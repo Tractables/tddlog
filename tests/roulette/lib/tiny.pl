@@ -1,6 +1,6 @@
 % tiny.rkt: the circuit Roulette builds, written by tddlog's scripts/roulette2problog.rkt.
 % 3 flips, 3 gates, 0 observations, 8 queries.
-% A value's weight is P(e) times its query's probability, both of which tddlog --evidence-probability prints.
+% A value's weight is P(e) times its query's probability, both of which tddlog --evidence-probability prints; a failed observation's value answers 0 under the evidence.
 % infer was called 4 times; query K is its K-th call.
 0.3::f1.
 0.6::f2.

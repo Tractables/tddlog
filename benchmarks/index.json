@@ -1,9 +1,11 @@
 {
  "records": {
   "alea-process": "alea",
+  "alea-tddlog": "tddlog",
   "prism-hybrid": "prism",
   "prism-sparse": "prism",
   "roulette-process": "roulette",
+  "roulette-tddlog": "tddlog",
   "storm-dd": "storm",
   "storm-exact": "storm",
   "storm-sparse": "storm"
@@ -566,6 +568,64 @@
     ],
     "key": "zeroone_w2",
     "title": "zeroone_w2"
+   }
+  ],
+  "circulette": [
+   {
+    "instances": [
+     "ct_1-bit-mux",
+     "ct_2bit-adder",
+     "ct_4-bit-comparator",
+     "ct_4bit-multiplier",
+     "ct_8bit-adder",
+     "ct_adder8",
+     "ct_ALU",
+     "ct_ALU_Controller",
+     "ct_ALU_Top",
+     "ct_exp",
+     "ct_FIFO",
+     "ct_fullAdder",
+     "ct_halfAdder",
+     "ct_jsrflipflop",
+     "ct_mux2",
+     "ct_openfpga_and4",
+     "ct_openfpga_and4_tmrg",
+     "ct_openfpga_asyn_spram_4x1",
+     "ct_openfpga_clock_divider",
+     "ct_openfpga_dual_port_ram_1k",
+     "ct_openfpga_pulse_generator",
+     "ct_openfpga_syn_spram_4x1",
+     "ct_openfpga_syn_spram_4x1_tmr",
+     "ct_serial-crc"
+    ],
+    "key": "netlists",
+    "title": "Circulette's netlists"
+   },
+   {
+    "instances": [
+     "ct_mac1",
+     "ct_mac2",
+     "ct_mac3",
+     "ct_mac4",
+     "ct_mac5",
+     "ct_mac6"
+    ],
+    "key": "mac",
+    "title": "multiply-accumulate units"
+   },
+   {
+    "instances": [
+     "ct_fulladder2",
+     "ct_fulladder4",
+     "ct_fulladder6",
+     "ct_fulladder8",
+     "ct_fulladder10",
+     "ct_fulladder12",
+     "ct_fulladder16",
+     "ct_fulladder20"
+    ],
+    "key": "fulladder",
+    "title": "ripple-carry adders"
    }
   ],
   "dice": [
@@ -1503,6 +1563,28 @@
     ],
     "key": "hardware",
     "title": "hardware"
+   },
+   {
+    "instances": [
+     "rl_hardware_bitwidth_5",
+     "rl_hardware_bitwidth_10",
+     "rl_hardware_bitwidth_20",
+     "rl_hardware_bitwidth_50",
+     "rl_hardware_bitwidth_100",
+     "rl_hardware_bitwidth_300",
+     "rl_hardware_bitwidth_1000",
+     "rl_hardware_bitwidth_3000",
+     "rl_hardware_bitwidth_10000",
+     "rl_hardware_bitwidth_30000",
+     "rl_hardware_bitwidth_100000",
+     "rl_hardware_bitwidth_300000",
+     "rl_hardware_bitwidth_1000000",
+     "rl_hardware_bitwidth_3000000",
+     "rl_hardware_bitwidth_10000000",
+     "rl_hardware_bitwidth_100000000"
+    ],
+    "key": "hardware_bitwidth",
+    "title": "hardware_bitwidth"
    },
    {
     "instances": [

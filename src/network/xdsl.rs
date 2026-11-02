@@ -58,23 +58,17 @@ pub(super) fn inst(data: &[u8], network: &Network) -> Result<Vec<(usize, usize)>
     if root.name != "instantiation" {
         return Err("evidence: not an <instantiation>".into());
     }
-    let mut given: Vec<Option<usize>> = vec![None; network.names.len()];
-    for e in &root.children {
-        let (Some(v), Some(u), "inst") = (e.attribute("id"), e.attribute("value"), e.name.as_str())
-        else {
-            return Err(format!("evidence: not an observation: <{}>", e.name));
-        };
-        let v = network.variable(v)?;
-        let u = network.value(v, u)?;
-        if given[v].replace(u).is_some() {
-            return Err(format!("evidence: {} observed twice", network.names[v]));
-        }
-    }
-    Ok(given
-        .into_iter()
-        .enumerate()
-        .filter_map(|(v, u)| Some((v, u?)))
-        .collect())
+    let pairs = root
+        .children
+        .iter()
+        .map(
+            |e| match (e.attribute("id"), e.attribute("value"), e.name.as_str()) {
+                (Some(v), Some(u), "inst") => Ok((v, u)),
+                _ => Err(format!("evidence: not an observation: <{}>", e.name)),
+            },
+        )
+        .collect::<Result<Vec<_>, _>>()?;
+    network.observations(pairs)
 }
 
 #[cfg(test)]

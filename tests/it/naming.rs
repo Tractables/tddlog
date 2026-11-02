@@ -354,6 +354,71 @@ fn weather_answers_and_evidence_are_the_forward_pass() {
     }
 }
 
+/// Three independent chains stated a day at a time, each day's facts first,
+/// and a last day that reads them into one atom: the window reaches that
+/// atom's narrow boundary, and the last day's frontier before it is cut too.
+/// The answer is each chain's forward pass, combined.
+#[test]
+fn a_program_that_narrows_at_its_end_keeps_the_forward_pass() {
+    let (stay, turn) = (0.7, 0.2);
+    let reads = [0.3, 0.4, 0.5];
+    let (h, i, k) = (0.6, 0.2, 0.9);
+    for days in [2, 4, 7] {
+        let mut src = String::from("0.5::s0_0. 0.5::s0_1. 0.5::s0_2.\n");
+        let mut p = 0.5;
+        for t in 1..=days {
+            for j in 0..3 {
+                src += &format!("{stay}::f{t}_{j}. {turn}::g{t}_{j}.\n");
+            }
+            for j in 0..3 {
+                src += &format!(
+                    "s{t}_{j} :- s{b}_{j}, f{t}_{j}. s{t}_{j} :- \\+s{b}_{j}, g{t}_{j}.\n",
+                    b = t - 1
+                );
+            }
+            p = p * stay + (1.0 - p) * turn;
+        }
+        src += &format!(
+            "{}::q0. {}::q1. {}::q2. {h}::h. {i}::i. {k}::k.\n\
+             a :- s{days}_0, q0. a :- s{days}_1, q1. a :- s{days}_2, q2.\n\
+             b :- a, h. b :- \\+a, i. z :- b, k. query(z).\n",
+            reads[0], reads[1], reads[2]
+        );
+        let a = 1.0 - reads.iter().map(|q| 1.0 - p * q).product::<f64>();
+        let want = (a * h + (1.0 - a) * i) * k;
+        check(&format!("narrow end {days}"), &src, want, 1.0);
+    }
+}
+
+/// A hidden Markov model stated step by step, every observation true. Half
+/// the window's cuts, those after an observation, hide nothing and do not
+/// stand; the answers are the forward pass's, with `program` still naming.
+#[test]
+fn a_hidden_markov_models_cuts_keep_the_forward_pass() {
+    let (a, b, c, d) = (0.7, 0.2, 0.9, 0.3);
+    for steps in [3, 6, 12] {
+        let mut src = String::from("0.5::s0.\n");
+        let mut alpha = [0.5, 0.5];
+        for i in 1..=steps {
+            src += &format!(
+                "{a}::a{i}. {b}::b{i}.\ns{i} :- s{p}, a{i}. s{i} :- \\+s{p}, b{i}.\n\
+                 {c}::c{i}. {d}::d{i}.\no{i} :- s{i}, c{i}. o{i} :- \\+s{i}, d{i}.\nevidence(o{i}).\n",
+                p = i - 1
+            );
+            let on = alpha[1] * a + alpha[0] * b;
+            let off = alpha[1] * (1.0 - a) + alpha[0] * (1.0 - b);
+            alpha = [off * d, on * c];
+        }
+        src += &format!("query(s{steps}).\n");
+        let e = alpha[0] + alpha[1];
+        let (named, _) = check(&format!("hmm {steps}"), &src, alpha[1] / e, e);
+        assert!(
+            named || steps < 12,
+            "hmm {steps}: `program` names its states"
+        );
+    }
+}
+
 #[test]
 fn grid_answers_and_evidence_are_the_forward_pass() {
     for side in [3, 4, 5] {
@@ -714,6 +779,25 @@ propcost(million) :- thiscarcost(hundredthou).
 propcost(million) :- othercarcost(thousand).
 ";
 
+fn check_answers<S: AsRef<str>>(what: &str, source: &str, want: &[(S, f64)], eps: f64) -> bool {
+    let mut named = false;
+    for strategy in STRATEGIES {
+        let options = common::options(strategy, Projection::default());
+        let run =
+            common::run(source, &options).unwrap_or_else(|e| panic!("{what} {strategy:?}: {e}"));
+        common::assert_answers(
+            &format!("{what} {strategy:?}"),
+            run.results.as_ref().expect("consistent evidence"),
+            want,
+            eps,
+        );
+        if strategy == Strategy::Trial(Kind::Program { fan_in: false }) {
+            named = !run.ground.encoding.is_empty();
+        }
+    }
+    named
+}
+
 /// ProbLog 2.3.0 (`-k sdd`, one query at a time) answers 0.019884864,
 /// 0.0085220844, 0 and 0.016076784; `program` answered 0.019029, 0.008155,
 /// 0 and 0.015402 before the fix.
@@ -728,20 +812,10 @@ fn a_split_tables_ties_read_copies_of_their_own_cut() {
         .map(|q| format!("propcost({q})"))
         .zip([0.019884864, 0.0085220844, 0.0, 0.016076784])
         .collect();
-    for strategy in STRATEGIES {
-        let options = common::options(strategy, Projection::default());
-        let run = common::run(&source, &options)
-            .unwrap_or_else(|e| panic!("insurance's split {strategy:?}: {e}"));
-        common::assert_answers(
-            &format!("insurance's split {strategy:?}"),
-            run.results.as_ref().expect("consistent evidence"),
-            &want,
-            1e-8,
-        );
-        if strategy == Strategy::Trial(Kind::Program { fan_in: false }) {
-            assert!(!run.ground.encoding.is_empty(), "`program` names atoms");
-        }
-    }
+    assert!(
+        check_answers("insurance's split", &source, &want, 1e-8),
+        "`program` names atoms"
+    );
 }
 
 /// Roulette's hailfinder network, cut down to the rules that keep
@@ -830,15 +904,5 @@ fn a_cut_whose_link_a_tie_stands_on() {
         ("r5fcst(sig)", 0.0),
         ("r5fcst(svr)", 0.2510229974258016),
     ];
-    for strategy in STRATEGIES {
-        let options = common::options(strategy, Projection::default());
-        let run = common::run(&source, &options)
-            .unwrap_or_else(|e| panic!("hailfinder's tie {strategy:?}: {e}"));
-        common::assert_answers(
-            &format!("hailfinder's tie {strategy:?}"),
-            run.results.as_ref().expect("consistent evidence"),
-            &want,
-            1e-9,
-        );
-    }
+    check_answers("hailfinder's tie", &source, &want, 1e-9);
 }

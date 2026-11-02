@@ -57,6 +57,150 @@ pub(super) fn table_models(
     n: usize,
     max: usize,
 ) -> Option<Vec<u64>> {
+    let (mut columns, cubes) = paired_columns_and_cubes(cubes, groups, outputs, n)?;
+
+    // The output: `outputs` where the cubes leave them in no group, a group
+    // of their own, and else the group of which cubes negate a variable.
+    let binary = !outputs.is_empty()
+        && outputs
+            .iter()
+            .all(|v| columns.group_of[v.0 as usize] == u32::MAX);
+    let output = if binary {
+        if outputs.len() >= 64 {
+            return None;
+        }
+        columns.push(outputs, false);
+        columns.all.len() - 1
+    } else {
+        let mut output: Option<u32> = None;
+        for c in &cubes {
+            for l in c.iter().filter(|l| !l.sign) {
+                let g = columns.group_of[l.var.0 as usize];
+                if g != u32::MAX && *output.get_or_insert(g) != g {
+                    return None;
+                }
+            }
+        }
+        output? as usize
+    };
+    // Every other variable of no group: an input of two values, the
+    // variable true and false.
+    let first_bit = columns.all.len();
+    for v in 1..=n {
+        if columns.group_of[v] == u32::MAX {
+            columns.push(&[VarId(v as u32)], false);
+        }
+    }
+    let Columns {
+        group_of,
+        member,
+        members,
+        all,
+    } = columns;
+    let width = all.len();
+    // A cube spreads over two values or more of each input it does not
+    // name: where that alone passes `max`, decline before reading them.
+    let most = max.max(1).ilog2() as usize;
+    if cubes.iter().any(|c| width > c.len() + 1 + most) {
+        return None;
+    }
+    // The values of each group: its variables, and none where it is at
+    // most one; those of `outputs`, its codes.
+    let count = |g: usize| match g == output && binary {
+        true => 1u64 << all[g].1,
+        false => all[g].1 as u64 + u64::from(!all[g].2),
+    };
+    let value_of = |g: usize, k: u64| if k == all[g].1 as u64 { NONE } else { k as u32 };
+
+    let (read, forces) = read_cubes(&cubes, width, output, binary, first_bit, &group_of, &member)?;
+    let (rows, order) = spread_rows(&read, width, max, &count, &value_of)?;
+    let key = |r: u32| &rows[r as usize * (width + 1)..][..width];
+    let spread = order.len() as u64;
+    // The inputs no cube reads leave the output free.
+    let inputs: Vec<usize> = (0..width).filter(|&g| g != output).collect();
+    let total = inputs
+        .iter()
+        .try_fold(1u64, |t, &g| t.checked_mul(count(g)))?;
+    let named = order.chunk_by(|&a, &b| key(a) == key(b)).count() as u64;
+    let outputs = count(output);
+    if spread.checked_add((total - named).checked_mul(outputs)?)? > max as u64 {
+        return None;
+    }
+    let words = n.div_ceil(64).max(1);
+    let mut models = Vec::new();
+    // The models at `values` with each value of the output that agrees
+    // with `value` on the bits `fixed`: for a group, the value fixed or,
+    // where none is, each of them; false past `max` models.
+    let mut put = |values: &[u32], (fixed, value): (u64, u64)| {
+        let open = match (binary, fixed) {
+            (true, _) => (outputs - 1) & !fixed,
+            (false, 0) => outputs - 1,
+            (false, _) => 0,
+        };
+        let mut next = 0u64;
+        loop {
+            let out = if binary { value | next } else { value + next };
+            let at = models.len();
+            models.resize(at + words, 0u64);
+            for (g, &(start, len, _)) in all.iter().enumerate() {
+                for (k, &v) in members[start..start + len].iter().enumerate() {
+                    let holds = match g == output {
+                        true if binary => out >> k & 1 == 1,
+                        true => k as u64 == out,
+                        false => k as u32 == values[g],
+                    };
+                    let i = v.0 as usize - 1;
+                    models[at + i / 64] |= u64::from(holds) << (i % 64);
+                }
+            }
+            if next == open {
+                return models.len() <= max * words;
+            }
+            // The next value of the bits left open, or the next value.
+            next = if binary {
+                next.wrapping_sub(open) & open
+            } else {
+                next + 1
+            };
+        }
+    };
+    let place = |r: u32| rows[r as usize * (width + 1) + width] as usize;
+    let mut runs = order.chunk_by(|&a, &b| key(a) == key(b)).peekable();
+    let mut at = vec![0u64; inputs.len()];
+    let mut values = vec![NONE; width];
+    loop {
+        for (i, &g) in inputs.iter().enumerate() {
+            values[g] = value_of(g, at[i]);
+        }
+        // The assignments come in ascending order, as the runs do.
+        let fixed = match runs.next_if(|run| key(run[0]) == values.as_slice()) {
+            // The bits the cubes fix, where they agree and rule out none.
+            Some(run) => run.iter().try_fold((0u64, 0u64), |(fixed, value), &r| {
+                let (more, to) = forces[place(r)]?;
+                ((value ^ to) & fixed & more == 0).then_some((fixed | more, value | to))
+            }),
+            None => Some((0, 0)),
+        };
+        if let Some(fixed) = fixed
+            && !put(&values, fixed)
+        {
+            return None;
+        }
+        // The next assignment, the last input fastest.
+        if !step(&mut at, |i| count(inputs[i]), (0..inputs.len()).rev()) {
+            break;
+        }
+    }
+    debug_assert!(runs.next().is_none());
+    Some(models)
+}
+
+fn paired_columns_and_cubes<'a>(
+    cubes: &'a [Vec<Literal>],
+    groups: &[(Vec<VarId>, bool)],
+    outputs: &[VarId],
+    n: usize,
+) -> Option<(Columns, Vec<&'a [Literal]>)> {
     let mut columns = Columns {
         group_of: vec![u32::MAX; n + 1],
         member: vec![0; n + 1],
@@ -131,96 +275,16 @@ pub(super) fn table_models(
         .map(Vec::as_slice)
         .filter(|c| !paired(c))
         .collect();
+    Some((columns, cubes))
+}
 
-    // The output: `outputs` where the cubes leave them in no group, a group
-    // of their own, and else the group of which cubes negate a variable.
-    let binary = !outputs.is_empty()
-        && outputs
-            .iter()
-            .all(|v| columns.group_of[v.0 as usize] == u32::MAX);
-    let output = if binary {
-        if outputs.len() >= 64 {
-            return None;
-        }
-        columns.push(outputs, false);
-        columns.all.len() - 1
-    } else {
-        let mut output: Option<u32> = None;
-        for c in &cubes {
-            for l in c.iter().filter(|l| !l.sign) {
-                let g = columns.group_of[l.var.0 as usize];
-                if g != u32::MAX && *output.get_or_insert(g) != g {
-                    return None;
-                }
-            }
-        }
-        output? as usize
-    };
-    // Every other variable of no group: an input of two values, the
-    // variable true and false.
-    let first_bit = columns.all.len();
-    for v in 1..=n {
-        if columns.group_of[v] == u32::MAX {
-            columns.push(&[VarId(v as u32)], false);
-        }
-    }
-    let Columns {
-        group_of,
-        member,
-        members,
-        all,
-    } = columns;
-    let bit = |g: usize| g >= first_bit;
-    let width = all.len();
-    // A cube spreads over two values or more of each input it does not
-    // name: where that alone passes `max`, decline before reading them.
-    let most = max.max(1).ilog2() as usize;
-    if cubes.iter().any(|c| width > c.len() + 1 + most) {
-        return None;
-    }
-    // The values of each group: its variables, and none where it is at
-    // most one; those of `outputs`, its codes.
-    let count = |g: usize| match g == output && binary {
-        true => 1u64 << all[g].1,
-        false => all[g].1 as u64 + u64::from(!all[g].2),
-    };
-    let value_of = |g: usize, k: u64| if k == all[g].1 as u64 { NONE } else { k as u32 };
-
-    // Each cube as `width + 1` values: the value of each input it names,
-    // free for those it does not, none for the output, and then the cube's
-    // place. What it says of the output is in `forces`: the bits of the
-    // output's value it fixes and their values, all of them for a group,
-    // and `None` where it rules its inputs out.
-    let mut read: Vec<u32> = Vec::with_capacity(cubes.len() * (width + 1));
-    let mut forces: Vec<Option<(u64, u64)>> = Vec::with_capacity(cubes.len());
-    for (i, c) in cubes.iter().enumerate() {
-        let at = read.len();
-        read.resize(at + width + 1, FREE);
-        let (values, place) = read[at..].split_at_mut(width);
-        place[0] = i as u32;
-        let mut force = None;
-        for &l in c.iter() {
-            let g = group_of[l.var.0 as usize] as usize;
-            let k = member[l.var.0 as usize];
-            if g == output {
-                if force.is_some() || (l.sign && !binary) {
-                    return None;
-                }
-                force = Some(if binary {
-                    (1 << k, u64::from(!l.sign) << k)
-                } else {
-                    (u64::MAX, u64::from(k))
-                });
-            } else if values[g] != FREE || !(l.sign || bit(g)) {
-                return None;
-            } else {
-                values[g] = if l.sign { k } else { NONE };
-            }
-        }
-        values[output] = NONE;
-        forces.push(force);
-    }
-
+fn spread_rows(
+    read: &[u32],
+    width: usize,
+    max: usize,
+    count: &dyn Fn(usize) -> u64,
+    value_of: &dyn Fn(usize, u64) -> u32,
+) -> Option<(Vec<u32>, Vec<u32>)> {
     // Each cube spread over the values of the inputs it does not name, in
     // the same layout.
     let mut spread = 0u64;
@@ -255,85 +319,55 @@ pub(super) fn table_models(
     let key = |r: u32| &rows[r as usize * (width + 1)..][..width];
     let mut order: Vec<u32> = (0..spread as u32).collect();
     order.sort_unstable_by(|&a, &b| key(a).cmp(key(b)));
+    Some((rows, order))
+}
 
-    // The inputs no cube reads leave the output free.
-    let inputs: Vec<usize> = (0..width).filter(|&g| g != output).collect();
-    let total = inputs
-        .iter()
-        .try_fold(1u64, |t, &g| t.checked_mul(count(g)))?;
-    let named = order.chunk_by(|&a, &b| key(a) == key(b)).count() as u64;
-    let outputs = count(output);
-    if spread.checked_add((total - named).checked_mul(outputs)?)? > max as u64 {
-        return None;
-    }
-    let words = n.div_ceil(64).max(1);
-    let mut models = Vec::new();
-    // The models at `values` with each value of the output that agrees
-    // with `value` on the bits `fixed`: for a group, the value fixed or,
-    // where none is, each of them; false past `max` models.
-    let mut put = |values: &[u32], (fixed, value): (u64, u64)| {
-        let open = match (binary, fixed) {
-            (true, _) => (outputs - 1) & !fixed,
-            (false, 0) => outputs - 1,
-            (false, _) => 0,
-        };
-        let mut next = 0u64;
-        loop {
-            let out = if binary { value | next } else { value + next };
-            let at = models.len();
-            models.resize(at + words, 0u64);
-            for (g, &(start, len, _)) in all.iter().enumerate() {
-                for (k, &v) in members[start..start + len].iter().enumerate() {
-                    let holds = match g == output {
-                        true if binary => out >> k & 1 == 1,
-                        true => k as u64 == out,
-                        false => k as u32 == values[g],
-                    };
-                    let i = v.0 as usize - 1;
-                    models[at + i / 64] |= u64::from(holds) << (i % 64);
+type CubeForces = (Vec<u32>, Vec<Option<(u64, u64)>>);
+
+/// Each cube as `width + 1` values: the value of each input it names, free
+/// for those it does not, none for the output, and then the cube's place.
+/// What it says of the output is in `forces`: the bits of the output's
+/// value it fixes and their values, all of them for a group, and `None`
+/// where it rules its inputs out.
+fn read_cubes<C: AsRef<[tididi::Literal]>>(
+    cubes: &[C],
+    width: usize,
+    output: usize,
+    binary: bool,
+    first_bit: usize,
+    group_of: &[u32],
+    member: &[u32],
+) -> Option<CubeForces> {
+    let mut read: Vec<u32> = Vec::with_capacity(cubes.len() * (width + 1));
+    let mut forces: Vec<Option<(u64, u64)>> = Vec::with_capacity(cubes.len());
+    for (i, c) in cubes.iter().enumerate() {
+        let at = read.len();
+        read.resize(at + width + 1, FREE);
+        let (values, place) = read[at..].split_at_mut(width);
+        place[0] = i as u32;
+        let mut force = None;
+        for &l in c.as_ref() {
+            let g = group_of[l.var.0 as usize] as usize;
+            let k = member[l.var.0 as usize];
+            if g == output {
+                if force.is_some() || (l.sign && !binary) {
+                    return None;
                 }
-            }
-            if next == open {
-                return models.len() <= max * words;
-            }
-            // The next value of the bits left open, or the next value.
-            next = if binary {
-                next.wrapping_sub(open) & open
+                force = Some(if binary {
+                    (1 << k, u64::from(!l.sign) << k)
+                } else {
+                    (u64::MAX, u64::from(k))
+                });
+            } else if values[g] != FREE || !(l.sign || g >= first_bit) {
+                return None;
             } else {
-                next + 1
-            };
+                values[g] = if l.sign { k } else { NONE };
+            }
         }
-    };
-    let place = |r: u32| rows[r as usize * (width + 1) + width] as usize;
-    let mut runs = order.chunk_by(|&a, &b| key(a) == key(b)).peekable();
-    at.clear();
-    at.resize(inputs.len(), 0);
-    let mut values = vec![NONE; width];
-    loop {
-        for (i, &g) in inputs.iter().enumerate() {
-            values[g] = value_of(g, at[i]);
-        }
-        // The assignments come in ascending order, as the runs do.
-        let fixed = match runs.next_if(|run| key(run[0]) == values.as_slice()) {
-            // The bits the cubes fix, where they agree and rule out none.
-            Some(run) => run.iter().try_fold((0u64, 0u64), |(fixed, value), &r| {
-                let (more, to) = forces[place(r)]?;
-                ((value ^ to) & fixed & more == 0).then_some((fixed | more, value | to))
-            }),
-            None => Some((0, 0)),
-        };
-        if let Some(fixed) = fixed
-            && !put(&values, fixed)
-        {
-            return None;
-        }
-        // The next assignment, the last input fastest.
-        if !step(&mut at, |i| count(inputs[i]), (0..inputs.len()).rev()) {
-            break;
-        }
+        values[output] = NONE;
+        forces.push(force);
     }
-    debug_assert!(runs.next().is_none());
-    Some(models)
+    Some((read, forces))
 }
 
 /// The columns of a table's rows: each group as the start and length of

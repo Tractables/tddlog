@@ -81,9 +81,11 @@ fn linear(gp: &GroundProgram, by_head: &RulesByHead, scc: &[AtomId]) -> bool {
 /// Rewrites every linear recursive component of `gp` by vertex elimination,
 /// and returns how many it rewrote.
 pub(crate) fn linear_recursion(gp: &mut GroundProgram) -> usize {
-    let structure = gp.structure();
-    let by_head = &structure.by_head;
-    let linear: Vec<&Vec<AtomId>> = structure
+    // Not the program's structure, whose exclusive sets are most of its
+    // cost and which the program `auto` writes for `program` never reads.
+    let deps = deps::Deps::of(gp);
+    let by_head = &deps.by_head;
+    let linear: Vec<&Vec<AtomId>> = deps
         .sccs
         .iter()
         .filter(|scc| linear(gp, by_head, scc))
@@ -93,7 +95,7 @@ pub(crate) fn linear_recursion(gp: &mut GroundProgram) -> usize {
     }
     // The atoms read from outside their component.
     let mut component = vec![usize::MAX; gp.num_atoms()];
-    for (c, scc) in structure.sccs.iter().enumerate() {
+    for (c, scc) in deps.sccs.iter().enumerate() {
         for &a in scc {
             component[a as usize] = c;
         }
@@ -243,10 +245,10 @@ fn conjoin(a: &[GLit], b: &[GLit]) -> Option<Vec<GLit>> {
     (!contradicts).then_some(body)
 }
 
-/// Rewrites one linear recursive component, marking its rules dropped.
-/// Rewrites one component, unless its elimination would take more than
-/// `budget` label products, which it then lowers by the products taken.
-/// Returns whether it rewrote the component.
+/// Rewrites one linear recursive component, marking its rules dropped,
+/// unless its elimination would take more than `budget` label products,
+/// which it then lowers by the products taken. Returns whether it rewrote
+/// the component.
 fn eliminate(
     out: &mut Out,
     by_head: &RulesByHead,

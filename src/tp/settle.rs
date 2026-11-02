@@ -624,6 +624,21 @@ fn pairs(backend: &TddBackend, compiled: &Compiled, a: AtomId) -> usize {
 /// links where they gain no more than the links' joint (`K - R <= J`),
 /// and whether that joint is larger than [`GROWTH`] times the links;
 /// `None` where the names pay for them.
+fn links_and_readers_pairs(
+    backend: &TddBackend,
+    compiled: &Compiled,
+    cut: &Cut,
+    readers: &[Reader],
+) -> (usize, usize) {
+    let held = readers.iter().map(|r| pairs(backend, compiled, r.0)).sum();
+    let l = cut
+        .links
+        .iter()
+        .map(|&(l, _)| pairs(backend, compiled, l))
+        .sum();
+    (held, l)
+}
+
 fn others_composed(
     backend: &TddBackend,
     compiled: &Compiled,
@@ -635,12 +650,7 @@ fn others_composed(
     if others.is_empty() {
         return Ok(Some((Vec::new(), false)));
     }
-    let held: usize = others.iter().map(|r| pairs(backend, compiled, r.0)).sum();
-    let l = cut
-        .links
-        .iter()
-        .map(|&(l, _)| pairs(backend, compiled, l))
-        .sum::<usize>();
+    let (held, l) = links_and_readers_pairs(backend, compiled, cut, others);
     let settled = backend.within(work, || {
         let Some(links) = Links::new(backend, compiled, cut, negations)? else {
             return Ok(None);
@@ -679,12 +689,7 @@ fn asked_composed(
     work: u64,
     negations: &mut Negations,
 ) -> Result<Option<Composed>, CompileError> {
-    let held: usize = asked.iter().map(|r| pairs(backend, compiled, r.0)).sum();
-    let l = cut
-        .links
-        .iter()
-        .map(|&(l, _)| pairs(backend, compiled, l))
-        .sum::<usize>();
+    let (held, l) = links_and_readers_pairs(backend, compiled, cut, asked);
     let bound =
         (l as u128 * evidence as u128 / held.max(1) as u128).min(usize::MAX as u128) as usize;
     let settled = backend.within(work, || {

@@ -90,6 +90,7 @@
 
 mod auto;
 mod by_hash;
+mod cnf;
 mod cubes;
 mod disjoint;
 pub mod eval;
@@ -108,10 +109,11 @@ pub mod vtree;
 
 use std::sync::Arc;
 
+pub use cnf::WeightedCnf;
 pub use ground::{GroundOptions, GroundProgram};
 pub use input::{Format, Input, consult, read};
 pub use query::QueryResult;
-pub use solve::{Options, Progress, Solution, rewritten, solve, solve_ground};
+pub use solve::{Options, Progress, Solution, rewritten, solve, solve_ground, weighted_cnf};
 pub use strategy::Strategy;
 pub use tp::Projection;
 pub use vtree::Kind;
@@ -122,7 +124,7 @@ use tp::CompileStats;
 pub struct Run {
     /// The program compiled: the ground program as [`Run::kind`] rewrote
     /// it ([`Kind::rewrite`]), with the copies its layout made.
-    pub ground: GroundProgram,
+    pub ground: Arc<GroundProgram>,
     /// The vtree the formulas were compiled on.
     pub vtree: Arc<tididi::Vtree>,
     /// The layout the vtree came from (for `auto`, the trial that
@@ -190,6 +192,9 @@ pub enum Error {
         error: tp::CompileError,
         notes: Vec<String>,
     },
+    /// The program has no weighted CNF ([`fn@weighted_cnf`]): it keeps a
+    /// cyclic component.
+    Cnf(String),
 }
 
 impl std::fmt::Display for Error {
@@ -203,6 +208,7 @@ impl std::fmt::Display for Error {
             Error::Compile(e) | Error::Trials { error: e, .. } => {
                 write!(f, "compilation error: {e}")
             }
+            Error::Cnf(e) => write!(f, "weighted CNF error: {e}"),
         }
     }
 }

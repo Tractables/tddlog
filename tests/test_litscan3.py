@@ -6,6 +6,7 @@ gen_problogtut.py takes a tutorial page's programs that ask marginals.
 """
 import itertools
 import math
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -92,6 +93,8 @@ class Litscan3Tests(unittest.TestCase):
         for name, (family, gargs) in bench.LIT.items():
             if gargs[0] not in bench.FOLD or (gargs[0] == 'gen_pcfg.py' and not (root / 'data' / 'problog-tutorial').exists()):
                 continue
+            if gargs[0] in bench.PROGRAM_OF_TDDLOG and not os.access(bench.source_tree.BINARY, os.X_OK):
+                continue   # its template is converted by tddlog --program
             program, text = bench.fold_template(gargs)
             programs.setdefault(program, set()).add(text)
             self.assertIn('$1', ''.join(line for line in text.splitlines() if not line.startswith('%')), name)

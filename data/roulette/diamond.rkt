@@ -18,4 +18,4 @@
 
 (define SIZE (string->number (vector-ref (current-command-line-arguments) 0)))
 (define result (time (query (main SIZE))))
-(emit (format "s(~a)" SIZE) (result #t))
+(statement (emit (format "s(~a)" SIZE) (result #t) #t))

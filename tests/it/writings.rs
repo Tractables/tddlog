@@ -24,8 +24,10 @@ struct Var {
 
 /// `a` and `b` are roots, `c` reads both, with a row where `c(1)` has no
 /// mass and one where `c(2)` has none; `d` reads `c`, and `e` reads `d`
-/// and `a`, with a row where `e` is false.
-const NET: [Var; 5] = [
+/// and `a`, with a row where `e` is false; `f`, of four values, reads `b`,
+/// and `g` reads `f` and `a`; `h`, of two values, reads `c`, `f` and `a`,
+/// and only `i`, of eight values, reads it.
+const NET: [Var; 9] = [
     Var {
         name: "a",
         values: 2,
@@ -63,11 +65,87 @@ const NET: [Var; 5] = [
         parents: &[3, 0],
         rows: &[&[0.95, 0.05], &[0.6, 0.4], &[0.3, 0.7], &[0.0, 1.0]],
     },
+    Var {
+        name: "f",
+        values: 4,
+        parents: &[1],
+        rows: &[
+            &[0.1, 0.2, 0.3, 0.4],
+            &[0.4, 0.1, 0.25, 0.25],
+            &[0.25, 0.25, 0.1, 0.4],
+        ],
+    },
+    Var {
+        name: "g",
+        values: 2,
+        parents: &[5, 0],
+        rows: &[
+            &[0.9, 0.1],
+            &[0.8, 0.2],
+            &[0.3, 0.7],
+            &[0.6, 0.4],
+            &[0.5, 0.5],
+            &[0.15, 0.85],
+            &[0.35, 0.65],
+            &[0.7, 0.3],
+        ],
+    },
+    Var {
+        name: "h",
+        values: 2,
+        parents: &[2, 5, 0],
+        rows: &[
+            &[0.01, 0.99],
+            &[0.02, 0.98],
+            &[0.03, 0.97],
+            &[0.04, 0.96],
+            &[0.05, 0.95],
+            &[0.06, 0.94],
+            &[0.07, 0.93],
+            &[0.08, 0.92],
+            &[0.09, 0.91],
+            &[0.11, 0.89],
+            &[0.12, 0.88],
+            &[0.13, 0.87],
+            &[0.14, 0.86],
+            &[0.16, 0.84],
+            &[0.17, 0.83],
+            &[0.18, 0.82],
+            &[0.19, 0.81],
+            &[0.21, 0.79],
+            &[0.22, 0.78],
+            &[0.23, 0.77],
+            &[0.24, 0.76],
+            &[0.26, 0.74],
+            &[0.27, 0.73],
+            &[0.28, 0.72],
+        ],
+    },
+    Var {
+        name: "i",
+        values: 8,
+        parents: &[7],
+        rows: &[
+            &[0.1, 0.2, 0.1, 0.2, 0.15, 0.05, 0.12, 0.08],
+            &[0.25, 0.05, 0.1, 0.15, 0.05, 0.2, 0.06, 0.14],
+        ],
+    },
 ];
 
 /// The evidence and the queries, as (variable, value).
 const EVIDENCE: [(usize, usize); 1] = [(4, 0)];
-const QUERIES: [(usize, usize); 6] = [(1, 1), (2, 0), (2, 1), (2, 2), (3, 0), (3, 1)];
+const QUERIES: [(usize, usize); 10] = [
+    (1, 1),
+    (2, 0),
+    (2, 1),
+    (2, 2),
+    (3, 0),
+    (3, 1),
+    (5, 2),
+    (6, 0),
+    (8, 3),
+    (8, 5),
+];
 
 /// Each row's context: the values of the parents, in order.
 fn contexts(v: &Var) -> Vec<Vec<usize>> {
@@ -427,5 +505,380 @@ fn a_noisy_or_written_as_rules_reads_each_parent_once() {
             "h" => assert_eq!(roots, 2, "{gp}"),
             _ => {}
         }
+    }
+}
+
+/// The network as a Dice program, as a Dice user writes a table: each
+/// variable an integer of the fewest bits that hold its values, each row a
+/// `discrete` under a chain of conditionals on its parents' values, the
+/// first parent outermost, its last value the final `else`; the evidence
+/// an `observe` and the queries the components of the returned tuple.
+fn dice() -> String {
+    let width = |x: usize| (usize::BITS - (NET[x].values - 1).leading_zeros()).max(1);
+    let value = |x: usize, u: usize| format!("int({}, {u})", width(x));
+    fn table(x: usize, depth: usize, row: usize, value: &dyn Fn(usize, usize) -> String) -> String {
+        let v = &NET[x];
+        let Some(&p) = v.parents.get(depth) else {
+            let row: Vec<String> = v.rows[row].iter().map(|q| format!("{q:?}")).collect();
+            return format!("discrete({})", row.join(", "));
+        };
+        let name = NET[p].name.to_uppercase();
+        let last = NET[p].values - 1;
+        let mut s = table(x, depth + 1, row * NET[p].values + last, value);
+        for u in (0..last).rev() {
+            let then = table(x, depth + 1, row * NET[p].values + u, value);
+            s = format!("if ({name} == {}) then ({then}) else ({s})", value(p, u));
+        }
+        s
+    }
+    let mut s = String::new();
+    for (x, v) in NET.iter().enumerate() {
+        s += &format!(
+            "let {} = {} in\n",
+            v.name.to_uppercase(),
+            table(x, 0, 0, &value)
+        );
+    }
+    for (k, &(x, u)) in EVIDENCE.iter().enumerate() {
+        s += &format!(
+            "let o{k} = observe ({} == {}) in\n",
+            NET[x].name.to_uppercase(),
+            value(x, u)
+        );
+    }
+    let asked: Vec<String> = QUERIES
+        .iter()
+        .map(|&(x, u)| format!("{} == {}", NET[x].name.to_uppercase(), value(x, u)))
+        .collect();
+    let mut tuple = asked.last().unwrap().clone();
+    for q in asked[..asked.len() - 1].iter().rev() {
+        tuple = format!("({q}, {tuple})");
+    }
+    s + &tuple + "\n"
+}
+
+/// The network with each variable's values in binary, as a user who
+/// encodes them so writes it: value `u` of `x` the code `u + 1` on the
+/// fewest bit atoms `x_bit(j)` that hold it, each row a chain of switches
+/// setting the bits of its value, a row's context the cubes of its
+/// parents' codes, and the values observed and asked atoms that read their
+/// codes.
+fn binary() -> String {
+    let width = |x: usize| (usize::BITS - NET[x].values.leading_zeros()) as usize;
+    let cube = |x: usize, u: usize| -> Vec<String> {
+        (0..width(x))
+            .map(|j| {
+                let bit = format!("{}_bit({j})", NET[x].name);
+                if (u + 1) >> j & 1 == 1 {
+                    bit
+                } else {
+                    format!("\\+{bit}")
+                }
+            })
+            .collect()
+    };
+    let mut s = String::new();
+    for (x, v) in NET.iter().enumerate() {
+        for (r, (row, context)) in v.rows.iter().zip(contexts(v)).enumerate() {
+            let body: Vec<String> = v
+                .parents
+                .iter()
+                .zip(&context)
+                .flat_map(|(&p, &u)| cube(p, u))
+                .collect();
+            let given: Vec<usize> = (0..row.len()).filter(|&u| row[u] > 0.0).collect();
+            let (mut done, mut left): (Vec<String>, f64) = (Vec::new(), 1.0);
+            for (i, &u) in given.iter().enumerate() {
+                let mut b = body.clone();
+                if i + 1 < given.len() {
+                    let switch = format!("s_{}_{r}_{i}", v.name);
+                    s += &format!("{:?}::{switch}.\n", row[u] / left);
+                    left -= row[u];
+                    b.push(switch.clone());
+                    b.extend(done.iter().cloned());
+                    done.push(format!("\\+{switch}"));
+                } else {
+                    b.extend(done.iter().cloned());
+                }
+                for j in 0..width(x) {
+                    if (u + 1) >> j & 1 == 1 {
+                        s += &format!("{}_bit({j})", v.name);
+                        if !b.is_empty() {
+                            s += &format!(" :- {}", b.join(", "));
+                        }
+                        s += ".\n";
+                    }
+                }
+            }
+        }
+    }
+    let atom = |x: usize, u: usize| format!("{}({})", NET[x].name, u + 1);
+    let mut named: Vec<(usize, usize)> = EVIDENCE.iter().chain(&QUERIES).copied().collect();
+    named.sort_unstable();
+    named.dedup();
+    for (x, u) in named {
+        s += &format!("{} :- {}.\n", atom(x, u), cube(x, u).join(", "));
+    }
+    for &(x, u) in &EVIDENCE {
+        s += &format!("evidence({}).\n", atom(x, u));
+    }
+    for &(x, u) in &QUERIES {
+        s += &format!("query({}).\n", atom(x, u));
+    }
+    s
+}
+
+/// The network's writings over bits, Dice's and [`binary`]'s.
+fn over_bits() -> [(&'static str, String); 2] {
+    [
+        ("dice", tddlog::syntax::dice::read(&dice()).unwrap()),
+        ("binary", binary()),
+    ]
+}
+
+#[test]
+fn a_network_written_over_bits_answers_as_the_enumeration() {
+    // Written over their values (src/ground/values.rs).
+    let expected = enumerated();
+    for (writing, source) in over_bits() {
+        for strategy in [
+            Strategy::Trial(Kind::Closed),
+            Strategy::Auto,
+            Strategy::Trial(Kind::Families { search: false }),
+        ] {
+            let what = format!("{writing}, {strategy:?}");
+            let run = common::run(&source, &common::options(strategy, Projection::default()))
+                .unwrap_or_else(|e| panic!("{what}: {e}"));
+            let results = run.results.expect("evidence is consistent");
+            assert_eq!(results.len(), expected.len(), "{what}");
+            for (r, &want) in results.iter().zip(&expected) {
+                assert!(
+                    (r.probability - want).abs() < 1e-9,
+                    "{what}: {r} against {want}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn a_network_written_over_bits_is_ground_over_its_values() {
+    // Every variable is written over its values, each value an atom, but
+    // a in Dice, one fact there; no rule reads a bit of b, c or f: their
+    // readers read their values, g's those of f through the chain that
+    // Dice reads f's low bit in once its first values are excluded; h,
+    // whose table summed into i's would pass the rows' bound, is written
+    // apart from it and i's rows read its values.
+    for ((writing, source), written) in over_bits().into_iter().zip([8, 9]) {
+        let gp = common::ground_as_written(&source, Rows::Classes, false);
+        assert_eq!(gp.stats.values, written, "{writing}: {gp}");
+        let bit = |name: &str| {
+            !name.contains('$') && ["b_b", "c_b", "f_b"].iter().any(|b| name.starts_with(b))
+        };
+        for r in &gp.rules {
+            for l in &r.body {
+                let name = &gp.atoms[l.atom() as usize].name;
+                assert!(
+                    !bit(name),
+                    "{writing}: {} reads {name}: {gp}",
+                    gp.atoms[r.head as usize]
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn a_network_written_over_its_values_is_left_as_written() {
+    // The pass finds no variable held as bits where every variable is
+    // written over its values, as annotated disjunctions or as rules.
+    // `x` alone reads `c`, each value of `c` in three rules, and each
+    // rule reads the first switch of its row too.
+    let chain = "0.2::c(1); 0.3::c(2); 0.5::c(3).
+        0.1::x(1); 0.6::x(2); 0.3::x(3) :- c(1).
+        0.4::x(1); 0.4::x(2); 0.2::x(3) :- c(2).
+        0.7::x(1); 0.2::x(2); 0.1::x(3) :- c(3).
+        query(x(1)). query(x(2)).";
+    for (writing, source) in [
+        ("annotated", annotated()),
+        ("rules", rules()),
+        ("chain", chain.to_string()),
+    ] {
+        for rows in [Rows::Apart, Rows::Classes] {
+            for gp in [
+                common::ground(&source, rows, false),
+                common::ground_as_written(&source, rows, false),
+            ] {
+                assert_eq!(gp.stats.values, 0, "{writing}: {gp}");
+            }
+        }
+    }
+}
+
+/// A variable of two bits, each a function of the same sixteen flips
+/// (a disjunction of cubes over them), read as values: it owns the flips,
+/// and its one row's distribution is the sum over their worlds, which
+/// takes more steps than the row could write. The pass leaves it as
+/// written (src/ground/values.rs, the bounds), and it answers as the
+/// enumeration of the flips.
+#[test]
+fn a_variable_computed_from_many_flips_is_left_as_written() {
+    const FLIPS: usize = 16;
+    let mut seed = 7u64;
+    let mut next = |n: u64| {
+        seed = seed
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        (seed >> 33) % n
+    };
+    let ps: Vec<f64> = (0..FLIPS).map(|_| (1 + next(9)) as f64 / 10.0).collect();
+    // Each bit's cubes, each three literals over distinct flips.
+    let cubes: Vec<Vec<Vec<(usize, bool)>>> = (0..2)
+        .map(|_| {
+            (0..24)
+                .map(|_| {
+                    let mut c: Vec<(usize, bool)> = Vec::new();
+                    while c.len() < 3 {
+                        let f = next(FLIPS as u64) as usize;
+                        if c.iter().all(|&(g, _)| g != f) {
+                            c.push((f, next(2) == 1));
+                        }
+                    }
+                    c
+                })
+                .collect()
+        })
+        .collect();
+    let mut source = String::new();
+    for (f, p) in ps.iter().enumerate() {
+        source += &format!("{p}::f({f}).\n");
+    }
+    for (b, bit) in cubes.iter().enumerate() {
+        for c in bit {
+            let body: Vec<String> = c
+                .iter()
+                .map(|&(f, pos)| format!("{}f({f})", if pos { "" } else { "\\+" }))
+                .collect();
+            source += &format!("b{b} :- {}.\n", body.join(", "));
+        }
+    }
+    source += "q(0) :- \\+b0, \\+b1.\nq(1) :- b0, \\+b1.\nq(2) :- b0, b1.\n";
+    source += "query(q(0)). query(q(1)). query(q(2)).\n";
+    let gp = common::ground_as_written(&source, Rows::Classes, false);
+    assert_eq!(gp.stats.values, 0, "{gp}");
+    let mut expected = [0.0; 3];
+    for world in 0..1usize << FLIPS {
+        let p: f64 = (0..FLIPS)
+            .map(|f| {
+                if world >> f & 1 == 1 {
+                    ps[f]
+                } else {
+                    1.0 - ps[f]
+                }
+            })
+            .product();
+        let holds = |bit: &Vec<Vec<(usize, bool)>>| {
+            bit.iter()
+                .any(|c| c.iter().all(|&(f, pos)| (world >> f & 1 == 1) == pos))
+        };
+        match (holds(&cubes[0]), holds(&cubes[1])) {
+            (false, false) => expected[0] += p,
+            (true, false) => expected[1] += p,
+            (true, true) => expected[2] += p,
+            (false, true) => {}
+        }
+    }
+    let run = common::run(
+        &source,
+        &common::options(Strategy::Auto, Projection::default()),
+    )
+    .expect("runs");
+    let results = run.results.expect("no evidence");
+    assert_eq!(results.len(), expected.len());
+    for (r, &want) in results.iter().zip(&expected) {
+        assert!((r.probability - want).abs() < 1e-9, "{r} against {want}");
+    }
+}
+
+#[test]
+fn a_private_variable_left_as_bits_reads_the_views_it_shares_with_its_reader() {
+    // Q's rows with P summed in pass their bound, so P is apart from Q. P
+    // reads only flips, no variable written, and stays as bits, reading the
+    // comparison X1 && X2 that Q's rows have replaced. R makes the flips
+    // read by more than P and Q.
+    const X: [f64; 6] = [0.3, 0.6, 0.2, 0.7, 0.4, 0.55];
+    const R: [f64; 6] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
+    const Q: [[f64; 8]; 4] = [
+        [0.1, 0.2, 0.1, 0.2, 0.15, 0.05, 0.12, 0.08],
+        [0.25, 0.05, 0.1, 0.15, 0.05, 0.2, 0.06, 0.14],
+        [0.05, 0.15, 0.3, 0.1, 0.1, 0.1, 0.05, 0.15],
+        [0.2, 0.1, 0.05, 0.05, 0.3, 0.1, 0.1, 0.1],
+    ];
+    // P's table: its k-th row, X3 to X6 its bits and X1 && X2 the next.
+    let p = |k: usize| 0.01 + 0.03 * k as f64;
+    fn table(x: usize, k: usize, p: &dyn Fn(usize) -> f64) -> String {
+        if x == 7 {
+            return format!("flip {:?}", p(k));
+        }
+        format!(
+            "if X{x} then ({}) else ({})",
+            table(x + 1, 2 * k + 1, p),
+            table(x + 1, 2 * k, p)
+        )
+    }
+    let draw = |r: &[f64; 8]| {
+        let weights: Vec<String> = r.iter().map(|q| format!("{q:?}")).collect();
+        format!("discrete({})", weights.join(", "))
+    };
+    let mut source = String::new();
+    for (k, q) in X.iter().enumerate() {
+        source += &format!("let X{} = flip {q:?} in\n", k + 1);
+    }
+    let r: Vec<String> = R
+        .iter()
+        .enumerate()
+        .map(|(k, q)| format!("(X{} && flip {q:?})", k + 1))
+        .collect();
+    source += &format!("let R = {} in\n", r.join(" || "));
+    source += &format!(
+        "let P = if (X1 && X2) then ({}) else ({}) in\n",
+        table(3, 1, &p),
+        table(3, 0, &p)
+    );
+    source += &format!(
+        "let Q = if (X1 && X2) then (if P then {} else {}) else (if P then {} else {}) in\n",
+        draw(&Q[0]),
+        draw(&Q[1]),
+        draw(&Q[2]),
+        draw(&Q[3])
+    );
+    source += "(R, (Q == int(3, 3), Q == int(3, 5)))\n";
+    let mut expected = [0.0; 3];
+    for world in 0usize..1 << X.len() {
+        let on = |k: usize| world >> k & 1 == 1;
+        let weight: f64 = (0..X.len())
+            .map(|k| if on(k) { X[k] } else { 1.0 - X[k] })
+            .product();
+        let not_r: f64 = (0..X.len())
+            .map(|k| if on(k) { 1.0 - R[k] } else { 1.0 })
+            .product();
+        let both = on(0) && on(1);
+        let row = (2..X.len()).fold(usize::from(both), |k, x| 2 * k + usize::from(on(x)));
+        let (given, otherwise) = if both { (&Q[0], &Q[1]) } else { (&Q[2], &Q[3]) };
+        expected[0] += weight * (1.0 - not_r);
+        for (e, value) in expected[1..].iter_mut().zip([3, 5]) {
+            *e += weight * (p(row) * given[value] + (1.0 - p(row)) * otherwise[value]);
+        }
+    }
+    let source = tddlog::syntax::dice::read(&source).unwrap();
+    let run = common::run(
+        &source,
+        &common::options(Strategy::Auto, Projection::default()),
+    )
+    .unwrap();
+    let results = run.results.expect("no evidence");
+    assert_eq!(results.len(), expected.len());
+    for (r, &want) in results.iter().zip(&expected) {
+        assert!((r.probability - want).abs() < 1e-9, "{r} against {want}");
     }
 }

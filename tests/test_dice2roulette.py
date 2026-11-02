@@ -66,8 +66,10 @@ def run(code, *args):
     with tempfile.TemporaryDirectory() as d:
         path = Path(d) / 'p.rkt'
         path.write_text(code)
-        return subprocess.run(shlex.split(RACKET) + [str(path), *args], capture_output=True, text=True,
-                              check=True, timeout=300).stdout
+        r = subprocess.run(shlex.split(RACKET) + [str(path), *args], capture_output=True, text=True, timeout=300)
+        if r.returncode != 0:
+            raise AssertionError(f'racket exits {r.returncode}: {r.stderr[-2000:]}')
+        return r.stdout
 
 
 class Dice2RouletteTests(unittest.TestCase):
@@ -80,7 +82,10 @@ class Dice2RouletteTests(unittest.TestCase):
                 except NotImplementedError:
                     continue   # lists, /, % and the like, which dice2problog.py refuses too
                 self.assertTrue(balanced(code))
-                self.assertIn('(define pmfs', code)
+                self.assertIn('(define dists', code)
+                # Every expression of the module is a statement: the
+                # language runs each other one as a query of its own.
+                self.assertNotRegex(code, r'\n\((?!define|statement|require)')
 
     def test_a_network_translates(self):
         text = subprocess.run([sys.executable, str(source_tree.script('gen_bn.py')), str(SOURCE / 'examples' / 'asia.net'),
@@ -98,7 +103,7 @@ class Dice2RouletteTests(unittest.TestCase):
 
     def test_a_recursive_function_takes_its_depth(self):
         code = translate(program_text('geometric'))
-        self.assertIn(f'[(> depth {dice2problog.RECURSION_LIMIT}) (observe! #f)', code)
+        self.assertIn(f'[(> depth {dice2problog.RECURSION_LIMIT}) (statement (observe! #f))', code)
         self.assertRegex(code, r'\(f-geom \(add1 depth\) ')
         self.assertRegex(code, r'\(f-geom 0 ')
 
@@ -124,8 +129,8 @@ class Dice2RouletteTests(unittest.TestCase):
     def test_joint_asks_the_booleans_as_one_int(self):
         code = dice2roulette.translate(self.JOINT, 'test', joint=True)
         self.assertTrue(balanced(code))
-        self.assertEqual(code.count('(report-int 1 (list-ref pmfs 0) 2)'), 1)
-        self.assertNotIn('report-bool', code.split('(define pmfs')[1])
+        self.assertEqual(code.count('(report-int 1 (list-ref dists 0) 2)'), 1)
+        self.assertNotIn('report-bool', code.split('(define dists')[1])
         with self.assertRaisesRegex(NotImplementedError, r'--joint asks a value of Booleans.*int\(2\)'):
             dice2roulette.translate('let x = int(2, 1) in (x, true)\n', 'test', joint=True)
 
@@ -144,14 +149,12 @@ class Dice2RouletteTests(unittest.TestCase):
             text = program_text(name)
             qs = reference.queries(dice2problog.translate(text))
             want = reference.answers(reference.exact(text), qs)
-            code = translate(text)
-            for flags in [(), ('--no-complement',)]:
-                with self.subTest(name=name, flags=flags):
-                    out = run(code, *flags)
-                    self.assertRegex(out, r'cpu time: \d+ real time: \d+ gc time: \d+')
-                    got = bench.alea_answers(qs, bench.parse_alea(out, 'roulette')[0])
-                    for q, w in zip(qs, want):
-                        self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-9, msg=q)
+            with self.subTest(name=name):
+                out = run(translate(text))
+                self.assertRegex(out, r'cpu time: \d+ real time: \d+ gc time: \d+')
+                got = bench.alea_answers(qs, bench.parse_alea(out, 'roulette')[0])
+                for q, w in zip(qs, want):
+                    self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-9, msg=q)
 
     @unittest.skipUnless(RACKET, 'ROULETTE_RACKET is not set')
     def test_integer_operations_wrap_as_dices(self):

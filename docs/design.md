@@ -143,16 +143,16 @@ the formulation and the projection besides its vtree. The modules, in
 
 | module | what it holds |
 |---|---|
-| `bin/tddlog/` | the binary: `main.rs`, the command line, options and answers; `stats.rs`, the `--stats` lines; `alloc.rs`, the allocator |
+| `bin/tddlog/` | the binary: `main.rs`, the command line, options and answers; `stats.rs`, the `--stats` lines; `budget.rs`, the address-space limit from the cgroups; `alloc.rs`, the allocator |
 | `lib.rs` | `Run`, `Error`, the public items |
 | `input.rs` | `Format` and `read`: every input (a ProbLog program or an LPAD, a Dice program, a network file with its evidence file) read as the program `solve` takes, the one route of the binary and the bindings |
 | `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, what `auto` is handed ready, the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups |
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
-| `syntax/` | lexer, parser, AST; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes |
-| `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text, which `syntax/lpad.rs` and `syntax/dice.rs` write too |
-| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs`, `table.rs`, `noisy_or.rs`, `normalize.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `engine.rs` (with `schedule.rs`, body order), `simplify.rs`, `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
+| `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes |
+| `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
+| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls; `topdown.rs`, top-down grounding; and `schedule.rs`, body order), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
@@ -160,6 +160,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `eval/` | `mod.rs`: `Value`; `number.rs`: `Count`; `weights.rs`: the weights of facts and indicators; `count.rs`: a count's two passes, the count of a conjunction; `grid.rs` and `kernel.rs`: count passes over levels read as grids, and their vector kernels |
 | `by_hash.rs` | entries numbered as they come and found by a hash, kept in their owner's arrays: the lists, tuples, rules and rows of the modules below and of `ground` |
 | `cubes.rs` | cubes merged on complementary literals |
+| `cnf.rs` | `WeightedCnf`: the ground program as a weighted CNF (`tddlog --cnf`), for a weighted model counter |
 | `disjoint.rs` | the union-find |
 | `multisets.rs` | literal lists numbered as multisets, for `tp`'s templates and `vtree`'s families |
 
@@ -355,13 +356,15 @@ script's programs for them).
 A file with the extension `.dice` is a Dice program, and `syntax/dice.rs`
 reads it as the ProbLog program its symbolic evaluation writes, which the
 parser then reads and `tddlog --program` prints. Every `let` binds a
-Boolean literal, an integer or a tuple; an integer of type `int(w)` is `w`
-bits, each a literal; a `flip` is a probabilistic fact, and a `discrete`
-or a `uniform` is drawn bit by bit from the most significant, as Dice
-draws it, each bit a flip whose probability is a ratio of exact sums of
-the masses. Boolean operators and conditionals are rules over fresh
-atoms; `+`, `-` and `*` are adders over the bits, `==` a conjunction, `<`
-a comparator. The values an integer can take are tracked where their
+Boolean literal, an integer, a tuple or a list; an integer of type
+`int(w)` is `w` bits, each a literal; a `flip` is a probabilistic fact, a
+`discrete` or a `uniform` is drawn bit by bit from the most significant,
+as Dice draws it, each bit a flip whose probability is a ratio of exact
+sums of the masses, and `binomial(w, n, p)` is the sum of `n` flips `p`.
+Boolean operators and conditionals are rules over fresh atoms; `+`, `-`
+and `*` are adders over the bits, `==` a conjunction, `<` a comparator,
+and `nth_bit(int(w, i), x)` is bit `i` of `x` from the most significant.
+The values an integer can take are tracked where their
 pairs are few, so that a comparison every pair decides is a constant, and
 within a branch of a conditional a variable the guard compares with a
 constant takes only the values the guard allows. An `observe` within a
@@ -369,10 +372,15 @@ branch holds where the branch is not taken. A function is inlined at each
 call, a recursive one up to Dice's limit of ten nested calls, the call
 past it an observation of false. `iterate(f, init, k)` is recursion over
 a step index that the grounder unrolls: f's body once, its atoms indexed
-by the step, the state before step `T + 1` the body's at step `T`. The
+by the step, the state before step `T + 1` the body's at step `T`. A
+list (`[] : list(t)`, `[...]`, `::`, `head`, `tail`, `length`) is held as
+Dice holds one: a 4-bit length and ten elements as nested pairs, those
+past the length at their type's default, with `head` and `tail` of an
+empty list observing false on their path. The
 program's result is queried, every value of an integer as the
-conjunction of its bits. Lists, `/`, `%`, `nth_bit`, `sample`, `head`,
-`tail` and `length` are refused. The reader writes the program that the
+conjunction of its bits. Refused are `/`, `%`, `sample`, list literals
+over ten elements, integers wider than 63 bits, and `uniform` over more
+than 2^24 values. The reader writes the program that the
 Python script it replaced (`dice2problog.py`, now on the baselines
 branch) wrote, byte for byte (tests/dice holds Dice programs and the
 script's programs for them).
@@ -444,7 +452,14 @@ distinct spelling.
 A Bayesian or Markov network file is read as a program, which
 `tddlog --program FILE` prints and the other systems of the benchmarks
 read, and that text is parsed as any program is: one route, whose
-answers are those of the program. The reader replaced a Python script
+answers are those of the program. What tddlog parses of it is the rows
+of the variables the queries and the evidence read and of their
+ancestors (`ReadOptions::whole` unset): grounding drops every other row,
+and nothing before it reads them (the noisy-or tables of step 0
+included), so the ground program is the same, and a large network asked
+about a few of its variables is not written out and parsed whole for
+them (a UAI network written as 74 MB of program text and observed at a
+few variables took 18 s to write, parse and ground for 40 rules). The reader replaced a Python script
 (`gen_bn.py`, now on the baselines branch) and writes its programs byte
 for byte; `tests/it/networks.rs` checks the reader's text line for line
 against the script's programs for the files of `tests/networks/`,
@@ -529,6 +544,19 @@ factor that steps 9 and 11 and `td`'s separator copies take out of
 accepts (`tddlog --ground`), which is how grounding is checked apart from
 compilation.
 
+`tddlog --cnf` (`weighted_cnf`, `cnf.rs`) writes the program `--ground`
+prints, without its linear recursion (`Kind::eliminated`), as a weighted
+CNF in DIMACS for a weighted model counter: a variable per fact weighed as
+the fact, a variable of weight one
+for each derived atom and each body of two literals or more, defined by
+Tseitin's encoding of the completion of its rules, each observation a unit
+clause, and each query a literal named in a `c query` line, whose unit
+clause makes the count `P(q, e)`. The completion has one model in each
+world of the facts only where no cyclic component is left, so a program
+that keeps one (negation through recursion, say) is refused. Without
+observations the count is the product of the facts' weights summed and
+the factor, which a `c count` line states.
+
 Steps 0 to 4 are the front end. `finish` runs steps 5 to 11, after the
 front end and again after each layout rewrite (step 12, `decision`'s
 guards, `td`'s separator copies); where unit propagation settles the
@@ -537,12 +565,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
 
 | step | files | what it does |
 |---|---|---|
-| 0 | `terms.rs`, `normalize.rs`, `table.rs`, `noisy_or.rs` | compound terms, lists and findall lowered to Datalog with built-in literals; the heads of the annotated disjunctions in one order; grounds a table-shaped program from its rows; writes noisy-or tables as noisy-ors |
+| 0 | `terms.rs`, `library.rs`, `normalize.rs`, `table.rs`, `noisy_or.rs` | compound terms, lists, findall, ProbLog's library clauses and `call/N` lowered to Datalog with built-in literals; the heads of the annotated disjunctions in one order; grounds a table-shaped program from its rows; writes noisy-or tables as noisy-ors |
 | 1 | `normalize.rs`, `unread.rs`, `chain.rs` | annotated disjunctions and probabilistic rules to switches and rules; arguments no clause reads dropped; transitive closures to linear steps |
 | 2 | `linear.rs` | right-linear recursion grounded from its bound end |
-| 3 | `magic.rs` | magic sets: only what the queries and evidence demand is ground |
-| 4 | `engine.rs` | stratified semi-naive bottom-up grounding |
-| 5 | `simplify.rs`, `noisy_or.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables; tables of one atom written as noisy-ors |
+| 3 | `magic.rs`, `modes.rs` | magic sets: only what the queries and evidence demand is ground; routes calls whose tests or demands depend on ProbLog's call order top-down |
+| 4 | `engine/` (`lists.rs`, `topdown.rs`) | stratified semi-naive bottom-up grounding, probabilistic findalls, or top-down grounding from the queries |
+| 5 | `simplify.rs`, `values.rs`, `noisy_or.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables; variables held as bits written over their values; tables of one atom written as noisy-ors |
 | 6 | `exclusive.rs`, `negation.rs`, `inline.rs`, `aig.rs`, `contexts.rs` | exclusive sets; negated atoms unfolded; views; equal gates; choices read under exclusive contexts |
 | 7 | `classes.rs`, `share.rs` | row classes; switch sharing |
 | 8 | `cover.rs` | atoms certain by cover |
@@ -587,9 +615,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
    of `x(b)`, negated), and an observed table only with its parents (the
    conditioning reads a table's clauses, not a noisy-or's), as is every
    table written below one observed at its absent value, which turns all
-   of their causes off. A chain of such tables is then a chain of views that
-   inline (step 6) into one rule per cause. The program written is not
-   built: its shape is made from the source's (`Shape::rewritten`).
+   of their causes off. Only the tables a query or an observation depends
+   on are taken or count as readers: the relevance cut drops the others,
+   and a program grounds the same with them or without them. A chain of
+   such tables is then a chain of views that inline (step 6) into one rule
+   per cause. The program written is not built: its shape is made from the
+   source's (`Shape::rewritten`).
 1. **Normalize** (`normalize.rs`). Each probabilistic clause
    `p1::h1;...;pn::hn :- body` with clause variables V becomes rules
    `hi :- body, swi(V), \+sw1(V), ..., \+sw_{i-1}(V)`. With `S_i` the
@@ -705,18 +736,22 @@ are skipped. Several steps have a program in `examples/` that shows them.
    possible, a recursive component completed by linear tabling (its
    leader re-evaluates the component's calls until none has a new
    answer, and only the leader completes it: a call found in the
-   component stays in it when it is re-evaluated). An answer with variables in it is kept where it holds in
-   every world (`reverse([], L, L)`) and refused where it holds in some
-   only. A comparison `\=`, `==` or `\==` of terms with variables that
+   component stays in it when it is re-evaluated). An answer with
+   variables in it becomes an atom of the ground program with its
+   variables named (`_0`, `_1`, ...), as ProbLog gives it a node of its
+   own, and a query or an observation answered with variables is refused.
+   A comparison `\=`, `==` or `\==` of terms with variables that
    unify and are not identical is made as ProbLog makes it, as the terms
-   stand at the call (`\=` and `==` fail, `\==` holds), and so is a type
-   test (`var/1`, `nonvar/1`, `is_list/1`) of a term with variables.
+   stand at the call (`\=` and `==` fail, `\==` holds), and so are a
+   negation of a call with variables, a `findall` over a goal with
+   variables, and a type test (`var/1`, `nonvar/1`, `is_list/1`) of a
+   term with variables.
    Where their variables are the call's, a call that binds more of the
-   same atom may compare or test them otherwise; the calls of a predicate
+   same atom may evaluate them otherwise; the calls of a predicate
    share the atoms of their answers, so the program is refused where an
-   atom is the answer of two calls one of which made such a comparison
-   or test, or called with
-   variables of its own call, directly or not, a call that did. The
+   atom is the answer of two calls one of which had such a goal, or
+   called with variables of its own call, directly or not, a call that
+   did. The
    resolution emits the ground instances of the clauses it
    used, which the grounder then grounds as a program without variables;
    they count against the grounding bound, and a call or a term with
@@ -825,6 +860,52 @@ are skipped. Several steps have a program in `examples/` that shows them.
    undirected edge `conn(a,b) :- edge(a,b)`, `conn(b,a) :- edge(a,b)` is
    one variable.
 
+   Then **variables held as bits** written as tables over their values
+   (`values::bits_as_values`). Dice draws a `discrete` bit by bit, a
+   flip per ratio under a chain of conditionals on its parents' values,
+   and its comparisons are cubes over the bits; a network written with
+   its values as binary codes sets each bit from a chain of switches per
+   row. Ground, such a program names no value, and the exclusive sets,
+   row classes, cover and families layout below find no table: the
+   compile carries the bits, the comparisons and the guards as atoms of
+   their own. The pass finds the variables on the ground program from
+   their readers: atoms that no query names and that every rule reading
+   one reads all of, directly or through what the rest of its body
+   depends on (a decision chain's guard fixes the bits the rule does not
+   read), outside the variable's own rules. Each such set owns the atoms
+   that only its rules read, through their rules (its private gates, its
+   flips and switches), and its bits that what it owns does not connect
+   are separate variables. A set that owns no fact (a comparison and a
+   guard read together) is dropped and the others found again without
+   it. A variable is written
+   where it owns a fact, so that it is a draw of its own and not a
+   function of its inputs, and its readers test two of its values or
+   more: its rules and the views it reads are expanded over the cone's
+   inputs (Shannon, constants propagated), each leaf a row, and over the
+   variable's facts for the row's distribution over the codes. The rows
+   are written as annotated disjunctions are ground, an atom per value
+   and a switch chain per row under the parents' values, each bit the
+   disjunction of the values that set it, and a reader's cube over the
+   bits the value it spells. A variable of one bit is written so where
+   its rows read a variable written so, and where a variable's rows
+   would pass their bound, the gates of one bit that they sum in and that
+   read a value of another are written apart first. A number whose bits
+   an adder reads one at a time is not read as values and stays.
+   Variables whose
+   cones share inputs are written together or not at all. A variable
+   one of whose atoms reads one of its bits both ways draws its lower
+   bits under the values of the higher ones, as a trie (the index
+   Alea.jl draws for a decision list); its flips are the guards the
+   `decision` layout conditions on, and it is left as written, with the
+   variables written together with it. The expansion is bounded by the
+   cone's literals and a row's sum by what a row of the variable can
+   write; it stops as soon as it passes a bound, the variable then left
+   as written, and a cone without inputs whose rules alone pass its
+   row's bound is not expanded. Finding the variables is bounded by the
+   program's literals, and writing them by what the program's rows may
+   hold; a variable that a rule reads in part, over atoms that cannot
+   depend on the rest, is declined before anything is found again.
+
    Then **tables of one atom** written as noisy-ors
    (`noisy_or::rows_as_noisy_ors`). A two-valued variable written by hand
    is one atom `x`, its other value `\+x`, and its table one rule per row,
@@ -907,8 +988,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    inlined cost more work than the variable. A loop unrolled step by step
    names each step's intermediate values this way: the Dice paper's
    diamond, unrolled, keeps one atom a step of four. Written as recursion
-   over a step index, as the Dice reader writes Dice's `iterate`, they
-   are a recursive predicate's atoms and stay.
+   over a step index, as the Dice reader writes Dice's `iterate`, a
+   recursive predicate whose ground atoms are each read once positively is
+   inlined as a chain while its readers' bodies stay within `CHAIN_GROWTH`
+   times the longest body.
 
    Then **equal gates** (`aig::reduce`; `examples/equal_gates.pl`,
    `examples/equal_functions.pl`). The acyclic derived atoms with rules,
@@ -923,7 +1006,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    often the program writes it (structural hashing). Alea.jl writes a
    gate again wherever its program computes a value again.
 
-   A gate alone in its predicate may also compute an earlier such gate's
+   A gate alone in its predicate or of a recursive predicate, and in no
+   exclusive set, may also compute an earlier such gate's
    function, or a fact's, by other structure, or the complement of one,
    or a constant. Those are found as an and-inverter graph package finds
    them (Mishchenko et al.'s fraiging): every node carries its values on
@@ -939,17 +1023,18 @@ are skipped. Several steps have a program in `examples/` that shows them.
    prove it goes on within its steps, past 16 words no longer simulating
    them. A proved gate is merged into the earlier one, read through a
    negated literal where it is the complement, or keeps an empty body or
-   none where it is constant; a later gate alone in its predicate built as
-   its node is merged the same way.
+   none where it is constant; a later gate alone in its predicate or of a
+   recursive predicate, and in no exclusive set, built as its node is
+   merged the same way.
 
    A body that then reads an atom both ways is dropped, and so is a rule
    its head already has. An atom a query or the evidence names is not
    merged away, nor a value of an exclusive set of a predicate with
    several atoms, a network variable's: merged into another variable's
-   value, it splits its variable. Only atoms alone in their predicates and
-   in no exclusive set of several atoms are merged into a complement, a
-   fact or a constant: merged into a switch fact or another value, a
-   table's values take the table's structure apart. The survivors keep
+   value, it splits its variable. Only atoms alone in their predicates or
+   of a recursive predicate, and in no exclusive set, are merged into a
+   complement, a fact or a constant: merged into a switch fact or another
+   value, a table's values take the table's structure apart. The survivors keep
    their rules, over the atoms merged into. A program conditioned on its
    guards (`decision`'s, finished again) is not merged: the conditioning
    put each gate under the decisions that select it, and which of two
@@ -1488,7 +1573,13 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   first boundary after a derived atom whose width is at most twice the
   facts since the cut, and runs until those facts double; the cut is the
   narrowest boundary in the window, and a window whose narrowest boundary
-  is wider than `WIDEST` (20) has none. The facts keep the order the
+  is wider than `WIDEST` (20) has none. The narrowest boundary the cut
+  skips is cut too where its names are no more than the facts on each side
+  of it, so that a window reaching a narrow end of the program does not run
+  two days of the weather together. A cut then stands only where its names
+  hide something: where the cones of the atoms crossing it, back to the
+  last cut that stands, reach a fact or an atom that no later rule reads.
+  The facts keep the order the
   program states them in, the variable order its exporter chose, each as
   late as that order allows (before the first rule that reads it or a
   fact stated after it), and each derived atom goes at its last rule, so
@@ -1749,27 +1840,34 @@ phase, the trial records, at the attempt's target, the share of the phase
 it has finished: in its compile, its components; in its query phase, its
 steps, which are the evidence walk's joins (each makes one formula of
 two, so the walk makes one of the observed factors in one fewer) and then
-the queries answered. The records of its compile are dropped as its query
-phase starts, but for the target of the last, at which the query phase
-had finished none of its steps: the phase began since, so its first
-record measures it over at least a doubling, and a trial that finished
-its compile in a turn has a projection at the next. The share it
+the queries answered. A compile that passes half its first turn's target
+(`Horizon::mark`) also records the components finished there at half the
+target (`Trial::mark`), so that after its first turn it already has a
+doubling to project from. The records of its compile are dropped when its
+query phase starts (`Trial::record`); before the query phase has a record
+at half its last target or less, it is projected from the work the trial
+had spent when the query phase began (`Trial::began`), by the share it
+finished per doubling of the work spent since. Otherwise the share it
 finished over the last doubling of its target projects the doublings it
 still needs, (1 − f)/Δf, and so the work at which it finishes the phase
-(`Trial::projected`). A trial that has not yet doubled its target in its
-phase makes no projection, and one that finished no step over its last
-doubling is projected never to finish. The records are by target rather
+(`Trial::projected`). A compile that has not yet passed its first turn's
+mark, or a query phase that has spent no work, makes no projection, and a
+trial that finished no step over the span is projected never to finish.
+The records are by target rather
 than by the work spent, which an attempt stopped by work overruns by a
 little: by the work, a record a hair past half the last went unread and
 the projection waited a doubling more.
 
 Each turn goes to the trial projected to finish first for its weight
-(`Trial::key`): its projected finish, counted from its target, where it
-is projected to finish within the next turn, to `PROJECTED_DOUBLINGS`
-(three) doublings past it; a projection further out, and none, count
-three. Without projections the trials take equal shares for their
-weights, as the doubling has them; a trial projected to finish soon
-takes its turns ahead of the others, up to three doublings ahead. The
+(`Trial::key`): its projected finish, counted from its target
+(`Trial::ahead`), where it is projected to finish within the next turn,
+to `PROJECTED_DOUBLINGS` (three) doublings past it; a projection further
+out, and none, count three, as does a compile projected from its first
+turn's mark (`Trial::mark`) to finish within its target, whose next turn
+would spend the rest of its budget on the query phase. Without
+projections the trials take equal shares for their weights, as the
+doubling has them; a trial projected to finish soon takes its turns ahead
+of the others, up to three doublings ahead. The
 projections of a compile hold that far and no further: the chance that a
 trial finishes in its next doubling falls with the doublings it is
 projected out, down to that of a trial with no projection at about three
@@ -1847,7 +1945,11 @@ trial that has spent as much, while no other trial holds anything, or
 past tididi's 32-bit indices), the trial is retired (`Trial::retire`): a
 later attempt would resume at the same operation with larger bounds and
 no more memory to take. What it built is freed, and the run goes on with
-the other trials; it fails with the refusal once none is left. So a
+the other trials; a trial retired for `OverBudget` while another trial
+held diagrams is marked `behind` (`Trial::behind`) and revived once
+(`Trial::revived`) when no active trial is left, since what the others
+held has been freed by then; the run fails with the refusal once none is
+left. So a
 refusal discards less work than the refused trial has spent from each
 other trial, and once: freed for whichever trial was refused, the others
 paid for an early refusal of a cheap trial. The compile and query phases

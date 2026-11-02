@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generate Boolean TPC-H queries over a tuple-independent database.
 
-usage: gen_tpch.py SF [--seed S] [--queries safe|q2,q7,...] [--views]
+usage: gen_tpch.py SF [--seed S] [--queries safe|q2,q7,...] [--views] --template
+       gen_tpch.py SF [--seed S] [--queries safe|q2,q7,...] [--views] --data KEY
 
 The probabilistic-database benchmark of SPROUT (Olteanu, Huang, Koch, ICDE
 2009) and of dissociation (Gatterbauer and Suciu, VLDB J. 2017): the TPC-H
@@ -54,6 +55,13 @@ whether that result is nonempty. Each view only names a part of the
 query's join, so the query's lineage, and its answer, are those of the
 flat rule; tpch_exact.py, which reads the facts and the query names, is
 the reference for both.
+
+The family is one program per query and the database's relations (bench.py's
+FOLD): --template prints the program of the queries, which consults the
+relations they read (its places $1, $2, ... in the order of RELATIONS) and
+holds their rules and queries; --data KEY prints one relation of the
+database at SF, KEY (`family(args)`) naming it. A relation is the same file
+for every query that reads it.
 """
 import argparse
 import datetime
@@ -266,40 +274,90 @@ LINKS = {'lineitem', 'partsupp'}
 EXPECTED = 100
 
 
-def main():
+RELATIONS = ['region', 'nation', 'supplier', 'customer', 'part', 'partsupp', 'orders', 'lineitem']
+
+
+def parser():
     ap = argparse.ArgumentParser()
     ap.add_argument('sf', type=float)
     ap.add_argument('--seed', type=int, default=1)
     ap.add_argument('--queries', default='safe', help='safe (all but q7 and q21), all, or a comma-separated list')
     ap.add_argument('--views', action='store_true', help='each query through views (intermediate predicates)')
-    a = ap.parse_args()
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument('--template', action='store_true')
+    mode.add_argument('--arguments', action='store_true')
+    mode.add_argument('--data', metavar='KEY')
+    return ap
+
+
+def queries(ap, a):
     qs = SAFE if a.queries == 'safe' else ALL if a.queries == 'all' else a.queries.split(',')
     unknown = [q for q in qs if q not in RULES]
     if unknown:
         ap.error('unknown queries: ' + ', '.join(unknown))
+    return qs
+
+
+def relations(qs):
+    """The relations the queries `qs` read, in the order the facts are written."""
+    read = set().union(*(READS[q] for q in qs))
+    return [rel for rel in RELATIONS if rel in read]
+
+
+def key(a, rel):
+    """The name of the file of relation `rel` of the database that the arguments `a` ask for."""
+    return f'tpch_sf{a.sf}_seed{a.seed}_{rel}'
+
+
+def family(argv):
+    """(the program's name, the keys of its relations' files) of the instance whose generator
+    arguments (after the script's name) are `argv`."""
+    ap = parser()
+    a = ap.parse_args(argv)
+    qs = queries(ap, a)
+    return f'tpch_{"_".join(qs)}{"_views" if a.views else ""}', [key(a, rel) for rel in relations(qs)]
+
+
+def main():
+    ap = parser()
+    a = ap.parse_args()
+    qs = queries(ap, a)
     if a.sf <= 0:
         ap.error('SF must be positive')
+    if not (a.template or a.arguments or a.data):
+        ap.error('one of --template, --arguments and --data KEY')
+    rels = relations(qs)
+    views = ', through views' if a.views else ''
+    if a.arguments:
+        return
+    if a.template:
+        print(f'% TPC-H, tuple-independent: queries {",".join(qs)}{views}; the places are the files of the '
+              f'relations {", ".join(rels)}, facts `P::relation(...)`.')
+        for k in range(1, len(rels) + 1):
+            print(f':- consult(${k}).')
+        rules = VIEWS if a.views else RULES
+        for rule in dict.fromkeys(r for q in qs for r in rules[q]):
+            print(rule)
+        for q in qs:
+            print(f'query({q}).')
+        return
+    rel = next((r for r in rels if key(a, r) == a.data), None)
+    if rel is None:
+        ap.error(f'--data {a.data}: not a relation of this database that the queries read, {[key(a, r) for r in rels]}')
     rng = random.Random(a.seed)
     db = database(a.sf, rng)
-    read = set().union(*(READS[q] for q in qs))
-    views = ', through views' if a.views else ''
-    print(f'% TPC-H, tuple-independent: SF {a.sf}, seed {a.seed}, queries {",".join(qs)}{views}')
-    for rel in ['region', 'nation', 'supplier', 'customer', 'part', 'partsupp', 'orders', 'lineitem']:
+    print(f'% TPC-H, tuple-independent: SF {a.sf}, seed {a.seed}, relation {rel}')
+    for r in RELATIONS:
         # Every relation's probabilities are drawn, read or not, so that a
         # relation's tuples have the same probabilities whichever queries
         # the program holds.
-        scale = min(1.0, EXPECTED / len(db[rel])) if rel in LINKS else 1.0
+        scale = min(1.0, EXPECTED / len(db[r])) if r in LINKS else 1.0
         # Nine decimals, written without an exponent.
-        probs = [f'{rng.uniform(0.05, 0.95) * scale:.9f}'.rstrip('0') for _ in db[rel]]
-        if rel not in read:
-            continue
-        for p, t in zip(probs, db[rel]):
-            print(f"{p}::{rel}({','.join(map(str, t))}).")
-    rules = VIEWS if a.views else RULES
-    for rule in dict.fromkeys(r for q in qs for r in rules[q]):
-        print(rule)
-    for q in qs:
-        print(f'query({q}).')
+        probs = [f'{rng.uniform(0.05, 0.95) * scale:.9f}'.rstrip('0') for _ in db[r]]
+        if r == rel:
+            for p, t in zip(probs, db[r]):
+                print(f"{p}::{r}({','.join(map(str, t))}).")
+            return
 
 
 if __name__ == '__main__':

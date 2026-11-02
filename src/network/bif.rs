@@ -1,13 +1,14 @@
 //! The Bayesian Interchange Format: `variable X { type discrete [ 2 ] {
 //! a, b }; }` and `probability ( X | P1, P2 ) { (u1, u2) 0.1, 0.9; ... }`,
 //! a root's row written `table 0.3, 0.7;`. A comment runs from `//` to the
-//! end of the line. Read as `gen_bn.py`'s regular expressions read it; a
-//! row of the same parents' values twice keeps the first's place and
-//! the second's numbers.
+//! end of the line. A row of the same parents' values twice keeps the
+//! first's place and the second's numbers.
 
 use std::collections::HashMap;
 
-use super::scan::{names_before_brace, occurrences, probability, skip_space, space, strip};
+use super::scan::{
+    names_before_brace, occurrences, paren_blocks, probability, skip_space, space, strip,
+};
 use super::{Network, Table};
 
 pub(super) fn parse(text: &str) -> Result<Network, String> {
@@ -30,15 +31,8 @@ pub(super) fn parse(text: &str) -> Result<Network, String> {
             None => pos = at + 1,
         }
     }
-    let mut pos = 0;
-    while let Some(at) = occurrences(&text, pos, "probability", false).next() {
-        match block(&text, at + "probability".len()) {
-            Some((head, body, end)) => {
-                read_probability(&mut network, head, body)?;
-                pos = end;
-            }
-            None => pos = at + 1,
-        }
+    for (head, body) in paren_blocks(&text, "probability", false) {
+        read_probability(&mut network, head, body)?;
     }
     Ok(network)
 }
@@ -100,31 +94,10 @@ fn declaration(text: &str, i: usize) -> Option<(&str, &str, usize)> {
     Some((size, &text[k..close], end))
 }
 
-/// The head and body of a match of `\s*\(([^)]*)\)\s*\{([^}]*)\}` at `i`,
-/// and where it ends.
-fn block(text: &str, i: usize) -> Option<(&str, &str, usize)> {
-    let i = skip_space(text, i);
-    let rest = text[i..].strip_prefix('(')?;
-    let close = rest.find(')')?;
-    let j = skip_space(text, i + 1 + close + 1);
-    let k = j + text[j..].strip_prefix('{').map(|_| 1)?;
-    let end = k + text[k..].find('}')?;
-    Some((&rest[..close], &text[k..end], end + 1))
-}
-
 /// Sets a variable's table from a `probability` block: its head, `X |
 /// P1, P2`, and its rows.
 fn read_probability(network: &mut Network, head: &str, body: &str) -> Result<(), String> {
-    let mut parts = head.split('|').map(strip);
-    let name = parts.next().unwrap_or("");
-    let v = network.variable(name)?;
-    let parents = match parts.next() {
-        Some(p) if !p.is_empty() => p
-            .split(',')
-            .map(|p| network.variable(strip(p)))
-            .collect::<Result<Vec<_>, _>>()?,
-        _ => Vec::new(),
-    };
+    let (name, v, parents) = network.parse_table_head(head, |p| p.split(','))?;
     let k = network.values[v].len();
     let mut table = Table {
         parents,

@@ -1,17 +1,7 @@
-//! The text conventions the Hugin and BIF readers share with the regular
-//! expressions of `gen_bn.py`, which read the same files: white
-//! space and word characters as Python's `re` and `str.split` take them.
+//! The text conventions the Hugin and BIF readers share: white space and
+//! word characters as Python's `re` and `str.split` take them.
 
-/// White space as Python's `\s` and `str.split()` take it: Unicode's, and
-/// the four ASCII separators U+001C to U+001F.
-pub(super) fn space(c: char) -> bool {
-    c.is_whitespace() || ('\u{1c}'..='\u{1f}').contains(&c)
-}
-
-/// A character of a word, for `\b`: a letter, a digit or `_`.
-pub(super) fn word(c: char) -> bool {
-    c.is_alphanumeric() || c == '_'
-}
+pub(super) use crate::syntax::lpad::{space, word};
 
 /// The fields of `s` between white space, as Python's `s.split()`.
 pub(super) fn fields(s: &str) -> impl Iterator<Item = &str> {
@@ -67,7 +57,39 @@ pub(super) fn names_before_brace(s: &str, i: usize) -> Vec<(usize, usize)> {
     ways
 }
 
-/// The numbers of a Hugin table's data: each match of gen_bn.py's
+/// The head and body of each match of `word\s*\(([^)]*)\)\s*\{([^}]*)\}` in
+/// `text`, in order (`\bword` when `bounded`), as Python's `re.finditer`
+/// finds them.
+pub(super) fn paren_blocks<'a>(
+    text: &'a str,
+    word: &'a str,
+    bounded: bool,
+) -> Vec<(&'a str, &'a str)> {
+    let mut out = Vec::new();
+    let mut pos = 0;
+    while let Some(at) = occurrences(text, pos, word, bounded).next() {
+        match paren_block(text, at + word.len()) {
+            Some((head, body, end)) => {
+                out.push((head, body));
+                pos = end;
+            }
+            None => pos = at + 1,
+        }
+    }
+    out
+}
+
+fn paren_block(text: &str, i: usize) -> Option<(&str, &str, usize)> {
+    let i = skip_space(text, i);
+    let rest = text[i..].strip_prefix('(')?;
+    let close = rest.find(')')?;
+    let j = skip_space(text, i + 1 + close + 1);
+    let k = j + text[j..].strip_prefix('{').map(|_| 1)?;
+    let end = k + text[k..].find('}')?;
+    Some((&rest[..close], &text[k..end], end + 1))
+}
+
+/// The numbers of a Hugin table's data: each match of
 /// `[-+]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][-+]?[0-9]+)?`, read as a
 /// double.
 pub(super) fn numbers(s: &str) -> Result<Vec<f64>, String> {
@@ -127,7 +149,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn numbers_read_as_gen_bn_py_finds_them() {
+    fn numbers_read_each_float_token() {
         assert_eq!(
             numbers("((0.5 .5\n1e-3), -2.5E+1 7. 1e x+3 1.2.3)").unwrap(),
             [0.5, 0.5, 1e-3, -25.0, 7.0, 1.0, 3.0, 1.2, 0.3]

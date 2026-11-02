@@ -729,6 +729,9 @@ footer {
 }
 
 .s-tddlog { --s: var(--s-tddlog); }
+/* tddlog's pipelines (another system's front end, then tddlog): its colour, dashed */
+.s-alea-tddlog { --s: var(--s-tddlog); --d: 6 3; --sws: dashed; }
+.s-roulette-tddlog { --s: var(--s-tddlog); --d: 1.5 2.5; --sws: dotted; }
 .s-problog { --s: var(--s-problog); }
 .s-pita { --s: var(--s-pita); --d: 6 3; --sws: dashed; }
 .s-aspmc { --s: var(--s-aspmc); --d: 1.5 2.5; --sws: dotted; }

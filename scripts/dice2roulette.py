@@ -2,8 +2,9 @@
 """Translate a Dice program (Holtzen, Van den Broeck, Millstein, OOPSLA 2020)
 into a program of Roulette's language (Moy, Czenszak, Li, Marshall and
 Holtzen, PLDI 2025; `#lang roulette/example/disrupt`, the language of the
-paper's benchmarks), which compiles a program's distribution to a BDD
-(rsdd) in the order its flips are created.
+paper's benchmarks, as neuppl/roulette's package `roulette` has it), which
+compiles a program's distribution to a BDD (rsdd) in the order its flips
+are created.
 
 The program is read by dice2problog.py's parser and written as Racket over
 Roulette's values: a Boolean is a Racket Boolean (symbolic where it
@@ -27,29 +28,31 @@ bit, `<` (and `<=`, `>`, `>=`) is an unsigned comparator from bit 0 up,
 its BDD's variables, in the order Dice does. `if c then a else b` is
 Racket's `if`, which Roulette (through Rosette) evaluates on both branches
 when c is symbolic, as Dice does; `observe e` is `(observe! e)`, which
-conjoins e to the evidence on the path it is on. A Dice function is a
+conjoins e to the evidence on the path it is on, a statement of its own
+(`statement`, a definition: the language runs each expression of a module
+as a query of its own, which would count the evidence there). A Dice function is a
 Racket function, `iterate(f, x, k)` a loop of k calls; a function that
 calls itself takes its depth as a first argument and is cut at Dice's
 recursion limit as in dice2problog.py: the call past it observes false and
 returns its type's default value.
 
-The program's value is queried with Roulette's `query`, one component of a
-returned tuple at a time, as Alea.jl is asked them (dice2alea.py). The
-program prints `roulette K VALUE PROBABILITY` for every value of the K-th
-component (true and false, or 0 to 2^w - 1); with `--joint` a value of N
-Booleans is one component, an int N whose most significant bit is the
-first Boolean (the joint distribution a circuit's `joint` program asks).
-Before them it prints the time of
-running the program and the queries as Racket's `time` prints it (`cpu
-time: ... real time: ... gc time: ...`), which leaves out Racket's start
-and loading. The program's statements are the module's own forms rather
-than one function's: Racket compiles a module too large for its compiler
-as forms it interprets, where one function of a large network's
-statements took minutes to compile. With the
-argument `--no-complement` it queries with `(query e #f)`: Roulette's
-default takes one value's probability as one minus the others', which
-loses that value once the evidence's probability falls below about 1e-16
-(data/roulette/README.md).
+The program's value is queried one component of a returned tuple at a
+time, as Alea.jl is asked them (dice2alea.py), by Roulette's query at the
+module's level (`display-pmf`, what the language does with an expression
+of the module): the flips are the module's, and `query` inside the module
+would keep them symbolic. Each component's distribution is read back from
+the table `display-pmf` prints (`distribution`), and the program prints
+`roulette K VALUE PROBABILITY` for every value of the K-th component (true
+and false, or 0 to 2^w - 1); with `--joint` a value of N Booleans is one
+component, an int N whose most significant bit is the first Boolean (the
+joint distribution a circuit's `joint` program asks). Before them it
+prints the time of running the program and the queries as Racket's `time`
+prints it (`cpu time: ... real time: ... gc time: ...`). The program's
+statements are the module's own forms rather than one function's: Racket
+compiles a module too large for its compiler as forms it interprets,
+where one function of a large network's statements took minutes to
+compile. Each query divides each value's probability with the
+observations by their sum, with no shortcut through the complement.
 
 Supported: what dice2problog.py supports. Not supported: lists, /, %,
 nth_bit, sample, functions that call each other in a cycle.
@@ -190,7 +193,7 @@ class Translator:
         if kind == 'observe':
             c, t = self.expr(e[1], env, out, hint)
             same(t, BOOL, 'observe')
-            out.append(f'(observe! {c})')
+            out.append(f'(statement (observe! {c}))')
             return '#t', BOOL
         if kind == 'if':
             return self.ite(e, env, out, hint)
@@ -310,7 +313,7 @@ class Translator:
         self.defs.append(
             f'(define ({" ".join([name, "depth"] + args)})\n'
             f'  (cond\n'
-            f'    [(> depth {RECURSION_LIMIT}) (observe! #f) {self.default(ret, fname)}]\n'
+            f'    [(> depth {RECURSION_LIMIT}) (statement (observe! #f)) {self.default(ret, fname)}]\n'
             f'    [else\n     ' + '\n     '.join(out + [value]) + ']))')
 
     def components(self, t, code):
@@ -340,12 +343,13 @@ class Translator:
             if any(ct != BOOL for _, ct in comps):
                 raise NotImplementedError("--joint asks a value of Booleans, and the value is " + show(t))
             comps = [(f"(list {' '.join(c for c, _ in reversed(comps))})", ("int", len(comps)))]
-        queries = ' '.join(f'(query {c} complement?)' for c, _ in comps)
+        queries = ' '.join(f'(distribution {c})' for c, _ in comps)
         reports = []
         for k, (_, ct) in enumerate(comps, 1):
-            reports.append(f'(report-bool {k} (list-ref pmfs {k - 1}))' if ct == BOOL else
-                           f'(report-int {k} (list-ref pmfs {k - 1}) {ct[1]})')
-        main = ['(define clock (start-clock))'] + out + [f'(define pmfs (list {queries}))', '(print-time clock)']
+            reports.append(f'(statement (report-bool {k} (list-ref dists {k - 1})))' if ct == BOOL else
+                           f'(statement (report-int {k} (list-ref dists {k - 1}) {ct[1]}))')
+        main = ['(define clock (start-clock))'] + out + [f'(define dists (list {queries}))',
+                                                         '(statement (print-time clock))']
         return PRELUDE.format(source=source) + '\n\n'.join(self.defs) + '\n\n' + '\n'.join(main + reports) + '\n'
 
 
@@ -353,8 +357,11 @@ PRELUDE = '''\
 #lang roulette/example/disrupt
 ;; {source}, translated by tddlog's scripts/dice2roulette.py.
 
-(define complement?
-  (not (member "--no-complement" (vector->list (current-command-line-arguments)))))
+(require racket/port racket/string)
+
+;; A statement of the program: a definition, which the language does not
+;; run as a query of its own (it runs each expression of the module as one).
+(define-syntax-rule (statement e ...) (define-values () (begin e ... (values))))
 
 ;; Integers: lists of Booleans, least significant bit first.
 (define (bxor a b) (! (<=> a b)))
@@ -435,13 +442,35 @@ PRELUDE = '''\
           (- (current-process-milliseconds) (vector-ref c 0))
           (inexact->exact (round (- (current-inexact-milliseconds) (vector-ref c 1))))
           (- (current-gc-milliseconds) (vector-ref c 2))))
-(define (report-bool k pm)
-  (printf "roulette ~a true ~a\\n" k (real (pm #t)))
-  (printf "roulette ~a false ~a\\n" k (real (pm #f))))
-(define (report-int k pm w)
+
+;; The distribution of v, a list of (value . probability): Roulette's query
+;; at the module's level (`display-pmf`), read back from the table it
+;; prints, or from the one value it prints alone.
+(define (distribution v)
+  (define text (with-output-to-string (λ () (display-pmf v))))
+  (define (datum s)
+    (define d (read (open-input-string s)))
+    (if (and (pair? d) (eq? (car d) 'quote)) (cadr d) d))
+  (define rows
+    (for/list ([line (in-list (string-split text "\\n"))]
+               #:when (regexp-match? #rx"[│|]" line))
+      (filter (λ (s) (not (string=? s ""))) (map string-trim (regexp-split #rx"[│|]" line)))))
+  (if (null? rows)
+      (list (cons (datum text) 1))
+      (for/list ([r (in-list rows)]
+                 #:unless (equal? r '("Value" "Probability")))
+        (cons (datum (car r)) (string->number (cadr r))))))
+;; (Not cond's `=>`: the language binds `=>` to Rosette's implication.)
+(define (probability dist v)
+  (define e (assoc v dist))
+  (if e (cdr e) 0))
+(define (report-bool k dist)
+  (printf "roulette ~a true ~a\\n" k (real (probability dist #t)))
+  (printf "roulette ~a false ~a\\n" k (real (probability dist #f))))
+(define (report-int k dist w)
   (define by-value (make-hash))
-  (for ([(v p) (in-pmf pm)])
-    (hash-set! by-value (bits->natural v) p))
+  (for ([vp (in-list dist)])
+    (hash-set! by-value (bits->natural (car vp)) (cdr vp)))
   (for ([i (in-range (expt 2 w))])
     (printf "roulette ~a ~a ~a\\n" k i (real (hash-ref by-value i 0)))))
 

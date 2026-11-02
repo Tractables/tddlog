@@ -22,6 +22,7 @@ scripts = root / 'scripts'
 sys.path.insert(0, str(scripts))
 from source_tree import SOURCE  # noqa: E402
 lit = SOURCE / 'tests' / 'lit'
+import gen_tpch as tpch_gen  # noqa: E402
 import tpch_exact  # noqa: E402
 
 ARGS = ['0.0004', '--queries', 'q2,q3,q4,q6,q7,q10,q11,q12,q14,q15,q17', '--seed', '4']
@@ -170,11 +171,28 @@ def brute_force(clauses, p):
     return total
 
 
+def no_comments(text):
+    return ''.join(line for line in text.splitlines(keepends=True) if not line.startswith('%'))
+
+
+def written(args):
+    """The program the generator writes for `args`, comments left out: its template with each
+    consult replaced by the relation's file (--data), as the program reads."""
+    gen = [sys.executable, str(scripts / 'gen_tpch.py')]
+    template = subprocess.run(gen + args + ['--template'], capture_output=True, text=True, check=True).stdout
+    keys = tpch_gen.family(args)[1]
+    data = [subprocess.run(gen + args + ['--data', k], capture_output=True, text=True, check=True).stdout
+            for k in keys]
+    out = []
+    for line in no_comments(template).splitlines(keepends=True):
+        m = re.fullmatch(r':- consult\(\$(\d+)\)\.\n', line)
+        out.append(no_comments(data[int(m[1]) - 1]) if m else line)
+    return ''.join(out)
+
+
 class TpchTests(unittest.TestCase):
     def test_the_generator_writes_the_program(self):
-        out = subprocess.run([sys.executable, str(scripts / 'gen_tpch.py')] + ARGS,
-                             capture_output=True, text=True, check=True).stdout
-        self.assertEqual(out, (lit / 'tpch.pl').read_text())
+        self.assertEqual(written(ARGS), no_comments((lit / 'tpch.pl').read_text()))
 
     def test_the_reference_answers_as_problog(self):
         text = (lit / 'tpch.pl').read_text()
@@ -184,9 +202,7 @@ class TpchTests(unittest.TestCase):
             self.assertAlmostEqual(answers[q], p, delta=1e-7, msg=q)
 
     def test_the_generator_writes_the_views_program(self):
-        out = subprocess.run([sys.executable, str(scripts / 'gen_tpch.py')] + ARGS + ['--views'],
-                             capture_output=True, text=True, check=True).stdout
-        self.assertEqual(out, (lit / 'tpch_views.pl').read_text())
+        self.assertEqual(written(ARGS + ['--views']), no_comments((lit / 'tpch_views.pl').read_text()))
 
     def test_views_have_the_lineage_of_the_flat_query(self):
         # Every query, written as one rule and through views, over tiny
@@ -196,8 +212,7 @@ class TpchTests(unittest.TestCase):
         # select tuples; q19's selections leave none at either.
         nonempty = set()
         for args in (['0.0004', '--queries', 'all', '--seed', '4'], ['0.002', '--queries', 'q16,q20,q21', '--seed', '1']):
-            flat, views = (subprocess.run([sys.executable, str(scripts / 'gen_tpch.py')] + args + extra,
-                                          capture_output=True, text=True, check=True).stdout for extra in ([], ['--views']))
+            flat, views = (written(args + extra) for extra in ([], ['--views']))
             rels, p = tpch_exact.parse(flat)
             self.assertEqual(tpch_exact.parse(views), (rels, p))
             of_flat, of_views = lineages(flat), lineages(views)

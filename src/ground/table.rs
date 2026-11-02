@@ -408,27 +408,7 @@ impl<'a> Shape<'a> {
             // A table of facts alone makes its atoms facts, without a
             // switch or a rule each ([`super::normalize::Facts`]).
             if self.clauses(x).iter().all(|s| fact(s.clause)) {
-                for s in self.clauses(x) {
-                    let next = gp.atoms.len();
-                    let h = number(&mut gp, &mut ids, x, &s.clause.heads[0].atom);
-                    let new = h as usize == next;
-                    let q = probabilistic(s.clause).then(|| {
-                        switch_probabilities(&s.clause.heads, &mut qs)
-                            .expect("a row's probabilities sum to one at most");
-                        qs[0]
-                    });
-                    let kind = &mut gp.kinds[h as usize];
-                    match (q, *kind) {
-                        (Some(q), AtomKind::Fact(w)) => *kind = AtomKind::Fact(w.either(q)),
-                        (Some(q), AtomKind::Derived) if new => *kind = AtomKind::Fact(q),
-                        // Certain already.
-                        (_, AtomKind::Derived) if !new => {}
-                        (_, _) => {
-                            *kind = AtomKind::Derived;
-                            gp.rules.push(GroundRule::new(h, Vec::new()));
-                        }
-                    }
-                }
+                self.ground_fact_table(x, &mut gp, &mut ids, &mut qs);
                 continue;
             }
             // The predicates of each clause's body are the next of the
@@ -500,6 +480,36 @@ impl<'a> Shape<'a> {
             .map(|(a, value)| (a.clone(), lookup(a), *value))
             .collect();
         gp
+    }
+
+    fn ground_fact_table(
+        &self,
+        x: usize,
+        gp: &mut GroundProgram,
+        ids: &mut FxHashMap<(usize, &'a [Term]), AtomId>,
+        qs: &mut Vec<Prob>,
+    ) {
+        for s in self.clauses(x) {
+            let next = gp.atoms.len();
+            let h = number(gp, ids, x, &s.clause.heads[0].atom);
+            let new = h as usize == next;
+            let q = probabilistic(s.clause).then(|| {
+                switch_probabilities(&s.clause.heads, qs)
+                    .expect("a row's probabilities sum to one at most");
+                qs[0]
+            });
+            let kind = &mut gp.kinds[h as usize];
+            match (q, *kind) {
+                (Some(q), AtomKind::Fact(w)) => *kind = AtomKind::Fact(w.either(q)),
+                (Some(q), AtomKind::Derived) if new => *kind = AtomKind::Fact(q),
+                // Certain already.
+                (_, AtomKind::Derived) if !new => {}
+                (_, _) => {
+                    *kind = AtomKind::Derived;
+                    gp.rules.push(GroundRule::new(h, Vec::new()));
+                }
+            }
+        }
     }
 }
 

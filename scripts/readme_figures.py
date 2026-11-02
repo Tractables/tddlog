@@ -28,6 +28,14 @@ figures draw a category's drawn systems (tddlog and the native systems
 given at least 20 of its instances), and their legends' numbers are the
 data's, which the results page shows.
 
+tddlog above is a category's `mine` (rule 26): plain tddlog, where it read
+the program with its own front ends, and each pipeline where another
+system's code ran first and handed it the inference (Alea.jl+tddlog,
+tddlog on the circuit Alea.jl builds). Exactly one of them is given each
+instance; each is drawn as a curve of its own in tddlog's colour (a
+pipeline dashed or dotted), and the texts, the scatter plot and the
+comparisons take each instance's (the data's vs[x]['me'] names them).
+
 Writes, as SVG:
   overview          for each type, tddlog's answers and, for each of its
                     five best native systems, the system's answers, its
@@ -81,7 +89,7 @@ WIDTH = 9.4  # inches; 900 pixels in a browser
 TDDLOG = '#0d6670'
 DASH, DOT, DASHDOT = (0, (6, 3)), (0, (1.5, 2.5)), (0, (7, 3, 2, 3))
 COLOURS = {
-    'tddlog': (TDDLOG, '-'),
+    'tddlog': (TDDLOG, '-'), 'alea-tddlog': (TDDLOG, DASH), 'roulette-tddlog': (TDDLOG, DOT),
     'problog': ('#b35c00', '-'), 'pita': ('#7f3f00', DASH), 'aspmc': ('#c4720f', DOT), 'psouffle': ('#a0522d', DASHDOT),
     'scallop': ('#d9480f', DASH),
     'ace': ('#1f5fa8', '-'), 'merlin': ('#3b7dd8', DASH), 'agrum': ('#173f73', DOT), 'pgmpy': ('#6186d2', '-'),
@@ -125,6 +133,39 @@ def column(cat, s):
     """[(limit, s's record)] over the category's rows."""
     j = 4 + cat['systems'].index(s)
     return [(r[2], r[j]) for r in cat['rows']]
+
+
+def is_mine(s):
+    """tddlog or one of its pipelines (rule 26: alea-tddlog)."""
+    return s == 'tddlog' or s.endswith('-tddlog')
+
+
+def my_keys(cat):
+    """The row's subject, row by row: the first of the category's `mine`
+    given the instance (panels.subject: tddlog where it ran, else the
+    pipeline it was given to; a pipeline run beside tddlog is a curve of
+    its own, not a subject)."""
+    js = [(m, 4 + cat['systems'].index(m)) for m in cat['mine']]
+    return [next((m for m, j in js if r[j] is not None), None) for r in cat['rows']]
+
+
+def my_column(cat):
+    """[(limit, the record of the row's subject)] over the category's rows."""
+    return [(r[2], None if m is None else r[4 + cat['systems'].index(m)]) for r, m in zip(cat['rows'], my_keys(cat))]
+
+
+def subject(cat, names, join='and'):
+    """The names of the members of MINE that are the subject of some row of
+    a category, listed in words: tddlog, Alea.jl+tddlog, tddlog and
+    Alea.jl+tddlog, or tddlog, Alea.jl+tddlog and Roulette+tddlog."""
+    keys = set(my_keys(cat))
+    xs = [names[m] for m in cat['mine'] if m in keys]
+    return xs[0] if len(xs) == 1 else f"{', '.join(xs[:-1])} {join} {xs[-1]}"
+
+
+def my_answers(cat):
+    """The rows whose subject answers."""
+    return sum(answered(v) for _, v in my_column(cat))
 
 
 def fastest(vs):
@@ -178,7 +219,7 @@ def linear_ticks(hi, room=5):
 def ordered(cat):
     """The drawn systems by answers, then in the data's order (the native
     systems by answers, then speed-up)."""
-    rank = ['tddlog'] + cat['native']
+    rank = cat['mine'] + cat['native']
     return sorted(cat['drawn'], key=lambda s: (-cat['answers'][s], rank.index(s)))
 
 
@@ -193,7 +234,7 @@ def cactus(ax, cat, systems, hi, c, col):
         solved[s] = len(ts)
         xs = [0] + ts + [hi]
         ys = [0] + list(range(1, len(ts) + 1)) + [len(ts)]
-        lead = s == 'tddlog'
+        lead = is_mine(s)
         ax.step(xs, ys, where='post', color=col[s][0], ls=col[s][1], lw=3.2 if lead else 1.7,
                 zorder=10 if lead else 5)
     ax.axhline(n, color=c['muted'], lw=0.9, zorder=1)
@@ -236,7 +277,7 @@ def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col):
             fig.text((x0 + right) / WIDTH, y, head, ha='right', va='center', fontsize=10, color=c['muted'])
         for k, (s, name, numbers) in enumerate(part):
             y = 1 - (top + LEGEND_HEAD + (k + 0.5) * LEGEND_ROW) / h
-            lead = s == 'tddlog'
+            lead = is_mine(s)
             fig.add_artist(plt.Line2D([(x0 + 0.02) / WIDTH, (x0 + 0.3) / WIDTH], [y, y], color=col[s][0],
                                       ls=col[s][1], lw=3.2 if lead else 1.7, transform=fig.transFigure))
             fig.text((x0 + 0.4) / WIDTH, y, name, ha='left', va='center', fontsize=11.5,
@@ -246,11 +287,12 @@ def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col):
                          color=c['text'] if j == 0 else c['muted'])
 
 
-def scatter(ax, cat, others, hi, c, col, other, label):
+def scatter(ax, cat, others, hi, c, col, other, label, me):
     """tddlog's time against the fastest of others', instance by instance;
-    other: the colour of tddlog's losses, label: the x axis's."""
+    other: the colour of tddlog's losses, label: the x axis's, me: the
+    names of tddlog and its pipelines in the category (subject)."""
     fail = 10 ** (math.log10(hi) + 0.32)
-    mine = [v for _, v in column(cat, 'tddlog')]
+    mine = [v for _, v in my_column(cat)]
     best = [fastest(vs) for vs in zip(*[[v for _, v in column(cat, s)] for s in others])] if others else []
     pts, both_fast, neither = [], 0, 0
     for t, b in zip(mine, best):
@@ -264,7 +306,7 @@ def scatter(ax, cat, others, hi, c, col, other, label):
     faster = [p for p in pts if p[1] < p[0]]
     slower = [p for p in pts if p[1] > p[0]]
     tie = [p for p in pts if p[1] == p[0]]
-    for ps, colour in ((faster, col['tddlog'][0]), (slower, other), (tie, c['muted'])):
+    for ps, colour in ((faster, TDDLOG), (slower, other), (tie, c['muted'])):
         if ps:
             ax.scatter([p[0] for p in ps], [p[1] for p in ps], s=24, color=colour, alpha=0.75, lw=0, zorder=5)
     lim = (FLOOR / 1.15, fail * 1.3)
@@ -286,8 +328,10 @@ def scatter(ax, cat, others, hi, c, col, other, label):
     ax.grid(True, color=c['grid'], lw=0.7)
     ax.set_axisbelow(True)
     ax.set_xlabel(f'{label} (s)')
-    ax.set_ylabel('tddlog (s)')
-    ax.set_title(f'tddlog faster on {len(faster)}', loc='left', color=col['tddlog'][0], fontsize=11.5, pad=10)
+    ax.set_ylabel(f'{me} (s)')
+    # tddlog and a pipeline (all programs) are named by the y axis alone
+    ax.set_title((f'{me} ' if len(set(my_keys(cat))) == 1 else '') + f'faster on {len(faster)}', loc='left', color=TDDLOG,
+                 fontsize=11.5, pad=10)
     ax.set_title(f'slower on {len(slower)}', loc='right', color=other, fontsize=11.5, pad=10)
     return dict(points=len(pts), faster=len(faster), slower=len(slower), tie=len(tie), both_fast=both_fast,
                 neither=neither)
@@ -306,7 +350,7 @@ def results(cat, names, col, out):
     numbers."""
     c = style()
     systems = ordered(cat)
-    others = [s for s in systems if s != 'tddlog']
+    others = [s for s in systems if not is_mine(s)]
     hi = max(r[2] for r in cat['rows'])
     ncol = 2
     legend_top = 4.9
@@ -319,8 +363,8 @@ def results(cat, names, col, out):
     solved = cactus(fig.add_axes(box(0.8, 0.4, 4.35, 3.45)), cat, systems, hi, c, col)
     loss = col[cat['named'][0]][0] if cat['named'] else c['muted']
     sc = scatter(fig.add_axes(box(5.85, 0.4, 3.45, 3.45)), cat, others, hi, c, col, loss,
-                 'fastest other system' if cat['key'] == ALL else 'fastest native system')
-    legend = [(s, names[s], [solved[s], '' if s == 'tddlog' else faster(cat['vs'][s])]) for s in systems]
+                 'fastest other system' if cat['key'] == ALL else 'fastest native system', subject(cat, names))
+    legend = [(s, names[s], [solved[s], '' if is_mine(s) else faster(cat['vs'][s])]) for s in systems]
     legend_table(fig, h, (WIDTH - ncol * LEGEND_BLOCK) / 2, legend_top, legend, cat['instances'], cat['noun'],
                  ncol, c, col)
     save(fig, out, f'results-{cat["key"]}')
@@ -383,9 +427,22 @@ def speed_mark(ax, x, y, r, transform, colour, muted, least=False):
 WORDS = 'no one two three four five six seven eight nine ten'.split()
 
 
-def measure_text(m):
+# what each of tddlog's pipelines (rule 26) is, for the overview's footnote
+PIPELINE_TEXT = {
+    'alea-tddlog': 'Alea.jl runs the program up to the Boolean circuit it builds, then tddlog answers from the circuit, '
+                   'and its time is both, Alea.jl’s timed warm',
+    'roulette-tddlog': 'Roulette runs the program up to the formulas of its queries, then tddlog answers from them',
+}
+
+
+def measure_text(m, pipelines=(), names=None):
     """The overview's footnote: how its rows compare (rule 16), from the
-    data's parameters of the measure (panels.py's)."""
+    data's parameters of the measure (panels.py's), and what the
+    pipelines its heads name are."""
+    missing = [p for p in pipelines if p not in PIPELINE_TEXT]
+    assert not missing, f'pipelines without a text (PIPELINE_TEXT): {missing}'
+    piped = ''.join(f' Where a type’s head names {names[p]}, its rows’ tddlog is {names[p]}: {PIPELINE_TEXT[p]}.'
+                    for p in pipelines)
     par = 'twice' if m['par'] == 2 else f"{m['par']:g} times"
     return (
         'Each instance counts in one type, whatever language its source was written in. A system’s answers are over '
@@ -398,7 +455,7 @@ def measure_text(m):
         'limit where that lower bound is at least the speed-up measured on the instances both answer; with fewer than '
         f"{m['common']} instances both answer, there are too few in common for one. The {WORDS[m['named']]} best "
         'native systems by answers, then speed-up, have a row each; the others share one, with the least of their '
-        'total times and of their speed-ups.')
+        'total times and of their speed-ups.' + piped)
 
 
 def overview(data, names, col, out):
@@ -413,8 +470,9 @@ def overview(data, names, col, out):
     for cat in data['categories']:
         if cat['key'] == ALL:
             continue
-        lines.append(('head', f"{cat['title']}, {cat['instances']} {cat['noun']}: tddlog answers "
-                      f"{cat['answers']['tddlog']}", None, None))
+        who = subject(cat, names)
+        lines.append(('head', f"{cat['title']}, {cat['instances']} {cat['noun']}: {who} "
+                      f"{'answers' if len(set(my_keys(cat))) == 1 else 'answer'} {my_answers(cat)}", None, None))
         for x in cat['named']:
             v = cat['vs'][x]
             lines.append(('row', names[x], cat['answers'][x], (x, v['tddlog_total'], v['total'], v['speedup'])))
@@ -424,7 +482,9 @@ def overview(data, names, col, out):
             lines.append(('others', f"{len(o['systems'])} others", None, (text, o['speedup'])))
     ts = [t for kind, _, _, st in lines if kind == 'row' for t in st[1:3]]
     ts += [o['others']['total'] for o in data['categories'] if o['key'] != ALL and o['others']['systems']]
-    foot = textwrap.wrap(measure_text(data['measure']), 112)
+    pipelines = list(dict.fromkeys(m for cat in data['categories'] if cat['key'] != ALL for m in cat['mine']
+                                   if m != 'tddlog' and m in my_keys(cat)))
+    foot = textwrap.wrap(measure_text(data['measure'], pipelines, names), 112)
     names_w, ratio_w, row, top, bottom = 2.6, 1.2, 0.34, 1.0, 0.55 + 0.2 * len(foot)
     # each line's height in rows, and its middle, from the top
     tall = [0.6 + 0.55 * st[0].count('\n') + 0.4 if kind == 'others' else 1 for kind, _, _, st in lines]
@@ -491,7 +551,7 @@ def overview(data, names, col, out):
 
 def misses(cat):
     """tddlog's records on the instances it does not answer, by kind."""
-    return dict(collections.Counter(v for _, v in column(cat, 'tddlog') if not answered(v)))
+    return dict(collections.Counter(v for _, v in my_column(cat) if not answered(v)))
 
 
 def ahead(cat):
@@ -502,7 +562,7 @@ def ahead(cat):
     native system, in less total time; a system here makes it false."""
     if cat['key'] == ALL:
         return []
-    mine = cat['answers']['tddlog']
+    mine = my_answers(cat)
     return [x for x in cat['native'] if cat['answers'][x] >= mine
             or x in cat['vs'] and cat['vs'][x]['tddlog_total'] >= cat['vs'][x]['total']]
 
@@ -512,11 +572,11 @@ def wins(cat):
     does not}}, the families' groups as the data orders them, for the
     README's "Where others win" bullets, whose counts and names come from
     it."""
-    j, me = {x: 4 + cat['systems'].index(x) for x in cat['native']}, 4 + cat['systems'].index('tddlog')
+    j, me = {x: 4 + cat['systems'].index(x) for x in cat['native']}, [v for _, v in my_column(cat)]
     out = {}
     for x in cat['native']:
         by = {g['key']: [cat['rows'][i][1] for i in g['rows']
-                         if answered(cat['rows'][i][j[x]]) and not answered(cat['rows'][i][me])] for g in cat['groups']}
+                         if answered(cat['rows'][i][j[x]]) and not answered(me[i])] for g in cat['groups']}
         out[x] = {g: names for g, names in by.items() if names}
     return out
 
@@ -540,7 +600,8 @@ def table(cat, names):
     tddlog's and tddlog's speed-up; the others in one row, the range of
     their answers, the least of their totals, the range of tddlog's and the
     least of their speed-ups."""
-    lines = ["| System | Answers | Its total time | tddlog's total time | tddlog faster |", '|---|--:|--:|--:|--:|']
+    who = subject(cat, names, 'or')
+    lines = [f"| System | Answers | Its total time | {who}'s total time | {who} faster |", '|---|--:|--:|--:|--:|']
     for x in cat['named']:
         v = cat['vs'][x]
         lines.append(f"| {names[x]} | {cat['answers'][x]} | {seconds(v['total'])} | {seconds(v['tddlog_total'])} | "
@@ -568,8 +629,10 @@ def main():
     names, col = data["names"], colours(data["categories"])
     numbers = {}
     for cat in data['categories']:
-        assert cat['drawn'][0] == 'tddlog', f"{cat['key']}: tddlog not drawn"
+        assert cat['drawn'][:len(cat['mine'])] == cat['mine'], f"{cat['key']}: tddlog not drawn"
         res = dict(instances=cat['instances'], limit=max(r[2] for r in cat['rows']))
+        # who the text names for tddlog (tddlog, Alea.jl+tddlog or both) and their answers
+        res['subject'], res['mine'], res['my_answers'] = subject(cat, names), cat['mine'], my_answers(cat)
         res['answers'], res['scatter'] = results(cat, names, col, out)
         # The legend's numbers are the results page's (the data's).
         assert all(res['answers'][s] == cat['answers'][s] for s in cat['drawn']), f"{cat['key']}: not the data"

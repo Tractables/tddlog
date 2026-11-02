@@ -388,6 +388,88 @@ fn the_backbone_search_keeps_the_count() {
     }
 }
 
+/// Formats a weighted CNF over `p` and `clauses` as a ProbLog program,
+/// parses it, and returns `(source, program, z)` where `z` is its exact
+/// partition function by world enumeration.
+fn wcnf_program(p: &[f64], clauses: &[Vec<i64>]) -> (String, tddlog::syntax::Program, f64) {
+    let n = p.len();
+    let holds = |w: u64, x: i64| (w >> (x.unsigned_abs() - 1) & 1 == 1) == (x > 0);
+    let z: f64 = (0..1u64 << n)
+        .filter(|&w| clauses.iter().all(|cl| cl.iter().any(|&x| holds(w, x))))
+        .map(|w| {
+            (0..n)
+                .map(|v| if w >> v & 1 == 1 { p[v] } else { 1.0 - p[v] })
+                .product::<f64>()
+        })
+        .sum();
+    let mut source = String::new();
+    for (v, q) in p.iter().enumerate() {
+        source.push_str(&format!("{q}::x({}).\n", v + 1));
+    }
+    for (j, cl) in clauses.iter().enumerate() {
+        let body: Vec<String> = cl
+            .iter()
+            .map(|&x| {
+                if x > 0 {
+                    format!("\\+x({x})")
+                } else {
+                    format!("x({})", -x)
+                }
+            })
+            .collect();
+        source.push_str(&format!(
+            "violated({j}) :- {}.\nevidence(violated({j}), false).\n",
+            body.join(", ")
+        ));
+    }
+    let program = tddlog::syntax::parse_program(&source).unwrap();
+    (source, program, z)
+}
+
+fn assert_wcnf_pe(round: usize, what: &str, got: Count, consistent: bool, z: f64, source: &str) {
+    if z == 0.0 {
+        assert!(
+            !consistent && got.to_f64() == 0.0,
+            "round {round} ({what}): P(e) = {} against 0\n{source}",
+            got.to_f64()
+        );
+    } else {
+        assert!(
+            (got.log10() - z.log10()).abs() < 1e-10,
+            "round {round} ({what}): P(e) = {} against {z}\n{source}",
+            got.to_f64()
+        );
+    }
+}
+
+fn check_defined_answers(program: &tddlog::syntax::Program, want: &[(&str, f64)]) {
+    for strategy in [
+        Strategy::Auto,
+        Strategy::Trial(Kind::Td),
+        Strategy::Trial(Kind::Closed),
+    ] {
+        for defined in [true, false] {
+            let ground = tddlog::ground::ground(
+                program,
+                &GroundOptions {
+                    defined,
+                    ..GroundOptions::default()
+                },
+            )
+            .unwrap();
+            let run =
+                tddlog::solve_ground(ground, &common::options(strategy, Projection::default()))
+                    .unwrap();
+            common::assert_answers(
+                &format!("{strategy:?}, defined {defined}"),
+                &run.results.unwrap(),
+                want,
+                1e-7,
+            );
+        }
+    }
+}
+
 #[test]
 fn weighted_cnfs_count_the_same_with_and_without_backbones() {
     // Random weighted CNFs as programs (each variable a fact, each clause j
@@ -432,36 +514,7 @@ fn weighted_cnfs_count_the_same_with_and_without_backbones() {
             }
             clauses.push(clause);
         }
-        let holds = |w: u64, x: i64| (w >> (x.unsigned_abs() - 1) & 1 == 1) == (x > 0);
-        let z: f64 = (0..1u64 << n)
-            .filter(|&w| clauses.iter().all(|cl| cl.iter().any(|&x| holds(w, x))))
-            .map(|w| {
-                (0..n as usize)
-                    .map(|v| if w >> v & 1 == 1 { p[v] } else { 1.0 - p[v] })
-                    .product::<f64>()
-            })
-            .sum();
-        let mut source = String::new();
-        for (v, q) in p.iter().enumerate() {
-            source.push_str(&format!("{q}::x({}).\n", v + 1));
-        }
-        for (j, cl) in clauses.iter().enumerate() {
-            let body: Vec<String> = cl
-                .iter()
-                .map(|&x| {
-                    if x > 0 {
-                        format!("\\+x({x})")
-                    } else {
-                        format!("x({})", -x)
-                    }
-                })
-                .collect();
-            source.push_str(&format!(
-                "violated({j}) :- {}.\nevidence(violated({j}), false).\n",
-                body.join(", ")
-            ));
-        }
-        let program = tddlog::syntax::parse_program(&source).unwrap();
+        let (source, program, z) = wcnf_program(&p, &clauses);
         let conditioned = |backbones: bool| {
             tddlog::ground::ground(
                 &program,
@@ -485,19 +538,7 @@ fn weighted_cnfs_count_the_same_with_and_without_backbones() {
                 backbones,
                 GroundOptions::default().defined,
             ) {
-                if z == 0.0 {
-                    assert!(
-                        !consistent && got.to_f64() == 0.0,
-                        "round {round} ({what}): P(e) = {} against 0\n{source}",
-                        got.to_f64()
-                    );
-                } else {
-                    assert!(
-                        (got.log10() - z.log10()).abs() < 1e-10,
-                        "round {round} ({what}): P(e) = {} against {z}\n{source}",
-                        got.to_f64()
-                    );
-                }
+                assert_wcnf_pe(round, &what, got, consistent, z, &source);
             }
         }
     }
@@ -555,32 +596,10 @@ fn defined_facts_take_out_one_half_each() {
             }
         }
     }
-    let want = [("a", 0.45), ("c", 0.57857143), ("g", 0.69285714)];
-    for strategy in [
-        Strategy::Auto,
-        Strategy::Trial(Kind::Td),
-        Strategy::Trial(Kind::Closed),
-    ] {
-        for defined in [true, false] {
-            let ground = tddlog::ground::ground(
-                &program,
-                &GroundOptions {
-                    defined,
-                    ..GroundOptions::default()
-                },
-            )
-            .unwrap();
-            let run =
-                tddlog::solve_ground(ground, &common::options(strategy, Projection::default()))
-                    .unwrap();
-            common::assert_answers(
-                &format!("{strategy:?}, defined {defined}"),
-                &run.results.unwrap(),
-                &want,
-                1e-7,
-            );
-        }
-    }
+    check_defined_answers(
+        &program,
+        &[("a", 0.45), ("c", 0.57857143), ("g", 0.69285714)],
+    );
 }
 
 #[test]
@@ -629,32 +648,7 @@ fn a_clause_the_others_imply_leaves_before_the_support() {
             }
         }
     }
-    let want = [("c", 0.85714286), ("d", 0.8)];
-    for strategy in [
-        Strategy::Auto,
-        Strategy::Trial(Kind::Td),
-        Strategy::Trial(Kind::Closed),
-    ] {
-        for defined in [true, false] {
-            let ground = tddlog::ground::ground(
-                &program,
-                &GroundOptions {
-                    defined,
-                    ..GroundOptions::default()
-                },
-            )
-            .unwrap();
-            let run =
-                tddlog::solve_ground(ground, &common::options(strategy, Projection::default()))
-                    .unwrap();
-            common::assert_answers(
-                &format!("{strategy:?}, defined {defined}"),
-                &run.results.unwrap(),
-                &want,
-                1e-7,
-            );
-        }
-    }
+    check_defined_answers(&program, &[("c", 0.85714286), ("d", 0.8)]);
 }
 
 #[test]
@@ -719,36 +713,7 @@ fn weighted_cnfs_count_the_same_with_and_without_eliminating_defined_facts() {
                     .collect(),
             );
         }
-        let holds = |w: u64, x: i64| (w >> (x.unsigned_abs() - 1) & 1 == 1) == (x > 0);
-        let z: f64 = (0..1u64 << n)
-            .filter(|&w| clauses.iter().all(|cl| cl.iter().any(|&x| holds(w, x))))
-            .map(|w| {
-                (0..n as usize)
-                    .map(|v| if w >> v & 1 == 1 { p[v] } else { 1.0 - p[v] })
-                    .product::<f64>()
-            })
-            .sum();
-        let mut source = String::new();
-        for (v, q) in p.iter().enumerate() {
-            source.push_str(&format!("{q}::x({}).\n", v + 1));
-        }
-        for (j, cl) in clauses.iter().enumerate() {
-            let body: Vec<String> = cl
-                .iter()
-                .map(|&x| {
-                    if x > 0 {
-                        format!("\\+x({x})")
-                    } else {
-                        format!("x({})", -x)
-                    }
-                })
-                .collect();
-            source.push_str(&format!(
-                "violated({j}) :- {}.\nevidence(violated({j}), false).\n",
-                body.join(", ")
-            ));
-        }
-        let program = tddlog::syntax::parse_program(&source).unwrap();
+        let (source, program, z) = wcnf_program(&p, &clauses);
         let ground = tddlog::ground::ground(
             &program,
             &GroundOptions {
@@ -765,19 +730,7 @@ fn weighted_cnfs_count_the_same_with_and_without_eliminating_defined_facts() {
                 GroundOptions::default().backbones,
                 defined,
             ) {
-                if z == 0.0 {
-                    assert!(
-                        !consistent && got.to_f64() == 0.0,
-                        "round {round} ({what}): P(e) = {} against 0\n{source}",
-                        got.to_f64()
-                    );
-                } else {
-                    assert!(
-                        (got.log10() - z.log10()).abs() < 1e-10,
-                        "round {round} ({what}): P(e) = {} against {z}\n{source}",
-                        got.to_f64()
-                    );
-                }
+                assert_wcnf_pe(round, &what, got, consistent, z, &source);
             }
         }
     }
@@ -836,36 +789,7 @@ fn weighted_cnfs_count_the_same_with_and_without_implied_clauses() {
                 lit(e, next() & 1 == 1),
             ]);
         }
-        let holds = |w: u64, x: i64| (w >> (x.unsigned_abs() - 1) & 1 == 1) == (x > 0);
-        let z: f64 = (0..1u64 << n)
-            .filter(|&w| clauses.iter().all(|cl| cl.iter().any(|&x| holds(w, x))))
-            .map(|w| {
-                (0..n as usize)
-                    .map(|v| if w >> v & 1 == 1 { p[v] } else { 1.0 - p[v] })
-                    .product::<f64>()
-            })
-            .sum();
-        let mut source = String::new();
-        for (v, q) in p.iter().enumerate() {
-            source.push_str(&format!("{q}::x({}).\n", v + 1));
-        }
-        for (j, cl) in clauses.iter().enumerate() {
-            let body: Vec<String> = cl
-                .iter()
-                .map(|&x| {
-                    if x > 0 {
-                        format!("\\+x({x})")
-                    } else {
-                        format!("x({})", -x)
-                    }
-                })
-                .collect();
-            source.push_str(&format!(
-                "violated({j}) :- {}.\nevidence(violated({j}), false).\n",
-                body.join(", ")
-            ));
-        }
-        let program = tddlog::syntax::parse_program(&source).unwrap();
+        let (source, program, z) = wcnf_program(&p, &clauses);
         let ground = tddlog::ground::ground(
             &program,
             &GroundOptions {
@@ -885,19 +809,7 @@ fn weighted_cnfs_count_the_same_with_and_without_implied_clauses() {
                 GroundOptions::default().backbones,
                 defined,
             ) {
-                if z == 0.0 {
-                    assert!(
-                        !consistent && got.to_f64() == 0.0,
-                        "round {round} ({what}): P(e) = {} against 0\n{source}",
-                        got.to_f64()
-                    );
-                } else {
-                    assert!(
-                        (got.log10() - z.log10()).abs() < 1e-10,
-                        "round {round} ({what}): P(e) = {} against {z}\n{source}",
-                        got.to_f64()
-                    );
-                }
+                assert_wcnf_pe(round, &what, got, consistent, z, &source);
             }
         }
     }

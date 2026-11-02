@@ -71,9 +71,9 @@ use num_rational::BigRational;
 use num_traits::ToPrimitive;
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use super::ParseError;
 use super::lpad::space;
-use crate::network::rows::{fsum, write_float};
+use super::{ParseError, float_repr};
+use crate::network::rows::fsum;
 
 /// The ProbLog program the Dice program `source` is read as. The error
 /// names the line of the token or expression that the program cannot be
@@ -559,108 +559,7 @@ impl<'a> Parser<'a> {
         let t = self.take();
         let line = t.line;
         let kind = match (t.kind, t.text) {
-            (Tk::Id, "flip") => {
-                if self.at(Tk::Op, "(") {
-                    self.take();
-                    let p = self.float()?;
-                    self.op(")")?;
-                    Kind::Flip(p)
-                } else {
-                    Kind::Flip(self.float()?)
-                }
-            }
-            (Tk::Id, "discrete") => {
-                self.op("(")?;
-                let mut ps = vec![self.float()?];
-                while self.at(Tk::Op, ",") {
-                    self.take();
-                    ps.push(self.float()?);
-                }
-                self.op(")")?;
-                Kind::Discrete(ps)
-            }
-            (Tk::Id, "int") => {
-                self.op("(")?;
-                let w = self.integer()?;
-                self.op(",")?;
-                let k = self.integer()?;
-                self.op(")")?;
-                Kind::Int(w, k)
-            }
-            (Tk::Id, "uniform") => {
-                self.op("(")?;
-                let w = self.integer()?;
-                self.op(",")?;
-                let lo = self.integer()?;
-                self.op(",")?;
-                let hi = self.integer()?;
-                self.op(")")?;
-                Kind::Uniform(w, lo, hi)
-            }
-            (Tk::Id, "iterate") => {
-                self.op("(")?;
-                let f = self.expect(Tk::Id, None)?.text;
-                self.op(",")?;
-                let init = self.expr(0)?;
-                self.op(",")?;
-                let k = self.integer()?;
-                self.op(")")?;
-                Kind::Iterate(f, Box::new(init), k)
-            }
-            (Tk::Id, "binomial") => {
-                self.op("(")?;
-                let w = self.integer()?;
-                self.op(",")?;
-                let n = self.integer()?;
-                self.op(",")?;
-                let p = self.float()?;
-                self.op(")")?;
-                Kind::Binomial(w, n, p)
-            }
-            (Tk::Id, "nth_bit") => {
-                self.op("(")?;
-                self.expect(Tk::Id, Some("int"))?;
-                self.op("(")?;
-                let w = self.integer()?;
-                self.op(",")?;
-                let i = self.integer()?;
-                self.op(")")?;
-                self.op(",")?;
-                let x = self.expr(0)?;
-                self.op(")")?;
-                Kind::NthBit(w, i, Box::new(x))
-            }
-            (Tk::Id, "fst") => Kind::Fst(Box::new(self.atom()?)),
-            (Tk::Id, "snd") => Kind::Snd(Box::new(self.atom()?)),
-            (Tk::Id, op @ ("head" | "tail" | "length")) => {
-                let x = Box::new(self.expr(precedence("::").expect("a level"))?);
-                match op {
-                    "head" => Kind::Head(x),
-                    "tail" => Kind::Tail(x),
-                    _ => Kind::Length(x),
-                }
-            }
-            (Tk::Id, "true") => Kind::Bool(true),
-            (Tk::Id, "false") => Kind::Bool(false),
-            (Tk::Id, name) if UNSUPPORTED.contains(&name) => {
-                return Err(fail(line, format!("Dice's `{name}` is not supported")));
-            }
-            (Tk::Id, name) => {
-                if self.at(Tk::Op, "(") {
-                    self.take();
-                    let mut args = Vec::new();
-                    while !self.at(Tk::Op, ")") {
-                        args.push(self.expr(0)?);
-                        if self.at(Tk::Op, ",") {
-                            self.take();
-                        }
-                    }
-                    self.op(")")?;
-                    Kind::Call(name, args)
-                } else {
-                    Kind::Var(name)
-                }
-            }
+            (Tk::Id, name) => self.id_atom(name, line)?,
             (Tk::Op, "(") => {
                 let e = self.expr(0)?;
                 if self.at(Tk::Op, ",") {
@@ -690,6 +589,115 @@ impl<'a> Parser<'a> {
             _ => return Err(fail(line, format!("unexpected `{}`", t.text))),
         };
         Ok(Expr { line, kind })
+    }
+
+    fn int_pair(&mut self) -> Res<(u64, u64)> {
+        self.op("(")?;
+        let w = self.integer()?;
+        self.op(",")?;
+        let k = self.integer()?;
+        self.op(")")?;
+        Ok((w, k))
+    }
+
+    fn id_atom(&mut self, name: &'a str, line: usize) -> Res<Kind<'a>> {
+        let kind = match name {
+            "flip" => {
+                if self.at(Tk::Op, "(") {
+                    self.take();
+                    let p = self.float()?;
+                    self.op(")")?;
+                    Kind::Flip(p)
+                } else {
+                    Kind::Flip(self.float()?)
+                }
+            }
+            "discrete" => {
+                self.op("(")?;
+                let mut ps = vec![self.float()?];
+                while self.at(Tk::Op, ",") {
+                    self.take();
+                    ps.push(self.float()?);
+                }
+                self.op(")")?;
+                Kind::Discrete(ps)
+            }
+            "int" => {
+                let (w, k) = self.int_pair()?;
+                Kind::Int(w, k)
+            }
+            "uniform" => {
+                self.op("(")?;
+                let w = self.integer()?;
+                self.op(",")?;
+                let lo = self.integer()?;
+                self.op(",")?;
+                let hi = self.integer()?;
+                self.op(")")?;
+                Kind::Uniform(w, lo, hi)
+            }
+            "iterate" => {
+                self.op("(")?;
+                let f = self.expect(Tk::Id, None)?.text;
+                self.op(",")?;
+                let init = self.expr(0)?;
+                self.op(",")?;
+                let k = self.integer()?;
+                self.op(")")?;
+                Kind::Iterate(f, Box::new(init), k)
+            }
+            "binomial" => {
+                self.op("(")?;
+                let w = self.integer()?;
+                self.op(",")?;
+                let n = self.integer()?;
+                self.op(",")?;
+                let p = self.float()?;
+                self.op(")")?;
+                Kind::Binomial(w, n, p)
+            }
+            "nth_bit" => {
+                self.op("(")?;
+                self.expect(Tk::Id, Some("int"))?;
+                let (w, i) = self.int_pair()?;
+                self.op(",")?;
+                let x = self.expr(0)?;
+                self.op(")")?;
+                Kind::NthBit(w, i, Box::new(x))
+            }
+            "fst" => Kind::Fst(Box::new(self.atom()?)),
+            "snd" => Kind::Snd(Box::new(self.atom()?)),
+            op @ ("head" | "tail" | "length") => {
+                let x = Box::new(self.expr(precedence("::").expect("a level"))?);
+                match op {
+                    "head" => Kind::Head(x),
+                    "tail" => Kind::Tail(x),
+                    _ => Kind::Length(x),
+                }
+            }
+            "true" => Kind::Bool(true),
+            "false" => Kind::Bool(false),
+            name if UNSUPPORTED.contains(&name) => {
+                return Err(fail(line, format!("Dice's `{name}` is not supported")));
+            }
+            name => {
+                if self.at(Tk::Op, "(") {
+                    self.take();
+                    let mut args = Vec::new();
+                    while !self.at(Tk::Op, ")") {
+                        args.push(self.expr(0)?);
+                        if self.at(Tk::Op, ",") {
+                            self.take();
+                        }
+                    }
+                    self.op(")")?;
+                    Kind::Call(name, args)
+                } else {
+                    Kind::Var(name)
+                }
+            }
+        };
+        Ok(kind)
     }
 }
 
@@ -927,31 +935,45 @@ impl Value {
 }
 
 /// The variables in scope: each binding shadows the ones after it.
+/// The variables in scope, in frames, the innermost first: a `let`
+/// chain's, a call's parameters, a branch's variables restricted to the
+/// values its guard allows. A frame is a table, so that a variable bound
+/// early in a chain of a hundred thousand `let`s is found at once, and
+/// the frames are as deep as the program's nesting, not as long as its
+/// chains: a binding each, they were a list that took time quadratic in a
+/// chain's length to search and that overflowed the stack when dropped.
 #[derive(Clone, Default)]
-struct Env<'a>(Option<Rc<Binding<'a>>>);
+struct Env<'a>(Option<Rc<Frame<'a>>>);
 
-struct Binding<'a> {
-    name: &'a str,
-    value: Value,
+#[derive(Clone)]
+struct Frame<'a> {
+    vars: FxHashMap<&'a str, Value>,
     next: Env<'a>,
 }
 
 impl<'a> Env<'a> {
-    fn bind(&self, name: &'a str, value: Value) -> Env<'a> {
-        Env(Some(Rc::new(Binding {
-            name,
-            value,
+    /// `self` with an empty frame inside it.
+    fn enter(&self) -> Env<'a> {
+        Env(Some(Rc::new(Frame {
+            vars: FxHashMap::default(),
             next: self.clone(),
         })))
     }
 
+    /// `name` bound to `value` in the innermost frame, which [`Env::enter`]
+    /// made: a binding of the same name before it is shadowed.
+    fn bind(&mut self, name: &'a str, value: Value) {
+        let frame = self.0.as_mut().expect("a frame entered");
+        Rc::make_mut(frame).vars.insert(name, value);
+    }
+
     fn get(&self, name: &str) -> Option<&Value> {
         let mut at = &self.0;
-        while let Some(b) = at {
-            if b.name == name {
-                return Some(&b.value);
+        while let Some(f) = at {
+            if let Some(v) = f.vars.get(name) {
+                return Some(v);
             }
-            at = &b.next.0;
+            at = &f.next.0;
         }
         None
     }
@@ -1072,13 +1094,6 @@ fn discrete_probs(ps: &[f64]) -> Vec<f64> {
     } else {
         ps.to_vec()
     }
-}
-
-/// A probability as Python's `repr` writes it.
-fn repr(p: f64) -> String {
-    let mut s = String::new();
-    write_float(&mut s, p);
-    s
 }
 
 // ---------------------------------------------------------------------
@@ -1390,7 +1405,7 @@ impl<'a> Translator<'a> {
             return lit(if p >= 1.0 { "true" } else { "false" });
         }
         let a = self.fresh(name);
-        let p = repr(p);
+        let p = float_repr(p);
         match &self.in_loop {
             Some(step) => {
                 self.lines.push(format!("{p}::{a}{STEP} :- {step}{STEP}."));
@@ -1822,10 +1837,10 @@ impl<'a> Translator<'a> {
         let line = e.line;
         match &e.kind {
             Kind::Let(binds, body) => {
-                let mut env = env.clone();
+                let mut env = env.enter();
                 for (x, v) in binds {
                     let value = self.eval(v, &env, path, x)?;
-                    env = env.bind(x, value);
+                    env.bind(x, value);
                 }
                 self.eval(body, &env, path, name)
             }
@@ -1839,25 +1854,7 @@ impl<'a> Translator<'a> {
                 let ps = discrete_probs(ps);
                 self.choice(&ps, bits_for(ps.len()), name, line)
             }
-            &Kind::Uniform(width, lo, hi) => {
-                if width > MAX_UNIFORM_WIDTH {
-                    return Err(fail(
-                        line,
-                        format!(
-                            "uniform({width}, {lo}, {hi}): a uniform over more than 2^{MAX_UNIFORM_WIDTH} values is not supported"
-                        ),
-                    ));
-                }
-                if !(lo < hi && hi <= 1 << width) {
-                    return Err(fail(
-                        line,
-                        format!("uniform({width}, {lo}, {hi}): empty or out of range"),
-                    ));
-                }
-                let p = 1.0 / (hi - lo) as f64;
-                let ps: Vec<f64> = (0..hi).map(|v| if v < lo { 0.0 } else { p }).collect();
-                self.choice(&ps, width, name, line)
-            }
+            &Kind::Uniform(width, lo, hi) => self.uniform(width, lo, hi, name, line),
             &Kind::Int(width, k) => Ok(Value::Int(self.constant(k, width, line)?)),
             Kind::Tuple(a, b) => {
                 let a = self.eval(a, env, path, &format!("{name}_1"))?;
@@ -1913,26 +1910,7 @@ impl<'a> Translator<'a> {
                 )),
             },
             Kind::Head(x) | Kind::Tail(x) | Kind::Length(x) => {
-                let v = self.eval(x, env, path, name)?;
-                let (n, elems) = list_parts(&v, name, line)?;
-                if let Kind::Length(_) = e.kind {
-                    return Ok(Value::Int(n));
-                }
-                // Dice's head and tail of an empty list observe false.
-                let zero = self.constant(0, list_width(), line)?;
-                let empty = self.compare("==", n.clone(), zero, name, line)?;
-                let empty = self.literal(&empty, name, line)?;
-                if !is(&empty, "false") {
-                    self.observe(neg(&empty), path);
-                }
-                if let Kind::Head(_) = e.kind {
-                    return Ok(elems[0].clone());
-                }
-                let one = self.constant(1, list_width(), line)?;
-                let n = self.arith("-", n, one, name, line)?;
-                let n = self.integer(&n, name, line)?;
-                let t = type_of(&elems[0]);
-                self.list(n, elems[1..].to_vec(), &t, name, line)
+                self.list_op(&e.kind, x, env, path, name, line)
             }
             Kind::Not(x) => {
                 let v = self.eval(x, env, path, name)?;
@@ -1947,30 +1925,69 @@ impl<'a> Translator<'a> {
             }
             Kind::If(arms, otherwise) => self.conditional(arms, otherwise, env, path, name, line),
             Kind::Call(f, args) => {
-                let Some(&(fun, _)) = self.funs.get(f) else {
-                    return Err(fail(line, format!("unknown function {f}")));
-                };
-                if fun.params.len() != args.len() {
-                    return Err(fail(
-                        line,
-                        format!(
-                            "{f}: {} parameters, {} arguments",
-                            fun.params.len(),
-                            args.len()
-                        ),
-                    ));
-                }
+                let fun = self.fun(f, args.len(), line)?;
                 let mut values = Vec::new();
                 for (p, x) in fun.params.iter().zip(args) {
                     values.push(self.eval(x, env, path, &format!("{f}_{p}"))?);
                 }
-                self.call(f, values, path, name, line)
+                self.call(fun, values, path, name, line)
             }
             Kind::Iterate(f, init, k) => {
                 let init = self.eval(init, env, path, name)?;
                 self.iterate(f, init, *k, path, name, line)
             }
         }
+    }
+
+    fn uniform(&mut self, width: u64, lo: u64, hi: u64, name: &str, line: usize) -> Res<Value> {
+        if width > MAX_UNIFORM_WIDTH {
+            return Err(fail(
+                line,
+                format!(
+                    "uniform({width}, {lo}, {hi}): a uniform over more than 2^{MAX_UNIFORM_WIDTH} values is not supported"
+                ),
+            ));
+        }
+        if !(lo < hi && hi <= 1 << width) {
+            return Err(fail(
+                line,
+                format!("uniform({width}, {lo}, {hi}): empty or out of range"),
+            ));
+        }
+        let p = 1.0 / (hi - lo) as f64;
+        let ps: Vec<f64> = (0..hi).map(|v| if v < lo { 0.0 } else { p }).collect();
+        self.choice(&ps, width, name, line)
+    }
+
+    fn list_op(
+        &mut self,
+        kind: &Kind<'a>,
+        x: &'a Expr<'a>,
+        env: &Env<'a>,
+        path: &[Lit],
+        name: &str,
+        line: usize,
+    ) -> Res<Value> {
+        let v = self.eval(x, env, path, name)?;
+        let (n, elems) = list_parts(&v, name, line)?;
+        if let Kind::Length(_) = kind {
+            return Ok(Value::Int(n));
+        }
+        // Dice's head and tail of an empty list observe false.
+        let zero = self.constant(0, list_width(), line)?;
+        let empty = self.compare("==", n.clone(), zero, name, line)?;
+        let empty = self.literal(&empty, name, line)?;
+        if !is(&empty, "false") {
+            self.observe(neg(&empty), path);
+        }
+        if let Kind::Head(_) = kind {
+            return Ok(elems[0].clone());
+        }
+        let one = self.constant(1, list_width(), line)?;
+        let n = self.arith("-", n, one, name, line)?;
+        let n = self.integer(&n, name, line)?;
+        let t = type_of(&elems[0]);
+        self.list(n, elems[1..].to_vec(), &t, name, line)
     }
 
     /// A binary operation or a shift whose left operand is a chain of
@@ -2073,9 +2090,10 @@ impl<'a> Translator<'a> {
         step: &str,
         line: usize,
     ) -> Res<Vec<Value>> {
+        let fun = self.fun(fname, 1, line)?;
         self.in_loop = Some(step.to_string());
         self.observed.clear();
-        let out = self.call(fname, vec![state.clone()], path, name, line);
+        let out = self.call(fun, vec![state.clone()], path, name, line);
         self.in_loop = None;
         let (ends, starts) = (out?.flat(), state.flat());
         let same = |p: &Value, q: &Value| match (p, q) {
@@ -2123,9 +2141,15 @@ impl<'a> Translator<'a> {
     /// integers take (for the comparisons and the conditions that they
     /// decide), are a fixpoint over the step: the initial state's, and
     /// what the body makes of them, until no evaluation of the body adds
-    /// to them (the evaluations before the last are undone). The step's
-    /// observations hold at every step: `failed` holds where one does not
-    /// at some step, and the evidence is that it is false.
+    /// to them (the evaluations before the last are undone). An
+    /// integer's values that grow in more than twice as many evaluations
+    /// as the integer has bits are widened to unknown: values that at
+    /// least double in each fill the integer's range in as many
+    /// evaluations as it has bits, so values still growing after twice
+    /// that grow by a few in each, as a counter's do, and would take an
+    /// evaluation per value. The step's observations hold at every step:
+    /// `failed` holds where one does not at some step, and the evidence
+    /// is that it is false.
     fn iterate(
         &mut self,
         fname: &'a str,
@@ -2156,6 +2180,7 @@ impl<'a> Translator<'a> {
             start,
         };
         let bases = state.hints.clone();
+        let mut growths = vec![0; state.start.len()];
         let mut step: Option<String> = None;
         loop {
             for (i, start) in state.start.iter().enumerate() {
@@ -2187,7 +2212,7 @@ impl<'a> Translator<'a> {
                         grew = true;
                     }
                 }
-                if let (Value::Int(_), Some(values), Value::Int(q)) = (p, &state.values[i], q) {
+                if let (Value::Int(x), Some(values), Value::Int(q)) = (p, &state.values[i], q) {
                     let more = q.support.as_ref().map(|s| {
                         values
                             .iter()
@@ -2198,7 +2223,8 @@ impl<'a> Translator<'a> {
                             .collect::<Vec<u64>>()
                     });
                     if more.as_ref() != Some(values) {
-                        state.values[i] = more;
+                        growths[i] += 1;
+                        state.values[i] = more.filter(|_| growths[i] <= 2 * x.width);
                         grew = true;
                     }
                 }
@@ -2281,41 +2307,45 @@ impl<'a> Translator<'a> {
         init.rebuild(&mut parts.into_iter())
     }
 
+    fn fun(&self, fname: &'a str, arity: usize, line: usize) -> Res<&'a Fun<'a>> {
+        let Some(&(fun, _)) = self.funs.get(fname) else {
+            return Err(fail(line, format!("unknown function {fname}")));
+        };
+        if fun.params.len() != arity {
+            return Err(fail(
+                line,
+                format!(
+                    "{fname}: {} parameters, {arity} arguments",
+                    fun.params.len()
+                ),
+            ));
+        }
+        Ok(fun)
+    }
+
     fn call(
         &mut self,
-        fname: &'a str,
+        fun: &'a Fun<'a>,
         args: Vec<Value>,
         path: &[Lit],
         name: &str,
         line: usize,
     ) -> Res<Value> {
-        let Some(&(fun, recursive)) = self.funs.get(fname) else {
-            return Err(fail(line, format!("unknown function {fname}")));
-        };
-        if fun.params.len() != args.len() {
-            return Err(fail(
-                line,
-                format!(
-                    "{fname}: {} parameters, {} arguments",
-                    fun.params.len(),
-                    args.len()
-                ),
-            ));
-        }
-        let depth = self.active.get(fname).copied().unwrap_or(0);
+        let (_, recursive) = self.funs[fun.name];
+        let depth = self.active.get(fun.name).copied().unwrap_or(0);
         if recursive && depth > RECURSION_LIMIT {
             // Dice's last copy of a recursive function: `observe false` on
             // this path, and the return type's default value.
             self.observe(lit("false"), path);
-            return self.default(fun.ret.as_ref(), fname, line);
+            return self.default(fun.ret.as_ref(), fun.name, line);
         }
-        self.active.insert(fname, depth + 1);
-        let mut env = Env::default();
+        self.active.insert(fun.name, depth + 1);
+        let mut env = Env::default().enter();
         for (p, a) in fun.params.iter().zip(args) {
-            env = env.bind(p, a);
+            env.bind(p, a);
         }
         let out = self.eval(&fun.body, &env, path, name);
-        self.active.insert(fname, depth);
+        self.active.insert(fun.name, depth);
         out
     }
 
@@ -2377,19 +2407,19 @@ impl<'a> Translator<'a> {
         let at_full = self.compare("==", n.clone(), full.clone(), name, line)?;
         let at_full = self.literal(&at_full, name, line)?;
         let more = self.arith("+", n, one, name, line)?;
-        let n = match &*at_full {
-            "false" => more,
-            "true" => Value::Int(full),
-            _ => self.merge(
-                vec![(at_full.clone(), Value::Int(full)), (neg(&at_full), more)],
-                name,
-                line,
-            )?,
-        };
+        let n = self.select(&at_full, Value::Int(full), more, name, line)?;
         let n = self.integer(&n, name, line)?;
         elems.pop();
         elems.insert(0, x);
         self.list(n, elems, &t, name, line)
+    }
+
+    fn select(&mut self, cond: &Lit, a: Value, b: Value, name: &str, line: usize) -> Res<Value> {
+        match &**cond {
+            "true" => Ok(a),
+            "false" => Ok(b),
+            _ => self.merge(vec![(cond.clone(), a), (neg(cond), b)], name, line),
+        }
     }
 
     /// `binomial(width, n, p)`, as Dice writes it: from 0, `n` times
@@ -2409,15 +2439,7 @@ impl<'a> Translator<'a> {
         for _ in 0..n {
             let f = self.flip(p, name);
             let more = self.arith("+", x.clone(), one.clone(), name, line)?;
-            let v = match &*f {
-                "true" => more,
-                "false" => Value::Int(x),
-                _ => self.merge(
-                    vec![(f.clone(), more), (neg(&f), Value::Int(x))],
-                    name,
-                    line,
-                )?,
-            };
+            let v = self.select(&f, more, Value::Int(x), name, line)?;
             x = self.integer(&v, name, line)?;
         }
         Ok(Value::Int(x))
@@ -2472,7 +2494,7 @@ impl<'a> Translator<'a> {
         let Some(known) = known else {
             return Ok(None);
         };
-        let mut out = env.clone();
+        let mut out = env.enter();
         for (&var, allowed) in known {
             let Some(x) = env.get(var) else {
                 continue;
@@ -2488,7 +2510,7 @@ impl<'a> Translator<'a> {
                         .collect();
                     match left.as_slice() {
                         [] => return Ok(None),
-                        [b] => out = out.bind(var, boolean(*b)),
+                        [b] => out.bind(var, boolean(*b)),
                         _ => {}
                     }
                 }
@@ -2506,7 +2528,7 @@ impl<'a> Translator<'a> {
                     }
                     if support.len() == 1 {
                         let k = self.constant(support[0], x.width, 0)?;
-                        out = out.bind(var, Value::Int(k));
+                        out.bind(var, Value::Int(k));
                     } else if support.len() < have.len() {
                         // The bits on which the values left agree are
                         // constants.
@@ -2538,7 +2560,7 @@ impl<'a> Translator<'a> {
                                 Some(x.size),
                             )))
                         })?;
-                        out = out.bind(var, v);
+                        out.bind(var, v);
                     }
                 }
                 Value::Tuple(_) => {}
@@ -2615,6 +2637,19 @@ impl<'a> Translator<'a> {
                 .collect();
             return Ok(Value::Bool(self.define(&head, bodies)));
         }
+        let Value::Int(first) = &value else {
+            unreachable!("an integer");
+        };
+        self.merge_ints(parts, first, name, line)
+    }
+
+    fn merge_ints(
+        &mut self,
+        parts: Vec<(Value, Lit)>,
+        first: &Int,
+        name: &str,
+        line: usize,
+    ) -> Res<Value> {
         let ints: Vec<(Rc<Int>, Lit)> = parts
             .into_iter()
             .map(|(v, g)| match v {
@@ -2622,9 +2657,6 @@ impl<'a> Translator<'a> {
                 _ => unreachable!("every branch is an integer"),
             })
             .collect();
-        let Value::Int(first) = &value else {
-            unreachable!("an integer");
-        };
         for (x, _) in &ints {
             self.same_width(first, x, "if", line)?;
         }
@@ -2812,6 +2844,31 @@ mod tests {
         let text =
             read("let xs = if flip 0.5 then [true] else [] : list(bool) in head xs").unwrap();
         assert_eq!(text.matches("evidence(").count(), 1, "{text}");
+    }
+
+    /// A chain of tens of thousands of `let`s, its flips bound first and
+    /// read last, as in Roulette's programs written in Dice: each variable
+    /// is found at once, and the bindings are dropped without a recursion
+    /// as deep as the chain, which overflowed a test's stack.
+    #[test]
+    fn a_long_chain_of_lets_is_read() {
+        let n = 50_000;
+        let mut text = String::new();
+        for i in (1..=n).rev() {
+            text += &format!("let a{i} = flip 0.5 in\n");
+        }
+        text += "let s0 = true in\n";
+        for i in 1..=n {
+            text += &format!("let s{i} = s{} && a{i} in\n", i - 1);
+        }
+        text += &format!("s{n}\n");
+        let program = read(&text).unwrap();
+        let flips = program.lines().filter(|l| l.starts_with("0.5::")).count();
+        assert_eq!(flips, n);
+        assert_eq!(
+            program.lines().filter(|l| l.starts_with("query(")).count(),
+            1
+        );
     }
 
     #[test]

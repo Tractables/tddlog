@@ -23,5 +23,6 @@
 
 (define SIZE (string->number (vector-ref (current-command-line-arguments) 0)))
 (define result (time (query (main SIZE))))
-(emit (format "o1(~a)" SIZE) (result (list #t #f)))
-(emit (format "o2(~a)" SIZE) (result (list #f #t)))
+(statement
+ (emit (format "o1(~a)" SIZE) (result (list #t #f)) (list #t #f))
+ (emit (format "o2(~a)" SIZE) (result (list #f #t)) (list #f #t)))

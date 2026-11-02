@@ -11,6 +11,7 @@ mod ad_tails;
 mod binary;
 mod binary_parent;
 mod cli;
+mod cnf;
 mod contexts;
 mod dense_count;
 mod evidence_probability;

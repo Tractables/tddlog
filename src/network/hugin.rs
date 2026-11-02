@@ -3,11 +3,12 @@
 //! first parent outermost and the values of X innermost. A comment runs
 //! from `%` to the end of the line, outside quotes (munin's states include
 //! "<12%"). A node without states, a decision or utility node of an
-//! influence diagram, is not a variable. Read as `gen_bn.py`'s regular
-//! expressions read it.
+//! influence diagram, is not a variable.
 
 use super::Network;
-use super::scan::{fields, names_before_brace, numbers, occurrences, skip_space, space, strip};
+use super::scan::{
+    fields, names_before_brace, numbers, occurrences, paren_blocks, skip_space, space,
+};
 
 pub(super) fn parse(text: &str) -> Result<Network, String> {
     let text = without_comments(text);
@@ -17,22 +18,14 @@ pub(super) fn parse(text: &str) -> Result<Network, String> {
             network.declare(name, values)?;
         }
     }
-    let mut pos = 0;
-    while let Some(at) = occurrences(&text, pos, "potential", true).next() {
-        match potential(&text, at + "potential".len()) {
-            Some((head, body, end)) => {
-                read_potential(&mut network, head, body)?;
-                pos = end;
-            }
-            None => pos = at + 1,
-        }
+    for (head, body) in paren_blocks(&text, "potential", true) {
+        read_potential(&mut network, head, body)?;
     }
     Ok(network)
 }
 
 /// `text` without its comments, from `%` to the end of the line, where
-/// the `%` is not inside a quoted string: gen_bn.py's
-/// `re.sub(r'("[^"]*")|%.*', ...)`.
+/// the `%` is not inside a quoted string (`"[^"]*"`).
 fn without_comments(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
     let mut rest = text;
@@ -117,30 +110,9 @@ fn states(body: &str) -> Option<Vec<String>> {
     None
 }
 
-/// The head and body of a match of `potential\s*\(([^)]*)\)\s*\{(.*?)\}`
-/// from `i`, just after the word, and where the match ends.
-fn potential(text: &str, i: usize) -> Option<(&str, &str, usize)> {
-    let i = skip_space(text, i);
-    let rest = text[i..].strip_prefix('(')?;
-    let close = rest.find(')')?;
-    let head = &rest[..close];
-    let j = skip_space(text, i + 1 + close + 1);
-    let body_start = j + text[j..].strip_prefix('{').map(|_| 1)?;
-    let end = body_start + text[body_start..].find('}')?;
-    Some((head, &text[body_start..end], end + 1))
-}
-
 /// Sets a variable's table from a potential's head, `X | P1 P2`, and body.
 fn read_potential(network: &mut Network, head: &str, body: &str) -> Result<(), String> {
-    let mut parts = head.split('|');
-    let name = strip(parts.next().unwrap_or(""));
-    let v = network.variable(name)?;
-    let parents = match parts.next() {
-        Some(p) => fields(p)
-            .map(|p| network.variable(p))
-            .collect::<Result<Vec<_>, _>>()?,
-        None => Vec::new(),
-    };
+    let (name, v, parents) = network.parse_table_head(head, fields)?;
     let data = data(body).ok_or_else(|| format!("{name}: a potential without data"))?;
     network.set_product_table(v, parents, numbers(data)?)
 }

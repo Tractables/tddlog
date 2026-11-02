@@ -266,9 +266,9 @@ fn query_groups(gp: &GroundProgram) -> Option<Groups> {
     let mut groups = vec![Vec::new(); heads.len()];
     let mut reached = Vec::with_capacity(heads.len());
     let mut placed = vec![false; gp.queries.len()];
-    for (g, head) in heads.into_iter().enumerate() {
+    for (g, mut head) in heads.into_iter().enumerate() {
         let mut part = evidence.clone();
-        reach(&mut head.clone(), &mut part);
+        reach(&mut head, &mut part);
         for (i, &(_, id, _)) in gp.queries.iter().enumerate() {
             if !placed[i]
                 && id.is_some_and(|q| part[q as usize] && (g == 0 || !evidence[q as usize]))

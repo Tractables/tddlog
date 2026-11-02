@@ -87,7 +87,14 @@
 ;;   prints them. A value asked that the call cannot take comes after the
 ;;   call's values, in the order asked, as `qK(I) :- fail.`: its weight is
 ;;   0. A note counts the calls of `infer`, whether or not they asked a
-;;   value.
+;;   value. Where the example language's `query` gives a call the value ⊥ of
+;;   a failed observation, the evidence is the observations, the negation of
+;;   ⊥'s guard, which every other value of the call implies whether or not
+;;   its guard shows them as conjuncts: a value's probability given the
+;;   observations then stays in a double's range where its weight, which
+;;   Roulette's `query` divides by the others', would not. ⊥ and the #f of
+;;   the call that asks for the observations answer 0 under the evidence,
+;;   which is not their weight, and the query reads neither.
 ;;
 ;; With --tddlog TDDLOG (a command, split at spaces), each query is written
 ;; on its own to a temporary file and answered by TDDLOG on it, and the query
@@ -143,6 +150,7 @@
            racket/file
            data/order
            rosette/base/core/term
+           (only-in rosette/base/core/reporter current-reporter)
            (only-in rosette/base/core/bool @! @&& @|| @=> @<=>)
            (only-in roulette/private/util flatten-symbolic))
 
@@ -162,6 +170,18 @@
 
   (define (fail fmt . args)
     (raise-user-error 'roulette2problog (apply format fmt args)))
+
+  ;; Every term Rosette makes, held. Roulette's example language makes
+  ;; Rosette's table of terms weak (`gc-terms!`), so that a term nothing else
+  ;; holds can be collected and, when the program asks for it again, made anew
+  ;; with a later id. The ids number the gates and when the collector runs
+  ;; varies with the addresses the process gets, so that two runs would write
+  ;; one circuit under two numberings.
+  (define held '())
+  (current-reporter
+   (λ (event . args)
+     (when (eq? event 'new-term)
+       (set! held (cons (car args) held)))))
 
   (define (seconds-since t) (/ (- (current-inexact-milliseconds) t) 1000.0))
 
@@ -199,19 +219,20 @@
       [(? constant?) '()]
       [_ (fail "a guard holds ~s, which is not a Boolean term" n)]))
 
-  ;; The terms under `roots`, each once, in the order Rosette created them
-  ;; (a term's operands before it).
+  ;; The terms under `roots`, each once, as a vector by term id, #f at the
+  ;; others: so in the order Rosette created them, a term's operands before it.
   (define (circuit-nodes roots)
-    (define seen (make-hasheq))
-    (let loop ([stack (filter term? roots)])
+    (define terms (filter term? roots))
+    (define seen (make-vector (for/fold ([size 0]) ([t (in-list terms)]) (max size (add1 (term-id t)))) #f))
+    (let loop ([stack terms])
       (unless (null? stack)
         (define n (car stack))
         (cond
-          [(hash-ref seen n #f) (loop (cdr stack))]
+          [(vector-ref seen (term-id n)) (loop (cdr stack))]
           [else
-           (hash-set! seen n #t)
+           (vector-set! seen (term-id n) n)
            (loop (append (children n) (cdr stack)))])))
-    (sort (hash-keys seen) < #:key term-id))
+    seen)
 
   (define (negated? n) (match n [(expression (== @!) _) #t] [_ #f]))
 
@@ -224,26 +245,35 @@
     (define bodies (for*/list ([q (in-list queries)] [e (in-list (second q))] #:when (third e))
                      (third e)))
     (define nodes (circuit-nodes (append (append* bodies) evidence)))
-    (define names (make-hasheq))
+    (define names (make-vector (vector-length nodes) #f))
+    (define (name-of n) (vector-ref names (term-id n)))
     (define-values (flips gates)
       (for/fold ([fs '()] [gs '()] [nf 0] [ng 0] #:result (values (reverse fs) (reverse gs)))
-                ([n (in-list nodes)])
+                ([n (in-vector nodes)]
+                 #:when n)
         (cond
           [(constant? n)
-           (hash-set! names n (format "f~a" (add1 nf)))
+           (vector-set! names (term-id n) (string-append "f" (number->string (add1 nf))))
            (values (cons n fs) gs (add1 nf) ng)]
           [(negated? n) (values fs gs nf ng)]
           [else
-           (hash-set! names n (format "g~a" (add1 ng)))
+           (vector-set! names (term-id n) (string-append "g" (number->string (add1 ng))))
            (values fs (cons n gs) nf (add1 ng))])))
     (define (lit n [pos #t])
       (match n
         [(expression (== @!) x) (lit x (not pos))]
-        [_ (define name (hash-ref names n))
+        [_ (define name (name-of n))
            (if pos name (string-append "\\+" name))]))
+    ;; Written piece by piece: `fprintf` took about half of a large circuit's time.
     (define (rule head . bodies)
       (for ([body (in-list bodies)])
-        (fprintf out "~a :- ~a.\n" head (string-join body ", "))))
+        (write-string head out)
+        (write-string " :- " out)
+        (write-string (car body) out)
+        (for ([b (in-list (cdr body))])
+          (write-string ", " out)
+          (write-string b out))
+        (write-string ".\n" out)))
     (define n-queries (for/sum ([q (in-list queries)]) (length (second q))))
     (fprintf out "% ~a: the circuit Roulette builds, written by tddlog's scripts/roulette2problog.rkt.\n"
              (program-label))
@@ -252,9 +282,12 @@
     (for ([note (in-list notes)])
       (fprintf out "% ~a\n" note))
     (for ([f (in-list flips)])
-      (fprintf out "~a::~a.\n" (number->string (exact->inexact (probability f))) (hash-ref names f)))
+      (write-string (number->string (exact->inexact (probability f))) out)
+      (write-string "::" out)
+      (write-string (name-of f) out)
+      (write-string ".\n" out))
     (for ([g (in-list gates)])
-      (define head (hash-ref names g))
+      (define head (name-of g))
       (match g
         [(expression (== @&&) xs ...) (rule head (map lit xs))]
         [(expression (== @||) xs ...) (apply rule head (for/list ([x (in-list xs)]) (list (lit x))))]
@@ -458,7 +491,7 @@
              racket/set
              (only-in racket/contract/base any/c)
              (only-in rosette vc vc-assumes)
-             (only-in rosette/base/core/bool @&&)
+             (only-in rosette/base/core/bool @&& @!)
              (only-in roulette [infer roulette-infer] immutable-set/c)
              (only-in roulette/engine/rsdd number-semiring)
              (only-in roulette/private/engine engine<%>)
@@ -488,7 +521,7 @@
         (list (simplify-path (path->complete-path dir)))))
 
     (define WEIGHTS
-      "A value's weight is P(e) times its query's probability, both of which tddlog --evidence-probability prints.")
+      "A value's weight is P(e) times its query's probability, both of which tddlog --evidence-probability prints; a failed observation's value answers 0 under the evidence.")
 
     ;; A call of `infer`: its number `k`, its value's values and their guards
     ;; in datum order (a vector of (value . guard)), each value's index, the
@@ -607,30 +640,55 @@
                 c f t))
         t))
 
+    ;; The value of a failed observation in the example language's `query`,
+    ;; a gensym of its own that the language does not export.
+    (define (failed-value? v)
+      (and (symbol? v) (not (symbol-interned? v)) (regexp-match? #rx"^⊥" (symbol->string v))))
+
+    ;; The members of the first of `lists` that are in all of them, #f for
+    ;; no list.
+    (define (common lists)
+      (and (pair? lists)
+           (for/fold ([s (car lists)]) ([b (in-list (cdr lists))])
+             (filter (λ (x) (memq x b)) s))))
+
     ;; The queries `items`, each (k assumes entries) with an entry (i value
     ;; guard), for `write-circuit`: each value's guard conjoined with the
-    ;; assumptions, the conjuncts every one shares as the evidence, and each
-    ;; value's other conjuncts its body, #f for a value never taken.
+    ;; assumptions, the conjuncts that every call's values imply as the
+    ;; evidence, and each value's other conjuncts its body, #f for a value
+    ;; never taken. A call's values are exclusive, so that those other than
+    ;; ⊥ imply the negation of its guard, and the value of another call with
+    ;; that guard (the #f of the call that asks for the observations) is
+    ;; failed with it. Another call's values imply the conjuncts their guards
+    ;; share.
     (define (factor items)
-      (define queries
+      (define calls
         (for/list ([q (in-list items)])
           (match-define (list k assumes entries) q)
           (list k (for/list ([e (in-list entries)])
                     (match-define (list i v g) e)
-                    (define c (@&& assumes g))
-                    (list i v (and c (conjuncts c)))))))
-      (define bodies (for*/list ([q (in-list queries)] [e (in-list (second q))] #:when (third e))
-                       (third e)))
-      (define shared
-        (if (null? bodies)
-            '()
-            (for/fold ([s (car bodies)]) ([b (in-list (cdr bodies))])
-              (filter (λ (x) (memq x b)) s))))
-      (values (for/list ([q (in-list queries)])
+                    (list i v (@&& assumes g))))))
+      (define (failed-of entries)
+        (and (pair? (cdr entries))
+             (findf (λ (e) (failed-value? (second e))) entries)))
+      (define failed
+        (for*/list ([q (in-list calls)]
+                    [f (in-value (failed-of (second q)))]
+                    #:when f)
+          (third f)))
+      (define (implied entries)
+        (define f (failed-of entries))
+        (if f
+            (conjuncts (@! (third f)))
+            (common (for/list ([e (in-list entries)]
+                               #:when (and (third e) (not (memq (third e) failed))))
+                      (conjuncts (third e))))))
+      (define shared (or (common (filter-map implied (map second calls))) '()))
+      (values (for/list ([q (in-list calls)])
                 (list (first q)
                       (for/list ([e (in-list (second q))])
-                        (match-define (list i v b) e)
-                        (list i v (and b (filter (λ (x) (not (memq x shared))) b))))))
+                        (match-define (list i v c) e)
+                        (list i v (and c (filter (λ (x) (not (memq x shared))) (conjuncts c)))))))
               shared))
 
     ;; The calls with a value asked, each with its asked values.

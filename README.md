@@ -82,7 +82,7 @@ and the counters) and for the records made before the switch.
 | Ace | 3.0 | the networks | the network file, with the evidence of `gen_bn.py --inst` | `--ace`, `--ace-variants auto,forceC2d`, `--ace-heap` | 7 |
 | Merlin | 1.7.0, built at ad37783 | the networks, the UAI sets | `gen_bn.py --uai` | `--merlin` | 8 |
 | Ganak, sharpSAT-TD | a static Ganak; sharpSAT-TD at 0c234c1 | the UAI PR sets, a second reference for log10 Z, not timed | `gen --cnf` (`uai_wcnf.py`) | `--ganak`, `--sharpsat-td`, `--sharpsat-td-decot 1,10` | 9 |
-| Roulette | camoy/roulette 54d6185 from the artifact (Zenodo 10.5281/zenodo.15253254) on Racket 8.16 | `data/roulette` and the artifact's networks | the artifact's programs | `--roulette`, `--roulette-variants rsdd,nocomplement` | 11 |
+| Roulette | neuppl/roulette 60f77cb (main of 2026-10-31) on Racket 9.3 | `data/roulette` and the artifact's networks; the Dice programs | the artifact's programs (Zenodo 10.5281/zenodo.15253254) in the current language; `dice2roulette.py` | `--roulette`, `--roulette-variants rsdd,bayes`; Roulette+tddlog `--roulette-tddlog` | 11 |
 
 The exact references written for this repository run with `--exact`:
 `bn_exact.py` (a clique tree) on the networks, `lit_exact.py`,

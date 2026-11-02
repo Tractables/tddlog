@@ -1,16 +1,14 @@
 #lang roulette/example/disrupt
 ;; benchmark/modular/caesar.rkt of the Roulette artifact (Zenodo
-;; 10.5281/zenodo.15253254), its last line changed to print the posterior
-;; of the key, key(K) for K = 0..25, in full (print.rkt), and to take a
-;; second argument, `--no-complement`, which queries as `(query e #f)`.
-;; By default `query` takes one value's probability as one minus the
-;; others' (and the evidence's complement): once the evidence falls below
-;; about 1e-16 that value is lost, as the key's most likely value is at
-;; 30 letters. The artifact's hmm.rkt queries with #f for that reason.
+;; 10.5281/zenodo.15253254), its query written as neuppl/roulette's
+;; `(query (main SIZE))` (the artifact's took a second argument, whether to
+;; take one value's probability as one minus the others'), its seeding a
+;; statement (print.rkt), and its last line changed to print the posterior
+;; of the key, key(K) for K = 0..25, in full.
 (require "print.rkt")
 
 (define rng (make-pseudo-random-generator))
-(parameterize ([current-pseudo-random-generator rng]) (random-seed 0))
+(statement (parameterize ([current-pseudo-random-generator rng]) (random-seed 0)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -94,11 +92,6 @@
   (observe! (andmap values bools))
   (bv->natural key1))
 
-(define ARGS (current-command-line-arguments))
-(define SIZE (string->number (vector-ref ARGS 0)))
-(define COMPLEMENT
-  (cond [(= (vector-length ARGS) 1) #t]
-        [(equal? (vector-ref ARGS 1) "--no-complement") #f]
-        [else (error 'caesar.rkt "usage: caesar.rkt N [--no-complement]")]))
-(define result (time (query (main SIZE) COMPLEMENT)))
-(void (for ([k (in-range 26)]) (emit (format "key(~a)" k) (result k))))
+(define SIZE (string->number (vector-ref (current-command-line-arguments) 0)))
+(define result (time (query (main SIZE))))
+(statement (for ([k (in-range 26)]) (emit (format "key(~a)" k) (result k) k)))

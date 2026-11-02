@@ -62,11 +62,7 @@ pub(crate) fn literal_vars(l: &Literal) -> Vec<String> {
 fn bound_term(t: &Term, bound: &FxHashSet<String>) -> bool {
     match t {
         Term::Var(v) => bound.contains(v),
-        Term::Compound(_) => {
-            let mut vs = Vec::new();
-            t.vars_into(&mut vs);
-            vs.iter().all(|v| bound.contains(v))
-        }
+        Term::Compound(_) => t.vars().iter().all(|v| bound.contains(v)),
         _ => true,
     }
 }
@@ -392,27 +388,10 @@ mod tests {
     #[test]
     fn an_atom_unbound_waits_for_one_that_joins() {
         let p = parse_program("h(X) :- a(X), c(Y), b(X, Y), d(Z).\n").unwrap();
-        let order = schedule_body(
-            &p.clauses[0].body,
-            &mut FxHashSet::default(),
-            |_| false,
-            Order::Join,
-        );
-        assert_eq!(order, Ok(vec![0, 2, 1, 3]));
-        let order = schedule_body(
-            &p.clauses[0].body,
-            &mut FxHashSet::default(),
-            |_| false,
-            Order::Source,
-        );
-        assert_eq!(order, Ok(vec![0, 1, 2, 3]));
-        let order = schedule_body(
-            &p.clauses[0].body,
-            &mut FxHashSet::default(),
-            |_| false,
-            Order::From(2),
-        );
-        assert_eq!(order, Ok(vec![2, 0, 1, 3]));
+        let order = |o| schedule_body(&p.clauses[0].body, &mut FxHashSet::default(), |_| false, o);
+        assert_eq!(order(Order::Join), Ok(vec![0, 2, 1, 3]));
+        assert_eq!(order(Order::Source), Ok(vec![0, 1, 2, 3]));
+        assert_eq!(order(Order::From(2)), Ok(vec![2, 0, 1, 3]));
     }
 
     /// `memberchk/2` waits for the element an atom written before it

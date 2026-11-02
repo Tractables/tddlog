@@ -119,11 +119,7 @@ fn usable(rule: &Clause, adornment: &Adornment) -> Option<Adornment> {
     }
     let read = |v: &String| {
         rule.body.iter().any(|l| match l {
-            Literal::Is(Term::Var(w), e) if w == v => {
-                let mut vs = Vec::new();
-                e.vars_into(&mut vs);
-                vs.contains(v)
-            }
+            Literal::Is(Term::Var(w), e) if w == v => e.vars().contains(v),
             other => literal_vars(other).contains(v),
         })
     };
@@ -194,9 +190,7 @@ fn given<'a>(
         literals
             && !head.negated
             && schedule_body(&rule.body, &mut bound, |_| false, Order::Source).is_ok()
-            && literal_vars(&Literal::Pos(head.atom.clone()))
-                .iter()
-                .all(|v| bound.contains(v))
+            && head.atom.vars().iter().all(|v| bound.contains(v))
     };
     let switches: FxHashSet<Sig> = norm.switches.keys().map(|(n, k)| (&**n, *k)).collect();
     let mut given: FxHashSet<Sig> = norm
@@ -242,9 +236,7 @@ fn bearing(
 ) -> Vec<usize> {
     let mut reached: FxHashSet<String> = FxHashSet::default();
     for t in args {
-        let mut vs = Vec::new();
-        t.vars_into(&mut vs);
-        reached.extend(vs);
+        reached.extend(t.vars());
     }
     let vars: Vec<Vec<String>> = prefix.iter().map(|&j| literal_vars(&body[j])).collect();
     let mut kept = vec![false; prefix.len()];
@@ -382,7 +374,7 @@ fn negation_bounds(norm: &NormProgram, given: &FxHashSet<Sig>) -> bool {
         }
     }
     let known =
-        |t: &Term, outside: &FxHashSet<String>| term_vars(t).iter().all(|v| outside.contains(v));
+        |t: &Term, outside: &FxHashSet<String>| t.vars().iter().all(|v| outside.contains(v));
     // The variables of `rule`, of the component `k`, whose values atoms
     // outside `k` give: those of its atoms outside `k`, and those an `is`,
     // a unification or a built-in computes from them.
@@ -392,25 +384,25 @@ fn negation_bounds(norm: &NormProgram, given: &FxHashSet<Sig>) -> bool {
             if let Literal::Pos(a) = l
                 && of(a) != Some(k)
             {
-                a.args.iter().for_each(|t| outside.extend(term_vars(t)));
+                outside.extend(a.vars());
             }
         }
         loop {
             let before = outside.len();
             for l in &rule.body {
                 match l {
-                    Literal::Is(x, e) if known(e, &outside) => outside.extend(term_vars(x)),
+                    Literal::Is(x, e) if known(e, &outside) => outside.extend(x.vars()),
                     Literal::Cmp(CmpOp::Eq, a, b) => {
                         if known(a, &outside) {
-                            outside.extend(term_vars(b));
+                            outside.extend(b.vars());
                         } else if known(b, &outside) {
-                            outside.extend(term_vars(a));
+                            outside.extend(a.vars());
                         }
                     }
                     Literal::Builtin(b, args, false) => {
                         let given: Vec<bool> = args.iter().map(|t| known(t, &outside)).collect();
                         if b.runs(&given) {
-                            args.iter().for_each(|t| outside.extend(term_vars(t)));
+                            args.iter().for_each(|t| outside.extend(t.vars()));
                         }
                     }
                     _ => {}
@@ -527,13 +519,6 @@ fn step(body: &[Literal], vh: &str, vb: &str) -> Option<i64> {
             _ => None,
         })
         .filter(|&d| d != 0)
-}
-
-/// The variables of `t`.
-fn term_vars(t: &Term) -> Vec<String> {
-    let mut vs = Vec::new();
-    t.vars_into(&mut vs);
-    vs
 }
 
 /// A negation a demand rule does not read: the demand's predicate and the
@@ -732,9 +717,7 @@ impl Demand<'_> {
             // names: m_pattern(bound args) :- driver(vars). The pattern's
             // variables are the driver's arguments, so all of them are
             // bound.
-            let bound: FxHashSet<String> = literal_vars(&Literal::Pos(driver.clone()))
-                .into_iter()
-                .collect();
+            let bound: FxHashSet<String> = driver.vars().into_iter().collect();
             let body = vec![Literal::Pos(driver.clone())];
             self.seed(pattern, self.adorn(pattern, &bound), body, w);
         }
@@ -840,32 +823,14 @@ impl Demand<'_> {
                 _ => None,
             };
             if let Some(a) = body_atom {
-                if self.derived(a) {
-                    let sub = self.adorn(a, &bound_so_far);
-                    let args = bound_args(a, &sub);
-                    let kept = bearing(&rule.body, &prefix, &args, &bound);
-                    let mut body = Vec::with_capacity(1 + kept.len());
-                    body.push(guard.clone());
-                    body.extend(kept.iter().map(|&j| rule.body[j].clone()));
-                    let demand = magic_atom(a, &sub);
-                    if !unread.is_empty() {
-                        let all: Vec<usize> = prefix.iter().chain(&unread).copied().collect();
-                        for j in bearing(&rule.body, &all, &args, &bound) {
-                            if let Literal::Neg(n) = &rule.body[j]
-                                && unread.contains(&j)
-                            {
-                                w.unread.push((
-                                    (demand.name.clone(), demand.args.len()),
-                                    (n.name.clone(), n.args.len()),
-                                ));
-                            }
-                        }
-                    }
-                    w.out.rules.push(Clause::rule(demand, body, u32::MAX));
-                    w.work.push((a.clone(), sub));
-                } else if self.given.contains(&a.signature()) {
-                    w.work.push((a.clone(), Vec::new()));
-                }
+                self.emit_body_demand(
+                    rule,
+                    a,
+                    (&bound_so_far, &bound),
+                    (&prefix, &unread),
+                    &guard,
+                    w,
+                );
             }
             // Positive literals and deterministic filters join the prefix,
             // and so do negations of given predicates, whose atoms are all
@@ -901,6 +866,43 @@ impl Demand<'_> {
             group: rule.group,
         });
         Some(())
+    }
+
+    fn emit_body_demand(
+        &self,
+        rule: &Clause,
+        a: &Atom,
+        (bound_so_far, bound): (&FxHashSet<String>, &FxHashSet<String>),
+        (prefix, unread): (&[usize], &[usize]),
+        guard: &Literal,
+        w: &mut Written,
+    ) {
+        if self.derived(a) {
+            let sub = self.adorn(a, bound_so_far);
+            let args = bound_args(a, &sub);
+            let kept = bearing(&rule.body, prefix, &args, bound);
+            let mut body = Vec::with_capacity(1 + kept.len());
+            body.push(guard.clone());
+            body.extend(kept.iter().map(|&j| rule.body[j].clone()));
+            let demand = magic_atom(a, &sub);
+            if !unread.is_empty() {
+                let all: Vec<usize> = prefix.iter().chain(unread).copied().collect();
+                for j in bearing(&rule.body, &all, &args, bound) {
+                    if let Literal::Neg(n) = &rule.body[j]
+                        && unread.contains(&j)
+                    {
+                        w.unread.push((
+                            (demand.name.clone(), demand.args.len()),
+                            (n.name.clone(), n.args.len()),
+                        ));
+                    }
+                }
+            }
+            w.out.rules.push(Clause::rule(demand, body, u32::MAX));
+            w.work.push((a.clone(), sub));
+        } else if self.given.contains(&a.signature()) {
+            w.work.push((a.clone(), Vec::new()));
+        }
     }
 }
 

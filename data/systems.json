@@ -9,6 +9,22 @@
       "cite": null,
       "link": "https://github.com/Tractables/tddlog"
     },
+    "alea-tddlog": {
+      "about": "Alea.jl's front end with tddlog's inference: Alea.jl runs the program up to the Boolean circuit it builds, and tddlog compiles that circuit, written as a ProbLog program by alea2problog.jl, in place of Alea.jl's BDDs. Against Alea.jl it differs only in the inference.",
+      "version": "Alea.jl at revision cf5e5b8 on Julia 1.11.9, then tddlog {version}, linked statically",
+      "settings": "tddlog's default strategy (auto) on the circuit. Its time is Alea.jl's run up to the circuit and the circuit's writing, timed warm as Alea.jl's own record is, and tddlog's on the circuit. Every other system that reads the circuit, or a translation of it, pays the same time for it.",
+      "notgiven": "",
+      "cite": null,
+      "link": "https://github.com/Tractables/tddlog"
+    },
+    "roulette-tddlog": {
+      "about": "Roulette's front end with tddlog's inference: Roulette runs the program up to the formulas of its queries, and tddlog compiles them, written as a ProbLog program by roulette2problog.rkt, in place of Roulette's BDDs. Against Roulette it differs only in the inference.",
+      "version": "Roulette's upstream roulette-lib at revision 60f77cb on Racket 9.3, then tddlog {version}, linked statically",
+      "settings": "tddlog's default strategy (auto) on the exported program. Its time is Roulette's run up to the export, timed after its warm-up as Roulette's own record is, and tddlog's on the program.",
+      "notgiven": "",
+      "cite": null,
+      "link": "https://github.com/Tractables/tddlog"
+    },
     "problog": {
       "about": "The reference implementation of ProbLog: it grounds the program and compiles it into a d-DNNF or an SDD.",
       "version": "ProbLog 2.3.0",
@@ -99,8 +115,8 @@
     },
     "roulette": {
       "about": "A discrete probabilistic language embedded in Racket, compiled into BDDs through Rosette's symbolic evaluation.",
-      "version": "Roulette of its PLDI 2025 artifact (revision 54d6185) on Racket 8.16",
-      "settings": "Dice programs through dice2roulette.py. Three forms, the artifact's (rsdd), without its complement (nocomplement, on the translated programs) and, on a network that observes nothing, the network built by the artifact's bayes.rkt from a BIF file (bayes); each instance counts the fastest. Its time is the one the artifact's own time reports, without Racket's start-up.",
+      "version": "neuppl/roulette's main (revision 60f77cb) on Racket 9.3",
+      "settings": "Its PLDI 2025 artifact's programs in its current language (only the #lang line and the query forms change), and Dice programs through dice2roulette.py. Two forms, its query (rsdd) and, on a network that observes nothing, the network built by the artifact's bayes.rkt from a BIF file (bayes); each instance counts the fastest. Its time is its program's run once Racket and the program's modules are loaded.",
       "notgiven": "",
       "cite": {"authors": "Cameron Moy, Jack Czenszak, John M. Li, Brianna Marshall and Steven Holtzen", "title": "Roulette: A language for expressive, exact, and efficient discrete probabilistic programming", "venue": "PLDI", "year": 2025, "doi": "10.1145/3729334"},
       "link": "https://doi.org/10.5281/zenodo.15253254"

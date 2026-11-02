@@ -319,14 +319,11 @@ impl SumOut {
     /// the facts' weights there (`Engine::embed_over`, which places
     /// marginal levels), the other moved. Refused, each comes back on the
     /// scope it was left on.
-    #[allow(clippy::too_many_arguments)]
     fn place_both(
         &self,
         backend: &TddBackend,
-        fa: Formula,
-        first: Option<&[VarId]>,
-        fb: Formula,
-        second: Option<&[VarId]>,
+        (fa, first): (Formula, Option<&[VarId]>),
+        (fb, second): (Formula, Option<&[VarId]>),
         scope: &VtreeScope,
         store: &WeightStore,
     ) -> Result<(Tdd, Tdd), Refused> {
@@ -340,6 +337,15 @@ impl SumOut {
         let place =
             |f: Formula, map: Option<&[VarId]>| -> Result<Formula, Box<(CompileError, Formula)>> {
                 let (t, own) = f;
+                if t.weights().is_none() {
+                    return backend
+                        .embed_moving(t, &own, scope, map)
+                        .map(|g| (g, scope.clone()))
+                        .map_err(|refused| {
+                            let (e, t) = *refused;
+                            Box::new((e, (t, own)))
+                        });
+                }
                 if own.same(scope) {
                     return Ok((t, own));
                 }
@@ -350,24 +356,14 @@ impl SumOut {
                         Err(e) => return Err(Box::new((e, (t, own)))),
                     },
                 };
-                if t.weights().is_some() {
-                    match backend.engine.embed_over(
-                        &t,
-                        scope.vtree(),
-                        |v| map[v.0 as usize - 1],
-                        Some(store.empty_like()),
-                    ) {
-                        Ok((g, _)) => Ok((g, scope.clone())),
-                        Err(e) => Err(Box::new((e.into(), (t, own)))),
-                    }
-                } else {
-                    match backend
-                        .engine
-                        .embed_moving(t, scope.vtree(), |v| map[v.0 as usize - 1])
-                    {
-                        Ok((g, _)) => Ok((g, scope.clone())),
-                        Err(refused) => Err(Box::new((refused.error.into(), (refused.tdd, own)))),
-                    }
+                match backend.engine.embed_over(
+                    &t,
+                    scope.vtree(),
+                    |v| map[v.0 as usize - 1],
+                    Some(store.empty_like()),
+                ) {
+                    Ok((g, _)) => Ok((g, scope.clone())),
+                    Err(e) => Err(Box::new((e.into(), (t, own)))),
                 }
             };
         let unswap = |x: Formula, y: Formula| if swapped { (y, x) } else { (x, y) };
@@ -397,15 +393,13 @@ impl SumOut {
     pub(super) fn and_onto(
         &mut self,
         backend: &TddBackend,
-        fa: Formula,
-        first: Option<&[VarId]>,
-        fb: Formula,
-        second: Option<&[VarId]>,
+        (fa, first): (Formula, Option<&[VarId]>),
+        (fb, second): (Formula, Option<&[VarId]>),
         scope: &VtreeScope,
     ) -> Result<Tdd, Refused> {
         self.weighted += 1;
         let store = self.store_for(scope);
-        let (a, b) = self.place_both(backend, fa, first, fb, second, scope, &store)?;
+        let (a, b) = self.place_both(backend, (fa, first), (fb, second), scope, &store)?;
         backend.engine.and_restoring(a, b).map_err(|refused| {
             let (f, g) = (refused.f.into_owned(), refused.g.into_owned());
             Box::new((
@@ -419,19 +413,16 @@ impl SumOut {
     /// The conjunction on `scope` with `targets` summed out as it is built
     /// (`Engine::and_marginalizing`), under the facts' weights; refused,
     /// both operands come back on `scope` as they were placed.
-    #[allow(clippy::too_many_arguments)]
     pub(super) fn and_marginalizing(
         &mut self,
         backend: &TddBackend,
-        fa: Formula,
-        first: Option<&[VarId]>,
-        fb: Formula,
-        second: Option<&[VarId]>,
+        (fa, first): (Formula, Option<&[VarId]>),
+        (fb, second): (Formula, Option<&[VarId]>),
         scope: &VtreeScope,
         targets: &[VtreeIdx],
     ) -> Result<Tdd, Refused> {
         let store = self.store_for(scope);
-        let (mut a, b) = self.place_both(backend, fa, first, fb, second, scope, &store)?;
+        let (mut a, b) = self.place_both(backend, (fa, first), (fb, second), scope, &store)?;
         self.summing += 1;
         if a.weights().is_none()
             && b.weights().is_none()

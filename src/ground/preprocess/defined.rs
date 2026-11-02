@@ -211,12 +211,17 @@ pub(in crate::ground) fn eliminate_defined(gp: &mut GroundProgram) -> Option<Def
     if stats.eliminated == 0 && stats.implied.implied == 0 {
         return Some(stats);
     }
+    apply_defined(gp, &cnf, &kept, &resolvents);
+    Some(stats)
+}
+
+fn apply_defined(gp: &mut GroundProgram, cnf: &Cnf, kept: &[bool], resolvents: &[Vec<Lit>]) {
     let mut dead_rule = vec![false; gp.rules.len()];
     let mut dead_observation = vec![false; gp.evidence.len()];
     let dropped = cnf
         .origin
         .iter()
-        .zip(&kept)
+        .zip(kept)
         .filter_map(|(&o, &kept)| (!kept).then_some(o));
     for o in dropped.chain(cnf.redundant.iter().copied()) {
         match o {
@@ -224,16 +229,10 @@ pub(in crate::ground) fn eliminate_defined(gp: &mut GroundProgram) -> Option<Def
             Origin::Observation(k) => dead_observation[k] = true,
         }
     }
-    let mut k = 0;
-    gp.rules.retain(|_| {
-        k += 1;
-        !dead_rule[k - 1]
-    });
-    let mut k = 0;
-    gp.evidence.retain(|_| {
-        k += 1;
-        !dead_observation[k - 1]
-    });
+    let mut dead = dead_rule.iter();
+    gp.rules.retain(|_| !*dead.next().unwrap());
+    let mut dead = dead_observation.iter();
+    gp.evidence.retain(|_| !*dead.next().unwrap());
     for (k, clause) in resolvents.iter().enumerate() {
         let h = gp.atoms.len() as AtomId;
         let atom = Atom::new(RESOLVENT_NAME, Args::One(Term::Int(k as i64)));
@@ -247,7 +246,6 @@ pub(in crate::ground) fn eliminate_defined(gp: &mut GroundProgram) -> Option<Def
         gp.rules.push(GroundRule::new(h, body));
         gp.evidence.push((atom, Some(h), false));
     }
-    Some(stats)
 }
 
 /// The CNF of `gp`, a CNF over its facts whose copies are `copy`: a clause

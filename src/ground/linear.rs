@@ -80,12 +80,13 @@ struct Plan<'a> {
     sources: Vec<Vec<Term>>,
 }
 
+fn bound_args<'a>(args: &'a [Term], pass: &'a [bool]) -> impl Iterator<Item = &'a Term> + 'a {
+    args.iter().zip(pass).filter(|(_, p)| !**p).map(|(t, _)| t)
+}
+
 impl Plan<'_> {
     fn bound<'a>(&'a self, args: &'a [Term]) -> impl Iterator<Item = &'a Term> + 'a {
-        args.iter()
-            .zip(&self.pass)
-            .filter(|(_, p)| !**p)
-            .map(|(t, _)| t)
+        bound_args(args, &self.pass)
     }
 
     fn reach(&self, from: &[Term], to: impl Iterator<Item = Term>) -> Atom {
@@ -215,13 +216,7 @@ fn plan<'a>(
         if a.signature() != *sig {
             return true;
         }
-        let bound: Vec<Term> = a
-            .args
-            .iter()
-            .zip(&pass)
-            .filter(|(_, p)| !**p)
-            .map(|(t, _)| t.clone())
-            .collect();
+        let bound: Vec<Term> = bound_args(&a.args, &pass).cloned().collect();
         if bound.iter().any(Term::is_var) {
             return false;
         }

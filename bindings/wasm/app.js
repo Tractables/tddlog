@@ -270,9 +270,10 @@ function benchPath(value) {
 }
 
 // The file tddlog read of an instance of the results: the one .pl file of
-// the tab tddlog is a reader of. Else why there is none to open.
+// the tab tddlog (or a pipeline, Alea.jl+tddlog) is a reader of. Else why
+// there is none to open.
 function tddlogFile(instance) {
-  const files = (instance.tabs ?? []).filter((tab) => tab.readers.includes("tddlog"))
+  const files = (instance.tabs ?? []).filter((tab) => tab.readers.some((r) => r === "tddlog" || r.endsWith("+tddlog")))
     .flatMap((tab) => tab.files.filter((file) => file.name.endsWith(".pl")).map((file) => ({ tab, file })));
   if (files.length === 1) return files[0];
   return {
@@ -299,8 +300,8 @@ function holdBack(bytes, native) {
 function nativeRun(records, suite, instance) {
   const s = records.flatMap((r) => r.families.flatMap((f) => f.suites)).find((x) => x.key === suite);
   const row = s?.instances.find(([name]) => name === instance);
-  const own = s === undefined ? -1 : s.systems.indexOf("tddlog");
-  return row === undefined || own === -1 ? undefined : row[own + 1];
+  const own = s === undefined ? [] : tddlogColumns(s);
+  return row === undefined || !own.length ? undefined : own.map((i) => row[i + 1]).find((v) => v !== null) ?? null;
 }
 
 // The text of a file the site keeps on its own, gzipped where its name ends
@@ -362,16 +363,18 @@ function records() {
 }
 
 // The release run's instances, those tddlog answers and those it alone
-// answers.
+// answers (tddlog alone or in a pipeline, Alea.jl+tddlog: its columns
+// `tddlog` and `*-tddlog`).
+const tddlogColumns = (suite) => suite.systems.flatMap((x, i) => (x === "tddlog" || x.endsWith("-tddlog") ? [i] : []));
 async function glance() {
   let all = 0, answered = 0, alone = 0;
   for (const suite of (await records()).flatMap((p) => p.families.flatMap((f) => f.suites))) {
-    const own = suite.systems.indexOf("tddlog");
+    const own = tddlogColumns(suite);
     for (const [, ...times] of suite.instances) {
       all += 1;
-      if (typeof times[own] !== "number") continue;
+      if (!own.some((i) => typeof times[i] === "number")) continue;
       answered += 1;
-      if (times.every((t, i) => i === own || typeof t !== "number")) alone += 1;
+      if (times.every((t, i) => own.includes(i) || typeof t !== "number")) alone += 1;
     }
   }
   if (all === 0) return;

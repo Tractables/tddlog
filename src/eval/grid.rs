@@ -57,7 +57,7 @@
 
 use tididi::diagram::{ChildDecoder, ChildPair, ChildRef, ImplicitLevel, TddLevel};
 
-use super::kernel::{Kernel, LANES, LaneSet};
+use super::kernel::{Kernel, LANES, LaneSet, cell_places};
 use super::{Range, Value};
 
 /// The bytes of a cache line.
@@ -460,60 +460,8 @@ impl Grid {
             offsets.iter().all(|&o| places.next() == o)
         });
         let across = digits(nodes, |i| stored.of_idx(i).first().map(pair))?;
-        // The least offset on each side, and every predicted slot's range.
-        let low = offsets
-            .iter()
-            .fold((0, 0), |(l, r), &(a, b)| (l.min(a), r.min(b)));
-        let high = offsets
-            .iter()
-            .fold((0, 0), |(l, r), &(a, b)| (l.max(a), r.max(b)));
-        let reach = |side: fn(&(isize, isize)) -> isize, sign: isize| -> isize {
-            across
-                .iter()
-                .map(|d| (side(&d.step) * sign).max(0) * (d.radix as isize - 1))
-                .sum()
-        };
-        let lows = (
-            at.0 + low.0 - reach(|s| s.0, -1),
-            at.1 + low.1 - reach(|s| s.1, -1),
-        );
-        let highs = (
-            at.0 + high.0 + reach(|s| s.0, 1),
-            at.1 + high.1 + reach(|s| s.1, 1),
-        );
-        if lows.0 < 0 || lows.1 < 0 || highs.0 >= 1 << 31 || highs.1 >= 1 << 31 {
+        if !check_grid_words(level, &across, at, &offsets) {
             return None;
-        }
-        let word = |l: isize, r: isize| l as u64 | (r as u64) << 32;
-        let pattern: Vec<u64> = offsets
-            .iter()
-            .map(|&(a, b)| word(a - low.0, b - low.1))
-            .collect();
-        // The fastest node digit steps the base word in the loop, signed
-        // steps as wrapping words: every base lies in `0..2^31` on both
-        // sides, so no step borrows across the halves.
-        let (fast, slow) = across.split_first().map_or(
-            (
-                Digit {
-                    radix: 1,
-                    step: (0, 0),
-                },
-                &[][..],
-            ),
-            |(f, s)| (*f, s),
-        );
-        let step = (fast.step.0 as u64).wrapping_add((fast.step.1 as u64) << 32);
-        let mut bases = Odometer::new(slow, (at.0 + low.0, at.1 + low.1));
-        for run in stored.nodes().chunks_exact(fast.radix) {
-            let (bl, br) = bases.next();
-            let mut base = word(bl, br);
-            for node in run {
-                let pairs = stored.of(node);
-                if pairs.len() != k || !same_words(pairs, base, &pattern) {
-                    return None;
-                }
-                base = base.wrapping_add(step);
-            }
         }
         let (mut dims, list) = match within {
             Some(within) => (
@@ -701,9 +649,7 @@ impl Grid {
                             p,
                             first,
                             last.as_deref_mut(),
-                            o,
-                            a,
-                            b,
+                            (o, a, b),
                         );
                     }
                     if !twos.is_empty() {
@@ -713,13 +659,11 @@ impl Grid {
                             p,
                             first,
                             last.as_deref_mut(),
-                            o,
-                            a,
-                            b,
+                            (o, a, b),
                         );
                     }
                     if !one.is_empty() {
-                        sums::<V, 1, SKIP>(one, &plan.offsets, p, first, last, o, a, b);
+                        sums::<V, 1, SKIP>(one, &plan.offsets, p, first, last, (o, a, b));
                     }
                 }
             },
@@ -877,7 +821,6 @@ impl Grid {
 ///
 /// Every slot the cells name at every offset lies within the arrays, and
 /// the cells name distinct slots of `out`.
-#[allow(clippy::too_many_arguments)]
 #[inline(always)]
 unsafe fn sums<V: Value, const N: usize, const SKIP: bool>(
     cells: &[[isize; 3]],
@@ -885,9 +828,7 @@ unsafe fn sums<V: Value, const N: usize, const SKIP: bool>(
     p: [isize; 3],
     first: bool,
     last: Option<&mut Range>,
-    o: *mut V,
-    x: *const V,
-    y: *const V,
+    (o, x, y): (*mut V, *const V, *const V),
 ) {
     // SAFETY: the caller's.
     unsafe {
@@ -1342,17 +1283,7 @@ impl Grid {
         let work = self.work(pass, &steps, c);
         let mut inner: Vec<usize> = c.lanes.map(|l| l.dims().to_vec()).unwrap_or_default();
         inner.extend(c.tile);
-        let mut cells = vec![[0isize; 3]];
-        for &d in &inner {
-            let step = steps[d];
-            cells = (0..self.dims[d].radix as isize)
-                .flat_map(|k| {
-                    cells
-                        .iter()
-                        .map(move |p| [0, 1, 2].map(|a| p[a] + k * step[a]))
-                })
-                .collect();
-        }
+        let cells = cell_places(&self.dims, &steps, &inner);
         let outer: Vec<usize> = order[inner.len() + c.summed.len()..].to_vec();
         let offsets = self.summed_offsets(pass, &steps, c.summed);
         let kernel = c.lanes.and_then(|l| {
@@ -1695,6 +1626,75 @@ fn digits(n: usize, base: impl Fn(usize) -> Option<(isize, isize)>) -> Option<Ve
         period *= radix;
     }
     Some(digits)
+}
+
+/// Whether every predicted slot lies in `0..2^31` and every node of `level`
+/// matches the predicted pairs.
+fn check_grid_words(
+    level: &TddLevel,
+    across: &[Digit],
+    at: (isize, isize),
+    offsets: &[(isize, isize)],
+) -> bool {
+    let Some(stored) = level.stored() else {
+        return false;
+    };
+    let low = offsets
+        .iter()
+        .fold((0, 0), |(l, r), &(a, b)| (l.min(a), r.min(b)));
+    let high = offsets
+        .iter()
+        .fold((0, 0), |(l, r), &(a, b)| (l.max(a), r.max(b)));
+    let reach = |side: fn(&(isize, isize)) -> isize, sign: isize| -> isize {
+        across
+            .iter()
+            .map(|d| (side(&d.step) * sign).max(0) * (d.radix as isize - 1))
+            .sum()
+    };
+    let lows = (
+        at.0 + low.0 - reach(|s| s.0, -1),
+        at.1 + low.1 - reach(|s| s.1, -1),
+    );
+    let highs = (
+        at.0 + high.0 + reach(|s| s.0, 1),
+        at.1 + high.1 + reach(|s| s.1, 1),
+    );
+    if lows.0 < 0 || lows.1 < 0 || highs.0 >= 1 << 31 || highs.1 >= 1 << 31 {
+        return false;
+    }
+    let word = |l: isize, r: isize| l as u64 | (r as u64) << 32;
+    let pattern: Vec<u64> = offsets
+        .iter()
+        .map(|&(a, b)| word(a - low.0, b - low.1))
+        .collect();
+    // The fastest node digit steps the base word in the loop, signed
+    // steps as wrapping words: every base lies in `0..2^31` on both
+    // sides, so no step borrows across the halves.
+    let (fast, slow) = across.split_first().map_or(
+        (
+            Digit {
+                radix: 1,
+                step: (0, 0),
+            },
+            &[][..],
+        ),
+        |(f, s)| (*f, s),
+    );
+    let step = (fast.step.0 as u64).wrapping_add((fast.step.1 as u64) << 32);
+    let mut bases = Odometer::new(slow, (at.0 + low.0, at.1 + low.1));
+    let k = offsets.len();
+    for run in stored.nodes().chunks_exact(fast.radix) {
+        let (bl, br) = bases.next();
+        let mut base = word(bl, br);
+        for node in run {
+            let pairs = stored.of(node);
+            if pairs.len() != k || !same_words(pairs, base, &pattern) {
+                return false;
+            }
+            base = base.wrapping_add(step);
+        }
+    }
+    true
 }
 
 #[cfg(test)]

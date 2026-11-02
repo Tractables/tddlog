@@ -94,6 +94,16 @@ pub fn assert_answers<S: AsRef<str>>(
     }
 }
 
+/// Asserts that `got` are the `(atom, probability)` pairs `expected`, in
+/// order, each within `tolerance`; `what` says which run failed.
+pub fn assert_close(what: &str, got: &[(String, f64)], expected: &[(&str, f64)], tolerance: f64) {
+    assert_eq!(got.len(), expected.len(), "{what}: {got:?}");
+    for ((a, p), (b, q)) in got.iter().zip(expected) {
+        assert_eq!(a, b, "{what}");
+        assert!((p - q).abs() < tolerance, "{what}: {a} = {p} against {q}");
+    }
+}
+
 /// Asserts that `results` are the probabilities `expected`, in order, each
 /// within `tolerance`; `what` says which run failed.
 pub fn assert_probabilities(what: &str, results: &[QueryResult], expected: &[f64], tolerance: f64) {

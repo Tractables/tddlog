@@ -211,12 +211,13 @@ fn partition_offset(logs: &[f64]) -> f64 {
 /// table in that order; `None` for another network. A function that is a
 /// table of two of its variables, an identity say, takes the child a
 /// matching of functions to variables gives it.
-#[allow(clippy::type_complexity)]
+type ConditionalTable = (Vec<usize>, Vec<f64>);
+
 fn conditional_tables(
     sizes: &[usize],
     scopes: &[Vec<usize>],
     tables: &[Vec<f64>],
-) -> Option<Vec<(Vec<usize>, Vec<f64>)>> {
+) -> Option<Vec<ConditionalTable>> {
     let n = sizes.len();
     if scopes.len() != n {
         return None;
@@ -333,33 +334,9 @@ fn conditional_tables(
     }
     // The child relation is acyclic: a depth-first walk to the parents
     // meets no variable on its own path.
-    let mut state = vec![0u8; n]; // 0 unseen, 1 on the path, 2 done
-    for root in 0..n {
-        if state[root] != 0 {
-            continue;
-        }
-        state[root] = 1;
-        let mut stack = vec![(root, 0usize)];
-        while let Some((v, next)) = stack.last_mut() {
-            let parents = &out[*v].0[..out[*v].0.len() - 1];
-            if *next == parents.len() {
-                state[*v] = 2;
-                stack.pop();
-                continue;
-            }
-            let u = parents[*next];
-            *next += 1;
-            match state[u] {
-                1 => return None,
-                0 => {
-                    state[u] = 1;
-                    stack.push((u, 0));
-                }
-                _ => {}
-            }
-        }
-    }
-    Some(out)
+    super::parent_postorder(n, |v| &out[v].0[..out[v].0.len() - 1])
+        .1
+        .then_some(out)
 }
 
 /// The colour symmetry of a Markov network, broken. In a network whose
@@ -376,12 +353,13 @@ fn conditional_tables(
 /// Returns the functions with v1's and v2's unary tables added and the
 /// table of v3 given v2 where there is a v3, whose Z is the network's
 /// divided by k; `None` for another network.
-#[allow(clippy::type_complexity)]
+type BrokenSymmetry = (Vec<Vec<usize>>, Vec<Vec<f64>>);
+
 fn colour_symmetry(
     sizes: &[usize],
     scopes: &[Vec<usize>],
     tables: &[Vec<f64>],
-) -> Option<(Vec<Vec<usize>>, Vec<Vec<f64>>)> {
+) -> Option<BrokenSymmetry> {
     let k = *sizes.first()?;
     if k < 2 || sizes.iter().any(|&c| c != k) || scopes.is_empty() {
         return None;
@@ -471,19 +449,11 @@ pub(super) fn evid(text: &str, network: &Network) -> Result<Vec<(usize, usize)>,
     if count.is_none_or(|c| tokens.len() != 1 + 2 * c) {
         return Err("evidence: not a UAI evidence file of one sample".into());
     }
-    let mut given: Vec<Option<usize>> = vec![None; network.names.len()];
-    for pair in tokens[1..].chunks(2) {
-        let v = network.variable(&format!("x{}", pair[0]))?;
-        let u = network.value(v, pair[1])?;
-        if given[v].replace(u).is_some() {
-            return Err(format!("evidence: x{} observed twice", pair[0]));
-        }
-    }
-    Ok(given
-        .into_iter()
-        .enumerate()
-        .filter_map(|(v, u)| Some((v, u?)))
-        .collect())
+    network.observations(
+        tokens[1..]
+            .chunks(2)
+            .map(|pair| (format!("x{}", pair[0]), pair[1])),
+    )
 }
 
 #[cfg(test)]

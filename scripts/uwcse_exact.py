@@ -5,7 +5,7 @@ where ProbLog, PITA, Ace and Merlin do not finish (uwcse2560).
 usage: uwcse_exact.py program.pl [--precision N]
 
 The program is cplint's uwcse3s with one course c1, one professor p1 and
-N students (gen_uwcse.py N). The method shares nothing with tddlog's: it
+N students (gen_uwcse.py N, with its argument in place). The method shares nothing with tddlog's: it
 is lifted. Given the course's level and the professor's position, the
 students are independent and alike; they meet only in three disjunctions
 over all of them, aux1_prof_nb_publications(p1) (some advisee with three
@@ -115,10 +115,11 @@ def main():
     ap.add_argument('--precision', type=int, default=6)
     a = ap.parse_args()
     text = open(a.program).read()
-    n = len(re.findall(r'^student\(s\d+\)\.$', text, re.M))
+    n = [int(m) for m in re.findall(r'^student\(S\) :- between\(1,(\d+),S\)\.$', text, re.M)]
+    n = n[0] if len(n) == 1 else 0   # (gen_uwcse.py N --template, its place $1 bound to N)
     src = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'cplint', 'uwcse3s.pl')
-    model = [x for x in source_tree.program(src).splitlines() if not x.startswith('student(s')]
-    read = [x for x in text.splitlines() if not x.startswith('%') and not x.startswith('student(s')]
+    model = [x for x in source_tree.program(src).splitlines() if not x.startswith('student(')]
+    read = [x for x in text.splitlines() if not x.startswith(('%', 'student('))]
     if n == 0 or read != model:
         sys.exit(f"uwcse_exact.py: {a.program} is not gen_uwcse.py's program")
     missing = [c for c in constants() if not re.search(rf'(?<![0-9.]){re.escape(c)}::', text)]

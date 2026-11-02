@@ -225,6 +225,16 @@ fn key(groups: &[Group], g: u32) -> u64 {
 /// their sum.
 const SHORT: f64 = 1e-6;
 
+fn live_body<'a>(body: &'a [GLit], certain: &'a [bool]) -> Option<impl Iterator<Item = GLit> + 'a> {
+    if body
+        .iter()
+        .any(|l| !l.is_positive() && certain[l.atom() as usize])
+    {
+        return None;
+    }
+    Some(body.iter().copied().filter(|l| !certain[l.atom() as usize]))
+}
+
 impl Merge {
     /// Take the bodies of the rules of `atoms`, without the certain atoms
     /// they read and without the bodies that read one negatively.
@@ -239,14 +249,9 @@ impl Merge {
         self.bodies.clear();
         for &a in atoms {
             for &ri in &by_head[a as usize] {
-                let body = &gp.rules[ri].body;
-                if body
-                    .iter()
-                    .any(|l| !l.is_positive() && certain[l.atom() as usize])
-                {
-                    continue;
+                if let Some(live) = live_body(&gp.rules[ri].body, certain) {
+                    self.push_body(live);
                 }
-                self.push_body(body.iter().copied().filter(|l| !certain[l.atom() as usize]));
             }
         }
     }
@@ -267,21 +272,15 @@ impl Merge {
         let (mut bodies, mut measure, mut empty) = (0usize, 0.0f64, false);
         for &ri in rules {
             let body = &gp.rules[ri].body;
-            if body
-                .iter()
-                .any(|l| !l.is_positive() && certain[l.atom() as usize])
-            {
+            let Some(live) = live_body(body, certain) else {
                 continue;
-            }
+            };
             if !body.is_sorted_by(|x, y| x < y) {
                 return None;
             }
-            let mut live = body
-                .iter()
-                .filter(|l| !certain[l.atom() as usize])
-                .peekable();
+            let mut live = live.peekable();
             empty |= live.peek().is_none();
-            measure += live.map(|&l| weight(&group_of, l)).product::<f64>();
+            measure += live.map(|l| weight(&group_of, l)).product::<f64>();
             bodies += 1;
         }
         if empty {

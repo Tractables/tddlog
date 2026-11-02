@@ -47,7 +47,7 @@ fn py_error(error: tddlog::Error) -> PyErr {
     match error {
         tddlog::Error::Options(_) => PyValueError::new_err(message),
         tddlog::Error::Parse(_) | tddlog::Error::Network(_) => ParseError::new_err(message),
-        tddlog::Error::Ground(_) => GroundingError::new_err(message),
+        tddlog::Error::Ground(_) | tddlog::Error::Cnf(_) => GroundingError::new_err(message),
         tddlog::Error::Vtree(_) | tddlog::Error::Compile(_) | tddlog::Error::Trials { .. } => {
             CompilationError::new_err(message)
         }
@@ -175,12 +175,14 @@ fn solve(
         .parse::<tddlog::Strategy>()
         .map_err(PyValueError::new_err)?;
     let read = tddlog::network::ReadOptions {
-        queries: match queries {
-            true => tddlog::network::Queries::All,
-            false => tddlog::network::Queries::None,
+        queries: if queries {
+            tddlog::network::Queries::All
+        } else {
+            tddlog::network::Queries::None
         },
         evidence: evidence.map(|e| format.evidence(e.as_bytes())),
         rescale: false,
+        whole: false,
         arguments: arguments.unwrap_or_default(),
     };
     let options = tddlog::Options {

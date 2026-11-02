@@ -50,18 +50,17 @@ impl Rows {
 
     /// The facts row `i` reads.
     pub(super) fn facts(&self, i: usize) -> &[AtomId] {
-        &self.facts[if i == 0 { 0 } else { self.fact_ends[i - 1] }..self.fact_ends[i]]
+        slice_at(&self.facts, &self.fact_ends, i)
     }
 
     /// The heads of the rules that read row `i`.
     fn heads(&self, i: usize) -> &[AtomId] {
-        &self.heads[if i == 0 { 0 } else { self.head_ends[i - 1] }..self.head_ends[i]]
+        slice_at(&self.heads, &self.head_ends, i)
     }
 
     /// The copies of context `x`, signed and sorted.
     pub(super) fn context_copies(&self, x: u32) -> &[(AtomId, bool)] {
-        let x = x as usize;
-        &self.contexts[if x == 0 { 0 } else { self.context_ends[x - 1] }..self.context_ends[x]]
+        slice_at(&self.contexts, &self.context_ends, x as usize)
     }
 
     pub(super) fn num_contexts(&self) -> usize {
@@ -72,6 +71,10 @@ impl Rows {
     fn copies(&self, i: usize) -> &[(AtomId, bool)] {
         self.context_copies(self.context[i])
     }
+}
+
+fn slice_at<'a, T>(items: &'a [T], ends: &[usize], i: usize) -> &'a [T] {
+    &items[if i == 0 { 0 } else { ends[i - 1] }..ends[i]]
 }
 
 /// A part of a group in [`nest`]: `Ok` with its rows, nested in a block of
@@ -215,8 +218,7 @@ pub(super) fn nest(
     let any_shared = mark_shared(rows, scratch, &members);
     let (roots, parts) = parts_of(rows, scratch, &members);
     if common.is_empty() && parts.len() == 1 {
-        let items: Vec<usize> = copies.iter().map(|&c| forest.leaf(c)).collect();
-        let acc = forest.balanced(&items);
+        let acc = forest.balanced_leaves(&copies);
         for c in copies {
             scratch.place(c);
         }
@@ -244,8 +246,7 @@ pub(super) fn nest(
         };
         let mut items: Vec<Part> = items.into_iter().map(|(_, _, item)| item).collect();
         items.sort_unstable_by_key(first_row);
-        let leaves: Vec<usize> = bottom.iter().map(|&c| forest.leaf(c)).collect();
-        let below = forest.balanced(&leaves);
+        let below = forest.balanced_leaves(&bottom);
         for c in bottom {
             scratch.place(c);
         }
@@ -262,8 +263,7 @@ pub(super) fn nest(
         };
         return spine(forest, rows, scratch, &hoisted, &members, acc);
     }
-    let leaves: Vec<usize> = bottom.iter().map(|&c| forest.leaf(c)).collect();
-    let mut acc = forest.balanced(&leaves);
+    let mut acc = forest.balanced_leaves(&bottom);
     for c in bottom {
         scratch.place(c);
     }
@@ -325,24 +325,16 @@ fn spine(
     scratch: &mut NestScratch,
     facts: &[AtomId],
     readers: &[usize],
-    mut acc: Option<usize>,
+    acc: Option<usize>,
 ) -> Option<usize> {
     if let Some(below) = acc
         && !facts.is_empty()
         && one_context(rows, &mut scratch.mark, &mut scratch.seen, facts, readers)
     {
-        let leaves: Vec<usize> = facts.iter().map(|&f| forest.leaf(f)).collect();
-        let facts = forest.balanced(&leaves).unwrap();
+        let facts = forest.balanced_leaves(facts).unwrap();
         return Some(forest.join(below, facts));
     }
-    for &f in facts {
-        let leaf = forest.leaf(f);
-        acc = Some(match acc {
-            None => leaf,
-            Some(rest) => forest.join(leaf, rest),
-        });
-    }
-    acc
+    forest.spine_up(facts.iter().copied(), acc)
 }
 
 /// The copies the rows `members` read that are not placed yet, ascending,

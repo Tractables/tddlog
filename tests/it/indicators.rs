@@ -91,6 +91,24 @@ fn each_reader_of_a_shared_definition_reads_a_copy_of_its_own() {
     assert_probabilities("families", &run.results.unwrap(), &expected, 1e-12);
 }
 
+/// Whether `name` in `clauses` has a single 1-literal rule reading an
+/// indicator copy.
+fn defined_by_copy(clauses: &tddlog::GroundProgram, name: &str) -> bool {
+    let k = clauses
+        .atoms
+        .iter()
+        .position(|a| a.to_string() == name)
+        .unwrap() as u32;
+    let rules: Vec<_> = clauses.rules.iter().filter(|r| r.head == k).collect();
+    rules.len() == 1
+        && rules[0].body.len() == 1
+        && clauses
+            .encoding
+            .indicators
+            .iter()
+            .any(|i| i.var == rules[0].body[0].atom())
+}
+
 #[test]
 fn tables_as_clauses_keep_the_rows_a_reader_of_some_values_reads() {
     // x is a table read by y, which reads every value, and by z, which
@@ -106,23 +124,6 @@ fn tables_as_clauses_keep_the_rows_a_reader_of_some_values_reads() {
                   0.3::z(t); 0.7::z(f) :- x(b).
                   evidence(y(t)). query(x(a)). query(x(b)). query(z(t)). query(v(b)).";
     let clauses = common::ground(source, Rows::Classes, true);
-    let atom = |name: &str| {
-        clauses
-            .atoms
-            .iter()
-            .position(|a| a.to_string() == name)
-            .unwrap() as u32
-    };
-    let defined_by_copy = |k: u32| {
-        let rules: Vec<_> = clauses.rules.iter().filter(|r| r.head == k).collect();
-        rules.len() == 1
-            && rules[0].body.len() == 1
-            && clauses
-                .encoding
-                .indicators
-                .iter()
-                .any(|i| i.var == rules[0].body[0].atom())
-    };
     assert!(
         clauses
             .evidence
@@ -131,10 +132,10 @@ fn tables_as_clauses_keep_the_rows_a_reader_of_some_values_reads() {
         "x's clauses tie it to y"
     );
     assert!(
-        !defined_by_copy(atom("x(a)")) && !defined_by_copy(atom("x(b)")),
+        !defined_by_copy(&clauses, "x(a)") && !defined_by_copy(&clauses, "x(b)"),
         "z reads them through links"
     );
-    assert!(defined_by_copy(atom("x(c)")));
+    assert!(defined_by_copy(&clauses, "x(c)"));
     // P(y(t)) = 0.2·0.9 + 0.3·0.4 + 0.5·0.7 = 0.65, and
     // P(z(t), y(t)) = 0.2·0.9·0.6·0.8 + 0.3·0.4·0.3.
     let expected = [0.18 / 0.65, 0.12 / 0.65, (0.0864 + 0.036) / 0.65, 0.3];
@@ -411,25 +412,8 @@ fn tables_as_clauses_take_a_table_split_on_a_parent() {
     }
     source.push_str("evidence(z(t)). query(q(a)). query(y(t)).\n");
     let clauses = common::ground(&source, Rows::Classes, true);
-    let atom = |name: &str| {
-        clauses
-            .atoms
-            .iter()
-            .position(|a| a.to_string() == name)
-            .unwrap() as u32
-    };
-    let defined_by_copy = |k: u32| {
-        let rules: Vec<_> = clauses.rules.iter().filter(|r| r.head == k).collect();
-        rules.len() == 1
-            && rules[0].body.len() == 1
-            && clauses
-                .encoding
-                .indicators
-                .iter()
-                .any(|i| i.var == rules[0].body[0].atom())
-    };
     assert!(
-        defined_by_copy(atom("y(t)")) && defined_by_copy(atom("y(f)")),
+        defined_by_copy(&clauses, "y(t)") && defined_by_copy(&clauses, "y(f)"),
         "y's clauses tie it to z"
     );
     let y: f64 = q.iter().zip(mean).map(|((_, p), m)| p * m).sum();

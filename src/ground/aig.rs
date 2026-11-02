@@ -502,27 +502,7 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     if !may_merge(gp, by_head, &gates, &gate, &kept) {
         return false;
     }
-    // The atoms the sweep takes: alone in their predicates (a fact by its
-    // signature) or of a recursive predicate, and in no exclusive set of
-    // several atoms.
-    let swept: Vec<bool> = {
-        let mut facts_of: FxHashMap<(&str, usize), usize> = FxHashMap::default();
-        for (a, kind) in gp.kinds.iter().enumerate() {
-            if matches!(kind, AtomKind::Fact(_)) {
-                *facts_of.entry(gp.atoms[a].signature()).or_default() += 1;
-            }
-        }
-        let recursive = deps::recursive_predicates(gp);
-        (0..n)
-            .map(|a| {
-                !in_set[a]
-                    && match structure.predicate_of[a] {
-                        usize::MAX => facts_of.get(&gp.atoms[a].signature()) == Some(&1),
-                        p => structure.atoms_of[p] == 1 || recursive[a],
-                    }
-            })
-            .collect()
-    };
+    let swept = swept_atoms(gp, structure, &in_set);
     let sweeping = gates.iter().any(|&a| swept[a as usize]);
     let mut g = Graph::new(if sweeping { WORDS } else { 0 });
     let mut sweep = sweeping.then(|| {
@@ -647,6 +627,28 @@ pub(crate) fn reduce(gp: &mut GroundProgram, structure: &Structure) -> bool {
     gp.stats.merged += merged;
     gp.stats.reduced += derived.saturating_sub(gp.num_derived());
     true
+}
+
+/// The atoms the sweep takes: alone in their predicates (a fact by its
+/// signature) or of a recursive predicate, and in no exclusive set of
+/// several atoms.
+fn swept_atoms(gp: &GroundProgram, structure: &Structure, in_set: &[bool]) -> Vec<bool> {
+    let mut facts_of: FxHashMap<(&str, usize), usize> = FxHashMap::default();
+    for (a, kind) in gp.kinds.iter().enumerate() {
+        if matches!(kind, AtomKind::Fact(_)) {
+            *facts_of.entry(gp.atoms[a].signature()).or_default() += 1;
+        }
+    }
+    let recursive = deps::recursive_predicates(gp);
+    (0..gp.atoms.len())
+        .map(|a| {
+            !in_set[a]
+                && match structure.predicate_of[a] {
+                    usize::MAX => facts_of.get(&gp.atoms[a].signature()) == Some(&1),
+                    p => structure.atoms_of[p] == 1 || recursive[a],
+                }
+        })
+        .collect()
 }
 
 /// Whether a gate that is not `kept` has the signature of a constant, or

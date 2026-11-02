@@ -101,37 +101,27 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
         let Some(probabilities) = choice(gp, tables, t, rules, &named) else {
             continue;
         };
-        let member = |ri: usize| {
-            gp.rules[ri]
-                .body
-                .iter()
-                .position(|l| !gp.is_fact(l.atom()) && tables.of(l.atom()) == t)
-                .expect("a reader reads the table")
-        };
-        let contexts: Vec<Vec<GLit>> = rules
+        // The place in each reader of the atom of `t` it reads.
+        let at: Vec<usize> = rules
             .iter()
             .map(|&ri| {
-                let k = member(ri);
-                let mut c: Vec<GLit> = gp.rules[ri]
+                gp.rules[ri]
                     .body
                     .iter()
-                    .enumerate()
-                    .filter(|&(j, _)| j != k)
-                    .map(|(_, &l)| l)
-                    .collect();
-                c.sort_unstable();
-                c
+                    .position(|l| !gp.is_fact(l.atom()) && tables.of(l.atom()) == t)
+                    .expect("a reader reads the table")
             })
             .collect();
-        if !exclusive(gp, tables, &contexts) {
+        if !exclusive(gp, tables, rules, &at) {
             continue;
         }
         // The literals the atoms' rules held beyond the one fact each reader
         // reads, against the facts added beyond the table's own.
         let saved: usize = rules
             .iter()
-            .map(|&ri| {
-                gp.rules[tables.by_head()[gp.rules[ri].body[member(ri)].atom() as usize][0]]
+            .zip(&at)
+            .map(|(&ri, &k)| {
+                gp.rules[tables.by_head()[gp.rules[ri].body[k].atom() as usize][0]]
                     .body
                     .len()
                     - 1
@@ -140,12 +130,11 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
         if saved < rules.len().saturating_sub(own_facts(gp, tables, t)) {
             continue;
         }
-        for &ri in rules {
-            let k = member(ri);
+        for (&ri, &k) in rules.iter().zip(&at) {
             taken[ri] = true;
             rewrites.push((ri, k, probabilities[&gp.rules[ri].body[k].atom()]));
         }
-        for m in members(tables, t) {
+        for m in tables.members(t) {
             for &mr in &tables.by_head()[m as usize] {
                 drop_rules[mr] = true;
             }
@@ -169,31 +158,17 @@ pub(super) fn choices(gp: &mut GroundProgram, tables: &mut Tables) -> usize {
             gp.rules[ri].body[k] = GLit::Pos(f);
         }
     }
-    let mut i = 0;
-    gp.rules.retain(|_| {
-        i += 1;
-        !drop_rules[i - 1]
-    });
+    let mut dead = drop_rules.iter();
+    gp.rules.retain(|_| !*dead.next().unwrap());
     simplify::compact(gp);
     read
-}
-
-/// The atoms of table `t`: an exclusive set's, or the one atom of a table
-/// of one ([`Tables::of`]).
-fn members(tables: &Tables, t: usize) -> Vec<AtomId> {
-    let sets = tables.sets();
-    if t < sets.len() {
-        sets[t].clone()
-    } else {
-        vec![(t - sets.len()) as AtomId]
-    }
 }
 
 /// How many facts are table `t`'s own: what reading its atoms through
 /// facts of their own frees.
 fn own_facts(gp: &GroundProgram, tables: &Tables, t: usize) -> usize {
     let mut own: FxHashSet<AtomId> = FxHashSet::default();
-    for m in members(tables, t) {
+    for m in tables.members(t) {
         for &mr in &tables.by_head()[m as usize] {
             own.extend(gp.rules[mr].body.iter().map(|l| l.atom()));
         }
@@ -213,7 +188,7 @@ fn choice(
     named: &[bool],
 ) -> Option<rustc_hash::FxHashMap<AtomId, Prob>> {
     let mut probabilities = rustc_hash::FxHashMap::default();
-    for m in members(tables, t) {
+    for m in tables.members(t) {
         if named[m as usize] || gp.kinds[m as usize] != AtomKind::Derived {
             return None;
         }
@@ -256,32 +231,46 @@ fn choice(
     Some(probabilities)
 }
 
-/// Whether every two of `contexts`, sorted, clash ([`Tables::clash`]): at
-/// once where each reads a different atom of one exclusive set positively,
-/// two by two where there are at most [`MOST_COMPARED`] of them.
-fn exclusive(gp: &GroundProgram, tables: &Tables, contexts: &[Vec<GLit>]) -> bool {
+/// Whether every two contexts of `readers` clash ([`Tables::clash`]), a
+/// reader's context being the rest of its body beyond the literal at its
+/// place in `at`: at once where each reads a different atom of one
+/// exclusive set positively, two by two where there are at most
+/// [`MOST_COMPARED`] of them. Only these are written out, sorted.
+fn exclusive(gp: &GroundProgram, tables: &Tables, readers: &[usize], at: &[usize]) -> bool {
     let sets = tables.sets().len();
     let in_set = |l: &GLit| l.is_positive() && !gp.is_fact(l.atom()) && tables.of(l.atom()) < sets;
-    let first: Vec<usize> = contexts[0]
-        .iter()
+    let context = |i: usize| {
+        let body = &gp.rules[readers[i]].body;
+        body[..at[i]].iter().chain(&body[at[i] + 1..])
+    };
+    let first: Vec<usize> = context(0)
         .filter(|l| in_set(l))
         .map(|l| tables.of(l.atom()))
         .collect();
     for s in first {
         let mut atoms: FxHashSet<AtomId> = FxHashSet::default();
-        let distinct = contexts.iter().all(|c| {
-            let mut of_s = c.iter().filter(|l| in_set(l) && tables.of(l.atom()) == s);
+        let distinct = (0..readers.len()).all(|i| {
+            let mut of_s = context(i).filter(|l| in_set(l) && tables.of(l.atom()) == s);
             matches!((of_s.next(), of_s.next()), (Some(l), None) if atoms.insert(l.atom()))
         });
         if distinct {
             return true;
         }
     }
-    contexts.len() <= MOST_COMPARED
-        && contexts
-            .iter()
-            .enumerate()
-            .all(|(i, x)| contexts[i + 1..].iter().all(|y| tables.clash(x, y)))
+    if readers.len() > MOST_COMPARED {
+        return false;
+    }
+    let contexts: Vec<Vec<GLit>> = (0..readers.len())
+        .map(|i| {
+            let mut c: Vec<GLit> = context(i).copied().collect();
+            c.sort_unstable();
+            c
+        })
+        .collect();
+    contexts
+        .iter()
+        .enumerate()
+        .all(|(i, x)| contexts[i + 1..].iter().all(|y| tables.clash(x, y)))
 }
 
 #[cfg(test)]

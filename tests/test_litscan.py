@@ -199,8 +199,13 @@ class LitscanTests(unittest.TestCase):
         src = root / 'data' / 'psouffle' / 'taint' / 'angulo.pl.gz'
         with gzip.open(src, 'rt') as f:
             original = f.read()
-        out = subprocess.run([sys.executable, str(scripts / 'gen_taint.py'), str(src)],
-                             capture_output=True, text=True, check=True).stdout
+        gen = [sys.executable, str(scripts / 'gen_taint.py'), str(src)]
+        data = subprocess.run(gen + ['--data', 'KEY'], capture_output=True, text=True, check=True).stdout
+        template = subprocess.run(gen + ['--template'], capture_output=True, text=True, check=True).stdout
+        # the app's declarations and facts, then the rules and queries: the original's lines, in the
+        # order of two files (a few facts the original writes after its rules come first)
+        out = data + ''.join(template.splitlines(keepends=True)[2:])
+        self.assertEqual(template.splitlines()[1], ':- consult($1).')
         self.assertIn('\\+(I = 0)', original)
         self.assertNotIn('\\+(', out)
         self.assertIn('mmetharg(M, I, V), I \\= 0.', out)
@@ -209,7 +214,7 @@ class LitscanTests(unittest.TestCase):
         self.assertNotRegex(out, re.compile(r'^\w+\(_', re.M))
         back = re.sub(r'^(\w+)\((0(?:, 0)*)\) :- fail\.$', lambda m: f'{m[1]}({m[2].replace("0", "_")}) :- fail.',
                       out.replace('I \\= 0', '\\+(I = 0)'), flags=re.M)
-        self.assertEqual(back, original)
+        self.assertEqual(sorted(back.splitlines()), sorted(original.splitlines()))
 
     def test_sidechannel_reads_souffles_equations_as_souffle_does(self):
         """P1's equations evaluate their arithmetic (`is`), after the atoms

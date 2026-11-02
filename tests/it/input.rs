@@ -7,6 +7,7 @@
 
 use std::borrow::Cow;
 
+use crate::common::assert_close;
 use tddlog::network::{Evidence, Queries, ReadOptions};
 use tddlog::{Error, Format, Input, Options};
 
@@ -30,14 +31,6 @@ fn answers(input: &Input) -> (Vec<(String, f64)>, (f64, f64)) {
         .map(|a| (a.to_string(), a.probability))
         .collect();
     (answers, input.evidence_probability(&solution).unwrap())
-}
-
-fn assert_close(what: &str, got: &[(String, f64)], expected: &[(&str, f64)], tolerance: f64) {
-    assert_eq!(got.len(), expected.len(), "{what}: {got:?}");
-    for ((a, p), (b, q)) in got.iter().zip(expected) {
-        assert_eq!(a, b, "{what}");
-        assert!((p - q).abs() < tolerance, "{what}: {a} = {p} against {q}");
-    }
 }
 
 /// tests/dice/walk.dice: a random walk absorbed at 0 and 7, observed not

@@ -670,10 +670,11 @@ impl Answers<'_> {
                 positive: polarity,
             });
         }
-        let (f, scope) = match &self.pending_query.as_ref().unwrap().formula {
-            Some((f, scope)) => (f, scope),
-            None => stored(self.compiled, a),
-        };
+        let (f, scope) = unpack(
+            self.compiled,
+            &self.pending_query.as_ref().unwrap().formula,
+            a,
+        );
         let w = self.weights_on(scope, template);
         self.sizes.record(self.backend.size(f), self.watch)?;
         Ok(crate::eval::mass(self.backend.engine, f, &w, &mut self.sizes.recounts)?.to_f64())
@@ -690,10 +691,7 @@ impl Answers<'_> {
     ) -> Result<f64, CompileError> {
         self.sizes.products += 1;
         let built = self.formula(a, polarity)?;
-        let (q, q_scope) = match &built {
-            Some((f, scope)) => (f, scope),
-            None => stored(self.compiled, a),
-        };
+        let (q, q_scope) = unpack(self.compiled, &built, a);
         let q_w = self.weights_on(q_scope, template);
         let ev = self.evidence.as_ref().unwrap();
         let c = self
@@ -718,22 +716,18 @@ impl Answers<'_> {
         loop {
             let p = match &c.counted {
                 Counts::Plain(plain) => joint_ratio(
-                    ev.e,
-                    plain,
+                    (ev.e, plain),
                     &c.spans,
-                    q,
-                    &q_w,
+                    (q, &q_w),
                     &leaf_in_e,
                     ev.mass,
                     &mut charged,
                     &host,
                 )?,
                 Counts::Wide(wide) => joint_ratio(
-                    ev.e,
-                    wide,
+                    (ev.e, wide),
                     &c.spans,
-                    q,
-                    &q_w,
+                    (q, &q_w),
                     &leaf_in_e,
                     ev.mass,
                     &mut charged,
@@ -778,12 +772,22 @@ impl Answers<'_> {
     }
 }
 
-/// The stored formula of `a` in `compiled`, and its scope.
-fn stored(compiled: &Compiled, a: AtomId) -> (&Tdd, &VtreeScope) {
-    let f = compiled.formulas[a as usize]
-        .as_deref()
-        .expect("the stored polarity's formula is stored");
-    (f, compiled.scope_of(a))
+/// `built` if the query built a formula, or the stored formula of `a` in
+/// `compiled` and its scope.
+fn unpack<'a>(
+    compiled: &'a Compiled,
+    built: &'a Option<Formula>,
+    a: AtomId,
+) -> (&'a Tdd, &'a VtreeScope) {
+    match built {
+        Some((f, scope)) => (f, scope),
+        None => {
+            let f = compiled.formulas[a as usize]
+                .as_deref()
+                .expect("the stored polarity's formula is stored");
+            (f, compiled.scope_of(a))
+        }
+    }
 }
 
 /// The evidence formula counted up and down once, on its own scope: its
@@ -828,10 +832,7 @@ impl CountedEvidence {
 
     /// The mass, exactly.
     fn total(&self, e: &Tdd) -> Count {
-        match &self.counted {
-            Counts::Plain(plain) => plain.total(e).count(),
-            Counts::Wide(wide) => wide.total(e).count(),
-        }
+        self.counted.total(e)
     }
 }
 
@@ -855,13 +856,10 @@ fn literal_ratio<V: Value>(
 /// count is not exact. The walk's work is charged through `host`
 /// unless `charged` says a walk of this query already was, and a walk that
 /// finishes sets it.
-#[allow(clippy::too_many_arguments)]
 fn joint_ratio<V: Value>(
-    e: &Tdd,
-    c: &Counted<V>,
+    (e, c): (&Tdd, &Counted<V>),
     spans: &[(u32, u32)],
-    q: &Tdd,
-    q_w: &Probabilities,
+    (q, q_w): (&Tdd, &Probabilities),
     leaf_in_e: &impl Fn(VarId) -> Option<VtreeIdx>,
     mass: Count,
     charged: &mut bool,

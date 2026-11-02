@@ -33,6 +33,14 @@ pub(super) fn print_stats(args: &Args, run: &tddlog::Run, ground_secs: f64) {
             g.encoding.links().len()
         );
     }
+    print_compile_stats(args, run);
+    for note in &run.vtree_notes {
+        eprintln!("{note}");
+    }
+    print_query_stats(run);
+}
+
+fn print_compile_stats(args: &Args, run: &tddlog::Run) {
     let s = &run.stats;
     let strategy = match args.strategy {
         Strategy::Trial(_) => run.kind.to_string(),
@@ -124,9 +132,10 @@ pub(super) fn print_stats(args: &Args, run: &tddlog::Run, ground_secs: f64) {
             );
         }
     }
-    for note in &run.vtree_notes {
-        eprintln!("{note}");
-    }
+}
+
+fn print_query_stats(run: &tddlog::Run) {
+    let s = &run.stats;
     let q = &run.query_sizes;
     eprintln!(
         "evidence and queries: {:.3}s, evidence {} pairs, largest formula {} pairs; walk {:.3}s, counting the evidence {:.3}s, {} query products {:.3}s, {} queries counted in the compile, {} through a template, {} recounts, {} pairs counted as grids",
@@ -228,6 +237,12 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
         line.push_str(&format!(
             "; {} tables written as noisy-ors",
             g.stats.noisy_or
+        ));
+    }
+    if g.stats.values > 0 {
+        line.push_str(&format!(
+            "; {} variables written over their values",
+            g.stats.values
         ));
     }
     if g.stats.unfolded > 0 {

@@ -735,34 +735,35 @@ fn partition(
     }
     // Each row's cubes, in the order of their rules.
     cube_spans.sort_unstable();
-    for spans in cube_spans.chunk_by(|x, y| x.0 == y.0) {
-        let cube = |&(_, start, end): &(usize, usize, usize)| &cubes[start..end];
-        let longest = spans.iter().map(|c| cube(c).len()).max().unwrap_or(0);
-        if longest > 120 {
-            return None;
-        }
-        let mass: u128 = spans
-            .iter()
-            .map(|c| 1u128 << (longest - cube(c).len()))
-            .sum();
-        if mass != 1u128 << longest {
-            return None;
-        }
-        for (i, x) in spans.iter().map(cube).enumerate() {
-            for y in spans[i + 1..].iter().map(cube) {
-                let clash = x.iter().any(|l| {
-                    let opposite = if l.is_positive() {
-                        GLit::Neg(l.atom())
-                    } else {
-                        GLit::Pos(l.atom())
-                    };
-                    y.binary_search(&opposite).is_ok()
-                });
-                if !clash {
-                    return None;
-                }
-            }
-        }
+    if !cube_spans
+        .chunk_by(|x, y| x.0 == y.0)
+        .all(|spans| switches_partition(spans, cubes))
+    {
+        return None;
     }
     Some(firing.clone())
+}
+
+/// Whether a row's switch cubes (`spans` into `cubes`, each cube sorted and
+/// deduplicated) partition the worlds over their switches: their masses
+/// `2^-|c|` sum to 1 and every two clash on a switch.
+fn switches_partition(spans: &[(usize, usize, usize)], cubes: &[GLit]) -> bool {
+    let cube = |&(_, start, end): &(usize, usize, usize)| &cubes[start..end];
+    let longest = spans.iter().map(|c| cube(c).len()).max().unwrap_or(0);
+    if longest > 120 {
+        return false;
+    }
+    let mass: u128 = spans
+        .iter()
+        .map(|c| 1u128 << (longest - cube(c).len()))
+        .sum();
+    if mass != 1u128 << longest {
+        return false;
+    }
+    spans.iter().map(cube).enumerate().all(|(i, x)| {
+        spans[i + 1..]
+            .iter()
+            .map(cube)
+            .all(|y| x.iter().any(|l| y.binary_search(&l.negated()).is_ok()))
+    })
 }

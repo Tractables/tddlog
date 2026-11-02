@@ -19,23 +19,21 @@ use crate::ground::{AtomId, AtomKind, GLit, GroundProgram, RulesByHead};
 
 /// Compile the atoms of `scc` on `scope`. `lambda_of` returns the final
 /// formula of a derived atom outside the component, already on `scope`.
-/// Returns each atom's formula in the order of `scc`.
+/// Returns each atom's formula in the order of `scc` and the number of atom
+/// updates performed.
 ///
 /// One component, one scope: every atom of a cycle sees the same facts, so
 /// nothing inside this fixpoint is embedded. Every negation goes through
 /// `negate`, which counts it.
-#[allow(clippy::too_many_arguments)]
 pub(crate) fn compile_component(
     gp: &GroundProgram,
     by_head: &RulesByHead,
     var_of: &[Option<VarId>],
-    scc: &[AtomId],
-    scope: &VtreeScope,
+    (scc, scope): (&[AtomId], &VtreeScope),
     lambda_of: &mut dyn FnMut(AtomId) -> Result<Tdd, CompileError>,
     negate: &dyn Fn(Tdd) -> Result<Tdd, CompileError>,
-    updates: &mut usize,
     backend: &TddBackend,
-) -> Result<Vec<Tdd>, CompileError> {
+) -> Result<(Vec<Tdd>, usize), CompileError> {
     let n = gp.num_atoms();
     let mut index = vec![usize::MAX; n];
     for (i, &a) in scc.iter().enumerate() {
@@ -108,6 +106,7 @@ pub(crate) fn compile_component(
     };
 
     let k = scc.len();
+    let mut updates = 0;
     let mut lower: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
     let mut upper: Vec<Tdd> = (0..k).map(|_| backend.one(scope)).collect();
     loop {
@@ -116,7 +115,7 @@ pub(crate) fn compile_component(
             let mut changed = false;
             for (i, &a) in scc.iter().enumerate() {
                 let (t, p) = apply(a, &lower, &upper)?;
-                *updates += 1;
+                updates += 1;
                 if !backend.equivalent(&t, &lower[i])? {
                     lower[i] = t;
                     changed = true;
@@ -137,7 +136,7 @@ pub(crate) fn compile_component(
             let mut changed = false;
             for (i, &a) in scc.iter().enumerate() {
                 let (_, p) = apply(a, &lower, &u)?;
-                *updates += 1;
+                updates += 1;
                 if !backend.equivalent(&p, &u[i])? {
                     u[i] = p;
                     changed = true;
@@ -163,5 +162,5 @@ pub(crate) fn compile_component(
             return Err(CompileError::Unsound(gp.atoms[scc[i] as usize].clone()));
         }
     }
-    Ok(lower)
+    Ok((lower, updates))
 }

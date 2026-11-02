@@ -41,8 +41,8 @@
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use super::{Atom, Builtin, CONS, Compound, Literal, NIL, ParseError, Program, Term};
-use crate::network::rows::{fsum, write_float};
+use super::{Atom, Builtin, CONS, Compound, Literal, NIL, ParseError, Program, Term, float_repr};
+use crate::network::rows::fsum;
 
 /// An LPAD read as a ProbLog program.
 #[derive(Clone, Debug, PartialEq)]
@@ -73,44 +73,14 @@ pub fn read(source: &str) -> Option<Result<Lpad, ParseError>> {
 }
 
 fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lpad, ParseError> {
-    // (clause, in the LPAD, where it starts in the stripped text), in the
-    // order of the file, directives and goals left out.
-    let mut read: Vec<(String, bool, usize)> = Vec::new();
-    let mut inside = false;
-    for &(at, c) in clauses {
-        if let Some(begin) = marker(c) {
-            inside = begin;
-        } else if !c.starts_with(":-") && !c.starts_with("?-") {
-            let c = if inside { without_db(c) } else { c.to_string() };
-            read.push((c, inside, at));
-        }
-    }
-    // The database clauses the LPAD's bodies name, and those they name.
-    let mut named: FxHashSet<String> = FxHashSet::default();
-    for (c, lpad, _) in &read {
-        if *lpad {
-            mentioned(body(c), &mut named);
-        }
-    }
-    let mut kept: Vec<bool> = read.iter().map(|(_, lpad, _)| *lpad).collect();
-    let mut grew = true;
-    while grew {
-        grew = false;
-        for (k, (c, _, _)) in read.iter().enumerate() {
-            if !kept[k] && head_name(c).is_some_and(|h| named.contains(h)) {
-                kept[k] = true;
-                grew = true;
-                mentioned(body(c), &mut named);
-            }
-        }
-    }
+    let (kept, named) = kept_clauses(clauses);
     let at_line = |(at, msg): (usize, String)| ParseError {
         line: raw.line(source, at),
         msg,
     };
     let (depth, memo) = settings(clauses).map_err(at_line)?;
     // The LPAD's predicates, which take the depth under PITA's bound.
-    let predicates: FxHashSet<(String, usize)> = read
+    let predicates: FxHashSet<(String, usize)> = kept
         .iter()
         .filter(|(_, lpad, _)| *lpad)
         .flat_map(|(c, _, _)| {
@@ -123,12 +93,7 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
         .collect();
     let mut out = Vec::new();
     // ProbLog loads `library(lists)` where the program asks for it.
-    let defined: FxHashSet<&str> = read
-        .iter()
-        .zip(&kept)
-        .filter(|(_, keep)| **keep)
-        .filter_map(|((c, _, _), _)| head_name(c))
-        .collect();
+    let defined: FxHashSet<&str> = kept.iter().filter_map(|(c, _, _)| head_name(c)).collect();
     if named
         .iter()
         .any(|n| Builtin::in_lists(n) && !defined.contains(n.as_str()))
@@ -136,7 +101,7 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
         out.push(":- use_module(library(lists)).".to_string());
     }
     let mut number = 0;
-    for ((c, lpad_clause, at), _) in read.iter().zip(&kept).filter(|(_, keep)| **keep) {
+    for (c, lpad_clause, at) in &kept {
         let error = |msg| ParseError {
             line: raw.line(source, *at),
             msg: format!("{msg} in the LPAD clause `{c}`"),
@@ -159,7 +124,7 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
             )));
         }
         let mut values = Vec::new();
-        for ((c, _, at), _) in read.iter().zip(&kept).filter(|(_, keep)| **keep) {
+        for (c, _, at) in &kept {
             match head_name(c) {
                 Some("values") if !c.contains(":-") => values.push(c.as_str()),
                 Some("values" | "msw") => {
@@ -170,6 +135,77 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
         }
         out.extend(switches(&set_sw, &values).map_err(at_line)?);
     }
+    let left_out = write_examples(source, depth, &predicates, &mut out)?;
+    let program = out.join("\n");
+    // PITA's default makes a new choice at each call of msw/2.
+    if let Some(&(at, _)) = set_sw.first()
+        && !memo
+        && let Ok(read) = super::parse_program(&program)
+    {
+        calls_once(&read, &predicates).map_err(|why| {
+            at_line((
+                at,
+                format!(
+                    "PRISM's msw/2 under PITA's default, which makes a new choice at each \
+                     call: {why}; tddlog reads a switch as one choice, as PITA does under \
+                     `:- set_pita(prism_memoization, true).`, and reads the default where \
+                     each switch is called once"
+                ),
+            ))
+        })?;
+    }
+    Ok(Lpad { program, left_out })
+}
+
+/// The clauses inside the LPAD and the database clauses their bodies reach,
+/// in file order (`(clause, in_lpad, start)`), with the predicate names
+/// their bodies mention.
+fn kept_clauses(clauses: &[(usize, &str)]) -> (Vec<(String, bool, usize)>, FxHashSet<String>) {
+    let mut read: Vec<(String, bool, usize)> = Vec::new();
+    let mut inside = false;
+    for &(at, c) in clauses {
+        if let Some(begin) = marker(c) {
+            inside = begin;
+        } else if !c.starts_with(":-") && !c.starts_with("?-") {
+            let c = if inside { without_db(c) } else { c.to_string() };
+            read.push((c, inside, at));
+        }
+    }
+    let mut named: FxHashSet<String> = FxHashSet::default();
+    for (c, lpad, _) in &read {
+        if *lpad {
+            mentioned(body(c), &mut named);
+        }
+    }
+    let mut kept: Vec<bool> = read.iter().map(|(_, lpad, _)| *lpad).collect();
+    let mut grew = true;
+    while grew {
+        grew = false;
+        for (k, (c, _, _)) in read.iter().enumerate() {
+            if !kept[k] && head_name(c).is_some_and(|h| named.contains(h)) {
+                kept[k] = true;
+                grew = true;
+                mentioned(body(c), &mut named);
+            }
+        }
+    }
+    let clauses = read
+        .into_iter()
+        .zip(kept)
+        .filter_map(|(c, keep)| keep.then_some(c))
+        .collect();
+    (clauses, named)
+}
+
+/// Appends the depth-bound bridge rules, `evidence(...)`, `query(...)`, and
+/// comments for left-out queries from `source`'s `examples` block to `out`,
+/// returning the left-out notes.
+fn write_examples(
+    source: &str,
+    depth: Option<u32>,
+    predicates: &FxHashSet<(String, usize)>,
+    out: &mut Vec<String>,
+) -> Result<Vec<String>, ParseError> {
     // One program holds one set of evidence: that of the first query not
     // asked under an intervention.
     let mut asked: Vec<(&str, Vec<&str>)> = Vec::new();
@@ -248,25 +284,7 @@ fn convert(source: &str, raw: &Stripped, clauses: &[(usize, &str)]) -> Result<Lp
             left_out.push(note);
         }
     }
-    let program = out.join("\n");
-    // PITA's default makes a new choice at each call of msw/2.
-    if let Some(&(at, _)) = set_sw.first()
-        && !memo
-        && let Ok(read) = super::parse_program(&program)
-    {
-        calls_once(&read, &predicates).map_err(|why| {
-            at_line((
-                at,
-                format!(
-                    "PRISM's msw/2 under PITA's default, which makes a new choice at each \
-                     call: {why}; tddlog reads a switch as one choice, as PITA does under \
-                     `:- set_pita(prism_memoization, true).`, and reads the default where \
-                     each switch is called once"
-                ),
-            ))
-        })?;
-    }
-    Ok(Lpad { program, left_out })
+    Ok(left_out)
 }
 
 /// The arguments of the directives `:- name(..).` among `clauses`, each
@@ -475,12 +493,12 @@ fn intervention(lit: &str) -> bool {
 }
 
 /// Python's white space (`str.isspace`), which the clauses are trimmed of.
-pub(super) fn space(c: char) -> bool {
+pub(crate) fn space(c: char) -> bool {
     matches!(c, ' ' | '\t'..='\r' | '\x1c'..='\x1f') || (!c.is_ascii() && c.is_whitespace())
 }
 
 /// A character of a word (Python's `\w`).
-fn word(c: char) -> bool {
+pub(crate) fn word(c: char) -> bool {
     c == '_' || c.is_alphanumeric()
 }
 
@@ -812,11 +830,7 @@ fn annotation(p: Written) -> Result<String, String> {
         Written::Term(t) => t.to_string(),
         Written::Number(p) if !p.is_finite() => return Err(format!("the probability {p}")),
         Written::Number(p) if p == p.trunc() => format!("{p:.1}"),
-        Written::Number(p) => {
-            let mut s = String::new();
-            write_float(&mut s, p);
-            s
-        }
+        Written::Number(p) => float_repr(p),
     })
 }
 
@@ -971,35 +985,34 @@ impl<'p> Calls<'p> {
             .iter()
             .filter(|c| reached.contains(&c.clause) && c.atom.signature() == p)
             .collect();
-        let w = match (asked.as_slice(), sites.as_slice()) {
-            ([a], []) => Some(a.args.iter().map(Term::is_ground).collect()),
+        let w: Vec<bool> = match (asked.as_slice(), sites.as_slice()) {
+            ([a], []) => a.args.iter().map(Term::is_ground).collect(),
             ([], [site]) if !site.repeated && !self.recursive(p) => {
                 let c = &self.program.clauses[site.clause];
-                match c.heads.as_slice() {
-                    [head] => self
-                        .way(head.atom.signature(), roots, reached, ways)
-                        .and_then(|w| {
-                            let bound = bound(&head.atom, &w);
-                            let before = before(&c.body[..site.at]);
-                            let mut vs = Vec::new();
-                            site.atom.vars_into(&mut vs);
-                            vs.iter()
-                                .all(|v| bound.contains(v) || !before.contains(v))
-                                .then(|| {
-                                    site.atom
-                                        .args
-                                        .iter()
-                                        .map(|t| term_vars(t).iter().all(|v| bound.contains(v)))
-                                        .collect()
-                                })
-                        }),
-                    _ => None,
+                let [head] = c.heads.as_slice() else {
+                    return None;
+                };
+                let w = self.way(head.atom.signature(), roots, reached, ways)?;
+                let bound = bound(&head.atom, &w);
+                let before = before(&c.body[..site.at]);
+                if !site
+                    .atom
+                    .vars()
+                    .iter()
+                    .all(|v| bound.contains(v) || !before.contains(v))
+                {
+                    return None;
                 }
+                site.atom
+                    .args
+                    .iter()
+                    .map(|t| t.vars().iter().all(|v| bound.contains(v)))
+                    .collect()
             }
-            _ => None,
+            _ => return None,
         };
-        ways.insert(p, w.clone());
-        w
+        ways.insert(p, Some(w.clone()));
+        Some(w)
     }
 
     /// [`calls_once`] for the evaluation of `roots`.
@@ -1046,7 +1059,7 @@ impl<'p> Calls<'p> {
             }
             let before = before(&c.body[..call.at]);
             let s = &call.atom.args[0];
-            let in_s = term_vars(s);
+            let in_s = s.vars();
             if let Some(v) = before
                 .iter()
                 .find(|v| !bound.contains(*v) && !in_s.contains(v))
@@ -1076,7 +1089,7 @@ fn bound(head: &Atom, way: &[bool]) -> FxHashSet<String> {
         .iter()
         .zip(way)
         .filter(|(_, b)| **b)
-        .flat_map(|(t, _)| term_vars(t))
+        .flat_map(|(t, _)| t.vars())
         .collect()
 }
 
@@ -1087,12 +1100,6 @@ fn before(body: &[Literal]) -> FxHashSet<String> {
         l.vars_into(&mut out);
     }
     out.into_iter().collect()
-}
-
-fn term_vars(t: &Term) -> Vec<String> {
-    let mut out = Vec::new();
-    t.vars_into(&mut out);
-    out
 }
 
 /// The depth PITA's depth bound asks the queries at, where the source

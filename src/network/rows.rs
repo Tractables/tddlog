@@ -1,5 +1,5 @@
 //! The numbers of a table's rows: how a row that does not sum to one is
-//! written, and how a probability is written in the program.
+//! written.
 //!
 //! A row of a table sums to one, and a file's decimals round it: bnlearn's
 //! pathfinder writes `0.3333333` three times, and the networks of the UAI
@@ -160,7 +160,7 @@ impl Decimal {
     /// 0.007262920000000001), and the noise would make the entry's slack
     /// that of 16 digits; 2/3 printed in full stays 0.6666666666666666.
     /// For an entry the file writes in 12 significant digits or fewer, this
-    /// is its text. `gen_bn.py`'s `meant_decimal`.
+    /// is its text.
     fn meant(x: f64) -> Decimal {
         if x == 0.0 {
             return Decimal {
@@ -284,9 +284,7 @@ impl PartialOrd for Natural {
 
 /// The sum of `xs` correctly rounded, as Python's `math.fsum` computes it
 /// (Shewchuk's partials, then the rounding of their sum): whether a row
-/// sums to more than one decides whether it is divided, and where a plain
-/// sum differs from the exact one in the last bit, the decisions of
-/// `gen_bn.py`, which sums with `math.fsum`, would differ.
+/// sums to more than one decides whether it is divided.
 pub(crate) fn fsum(xs: &[f64]) -> f64 {
     let mut partials: Vec<f64> = Vec::new();
     for &x in xs {
@@ -336,84 +334,9 @@ pub(crate) fn fsum(xs: &[f64]) -> f64 {
     hi
 }
 
-/// Appends `x` as Python's `repr` writes a float: its shortest digits
-/// that read back as `x` (Rust's), positional for a decimal exponent from
-/// -5 to 15 and scientific with a signed exponent of two digits or more
-/// otherwise (`1e-05`, `0.0001`, `1.0`), so that the program is the one
-/// `gen_bn.py` wrote.
-pub(crate) fn write_float(out: &mut String, x: f64) {
-    use std::fmt::Write;
-    if !x.is_finite() {
-        write!(out, "{x}").expect("a String takes any text");
-        return;
-    }
-    let text = format!("{x:e}");
-    let (mantissa, exp) = text.split_once('e').expect("Rust writes an exponent");
-    let (sign, mantissa) = match mantissa.strip_prefix('-') {
-        Some(m) => ("-", m),
-        None => ("", mantissa),
-    };
-    let digits: String = mantissa.chars().filter(char::is_ascii_digit).collect();
-    let n = digits.len() as i32;
-    // x = 0.digits · 10^point
-    let point = exp.parse::<i32>().expect("an integer exponent") + 1;
-    out.push_str(sign);
-    if !(-4 < point && point <= 16) {
-        out.push_str(&digits[..1]);
-        if n > 1 {
-            out.push('.');
-            out.push_str(&digits[1..]);
-        }
-        let e = point - 1;
-        write!(out, "e{}{:02}", if e < 0 { '-' } else { '+' }, e.abs())
-            .expect("a String takes any text");
-    } else if point <= 0 {
-        out.push_str("0.");
-        out.extend(std::iter::repeat_n('0', (-point) as usize));
-        out.push_str(&digits);
-    } else if point < n {
-        out.push_str(&digits[..point as usize]);
-        out.push('.');
-        out.push_str(&digits[point as usize..]);
-    } else {
-        out.push_str(&digits);
-        out.extend(std::iter::repeat_n('0', (point - n) as usize));
-        out.push_str(".0");
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn written(x: f64) -> String {
-        let mut s = String::new();
-        write_float(&mut s, x);
-        s
-    }
-
-    #[test]
-    fn a_float_is_written_as_python_writes_its_repr() {
-        for (x, repr) in [
-            (0.5, "0.5"),
-            (1.0, "1.0"),
-            (0.0, "0.0"),
-            (1e-05, "1e-05"),
-            (0.0001, "0.0001"),
-            (1.5e-7, "1.5e-07"),
-            (9.999e-05, "9.999e-05"),
-            (1e16, "1e+16"),
-            (1234567890123456.0, "1234567890123456.0"),
-            (0.30000000000000004, "0.30000000000000004"),
-            (-0.4, "-0.4"),
-            (-1.25e-100, "-1.25e-100"),
-            (123.0, "123.0"),
-            (12.5, "12.5"),
-            (5e-324, "5e-324"),
-        ] {
-            assert_eq!(written(x), repr, "{x:e}");
-        }
-    }
 
     #[test]
     fn fsum_rounds_the_exact_sum() {

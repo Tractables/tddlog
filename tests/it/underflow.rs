@@ -116,12 +116,9 @@ fn evidence_below_the_least_float_that_no_query_reads_is_counted_where_kept() {
     }
 }
 
-#[test]
-fn the_command_line_prints_the_answers() {
-    // Evidence below the least float is not inconsistent evidence: the
-    // answers are printed.
-    let path = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("underflow_independent.pl");
-    std::fs::write(&path, independent(1200, true)).unwrap();
+fn assert_cli_output(file: &str, source: &str, want: &str) {
+    let path = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join(file);
+    std::fs::write(&path, source).unwrap();
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_tddlog"))
         .arg(&path)
         .output()
@@ -131,9 +128,17 @@ fn the_command_line_prints_the_answers() {
         "{}",
         String::from_utf8_lossy(&out.stderr)
     );
-    assert_eq!(
-        std::str::from_utf8(&out.stdout).unwrap(),
-        "q:\t0.300000\nr:\t0.300000\ns:\t0.720000\na5:\t1.000000\n"
+    assert_eq!(std::str::from_utf8(&out.stdout).unwrap(), want);
+}
+
+#[test]
+fn the_command_line_prints_the_answers() {
+    // Evidence below the least float is not inconsistent evidence: the
+    // answers are printed.
+    assert_cli_output(
+        "underflow_independent.pl",
+        &independent(1200, true),
+        "q:\t0.300000\nr:\t0.300000\ns:\t0.720000\na5:\t1.000000\n",
     );
 }
 
@@ -460,31 +465,29 @@ fn posteriors_far_below_one_keep_their_digits() {
     // came out as 2.6e-14 (digitRecognition) and one of 1.3e-66 as zero.
     // Each answer is counted in the polarity asked, or as the complement's
     // count where one minus a count would be too small to keep its digits.
-    for n in [20, 100, 300] {
-        let tiny = 1.0 / (1.0 + 9f64.powi(n as i32));
+    let check_rel = |what: &str, source: &str, want: &[f64]| {
         for strategy in [Strategy::Trial(Kind::Closed), Strategy::Auto] {
-            let what = format!("n = {n}, {strategy:?}");
-            let run = common::run(
-                &unlikely_cause(n),
-                &common::options(strategy, Projection::default()),
-            )
-            .unwrap();
+            let what = format!("{what}, {strategy:?}");
+            let run =
+                common::run(source, &common::options(strategy, Projection::default())).unwrap();
             let results = run.results.expect("the evidence is consistent");
-            for (r, want) in
-                results
-                    .iter()
-                    .zip([tiny, 1.0 - tiny, tiny, 1.0 - tiny, 1.0 - tiny, tiny])
-            {
+            for (r, &want) in results.iter().zip(want) {
                 let relative = (r.probability - want).abs() / want;
                 assert!(
                     relative < 1e-9,
-                    "{what}: {}{} = {:e} against {want:e}",
-                    if r.positive { "" } else { "\\+" },
-                    r.atom,
+                    "{what}: {r} = {:e} against {want:e}",
                     r.probability
                 );
             }
         }
+    };
+    for n in [20, 100, 300] {
+        let tiny = 1.0 / (1.0 + 9f64.powi(n as i32));
+        check_rel(
+            &format!("n = {n}"),
+            &unlikely_cause(n),
+            &[tiny, 1.0 - tiny, tiny, 1.0 - tiny, 1.0 - tiny, tiny],
+        );
     }
     // Without evidence the compile counts a query's formula where it drops
     // it: a conjunction of 300 facts at 0.1 and a disjunction of 300 at 0.9.
@@ -500,40 +503,15 @@ fn posteriors_far_below_one_keep_their_digits() {
     );
     s += "query(q).\nquery(\\+q).\nquery(r).\nquery(\\+r).\n";
     let tiny = 0.1f64.powi(300);
-    for strategy in [Strategy::Trial(Kind::Closed), Strategy::Auto] {
-        let what = format!("no evidence, {strategy:?}");
-        let run = common::run(&s, &common::options(strategy, Projection::default())).unwrap();
-        let results = run.results.expect("nothing is observed");
-        for (r, want) in results.iter().zip([tiny, 1.0, 1.0, tiny]) {
-            let relative = (r.probability - want).abs() / want;
-            assert!(
-                relative < 1e-9,
-                "{what}: {}{} = {:e} against {want:e}",
-                if r.positive { "" } else { "\\+" },
-                r.atom,
-                r.probability
-            );
-        }
-    }
+    check_rel("no evidence", &s, &[tiny, 1.0, 1.0, tiny]);
     // The command line writes a probability that would show as zero in
     // scientific notation.
-    let path =
-        std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("underflow_unlikely_cause.pl");
-    std::fs::write(&path, unlikely_cause(100)).unwrap();
-    let out = std::process::Command::new(env!("CARGO_BIN_EXE_tddlog"))
-        .arg(&path)
-        .output()
-        .unwrap();
-    assert!(
-        out.status.success(),
-        "{}",
-        String::from_utf8_lossy(&out.stderr)
-    );
     let tiny = format!("{:.6e}", 1.0 / (1.0 + 9f64.powi(100)));
-    assert_eq!(
-        std::str::from_utf8(&out.stdout).unwrap(),
-        format!(
+    assert_cli_output(
+        "underflow_unlikely_cause.pl",
+        &unlikely_cause(100),
+        &format!(
             "h:\t{tiny}\n\\+h:\t1.000000\ny:\t{tiny}\n\\+y:\t1.000000\nz:\t1.000000\n\\+z:\t{tiny}\n"
-        )
+        ),
     );
 }

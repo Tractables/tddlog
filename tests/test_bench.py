@@ -286,16 +286,18 @@ class PplTests(unittest.TestCase):
         # The joint program's two Booleans are asked as one int, its first
         # Boolean the most significant bit (dice2roulette.py --joint).
         name = next(n for n, (_, gargs) in bench.instances(self.args()).items() if gargs[0] == 'alea_bench.jl')
-        outputs = {'a': 'cpu time: 5 real time: 250 gc time: 0\nroulette 1 true 0.25\nroulette 1 false 0.75\n',
-                   'b': 'cpu time: 5 real time: 500 gc time: 0\nroulette 1 0 0.125\nroulette 1 1 0.375\n'
-                        'roulette 1 2 0.5\nroulette 1 3 0.0\n'}
+        outputs = {'a': 'roulette 1 true 0.25\nroulette 1 false 0.75\n',
+                   'b': 'roulette 1 0 0.125\nroulette 1 1 0.375\nroulette 1 2 0.5\nroulette 1 3 0.0\n'}
+        timer = {'a': 'roulette_timer: program 0.25 s\n', 'b': 'roulette_timer: program 0.5 s\n'}
         runs = []
 
-        def timed(cmd, timeout):
+        def timed(cmd, timeout, cwd=None):
             if 'raco' in cmd:
                 return {'status': 'ok', 'seconds': 9.0, 'stdout': '', 'stderr': ''}
+            self.assertEqual(cmd[:2], ['racket', bench.ROULETTE_TIMER])
             runs.append(Path(cmd[-1]).read_text())
-            return {'status': 'ok', 'seconds': 1.5, 'stdout': outputs[Path(cmd[-1]).name[0]], 'stderr': ''}
+            first = Path(cmd[-1]).name[0]
+            return {'status': 'ok', 'seconds': 1.5, 'stdout': outputs[first], 'stderr': timer[first]}
         with tempfile.TemporaryDirectory() as d:
             Path(d, f'{name}.dicemap').write_text('a.dice bool q1\nb.dice joint q2 2\n')
             Path(d, 'a.dice').write_text('let x = flip 0.25 in x\n')
@@ -306,8 +308,8 @@ class PplTests(unittest.TestCase):
         self.assertEqual(r, {'status': 'ok', 'seconds': 3.0, 'stats': {'inproc_seconds': 0.75},
                              'answers': {'q1': 0.25, 'q2(0)': 0.125, 'q2(1)': 0.375, 'q2(2)': 0.5, 'q2(3)': 0.0}})
         self.assertIn('(report-bool 1 ', runs[0])
-        self.assertRegex(runs[1], r'\(query \(list \(cadr (\S+)\) \(car \1\)\) complement\?\)')
-        self.assertIn('(report-int 1 (list-ref pmfs 0) 2)', runs[1])
+        self.assertRegex(runs[1], r'\(distribution \(list \(cadr (\S+)\) \(car \1\)\)\)')
+        self.assertIn('(report-int 1 (list-ref dists 0) 2)', runs[1])
 
     def test_a_chain_whose_translations_pass_their_bound_is_the_harness_time_out(self):
         # dice2prism.py's translations of a chain took longer than their
@@ -540,46 +542,36 @@ class RouletteTests(unittest.TestCase):
         args = self.args()
         data = bench.ROULETTE_DATA
         self.assertEqual(bench.roulette_program(args, 'rl_caesar_25', 'rsdd'), (f'{data}/caesar.rkt', ['25']))
-        self.assertEqual(bench.roulette_program(args, 'rl_caesar_25', 'nocomplement'),
-                         (f'{data}/caesar.rkt', ['25', '--no-complement']))
-        # The complement applies to caesar's query alone.
-        self.assertIsNone(bench.roulette_program(args, 'rl_motivating_1000', 'nocomplement'))
-        # extexp drops it where nocomplement does and runs every program.
-        self.assertEqual(bench.roulette_program(args, 'rl_caesar_25', 'extexp'),
-                         (f'{data}/caesar.rkt', ['25', '--no-complement']))
-        self.assertEqual(bench.roulette_program(args, 'rl_motivating_1000', 'extexp'),
-                         (f'{data}/motivating.rkt', ['1000']))
-        x = self.args(roulette_extexp='xracket {file}')
-        self.assertEqual(bench.roulette_command(x, 'extexp', 'p.rkt'), ['xracket', 'p.rkt'])
-        self.assertEqual(bench.roulette_command(x, 'rsdd', 'p.rkt'), ['racket', 'p.rkt'])
+        self.assertEqual(bench.roulette_command('racket {file}', 'p.rkt'), ['racket', 'p.rkt'])
+        self.assertEqual(bench.roulette_command('racket {file}', 'p.rkt', '-l-', 'raco', 'make'),
+                         ['racket', '-l-', 'raco', 'make', 'p.rkt'])
         self.assertEqual(bench.roulette_program(args, 'rl_hmm_smoothing_joint_100', 'rsdd'),
-                         ('rb/hmm.rkt', ['roulette', 'smoothing-joint', '100']))
+                         (f'{data}/hmm.rkt', ['smoothing-joint', '100']))
         self.assertEqual(bench.roulette_program(args, 'rl_bn_alarm', 'rsdd'), (f'{data}/bayes.rkt', ['alarm']))
         for program in ['motivating', 'diamond', 'ladder', 'caesar', 'network', 'hardware', 'hardware-bitwidth',
-                        'bayes']:
+                        'hmm', 'bayes', 'bif', 'print', 'blocks', 'scaling/network', 'scaling/hardware']:
             self.assertTrue(Path(data, f'{program}.rkt').exists(), program)
 
     def run_roulette(self, name, path, out):
         with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0, 'stdout': out,
-                                                        'stderr': ''}) as timed:
+                                                        'stderr': 'roulette_timer: program 0.061 s\n'}) as timed:
             r = bench.run_roulette(self.args(), name, path, 'rsdd')
         return r, timed.call_args[0][0]
 
     def test_the_answers_are_keyed_by_the_queries(self):
         path = str(SOURCE / 'tests' / 'roulette' / 'network-2.pl')
-        out = ('cpu time: 60 real time: 61 gc time: 3\nroulette_q other(#t) 0.0\n'
-               'roulette_q m(2,15) 0.98\nroulette_q m(2,16) 0.01\n')
+        out = ('cpu time: 60 real time: 61 gc time: 3\nroulette_q other(#t) 0.0 #t\n'
+               'roulette_q m(2,15) 0.98 (#t #t #t #t)\nroulette_q m(2,16) 0.01 #f\n')
         r, cmd = self.run_roulette('rl_network_10', path, out)
-        self.assertEqual(cmd, ['racket', f'{bench.ROULETTE_DATA}/network.rkt', '10'])
+        self.assertEqual(cmd, ['racket', bench.ROULETTE_TIMER, f'{bench.ROULETTE_DATA}/network.rkt', '10'])
         self.assertEqual(r['status'], 'ok')
         self.assertEqual(list(r['answers']), [f'm(2,{v})' for v in range(17)])
         # A value Roulette leaves out has probability 0.
         self.assertEqual((r['answers']['m(2,15)'], r['answers']['m(2,16)'], r['answers']['m(2,0)']),
                          (0.98, 0.01, 0.0))
         self.assertEqual(r['stats'], {'inproc_seconds': 0.061, 'other': {'other(#t)': 0.0}})
-        # hmm.rkt prints its one answer on its last line.
         path = str(SOURCE / 'tests' / 'roulette' / 'hmm-smoothing-joint-4.pl')
-        r, cmd = self.run_roulette('rl_hmm_smoothing_joint_100', path, 'cpu time: 5 real time: 5 gc time: 0\n0.25\n')
+        r, cmd = self.run_roulette('rl_hmm_smoothing_joint_100', path, 'roulette_q q 0.25 #t\n')
         self.assertEqual(r['answers'], {'q': 0.25})
         # A network's values are named as gen_bn.py names them.
         with tempfile.TemporaryDirectory() as d:
@@ -612,12 +604,13 @@ class RouletteTests(unittest.TestCase):
             out = ('cpu time: 10 real time: 12 gc time: 0\nroulette_b x6 s0 0.11\nroulette_b x6 s1 0.89\n'
                    'cpu time: 20 real time: 21 gc time: 0\nroulette_b x7 s1 1.0\n')
             with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0, 'stdout': out,
-                                                            'stderr': ''}) as timed:
+                                                            'stderr': 'roulette_timer: program 0.033 s\n'}) as timed:
                 r = bench.run_roulette(args, 'bn_asia', str(path), 'bayes')
             self.assertEqual(timed.call_args_list[0][0][0],
-                             ['racket', '-l-', 'raco', 'make', f'{bench.ROULETTE_DATA}/bif.rkt'])
+                             ['racket', '-l-', 'raco', 'make', f'{bench.ROULETTE_DATA}/bif.rkt', bench.ROULETTE_TIMER])
             self.assertEqual(timed.call_args_list[1][0][0],
-                             ['racket', f'{bench.ROULETTE_DATA}/bif.rkt', f'{d}/bn_asia.bif', f'{d}/bn_asia.bifq'])
+                             ['racket', bench.ROULETTE_TIMER, f'{bench.ROULETTE_DATA}/bif.rkt', f'{d}/bn_asia.bif',
+                              f'{d}/bn_asia.bifq'])
         self.assertEqual(r['answers'], {'xray(yes)': 0.11, 'xray(no)': 0.89, 'dysp(yes)': 0.0, 'dysp(no)': 1.0})
         self.assertAlmostEqual(r['stats']['inproc_seconds'], 0.033)
 
@@ -632,14 +625,11 @@ class RouletteTests(unittest.TestCase):
             return SimpleNamespace(**base)
         with self.assertRaisesRegex(SystemExit, '--roulette-variants cudd'):
             bench.run(run_args(roulette_variants=['cudd']))
-        with self.assertRaisesRegex(SystemExit, 'translated Dice programs, and none is selected'):
-            bench.run(run_args(roulette_variants=['rsdd', 'nocomplement']))
+        for gone in ['nocomplement', 'extexp']:
+            with self.assertRaisesRegex(SystemExit, f'--roulette-variants {gone} was a variant of the Roulette artifact'):
+                bench.run(run_args(roulette_variants=['rsdd', gone]))
         with self.assertRaisesRegex(SystemExit, 'observe nothing, outside the roulette suite and --pr, and none'):
             bench.run(run_args(roulette_variants=['rsdd', 'bayes']))
-        with self.assertRaisesRegex(SystemExit, 'give both or neither'):
-            bench.run(run_args(roulette_variants=['rsdd', 'extexp']))
-        with self.assertRaisesRegex(SystemExit, 'give both or neither'):
-            bench.run(run_args(roulette_extexp='xracket {file}'))
 
         def parsed(cmd, **given):
             fields = dict(cmd=cmd, suite='roulette', ace_benchmarks=None, uai_benchmarks=None,
@@ -648,7 +638,7 @@ class RouletteTests(unittest.TestCase):
                           roulette='', roulette_variants=None)
             return SimpleNamespace(**(fields | given))
         with self.assertRaisesRegex(SystemExit, '--roulette-variants without --roulette'):
-            bench.ace_defaults(parsed('run', roulette_variants=['nocomplement']))
+            bench.ace_defaults(parsed('run', roulette_variants=['bayes']))
         with self.assertRaisesRegex(SystemExit, 'and the suite is ppl'):
             bench.ace_defaults(parsed('gen', suite='ppl', roulette_benchmarks='rb'))
         args = parsed('run', roulette='racket {file}')
@@ -661,10 +651,175 @@ class RouletteTests(unittest.TestCase):
         self.assertEqual(bench.EXACT['gen_roulette.py'][1]('x.pl'), ['gen_roulette.py', '--reference-of', 'x.pl'])
 
 
+class RouletteTddlogTests(unittest.TestCase):
+    """Roulette+tddlog: roulette2problog.rkt writes the circuit of
+    Roulette's run as a ProbLog program, tddlog answers it, and the answers
+    are read as Roulette's query reads its engine's."""
+
+    # A circuit of disrupt.rkt's shape: call 1 the value (x, y, the failed
+    # observation), call 2 the observation.
+    CIRCUIT = ('% infer was called 2 times\n% q1(1): x\n% q1(2): y\n% q1(3): \u22a5123\n'
+               '% q2(1): #t\n% q2(2): #f\nquery(q1(1)).\nquery(q1(2)).\nquery(q1(3)).\n')
+    ANSWERS = {'q1(1)': 0.3, 'q1(2)': 0.42, 'q1(3)': 0.28, 'q2(1)': 0.72, 'q2(2)': 0.28}
+
+    def test_each_call_is_divided_by_its_values_but_the_failure(self):
+        calls = bench.roulette_tddlog_calls(self.CIRCUIT, self.ANSWERS)
+        self.assertEqual(sorted(calls), [1, 2])
+        self.assertEqual(sorted(calls[1]), ['x', 'y'])
+        self.assertAlmostEqual(calls[1]['x'], 5 / 12)
+        self.assertAlmostEqual(calls[1]['y'], 7 / 12)
+        self.assertAlmostEqual(calls[2]['#t'], 0.72)
+        with self.assertRaisesRegex(ValueError, 'tddlog answers no q1\\(2\\)'):
+            bench.roulette_tddlog_calls(self.CIRCUIT, {'q1(1)': 0.3})
+        # Where every value but the failure has weight 0, they answer 0.
+        self.assertEqual(bench.roulette_tddlog_calls(self.CIRCUIT, {**self.ANSWERS, 'q1(1)': 0, 'q1(2)': 0})[1],
+                         {'x': 0.0, 'y': 0.0})
+
+    def test_a_dice_programs_components_are_its_odd_calls(self):
+        comps = bench.roulette_tddlog_components({
+            1: {'#t': 0.25, '#f': 0.75}, 2: {'#t': 1.0},
+            3: {'(#t #f)': 0.5, '(#f #f)': 0.5}, 4: {'#t': 1.0}})
+        self.assertEqual(comps, [{'true': 0.25, 'false': 0.75}, {'0': 0.5, '1': 0.5, '2': 0.0, '3': 0.0}])
+        with self.assertRaisesRegex(ValueError, 'neither Booleans nor lists of one width'):
+            bench.roulette_tddlog_components({1: {'(#t)': 0.5, '(#t #f)': 0.5}})
+
+    def args(self, **kw):
+        base = dict(suite='roulette', only=[], families=[], dir='bench', timeout=30, roulette_benchmarks='rb',
+                    roulette_tddlog='racket {file}', tddlog='tddlog')
+        base.update(kw)
+        return SimpleNamespace(**base)
+
+    def run_it(self, args, name, path, export_err, tddlog_out, export_out=None):
+        cmds = []
+
+        def timed(cmd, timeout, cwd=None):
+            cmds.append((cmd, timeout))
+            if cmd[0] == 'tddlog':
+                self.assertTrue(Path(cmd[-1]).exists())
+                return {'status': 'ok', 'seconds': 0.5, 'stdout': tddlog_out, 'stderr': ''}
+            if 'make' in cmd or '--make' in cmd:
+                return {'status': 'ok', 'seconds': 9.0, 'stdout': '', 'stderr': ''}
+            return {'status': 'ok', 'seconds': 2.0, 'stdout': export_out or self.CIRCUIT, 'stderr': export_err}
+        with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', side_effect=timed):
+            r = bench.run_roulette_tddlog(self.args(dir=d, **args), name, path)
+            self.assertEqual(os.listdir(d), [])
+        return r, cmds
+
+    SUMMARY = 'roulette2problog: 1 queries, 5 values, 2 flips, 3 gates, 1 observations; program 1.25 s, circuit 0.25 s\n'
+
+    def test_a_driver_is_answered_as_the_atoms_it_prints(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, 'p.pl')
+            path.write_text('query(a).\nquery(b).\nquery(c).\n')
+            # print.rkt's emit: the atom, the recording engine's weight, the value
+            err = 'roulette_q a 1 x\nroulette_q b 1 y\nroulette_q c 0 z\n' + self.SUMMARY
+            out = ''.join(f'{q}: {p}\n' for q, p in self.ANSWERS.items())
+            r, cmds = self.run_it({}, 'rl_motivating_1000', str(path), err, out)
+        data = bench.ROULETTE_DATA
+        self.assertEqual([c for c, _ in cmds[:3]], [
+            ['racket', '-l-', 'raco', 'make', f'{data}/motivating.rkt'],
+            ['racket', bench.RT_EXPORTER, '--make', f'{data}/motivating.rkt'],
+            ['racket', bench.RT_EXPORTER, f'{data}/motivating.rkt', '1000']])
+        self.assertEqual(cmds[3][0][:6], ['tddlog', '--stats', '--precision', '17', '--vtree', 'auto'])
+        # tddlog's budget is what the export leaves of the limit
+        self.assertAlmostEqual(cmds[3][1], 30 - 1.5)
+        self.assertEqual(r['status'], 'ok')
+        self.assertAlmostEqual(r['answers']['a'], 5 / 12)
+        self.assertAlmostEqual(r['answers']['b'], 7 / 12)
+        self.assertEqual(r['answers']['c'], 0.0)
+        self.assertEqual(r['seconds'], 2.5)
+        self.assertEqual(r['stats']['inproc_seconds'], 2.0)
+        self.assertEqual((r['stats']['program_s'], r['stats']['circuit_s'], r['stats']['tddlog_s']),
+                         (1.25, 0.25, 0.5))
+
+    def test_a_networks_value_that_reads_as_a_number_loses_its_bars(self):
+        # The circuit's note writes the symbol 0 as |0|, the ProbLog program's atom reads v_0.
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, 'p.pl')
+            path.write_text('query(p392115290(v_0)).\nquery(p392115290(v_1)).\n')
+            r, _ = self.run_it({}, 'rl_bn_pigs', str(path), self.SUMMARY, 'q1(0): 0.25\nq1(1): 0.75\n',
+                               export_out='% q1(0): |0|\n% q1(1): |1|\n')
+        self.assertEqual(r['answers'], {'p392115290(v_0)': 0.25, 'p392115290(v_1)': 0.75})
+        self.assertNotIn('other', r['stats'])
+
+    def test_out_of_fuel_is_one_past_the_largest_total_of_positive_probability(self):
+        # hardware-bitwidth.rkt under the exporter: every total the circuit can take (0 to 7),
+        # #f labelled one past the largest (res(8)); Roulette's run leaves out totals 4, 6 and 7
+        # of probability 0, and labels #f res(6)
+        circuit = '% infer was called 1 times\n' + ''.join(f'% q1({k}): {k}\n' for k in range(8)) + '% q1(8): #f\n'
+        answers = {f'q1({k})': p for k, p in enumerate([0.1, 0.1, 0.1, 0.1, 0, 0.1, 0, 0, 0.5])}
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, 'p.pl')
+            path.write_text(''.join(f'query(res({k})).\n' for k in (0, 1, 2, 3, 5, 6)))
+            # #f first: total 6's line after it, of probability 0, does not replace its answer
+            err = 'roulette_q res(8) 0.1 #f\n' + ''.join(f'roulette_q res({k}) 0.1 {k}\n' for k in range(8)) + self.SUMMARY
+            out = ''.join(f'{q}: {p}\n' for q, p in answers.items())
+            r, _ = self.run_it({}, 'rl_hardware_bitwidth_5', str(path), err, out, export_out=circuit)
+        self.assertEqual(r['status'], 'ok')
+        self.assertAlmostEqual(r['answers']['res(6)'], 0.5)
+        self.assertAlmostEqual(r['answers']['res(5)'], 0.1)
+        self.assertNotIn('res(8)', r['stats'].get('other', {}))
+        self.assertEqual(bench.roulette_tddlog_atom('rl_hardware', 'res(4)', '#f', {'0': 1.0}), 'res(4)')
+
+    def test_the_charge_past_the_limit_is_a_timeout(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, 'p.pl')
+            path.write_text('query(a).\n')
+            err = 'roulette_q a 1 x\n' + self.SUMMARY.replace('program 1.25', 'program 29.75')
+            out = ''.join(f'{q}: {p}\n' for q, p in self.ANSWERS.items())
+            r, cmds = self.run_it({}, 'rl_motivating_1000', str(path), err, out)
+        self.assertEqual(cmds[3][1], 1.0)
+        self.assertEqual(r['status'], 'timeout')
+
+    def test_an_export_without_its_summary_is_an_error(self):
+        r, cmds = self.run_it({}, 'rl_motivating_1000', 'p.pl', 'oops\n', '')
+        self.assertEqual(len(cmds), 3)
+        self.assertEqual((r['status'], r['error']), ('error', 'roulette2problog.rkt wrote no program: oops'))
+
+    def test_it_runs_the_roulette_suite_and_the_dice_programs_roulette_translates(self):
+        self.assertTrue(bench.roulette_tddlog_accepts(self.args(), 'rl_motivating_1000'))
+        args = self.args(suite='standard')
+        taken = [n for n in bench.instances(args) if bench.roulette_tddlog_accepts(args, n)]
+        self.assertTrue(taken)
+        for n in taken:
+            self.assertTrue(bench.instances(args)[n][1][1].startswith(str(scripts.parent / 'data' / 'dice')), n)
+        # noDice's programs, not the circuits of Alea.jl's
+        args = self.args(suite='ppl')
+        taken = {n for n in bench.instances(args) if bench.roulette_tddlog_accepts(args, n)}
+        self.assertEqual(taken, {n for n in bench.instances(args) if n.startswith('nodice_')})
+        self.assertTrue(taken)
+        args = self.args(suite='geni')
+        self.assertTrue(all(bench.roulette_tddlog_accepts(args, n) for n in bench.instances(args)))
+        # a network's Dice program is not one
+        args = self.args(suite='standard')
+        self.assertFalse(bench.roulette_tddlog_accepts(args, 'bn_asia'))
+
+
 class CirculetteTests(unittest.TestCase):
     """The circulette suite: Circulette's netlists, Roulette's circulette.rkt
     on each, and the ProbLog program roulette2problog.rkt writes from its
     run, one query a call of `infer`."""
+
+    def test_a_posterior_circulette_does_not_print_is_answered_only_below_its_threshold(self):
+        # 3 faults: q1 P(fail), q2 to q4 the singles, q5 to q7 the pairs, q8 the triple
+        ref = {'system': 'tddlog', 'export': {'queries': 8},
+               'answers': {'q1(1)': 1.0, 'q2(1)': 0.5, 'q3(1)': 0.0, 'q4(1)': 0.5,
+                           'q5(1)': 0.25, 'q6(1)': 1e-4, 'q7(1)': 0.25, 'q8(1)': 1e-9}}
+        printed = {'q1(1)': 1.0, 'q2(1)': 0.5, 'q4(1)': 0.5, 'q5(1)': 0.25, 'q7(1)': 0.25}
+        rec = {'instance': 'ct_exp', 'system': 'roulette', 'answers': printed}
+        self.assertEqual(bench.printed_answers(rec, ref), ref['answers'])
+        # left out above its threshold: a pair at 3e-4, a single above 0
+        for q, p in (('q6(1)', 3e-4), ('q3(1)', 1e-3), ('q8(1)', 1e-7)):
+            high = dict(ref, answers=dict(ref['answers'], **{q: p}))
+            self.assertNotIn(q, bench.printed_answers(rec, high))
+        # the failure's query is always printed
+        without = {'instance': 'ct_exp', 'system': 'roulette', 'answers': {'q2(1)': 0.5}}
+        self.assertNotIn('q1(1)', bench.printed_answers(without, ref))
+        # any other system, or instance, keeps its answers as they are
+        for other in (dict(rec, system='tddlog'), dict(rec, instance='rl_hmm_8')):
+            self.assertIs(bench.printed_answers(other, ref), printed)
+        # a reference that does not say how many calls there were
+        self.assertIs(bench.printed_answers(rec, {'answers': ref['answers']}), printed)
 
     # n = 2 faults: P(fail)'s call, then the singles and the pair
     PROGRAM = ('% infer was called 4 times; query K is its K-th call.\n'
@@ -1700,7 +1855,7 @@ class MerlinTests(unittest.TestCase):
     def test_own_seconds(self):
         """The own time of a system timed so (bench.OWN_TIME): warm, else in the
         process less its compilation, else the process's."""
-        self.assertEqual(set(bench.OWN_TIME), {'alea', 'roulette', 'pluck', 'tensorinference'})
+        self.assertEqual(set(bench.OWN_TIME), {'alea', 'roulette', 'roulette-tddlog', 'pluck', 'tensorinference'})
         alea = {'system': 'alea', 'seconds': 20.0, 'inproc_seconds': 12.5, 'jit_seconds': 12.25}
         self.assertEqual(bench.own_seconds(alea), 0.25)
         self.assertEqual(bench.own_seconds(dict(alea, warm_seconds=0.0625)), 0.0625)

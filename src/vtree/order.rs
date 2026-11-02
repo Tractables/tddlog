@@ -196,16 +196,8 @@ impl Program {
         scored.truncate(SCORED);
         // A component's cone is its own facts and its dependencies' cones;
         // dependencies come first.
-        let cone_bound = (fact_users.len() <= CONE_FACTS).then(|| {
-            let mut cone = vec![0u64; units.len()];
-            let mut bound = 0f64;
-            for i in 0..units.len() {
-                let own = facts_of[i].iter().fold(0u64, |m, &k| m | 1 << k);
-                cone[i] = deps[i].iter().fold(own, |m, &j| m | cone[j]);
-                bound += units[i].len() as f64 * 2f64.powi(cone[i].count_ones() as i32 + 1);
-            }
-            bound
-        });
+        let cone_bound =
+            (fact_users.len() <= CONE_FACTS).then(|| cone_bound(&units, &facts_of, &deps));
         let mut solo_facts = vec![0f64; units.len()];
         let mut shared_facts: Vec<usize> = Vec::new();
         for (k, users) in fact_users.iter().enumerate() {
@@ -321,36 +313,7 @@ impl Program {
                     }
                 }
             }
-            let mut bits = 0f64;
-            let mut mine = 0f64;
-            // `2^bits` is taken only at a position that introduces a fact
-            // after the bits changed: most positions of a scored span
-            // introduce nothing or lie between changes.
-            let mut scale = 1f64;
-            let mut stale = false;
-            for q in 0..span {
-                let add = scratch.add[q];
-                if add != 0.0 {
-                    bits += add;
-                    stale = true;
-                    scratch.add[q] = 0.0;
-                }
-                let introduced = scratch.introduced[first + q];
-                if introduced != 0.0 {
-                    if stale {
-                        scale = bits.min(900.0).exp2();
-                        stale = false;
-                    }
-                    mine += scale * introduced;
-                }
-                let rem = scratch.rem[q];
-                if rem != 0.0 {
-                    bits -= rem;
-                    stale = true;
-                    scratch.rem[q] = 0.0;
-                }
-            }
-            total += mine;
+            total += sweep_span(scratch, first, span);
             work += span as u64;
             for &u in set {
                 scratch.in_set[u] = false;
@@ -362,6 +325,50 @@ impl Program {
         }
         (total.max(1.0).log2(), work)
     }
+}
+
+fn cone_bound(units: &[Vec<AtomId>], facts_of: &[Vec<usize>], deps: &[Vec<usize>]) -> f64 {
+    let mut cone = vec![0u64; units.len()];
+    let mut bound = 0f64;
+    for i in 0..units.len() {
+        let own = facts_of[i].iter().fold(0u64, |m, &k| m | 1 << k);
+        cone[i] = deps[i].iter().fold(own, |m, &j| m | cone[j]);
+        bound += units[i].len() as f64 * 2f64.powi(cone[i].count_ones() as i32 + 1);
+    }
+    bound
+}
+
+fn sweep_span(scratch: &mut Scratch, first: usize, span: usize) -> f64 {
+    let mut bits = 0f64;
+    let mut mine = 0f64;
+    // `2^bits` is taken only at a position that introduces a fact
+    // after the bits changed: most positions of a scored span
+    // introduce nothing or lie between changes.
+    let mut scale = 1f64;
+    let mut stale = false;
+    for q in 0..span {
+        let add = scratch.add[q];
+        if add != 0.0 {
+            bits += add;
+            stale = true;
+            scratch.add[q] = 0.0;
+        }
+        let introduced = scratch.introduced[first + q];
+        if introduced != 0.0 {
+            if stale {
+                scale = bits.min(900.0).exp2();
+                stale = false;
+            }
+            mine += scale * introduced;
+        }
+        let rem = scratch.rem[q];
+        if rem != 0.0 {
+            bits -= rem;
+            stale = true;
+            scratch.rem[q] = 0.0;
+        }
+    }
+    mine
 }
 
 #[derive(Default)]
@@ -606,18 +613,7 @@ pub(crate) fn search(
         if j == i {
             j = if j < hi { j + 1 } else { j - 1 };
         }
-        let (lo_p, hi_p) = (i.min(j), i.max(j));
-        let repos = |order: &[usize], pos: &mut [usize]| {
-            for (p, &w) in order.iter().enumerate().take(hi_p + 1).skip(lo_p) {
-                pos[w] = p;
-            }
-        };
-        if i < j {
-            order[i..=j].rotate_left(1);
-        } else {
-            order[j..=i].rotate_right(1);
-        }
-        repos(&order, &mut pos);
+        rotate_move(&mut order, &mut pos, i, j);
         let (cost, w) = program.objective(&pos, &mut scratch);
         work += w;
         if cost < cost_c || rng.unit() < ((cost_c - cost) / t).exp() {
@@ -633,12 +629,7 @@ pub(crate) fn search(
                 }
             }
         } else {
-            if i < j {
-                order[i..=j].rotate_right(1);
-            } else {
-                order[j..=i].rotate_left(1);
-            }
-            repos(&order, &mut pos);
+            rotate_move(&mut order, &mut pos, j, i);
         }
     }
     let note = format!(
@@ -652,6 +643,19 @@ pub(crate) fn search(
         best.into_iter().map(|u| program.units[u].clone()).collect(),
         note,
     )
+}
+
+fn rotate_move(order: &mut [usize], pos: &mut [usize], from: usize, to: usize) {
+    let (lo, hi) = if from < to {
+        order[from..=to].rotate_left(1);
+        (from, to)
+    } else {
+        order[to..=from].rotate_right(1);
+        (to, from)
+    };
+    for (p, &w) in order.iter().enumerate().take(hi + 1).skip(lo) {
+        pos[w] = p;
+    }
 }
 
 #[cfg(test)]

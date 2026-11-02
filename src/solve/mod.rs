@@ -11,6 +11,7 @@ mod tests;
 use std::time::Instant;
 
 use crate::auto;
+use crate::cnf::WeightedCnf;
 use crate::evaluation::Evaluation;
 use crate::ground::{self, GroundOptions, GroundProgram};
 use crate::strategy::{Prepared, Strategy};
@@ -290,8 +291,26 @@ pub fn rewritten(source: &str, options: &Options) -> Result<GroundProgram, Error
     let ground = ground::ground(&parsed(source, options)?, &options.ground_options())?;
     Ok(match options.strategy {
         Strategy::Auto => ground,
-        Strategy::Trial(kind) => kind.prepare(ground)?.ground,
+        Strategy::Trial(kind) => std::sync::Arc::unwrap_or_clone(kind.prepare(ground)?.ground),
     })
+}
+
+/// The program [`rewritten`] gives under `auto`, written without its
+/// linear recursion (`Kind::eliminated`), as a weighted CNF
+/// ([`WeightedCnf`], `tddlog --cnf`). It comes before any layout and any
+/// compile, so a strategy other than `auto` or a projection is refused. A
+/// program that keeps a cyclic component fails with [`Error::Cnf`].
+pub fn weighted_cnf(source: &str, options: &Options) -> Result<WeightedCnf, Error> {
+    options.checked()?;
+    if options.strategy != Strategy::Auto || options.projection.is_some() {
+        return Err(Error::Options(
+            "the weighted CNF comes before any layout and any compile, so a strategy other than \
+             auto or a projection would do nothing"
+                .into(),
+        ));
+    }
+    let ground = ground::ground(&parsed(source, options)?, &options.ground_options())?;
+    WeightedCnf::of(&Kind::eliminated(ground)).map_err(Error::Cnf)
 }
 
 /// `source` parsed, without its queries where `options` leave them out.
@@ -340,12 +359,9 @@ pub(crate) fn run_prepared(
     let ((results, query_sizes), vtree) = layout.vtree.context().run(|engine| {
         let backend = tp::TddBackend::new(engine, layout.vtree.clone());
         let answers = evaluation.run(
-            &ground,
-            &deps,
-            &layout.order,
+            (&ground, &deps, &layout.order),
             &backend,
-            kind,
-            projection,
+            (kind, projection),
             first_pairs,
             None,
             None,
@@ -454,7 +470,7 @@ pub(crate) fn run_as_given(
     first_pairs: usize,
 ) -> Result<Run, Error> {
     run_prepared(
-        Prepared::lay_out(ground, None, kind, 0.0)?,
+        Prepared::lay_out(std::sync::Arc::new(ground), None, kind, 0.0)?,
         kind,
         projection,
         first_pairs,

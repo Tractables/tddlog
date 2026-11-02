@@ -409,8 +409,7 @@ pub(crate) fn normalize(
     for (k, qr) in program.query_rules.iter().enumerate() {
         // The pattern's variables that the body binds: the others stay
         // variables of the queries, as ProbLog's findall1.pl has one.
-        let mut vars: Vec<String> = Vec::new();
-        qr.pattern.vars_into(&mut vars);
+        let mut vars = qr.pattern.vars();
         let mut bound: Vec<String> = Vec::new();
         for l in &qr.body {
             l.vars_into(&mut bound);

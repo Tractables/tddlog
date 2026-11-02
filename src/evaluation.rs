@@ -93,15 +93,11 @@ impl Evaluation {
     /// projected finish ([`tp::Horizon`]). A dynamic layout searches first at `first_pairs`
     /// live pairs; the vtree the search reached is `backend`'s, and the
     /// next call must build on it.
-    #[allow(clippy::too_many_arguments)]
     pub(crate) fn run(
         &mut self,
-        gp: &GroundProgram,
-        deps: &ground::deps::Deps,
-        order: &[ground::AtomId],
+        (gp, deps, order): (&GroundProgram, &ground::deps::Deps, &[ground::AtomId]),
         backend: &tp::TddBackend,
-        kind: Kind,
-        projection: Projection,
+        (kind, projection): (Kind, Projection),
         first_pairs: usize,
         watch: Option<usize>,
         horizon: Option<tp::Horizon>,
@@ -249,12 +245,9 @@ mod tests {
                 let backend = TddBackend::new(engine, tree.clone());
                 evaluation
                     .run(
-                        &gp,
-                        &deps,
-                        &layout.order,
+                        (&gp, &deps, &layout.order),
                         &backend,
-                        Kind::Closed,
-                        Projection::default(),
+                        (Kind::Closed, Projection::default()),
                         1,
                         watch,
                         None,

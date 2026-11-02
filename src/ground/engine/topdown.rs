@@ -952,13 +952,14 @@ impl<'a> TopDown<'a> {
             let mark = self.mark();
             let key = self.tables[t as usize].call.clone();
             let call = self.unkey(&key, rule.args.len());
-            self.frames.last_mut().expect("a frame").call = call.clone();
             let base = self.binds.len() as u32;
             self.binds
                 .resize(self.binds.len() + rule.vars as usize, None);
             let head: Vec<T> = rule.args.iter().map(|a| Self::inst(a, base)).collect();
-            if self.unify_all(&head, &call) {
-                self.body(t, rule, base, 0, &call, &mut Vec::new())?;
+            let unified = self.unify_all(&head, &call);
+            self.frames.last_mut().expect("a frame").call = call;
+            if unified {
+                self.body(t, rule, base, 0, &mut Vec::new())?;
             }
             self.undo(mark);
         }
@@ -966,7 +967,7 @@ impl<'a> TopDown<'a> {
     }
 
     /// Resolves the literals of `rule` from the `i`th on, its variables
-    /// from `base`, for table `t`'s call `call`; `steps` holds what the
+    /// from `base`, for table `t`'s call; `steps` holds what the
     /// literals before it read: atoms, negated or not, and the ranks of
     /// built-ins' solutions.
     fn body(
@@ -975,61 +976,61 @@ impl<'a> TopDown<'a> {
         rule: &Rule,
         base: u32,
         i: usize,
-        call: &[T],
         steps: &mut Vec<Step>,
     ) -> Result<(), GroundError> {
         let Some(lit) = rule.body.get(i) else {
-            return self.answer(t, call, rule.group, steps);
+            return self.answer(t, rule.group, steps);
         };
         let next = |me: &mut Self, step: Option<Step>, steps: &mut Vec<Step>| {
             steps.extend(step);
-            let r = me.body(t, rule, base, i + 1, call, steps);
+            let r = me.body(t, rule, base, i + 1, steps);
             if step.is_some() {
                 steps.pop();
             }
             r
         };
         match lit {
-            Lit::Call(p, args, false) => {
+            Lit::Call(p, args, negated) => {
                 let args: Vec<T> = args.iter().map(|a| Self::inst(a, base)).collect();
                 let p = *p;
-                match self.preds[p as usize].kind {
-                    Kind::Rules => {
-                        let u = self.call(p, &args)?;
-                        let arity = args.len();
-                        let mut k = 0;
-                        while let Some((key, a)) = self.tables[u as usize].answers.get(k).cloned() {
-                            k += 1;
-                            let mark = self.mark();
-                            let answer = self.unkey(&key, arity);
-                            if self.unify_all(&args, &answer) {
-                                next(self, Some(Step::Pos(a)), steps)?;
+                if !negated {
+                    match self.preds[p as usize].kind {
+                        Kind::Rules => {
+                            let u = self.call(p, &args)?;
+                            let arity = args.len();
+                            let mut k = 0;
+                            while let Some((key, a)) =
+                                self.tables[u as usize].answers.get(k).cloned()
+                            {
+                                k += 1;
+                                let mark = self.mark();
+                                let answer = self.unkey(&key, arity);
+                                if self.unify_all(&args, &answer) {
+                                    next(self, Some(Step::Pos(a)), steps)?;
+                                }
+                                self.undo(mark);
                             }
-                            self.undo(mark);
                         }
-                    }
-                    Kind::Facts(f) => {
-                        for vals in self.fact_matches(p, f, &args) {
-                            let mark = self.mark();
-                            let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
-                            if self.unify_all(&args, &tuple) {
-                                let a = self.atom(p, vals)?;
-                                next(self, Some(Step::Pos(a)), steps)?;
+                        Kind::Facts(f) => {
+                            for vals in self.fact_matches(p, f, &args) {
+                                let mark = self.mark();
+                                let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
+                                if self.unify_all(&args, &tuple) {
+                                    let a = self.atom(p, vals)?;
+                                    next(self, Some(Step::Pos(a)), steps)?;
+                                }
+                                self.undo(mark);
                             }
-                            self.undo(mark);
                         }
+                        Kind::Switch => {
+                            let vals = self.values(p, &args, rule, "a probabilistic choice")?;
+                            let a = self.atom(p, vals)?;
+                            next(self, Some(Step::Pos(a)), steps)?;
+                        }
+                        Kind::Undefined => {}
                     }
-                    Kind::Switch => {
-                        let vals = self.values(p, &args, rule, "a probabilistic choice")?;
-                        let a = self.atom(p, vals)?;
-                        next(self, Some(Step::Pos(a)), steps)?;
-                    }
-                    Kind::Undefined => {}
+                    return Ok(());
                 }
-            }
-            Lit::Call(p, args, true) => {
-                let args: Vec<T> = args.iter().map(|a| Self::inst(a, base)).collect();
-                let p = *p;
                 if self.preds[p as usize].kind == Kind::Switch {
                     let vals = self.values(p, &args, rule, "a negation")?;
                     let a = self.atom(p, vals)?;
@@ -1054,7 +1055,7 @@ impl<'a> TopDown<'a> {
                 };
                 let n = steps.len();
                 steps.extend(answers.into_iter().map(Step::Neg));
-                let r = self.body(t, rule, base, i + 1, call, steps);
+                let r = self.body(t, rule, base, i + 1, steps);
                 steps.truncate(n);
                 r?;
             }
@@ -1657,15 +1658,10 @@ impl<'a> TopDown<'a> {
     /// An answer of table `t` from the instance of a clause of `group`
     /// just proved: the call's terms as bound, read with the body's
     /// `steps`.
-    fn answer(
-        &mut self,
-        t: u32,
-        call: &[T],
-        group: u32,
-        steps: &[Step],
-    ) -> Result<(), GroundError> {
+    fn answer(&mut self, t: u32, group: u32, steps: &[Step]) -> Result<(), GroundError> {
         let p = self.tables[t as usize].pred;
-        let args = self.full_all(call)?;
+        let call = self.frames.last().expect("a frame").call.clone();
+        let args = self.full_all(&call)?;
         let Some(key) = Self::key(&args) else {
             return Err(self.too_deep(p, "answer"));
         };
@@ -1823,6 +1819,12 @@ impl<'a> TopDown<'a> {
         Ok(())
     }
 
+    fn display_atom(&mut self, a: u32) -> Atom {
+        let (p, vals) = self.atoms[a as usize].clone();
+        let args: Args = vals.iter().map(|&v| self.g.term_of(v)).collect();
+        Atom::new(self.preds[p as usize].name.clone(), args)
+    }
+
     /// The ground program: the rules proved, the program's switches and
     /// facts, and its queries and evidence with the query rules' instances.
     fn program(
@@ -1836,9 +1838,7 @@ impl<'a> TopDown<'a> {
             if let Some(x) = &shown[a as usize] {
                 return x.clone();
             }
-            let (p, vals) = me.atoms[a as usize].clone();
-            let args: Args = vals.iter().map(|&v| me.g.term_of(v)).collect();
-            let x = Atom::new(me.preds[p as usize].name.clone(), args);
+            let x = me.display_atom(a);
             shown[a as usize] = Some(x.clone());
             x
         };
@@ -1918,9 +1918,7 @@ impl lists::Source for TopDown<'_> {
     }
 
     fn show(&mut self, a: u32) -> String {
-        let (p, vals) = self.atoms[a as usize].clone();
-        let args: Args = vals.iter().map(|&v| self.g.term_of(v)).collect();
-        Atom::new(self.preds[p as usize].name.clone(), args).to_string()
+        self.display_atom(a).to_string()
     }
 
     fn fresh(&mut self) -> Result<u32, GroundError> {

@@ -3,8 +3,8 @@ tests/roulette/ (the .rkt files), the ProbLog program committed beside it,
 whose answers tests/it/examples.rs checks against the ones computed by hand
 in the program's comment; with --tddlog it runs the program with tddlog
 answering its queries; --make compiles a program's modules ahead of its
-runs; the circuit is written in time linear in its size; and it refuses
-what it does not read. The programs of tests/roulette/ are in the language
+runs; the circuit is written in time linear in its size; its numbering does
+not depend on when the collector runs; and it refuses what it does not read. The programs of tests/roulette/ are in the language
 of Roulette's PLDI 2025 artifact, those of tests/roulette/lib/ in that of
 Roulette's package roulette-lib or of its example language
 `roulette/example/disrupt` (the package `roulette`).
@@ -183,6 +183,47 @@ class RouletteLibTests(unittest.TestCase):
                     self.assertEqual(len(got), len(ws), line)
                     for g, w in zip(got, ws):
                         self.assertAlmostEqual(g, w, delta=1e-9, msg=line)
+
+    @unittest.skipUnless(TDDLOG.exists(), 'no tddlog binary at TDDLOG_BIN')
+    def test_observations_below_a_doubles_range(self):
+        # 400 observed flips of 0.1, P(e) = 1e-400: a value's weight is 0 in
+        # a double, its probability given the observations 0.3.
+        with tempfile.TemporaryDirectory() as d:
+            path = program(d, '(define (model)\n'
+                              '  (define a (flip 0.3))\n'
+                              '  (for ([i (in-range 400)]) (observe! (flip 0.1)))\n'
+                              "  (if a 'x 'y))\n"
+                              '(define m (query (model)))\n')
+            r = lib(path)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn('400 observations', r.stdout)
+            pl = Path(d, 'program.pl')
+            pl.write_text(r.stdout)
+            t = subprocess.run([str(TDDLOG), '--precision', '17', str(pl)], capture_output=True, text=True)
+            self.assertEqual(t.returncode, 0, t.stderr)
+            answers = {q: float(p) for q, p in (line.split(':') for line in t.stdout.splitlines())}
+            value = dict(re.findall(r'^% (q1\(\d+\)): (.*)$', r.stdout, re.M))
+            for q, v in value.items():
+                self.assertAlmostEqual(answers[q], {'x': 0.3, 'y': 0.7}.get(v, 0.0), delta=1e-12, msg=v)
+
+    def test_a_collection_does_not_renumber_the_gates(self):
+        # The language's table of terms is weak, so that `both`'s term, which
+        # nothing holds at the collection, would be made anew after `later`'s.
+        with tempfile.TemporaryDirectory() as d:
+            r = lib(program(d, """(define (main)
+  (define a (flip 0.5))
+  (define b (flip 0.5))
+  (define c (flip 0.5))
+  (define (both) (and a b))
+  (void (both))
+  (collect-garbage)
+  (define later (and a c))
+  (and (both) later))
+(query (main))
+"""))
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn('g1 :- f1, f2.\n', r.stdout)
+            self.assertIn('g2 :- f1, f3.\n', r.stdout)
 
     def test_a_compiled_script_is_refused(self):
         # raco make of the script: its replacements of Roulette's modules

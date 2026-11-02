@@ -183,21 +183,21 @@ pub unsafe extern "C" fn tddlog_solve(
     else {
         return TDDLOG_ERROR_INVALID_INPUT;
     };
-    let evidence = match options.evidence.is_null() {
-        true => None,
-        false => Some(unsafe { CStr::from_ptr(options.evidence) }.to_bytes()),
-    };
+    let evidence = (!options.evidence.is_null())
+        .then(|| unsafe { CStr::from_ptr(options.evidence) }.to_bytes());
     let Some(arguments) = (unsafe { program_arguments(options.arguments, options.num_arguments) })
     else {
         return TDDLOG_ERROR_INVALID_INPUT;
     };
     let read = tddlog::network::ReadOptions {
-        queries: match options.queries {
-            true => tddlog::network::Queries::All,
-            false => tddlog::network::Queries::None,
+        queries: if options.queries {
+            tddlog::network::Queries::All
+        } else {
+            tddlog::network::Queries::None
         },
         evidence: evidence.map(|e| format.evidence(e)),
         rescale: false,
+        whole: false,
         arguments,
     };
     let options = tddlog::Options {
@@ -220,7 +220,7 @@ pub unsafe extern "C" fn tddlog_solve(
             let status = match error {
                 tddlog::Error::Options(_) => TDDLOG_ERROR_INVALID_INPUT,
                 tddlog::Error::Parse(_) | tddlog::Error::Network(_) => TDDLOG_ERROR_PARSE,
-                tddlog::Error::Ground(_) => TDDLOG_ERROR_GROUND,
+                tddlog::Error::Ground(_) | tddlog::Error::Cnf(_) => TDDLOG_ERROR_GROUND,
                 tddlog::Error::Vtree(_)
                 | tddlog::Error::Compile(_)
                 | tddlog::Error::Trials { .. } => TDDLOG_ERROR_COMPILE,

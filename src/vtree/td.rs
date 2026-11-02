@@ -139,6 +139,50 @@ pub(super) struct Rooted {
     leaf: Vec<bool>,
 }
 
+/// `td`'s bags rooted at `first` and at the first bag of every other
+/// component: each bag's parent (`usize::MAX` at a root), a preorder, the
+/// roots, and each bag's children.
+pub(super) fn root_bags(
+    td: &goatd::TreeDecomposition,
+    first: usize,
+) -> (Vec<usize>, Vec<usize>, Vec<usize>, Vec<Vec<usize>>) {
+    let bags = td.bags();
+    let adjacency = td.adjacency();
+    let mut parent = vec![usize::MAX; bags.len()];
+    let mut preorder = Vec::with_capacity(bags.len());
+    let mut visited = vec![false; bags.len()];
+    let mut roots = Vec::new();
+    for start in (first < bags.len())
+        .then_some(first)
+        .into_iter()
+        .chain(0..bags.len())
+    {
+        if visited[start] {
+            continue;
+        }
+        visited[start] = true;
+        roots.push(start);
+        let mut stack = vec![start];
+        while let Some(b) = stack.pop() {
+            preorder.push(b);
+            for &c in &adjacency[b] {
+                if !visited[c] {
+                    visited[c] = true;
+                    parent[c] = b;
+                    stack.push(c);
+                }
+            }
+        }
+    }
+    let mut children: Vec<Vec<usize>> = vec![Vec::new(); bags.len()];
+    for &b in &preorder {
+        if parent[b] != usize::MAX {
+            children[parent[b]].push(b);
+        }
+    }
+    (parent, preorder, roots, children)
+}
+
 impl Rooted {
     /// `td` rooted at bag `first`, and every other tree of the forest at its
     /// first bag. `position` orders the facts as the compiler consumes them.
@@ -151,32 +195,10 @@ impl Rooted {
         leaf: &dyn Fn(AtomId) -> bool,
     ) -> Option<Rooted> {
         let bags = td.bags();
-        let adjacency = td.adjacency();
         if bags.is_empty() {
             return None;
         }
-        let mut parent = vec![usize::MAX; bags.len()];
-        let mut preorder = Vec::with_capacity(bags.len());
-        let mut visited = vec![false; bags.len()];
-        let mut roots = Vec::new();
-        for start in std::iter::once(first).chain(0..bags.len()) {
-            if visited[start] {
-                continue;
-            }
-            visited[start] = true;
-            roots.push(start);
-            let mut stack = vec![start];
-            while let Some(b) = stack.pop() {
-                preorder.push(b);
-                for &c in &adjacency[b] {
-                    if !visited[c] {
-                        visited[c] = true;
-                        parent[c] = b;
-                        stack.push(c);
-                    }
-                }
-            }
-        }
+        let (parent, preorder, mut roots, mut children) = root_bags(td, first);
 
         // Top down, so that a fact lands in the highest bag that holds it.
         let mut introduced: Vec<Vec<AtomId>> = vec![Vec::new(); bags.len()];
@@ -196,12 +218,6 @@ impl Rooted {
         }
 
         // Bottom up: a preorder reversed has every bag after its children.
-        let mut children: Vec<Vec<usize>> = vec![Vec::new(); bags.len()];
-        for &b in &preorder {
-            if parent[b] != usize::MAX {
-                children[parent[b]].push(b);
-            }
-        }
         // The latest position in the compile order any fact of a bag's subtree
         // holds. A subtree whose facts are consumed late belongs leftmost, nearer
         // the root, for the same reason a bag's own spine is ordered that way.
@@ -288,15 +304,19 @@ impl Rooted {
             tops.push(s);
         }
         let root = forest.balanced(&tops)?;
+        let union = self.widest_root_path(bags, placed.len());
+        Some((forest, root, union))
+    }
 
+    fn widest_root_path(&self, bags: &[goatd::TdBag], num_atoms: usize) -> usize {
         let mut union = 0usize;
-        let mut on_path = vec![0u32; placed.len()];
+        let mut on_path = vec![0u32; num_atoms];
         let mut live = 0usize;
         enum Walk {
             Enter(usize),
             Leave(usize),
         }
-        let mut walk: Vec<Walk> = roots.iter().rev().map(|&r| Walk::Enter(r)).collect();
+        let mut walk: Vec<Walk> = self.roots.iter().rev().map(|&r| Walk::Enter(r)).collect();
         while let Some(step) = walk.pop() {
             match step {
                 Walk::Enter(b) => {
@@ -308,7 +328,7 @@ impl Rooted {
                     }
                     union = union.max(live);
                     walk.push(Walk::Leave(b));
-                    walk.extend(children[b].iter().rev().map(|&c| Walk::Enter(c)));
+                    walk.extend(self.children[b].iter().rev().map(|&c| Walk::Enter(c)));
                 }
                 Walk::Leave(b) => {
                     for &v in bags[b].vertices() {
@@ -320,7 +340,7 @@ impl Rooted {
                 }
             }
         }
-        Some((forest, root, union))
+        union
     }
 }
 

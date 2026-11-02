@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """Generate a blood type program on a random pedigree.
 
-usage: gen_pedigree.py G W [--observe F] [--seed S]
+usage: gen_pedigree.py G W [--observe F] [--seed S] --template
+       gen_pedigree.py G W [--observe F] [--seed S] --data KEY
+
+The family is one program and its data (bench.py's FOLD): --template prints
+the rules, which consult the pedigree (their place $1); --data prints the
+pedigree, its founders' priors, the observed blood types and the queries,
+KEY being only its name; there are no other arguments.
 
 The rules are cplint's bloodtype example (data/cplint/bloodtype.pl, read
 by `tddlog --program`, the binary $TDDLOG or the source tree's; Meert,
@@ -47,12 +53,24 @@ def main():
     ap.add_argument('w', type=int)
     ap.add_argument('--observe', type=float, default=0.3)
     ap.add_argument('--seed', type=int, default=1)
+    mode = ap.add_mutually_exclusive_group(required=True)
+    mode.add_argument('--template', action='store_true')
+    mode.add_argument('--arguments', action='store_true')
+    mode.add_argument('--data', metavar='KEY')
     a = ap.parse_args()
     if a.g < 2 or a.w < 2:
         ap.error('a pedigree needs two generations of at least two people')
     rng = random.Random(a.seed)
     rules = [line for line in source_tree.program(RULES).splitlines() if ':-' in line]
     assert len(rules) == 27, len(rules)
+    if a.template:
+        print("% rules of cplint's bloodtype example (data/cplint/bloodtype.pl); $1 is a pedigree, a file of\n"
+              '% facts father/2 and mother/2, the founders\' alleles, evidence/1 and query/1 directives')
+        print('\n'.join(rules))
+        print(':- consult($1).')
+        return
+    if a.arguments:
+        return
 
     def draw(row):
         """A value of `row`, or None for the mass it leaves to no value."""
@@ -90,8 +108,6 @@ def main():
                     evidence.append((p, v))
 
     print(f'% blood type on a random pedigree: {a.g} generations of {a.w}, observed {a.observe}, seed {a.seed}')
-    print("% rules of cplint's bloodtype example (data/cplint/bloodtype.pl)")
-    print('\n'.join(rules))
     for p in people[0]:
         for c in ('mchrom', 'pchrom'):
             print('; '.join(f'{q}::{c}({p},{v})' for v, q in PRIOR) + '.')

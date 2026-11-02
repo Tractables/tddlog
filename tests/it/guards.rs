@@ -639,16 +639,7 @@ impl Circuit {
             panic!("the observation folded")
         };
         c.evidence = e;
-        c.queries = genes
-            .iter()
-            .filter_map(|n| {
-                if let Node::Lit(Lit::Gate(g, true)) = n {
-                    Some(*g)
-                } else {
-                    None
-                }
-            })
-            .collect();
+        c.queries = Self::gate_queries(&genes);
         (c, any)
     }
 
@@ -693,16 +684,7 @@ impl Circuit {
             panic!("the observations folded")
         };
         c.evidence = e;
-        c.queries = a
-            .iter()
-            .filter_map(|n| {
-                if let Node::Lit(Lit::Gate(g, true)) = n {
-                    Some(*g)
-                } else {
-                    None
-                }
-            })
-            .collect();
+        c.queries = Self::gate_queries(&a);
         c
     }
 
@@ -747,16 +729,7 @@ impl Circuit {
             panic!("the observations folded")
         };
         c.evidence = e;
-        c.queries = mu
-            .iter()
-            .filter_map(|n| {
-                if let Node::Lit(Lit::Gate(g, true)) = n {
-                    Some(*g)
-                } else {
-                    None
-                }
-            })
-            .collect();
+        c.queries = Self::gate_queries(&mu);
         c
     }
 
@@ -786,16 +759,7 @@ impl Circuit {
             panic!("the observations folded")
         };
         c.evidence = e;
-        c.queries = key
-            .iter()
-            .filter_map(|n| {
-                if let Node::Lit(Lit::Gate(g, true)) = n {
-                    Some(*g)
-                } else {
-                    None
-                }
-            })
-            .collect();
+        c.queries = Self::gate_queries(&key);
         c
     }
 
@@ -918,7 +882,11 @@ impl Circuit {
             panic!("the toss folded")
         };
         self.evidence = e;
-        self.queries = value
+        self.queries = Self::gate_queries(value);
+    }
+
+    fn gate_queries(nodes: &[Node]) -> Vec<usize> {
+        nodes
             .iter()
             .filter_map(|n| {
                 if let Node::Lit(Lit::Gate(g, true)) = n {
@@ -927,7 +895,34 @@ impl Circuit {
                     None
                 }
             })
-            .collect();
+            .collect()
+    }
+
+    /// Runs `self` under `decision`, `program`, and `auto`, asserting that
+    /// each matches [`Circuit::answers`], and returns the `decision` run.
+    fn check_decision(&self, label: &str) -> tddlog::Run {
+        let source = self.source();
+        let expected = self.answers();
+        assert!(ground(&source, true).stats.decisions.is_some(), "{label}");
+        let mut decision_run = None;
+        for strategy in [
+            Strategy::Trial(Kind::Decision),
+            Strategy::Trial(Kind::Program { fan_in: false }),
+            Strategy::Auto,
+        ] {
+            let run = common::run(&source, &common::options(strategy, Projection::default()))
+                .unwrap_or_else(|e| panic!("{label}, {strategy}: {e}\n{source}"));
+            assert_answers(
+                &format!("{label}, {strategy}"),
+                run.results.as_ref().expect("evidence is consistent"),
+                &expected,
+                1e-12,
+            );
+            if strategy == Strategy::Trial(Kind::Decision) {
+                decision_run = Some(run);
+            }
+        }
+        decision_run.unwrap()
     }
 }
 
@@ -939,26 +934,7 @@ fn a_mux_tree_read_by_a_comparator_keeps_its_answers() {
     for seed in 0..2 {
         let circuit = Circuit::coin_bias(seed, 3, 1);
         assert_eq!(circuit.probabilities.len(), 19);
-        let source = circuit.source();
-        let expected = circuit.answers();
-        assert!(
-            ground(&source, true).stats.decisions.is_some(),
-            "seed {seed}"
-        );
-        for strategy in [
-            Strategy::Trial(Kind::Decision),
-            Strategy::Trial(Kind::Program { fan_in: false }),
-            Strategy::Auto,
-        ] {
-            let run = common::run(&source, &common::options(strategy, Projection::default()))
-                .unwrap_or_else(|e| panic!("seed {seed}, {strategy}: {e}\n{source}"));
-            assert_answers(
-                &format!("seed {seed}, {strategy}"),
-                &run.results.expect("evidence is consistent"),
-                &expected,
-                1e-12,
-            );
-        }
+        circuit.check_decision(&format!("seed {seed}"));
     }
 }
 
@@ -973,39 +949,18 @@ fn decision_names_what_its_trees_readers_read_beside_it() {
     for seed in 0..2 {
         let (circuit, any) = Circuit::genes(seed, 3, 1, 2);
         assert_eq!(circuit.probabilities.len(), 23);
-        let source = circuit.source();
-        let expected = circuit.answers();
+        let run = circuit.check_decision(&format!("seed {seed}"));
+        let named: Vec<String> = run
+            .ground
+            .encoding
+            .indicators
+            .iter()
+            .map(|i| run.ground.atoms[i.atom as usize].to_string())
+            .collect();
         assert!(
-            ground(&source, true).stats.decisions.is_some(),
-            "seed {seed}"
+            named.contains(&format!("g{any}")),
+            "seed {seed}: g{any} not named: {named:?}"
         );
-        for strategy in [
-            Strategy::Trial(Kind::Decision),
-            Strategy::Trial(Kind::Program { fan_in: false }),
-            Strategy::Auto,
-        ] {
-            let run = common::run(&source, &common::options(strategy, Projection::default()))
-                .unwrap_or_else(|e| panic!("seed {seed}, {strategy}: {e}\n{source}"));
-            if strategy == Strategy::Trial(Kind::Decision) {
-                let named: Vec<String> = run
-                    .ground
-                    .encoding
-                    .indicators
-                    .iter()
-                    .map(|i| run.ground.atoms[i.atom as usize].to_string())
-                    .collect();
-                assert!(
-                    named.contains(&format!("g{any}")),
-                    "seed {seed}: g{any} not named: {named:?}"
-                );
-            }
-            assert_answers(
-                &format!("seed {seed}, {strategy}"),
-                &run.results.expect("evidence is consistent"),
-                &expected,
-                1e-12,
-            );
-        }
     }
 }
 
@@ -1020,39 +975,18 @@ fn decision_names_nothing_beside_its_tree_that_shares_a_cone() {
     for seed in 0..2 {
         let circuit = Circuit::means_observed(seed, 2, 1, 1);
         assert_eq!(circuit.probabilities.len(), 15);
-        let source = circuit.source();
-        let expected = circuit.answers();
-        assert!(
-            ground(&source, true).stats.decisions.is_some(),
-            "seed {seed}"
-        );
-        for strategy in [
-            Strategy::Trial(Kind::Decision),
-            Strategy::Trial(Kind::Program { fan_in: false }),
-            Strategy::Auto,
-        ] {
-            let run = common::run(&source, &common::options(strategy, Projection::default()))
-                .unwrap_or_else(|e| panic!("seed {seed}, {strategy}: {e}\n{source}"));
-            if strategy == Strategy::Trial(Kind::Decision) {
-                let named: Vec<String> = run
-                    .ground
-                    .encoding
-                    .indicators
-                    .iter()
-                    .map(|i| run.ground.atoms[i.atom as usize].to_string())
-                    .collect();
-                for q in &circuit.queries {
-                    assert!(
-                        !named.contains(&format!("g{q}")),
-                        "seed {seed}: g{q} named: {named:?}"
-                    );
-                }
-            }
-            assert_answers(
-                &format!("seed {seed}, {strategy}"),
-                &run.results.expect("evidence is consistent"),
-                &expected,
-                1e-12,
+        let run = circuit.check_decision(&format!("seed {seed}"));
+        let named: Vec<String> = run
+            .ground
+            .encoding
+            .indicators
+            .iter()
+            .map(|i| run.ground.atoms[i.atom as usize].to_string())
+            .collect();
+        for q in &circuit.queries {
+            assert!(
+                !named.contains(&format!("g{q}")),
+                "seed {seed}: g{q} named: {named:?}"
             );
         }
     }
@@ -1074,26 +1008,7 @@ fn observations_of_several_draws_keep_their_answers_grouped_by_draw() {
             "{}",
             circuit.probabilities.len()
         );
-        let source = circuit.source();
-        let expected = circuit.answers();
-        assert!(
-            ground(&source, true).stats.decisions.is_some(),
-            "seed {seed}"
-        );
-        for strategy in [
-            Strategy::Trial(Kind::Decision),
-            Strategy::Trial(Kind::Program { fan_in: false }),
-            Strategy::Auto,
-        ] {
-            let run = common::run(&source, &common::options(strategy, Projection::default()))
-                .unwrap_or_else(|e| panic!("seed {seed}, {strategy}: {e}\n{source}"));
-            assert_answers(
-                &format!("seed {seed}, {strategy}"),
-                &run.results.expect("evidence is consistent"),
-                &expected,
-                1e-12,
-            );
-        }
+        circuit.check_decision(&format!("seed {seed}"));
     }
 }
 
@@ -1106,26 +1021,7 @@ fn an_else_chain_keeps_its_answers() {
     for seed in 0..2 {
         let circuit = Circuit::else_chain(seed, 3, 2);
         assert_eq!(circuit.probabilities.len(), 14);
-        let source = circuit.source();
-        let expected = circuit.answers();
-        assert!(
-            ground(&source, true).stats.decisions.is_some(),
-            "seed {seed}"
-        );
-        for strategy in [
-            Strategy::Trial(Kind::Decision),
-            Strategy::Trial(Kind::Program { fan_in: false }),
-            Strategy::Auto,
-        ] {
-            let run = common::run(&source, &common::options(strategy, Projection::default()))
-                .unwrap_or_else(|e| panic!("seed {seed}, {strategy}: {e}\n{source}"));
-            assert_answers(
-                &format!("seed {seed}, {strategy}"),
-                &run.results.expect("evidence is consistent"),
-                &expected,
-                1e-12,
-            );
-        }
+        circuit.check_decision(&format!("seed {seed}"));
     }
 }
 
@@ -1143,22 +1039,7 @@ fn slopes_sit_under_the_index_their_readers_are_read_under() {
     for seed in 0..2 {
         let circuit = Circuit::slopes(seed, 3, 1);
         assert_eq!(circuit.probabilities.len(), 21);
-        let source = circuit.source();
-        let expected = circuit.answers();
-        for strategy in [
-            Strategy::Trial(Kind::Decision),
-            Strategy::Trial(Kind::Program { fan_in: false }),
-            Strategy::Auto,
-        ] {
-            let run = common::run(&source, &common::options(strategy, Projection::default()))
-                .unwrap_or_else(|e| panic!("seed {seed}, {strategy}: {e}\n{source}"));
-            assert_answers(
-                &format!("seed {seed}, {strategy}"),
-                &run.results.expect("evidence is consistent"),
-                &expected,
-                1e-12,
-            );
-        }
+        circuit.check_decision(&format!("seed {seed}"));
     }
     let source = Circuit::slopes(0, 6, 2).source();
     let decision = common::options(Strategy::Trial(Kind::Decision), Projection::default());
@@ -1188,22 +1069,7 @@ fn facts_the_tree_leaves_out_sit_above_the_part_that_reads_them() {
     ] {
         let circuit = Circuit::sums_observed(seed, k, l, n);
         assert_eq!(circuit.probabilities.len(), flips);
-        let source = circuit.source();
-        let expected = circuit.answers();
-        for strategy in [
-            Strategy::Trial(Kind::Decision),
-            Strategy::Trial(Kind::Program { fan_in: false }),
-            Strategy::Auto,
-        ] {
-            let run = common::run(&source, &common::options(strategy, Projection::default()))
-                .unwrap_or_else(|e| panic!("seed {seed}, n {n}, {strategy}: {e}\n{source}"));
-            assert_answers(
-                &format!("seed {seed}, n {n}, {strategy}"),
-                &run.results.expect("evidence is consistent"),
-                &expected,
-                1e-12,
-            );
-        }
+        circuit.check_decision(&format!("seed {seed}, n {n}"));
     }
     let source = Circuit::sums_observed(0, 4, 2, 2).source();
     let decision = common::options(Strategy::Trial(Kind::Decision), Projection::default());
@@ -1226,28 +1092,11 @@ fn decision_names_nothing_where_nothing_outside_its_tree_reads_it() {
     for seed in 0..2 {
         let circuit = Circuit::caesar(seed, 3, 2);
         assert_eq!(circuit.probabilities.len(), 21);
-        let source = circuit.source();
-        let expected = circuit.answers();
-        for strategy in [
-            Strategy::Trial(Kind::Decision),
-            Strategy::Trial(Kind::Program { fan_in: false }),
-            Strategy::Auto,
-        ] {
-            let run = common::run(&source, &common::options(strategy, Projection::default()))
-                .unwrap_or_else(|e| panic!("seed {seed}, {strategy}: {e}\n{source}"));
-            if strategy == Strategy::Trial(Kind::Decision) {
-                assert!(
-                    run.ground.encoding.indicators.is_empty(),
-                    "seed {seed}: {} names",
-                    run.ground.encoding.indicators.len()
-                );
-            }
-            assert_answers(
-                &format!("seed {seed}, {strategy}"),
-                &run.results.expect("evidence is consistent"),
-                &expected,
-                1e-12,
-            );
-        }
+        let run = circuit.check_decision(&format!("seed {seed}"));
+        assert!(
+            run.ground.encoding.indicators.is_empty(),
+            "seed {seed}: {} names",
+            run.ground.encoding.indicators.len()
+        );
     }
 }

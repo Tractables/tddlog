@@ -137,10 +137,9 @@ impl<'a> Tree<'a> {
     /// it read and the atoms they read beside those named (module doc);
     /// `None` where nothing outside the tree reads it.
     pub(super) fn name(&self) -> Option<Named> {
-        let (gp, deps) = (self.gp, self.deps);
+        let gp = self.gp;
         let n = gp.num_atoms();
         let contexts = &self.decisions.contexts;
-        let nodes = &self.decisions.nodes;
         let decision = &self.decision;
         // Whether each atom's cone holds a fact outside the tree; the atoms
         // of the tree that a rule of such an atom reads are cut.
@@ -233,39 +232,13 @@ impl<'a> Tree<'a> {
                 pairs: r.pairs,
             });
         }
-        // The range of the tree each atom's cone holds, in the rewrite.
-        let mut held: Vec<(u32, u32)> = vec![NOWHERE; out.atoms.len()];
-        for (i, node) in nodes.iter().enumerate() {
-            if let DecisionNode::Leaf(name) = node
-                && let Some(&f) = self.by_name.get(name)
-            {
-                held[f as usize] = self.range[i];
-            }
-        }
-        for &k in &named_contexts {
-            held[var_of_context[k as usize] as usize] =
-                self.range[contexts[k as usize].node as usize];
-        }
-        for &a in deps.sccs.iter().flatten() {
-            if !outside[a as usize] {
-                held[a as usize] = deps.by_head[a as usize]
-                    .iter()
-                    .flat_map(|&ri| &rules[ri].body)
-                    .fold(NOWHERE, |h, l| join(h, held[l.atom() as usize]));
-            }
-        }
-        // Each cut name above the lowest node holding its atom's cone, and
-        // each context's name above its subtree, outermost.
-        let mut above: Vec<Vec<AtomId>> = vec![Vec::new(); nodes.len()];
-        for &k in &named_contexts {
-            above[contexts[k as usize].node as usize].push(var_of_context[k as usize]);
-        }
-        let mut cut_node: Vec<usize> = Vec::with_capacity(cut.len());
-        for (&a, &var) in cut.iter().zip(&cut_var) {
-            let at = lowest(nodes, &self.range, held[a as usize]);
-            above[at].push(var);
-            cut_node.push(at);
-        }
+        let (above, cut_node) = self.place_names(
+            &outside,
+            &rules,
+            out.atoms.len(),
+            (&named_contexts, &var_of_context),
+            (&cut, &cut_var),
+        );
         out.rules.extend(rules);
         out.encoding.segments = segments(out.encoding.indicators.len(), &cut_node, beside.len());
         let note = format!(
@@ -279,6 +252,52 @@ impl<'a> Tree<'a> {
             above,
             note,
         })
+    }
+
+    fn place_names(
+        &self,
+        outside: &[bool],
+        rules: &[GroundRule],
+        num_atoms: usize,
+        (named_contexts, var_of_context): (&[u32], &[AtomId]),
+        (cut, cut_var): (&[AtomId], &[AtomId]),
+    ) -> (Vec<Vec<AtomId>>, Vec<usize>) {
+        let nodes = &self.decisions.nodes;
+        let contexts = &self.decisions.contexts;
+        // The range of the tree each atom's cone holds, in the rewrite.
+        let mut held: Vec<(u32, u32)> = vec![NOWHERE; num_atoms];
+        for (i, node) in nodes.iter().enumerate() {
+            if let DecisionNode::Leaf(name) = node
+                && let Some(&f) = self.by_name.get(name)
+            {
+                held[f as usize] = self.range[i];
+            }
+        }
+        for &k in named_contexts {
+            held[var_of_context[k as usize] as usize] =
+                self.range[contexts[k as usize].node as usize];
+        }
+        for &a in self.deps.sccs.iter().flatten() {
+            if !outside[a as usize] {
+                held[a as usize] = self.deps.by_head[a as usize]
+                    .iter()
+                    .flat_map(|&ri| &rules[ri].body)
+                    .fold(NOWHERE, |h, l| join(h, held[l.atom() as usize]));
+            }
+        }
+        // Each cut name above the lowest node holding its atom's cone, and
+        // each context's name above its subtree, outermost.
+        let mut above: Vec<Vec<AtomId>> = vec![Vec::new(); nodes.len()];
+        for &k in named_contexts {
+            above[contexts[k as usize].node as usize].push(var_of_context[k as usize]);
+        }
+        let mut cut_node: Vec<usize> = Vec::with_capacity(cut.len());
+        for (&a, &var) in cut.iter().zip(cut_var) {
+            let at = lowest(nodes, &self.range, held[a as usize]);
+            above[at].push(var);
+            cut_node.push(at);
+        }
+        (above, cut_node)
     }
 
     /// Per atom, whether its cone holds a fact that `fact` holds of: for
@@ -631,7 +650,7 @@ pub(super) fn decision_forest(
     // Per node, where it went in the forest, if any of its facts is `gp`'s.
     let mut at: Vec<Option<usize>> = Vec::with_capacity(decisions.nodes.len());
     for (i, n) in decisions.nodes.iter().enumerate() {
-        let mut here =
+        let here =
             match n {
                 DecisionNode::Leaf(name) => by_name
                     .get(name)
@@ -647,14 +666,14 @@ pub(super) fn decision_forest(
             };
         // The names outermost, the facts placed here below them.
         let names = above.get(i).into_iter().flatten();
-        for &v in names.chain(homes.get(i).into_iter().flatten()).rev() {
-            placed[v as usize] = true;
-            let leaf = forest.leaf(v);
-            here = Some(match here {
-                Some(h) => forest.join(leaf, h),
-                None => leaf,
-            });
-        }
+        let here = forest.spine_up(
+            names
+                .chain(homes.get(i).into_iter().flatten())
+                .rev()
+                .inspect(|&&v| placed[v as usize] = true)
+                .copied(),
+            here,
+        );
         at.push(here);
     }
     let root = at.last().copied().flatten();
@@ -670,15 +689,9 @@ pub(super) fn decision_forest(
     rest.sort_unstable_by_key(|&a| met[a as usize]);
     // `(root (r1 (r2 ...)))`, built from its innermost join out, the first
     // fact placed innermost (read first).
-    let mut spine = None;
-    for &a in &rest {
-        let leaf = forest.leaf(a);
-        spine = Some(match spine {
-            Some(s) => forest.join(leaf, s),
-            None => leaf,
-        });
-    }
-    let spine = spine.expect("some rest");
+    let spine = forest
+        .spine_up(rest.iter().copied(), None)
+        .expect("some rest");
     let root = match root {
         Some(root) => forest.join(root, spine),
         None => spine,

@@ -25,10 +25,13 @@ ASPMC = {
                                 'p10': 0.5959954033785615}}
 
 
-def program(n, friends, symmetric, queries='smokes'):
-    return subprocess.run([sys.executable, str(SCRIPTS / 'gen_smokers.py'), str(n), '--friends-per', str(friends),
-                           '--seed', '1', '--queries', queries] + (['--symmetric'] if symmetric else []),
-                          capture_output=True, text=True, check=True).stdout
+def program(n, friends, symmetric):
+    """gen_smokers.py's program with its data in place (the data after the template's rules)."""
+    gen = [sys.executable, str(SCRIPTS / 'gen_smokers.py'), str(n), '--friends-per', str(friends), '--seed', '1'] \
+        + (['--symmetric'] if symmetric else [])
+    template = subprocess.run(gen + ['--template'], capture_output=True, text=True, check=True).stdout
+    data = subprocess.run(gen + ['--data', 'KEY'], capture_output=True, text=True, check=True).stdout
+    return template.replace(':- consult($1).\n', data)
 
 
 def answers(program_text):
@@ -59,7 +62,7 @@ class SmokersExact(unittest.TestCase):
         self.check(ASPMC, 1e-12)
 
     def test_asthma_is_four_tenths_of_smokes(self):
-        r, got = answers(program(10, 3, True, 'all'))
+        r, got = answers(program(10, 3, True) + 'query(asthma(X)) :- person(X).\n')
         self.assertEqual(r.returncode, 0, r.stderr)
         for x, p in ASPMC[('ssym10', (10, 3, True))].items():
             self.assertAlmostEqual(got[f'asthma({x})'], 0.4 * p, delta=1e-12, msg=x)

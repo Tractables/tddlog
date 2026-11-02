@@ -56,8 +56,7 @@ pub(crate) const CONS: &str = "[|]";
 pub(crate) const NIL: &str = "[]";
 
 /// A ground or non-ground term.
-#[allow(clippy::derived_hash_with_manual_eq)]
-#[derive(Clone, Debug, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, PartialOrd, Ord)]
 pub enum Term {
     /// A symbolic constant, e.g. `alice`, `'New York'`, `[]`.
     Const(Name),
@@ -72,7 +71,7 @@ pub enum Term {
 }
 
 // The derived equality, with names told by [`same_name`], with which the
-// derived hash agrees.
+// hash agrees.
 impl PartialEq for Term {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -82,6 +81,19 @@ impl PartialEq for Term {
             (Term::Float(a), Term::Float(b)) => a == b,
             (Term::Compound(a), Term::Compound(b)) => Arc::ptr_eq(a, b) || **a == **b,
             _ => false,
+        }
+    }
+}
+
+impl Hash for Term {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        std::mem::discriminant(self).hash(state);
+        match self {
+            Term::Const(a) => a.hash(state),
+            Term::Int(a) => a.hash(state),
+            Term::Var(a) => a.hash(state),
+            Term::Float(a) => a.hash(state),
+            Term::Compound(a) => a.hash(state),
         }
     }
 }
@@ -286,10 +298,38 @@ impl Term {
             }
         }
     }
+
+    /// The variables of the term, each once, in order of first occurrence.
+    pub fn vars(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        self.vars_into(&mut out);
+        out
+    }
+
+    /// The list of `items` ending in `tail`.
+    pub(crate) fn list(
+        items: impl IntoIterator<Item = Term, IntoIter: DoubleEndedIterator>,
+        tail: Term,
+    ) -> Term {
+        let cons: Name = CONS.into();
+        items
+            .into_iter()
+            .rev()
+            .fold(tail, |t, x| Compound::term(cons.clone(), vec![x, t]))
+    }
+}
+
+/// How an infix operator groups: `xfx` neither way, `xfy` to the right,
+/// `yfx` to the left.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Assoc {
+    Xfx,
+    Xfy,
+    Yfx,
 }
 
 /// The infix operators of ProbLog's parser, by name: `(priority, type)`.
-fn infix(name: &str) -> Option<(u16, Assoc)> {
+pub(crate) fn infix_op(name: &str) -> Option<(u16, Assoc)> {
     use Assoc::*;
     Some(match name {
         ":-" => (1200, Xfx),
@@ -310,31 +350,12 @@ fn infix(name: &str) -> Option<(u16, Assoc)> {
 }
 
 /// The prefix operators of ProbLog's parser, by name, and their priority.
-fn prefix(name: &str) -> Option<u16> {
+pub(crate) fn prefix_op(name: &str) -> Option<u16> {
     Some(match name {
         "-" | "+" | "\\" => 200,
         "\\+" => 900,
         _ => return None,
     })
-}
-
-/// How an infix operator groups: `xfx` neither way, `xfy` to the right,
-/// `yfx` to the left.
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Assoc {
-    Xfx,
-    Xfy,
-    Yfx,
-}
-
-/// The priority and grouping of the infix operator `name`, for the parser.
-pub(crate) fn infix_op(name: &str) -> Option<(u16, Assoc)> {
-    infix(name)
-}
-
-/// The priority of the prefix operator `name`, for the parser.
-pub(crate) fn prefix_op(name: &str) -> Option<u16> {
-    prefix(name)
 }
 
 /// The infix operators printed infix. ProbLog prints a conjunction and a
@@ -343,7 +364,7 @@ pub(crate) fn prefix_op(name: &str) -> Option<u16> {
 fn printed_infix(name: &str) -> Option<(u16, Assoc)> {
     match name {
         "," | ";" | ":-" => None,
-        _ => infix(name),
+        _ => infix_op(name),
     }
 }
 
@@ -352,7 +373,7 @@ fn printed_infix(name: &str) -> Option<(u16, Assoc)> {
 fn printed_prefix(name: &str) -> Option<u16> {
     match name {
         "\\+" => None,
-        _ => prefix(name),
+        _ => prefix_op(name),
     }
 }
 
@@ -404,16 +425,12 @@ fn write_term(f: &mut fmt::Formatter<'_>, t: &Term, max: u16) -> fmt::Result {
     let mut pieces: Vec<Piece> = Vec::new();
     while let Some(piece) = stack.pop() {
         let (t, max) = match piece {
-            Piece::Text(s) => {
+            Piece::Text(s) | Piece::Raw(s) => {
                 f.write_str(s)?;
                 continue;
             }
             Piece::Name(s) => {
                 write_const(f, s)?;
-                continue;
-            }
-            Piece::Raw(s) => {
-                f.write_str(s)?;
                 continue;
             }
             Piece::Term(t, max) => (t, max),
@@ -430,97 +447,105 @@ fn write_term(f: &mut fmt::Formatter<'_>, t: &Term, max: u16) -> fmt::Result {
         if paren {
             pieces.push(Piece::Text("("));
         }
-        match (&*c.name, &c.args[..]) {
-            (CONS, [_, _]) => {
-                pieces.push(Piece::Text("["));
-                let mut cell = c;
-                loop {
-                    pieces.push(Piece::Term(&cell.args[0], 1200));
-                    match &cell.args[1] {
-                        Term::Compound(next) if &*next.name == CONS && next.args.len() == 2 => {
-                            pieces.push(Piece::Text(", "));
-                            cell = next;
-                        }
-                        Term::Const(nil) if &**nil == NIL => break,
-                        tail => {
-                            pieces.push(Piece::Text(" | "));
-                            pieces.push(Piece::Term(tail, 1200));
-                            break;
-                        }
-                    }
-                }
-                pieces.push(Piece::Text("]"));
-            }
-            (",", [_, _]) => {
-                pieces.push(Piece::Text("("));
-                for (i, a) in chain(",", c).into_iter().enumerate() {
-                    if i > 0 {
-                        pieces.push(Piece::Text(", "));
-                    }
-                    let or = matches!(a.as_compound(), Some((n, [_, _])) if &**n == ";");
-                    if or {
-                        pieces.push(Piece::Text("("));
-                    }
-                    pieces.push(Piece::Term(a, 1200));
-                    if or {
-                        pieces.push(Piece::Text(")"));
-                    }
-                }
-                pieces.push(Piece::Text(")"));
-            }
-            (";", [_, _]) => {
-                for (i, a) in chain(";", c).into_iter().enumerate() {
-                    if i > 0 {
-                        pieces.push(Piece::Text("; "));
-                    }
-                    pieces.push(Piece::Term(a, 1200));
-                }
-            }
-            (name, [a, b]) if printed_infix(name).is_some() => {
-                let (p, assoc) = printed_infix(name).expect("an operator");
-                let left = if assoc == Assoc::Yfx { p } else { p - 1 };
-                let right = if assoc == Assoc::Xfy { p } else { p - 1 };
-                pieces.push(Piece::Term(a, left));
-                let alphabetic = name.starts_with(|ch: char| ch.is_ascii_lowercase());
-                if alphabetic {
-                    pieces.push(Piece::Text(" "));
-                }
-                pieces.push(Piece::Raw(&c.name));
-                if alphabetic {
-                    pieces.push(Piece::Text(" "));
-                }
-                pieces.push(Piece::Term(b, right));
-            }
-            (name, [a]) if printed_prefix(name).is_some() => {
-                pieces.push(Piece::Raw(&c.name));
-                // `-(1)` is not the integer -1, and `- (a, b)` not a list
-                // of arguments.
-                if matches!(a, Term::Int(_) | Term::Float(_)) || priority(a) >= 1000 {
-                    pieces.push(Piece::Text("("));
-                    pieces.push(Piece::Term(a, 1200));
-                    pieces.push(Piece::Text(")"));
-                } else {
-                    pieces.push(Piece::Term(a, printed_prefix(name).expect("an operator")));
-                }
-            }
-            (_, args) => {
-                pieces.push(Piece::Name(&c.name));
-                pieces.push(Piece::Text("("));
-                for (i, a) in args.iter().enumerate() {
-                    if i > 0 {
-                        pieces.push(Piece::Text(","));
-                    }
-                    pieces.push(Piece::Term(a, 1200));
-                }
-                pieces.push(Piece::Text(")"));
-            }
-        }
+        compound_pieces(c, &mut pieces);
         if paren {
             pieces.push(Piece::Text(")"));
         }
         stack.extend(pieces.drain(..).rev());
     }
     Ok(())
+}
+
+/// The pieces that format the compound term `c` (inside any outer
+/// priority parentheses).
+fn compound_pieces<'a>(c: &'a Compound, pieces: &mut Vec<Piece<'a>>) {
+    match (&*c.name, &c.args[..]) {
+        (CONS, [_, _]) => list_pieces(c, pieces),
+        (",", [_, _]) => {
+            pieces.push(Piece::Text("("));
+            for (i, a) in chain(",", c).into_iter().enumerate() {
+                if i > 0 {
+                    pieces.push(Piece::Text(", "));
+                }
+                let or = matches!(a.as_compound(), Some((n, [_, _])) if &**n == ";");
+                if or {
+                    pieces.push(Piece::Text("("));
+                }
+                pieces.push(Piece::Term(a, 1200));
+                if or {
+                    pieces.push(Piece::Text(")"));
+                }
+            }
+            pieces.push(Piece::Text(")"));
+        }
+        (";", [_, _]) => {
+            for (i, a) in chain(";", c).into_iter().enumerate() {
+                if i > 0 {
+                    pieces.push(Piece::Text("; "));
+                }
+                pieces.push(Piece::Term(a, 1200));
+            }
+        }
+        (name, [a, b]) if printed_infix(name).is_some() => {
+            let (p, assoc) = printed_infix(name).expect("an operator");
+            let left = if assoc == Assoc::Yfx { p } else { p - 1 };
+            let right = if assoc == Assoc::Xfy { p } else { p - 1 };
+            pieces.push(Piece::Term(a, left));
+            let alphabetic = name.starts_with(|ch: char| ch.is_ascii_lowercase());
+            if alphabetic {
+                pieces.push(Piece::Text(" "));
+            }
+            pieces.push(Piece::Raw(&c.name));
+            if alphabetic {
+                pieces.push(Piece::Text(" "));
+            }
+            pieces.push(Piece::Term(b, right));
+        }
+        (name, [a]) if printed_prefix(name).is_some() => {
+            pieces.push(Piece::Raw(&c.name));
+            // `-(1)` is not the integer -1, and `- (a, b)` not a list
+            // of arguments.
+            if matches!(a, Term::Int(_) | Term::Float(_)) || priority(a) >= 1000 {
+                pieces.push(Piece::Text("("));
+                pieces.push(Piece::Term(a, 1200));
+                pieces.push(Piece::Text(")"));
+            } else {
+                pieces.push(Piece::Term(a, printed_prefix(name).expect("an operator")));
+            }
+        }
+        (_, args) => {
+            pieces.push(Piece::Name(&c.name));
+            pieces.push(Piece::Text("("));
+            for (i, a) in args.iter().enumerate() {
+                if i > 0 {
+                    pieces.push(Piece::Text(","));
+                }
+                pieces.push(Piece::Term(a, 1200));
+            }
+            pieces.push(Piece::Text(")"));
+        }
+    }
+}
+
+fn list_pieces<'a>(c: &'a Compound, pieces: &mut Vec<Piece<'a>>) {
+    pieces.push(Piece::Text("["));
+    let mut cell = c;
+    loop {
+        pieces.push(Piece::Term(&cell.args[0], 1200));
+        match &cell.args[1] {
+            Term::Compound(next) if &*next.name == CONS && next.args.len() == 2 => {
+                pieces.push(Piece::Text(", "));
+                cell = next;
+            }
+            Term::Const(nil) if &**nil == NIL => break,
+            tail => {
+                pieces.push(Piece::Text(" | "));
+                pieces.push(Piece::Term(tail, 1200));
+                break;
+            }
+        }
+    }
+    pieces.push(Piece::Text("]"));
 }
 
 /// A term other than a compound.
@@ -538,7 +563,7 @@ fn write_flat(f: &mut fmt::Formatter<'_>, t: &Term) -> fmt::Result {
 /// shortest digits that read back as it, in fixed notation from 1e-4 up to
 /// 1e16 (`2.0`, `0.0001`), in scientific notation otherwise (`1e-05`,
 /// `1e+16`).
-fn write_float(f: &mut fmt::Formatter<'_>, x: f64) -> fmt::Result {
+pub(crate) fn write_float(f: &mut impl fmt::Write, x: f64) -> fmt::Result {
     if x.is_nan() {
         return f.write_str("nan");
     }
@@ -584,6 +609,13 @@ fn write_float(f: &mut fmt::Formatter<'_>, x: f64) -> fmt::Result {
         let (int, frac) = digits.split_at(exp as usize + 1);
         write!(f, "{int}.{frac}")
     }
+}
+
+/// `x` as [`write_float`] writes it.
+pub(crate) fn float_repr(x: f64) -> String {
+    let mut s = String::new();
+    write_float(&mut s, x).expect("a String takes any text");
+    s
 }
 
 impl fmt::Display for Term {
@@ -734,8 +766,7 @@ impl Ord for Args {
 }
 
 /// A predicate atom `name(args)`.
-#[allow(clippy::derived_hash_with_manual_eq)]
-#[derive(Clone, Debug, Default, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Debug, Default, Eq, PartialOrd, Ord)]
 pub struct Atom {
     pub name: Name,
     pub args: Args,
@@ -745,6 +776,13 @@ pub struct Atom {
 impl PartialEq for Atom {
     fn eq(&self, other: &Self) -> bool {
         same_name(&self.name, &other.name) && self.args == other.args
+    }
+}
+
+impl Hash for Atom {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+        self.args.hash(state);
     }
 }
 
@@ -767,6 +805,12 @@ impl Atom {
         for t in &self.args {
             t.vars_into(out);
         }
+    }
+    /// The variables of the atom, each once, in order of first occurrence.
+    pub fn vars(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        self.vars_into(&mut out);
+        out
     }
 }
 
@@ -1520,15 +1564,6 @@ impl fmt::Display for Program {
 mod tests {
     use super::*;
 
-    /// The list of `items` ending in `tail`.
-    fn list(items: Vec<Term>, tail: Term) -> Term {
-        let cons: Name = CONS.into();
-        items
-            .into_iter()
-            .rev()
-            .fold(tail, |t, x| Compound::term(cons.clone(), vec![x, t]))
-    }
-
     #[test]
     fn a_constant_is_quoted_and_escaped_as_written() {
         for s in [
@@ -1551,19 +1586,29 @@ mod tests {
     fn floats_print_as_python_writes_them() {
         for (x, s) in [
             (2.0, "2.0"),
+            (0.5, "0.5"),
+            (1.0, "1.0"),
+            (0.0, "0.0"),
             (0.1, "0.1"),
             (1200.0, "1200.0"),
+            (123.0, "123.0"),
+            (12.5, "12.5"),
             (0.0001, "0.0001"),
             (0.00001, "1e-05"),
+            (9.999e-05, "9.999e-05"),
             (1e16, "1e+16"),
             (1234567890123456.0, "1234567890123456.0"),
             (1.5e-7, "1.5e-07"),
             (-2.5, "-2.5"),
+            (-0.4, "-0.4"),
             (-0.0, "-0.0"),
             (1e100, "1e+100"),
+            (-1.25e-100, "-1.25e-100"),
+            (5e-324, "5e-324"),
             (0.30000000000000004, "0.30000000000000004"),
         ] {
             assert_eq!(Term::Float(F64(x)).to_string(), s, "{x}");
+            assert_eq!(float_repr(x), s, "{x}");
         }
     }
 
@@ -1575,7 +1620,7 @@ mod tests {
             Term::Const("b".into()),
             Term::Var("X".into()),
         );
-        let list = list(vec![a.clone(), b.clone()], x.clone());
+        let list = Term::list([a.clone(), b.clone()], x.clone());
         assert_eq!(list.to_string(), "[a, b | X]");
         assert_eq!(Term::Const(NIL.into()).to_string(), "[]");
         let (two, three, four) = (Term::Int(2), Term::Int(3), Term::Int(4));
@@ -1627,10 +1672,10 @@ mod tests {
         assert_eq!(or(&a, &or(&b, &d)).to_string(), "a; b; d");
         assert_eq!(c("f", vec![or(&a, &b)]).to_string(), "f(a; b)");
         assert_eq!(c("f", vec![and(&a, &b)]).to_string(), "f((a, b))");
-        let items = list(
-            vec![and(
+        let items = Term::list(
+            [and(
                 &Term::Int(1),
-                &list(vec![Term::Int(1)], Term::Const(NIL.into())),
+                &Term::list([Term::Int(1)], Term::Const(NIL.into())),
             )],
             Term::Const(NIL.into()),
         );
@@ -1672,7 +1717,7 @@ mod tests {
     #[test]
     fn a_long_list_is_compared_and_dropped_without_deep_recursion() {
         let n = 200_000;
-        let long = |k: i64| list((0..n).map(Term::Int).collect(), Term::Int(k));
+        let long = |k: i64| Term::list((0..n).map(Term::Int), Term::Int(k));
         let (x, y) = (long(0), long(0));
         assert_eq!(x, y);
         assert!(long(0) < long(1));

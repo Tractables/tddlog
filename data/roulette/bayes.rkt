@@ -1,29 +1,31 @@
-#lang racket/base
+#lang roulette/example/disrupt
 ;; racket bayes.rkt NAME: the Bayesian network NAME of the Roulette
-;; artifact's benchmark/main.rkt (its .bif, queried variable and variable
-;; order, read from main.rkt as the artifact's driver builds them) under
-;; benchmark/bayes.rkt with rsdd, its distribution printed in full:
-;; `roulette_v VALUE P` for each value of the queried variable.
-(require (submod roulette/benchmark/bayes rsdd)
-         roulette/example/private/pmf
+;; artifact's benchmark/main.rkt, as neuppl/roulette's package `roulette`
+;; holds it (roulette/test/bn/NAME.rkt, `#lang roulette/example/bn`), with
+;; the queried variable and the variable order of main.rkt
+;; (networks.rktd), evaluated by `make-run` of roulette/example/bn, the
+;; artifact's benchmark/bayes.rkt in the package. The file is read inside
+;; the query's `time`, as the artifact's `main` reads its .bif there. The
+;; distribution is printed in full: `roulette_v VALUE P` for each value of
+;; the queried variable.
+(require racket/file
          racket/match
-         racket/path)
-(define name (vector-ref (current-command-line-arguments) 0))
-(define dir (path-only (collection-file-path "main.rkt" "roulette" "benchmark")))
-(define body
-  (let* ([mod (parameterize ([read-accept-reader #t])
-                (call-with-input-file (build-path dir "main.rkt") read))]
-         [b (cadddr mod)])
-    (if (eq? (car b) '#%module-begin) (cdr b) (cdddr mod))))
-(define def
-  (for/first ([f body] #:when (and (pair? f) (eq? (car f) 'define)
-                                   (eq? (cadr f) (string->symbol (string-upcase name)))))
-    (caddr f)))
-(define params
-  (match def
-    [(list 'quasiquote (list (list 'unquote (list 'bif n)) q order))
-     (list (path->string (build-path dir "bayesian-networks" (format "~a.bif" n))) q order)]
-    [_ (error 'bayes.rkt "no network ~a in main.rkt" name)]))
-(define result (apply main params))
-(for ([(v p) (in-pmf result)])
-  (printf "roulette_v ~a ~a\n" v (if (exact? p) (exact->inexact p) p)))
+         (only-in roulette/example/bn make-run)
+         "blocks.rkt"
+         "print.rkt")
+
+(define NAME (string->symbol (vector-ref (current-command-line-arguments) 0)))
+(define HERE
+  (let-values ([(dir _name _dir?) (split-path (variable-reference->module-source (#%variable-reference)))])
+    dir))
+(define-values (QUERY ORDER)
+  (match (assq NAME (file->value (build-path HERE "networks.rktd")))
+    [(list _ q order) (values q order)]
+    [_ (error 'bayes.rkt "no network ~a in networks.rktd" NAME)]))
+(define FILE (collection-file-path (format "~a.rkt" NAME) "roulette" "test" "bn"))
+
+(define result
+  (time (query ((make-run (bif-blocks FILE #:lang? #t)) (list QUERY) ORDER))))
+(statement
+ (for ([(v p) (in-pmf result)])
+   (printf "roulette_v ~a ~a\n" v (if (exact? p) (exact->inexact p) p))))

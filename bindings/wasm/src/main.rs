@@ -276,12 +276,7 @@ fn part_json(run: &tddlog::Run) -> String {
         number(run.query_seconds),
         number(run.wasted_seconds),
     );
-    for (i, note) in run.vtree_notes.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str(&string(note));
-    }
+    push_strings(&mut out, &run.vtree_notes);
     out.push_str("]}");
     out
 }
@@ -294,15 +289,19 @@ fn push_partial(out: &mut String, partial: &Partial) {
         number(partial.ground_seconds),
         partial.compiling.as_deref().unwrap_or("null")
     );
-    for (i, note) in partial.notes.iter().enumerate() {
-        if i > 0 {
-            out.push(',');
-        }
-        out.push_str(&string(note));
-    }
+    push_strings(out, &partial.notes);
     out.push_str("],\"parts\":[");
     out.push_str(&partial.parts.join(","));
     out.push(']');
+}
+
+fn push_strings(out: &mut String, items: &[String]) {
+    for (i, item) in items.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&string(item));
+    }
 }
 
 fn error_json(message: &str, partial: &Partial) -> String {

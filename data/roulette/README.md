@@ -19,17 +19,30 @@ the attribution above.
 
 ## Files
 
+They run on neuppl/roulette's main (commit
+60f77cb13839cccafd018f4a8281758355492483, the packages `roulette-lib` and
+`roulette`, Apache License 2.0), whose `#lang roulette/example/disrupt` is
+the artifact's language with two differences the drivers follow: `query`
+takes the body alone (the artifact's took a second argument, whether to
+take one value's probability as one minus the others') and divides each
+value's probability with the observations by their sum; and the language
+runs each expression of a module as a query of its own at the module's
+level, printing its distribution, so the drivers' printing is a
+definition (`print.rkt`'s `statement`).
+
 - `motivating.rkt`, `diamond.rkt`, `ladder.rkt`, `caesar.rkt`: copies of
   `benchmark/modular/NAME.rkt`. Only the head comment and the last line
   change: the last line keeps the artifact's `(time (query ...))` and
-  prints the answers with `print.rkt`'s `emit`, one `roulette_q ATOM P`
-  a line, P in full (Roulette prints six digits), under the atom names
-  of gen_roulette.py's ProbLog program. `caesar.rkt` also takes
-  `--no-complement`, which queries with `(query e #f)` (below), and
-  wraps its print loop in `(void ...)`.
-- `network.rkt`, `hardware.rkt`: drivers that require the artifact's
-  `benchmark/scaling/network.rkt` and `hardware.rkt` (their `rsdd`
-  submodules, as the artifact's `-m rsdd` runs them) and print the
+  prints the answers with `print.rkt`'s `emit`, one `roulette_q ATOM P
+  VALUE` a line, P in full (Roulette prints six digits) and VALUE the
+  program's value, under the atom names of gen_roulette.py's ProbLog
+  program. `caesar.rkt` queries as `(query (main SIZE))` and seeds its
+  generator in a statement.
+- `scaling/network.rkt`, `scaling/hardware.rkt`: the artifact's
+  `benchmark/scaling/` programs in `#lang roulette/example/disrupt` (the
+  artifact's `roulette/benchmark/disrupt` wrote each once for each engine
+  and chose one, `-m rsdd`); the rest unchanged.
+- `network.rkt`, `hardware.rkt`: drivers that require them and print the
   distribution: `m(K,V)` and `m(K,16)` for a lost message; `res(T)` and
   `res(4)` for a run out of fuel.
 - `hardware-bitwidth.rkt BW`: `hardware.rkt` on the artifact's bit-width
@@ -38,35 +51,40 @@ the attribution above.
   labels it. The artifact's third ladder (`-p (2 n 3)`, n from 5 to 20)
   is not run: at bit width 2 `(int n)` saturates at 3, so every n of it
   is the same program.
-- `bayes.rkt NAME`: the network NAME of the artifact's `benchmark/main.rkt`
-  (its .bif file, queried variable and variable order, read from
-  main.rkt) under `benchmark/bayes.rkt`, its distribution printed as
-  `roulette_v VALUE P`.
+- `hmm.rkt QUERY N`: the Roulette implementation of the artifact's
+  `benchmark/hmm.rkt` (its model, query patterns and parameters; the Dice
+  and dynamic programming implementations run other systems), queried as
+  `(query e)` where the artifact wrote `(with-observe (query e #f))`, its
+  answer printed as `roulette_q q P #t`.
+- `bayes.rkt NAME`: the network NAME of the artifact's `benchmark/main.rkt`,
+  as the package holds it (`roulette/test/bn/NAME.rkt`, read by
+  `blocks.rkt` with `#lang roulette/example/bn`'s reader), with main.rkt's
+  queried variable and variable order (`networks.rktd`), under the
+  package's `make-run` (the artifact's `benchmark/bayes.rkt`), its
+  distribution printed as `roulette_v VALUE P`.
 - `bif.rkt BIF QUERIES`: a network of another suite as the artifact runs
-  its own (bench.py's Roulette variant `bayes`): `benchmark/bayes.rkt`'s
-  `main` on the BIF file `scripts/gen_bn.py` writes of it
-  (`bif_programs`), once for each queried variable, with the variable and
-  its ancestors evaluated in the order of the lets of its Dice program;
-  its distributions printed as `roulette_b VARIABLE VALUE P`.
-- `print.rkt`: `emit`.
+  its own (bench.py's Roulette variant `bayes`): `make-run` on the BIF file
+  `scripts/gen_bn.py` writes of it (`bif_programs`), once for each queried
+  variable, with the variable and its ancestors evaluated in the order of
+  the lets of its Dice program; its distributions printed as
+  `roulette_b VARIABLE VALUE P`.
+- `print.rkt`: `emit` and `statement`. `blocks.rkt`: a BIF file's blocks
+  as `#lang roulette/example/bn` reads them.
 - `caesar_obs.rkt N` prints the first N observations of the caesar
   program, `(random 0 26 rng)` from a generator seeded with `(random-seed
   0)`, as the benchmark draws them; `caesar_obs.txt` holds the first
   100000 (Racket 8.16), one a line.
 
-The hmm programs run the artifact's own `benchmark/hmm.rkt` (`racket
-hmm.rkt roulette QUERY N`), which prints its answer on its last line.
-
 ## Two findings in the artifact
 
-- Roulette's `query` (the `#:complement-of` option of
+- The artifact's `query` (the `#:complement-of` option of
   `example/disrupt/rsdd.rkt`) computes one value's probability as one
   minus the others'. Once the evidence's probability falls below about
   1e-16 that value is lost: on caesar with 25 letters key(0) prints 0
   against 0.519, with 30 letters 0 against 0.99991; with 5 letters it is
   off by 1.5e-6 relative. `(query e #f)` gives every value to 1e-13.
   hmm.rkt already queries with #f ("TODO: shouldn't need to disable
-  optimization").
+  optimization"). neuppl/roulette's `query` has no such shortcut.
 - `benchmark/gen-caesar.rkt`, which writes the Dice programs of the
   caesar comparison, is byte for byte `gen-motivating.rkt`, so the
   artifact's Dice caesar numbers are those of the motivating program.

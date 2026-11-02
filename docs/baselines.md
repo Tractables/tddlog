@@ -15,7 +15,7 @@ builds:
 - Ganak and sharpSAT-TD, static binaries outside the checkout (section 9)
 - Julia 1.11 with Alea.jl and its package depot outside the checkout
   (section 5)
-- Racket 8.16 with Roulette outside the checkout (section 11)
+- Racket 9.3 with Roulette's upstream code outside the checkout (section 11)
 - the network, database and model-checking baselines of sections 20 to 22 under `$HOME/local/code`
 
 | system | exact | input | `bench.py run` option |
@@ -39,7 +39,7 @@ builds:
 | PRISM 4.8.1 | yes (`sparse`, `hybrid`) | the same as Storm | `--prism`, `--prism-variants`, `--prism-heap` |
 | Ganak | yes, exact rationals | weighted CNFs | `--ganak` |
 | sharpSAT-TD | yes, 53-bit MPFR floats | weighted CNFs | `--sharpsat-td`, `--sharpsat-td-decot` |
-| Roulette (Racket 8.16) | yes | its own programs (`--suite roulette`); Dice programs and circuits through `dice2roulette.py` | `--roulette`, `--roulette-variants` |
+| Roulette (Racket 9.3) | yes | its own programs (`--suite roulette`); Dice programs and circuits through `dice2roulette.py` | `--roulette`, `--roulette-variants` |
 | Geni (gennifer) | yes, f32 | its own `.gir` programs (`--suite geni`) and the other Dice programs, through `dice2geni.py` | `--geni`, `--geni-benchmarks` |
 | noDice | yes | Dice programs without `nflip`, the circuits' included | `--nodice` |
 | Psi (ef8a9e5) | yes, symbolic | Dice programs, the circuits' included, through `dice2psi.py`, and its linear regression | `--psi` |
@@ -94,10 +94,19 @@ noDice program (and `dice2problog_onehot.py`'s, which tddlog's one-hot
 arm reads), of a network and of a cplint LPAD, which `tddlog --program`
 writes (`dice2problog.py`, `gen_bn.py` and `lpad2problog.py` wrote the
 same text before tddlog's readers replaced them). The circuit Alea.jl
-writes of a bit-blasted program is not charged: it is the benchmark's
-input, and tddlog and every system that reads it or a translation of it
-start from the same circuit (the owner, 2026-10-28), as Alea.jl starts
-from its own program. Each conversion is timed once an
+writes of a bit-blasted program is the benchmark's input: every system
+but Alea.jl starts from the same circuit (the owner, 2026-10-28), as
+Alea.jl starts from its own program. tddlog on the circuit is
+Alea.jl+tddlog, whose time includes Alea.jl's run up to the circuit and
+its writing, timed warm as Alea.jl's own record is (`alea_bench.jl
+export --warm-below`; the owner, 2026-10-31: X+tddlog's time includes
+all of X's own time after its warm-up). The charge goes with the file:
+every system that reads the circuit or a translation of it (the ProbLog
+family, Scallop, the ground route's network tools and Ace, and the Dice
+family on the Dice programs of its gates, Roulette included) pays the
+same seconds; a system given a program of its own for the model (Genfer's
+population models, Psi's linear regression, SPPL's Markov model, Pluck's
+sequence models) reads no circuit and pays nothing. Each conversion is timed once an
 instance on one machine, apart from the runs (matched to the file the
 runs read by its SHA-256), as the median of three runs. A conversion is
 timed as the system it comes from is: a Python converter's process, or
@@ -1410,24 +1419,32 @@ and a perturbed-memory interpreter).
 
 ### Install
 
-From the paper's artifact (Zenodo 10.5281/zenodo.15253254, CC-BY-4.0, a
-2.6 GB Docker image, md5 99bd2e7417aa52092396009e922cb5ec), whose
-Roulette is camoy/roulette at 54d6185f0b5143bdaabbd9ed35bb22c9dcaddc60
-(Apache License 2.0; the repository is not public, and the public
-neuppl/roulette head 60f77cb does not compile on Racket 8.13). The paper
-ran Racket 8.13 with Rosette 4.1; the image has Racket 8.16, which runs
-the artifact's source. The install puts everything under PREFIX:
+Every evaluation runs Roulette's upstream code (the owner, 2026-10-31:
+"yes on using the latest upstream roulette ... for all evals"):
+neuppl/roulette's main of 2026-10-31,
+60f77cb13839cccafd018f4a8281758355492483 (the packages roulette-lib and
+roulette, Apache License 2.0; the commit Racket's catalog gives for
+roulette-lib), on Racket 9.3, with roulette-x86_64-linux at
+45b7abd5dd6a8b094ac95653ff09a1d1d7462b6d (its prebuilt `librsdd.so`,
+SHA-256 3ad7bacb6456666f4e762c1a766d40bb33a0d24f817cf5b5178da62743100c6f)
+and rosette at 373c8c35e4a7667f38fce10cf0b74ae17de07f1d, all from git,
+under `$HOME/local/roulette-upstream`. A run stops where roulette or
+roulette-lib is installed at another commit.
 
-- Racket 8.16 minimal (`racket-minimal-8.16-x86_64-linux-cs.sh`, SHA-256
-  5439d606ddbac8cbc72e7d9ec690e6fee97e49d439f9f0d2b1f19a3b4dce5101);
-- the image's layers that hold the Roulette source and `librsdd.so`
-  (built there from camoy/rsdd branch `more-ffi`, MIT-style license),
-  cut into a 36 MB tarball, so a machine that has the tarball skips the
-  2.6 GB download and needs no Rust;
-- rosette, memo and mischief from the 8.16 release catalog, and the
-  Roulette packages linked from the source, with `PLTUSERHOME`,
-  `PLTADDONDIR` and `TMPDIR` under PREFIX. The image's compiled files
-  do not load on this Racket and are rebuilt by `raco setup`.
+The paper's artifact (Zenodo 10.5281/zenodo.15253254, CC-BY-4.0, a
+2.6 GB Docker image whose Roulette is camoy/roulette at
+54d6185f0b5143bdaabbd9ed35bb22c9dcaddc60 on Racket 8.16) is no longer
+run. The paper ran Racket 8.13 with Rosette 4.1. The artifact is the
+source of the programs, which data/roulette ports to the upstream
+language changing only the `#lang` line and the `query` forms
+(data/roulette/README.md), and of the networks' BIF files: its
+`benchmark/` directory (`--roulette-benchmarks`, kept under
+`$HOME/local/roulette`), from which gen_bn.py writes the other systems'
+programs. Roulette reads the same networks as its package holds them
+(`roulette/test/bn/NAME.rkt`, the artifact's BIF files without their
+header). The runs before 2026-10-31 ran the artifact; every instance and
+repetition that had a Roulette record is run again on upstream, and only
+those records of Roulette are kept.
 
 ### How `bench.py` runs it
 
@@ -1437,15 +1454,16 @@ ladders of size, and the nine networks with the variable the artifact
 queries. `--roulette CMD` runs Roulette, CMD a template for Racket with
 `{file}`, e.g.
 
-    --roulette "env PLTUSERHOME=$PREFIX/home PLTADDONDIR=$PREFIX/addon $PREFIX/racket/bin/racket {file}"
+    --roulette "env PLTUSERHOME=$RU/home PLTADDONDIR=$RU/addon $RU/racket/bin/racket {file}"
 
-on the artifact's program for the instance: a driver of data/roulette/,
-or for the hmm queries the artifact's `benchmark/hmm.rkt` under
-`--roulette-benchmarks` (the artifact's `benchmark/` directory, which
-also holds the networks' .bif files). The time is the process's;
-Roulette's own `(time ...)` of building and querying the program, without
-Racket's start and loading, is kept as `inproc_seconds`. A value Roulette
-leaves out of its distribution answers 0.
+($RU the upstream install) on the instance's driver of data/roulette/,
+the artifact's program in the upstream language. The driver is compiled
+by `raco make` before the clock and runs under
+scripts/roulette_timer.rkt, which loads Racket, Roulette and the
+program's imports, then runs the program and reports its run's seconds:
+Roulette's time after its warm-up (`inproc_seconds`), the time the
+tables charge, with the process's seconds beside
+it. A value Roulette leaves out of its distribution answers 0.
 
 The hardware program runs on two of the artifact's three ladders: fuel
 (`rl_hardware`, bit width 2, n = fuel - 2) and bit width
@@ -1466,46 +1484,55 @@ evaluating. Unrolled, a rule for each bit, the program took about 47
 lines and 187 bytes a bit (178 MB at 100000 bits); it grounded to 119
 rules at every width, but reading and grounding the file took tddlog
 22 s and 7 GB at 100000 bits. Written once, it grounds to 56 rules at
-every width, and tddlog answers in under 0.01 s up to 10^7 bits. The
-ladder runs to 10^7 bits, where Roulette takes 703 s (60 s at 10^6,
-190 s at 3 x 10^6).
+every width, and tddlog answers in under 0.02 s at every size.
 
-`--roulette-variants rsdd,nocomplement` adds caesar queried with `(query
-e #f)`. Roulette's default `query` takes one value's probability as one
-minus the others', which loses that value once the evidence's
-probability is below about 1e-16 (caesar from 25 letters on prints 0 for
-the most likely key); `nocomplement` gives every value to 1e-13.
+The ladder runs to 10^8 bits, on which the systems part. What grows with
+the width is a run that writes out every bit. Roulette takes 0.57 s at 10^4
+bits, 5.9 s at 10^5, 68 s at 10^6 and 263 s at 3 x 10^6 and does not finish
+within 600 s at 10^7, so that the skip rule leaves it out of 10^8;
+Roulette+tddlog takes as long, in the program's run, its count taking
+0.01 s. Alea.jl takes 47 s at 10^7 and runs out of its 29 GB at 10^8. The
+reference's dynamic program takes 0.7 s at 10^7 and 8.8 s at 10^8. Dice,
+noDice, PRISM and Storm's dd engine answer at 5 and 10 bits and stop at 20
+(noDice out of memory, the others at the limit); Storm's sparse and exact
+engines answer up to 20 and refuse the program's integers from 50; Psi does
+not finish at 5 and Scallop runs out of memory there.
 
-`--roulette-variants extexp` (with `--roulette-extexp CMD`) runs a second
-Roulette whose counts do not underflow. rsdd counts in doubles, so that a
-probability of evidence below 2^-1074 is 0 and the query answers 0 for
-every value: the Dice programs caesar-iter at 3000 characters (P(e) =
-2.0e-904) and simpleCaesar at 300 (4.0e-1215), and the hmm marginal
-likelihood from about 915 steps. The owner asked whether this underflow
-can be avoided. rsdd has no log or extended-range semiring and Roulette
-no option for one, so the variant patches both. rsdd (camoy/rsdd
-b1f7e241, the head of `more-ffi`) gets a semiring of reals held as a
-double mantissa in [0.5, 1) and a 64-bit binary exponent, and the FFI
-functions `new_wmc_params_ext`, `wmc_param_ext_set_weight` and
-`bdd_wmc_ext`. Roulette's engine (roulette-lib/engine/rsdd.rkt) counts
-through them and returns each count as the exact rational
-mantissa * 2^exponent, which the query normalizes exactly. The flips'
-weights are the doubles the artifact gives rsdd. The exponent extends the
-range, not the precision: the complement, one minus the counts of the
-other values and of the failed evidence, still cancels to nothing below
-a double's precision, so the variant queries caesar and the translated
-programs without it, as `nocomplement` does.
+Every other system reaches 10^8 bits in about the time it takes at 10: ProbLog,
+PITA, aspmc, Genfer, SPPL, Geni, Pluck, Ace, Merlin, pyAgrum, pgmpy, libDAI,
+TensorInference.jl and tddlog. Geni's records count as wrong at every size: it
+prints seven decimals, and two of the program's answers, 1e-8 and 2e-8, are
+below that. The ladder stops there all the same. For these systems the width
+is one fact of the program, so that a larger size is no harder for them and adds
+no point to their curves, and at 10^9 bits Genfer's and SPPL's translators do not
+finish. The first size's records of the systems
+charged by the process's seconds are a second run of that size, on a warm file
+cache: in the run proper every system began it on a cold one (pgmpy 66 s,
+against 1.5 s at 10 bits).
 
-The variant's installation is a second one beside the artifact's, under
-its own PREFIX: the same Racket and packages, the engine patched, and
-rsdd built from source with the patch, with its feature `ffi` (as the
-artifact's Dockerfile builds it) and with rand's feature `small_rng`
-(rsdd uses it, and with no Cargo.lock today's resolution of rand no
-longer enables it). Its `librsdd.so` goes into the add-on library
-directory after `raco setup`, whose run of Roulette's pre-installer
-would replace it with the 404 page its download URL now answers.
+Upstream's `query` asks `infer` for the value and for the observations
+and divides each value's weight by the observations'
+(data/roulette/README.md), so it has no complement to lose. The
+artifact's default `query` took one value's probability as one minus the
+others', which lost caesar's most likely key from 25 letters on, and the
+variant `nocomplement` queried with `(query e #f)` to keep it; upstream
+has no such form, and none is needed. The variant `extexp` patched the
+artifact's engine and rsdd (camoy/rsdd b1f7e241) to count with a 64-bit
+exponent; upstream's rsdd still counts in doubles, so that a probability
+of evidence below 2^-1074 is 0 and Roulette answers 0 for every value
+(caesar-iter at 3000 characters, P(e) = 2.0e-904; simpleCaesar at 300,
+4.0e-1215; the hmm marginal likelihood from about 915 steps), a failure
+of its own, and the patch has no upstream form either. Upstream's
+`log-semiring` does not avoid it: its addition goes through `exp`
+(`(log (apply + (map exp args)))`), so a sum below a double's range is 0
+there too. bench.py refuses both variants, and their records went with
+the artifact's, which is why the tables have no `nocomplement` or `extexp`
+row.
+`--roulette-variants rsdd,bayes` runs a network of another suite as the
+artifact runs its own (`roulette:bayes`, data/roulette/bif.rkt).
 
-Checked on 2026-10-30, untimed: caesar-iter at 3000 answers key 2 with
+`extexp` on the artifact, checked on 2026-10-30, untimed, confirmed the
+references where rsdd underflows: caesar-iter at 3000 answers key 2 with
 probability 1, as tddlog does, in 25 s (Roulette alone answers 0 for
 every key, in 23 s); simpleCaesar at 300 answers key 1 with 1 and the
 others 5.5453459302e-293, tddlog's answers to the digits printed, in
@@ -1518,40 +1545,84 @@ the smallest size of every other program of the suite and on four
 translated Dice programs it answers what Roulette alone answers, to
 1.7e-16.
 
-tddlog's scripts/roulette2problog.rkt runs a Roulette program with
-tddlog as its backend: Roulette evaluates the program as it does, with
-an engine that records the circuit instead of calling rsdd, and the
-exporter writes the circuit as one ProbLog program for every query, or
-with `--tddlog TDDLOG` hands it to tddlog and prints the program's
-output as Roulette does. The two routes are timed alike. Roulette alone
-runs the program `raco make` compiled, untimed; the exporter's `--make`
-compiles the same modules in its own language into its cache, untimed
-at the same place. The timed run of the export covers Racket's start,
-the program's evaluation and the writing of the circuit, and tddlog's
-count of that circuit is timed after it; the two are kept apart and
-summed.
+Roulette+tddlog (`--roulette-tddlog CMD`, records `roulette-tddlog:auto`)
+is tddlog on the circuit Roulette builds for a
+program: tddlog's scripts/roulette2problog.rkt runs the program as
+Roulette does, with Roulette's engine replaced by one that records each
+`infer`, and writes the circuit as one ProbLog program for every query;
+tddlog (strategy auto) answers it, and the answers are read as Roulette's
+`query` reads its engine's (`run_roulette_tddlog`). A query's
+observations reach tddlog as evidence, where Roulette's `query` divides
+two counts in doubles: the values of a call are exclusive, so every value
+but the observation's failure implies the negation of the failure's guard,
+and the conjuncts of that negation are written as `evidence`. tddlog's
+counts are scaled, so an observation below a double's range leaves the
+conditional in range (Roulette answers 0 for every value on those
+programs, and Roulette+tddlog the reference); the failed value answers 0.
+The circuit is otherwise the one Roulette builds. It runs wherever
+Roulette runs on its own programs (`--suite roulette`) or on a Dice
+program that dice2roulette.py translates (the Dice paper's, noDice's and
+Geni's), not on a circuit's or a network's Dice programs, whose
+Roulette+tddlog would be Alea.jl's route or the network reader with more
+steps between. The exporter runs from its source: compiled by `raco
+make`, its re-exports of Roulette's bindings resolve to its own
+submodules and a program fails to instantiate, so it refuses a compiled
+copy of itself. Its `--make` compiles the program's modules against the
+recording engine, untimed, as `raco make` compiles them for Roulette.
+Roulette+tddlog is charged as Roulette is, after the warm-up (the owner,
+2026-10-31: "the X+tddlog should include all the time of the X system
+(after warmup)"): the program's run up to the circuit (`program_s`, the
+span roulette_timer.rkt times Roulette by), the writing of the circuit
+(`circuit_s`) and tddlog's run (`tddlog_s`), together `inproc_seconds`;
+Racket's start and the modules' load are in the record's seconds alone.
+tddlog runs within what the export leaves of the limit, and a charge
+past the limit is a time-out. A driver's atoms are those Roulette's run
+prints: hardware-bitwidth.rkt names a run out of fuel one past the
+largest total of positive probability, which the exporter, holding every
+total the circuit can take, does not know, so that label is taken from
+tddlog's distribution (`roulette_tddlog_atom`).
 
-Timed on 2026-10-30 (one server, 34 lanes of 29 GB, a 600 s limit, the arms
-of an instance back to back in one lane; tddlog 5743153b): every
-program of `--suite roulette` on its ladder, the nine networks and the
-22 Dice programs of data/dice translated. Over the 91 instances both
-answer, Roulette alone takes 812 s, the export 487 s and tddlog's count
-368 s (856 s together), the backend run 860 s. The export with tddlog
-answers larger sizes than Roulette alone on seven ladders: caesar 20000
-(Roulette 5000), diamond 300000 (10000), hardware fuel 1000 (300), the
-hmm filtering and smoothing marginals 300000 (3000), ladder 300000
-(10000), motivating 1000000 (10000) and network 30000 (300). Roulette
-stops there with a segmentation fault (diamond, ladder, motivating,
-caesar) or rsdd's failed allocation of 6 GB (network, hardware, hmm).
-Both reach the same sizes on the bit-width ladder (3000000 bits, where
-Racket's evaluation of the program takes the time and the count 0.1 s)
-and on the hmm joints (3000). tddlog's count is slower than rsdd's on
-the hmm joints (94 s against 44 s for filtering over their sizes, 84 s
-against 41 s for smoothing), pmc1 (52 s against 10 s) and pmc2 (10 s
-against 2.6 s). The backend run answers each of the 68 instances with a
-reference as the reference does, to 4e-13; Roulette alone answers 0.62
-off the hmm filtering marginal at 1000 and 3000 steps (0.45 off the
-smoothing marginal), and extexp answers them as the reference.
+The rerun on upstream runs tddlog auto, Roulette (rsdd, and bayes where
+the artifact's runs had it) and Roulette+tddlog in the same jobs and
+lanes, on every instance and repetition that had a Roulette record, at
+each table's limit with the skip rule, and keeps the programs they read.
+Its tddlog records are the ones Roulette's and Roulette+tddlog's are
+compared with; they do not replace the other tddlog records.
+
+On upstream, timed on 2026-11-01 (one server, 34 lanes of 29 GB, a 600 s
+limit, the arms of an instance back to back in one lane, three repetitions,
+medians; tddlog 2ceeb514): over the 66 instances of `--suite roulette` that
+Roulette, Roulette+tddlog and tddlog all answer, those where Roulette's
+answer is wrong (below) included, Roulette takes 1586 s and Roulette+tddlog
+2117 s, of which the program's run takes 1114 s, the circuit's writing 205 s
+and tddlog's count 798 s; tddlog on its own program takes 384 s. Where
+Racket's evaluation of the program takes the time Roulette+tddlog is the
+slower, since it adds the circuit's writing and its count is slower than
+rsdd's on those circuits: caesar 557 s against 376 s, diamond 374 s against
+248 s, ladder 544 s against 342 s, motivating 559 s against 390 s. On
+hardware the program's run is short and the count alone is slower, 46 s
+against 25 s. Where rsdd takes the time Roulette+tddlog is the faster:
+network 3.2 s against 26 s, and the hmm programs 18 s against 163 s over the
+sizes both answer. On translated programs, where the program's run is short,
+the gap is wider: 217 s against 1425 s over the 61 instances of `--suite ppl`
+the three answer, and 5.5 s against 405 s over the 22 of `--suite geni`.
+
+The largest size each answers right in all three repetitions, for Roulette,
+Roulette+tddlog and tddlog: caesar 200, 10000 and 20000; diamond 300000,
+300000 and 1000000; hardware fuel 300, 1000 and 100000; the hmm joints 3000,
+10000 and 300000; the hmm filtering and smoothing marginals 300, 30000 and
+300000; ladder 300000, 300000 and 1000000; motivating 1000000 for all three;
+network 300, 30000 and 100000; the hmm marginal likelihood 900 for all three,
+where its ladder ends. Roulette stops there with rsdd's failed allocation of
+6 GB (network, hardware, the hmm joints) or at the limit (diamond, ladder,
+motivating). On caesar from 300 letters it answers 0 for every key, and on
+the hmm marginals from 1000 steps 0.62 off, as the observations' probability
+falls below a double's range. Roulette+tddlog stops at the limit, or out of
+memory on the hmm marginals at 100000; tddlog stops on its 29 GB, or at the
+limit on diamond. Roulette+tddlog answers as tddlog does on every instance,
+within 1e-8 on the networks (the package's tables round the BIF files',
+Roulette differs by as much) and closer elsewhere, and Roulette answers 48
+records wrongly, all from the underflow above.
 
 The reference is `--exact` (`exact:dp`): `gen_roulette.py --reference-of`
 computes each program's answers by a dynamic program over the model's
@@ -1571,8 +1642,7 @@ instance's Dice program into Roulette's language, which `raco make`
 compiles, both untimed, before the program runs. The translation holds
 an int(w) as a list of w Booleans, least significant bit first, draws
 `discrete` as Dice does, creates the flips in Dice's order, and queries
-each component of the program's value with `(query e #f)` under
-`--roulette-variants nocomplement` or `(query e)` otherwise; the answers
+each component of the program's value with `(query e)`; the answers
 map to the instance's queries as Alea.jl's do. The program's statements
 are forms of the module, not a function's body: Racket CS interprets a
 large module's forms, where it took longer than 120 s to compile a
@@ -1584,6 +1654,13 @@ asked as one int (`dice2roulette.py --joint`, the first Boolean the most
 significant bit), the value U answering PRED(U). The seconds of the
 programs add up. A program that reaches no network or Dice program of its
 own goes through its ground program (section 23).
+One record of the upstream rerun was not measured: `bb_markov_n4000` on
+Roulette. Alea.jl's export of that circuit stops with a BoundsError, so
+the instance has no circuit to read, and the harness stopped on the
+missing file (it now reports it and goes on). Roulette had timed out on
+`bb_markov_n50` in the same run, so the skip rule gives the instance
+`skipped`, as the run before it recorded; that record has no time and
+was added by hand after the run.
 tests/test_dice2roulette.py checks the translation, and with
 `ROULETTE_RACKET` set (the command that runs Racket, without `{file}`)
 Roulette's answers on small programs against an exact enumeration.
@@ -1603,15 +1680,8 @@ P(fail) and for the posterior of every single, pair and triple of faults:
 1 + n + C(n,2) + C(n,3) calls of `infer` for n faults. It prints P(fail),
 the singles above 0, the pairs above 2e-4 and the triples above 1e-8.
 
-Install: Roulette's upstream code, which every evaluation runs (under
-`$HOME/local/roulette-upstream`, apart from the artifact's Roulette):
-Racket 9.3 and, from git, roulette-lib and roulette at neuppl/roulette's
-main of 2026-10-31, 60f77cb13839cccafd018f4a8281758355492483 (the commit
-Racket's catalog gives for roulette-lib), roulette-x86_64-linux at
-45b7abd5dd6a8b094ac95653ff09a1d1d7462b6d (its prebuilt `librsdd.so`, SHA-256
-3ad7bacb6456666f4e762c1a766d40bb33a0d24f817cf5b5178da62743100c6f) and rosette
-at 373c8c35e4a7667f38fce10cf0b74ae17de07f1d. Circulette on it
-(install_circulette.sh, under `$HOME/local/circulette`); for
+Install: Roulette's upstream code as section 11 installs it, and
+Circulette on it (install_circulette.sh, under `$HOME/local/circulette`); for
 `rkt_of_verilog.py`, Python 3.10 with pyrtl 0.12 and Circulette's
 `pyrtl_noopt.patch`, and Yosys 0.68 (yowasp-yosys 0.68.0.0.post1208).
 
@@ -1632,7 +1702,11 @@ which loads Racket, Roulette and the program's imports, then runs the
 program and reports its run's seconds: Roulette's time after its warm-up
 (`inproc_seconds`), the process's beside it. Its
 printed posteriors are keyed as the program's queries (`run_circulette`)
-and P(fail) is kept as `p_fail`. Roulette+tddlog is tddlog on the ProbLog program that tddlog's
+and P(fail) is kept as `p_fail`. circulette.rkt computes every posterior
+and prints a single's above 0, a pair's above 2e-4 and a triple's above
+1e-8, so a posterior it leaves out counts as answered where the reference
+puts it at or below that threshold, and as left out otherwise
+(`printed_answers`). Roulette+tddlog is tddlog on the ProbLog program that tddlog's
 `scripts/roulette2problog.rkt` writes from circulette.rkt's own run with
 Roulette's engine replaced by one that records each `infer`:
 P(fail) is the evidence's probability, which tddlog prints under
@@ -1651,9 +1725,11 @@ The Dice family (Dice, Alea.jl, noDice, Psi, Genfer, SPPL, Geni, Pluck)
 is not given these programs: Circulette's question is all 1 + n + C(n,2)
 + C(n,3) posteriors at once, and a Dice program answers one query, so a
 Dice program of P(fail) alone, or one program per posterior, would ask
-another question (rule 19). The programs are LGPL-3.0, with designs from
-OpenFPGA (MIT), OpenRAM (BSD-3) and others; until that is decided they
-stay off the benchmark pages, as Rubicon's GPL models do.
+another question. The programs are LGPL-3.0, with designs from
+OpenFPGA (MIT), OpenRAM (BSD-3) and others. Their results are in the tables,
+and the programs and the translations written from them stay off the
+benchmark pages, as Rubicon's GPL models do: each page says why and gives
+the file's size, its SHA-256 and where to download the original.
 
 ---
 
@@ -2298,7 +2374,11 @@ systems, Hugin and `.inst` for Ace) or as Dice programs (one program
 returning every query as a tuple for Alea.jl, Roulette, Psi, Genfer,
 SPPL, Geni, Storm and PRISM; one program per query, listed in a `.dicemap`, for Dice
 and noDice, as for the circuits). Both steps are timed, and their
-seconds (`ground_s` in the record) are added to the system's. The
+seconds (`ground_s` in the record) are added to the system's. A system
+the tables time by its own time in the process (Alea.jl, Roulette, Pluck
+and TensorInference.jl, bench.py's OWN_TIME) has them added to that own
+time too (`ground_route_seconds`, `rel/charge.py`), since the route is
+part of what it read, as every system on the route pays it. The
 answers are those of the ground program's queries, which are the ground
 atoms tddlog answers.
 
@@ -2515,6 +2595,7 @@ the same model) has the class of the program it is written from.
 | pita | std, lit, tpch, biomine | all | translated | the ProbLog program translated by problog2pita.py |
 | tddlog | std, dice | `dice_(?!(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder))` | native | the Dice paper's program, read by tddlog's Dice reader |
 | tddlog | ppl | `nodice_` | native | noDice's programs, which are Dice programs, read by tddlog's Dice reader |
+| tddlog | dice | `dice_(caesar-iter_k[13]0{4,}\|simpleCaesar_k(3000\|[13]0{4,})\|(diamond\|ladder)_k(25600\|102400\|409600\|1638400)\|pmc1_k(150\|300\|600)\|pmc2_k(200\|400\|800\|1600))$` | native | the Dice paper's loop programs at their growth sizes, read by tddlog's Dice reader |
 | tddlog, problog, pita, aspmc | std | `dice_` | translated | the Dice paper's program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
 | provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
@@ -2524,7 +2605,12 @@ the same model) has the class of the program it is written from.
 | dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
 | nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
 | alea | ppl | `pluck_` | translated | the Dice.jl versions of Pluck's sequence models in the paper's artifact, ported to Alea.jl (Pluck's own programs are the models) |
-| tddlog, problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | translated | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog (alea2problog.jl) or as Dice programs of its gates |
+| alea-tddlog | ppl | `pluck_` | translated | the Alea.jl port of Pluck's sequence model (Pluck's own programs are the models), whose circuit Alea.jl hands to tddlog |
+| alea-tddlog | ppl, bitblast | `(bb\|arith\|pluck)_` | native | the Alea.jl program, which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog as ProbLog (alea2problog.jl) |
+| roulette-tddlog | circulette | all | native | the netlist, which circulette.rkt runs on Roulette's package roulette-lib up to the formulas of its queries, handed to tddlog as ProbLog (roulette2problog.rkt) |
+| roulette-tddlog | roulette | all | native | the Roulette paper's program, which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (roulette2problog.rkt) |
+| roulette-tddlog | dice, ppl, geni | all | translated | a Dice program translated for Roulette (dice2roulette.py), which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (roulette2problog.rkt) |
+| problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | translated | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog (alea2problog.jl) or as Dice programs of its gates |
 | problog, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the loops unrolled step by step, the form of its ProbLog program on which the system answers more of them |
 | tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | roulette | all | translated | the paper's model written as a ProbLog program (gen_roulette.py) |

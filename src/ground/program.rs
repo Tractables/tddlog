@@ -313,6 +313,9 @@ pub struct GroundStats {
     pub swept: super::SweepStats,
     /// How many tables the grounder wrote as noisy-ors (`noisy_or`).
     pub noisy_or: usize,
+    /// How many variables held as bits the grounder wrote as tables over
+    /// their values (`values`).
+    pub values: usize,
     /// How many negated derived atoms the grounder unfolded under the
     /// rules that read them, rules dropped among them (`negation`).
     pub unfolded: usize,
@@ -485,6 +488,26 @@ impl GroundProgram {
             .iter()
             .chain(&self.evidence)
             .filter_map(|&(_, id, _)| id)
+    }
+
+    /// Replaces `self.rules`, inserting any rules in `before` at each rule
+    /// index `ri` and dropping rules where `dropped[ri]` holds.
+    pub(crate) fn splice_rules(
+        &mut self,
+        mut before: rustc_hash::FxHashMap<usize, Vec<GroundRule>>,
+        dropped: &[bool],
+    ) {
+        let old = std::mem::take(&mut self.rules);
+        let mut rules = Vec::with_capacity(old.len());
+        for (ri, r) in old.into_iter().enumerate() {
+            if let Some(new) = before.remove(&ri) {
+                rules.extend(new);
+            }
+            if !dropped[ri] {
+                rules.push(r);
+            }
+        }
+        self.rules = rules;
     }
 }
 

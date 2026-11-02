@@ -1,9 +1,7 @@
 //! Discrete Bayesian and Markov networks, read as programs.
 //!
 //! A network file is read as a ProbLog program, which `tddlog --program`
-//! prints, and that program is what tddlog answers. It is the program the
-//! benchmarks' Python script `gen_bn.py` (on the baselines branch), which
-//! this reader replaced, wrote, byte for byte: every variable `X` with
+//! prints, and that program is what tddlog answers: every variable `X` with
 //! parents `P1..Pm` becomes one annotated disjunction per row of its
 //! conditional table,
 //!
@@ -18,6 +16,12 @@
 //! is a plain rule, and a row that sums to one up to the rounding of its
 //! decimals is divided by its sum (`rows.rs`). The rules come in the order
 //! of a depth-first walk from each variable in turn to its parents.
+//!
+//! What tddlog answers is that program's rows of the variables the queries
+//! and the evidence read and of their ancestors ([`ReadOptions::whole`]):
+//! no query or evidence depends on another row, which grounding would
+//! drop, and a large network asked about a few of its variables is then
+//! not written out and parsed whole for them.
 //!
 //! The formats, by the file's extension ([`Format::of_path`]): BIF
 //! (`.bif`), Hugin (`.net`, `.hugin`), GeNIe (`.xdsl`, its `cpt` nodes),
@@ -147,9 +151,15 @@ pub struct ReadOptions<'a> {
     /// ([`crate::syntax`]), as the values after the program's file do on
     /// the command line. Refused for a network or a Dice program.
     pub arguments: Vec<String>,
+    /// Write every variable's rows, as `--program` prints a network for
+    /// the systems that read its program, and not only those of the
+    /// variables the queries and the evidence read and of their
+    /// ancestors, the part of the program they depend on.
+    pub whole: bool,
 }
 
-/// Every variable queried, no evidence, the rows as written, no arguments.
+/// Every variable queried, no evidence, the rows as written, no
+/// arguments, the part of the program the queries depend on.
 impl Default for ReadOptions<'_> {
     fn default() -> Self {
         ReadOptions {
@@ -157,6 +167,7 @@ impl Default for ReadOptions<'_> {
             evidence: None,
             rescale: false,
             arguments: Vec::new(),
+            whole: false,
         }
     }
 }
@@ -217,10 +228,10 @@ pub fn read(data: &[u8], format: Format, options: &ReadOptions) -> Result<Networ
     let mut program = String::new();
     if let Some(c) = log10_offset {
         program.push_str("% log10 Z - log10 P(e) = ");
-        rows::write_float(&mut program, c);
+        crate::syntax::write_float(&mut program, c).expect("a String takes any text");
         program.push('\n');
     }
-    network.write(&mut program, &options.queries, &evidence)?;
+    network.write(&mut program, &options.queries, &evidence, options.whole)?;
     Ok(NetworkProgram {
         program,
         log10_offset,
@@ -306,6 +317,48 @@ impl Network {
             .ok_or_else(|| format!("{} has no value {value}", self.names[v]))
     }
 
+    /// The variable and parents of a table's `X | P1 ...` head, with the
+    /// parents split by `split_parents`.
+    fn parse_table_head<'a, I: Iterator<Item = &'a str>>(
+        &self,
+        head: &'a str,
+        split_parents: impl FnOnce(&'a str) -> I,
+    ) -> Result<(&'a str, usize, Vec<usize>), String> {
+        let mut parts = head.split('|').map(scan::strip);
+        let name = parts.next().unwrap_or("");
+        let v = self.variable(name)?;
+        let parents = match parts.next() {
+            Some(p) if !p.is_empty() => split_parents(p)
+                .map(|p| self.variable(scan::strip(p)))
+                .collect::<Result<Vec<_>, _>>()?,
+            _ => Vec::new(),
+        };
+        Ok((name, v, parents))
+    }
+
+    /// The observations `pairs` (a variable name and a value name each), a
+    /// variable and a value index each, in the network's order. A variable
+    /// or value the network does not have, or a variable observed twice, is
+    /// an error.
+    fn observations<V: AsRef<str>, U: AsRef<str>>(
+        &self,
+        pairs: impl IntoIterator<Item = (V, U)>,
+    ) -> Result<Vec<(usize, usize)>, String> {
+        let mut given: Vec<Option<usize>> = vec![None; self.names.len()];
+        for (v, u) in pairs {
+            let v = self.variable(v.as_ref())?;
+            let u = self.value(v, u.as_ref())?;
+            if given[v].replace(u).is_some() {
+                return Err(format!("evidence: {} observed twice", self.names[v]));
+            }
+        }
+        Ok(given
+            .into_iter()
+            .enumerate()
+            .filter_map(|(v, u)| Some((v, u?)))
+            .collect())
+    }
+
     /// Every assignment of `parents`, the last changing fastest, flat.
     fn assignments(&self, parents: &[usize]) -> Vec<u32> {
         let sizes: Vec<usize> = parents.iter().map(|&p| self.values[p].len()).collect();
@@ -383,33 +436,9 @@ impl Network {
     }
 
     /// Each variable after its parents, depth first from each variable in
-    /// turn, the parents in their table's order. A stack, not recursion: a
-    /// chain of ancestors can be as long as the network.
+    /// turn, the parents in their table's order.
     fn topological(&self, tables: &[&Table]) -> Vec<usize> {
-        let mut done = vec![false; self.names.len()];
-        let mut out = Vec::with_capacity(self.names.len());
-        for root in 0..self.names.len() {
-            if done[root] {
-                continue;
-            }
-            done[root] = true;
-            let mut stack = vec![(root, 0)];
-            while let Some((v, next)) = stack.last_mut() {
-                let parents = &tables[*v].parents;
-                while *next < parents.len() && done[parents[*next]] {
-                    *next += 1;
-                }
-                if *next == parents.len() {
-                    out.push(*v);
-                    stack.pop();
-                } else {
-                    let p = parents[*next];
-                    done[p] = true;
-                    stack.push((p, 0));
-                }
-            }
-        }
-        out
+        parent_postorder(self.names.len(), |v| &tables[v].parents).0
     }
 
     /// The variables `queries` asks, observed or not.
@@ -435,15 +464,30 @@ impl Network {
 
     /// Writes the program: the rules in topological order, then the
     /// observations `evidence` (a variable and a value index each), then
-    /// the queries, each line ending in a newline.
+    /// the queries, each line ending in a newline. The rules are every
+    /// variable's where `whole` holds, and else those of the variables
+    /// queried and observed and of their ancestors; every row is checked.
     fn write(
         &self,
         out: &mut String,
         queries: &Queries,
         evidence: &[(usize, usize)],
+        whole: bool,
     ) -> Result<(), String> {
         let tables = self.tables()?;
         let atoms = self.atoms()?;
+        let queried = self.queried(&tables, queries)?;
+        let mut written = vec![whole; self.names.len()];
+        let mut stack: Vec<usize> = queried
+            .iter()
+            .copied()
+            .chain(evidence.iter().map(|&(v, _)| v))
+            .collect();
+        while let Some(v) = stack.pop() {
+            if !std::mem::replace(&mut written[v], true) {
+                stack.extend(&tables[v].parents);
+            }
+        }
         let start = out.len();
         let (mut row, mut head) = (Vec::new(), String::new());
         for v in self.topological(&tables) {
@@ -466,6 +510,9 @@ impl Network {
                         format!("{} given ({}): {e}", self.names[v], at.join(", "))
                     })?;
                     head.clear();
+                    if !written[v] {
+                        continue;
+                    }
                     let heads: Vec<(f64, usize)> = row
                         .iter()
                         .enumerate()
@@ -481,7 +528,8 @@ impl Network {
                                 if j > 0 {
                                     head.push_str("; ");
                                 }
-                                rows::write_float(&mut head, p);
+                                crate::syntax::write_float(&mut head, p)
+                                    .expect("a String takes any text");
                                 head.push_str("::");
                                 head.push_str(&atoms[v][u]);
                             }
@@ -505,11 +553,7 @@ impl Network {
             writeln!(out, "evidence({}).", atoms[v][u]).expect("a String takes any text");
         }
         if *queries != Queries::None {
-            let queried: Vec<usize> = self
-                .queried(&tables, queries)?
-                .into_iter()
-                .filter(|&v| !observed[v])
-                .collect();
+            let queried: Vec<usize> = queried.into_iter().filter(|&v| !observed[v]).collect();
             if queried.is_empty() {
                 return Err("every queried variable is observed, nothing is left to query".into());
             }
@@ -549,6 +593,46 @@ impl Network {
         }
         Ok(atoms)
     }
+}
+
+/// Each variable of `0..n` after its parents, depth first from each
+/// variable in turn, with the parents in `parents_of(v)`'s order, and
+/// whether the parent relation is acyclic. A stack, not recursion: a
+/// chain of ancestors can be as long as the network.
+pub(super) fn parent_postorder<'a>(
+    n: usize,
+    parents_of: impl Fn(usize) -> &'a [usize],
+) -> (Vec<usize>, bool) {
+    let mut state = vec![0u8; n]; // 0 unseen, 1 on the path, 2 done
+    let mut acyclic = true;
+    let mut out = Vec::with_capacity(n);
+    for root in 0..n {
+        if state[root] != 0 {
+            continue;
+        }
+        state[root] = 1;
+        let mut stack = vec![(root, 0usize)];
+        while let Some((v, next)) = stack.last_mut() {
+            let parents = parents_of(*v);
+            if *next == parents.len() {
+                state[*v] = 2;
+                out.push(*v);
+                stack.pop();
+                continue;
+            }
+            let p = parents[*next];
+            *next += 1;
+            match state[p] {
+                0 => {
+                    state[p] = 1;
+                    stack.push((p, 0));
+                }
+                1 => acyclic = false,
+                _ => {}
+            }
+        }
+    }
+    (out, acyclic)
 }
 
 /// A name as the program writes it: lowercased, every character but

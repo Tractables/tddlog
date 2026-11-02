@@ -56,7 +56,7 @@ pub(crate) struct Compiled {
 /// given a formula. Most atoms are facts, which have none: an entry for
 /// each atom would write most of a small program's memory before its
 /// compile begins. A formula is held through an `Arc`, which a read that
-/// does not take it shares ([`Read::Shared`]) for a conjunction to read in
+/// does not take it shares ([`Read::shared`]) for a conjunction to read in
 /// place; no read outlives the atom update that made it.
 #[derive(Default)]
 pub(crate) struct Formulas {
@@ -535,24 +535,22 @@ impl Projected {
         (Some(projected), None)
     }
 
-    /// The scope of component `ci`, the next to start: its cone's, or the
+    /// The scope of the next component to start (`scc`): its cone's, or the
     /// global one over the limit.
-    #[allow(clippy::too_many_arguments)]
     fn start(
         &mut self,
         gp: &GroundProgram,
         by_head: &RulesByHead,
-        sccs: &[Vec<AtomId>],
-        ci: usize,
+        scc: &[AtomId],
         var_of: &[Option<VarId>],
         comp_of: &[u32],
         backend: &TddBackend,
     ) -> Result<Option<VtreeScope>, CompileError> {
-        debug_assert_eq!(ci, self.started, "components start in order");
+        let ci = self.started;
         self.started += 1;
         let Some(vars) = self
             .cones
-            .of(gp, by_head, sccs, ci, var_of, comp_of, self.keep_global)
+            .of(gp, by_head, (ci, scc), var_of, comp_of, self.keep_global)
         else {
             return Ok(None);
         };
@@ -1049,8 +1047,7 @@ impl Compilation {
                     && let Some(scope) = p.start(
                         gp,
                         &self.by_head,
-                        &self.sccs,
-                        self.next,
+                        &self.sccs[self.next],
                         &self.var_of,
                         &self.comp_of,
                         backend,
@@ -1461,7 +1458,7 @@ impl Compilation {
         // none where the caller may read the literal again. In a run
         // without a watch the last read of a formula takes it, and the
         // cached other polarity: the end of the component would drop them.
-        // Another read shares them with the store ([`Read::Shared`]), and
+        // Another read shares them with the store ([`Read::shared`]), and
         // the conjunction that reads it reads it in place.
         let derived =
             |l: GLit, covers: u32, formulas: &mut Formulas| -> Result<Read, CompileError> {
@@ -1501,8 +1498,8 @@ impl Compilation {
                     };
                     match f {
                         Some(f) => Read::taken(f),
-                        None if stored_positive => Read::Owned(backend.zero(own)),
-                        None => Read::Owned(backend.one(own)),
+                        None if stored_positive => Read::from(backend.zero(own)),
+                        None => Read::from(backend.one(own)),
                     }
                 };
                 if stored_positive == l.is_positive() {
@@ -1531,13 +1528,13 @@ impl Compilation {
                         };
                         let f = stored(formulas).with_cow(|f| negate(source, f))?;
                         if last {
-                            return Ok(Read::Owned(f));
+                            return Ok(Read::from(f));
                         }
                         let f = Arc::new(f);
                         lambda_cache.borrow_mut()[b] = Some(Arc::clone(&f));
-                        Ok(Read::Shared(f))
+                        Ok(Read::shared(f))
                     }
-                    Formulation::Primal => Ok(Read::Owned(
+                    Formulation::Primal => Ok(Read::from(
                         stored(formulas).with_cow(|f| negate(NegationSource::Primal, f))?,
                     )),
                 }
@@ -1609,7 +1606,7 @@ impl Compilation {
                         } else {
                             tididi::Literal::neg(v)
                         };
-                        Ok(Part(Read::Owned(backend.literal(on, lit)?), on.clone()))
+                        Ok(Part(Read::from(backend.literal(on, lit)?), on.clone()))
                     }
                     AtomKind::Derived => Ok(Part(
                         derived(l, covers, formulas)?,
@@ -1713,17 +1710,14 @@ impl Compilation {
             let mut lambda_lookup = |b: AtomId| -> Result<Tdd, CompileError> {
                 backend.embed_read(derived(GLit::Pos(b), 0, formulas)?, scope_of(b), scope)
             };
-            let mut updates = 0;
             let wf_negate = |f: Tdd| negate(NegationSource::WellFounded, f.into());
-            let result = aft::compile_component(
+            let (result, updates) = aft::compile_component(
                 gp,
                 by_head,
                 var_of,
-                scc,
-                scope,
+                (scc, scope),
                 &mut lambda_lookup,
                 &wf_negate,
-                &mut updates,
                 backend,
             )?;
             stats.atom_updates += updates;
@@ -1748,75 +1742,15 @@ impl Compilation {
         let cyclic = deps::is_cyclic(gp, by_head, scc);
         if !cyclic {
             let a = scc[0];
-            // An atom that holds where a fact `v` agrees with a derived atom
-            // `k` is a link of a reader of `k`'s table: bn_barley's aks_m2
-            // has four readers. The first such atom for `k` is built from
-            // `k`'s formula and its negation (`TddBackend::select_at_root`)
-            // where `v` is a child of its scope's root; the others are that
-            // one with `v` renamed, wherever their scope has its shape.
-            // Built from its rules, a link costs most of its work in the
-            // conjunction of its two negated halves.
-            //
-            // The renaming holds only where `v` is outside `k`'s cone, as
-            // a reader's copy is: `tmp :- d, v. tmp :- \+d, \+v.` with
-            // `v :- \+d` is false, and renamed to `link`'s fact `a` it
-            // would make `link :- a, v. link :- \+a, \+v.` false too.
-            let equal = equivalence(gp, &by_head[a as usize]);
-            let outside = |v: AtomId, k: AtomId| {
-                var_of[v as usize].is_some_and(|x| scope_of(k).local_of(x).is_none())
-            };
-            let mut reused = None;
-            if let Some((v, k)) = equal
-                && outside(v, k)
-            {
-                match equivalents
-                    .get(&k)
-                    .and_then(|&(v0, a0)| Some((v0, a0, formulas[a0 as usize].as_ref()?)))
-                {
-                    Some((v0, a0, f0)) => {
-                        let renamed = (
-                            var_of[v0 as usize].expect("a fact has a variable"),
-                            var_of[v as usize].expect("a fact has a variable"),
-                        );
-                        reused = backend.embed_renamed(f0, scope_of(a0), scope, renamed)?;
-                    }
-                    None => {
-                        equivalents.insert(k, (v, a));
-                    }
-                }
-            }
-            let selected = match (&reused, equal) {
-                (None, Some((v, k))) => {
-                    // The stored formula is `v ∧ X ∨ ¬v ∧ Y`, with X and Y the
-                    // formulas of ¬k and k in the dual, of k and ¬k in the
-                    // primal.
-                    let (pos, neg) = (GLit::Pos(k), GLit::Neg(k));
-                    // Read for no body: where the selection does not apply,
-                    // the rules read `k` again.
-                    let (x, y) = match formulation {
-                        Formulation::Dual => {
-                            (derived(neg, 0, formulas)?, derived(pos, 0, formulas)?)
-                        }
-                        Formulation::Primal => {
-                            (derived(pos, 0, formulas)?, derived(neg, 0, formulas)?)
-                        }
-                    };
-                    let own = scope_of(k);
-                    let placed = |f: Read| match own.same(scope) {
-                        true => Ok(f),
-                        false => backend.embed_read(f, own, scope).map(Read::Owned),
-                    };
-                    let (x, y) = (placed(x)?, placed(y)?);
-                    backend.select_at_root(
-                        scope,
-                        var_of[v as usize].expect("a fact has a variable"),
-                        &x,
-                        &y,
-                    )?
-                }
-                _ => None,
-            };
-            let f = match reused.or(selected) {
+            let f = match Self::try_equivalence(
+                gp,
+                (a, &by_head[a as usize]),
+                (var_of, formulation),
+                (scope, scope_of),
+                backend,
+                (equivalents, formulas),
+                &derived,
+            )? {
                 // Renamed from a settled formula, or interned level by level
                 // from settled operands: settled already.
                 Some(f) => f,
@@ -1992,6 +1926,73 @@ impl Compilation {
         stats.restarts += found.restarts;
         stats.restarts_kept += found.restarts_kept;
         Ok(refused)
+    }
+
+    /// An atom that holds where a fact `v` agrees with a derived atom `k`
+    /// is a link of a reader of `k`'s table: bn_barley's aks_m2 has four
+    /// readers. The first such atom for `k` is built from `k`'s formula and
+    /// its negation ([`TddBackend::select_at_root`]) where `v` is a child
+    /// of its scope's root; the others are that one with `v` renamed,
+    /// wherever their scope has its shape. Built from its rules, a link
+    /// costs most of its work in the conjunction of its two negated halves.
+    ///
+    /// The renaming holds only where `v` is outside `k`'s cone, as a
+    /// reader's copy is: `tmp :- d, v. tmp :- \+d, \+v.` with `v :- \+d` is
+    /// false, and renamed to `link`'s fact `a` it would make
+    /// `link :- a, v. link :- \+a, \+v.` false too.
+    fn try_equivalence<'s>(
+        gp: &GroundProgram,
+        (a, comp_rules): (AtomId, &[usize]),
+        (var_of, formulation): (&[Option<VarId>], Formulation),
+        (scope, scope_of): (&VtreeScope, impl Fn(AtomId) -> &'s VtreeScope),
+        backend: &TddBackend,
+        (equivalents, formulas): (&mut FxHashMap<AtomId, (AtomId, AtomId)>, &mut Formulas),
+        derived: &dyn Fn(GLit, u32, &mut Formulas) -> Result<Read, CompileError>,
+    ) -> Result<Option<Tdd>, CompileError> {
+        let Some((v, k)) = equivalence(gp, comp_rules) else {
+            return Ok(None);
+        };
+        let outside = var_of[v as usize].is_some_and(|x| scope_of(k).local_of(x).is_none());
+        if outside {
+            match equivalents
+                .get(&k)
+                .and_then(|&(v0, a0)| Some((v0, a0, formulas[a0 as usize].as_ref()?)))
+            {
+                Some((v0, a0, f0)) => {
+                    let renamed = (
+                        var_of[v0 as usize].expect("a fact has a variable"),
+                        var_of[v as usize].expect("a fact has a variable"),
+                    );
+                    if let Some(reused) = backend.embed_renamed(f0, scope_of(a0), scope, renamed)? {
+                        return Ok(Some(reused));
+                    }
+                }
+                None => {
+                    equivalents.insert(k, (v, a));
+                }
+            }
+        }
+        // The stored formula is `v ∧ X ∨ ¬v ∧ Y`, with X and Y the
+        // formulas of ¬k and k in the dual, of k and ¬k in the primal.
+        let (pos, neg) = (GLit::Pos(k), GLit::Neg(k));
+        // Read for no body: where the selection does not apply, the rules
+        // read `k` again.
+        let (x, y) = match formulation {
+            Formulation::Dual => (derived(neg, 0, formulas)?, derived(pos, 0, formulas)?),
+            Formulation::Primal => (derived(pos, 0, formulas)?, derived(neg, 0, formulas)?),
+        };
+        let own = scope_of(k);
+        let placed = |f: Read| match own.same(scope) {
+            true => Ok(f),
+            false => backend.embed_read(f, own, scope).map(Read::from),
+        };
+        let (x, y) = (placed(x)?, placed(y)?);
+        backend.select_at_root(
+            scope,
+            var_of[v as usize].expect("a fact has a variable"),
+            &x,
+            &y,
+        )
     }
 }
 

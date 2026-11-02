@@ -77,74 +77,11 @@ pub(super) fn unfold(gp: &mut GroundProgram, structure: &Structure) -> usize {
             position[a as usize] = i;
         }
     }
-    // A negated derived atom of the head's predicate, of an earlier
-    // component: an earlier value of the head's table.
-    let earlier = |head: AtomId, l: GLit| {
-        !l.is_positive()
-            && position[l.atom() as usize] < position[head as usize]
-            && gp.atoms[l.atom() as usize].signature() == gp.atoms[head as usize].signature()
-    };
-    // A fact read negatively by a rule of an atom of its predicate, a
-    // table's first value ([`unfold`]'s last step).
-    let sibling = |head: AtomId, l: GLit| {
-        !l.is_positive()
-            && gp.is_fact(l.atom())
-            && gp.atoms[l.atom() as usize].signature() == gp.atoms[head as usize].signature()
-    };
-    if !gp.rules.iter().any(|r| {
-        r.body
-            .iter()
-            .any(|&l| earlier(r.head, l) || sibling(r.head, l))
-    }) {
+    if !has_unfold_candidates(gp, &position) {
         return 0;
     }
     let by_head = &structure.by_head;
-    let mut set_of = vec![usize::MAX; n];
-    for (i, set) in structure.sets.iter().enumerate() {
-        for &a in set {
-            set_of[a as usize] = i;
-        }
-    }
-    // The facts one rule alone reads, which no query or evidence names: a
-    // row's switches, left out of the contexts.
-    let mut readers = vec![0u8; n];
-    for l in gp.rules.iter().flat_map(|r| &r.body) {
-        let c = &mut readers[l.atom() as usize];
-        *c = (*c + 1).min(2);
-    }
-    for a in gp.named_atoms() {
-        readers[a as usize] = 2;
-    }
-    let once: Vec<bool> = (0..n)
-        .map(|a| readers[a] == 1 && gp.is_fact(a as AtomId))
-        .collect();
-    // The atoms every rule of each atom reads negatively, sorted.
-    let mut excluded: Vec<(usize, AtomId)> = Vec::new();
-    let mut common: Vec<AtomId> = Vec::new();
-    for (h, rules) in by_head.iter().enumerate() {
-        let Some((&first, others)) = rules.split_first() else {
-            continue;
-        };
-        common.clear();
-        common.extend(
-            gp.rules[first]
-                .body
-                .iter()
-                .filter(|l| !l.is_positive())
-                .map(|l| l.atom()),
-        );
-        for &ri in others {
-            common.retain(|&x| gp.rules[ri].body.contains(&GLit::Neg(x)));
-        }
-        common.sort_unstable();
-        common.dedup();
-        excluded.extend(common.iter().map(|&x| (h, x)));
-    }
-    let excluded = Lists::new(n, || excluded.iter().copied());
-    let excludes = |x: AtomId, y: AtomId| {
-        excluded[x as usize].binary_search(&y).is_ok()
-            || excluded[y as usize].binary_search(&x).is_ok()
-    };
+    let (set_of, once, excluded) = exclusivity_and_once(gp, structure);
     let clash = |x: &[GLit], y: &[GLit]| {
         x.iter().any(|&l| {
             y.contains(&l.negated())
@@ -154,7 +91,8 @@ pub(super) fn unfold(gp: &mut GroundProgram, structure: &Structure) -> usize {
                             && m.atom() != l.atom()
                             && ((set_of[l.atom() as usize] != usize::MAX
                                 && set_of[l.atom() as usize] == set_of[m.atom() as usize])
-                                || excludes(l.atom(), m.atom()))
+                                || excluded[l.atom() as usize].binary_search(&m.atom()).is_ok()
+                                || excluded[m.atom() as usize].binary_search(&l.atom()).is_ok())
                     }))
         })
     };
@@ -190,12 +128,11 @@ pub(super) fn unfold(gp: &mut GroundProgram, structure: &Structure) -> usize {
                 negated.extend(
                     body.iter()
                         .enumerate()
-                        .filter(|&(_, &l)| earlier(h, l))
+                        .filter(|&(_, &l)| earlier_sibling(gp, &position, h, l))
                         .map(|(k, l)| (position[l.atom() as usize], k)),
                 );
                 negated.sort_unstable_by(|x, y| y.cmp(x));
-                let mut step = None;
-                for &(_, k) in &negated {
+                let step = negated.iter().find_map(|&(_, k)| {
                     let l = body[k];
                     let a = l.atom();
                     rest.clear();
@@ -213,9 +150,7 @@ pub(super) fn unfold(gp: &mut GroundProgram, structure: &Structure) -> usize {
                             .all(|(i, (x, _))| rules[i + 1..].iter().all(|(y, _)| clash(x, y)));
                         pairwise.then(|| rules.into_iter().collect())
                     });
-                    let Some(rules) = rules else {
-                        continue;
-                    };
+                    let rules = rules.as_ref()?;
                     let unfolded = match rules.get(&context(&rest)) {
                         Some(&rj) if !clash(&gp.rules[rj].body, &rest) => {
                             let mut extra = gp.rules[rj]
@@ -223,25 +158,20 @@ pub(super) fn unfold(gp: &mut GroundProgram, structure: &Structure) -> usize {
                                 .iter()
                                 .filter(|m| rest.binary_search(m).is_err());
                             match (extra.next(), extra.next()) {
-                                (None, _) => Some(Unfolded::False),
-                                (Some(&m), None) => Some(Unfolded::Literal(m.negated())),
-                                _ => None,
+                                (None, _) => Unfolded::False,
+                                (Some(&m), None) => Unfolded::Literal(m.negated()),
+                                _ => return None,
                             }
                         }
-                        Some(_) => Some(Unfolded::True),
-                        None => rules
-                            .values()
-                            .all(|&rj| clash(&gp.rules[rj].body, &rest))
-                            .then_some(Unfolded::True),
+                        Some(_) => Unfolded::True,
+                        None if rules.values().all(|&rj| clash(&gp.rules[rj].body, &rest)) => {
+                            Unfolded::True
+                        }
+                        None => return None,
                     };
-                    if let Some(unfolded) = unfolded {
-                        step = Some((k, unfolded));
-                        break;
-                    }
-                }
-                let Some((k, unfolded)) = step else {
-                    break;
-                };
+                    Some((k, unfolded))
+                });
+                let Some((k, unfolded)) = step else { break };
                 count += 1;
                 let body = &mut gp.rules[ri].body;
                 match unfolded {
@@ -259,11 +189,86 @@ pub(super) fn unfold(gp: &mut GroundProgram, structure: &Structure) -> usize {
     }
     if count > 0 {
         let mut i = 0;
-        gp.rules.retain(|_| {
-            i += 1;
-            !dropped[i - 1]
-        });
+        gp.rules.retain(|_| (!dropped[i], i += 1).0);
     }
+    count + alias_value_facts(gp, &excluded)
+}
+
+/// A negated derived atom of the head's predicate, of an earlier
+/// component: an earlier value of the head's table.
+fn earlier_sibling(gp: &GroundProgram, position: &[usize], head: AtomId, l: GLit) -> bool {
+    !l.is_positive()
+        && position[l.atom() as usize] < position[head as usize]
+        && gp.atoms[l.atom() as usize].signature() == gp.atoms[head as usize].signature()
+}
+
+fn has_unfold_candidates(gp: &GroundProgram, position: &[usize]) -> bool {
+    // A fact read negatively by a rule of an atom of its predicate, a
+    // table's first value ([`unfold`]'s last step).
+    let sibling_fact = |head: AtomId, l: GLit| {
+        !l.is_positive()
+            && gp.is_fact(l.atom())
+            && gp.atoms[l.atom() as usize].signature() == gp.atoms[head as usize].signature()
+    };
+    gp.rules.iter().any(|r| {
+        r.body
+            .iter()
+            .any(|&l| earlier_sibling(gp, position, r.head, l) || sibling_fact(r.head, l))
+    })
+}
+
+fn exclusivity_and_once(
+    gp: &GroundProgram,
+    structure: &Structure,
+) -> (Vec<usize>, Vec<bool>, Lists<AtomId>) {
+    let n = gp.num_atoms();
+    let mut set_of = vec![usize::MAX; n];
+    for (i, set) in structure.sets.iter().enumerate() {
+        for &a in set {
+            set_of[a as usize] = i;
+        }
+    }
+    // The facts one rule alone reads, which no query or evidence names: a
+    // row's switches, left out of the contexts.
+    let mut readers = vec![0u8; n];
+    for l in gp.rules.iter().flat_map(|r| &r.body) {
+        let c = &mut readers[l.atom() as usize];
+        *c = (*c + 1).min(2);
+    }
+    for a in gp.named_atoms() {
+        readers[a as usize] = 2;
+    }
+    let once: Vec<bool> = (0..n)
+        .map(|a| readers[a] == 1 && gp.is_fact(a as AtomId))
+        .collect();
+    // The atoms every rule of each atom reads negatively, sorted.
+    let mut excluded: Vec<(usize, AtomId)> = Vec::new();
+    let mut common: Vec<AtomId> = Vec::new();
+    for (h, rules) in structure.by_head.iter().enumerate() {
+        let Some((&first, others)) = rules.split_first() else {
+            continue;
+        };
+        common.clear();
+        common.extend(
+            gp.rules[first]
+                .body
+                .iter()
+                .filter(|l| !l.is_positive())
+                .map(|l| l.atom()),
+        );
+        for &ri in others {
+            common.retain(|&x| gp.rules[ri].body.contains(&GLit::Neg(x)));
+        }
+        common.sort_unstable();
+        common.dedup();
+        excluded.extend(common.iter().map(|&x| (h, x)));
+    }
+    let excluded = Lists::new(n, || excluded.iter().copied());
+    (set_of, once, excluded)
+}
+
+fn alias_value_facts(gp: &mut GroundProgram, excluded: &Lists<AtomId>) -> usize {
+    let n = gp.num_atoms();
     // The facts that an atom of their predicate reads negatively in every
     // rule, read positively through an atom of their own.
     let mut value = vec![false; n];
@@ -280,17 +285,16 @@ pub(super) fn unfold(gp: &mut GroundProgram, structure: &Structure) -> usize {
         }
     }
     let mut alias = vec![AtomId::MAX; n];
-    let mut aliased = false;
+    let mut count = 0;
     for f in 0..n {
         if read[f] {
             alias[f] = gp.atoms.len() as AtomId;
             gp.atoms.push(named_after(&gp.atoms[f], "$value"));
             gp.kinds.push(AtomKind::Derived);
-            aliased = true;
             count += 1;
         }
     }
-    if aliased {
+    if count > 0 {
         for l in gp.rules.iter_mut().flat_map(|r| &mut r.body) {
             if let GLit::Pos(f) = *l
                 && alias[f as usize] != AtomId::MAX
