@@ -30,9 +30,10 @@
 #               results page shows the plots and times alone
 #   /next/      the front page's script, styles and data: next.js, next.css,
 #               views.json (each comparison head-to-head or translated, the
-#               coverage's census) and walk/, the outputs its walkthrough
-#               shows; its index.html sends the address of the draft the
-#               front page once was to the front page
+#               coverage's census) and walk/, the traces its walkthroughs
+#               draw (trace.js, at the root, draws them, and the
+#               playground's trace too); its index.html sends the address of
+#               the draft the front page once was to the front page
 #   /404.html   the page for an address the site does not have, which sends
 #               a link to a benchmark's former page to its view of the
 #               results page
@@ -71,7 +72,7 @@ rm -rf "$out"
 mkdir -p "$out/playground" "$out/examples" "$out/guide" "$out/results" "$out/next/walk"
 out=$(cd "$out" && pwd)
 cd "$here"
-cp index.html 404.html styles.css theme.js code.js app.js worker.js runtime.js examples.js "$module/tddlog.js" "$module/tddlog.wasm" "$out/"
+cp index.html 404.html styles.css theme.js code.js trace.js app.js worker.js runtime.js examples.js "$module/tddlog.js" "$module/tddlog.wasm" "$out/"
 node -e 'for (const e of require("./examples.js").tddlogExamples) console.log(e.file)' |
   while read -r file; do cp "../../$file" "$out/examples/"; done
 cp sitemap.xml social.png ../../docs/logo.svg "$out/"
@@ -83,7 +84,7 @@ cp playground/index.html "$out/playground/"
 cp guide/index.html "$out/guide/"
 cp results/index.html results/results.js results/suites.json results/ppl.json results/categories.json "$out/results/"
 cp next/index.html next/next.js next/next.css next/views.json "$out/next/"
-cp next/walk/*.txt "$out/next/walk/"
+cp next/walk/*.json "$out/next/walk/"
 if [ -n "$benchmarks" ]; then
   test -f "$benchmarks/index.json"
   cp -r "$benchmarks" "$out/results/benchmarks"
@@ -102,10 +103,10 @@ if [ "$stamp" = hash ]; then
 fi
 if [ -n "$stamp" ]; then
   for page in "$out/index.html" "$out/playground/index.html" "$out/guide/index.html" "$out/results/index.html" "$out/404.html"; do
-    sed -i -E "s#(href|src)=\"((\.\./)?(results/|next/)?(styles\.css|theme\.js|code\.js|runtime\.js|examples\.js|app\.js|results\.js|next\.js|next\.css))\"#\1=\"\2?v=$stamp\"#" "$page"
+    sed -i -E "s#(href|src)=\"((\.\./)?(results/|next/)?(styles\.css|theme\.js|code\.js|trace\.js|runtime\.js|examples\.js|app\.js|results\.js|next\.js|next\.css))\"#\1=\"\2?v=$stamp\"#" "$page"
   done
-  test "$(grep -c "?v=$stamp\"" "$out/index.html")" = 6
-  test "$(grep -c "?v=$stamp\"" "$out/playground/index.html")" = 6
+  test "$(grep -c "?v=$stamp\"" "$out/index.html")" = 7
+  test "$(grep -c "?v=$stamp\"" "$out/playground/index.html")" = 7
   test "$(grep -c "?v=$stamp\"" "$out/guide/index.html")" = 3
   test "$(grep -c "?v=$stamp\"" "$out/results/index.html")" = 4
   test "$(grep -c "?v=$stamp\"" "$out/404.html")" = 2

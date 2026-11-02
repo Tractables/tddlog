@@ -264,6 +264,15 @@ function workHtml(result, strategy) {
   return out;
 }
 
+// The trace of a run, step by step (trace.js), or why it cannot be drawn.
+function traceHtml(trace) {
+  try {
+    return tddlogTrace.html(trace);
+  } catch (failure) {
+    return `<p class="note">The trace cannot be drawn: ${escapeHtml(failure.message)}.</p>`;
+  }
+}
+
 // ------------------------------------------------------ a benchmark's program
 
 // The suite, family and instance an address names
@@ -626,7 +635,7 @@ if (typeof document !== "undefined") {
   // ----------------------------------------------------------- the address
 
   // The address carries the choices, so a result can be linked to:
-  // ?example=<key>&strategy=<s>&evidence=1&digits=<n>, an unedited benchmark
+  // ?example=<key>&strategy=<s>&evidence=1&trace=1&digits=<n>, an unedited benchmark
   // after #bench=, and an edited program after #program=, with &format=<f>
   // where it is not ProbLog. It is read once
   // when the page opens, and written at every run and after edits.
@@ -635,6 +644,7 @@ if (typeof document !== "undefined") {
     const strategy = params.get("strategy");
     if (tddlogRuntime.strategies.includes(strategy)) element("strategy").value = strategy;
     element("evidence").checked = params.get("evidence") === "1";
+    element("trace").checked = params.get("trace") === "1";
     if (params.get("digits") !== null) element("digits").value = params.get("digits");
     const hash = new URLSearchParams(location.hash.slice(1));
     return {
@@ -652,6 +662,7 @@ if (typeof document !== "undefined") {
     if (source?.example !== undefined) params.set("example", tddlogExamples[source.example].key);
     if (settings.strategy !== "auto") params.set("strategy", settings.strategy);
     if (settings.evidence) params.set("evidence", "1");
+    if (settings.trace) params.set("trace", "1");
     if (settings.digits !== 6) params.set("digits", String(settings.digits));
     if (source === null && settings.format !== "problog") params.set("format", settings.format);
     const query = params.toString();
@@ -805,6 +816,7 @@ if (typeof document !== "undefined") {
       format: format.value,
       strategy: element("strategy").value,
       evidence: element("evidence").checked,
+      trace: element("trace").checked,
       digits: tddlogRuntime.digits(element("digits").value),
       reference: source === null ? null : source.reference,
     };
@@ -831,8 +843,8 @@ if (typeof document !== "undefined") {
     element("run").hidden = true;
     element("cancel").hidden = false;
     document.body.classList.add("busy");
-    const { program, strategy, evidence, format } = chosenSettings;
-    worker.postMessage({ program, strategy, evidence, format });
+    const { program, strategy, evidence, format, trace } = chosenSettings;
+    worker.postMessage({ program, strategy, evidence, format, trace });
   }
 
   element("run").addEventListener("click", requestRun);
@@ -850,6 +862,8 @@ if (typeof document !== "undefined") {
     const trials = result.parts.flatMap((p) => p.trials);
     element("trials").hidden = trials.length === 0;
     element("trial-notes").textContent = trials.join("\n");
+    element("trace-card").hidden = !result.trace;
+    element("trace-steps").innerHTML = result.trace ? traceHtml(result.trace) : "";
   }
 
   function finish(result, elapsed) {
@@ -899,7 +913,7 @@ if (typeof document !== "undefined") {
 
 if (typeof module !== "undefined") {
   module.exports = {
-    encodeProgram, decodeProgram, answersHtml, workHtml, summarise, said, escapeHtml,
+    encodeProgram, decodeProgram, answersHtml, workHtml, traceHtml, summarise, said, escapeHtml,
     exampleReference, benchReference, benchPath, tddlogFile, holdBack, nativeRun, holdsFile,
   };
 }

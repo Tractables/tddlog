@@ -17,7 +17,8 @@
 //! options, and returns a [`Solution`]: the answers to the program's
 //! queries, in their order, and `P(e)`, the probability of the evidence,
 //! where it was asked for. Its third argument receives what `--stats`
-//! prints as the run goes, which a caller may ignore.
+//! prints as the run goes, which a caller may ignore, or hands to a
+//! [`trace::Trace`], which writes the run's stages as JSON (`--trace`).
 //!
 //! ```
 //! let program = "
@@ -105,6 +106,7 @@ mod solve;
 mod strategy;
 pub mod syntax;
 pub mod tp;
+pub mod trace;
 pub mod vtree;
 
 use std::sync::Arc;
@@ -154,6 +156,10 @@ pub struct Run {
     pub query_sizes: query::QuerySizes,
     /// What the compile that made the answers counted, over its runs.
     pub stats: CompileStats,
+    /// What that compile recorded for a trace of the run, where
+    /// [`Options::trace`] asked for one: its components in order, and the
+    /// variables of its vtree.
+    pub trace: Option<Box<tp::CompileTrace>>,
     /// `None` when the evidence is inconsistent.
     pub results: Option<Vec<QueryResult>>,
     /// `P(e)`, the probability of the program's evidence: the count of the

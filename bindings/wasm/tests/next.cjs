@@ -1,7 +1,8 @@
 // The site's front page in headless Chromium: each of its views (the home
 // page, by tool and a tool's page, by type and a type's page with its
 // head-to-head and translated parts, the coverage, how it works and each
-// step of its walkthrough) draws without an error, its views.json written
+// step of its four walkthroughs, each a trace drawn with a caption over every
+// step) draws without an error, its views.json written
 // from the same results as categories.json, with a member of tddlog's
 // (tddlog or a pipeline) for each row a system was given, named where a
 // tool's page compares with it; the tools' numbers each in a cell of its
@@ -20,6 +21,7 @@ const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
 const { chromium } = require("playwright");
+const tddlogTrace = require("../trace.js");
 
 const site = path.resolve(process.argv[2]);
 const shots = process.argv[3] ? path.resolve(process.argv[3]) : null;
@@ -80,6 +82,9 @@ function drawn(page) {
       if (v.kinds[c.key] !== undefined) assert.equal(v.with[c.key].length, c.rows.length, `${x} in ${c.key}: a member per row`);
     }
   }
+  // the walkthroughs: each one's key, playground example and steps
+  const WALKS = [["reach", "reachability"], ["network", "asia"], ["dice", "walk"], ["circuit", "circuit"]].map(([key, example]) =>
+    [key, example, tddlogTrace.steps(JSON.parse(fs.readFileSync(path.join(site, "next", "walk", `${key}.json`), "utf8")))]);
   const checks = [
     ["#/", "draft-home", async () => {
       assert.equal(await page.locator(".entries a.entry").count(), 3);
@@ -109,15 +114,22 @@ function drawn(page) {
     ["#/coverage", "coverage", async () => assert.ok(await page.locator(".census").count() >= views.census.sources.length)],
     ["#/how", "how", async () => {
       await page.waitForSelector(".pipe svg.pipeline");
-      await page.waitForFunction(() => document.querySelector(".walk-code pre.src")?.textContent.includes("path(X,Y)"));
-      assert.equal(await page.locator('a[href="playground/?example=reachability"]').count(), 1);
+      assert.equal(await page.locator(".entries.walks a.entry").count(), WALKS.length);
+      assert.equal(await page.locator('a[href="playground/?trace=1"]').count(), 1);
     }],
-    ...[2, 3, 4, 5, 6].map((n) => [`#/how/${n}`, "how", async () => {
-      await page.waitForFunction(() => document.querySelector(".walk-code pre.src") !== null);
-      const text = await page.locator(".walk-code").textContent();
-      assert.ok(!text.includes(": 404)"), `step ${n}: a walk file is missing`);
-    }]),
-    ["#/how/9", "missing", async () => assert.equal(await page.locator("#view h2", { hasText: "Not found" }).count(), 1)],
+    // each step of each walkthrough: its trace drawn, under its caption
+    ...WALKS.flatMap(([key, example, steps]) => steps.map((step, i) => [`#/how/${key}/${i + 1}`, "how", async () => {
+      await page.waitForSelector(".walk-trace p.trace-api");
+      assert.equal(await page.textContent(".step h4"), `${i + 1}. ${step.title}`);
+      assert.equal(await page.locator(".step > p").count(), 1, `${key} ${i + 1}: its caption`);
+      assert.equal(await page.locator(`a.try-btn[href^="playground/?example=${example}&"]`).count(), 1);
+      if (step.key === "layout") await page.waitForSelector(".walk-trace svg.trace-vtree");
+    }])),
+    ["#/how/reach/99", "how", async () => {
+      await page.waitForSelector(".walk-trace p.trace-api");
+      assert.match(await page.textContent(".step h4"), /Answers$/, "past the last step, the last");
+    }],
+    ["#/how/nothing", "missing", async () => assert.equal(await page.locator("#view h2", { hasText: "Not found" }).count(), 1)],
   ];
   // a benchmark's page, where the site has the benchmarks' data: its programs and the playground's link
   const benchIndex = path.join(site, "results", "benchmarks", "index.json");
@@ -150,7 +162,7 @@ function drawn(page) {
   await page.close();
 
   // both themes, at a desktop's width and a phone's, a page each
-  const wide = ["#/", "#/tools", `#/tools/${systems.includes("dice") ? "dice" : systems[0]}`, "#/types", "#/category/functional-programs", "#/coverage", "#/how", "#/how/3"];
+  const wide = ["#/", "#/tools", `#/tools/${systems.includes("dice") ? "dice" : systems[0]}`, "#/types", "#/category/functional-programs", "#/coverage", "#/how", "#/how/reach/5", "#/how/circuit/6"];
   for (const colorScheme of ["light", "dark"]) {
     for (const width of [1280, 390]) {
       for (const hash of wide) {

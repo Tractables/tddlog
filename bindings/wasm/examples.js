@@ -14,7 +14,8 @@
 // For the Dice program and the network they are the answers of the program
 // tddlog reads each as, computed by hand: Dice's own for the walk
 // (tests/it/examples.rs), and the network's marginals by a sum over its
-// worlds.
+// worlds. Alea.jl's circuit holds them by hand too, from the two dice it
+// was built from (tests/it/examples.rs).
 //
 // The examples marked `larger` take a few seconds each, and ProbLog does not
 // answer them within five minutes. Their `problog` holds exact answers,
@@ -132,6 +133,13 @@ const tddlogExamples = [
       ["x(4)", 0], ["x(5)", 0.190068881992], ["x(6)", 0], ["x(7)", 0.202017258345],
     ],
     evidence: 0.432898048,
+  },
+  {
+    key: "circuit",
+    name: "Alea.jl's circuit: two dice",
+    file: "examples/alea_dice.pl",
+    problog: [["q1", 0.166666666667], ["q2", 0.666666666667]],
+    evidence: 0.5,
   },
   {
     key: "chest",

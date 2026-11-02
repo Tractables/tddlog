@@ -1316,3 +1316,32 @@ table.runs tr.err pre { margin: 0.2rem 0; max-height: 12rem; background: color-m
 @media (prefers-reduced-motion: no-preference) {
   .tree a, table.grid td button { transition: background-color 0.12s; }
 }
+
+/* A trace of a run (trace.js): the playground's, step by step, and the
+   draft site's walkthroughs. */
+details.trace-step { margin-top: 0.6rem; border-top: 1px solid var(--line); padding-top: 0.6rem; }
+details.trace-step > summary { font-size: 14px; color: var(--ink); font-weight: 600; }
+.trace-api { margin: 0.6rem 0; font-size: 13px; overflow-wrap: anywhere; }
+dl.trace-facts { margin: 0.6rem 0; font-size: 13.5px; }
+dl.trace-facts dd { overflow-wrap: anywhere; }
+.trace-figure { overflow-x: auto; margin: 0.6rem 0; }
+svg.trace-vtree, svg.trace-bars { display: block; width: 100%; height: auto; }
+svg.trace-vtree line { stroke: var(--muted); stroke-width: 1; }
+svg.trace-vtree circle.inner { fill: var(--muted); }
+svg.trace-vtree circle.leaf { fill: var(--accent); }
+svg.trace-vtree path.closed { fill: var(--amber-fill); stroke: var(--amber); }
+svg.trace-vtree text, svg.trace-bars text { font: 10px var(--mono); fill: var(--ink); }
+svg.trace-bars rect.acyclic { fill: var(--accent); }
+svg.trace-bars rect.cyclic { fill: var(--amber); }
+svg.trace-bars line { stroke: var(--line); }
+svg.trace-bars text { fill: var(--muted); }
+.trace-scroll { overflow-x: auto; max-width: 100%; }
+table.trace-table { border-collapse: collapse; font-size: 13px; margin: 0.6rem 0; max-width: 100%; }
+table.trace-table th, table.trace-table td { text-align: left; padding: 0.2rem 0.7rem 0.2rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.trace-table th { color: var(--muted); font-weight: 500; }
+table.trace-table .n { text-align: right; font-variant-numeric: tabular-nums; }
+table.trace-table td.sizes { font: 12px var(--mono); overflow-wrap: anywhere; }
+.trace-table .tag { font-size: 11px; padding: 0 0.35rem; border-radius: 4px; background: var(--amber-fill); white-space: nowrap; }
+.trace-more, .trace-label { font-size: 13px; margin: 0.6rem 0 0; }
+pre.trace-code { max-height: 18rem; }
+.bad { color: var(--bad); }

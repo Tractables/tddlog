@@ -16,6 +16,7 @@ use super::factoring::{Checked, Factoring, Pairs, Scratch};
 use super::stats::Op;
 use super::template::{Template, templates};
 use super::tie::{Tie, ties};
+use super::trace::CompileTrace;
 use super::{
     CompileError, CompileStats, Formulation, NegationSource, Negations, Projection,
     ProjectionStats, Reduce, ScopeTable, SearchStats, TddBackend, VtreeScope, aft, cone,
@@ -50,6 +51,9 @@ pub(crate) struct Compiled {
     /// did not build.
     pub(crate) for_queries: ForQueries,
     pub stats: CompileStats,
+    /// The compile's record for a trace, where it was asked for one
+    /// ([`Compilation::traced`]).
+    pub(crate) trace: Option<Box<CompileTrace>>,
 }
 
 /// A formula or none for each atom, with an entry only for the atoms
@@ -704,6 +708,9 @@ pub(crate) struct Compilation {
     /// Calls per operation kind ([`Op`]).
     counts: std::cell::RefCell<[usize; 5]>,
     negations: std::cell::RefCell<Negations>,
+    /// The record for a trace, where one was asked for
+    /// ([`Compilation::traced`]).
+    trace: Option<Box<CompileTrace>>,
 }
 
 /// The formula of each atom and the fixpoint's bookkeeping.
@@ -926,7 +933,16 @@ impl Compilation {
             stats,
             counts: std::cell::RefCell::new([0usize; 5]),
             negations: std::cell::RefCell::new(Negations::default()),
+            trace: None,
         })
+    }
+
+    /// The compilation, recording its components for a trace of the run
+    /// ([`CompileTrace`]).
+    #[must_use]
+    pub(crate) fn traced(mut self) -> Self {
+        self.trace = Some(Box::new(CompileTrace::new(&self.var_of)));
+        self
     }
 
     /// Search for a smaller global vtree between the steps of the compile:
@@ -1069,6 +1085,13 @@ impl Compilation {
                 // A round the guard refuses has taken no formula, but has
                 // counted reads down.
                 let reads = guard.map(|_| self.dying.reads_after(self.next));
+                if let Some(t) = self.trace.as_mut() {
+                    t.start(
+                        &self.sccs[self.next],
+                        *self.counts.borrow(),
+                        backend.work_units(),
+                    );
+                }
                 let finished = match self.round(gp, backend, watch, guard) {
                     Err(CompileError::Oversize { pairs, .. }) if guard.is_some() => {
                         guarded = (self.next, tries + 1);
@@ -1091,6 +1114,9 @@ impl Compilation {
                     r => r?,
                 };
                 if finished {
+                    if let Some(t) = self.trace.as_mut() {
+                        t.finish(*self.counts.borrow(), backend.work_units());
+                    }
                     self.next += 1;
                     self.drop_dying(backend, self.next - 1)?;
                     self.narrow(backend, self.next - 1)?;
@@ -1154,6 +1180,9 @@ impl Compilation {
     /// it over: its formulas, cached positives, versions, and the rules
     /// folded into its atoms.
     fn reset(&mut self, i: usize) {
+        if let Some(t) = self.trace.as_mut() {
+            t.restart();
+        }
         let fixpoint = &mut self.fixpoint;
         fixpoint.worklist = None;
         for &a in &self.sccs[i] {
@@ -1324,6 +1353,7 @@ impl Compilation {
             projection: self.projection,
             for_queries: std::mem::take(&mut self.for_queries),
             stats: self.stats.clone(),
+            trace: self.trace.take(),
         })
     }
 
@@ -1697,6 +1727,7 @@ impl Compilation {
         let formulas = &mut self.fixpoint.formulas;
         let equivalents = &mut self.equivalents;
         let stats = &mut self.stats;
+        let trace = &mut self.trace;
         let (sizes, live) = (&mut self.fixpoint.sizes, &mut self.fixpoint.live);
         // Store `f`, of `size` pairs, as `a`'s formula, keeping the live
         // pairs.
@@ -1721,9 +1752,16 @@ impl Compilation {
                 backend,
             )?;
             stats.atom_updates += updates;
+            if let Some(t) = trace.as_mut() {
+                t.cyclic(true, updates.saturating_sub(scc.len()));
+            }
             for (&a, mut lambda) in scc.iter().zip(result) {
                 backend.minimize(&mut lambda, Reduce::Settled)?;
-                stats.max_pairs = stats.max_pairs.max(backend.size(&lambda));
+                let pairs = backend.size(&lambda);
+                stats.max_pairs = stats.max_pairs.max(pairs);
+                if let Some(t) = trace.as_mut() {
+                    t.update(a, Some(pairs), 0);
+                }
                 let lambda = watched(lambda, a)?;
                 let f = match formulation {
                     Formulation::Primal => lambda,
@@ -1765,6 +1803,9 @@ impl Compilation {
             stats.atom_updates += 1;
             let pairs = backend.size(&f);
             stats.max_pairs = stats.max_pairs.max(pairs);
+            if let Some(t) = trace.as_mut() {
+                t.update(a, Some(pairs), 0);
+            }
             let (f, pairs) = watched_sized(f, pairs, a)?;
             store(a, f, pairs, formulas);
             return Ok(true);
@@ -1772,6 +1813,9 @@ impl Compilation {
         if self.fixpoint.worklist.is_none() {
             self.fixpoint.worklist = Some(Worklist::new(gp, by_head, scc));
             stats.cyclic_components += 1;
+            if let Some(t) = trace.as_mut() {
+                t.cyclic(false, 0);
+            }
             for &a in scc {
                 let f = bottom();
                 let size = backend.size(&f);
@@ -1829,6 +1873,9 @@ impl Compilation {
             // through.
             count(Op::Equivalent, usize::from(sized));
             stats.convergence_tests += 1;
+            if let Some(t) = trace.as_mut() {
+                t.update(a, (!same).then_some(pairs), *iterations);
+            }
             // The cache holds the stored formula's other polarity: the one
             // the update built, which is the old formula's too when the two
             // are the same, and otherwise nothing once the formula changed.

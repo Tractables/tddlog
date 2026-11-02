@@ -80,6 +80,8 @@ and their answers.</p></noscript>
         <input id="digits" type="number" min="0" max="17" value="6">
       </div>
       <label class="check"><input id="evidence" type="checkbox"> P(evidence)</label>
+      <label class="check"><input id="trace" type="checkbox" aria-describedby="trace-hint"> Trace</label>
+      <p id="trace-hint" class="note">Each stage of the run, as <code>tddlog --trace</code> writes it.</p>
       <button id="run" disabled>Run</button>
       <button id="cancel" type="button" hidden>Cancel</button>
       <p class="status"><span id="status" role="status">loading the solver</span> <span id="clock"></span></p>
@@ -108,6 +110,16 @@ and their answers.</p></noscript>
   </details>
 </section>
 
+<section class="card" id="trace-card" hidden>
+  <div class="result-head">
+    <h2>Trace</h2>
+  </div>
+  <p class="note">What each stage of the run took in and gave out, in
+  summary: the program as read, ground and rewritten, the vtree, each
+  component's compile, the evidence and the answers.</p>
+  <div id="trace-steps"></div>
+</section>
+
 <section class="card glance" id="glance" hidden>
   <div id="glance-stats" class="stats"></div>
   <p class="note">From the release run against the exact systems people
@@ -128,6 +140,7 @@ and their answers.</p></noscript>
 <script src="../runtime.js"></script>
 <script src="../examples.js"></script>
 <script src="../code.js"></script>
+<script src="../trace.js"></script>
 <script src="../app.js"></script>
 
 </body>

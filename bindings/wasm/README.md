@@ -37,7 +37,11 @@ command line), P(e) (`--evidence-probability`) and the digits shown
 (`--precision`) are settings. Under the answers the page says what tddlog
 did: the layout that answered (for `auto`, the trial that won and how
 many compilations it took), the size of the ground program, the largest
-formulas in pairs, and the time of each stage. The editor colours the
+formulas in pairs, and the time of each stage. With Trace checked
+(`--trace` on the command line) it also shows the run's stages one by
+one: the program as read and ground, the passes that changed it, the
+rewrite, the vtree drawn as a tree, each component's compile with the
+pairs of its formulas, the evidence and the answers. The editor colours the
 program as the guide does; a file can be opened in it or dropped on it,
 and Download saves the program. The address carries the example, the
 settings and an edited program (after `#program=`, where its code is at
@@ -50,15 +54,16 @@ it natively within 2 s.
 ## The site
 
 The playground is `playground/index.html` with `styles.css`, `theme.js`,
-`code.js`, `app.js`, `worker.js`, `runtime.js` and `examples.js` at the
-site's root, beside the Emscripten build and the example programs: no
-framework, no bundler, nothing fetched from anywhere else. It follows
-`main`. The guide (`guide/`) and the results (`results/`) are pages of
-their own with the same styles; the guide's examples open in the
-playground through `?example=<key>`, and the browser test checks that
-each key it links to is one of `examples.js`. The playground was once the
-site's root, and the front page sends an address of it there
-(`?example=`, `#program=`, `#bench=`) to the playground.
+`code.js`, `app.js`, `worker.js`, `runtime.js`, `trace.js` (the trace's
+stages as HTML) and `examples.js` at the site's root, beside the
+Emscripten build and the example programs: no framework, no bundler,
+nothing fetched from anywhere else. It follows `main`. The guide
+(`guide/`) and the results (`results/`) are pages of their own with the
+same styles; the guide's examples open in the playground through
+`?example=<key>`, and the browser test checks that each key it links to
+is one of `examples.js`. The playground was once the site's root, and the
+front page sends an address of it there (`?example=`, `#program=`,
+`#bench=`) to the playground.
 
 The results page shows the release run against every exact system that
 accepts a suite's programs, one view at a time, named by the address's
@@ -83,8 +88,10 @@ The front page, `index.html`, shows the results by tool (tddlog against
 each system, head-to-head apart from translated, with each translation's
 direction and translator) and by type of program, the programs each
 system's sources hold that tddlog does not run, and how a program is
-answered, with a walkthrough of `examples/cycle_graph.pl` (`next/walk/`,
-the outputs of tddlog 0.1.0's `--ground` and `--stats`). `next/next.js`
+answered, with walkthroughs of four small programs (a graph's
+reachability, a Bayesian network with evidence, a Dice program and
+Alea.jl's circuit), each drawn from its `--trace` (`next/walk/`) by
+`trace.js` and opened in the playground with its trace. `next/next.js`
 adds these views to the results page's app through its `extend` hooks and
 reads the results page's data and `next/views.json`, which is generated
 with it: each comparison's kind on each instance, the comparisons over

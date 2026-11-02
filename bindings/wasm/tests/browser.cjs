@@ -245,6 +245,28 @@ function benchmarksOf(root) {
     assert.match(await page.textContent("#summary"), /in the browser/);
     console.log(`ok P(evidence) ${evidence[0]}`);
 
+    // The trace of the run, step by step, its last step the answers on
+    // show; the address keeps it, and a run without it hides it.
+    await page.check("#trace");
+    await page.click("#run");
+    await answered(page, tddlogExamples[0].problog[0][0]);
+    await page.waitForSelector("#trace-card:not([hidden]) details.trace-step");
+    const titles = await page.$$eval("#trace-steps details.trace-step > summary", (ss) => ss.map((s) => s.textContent));
+    for (const t of ["1. Read", "2. Parse", "3. Ground"]) assert.equal(titles.includes(t), true, `the trace's ${t}: ${titles.join(", ")}`);
+    for (const t of ["Rewrite", "Choose a layout", "Compile", "Evidence and queries"]) assert.ok(titles.some((u) => u.includes(t)), `the trace's ${t}: ${titles.join(", ")}`);
+    assert.match(titles.at(-1), /\. Answers$/);
+    await page.click("#trace-steps details.trace-step:has(svg.trace-vtree) > summary");
+    assert.ok(await page.isVisible("#trace-steps svg.trace-vtree"), "the vtree drawn");
+    const traced = await page.$$eval("#trace-steps details.trace-step:last-child tbody tr", (trs) => trs.map((tr) => [...tr.cells].map((td) => td.textContent)));
+    assert.deepEqual(traced, (await rows(page)).map(([query, p]) => [query, p]), "the trace's answers are those on show");
+    assert.match(page.url(), /trace=1/);
+    await page.uncheck("#trace");
+    await page.click("#run");
+    await answered(page, tddlogExamples[0].problog[0][0]);
+    assert.equal(await page.isHidden("#trace-card"), true, "no trace unless asked for");
+    assert.doesNotMatch(page.url(), /trace=1/);
+    console.log(`ok the trace: ${titles.length} steps`);
+
     // An edited program is painted in the next frame, runs, goes in the
     // address, and comes back from it.
     const program = "0.3::a.\n0.6::b.\nc :- a, \\+b.\nquery(c).\n";

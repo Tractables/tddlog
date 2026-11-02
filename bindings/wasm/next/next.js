@@ -11,7 +11,8 @@
 //                     coverage, and how it was run
 //   #/types           by type of program: the six types and all programs
 //   #/coverage        the programs each system's sources hold that tddlog does not run, and why
-//   #/how             how a program is answered: the pipeline and a walkthrough
+//   #/how             how a program is answered: the pipeline and four walkthroughs
+//   #/how/WALK[/N]    a walkthrough, at its step N: a run's trace, a stage at a time
 // A type of program is results.js's view (#/category/C), with its comparisons
 // head-to-head and translated before the rest; a solver's full page, a suite,
 // a family and an instance are results.js's views as they are.
@@ -135,7 +136,7 @@ function draftHome() {
   const entries = [
     ["#/tools", "By tool", `tddlog against each of the ${count(others)} other systems: Dice, Alea.jl, ProbLog, PITA, Ace and the rest, head-to-head apart from translated.`],
     ["#/types", "By type of program", "The six types of program and all programs, each against the systems native to it, with every instance's programs and commands."],
-    ["#/how", "How it works", "The pipeline from a program to its probabilities, and a walk through one program's run."],
+    ["#/how", "How it works", "The pipeline from a program to its probabilities, and four runs traced step by step."],
   ];
   return [
     element("section", { class: "intro" },
@@ -431,74 +432,179 @@ function pipeline(on) {
   return element("figure", { class: "pipe" }, fig);
 }
 
-// The walkthrough: examples/cycle_graph.pl, from a run of tddlog 0.1.0
-// (walk/: its answers, --ground, --ground --vtree closed and --stats), a
-// step per stage.
-const WALK = [
-  { title: "Parse", api: "src/syntax; tddlog::solve(source, &options, progress) runs the six stages",
-    text: "A graph of seven nodes whose fourteen edges are each present with a probability of their own, independently, and the probability of a path from node 1 to each other node. The edges are probabilistic facts: a choice of them is a world. The paths are derived: in each world, the least fixpoint of the two rules. The graph has cycles (1, 2, 3 and back to 1, among others).",
-    file: "program", why: "The progress callback hears of each stage (Parsed, Grounded, Compiling, Answered); the playground shows them." },
-  { title: "Ground", api: "src/ground; tddlog --ground",
-    text: "The grounder writes only what the queries depend on. path/2 is grounded from the bound end, node 1, as path(1,3) :- edge(2,3), path(1,2): the paths from node 1 alone, 6 atoms and 12 rules, not the paths between every two nodes. edge(3,1) and edge(6,1), which lead back to node 1, are left out: a path that returns to node 1 reaches nothing that a path from it does not.",
-    file: "ground", why: "Grounding for the queries keeps the program as small as what they ask." },
-  { title: "Rewrite", api: "src/ground/eliminate.rs, ground::without_linear_recursion; tddlog --ground --vtree closed",
-    text: "The six paths are one cyclic component (path(1,2) reads path(1,7), which reads path(1,4), which reads path(1,3), which reads path(1,2)), and each of its rules reads one of its atoms, positively: linear recursion. tddlog writes it without recursion by eliminating its atoms one at a time; a label that joins several paths and goes on becomes an atom of its own, '$e'(0) and '$e'(1). path(1,4) now reads edges alone, and every other path follows from it in order: 20 atoms (12 facts, 8 derived) and 16 rules.",
-    file: "ground_closed", stats: ["ground:"], why: "Without a cycle, each atom's diagram is built once, in dependency order, with no fixpoint to iterate." },
-  { title: "Choose a layout", api: "src/vtree, src/auto; vtree::Kind, Strategy; the layout and trial lines of --stats",
-    text: "A vtree, a binary tree whose leaves are the 12 edges, shapes every diagram. auto, the default strategy, tries a few layouts in turns under bounds in pairs and work that double each turn, and the first trial to finish answers. Here its first trial, dynamic:minfill (a vtree over a min-fill elimination order of the edges, which the compile may change between components), finishes in its first attempt.",
-    stats: ["dynamic:", "layout:", "trial:"], why: "One function can take a few pairs on one vtree and millions on another." },
-  { title: "Compile", api: "src/tp; the compile lines of --stats",
-    text: "Each derived atom gets a formula, a TDD over the edges that holds in exactly the worlds where the atom does, by Tp-compilation: the rules applied to diagrams rather than to truth values. The 8 atoms go as 8 components in dependency order, none cyclic, so none is iterated: 20 conjunctions, 16 negations and 23 minimizations, the largest formula 79 pairs, 14,580 of the library's work units.",
-    stats: ["compile (", "compile operations:", "compile negations:"], why: "Sizes are counted in pairs and work in work units, never in seconds, so a run takes the same decisions on every machine." },
-  { title: "Evidence and queries", api: "src/query, src/eval; the evidence and queries line of --stats",
-    text: "There is no evidence here, so each query's probability is the weighted model count of its formula, an edge weighing its probability true and one minus it false. The six queries are counted in the compile itself.",
-    stats: ["evidence and queries:"], file: "answers", why: "ProbLog gives the same six probabilities (tests/it/examples.rs)." },
+// The stage of the pipeline each step of a trace belongs to.
+const STAGE_OF = { read: 0, parse: 0, ground: 1, rewrite: 2, layout: 3, compile: 4, evidence: 5, answers: 5 };
+
+// The walkthroughs: a run of tddlog on each program, its trace
+// (walk/KEY.json, written by the command shown, `tddlog --trace`) drawn by
+// trace.js a step per stage, and a caption by hand over each step. Each
+// fact a caption states is the trace's or docs/design.md's.
+const WALKS = [
+  {
+    key: "reach", title: "Reachability in a graph with cycles", what: "Recursion, written without recursion before the compile; the fixpoint where a cycle stays.",
+    file: "examples/cycle_graph.pl", example: "reachability", evidence: false,
+    command: "tddlog --trace reach.json examples/cycle_graph.pl",
+    lede: "The probability that node 1 reaches each other node of a graph with cycles, each of its 14 edges present with a probability of its own. "
+      + "The recursion of path/2 is linear, and tddlog writes it without recursion before the compile, so no fixpoint runs here; the compile step says where one does.",
+    captions: {
+      read: "`tddlog::read` takes the bytes and their format and returns the program `solve` takes. A ProbLog file is its own program, so there is no translation to show.",
+      parse: "The parser turns the text into clauses: the 14 edges as probabilistic facts, the two rules of `path/2`, the second reading `path` itself, and the six queries `path(1,Y)`.",
+      ground: "The grounder writes rules without variables over the atoms the queries need. Every query binds the first argument of `path` to 1, so the recursion "
+        + "is grounded from that bound end: paths from node 1 alone. The edges into node 1 drop out with `path(1,1)`, which no query needs. What is left is one "
+        + "cyclic component of six atoms: `path(1,2)` reads `path(1,7)`, which reads `path(1,4)`, and so on round the graph.",
+      rewrite: "A recursive component whose rules each read one of its atoms is reachability, and the rewrite writes it without recursion (src/ground/eliminate.rs): "
+        + "its atoms are eliminated one at a time, as in Floyd and Warshall's algorithm, so that each reads only atoms eliminated after it. A label that "
+        + "several paths share becomes an atom of its own, here `'$e'(0)` and `'$e'(1)`. What is left is eight acyclic components of one atom each.",
+      layout: "`auto` gives a program that grounds to a recursive component the `dynamic` trial, and it finished in its first attempt. Its vtree is right-linear "
+        + "over a pre-order of the min-fill elimination tree of the program's interaction graph, and may change during the compile. Its leaves are the 12 edges; "
+        + "every diagram that follows is shaped by it.",
+      compile: "The components compile in dependency order, a formula over the edges for each atom, built from its rules' bodies by TDD operations, which the "
+        + "trace counts by kind. The largest, `path(1,6)`, has 79 pairs. No component is cyclic, so no fixpoint runs. Where a recursive component stays "
+        + "(rules that read two of its atoms, negation through a cycle), its formulas are computed again in rounds until none changes, and the table "
+        + "gives each such component's rounds.",
+      evidence: "Without evidence, a query is counted when its formula is dropped, once nothing reads it, during the compile: all six were counted there, and "
+        + "this stage has nothing to conjoin.",
+      answers: "The answers in the program's order: what `tddlog examples/cycle_graph.pl` prints, and ProbLog 2.3.0's answers (tests/it/examples.rs).",
+    },
+  },
+  {
+    key: "network", title: "A Bayesian network with evidence", what: "A network file read as a program: its tables, its families and the evidence.",
+    file: "examples/asia.net", example: "asia", evidence: true,
+    command: "tddlog --trace network.json --evidence-probability --evidence tests/networks/asia_leaves.inst examples/asia.net",
+    lede: "The asia network in Hugin's format, with its two leaves observed: `xray` yes and `dysp` no (tests/networks/asia_leaves.inst). tddlog reads the network "
+      + "as a program, each row of a table an annotated disjunction, and answers the marginals of the six other variables and P(e).",
+    captions: {
+      read: "The network and its evidence file (Ace's `.inst`) are read as one program, which `tddlog --program` prints: each row of a table an annotated "
+        + "disjunction over the variable's values, conditioned on its parents' values, and `either`, a logical or of `tub` and `lung`, as rules. It is "
+        + "examples/bn_asia_evidence.pl, which the playground opens.",
+      parse: "18 clauses: the 14 rows with a choice as annotated disjunctions and the four rows of `either` as rules; the two observations, and twelve queries, a "
+        + "value each of the six variables not observed.",
+      ground: "Each annotated disjunction of two values becomes a switch, a probabilistic fact true for its first value (`'$swtub_1_0'` for `tub` given "
+        + "`asia(yes)`), and rules over it. Of the observed variables only the observed values' rules remain. A network is acyclic: 14 components of one atom.",
+      rewrite: "`families:0` reads the program through indicators: each atom that another family reads is read there through a copy, a fact of its own "
+        + "(`'$v'`, 16 copies of 12 atoms), tied to the atom by a link (`'$c'`) that the program observes. The 10 observations are the network's 2 and the 8 links.",
+      layout: "Here `auto`'s first trial is `families:0`, and it finished in its first attempt. A family is a formula the query phase conjoins (a link, an observed "
+        + "or queried atom), and `families:0` lays them out by a min-fill decomposition of the graph of their groups. The vtree's 30 leaves are the 14 switches and the 16 copies.",
+      compile: "Each of the 22 components is one atom. The variables' own atoms take no pairs here; the work is in the links, which hold the tables' rows "
+        + "as their clauses (src/indicators), and in the observed atoms, the largest `dysp(no)` at 41 pairs. A formula is stored as the atom's negation (the "
+        + "dual) and compiles on the vtree projected to its component's ancestor cone.",
+      evidence: "The 10 observations are conjoined along the vtree into one diagram of 120 pairs, whose count is P(e) = 0.0396199356. Each query is counted "
+        + "against it: P(q | e) = WMC(q ∧ e) / WMC(e).",
+      answers: "Twelve marginals and P(e): ProbLog 2.3.0's answers on examples/bn_asia_evidence.pl, the program the network was read as.",
+    },
+  },
+  {
+    key: "dice", title: "A Dice program", what: "A probabilistic functional program: integers held as bits, a derived atom per bit and step.",
+    file: "tests/dice/walk.dice", example: "walk", evidence: true,
+    command: "tddlog --trace dice.json --evidence-probability tests/dice/walk.dice",
+    lede: "A random walk on 0..7 in Dice: ten steps of plus or minus one from 3, absorbed at either end, observed not to end at 0. tddlog reads Dice itself: an "
+      + "integer is held as bits, and the answer is the distribution of the walk's end.",
+    captions: {
+      read: "tddlog's Dice front end evaluates the program symbolically and writes it as Datalog: `x` is three bits, `step_b0(T)` to `step_b2(T)` at step `T`; "
+        + "each step's flip is `0.4::x_c_3(T)`; `iterate` becomes a recursion over a counter `T`, a level per step; and each value of the result is a query "
+        + "`x(V)` over its bits.",
+      parse: "44 clauses: the flip as a probabilistic rule, the start's bits and step 0 as facts, and 40 rules; eight queries, a value each, and the observation "
+        + "`obs`, that the walk does not end at 0.",
+      ground: "The grounder grounds the recursion over the steps level by level (`levels`) and proves atoms constant as each level completes (`constants`). "
+        + "Passes over the gates then merge atoms equal in their rules or in function (`merged`; `swept`, candidates proved equal by a SAT solver), and the "
+        + "conditioning fixes atoms the observation decides. 215 atoms become 90: the ten flips and 80 gates, none cyclic.",
+      rewrite: "No recursion is left once the steps are ground, and `closed` reads no indicators: the program compiles as ground.",
+      layout: "`closed` is `auto`'s first trial for a program of at most 64 facts with 8 or more derived atoms per fact (here 10 and 80), and it finished in its "
+        + "first attempt. Each component's new facts go on a right-linear spine above the blocks it reads: over the ten flips, a chain.",
+      compile: "Each of the 80 gates is a component of its own, compiled in dependency order, a step after the other. The formulas grow with the steps, as the "
+        + "walk's position depends on more flips, up to 59 pairs.",
+      evidence: "The observation is conjoined into a diagram of 41 pairs, whose count is P(e) = 0.432898, the probability that the walk does not end at 0; the "
+        + "eight values are counted against it.",
+      answers: "The end's distribution under the observation. Ten steps from 3 end on an odd number unless absorbed at 0, which is observed away, so the even "
+        + "values have probability 0. Dice's own answers are the same (tests/it/examples.rs).",
+    },
+  },
+  {
+    key: "circuit", title: "A bit-blasted circuit", what: "The and-inverter graph of Alea.jl's circuit, optimized, then compiled gate by gate in dependency order.",
+    file: "examples/alea_dice.pl", example: "circuit", evidence: true,
+    command: "tddlog --trace circuit.json --evidence-probability examples/alea_dice.pl",
+    lede: "Two dice, the first at least 4, as the circuit Alea.jl builds for them: 8 flips and 78 gates, written as a ProbLog program by scripts/alea2problog.jl. "
+      + "The queries are that the sum is 7 (`q1`) and that the first shows more (`q2`). A bit-blasted program is a deep and narrow computation graph.",
+    captions: {
+      read: "The circuit is a ProbLog program: a probabilistic fact per flip, `f1` to `f8`; an and-gate a rule and an or-gate a rule per input, a negated input "
+        + "written `\\+`; then the observation and the two queries.",
+      parse: "119 clauses: the 8 flips and 111 rules; two queries and one observation.",
+      ground: "Before any diagram is built, the grounder optimizes the gates as an and-inverter graph: 24 views (atoms read once, or of one rule over facts "
+        + "alone) replaced by their bodies in their readers, 19 atoms merged into an equal one, and 4 candidates proved equal by SAT sweeping. 88 atoms "
+        + "and 111 rules become 40 and 49.",
+      rewrite: "The layout that answered, `program`, orders the flips as the program states them, and a view inlined into its readers would move its flips "
+        + "to them: it reads the circuit with its views in place, its 81 derived atoms as written. It names the derived atom that crosses the one narrow cut it finds, "
+        + "`g76`, read across the cut through a copy `'$v'(g76,q2)` tied to it by an observed link.",
+      layout: "Where the grounder inlined views, as in every exported circuit, `auto`'s first trial is `program`: a vtree right-linear over the flips in the "
+        + "reverse of the order the program states them, read as an OBDD in the program's order, the variable order Alea.jl's BDD package built the "
+        + "circuit in. It finished in its first attempt; its 9 leaves are the 8 flips and the copy.",
+      compile: "A component per derived atom, 81 in all, compiled bottom-up in dependency order, each gate once and shared by its readers. A formula is stored as the gate's "
+        + "negation (the dual), so an or-gate's is the conjunction of its inputs' negations and the trace counts no disjunctions. The largest formula "
+        + "has 60 pairs.",
+      evidence: "The observation and the link are conjoined into 40 pairs, whose count is P(e) = 0.5, the probability that the first die shows at least 4; "
+        + "the name `g76` is kept to the end, and both queries are counted against the evidence.",
+      answers: "1/6 and 2/3, the answers the two dice give by hand (tests/it/examples.rs).",
+    },
+  },
 ];
 
-async function walkFiles() {
-  if (!draft.walk) {
-    draft.walk = Promise.all(["program", "ground", "ground_closed", "stats", "answers"].map((f) =>
-      fetch(f === "program" ? `examples/cycle_graph.pl${stamp}` : `next/walk/${f}.txt${stamp}`).then((r) => (r.ok ? r.text() : `(${f}: ${r.status})`)))).then(([program, ground, ground_closed, stats, answers]) =>
-      ({ program, ground, ground_closed, stats, answers }));
-  }
-  return draft.walk;
+// A walkthrough's trace, fetched once.
+function walkTrace(key) {
+  draft.walks ??= {};
+  draft.walks[key] ??= fetch(`next/walk/${key}.json${stamp}`).then((r) => {
+    if (!r.ok) throw new Error(`walk/${key}.json: ${r.status}`);
+    return r.json();
+  });
+  return draft.walks[key];
 }
 
+// A caption as a paragraph, `code` between backticks.
+const caption = (text, cls) => element("p", cls ? { class: cls } : {},
+  ...text.split("`").map((part, i) => (i % 2 ? element("code", {}, part) : part)));
+
+const playgroundHref = (w) => `playground/?example=${w.example}${w.evidence ? "&evidence=1" : ""}&trace=1`;
+
 function howView(route) {
-  const step = Math.min(Math.max(route.step ?? 0, 0), WALK.length - 1);
-  const s = WALK[step];
-  const out = [crumbs(["Home", { view: "home" }], ["How it works"]), element("h2", {}, "How it works"),
-    element("p", { class: "lede" }, "tddlog answers a program in six stages, for the command line and a library caller alike; ",
-      element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"),
-      " describes each and the decisions behind it. The diagrams are built bottom-up, by TDD operations on the rules."),
-    pipeline(step),
-    element("h3", {}, "A walk through one run: reachability in a graph with cycles"),
-    element("p", { class: "small" }, "From a run of tddlog 0.1.0 on ", element("a", { href: `${BRANCH}main/examples/cycle_graph.pl` }, element("code", {}, "examples/cycle_graph.pl")),
-      ": what each stage printed. ", element("a", { href: "playground/?example=reachability", class: "try-btn" }, "Open in playground"))];
-  const steps = element("ol", { class: "steps" }, ...WALK.map((w, i) => element("li", {},
-    element("a", { href: `#/how/${i + 1}`, "aria-current": i === step ? "step" : null }, `${i + 1}. ${w.title}`))));
-  const body = element("div", { class: "step" }, element("h4", {}, `${step + 1}. ${s.title}`), element("p", {}, s.text),
-    element("p", { class: "api" }, element("span", { class: "muted" }, "Where: "), element("code", {}, s.api)),
-    element("p", { class: "why" }, element("span", { class: "muted" }, "Why: "), s.why));
-  const code = element("div", { class: "walk-code" }, note("Loading…"));
-  body.append(code);
-  walkFiles().then((files) => {
-    const parts = [];
-    if (s.file) parts.push(element("pre", { class: "src" }, files[s.file]));
-    if (s.stats) {
-      const want = [].concat(s.stats);
-      const lines = files.stats.split("\n").filter((l) => want.some((p) => l.startsWith(p)));
-      parts.push(element("p", { class: "small muted" }, "tddlog --stats examples/cycle_graph.pl, the lines of this stage:"),
-        element("pre", { class: "src stats" }, lines.join("\n")));
-    }
-    code.replaceChildren(...parts);
-  });
-  const nav = element("p", { class: "step-nav" }, step > 0 ? element("a", { href: `#/how/${step}` }, "← Back") : "",
-    step < WALK.length - 1 ? element("a", { href: `#/how/${step + 2}` }, "Next →") : "");
-  out.push(element("div", { class: "walk" }, steps, element("div", {}, body, nav)),
-    element("h3", {}, "Coming"),
-    element("ul", {}, element("li", {}, "Three more walkthroughs: a Bayesian network (tables, families, evidence), a Dice program (bits and values) and a bit-blasted circuit (the and-inverter graph, names and links)."),
-      element("li", {}, "A trace of the run (tddlog --trace, JSON), which the playground draws for a program of the reader's own, step by step as here.")));
+  const w = WALKS.find((x) => x.key === route.walk);
+  if (!w) {
+    return [crumbs(["Home", { view: "home" }], ["How it works"]), element("h2", {}, "How it works"),
+      element("p", { class: "lede" }, "tddlog answers a program in six stages, for the command line and a library caller alike; ",
+        element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"),
+        " describes each and the decisions behind it. The diagrams are built bottom-up, by TDD operations on the rules."),
+      pipeline(-1),
+      element("h3", {}, "Four runs, step by step"),
+      element("p", { class: "small" }, "Each is the trace of one run of tddlog (", element("code", {}, "tddlog --trace"),
+        "), drawn a stage at a time with a caption by hand."),
+      element("nav", { class: "entries walks", "aria-label": "Walkthroughs" }, ...WALKS.map((x) =>
+        element("a", { href: `#/how/${x.key}`, class: "entry" }, element("b", {}, x.title), element("span", {}, x.what)))),
+      element("p", { class: "also" }, "The playground draws the same trace for a program of your own: ",
+        element("a", { href: "playground/?trace=1" }, "tick Trace"), " and run it.")];
+  }
+  const pipe = element("div", {}, pipeline(-1));
+  const out = [crumbs(["Home", { view: "home" }], ["How it works", { view: "how" }], [w.title]), element("h2", {}, w.title),
+    caption(w.lede, "lede"),
+    element("p", { class: "small" }, "The trace of ", element("code", {}, w.command), " (",
+      element("a", { href: `${BRANCH}main/${w.file}` }, element("code", {}, w.file)), "). ",
+      element("a", { href: playgroundHref(w), class: "try-btn" }, "Open in playground")),
+    pipe];
+  const walk = element("div", { class: "walk" }, note("Loading the trace…"));
+  out.push(walk);
+  walkTrace(w.key).then((trace) => {
+    const steps = tddlogTrace.steps(trace);
+    const i = Math.min(Math.max(route.step, 0), steps.length - 1);
+    const s = steps[i];
+    pipe.replaceChildren(pipeline(STAGE_OF[s.key] ?? -1));
+    const list = element("ol", { class: "steps" }, ...steps.map((t, k) =>
+      element("li", {}, element("a", { href: `#/how/${w.key}/${k + 1}`, "aria-current": k === i ? "step" : null }, `${k + 1}. ${t.title}`))));
+    const body = element("div", { class: "step" }, element("h4", {}, `${i + 1}. ${s.title}`));
+    if (w.captions[s.key]) body.append(caption(w.captions[s.key]));
+    const drawn = element("div", { class: "walk-trace" });
+    drawn.innerHTML = tddlogTrace.stepHtml(s);
+    body.append(drawn);
+    const nav = element("p", { class: "step-nav" }, i > 0 ? element("a", { href: `#/how/${w.key}/${i}` }, "← Back") : "",
+      i < steps.length - 1 ? element("a", { href: `#/how/${w.key}/${i + 2}` }, "Next →") : "");
+    walk.replaceChildren(list, element("div", {}, body, nav));
+  }, (e) => walk.replaceChildren(note(`The trace did not load: ${e.message}.`)));
   return out;
 }
 
@@ -540,14 +646,15 @@ Object.assign(extend, {
     }
     if (parts[0] === "types" && parts.length === 1) return { view: "types" };
     if (parts[0] === "coverage" && parts.length === 1) return { view: "coverage" };
-    if (parts[0] === "how" && parts.length === 1) return { view: "how", step: 0 };
-    if (parts[0] === "how" && parts.length === 2 && /^[1-9]\d*$/.test(parts[1]) && Number(parts[1]) <= WALK.length) {
-      return { view: "how", step: Number(parts[1]) - 1 };
+    if (parts[0] === "how" && parts.length === 1) return { view: "how" };
+    if (parts[0] === "how" && WALKS.some((w) => w.key === parts[1])) {
+      if (parts.length === 2) return { view: "how", walk: parts[1], step: 0 };
+      if (parts.length === 3 && /^[1-9]\d{0,2}$/.test(parts[2])) return { view: "how", walk: parts[1], step: Number(parts[2]) - 1 };
     }
     return null;
   },
   href: (route) => ({ "draft-home": "#/", tools: "#/tools", tool: `#/tools/${encodeURIComponent(route.system)}`, types: "#/types",
-    coverage: "#/coverage", how: route.step ? `#/how/${route.step + 1}` : "#/how" })[route.view] ?? null,
+    coverage: "#/coverage", how: route.walk ? `#/how/${route.walk}${route.step ? `/${route.step + 1}` : ""}` : "#/how" })[route.view] ?? null,
   draw: (route) => {
     if (!(route.view in DRAFT_VIEWS)) return null;
     const stale = staleViews();
@@ -555,7 +662,7 @@ Object.assign(extend, {
     return DRAFT_VIEWS[route.view](route);
   },
   title: (route) => ({ "draft-home": null, tools: "By tool", tool: `tddlog against ${data.names[route.system]}`, types: "By type of program",
-    coverage: "Coverage", how: "How it works" })[route.view] ?? null,
+    coverage: "Coverage", how: route.walk ? `How it works: ${WALKS.find((w) => w.key === route.walk).title}` : "How it works" })[route.view] ?? null,
   category: (c, route, rows) => (staleViews().length ? [staleNote(staleViews())] : typeSplit(c, route, rows)),
   // a translator's or generator's name in a line on how a file was made, as a link to its source
   made: (html) => html.replace(/<code>([\w-]+\.(?:py|jl|rkt))(\b[^<]*)<\/code>/g, (whole, name, rest) =>

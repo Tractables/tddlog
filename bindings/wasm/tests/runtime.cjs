@@ -38,12 +38,13 @@ test("the program, its format and the strategy go on the heap and every allocati
     HEAPU8: heap,
     _malloc: (n) => { const at = next; next += n; return at; },
     _free: (ptr) => freed.push(ptr),
-    _tddlog_solve_json: (program, format, observed, strategy, evidence) => {
+    _tddlog_solve_json: (program, format, observed, strategy, evidence, list, count, trace) => {
       assert.equal(heap[program], "%".charCodeAt(0));
       assert.equal(new TextDecoder().decode(heap.subarray(format, format + 5)), "dice\0");
       assert.equal(observed, 0, "no evidence file");
       assert.equal(new TextDecoder().decode(heap.subarray(strategy, strategy + 6)), "closed");
       assert.equal(evidence, 1);
+      assert.equal(trace, 1, "the trace asked for");
       return 8;
     },
     _tddlog_string_free: (ptr) => freed.push(ptr),
@@ -54,7 +55,7 @@ test("the program, its format and the strategy go on the heap and every allocati
   // Objects made in the worker's context have its prototypes, so they are
   // compared as JSON.
   assert.equal(JSON.stringify(messages[0]), '{"ready":true}');
-  context.onmessage({ data: { program: "%" + "x".repeat(3 * 1024 * 1024), strategy: "closed", evidence: true, format: "dice" } });
+  context.onmessage({ data: { program: "%" + "x".repeat(3 * 1024 * 1024), strategy: "closed", evidence: true, format: "dice", trace: true } });
   assert.equal(JSON.stringify(messages.at(-1).result), '{"answers":[],"evidence":null}', JSON.stringify(messages.at(-1)));
   assert.equal(freed.length, 4);
 });
@@ -68,9 +69,10 @@ test("a program's arguments go on the heap as an array of pointers, and are free
     HEAPU8: heap,
     _malloc: (n) => { const at = next; next += n; return at; },
     _free: (ptr) => freed.push(ptr),
-    _tddlog_solve_json: (program, format, observed, strategy, evidence, list, count) => {
+    _tddlog_solve_json: (program, format, observed, strategy, evidence, list, count, trace) => {
       assert.equal(text(program), "$2::a($1). query(a($1)).");
       assert.equal(count, 2);
+      assert.equal(trace, 0, "no trace unless asked for");
       const view = new DataView(heap.buffer);
       assert.deepEqual([0, 1].map((k) => text(view.getUint32(list + 4 * k, true))), ["7", "0.3"]);
       return 8;
@@ -122,8 +124,9 @@ test("a file's format by its extension, as the command line tells it", () => {
   for (const [name, format] of cases) assert.equal(tddlogRuntime.formatOf(name), format, name);
 });
 
-test("evidence must be a boolean, digits an integer from 0 to 17", () => {
+test("evidence and trace must be booleans, digits an integer from 0 to 17", () => {
   assert.throws(() => tddlogRuntime.solve({}, "", "auto", "false"), /true or false/);
+  assert.throws(() => tddlogRuntime.solve({}, "", "auto", false, "problog", null, [], 1), /trace must be true or false/);
   for (const value of ["", "-1", "1.5", "18", "x"]) assert.throws(() => tddlogRuntime.digits(value), /digits/);
   for (const value of ["0", "6", "17"]) assert.equal(tddlogRuntime.digits(value), Number(value));
 });

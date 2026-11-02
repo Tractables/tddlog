@@ -11,6 +11,7 @@ use std::fmt::Write;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use tddlog::network::ReadOptions;
+use tddlog::trace::{Trace, number, string};
 use tddlog::{Format, Options, Progress, Strategy};
 
 fn main() {}
@@ -24,14 +25,15 @@ fn main() {}
 /// arguments the `num_arguments` strings at `arguments` (null for none;
 /// each the text of a term that takes the places `$1`, `$2`, ... of the
 /// program, as the command line takes the values after the program's
-/// file), and return the JSON text of the result
-/// (`runtime.js` documents its fields), or of `{"error": ...}` where the
-/// program or the options are refused or the run fails. The caller
-/// releases the string with [`tddlog_string_free`].
+/// file), with the trace of the run ([`tddlog::trace::Trace`]) where
+/// `trace` is 1, and return the JSON text of the result (`runtime.js`
+/// documents its fields), or of `{"error": ...}` where the program or the
+/// options are refused or the run fails. The caller releases the string
+/// with [`tddlog_string_free`].
 ///
-/// `evidence_probability` is a `u32` so that it crosses the boundary as a
-/// JavaScript number; a value other than 0 or 1 is an error rather than
-/// read as true.
+/// `evidence_probability` and `trace` are `u32`s so that they cross the
+/// boundary as JavaScript numbers; a value other than 0 or 1 is an error
+/// rather than read as true.
 ///
 /// # Safety
 ///
@@ -47,6 +49,7 @@ pub unsafe extern "C" fn tddlog_solve_json(
     evidence_probability: u32,
     arguments: *const *const c_char,
     num_arguments: u32,
+    trace: u32,
 ) -> *mut c_char {
     if program.is_null() || format.is_null() || strategy.is_null() {
         return into_c_string(error_json(
@@ -102,7 +105,7 @@ pub unsafe extern "C" fn tddlog_solve_json(
             format,
             evidence,
             strategy,
-            evidence_probability,
+            (evidence_probability, trace),
             read,
         )
     }))
@@ -137,13 +140,15 @@ pub unsafe extern "C" fn tddlog_string_free(text: *mut c_char) {
 
 /// What the run reported before it answered or failed: the grounding's
 /// seconds, the notes on the run as a whole, the program handed to the
-/// last compile, and a JSON object per part answered.
+/// last compile, a JSON object per part answered, and the trace where it
+/// was asked for.
 #[derive(Default)]
 struct Partial {
     ground_seconds: f64,
     notes: Vec<String>,
     compiling: Option<String>,
     parts: Vec<String>,
+    trace: Option<Trace>,
 }
 
 fn run(
@@ -151,7 +156,7 @@ fn run(
     format: &str,
     evidence: Option<&[u8]>,
     strategy: &str,
-    evidence_probability: u32,
+    (evidence_probability, trace): (u32, u32),
     arguments: Vec<String>,
 ) -> String {
     let mut partial = Partial::default();
@@ -163,15 +168,17 @@ fn run(
         Ok(s) => s,
         Err(e) => return error_json(&format!("options error: {e}"), &partial),
     };
-    let evidence_probability = match evidence_probability {
-        0 => false,
-        1 => true,
-        other => {
-            return error_json(
-                &format!("options error: evidence_probability is {other}, not 0 or 1"),
-                &partial,
-            );
-        }
+    let flag = |name: &str, value: u32| match value {
+        0 => Ok(false),
+        1 => Ok(true),
+        other => Err(format!("options error: {name} is {other}, not 0 or 1")),
+    };
+    let (evidence_probability, traced) = match (
+        flag("evidence_probability", evidence_probability),
+        flag("trace", trace),
+    ) {
+        (Ok(e), Ok(t)) => (e, t),
+        (Err(e), _) | (_, Err(e)) => return error_json(&e, &partial),
     };
     let read = ReadOptions {
         evidence: evidence.map(|e| format.evidence(e)),
@@ -187,14 +194,26 @@ fn run(
     let options = Options {
         strategy,
         evidence_probability,
+        trace: traced,
         ..Options::default()
     };
-    let solved = tddlog::solve(&input.program, &options, &mut |progress| match progress {
-        Progress::Parsed { .. } => {}
-        Progress::Grounded { seconds } => partial.ground_seconds = seconds,
-        Progress::Note(line) => partial.notes.push(line),
-        Progress::Compiling(ground) => partial.compiling = Some(ground_json(ground)),
-        Progress::Answered(run) => partial.parts.push(part_json(run)),
+    if traced {
+        match Trace::new(format, program, &input, &options) {
+            Ok(trace) => partial.trace = Some(trace),
+            Err(e) => return error_json(&e.to_string(), &partial),
+        }
+    }
+    let solved = tddlog::solve(&input.program, &options, &mut |progress| {
+        if let Some(trace) = partial.trace.as_mut() {
+            trace.observe(&progress);
+        }
+        match progress {
+            Progress::Parsed { .. } => {}
+            Progress::Grounded { seconds, .. } => partial.ground_seconds = seconds,
+            Progress::Note(line) => partial.notes.push(line),
+            Progress::Compiling(ground) => partial.compiling = Some(ground_json(ground)),
+            Progress::Answered(run) => partial.parts.push(part_json(run)),
+        }
     });
     let solution = match solved {
         Ok(solution) => solution,
@@ -202,9 +221,15 @@ fn run(
             if let tddlog::Error::Trials { notes, .. } = &e {
                 partial.notes.extend(notes.iter().cloned());
             }
+            if let Some(trace) = partial.trace.as_mut() {
+                trace.failed(&e);
+            }
             return error_json(&e.to_string(), &partial);
         }
     };
+    if let Some(trace) = partial.trace.as_mut() {
+        trace.answered(&solution, &input);
+    }
     let mut out = String::from("{\"answers\":");
     match &solution.answers {
         None => out.push_str("null"),
@@ -292,7 +317,13 @@ fn push_partial(out: &mut String, partial: &Partial) {
     push_strings(out, &partial.notes);
     out.push_str("],\"parts\":[");
     out.push_str(&partial.parts.join(","));
-    out.push(']');
+    out.push_str("],\"trace\":");
+    match &partial.trace {
+        Some(trace) => {
+            let _ = write!(out, "{}", trace.to_string().trim_end());
+        }
+        None => out.push_str("null"),
+    }
 }
 
 fn push_strings(out: &mut String, items: &[String]) {
@@ -311,43 +342,13 @@ fn error_json(message: &str, partial: &Partial) -> String {
     out
 }
 
-/// A JSON number; `null` for a value JSON cannot hold, as the logarithm of
-/// a zero `P(e)`.
-fn number(x: f64) -> String {
-    if x.is_finite() {
-        format!("{x:?}")
-    } else {
-        "null".to_string()
-    }
-}
-
-/// A JSON string.
-fn string(s: &str) -> String {
-    let mut out = String::with_capacity(s.len() + 2);
-    out.push('"');
-    for c in s.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            c if (c as u32) < 0x20 => {
-                let _ = write!(out, "\\u{:04x}", c as u32);
-            }
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-    out
-}
-
 fn into_c_string(json: String) -> *mut c_char {
     // An atom or a message with a NUL inside would be a tddlog bug, so report
     // it as one rather than a truncated result.
     CString::new(json)
         .unwrap_or_else(|_| {
-            c"{\"error\":\"the result contains a NUL byte\",\"notes\":[],\"parts\":[]}".to_owned()
+            c"{\"error\":\"the result contains a NUL byte\",\"notes\":[],\"parts\":[],\"trace\":null}"
+                .to_owned()
         })
         .into_raw()
 }
@@ -392,6 +393,27 @@ mod tests {
         evidence_probability: u32,
         arguments: &[&str],
     ) -> String {
+        solve_traced(
+            program,
+            format,
+            evidence,
+            strategy,
+            evidence_probability,
+            arguments,
+            0,
+        )
+    }
+
+    /// [`solve_with`], with the trace where `trace` is 1.
+    fn solve_traced(
+        program: &[u8],
+        format: &str,
+        evidence: Option<&[u8]>,
+        strategy: &str,
+        evidence_probability: u32,
+        arguments: &[&str],
+        trace: u32,
+    ) -> String {
         let program = CString::new(program).unwrap();
         let format = CString::new(format).unwrap();
         let evidence = evidence.map(|e| CString::new(e).unwrap());
@@ -412,6 +434,7 @@ mod tests {
                 evidence_probability,
                 pointers.as_ptr(),
                 pointers.len() as u32,
+                trace,
             );
             let text = CStr::from_ptr(out).to_str().unwrap().to_string();
             tddlog_string_free(out);
@@ -531,10 +554,40 @@ mod tests {
         );
     }
 
+    /// The trace of a run is in its result where it is asked for, its
+    /// answers the result's; a run that fails ends its trace with the
+    /// error; and a flag other than 0 or 1 is refused.
     #[test]
-    fn strings_are_escaped() {
-        assert_eq!(string("a\"b\\c\n\u{1}"), "\"a\\\"b\\\\c\\n\\u0001\"");
-        assert_eq!(number(f64::NEG_INFINITY), "null");
-        assert_eq!(number(1e-300), "1e-300");
+    fn the_trace_comes_with_the_answers() {
+        let alarm = file("examples/alarm.pl");
+        let out = solve_with(&alarm, "problog", None, "auto", 0, &[]);
+        assert!(out.ends_with(",\"trace\":null}"), "{out}");
+        let out = solve_traced(&alarm, "problog", None, "auto", 0, &[], 1);
+        let at = out.find(",\"trace\":{\"trace\":1,").expect("a trace");
+        let answers = "\"answers\":[{\"query\":\"burglary\",\"probability\":0.35714";
+        assert!(out.starts_with(&format!("{{{answers}")), "{out}");
+        assert!(
+            out[at..].contains(&format!("{{\"stage\":\"answers\",{answers}")),
+            "{out}"
+        );
+        for stage in [
+            "read", "parse", "ground", "rewrite", "layout", "compile", "evidence",
+        ] {
+            assert!(
+                out[at..].contains(&format!("{{\"stage\":\"{stage}\",")),
+                "{stage}: {out}"
+            );
+        }
+        let out = solve_traced(b"0.5::a query(a).", "problog", None, "auto", 0, &[], 1);
+        assert!(out.starts_with("{\"error\":\"parse error: "), "{out}");
+        assert!(
+            out.contains("{\"stage\":\"error\",\"message\":\"parse error: "),
+            "{out}"
+        );
+        let out = solve_traced(&alarm, "problog", None, "auto", 0, &[], 2);
+        assert!(
+            out.starts_with("{\"error\":\"options error: trace is 2"),
+            "{out}"
+        );
     }
 }

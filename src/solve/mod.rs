@@ -43,6 +43,11 @@ pub struct Options {
     /// For tests: the live pairs at which a dynamic layout searches first,
     /// where not `tp::DYNAMIC_FIRST_PAIRS`; with [`Kind::Dynamic`] alone.
     pub dynamic_first_pairs: Option<usize>,
+    /// Whether the compile records its components for a trace of the run
+    /// ([`crate::trace::Trace`]): each in the order it compiled, with the
+    /// pairs of each formula an update made, in [`Run::trace`]. Off, the
+    /// compile records nothing.
+    pub trace: bool,
 }
 
 impl Default for Options {
@@ -54,6 +59,7 @@ impl Default for Options {
             ground: GroundOptions::default(),
             projection: None,
             dynamic_first_pairs: None,
+            trace: false,
         }
     }
 }
@@ -106,12 +112,16 @@ impl Options {
     }
 }
 
-/// What [`solve`] reports as it goes, for `--stats`.
+/// What [`solve`] reports as it goes, for `--stats` and a trace of the run
+/// ([`crate::trace::Trace`]).
 pub enum Progress<'a> {
     /// The program is parsed, in `seconds`.
-    Parsed { seconds: f64 },
+    Parsed { seconds: f64, program: &'a Program },
     /// The program is ground, in `seconds`.
-    Grounded { seconds: f64 },
+    Grounded {
+        seconds: f64,
+        ground: &'a GroundProgram,
+    },
     /// A line on the run as a whole: the `decision` trial's grounding, the
     /// split of the queries, a part's start.
     Note(String),
@@ -174,6 +184,7 @@ fn solve_split(
     let program = parsed(source, options)?;
     progress(Progress::Parsed {
         seconds: start.elapsed().as_secs_f64(),
+        program: &program,
     });
     let start = Instant::now();
     let ground_options = options.ground_options();
@@ -187,6 +198,7 @@ fn solve_split(
     let (ground, kept) = ground::ground_keeping(&program, &ground_options, keep)?;
     progress(Progress::Grounded {
         seconds: start.elapsed().as_secs_f64(),
+        ground: &ground,
     });
     // Its time is counted as the first part's rewrite's.
     let start = Instant::now();
@@ -235,12 +247,12 @@ fn solve_split(
         let mut run = match options.strategy {
             Strategy::Auto => {
                 progress(Progress::Compiling(&part));
-                auto::run(part, projection, std::mem::take(&mut ready))?
+                auto::run(part, projection, std::mem::take(&mut ready), options.trace)?
             }
             Strategy::Trial(kind) => {
                 let prepared = kind.prepare(part)?;
                 progress(Progress::Compiling(&prepared.ground));
-                run_prepared(prepared, kind, projection, first_pairs)?
+                run_prepared(prepared, kind, (projection, first_pairs), options.trace)?
             }
         };
         if i == 0 {
@@ -334,19 +346,25 @@ fn parsed(source: &str, options: &Options) -> Result<Program, Error> {
 pub fn solve_ground(ground: GroundProgram, options: &Options) -> Result<Run, Error> {
     let (projection, first_pairs) = options.checked()?;
     match options.strategy {
-        Strategy::Auto => auto::run(ground, projection, auto::Ready::default()),
-        Strategy::Trial(kind) => run_prepared(kind.prepare(ground)?, kind, projection, first_pairs),
+        Strategy::Auto => auto::run(ground, projection, auto::Ready::default(), options.trace),
+        Strategy::Trial(kind) => run_prepared(
+            kind.prepare(ground)?,
+            kind,
+            (projection, first_pairs),
+            options.trace,
+        ),
     }
 }
 
 /// The run of `kind`'s program and layout, `prepared`, compiled without
 /// bounds under `projection`; a dynamic layout searches first at
-/// `first_pairs` live pairs.
+/// `first_pairs` live pairs. The compile records its components for a
+/// trace where `traced`.
 pub(crate) fn run_prepared(
     prepared: Prepared,
     kind: Kind,
-    projection: Projection,
-    first_pairs: usize,
+    (projection, first_pairs): (Projection, usize),
+    traced: bool,
 ) -> Result<Run, Error> {
     let Prepared {
         ground,
@@ -355,7 +373,7 @@ pub(crate) fn run_prepared(
         rewrite_seconds,
         layout_seconds,
     } = prepared;
-    let mut evaluation = Evaluation::default();
+    let mut evaluation = Evaluation::new(traced);
     let ((results, query_sizes), vtree) = layout.vtree.context().run(|engine| {
         let backend = tp::TddBackend::new(engine, layout.vtree.clone());
         let answers = evaluation.run(
@@ -369,6 +387,7 @@ pub(crate) fn run_prepared(
         Ok::<_, tp::CompileError>((answers, backend.vtree()))
     })?;
     let evidence_probability = evaluation.evidence_probability(&ground);
+    let trace = evaluation.take_trace();
     Ok(Run {
         ground,
         vtree,
@@ -382,6 +401,7 @@ pub(crate) fn run_prepared(
         query_sizes,
         evidence_probability,
         stats: evaluation.into_stats(),
+        trace,
         results,
         spent: auto::Spent::default(),
     })
@@ -472,8 +492,8 @@ pub(crate) fn run_as_given(
     run_prepared(
         Prepared::lay_out(std::sync::Arc::new(ground), None, kind, 0.0)?,
         kind,
-        projection,
-        first_pairs,
+        (projection, first_pairs),
+        false,
     )
 }
 

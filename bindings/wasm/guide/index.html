@@ -568,6 +568,13 @@ query(reach($3)).</pre>
     <dd>Print what tddlog did to stderr: the size of the ground program,
     the trials of <code>auto</code>, the largest diagrams and the time of
     each stage.</dd>
+    <dt><code>--trace &lt;file&gt;</code></dt>
+    <dd>Write a trace of the run to the file as JSON: each stage with what
+    it took in and gave out, in summary (the program as read, ground and
+    rewritten, the vtree, each component's compile, the evidence and the
+    answers), or how far the run got before its error. The answers on
+    stdout are the same. The playground's Trace box shows the same stages
+    for the program in its editor.</dd>
   </dl>
   <p>The exit status is 0 with answers, also where the evidence is
   inconsistent, 1 for a program tddlog cannot answer, with the reason on
@@ -695,7 +702,9 @@ tddlog --program tests/lpad/coin.cplint.pl &gt; coin.pl</pre>
 <pre data-lang="toml">[dependencies]
 tddlog = { git = "https://github.com/Tractables/tddlog" }</pre>
   <p><code>tddlog::solve</code> takes the program, <code>Options</code>
-  and a function that receives what <code>--stats</code> would print:</p>
+  and a function that receives what <code>--stats</code> would print, or
+  hands it to a <code>tddlog::trace::Trace</code>, which writes the run's
+  stages as <code>--trace</code> does:</p>
 <pre data-lang="rust">let program = "
     0.1::burglary.
     0.2::earthquake.

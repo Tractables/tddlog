@@ -42,6 +42,7 @@ mod templates;
 mod terms;
 mod ties;
 mod topdown;
+mod trace;
 mod undefined;
 mod underflow;
 mod writings;

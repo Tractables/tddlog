@@ -288,6 +288,9 @@ pub struct GroundProgram {
 /// rewrites that make atoms number them from their counts here.
 #[derive(Clone, Debug, Default)]
 pub struct GroundStats {
+    /// The atoms and rules of the program as the grounder's front end wrote
+    /// it, before `finish`'s passes simplified it.
+    pub as_ground: (usize, usize),
     /// The predicates, as `name/arity`, whose right-linear recursion was
     /// grounded from its bound end (`linear`).
     pub from_bound_end: Vec<String>,
