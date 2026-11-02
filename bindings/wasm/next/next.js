@@ -72,13 +72,28 @@ function scriptLink(name, path) {
 
 // ------------------------------------------------------------- the parts
 
-// A comparison's line: the two systems' answers, their PAR-2 totals over the
-// instances the system is given and either answers, and the speed-up of the
-// members of mine it is with.
-function versusLine(v, name, n) {
-  if (!v) return note(`No instances.`);
-  return element("p", { class: "headline" }, element("b", {}, `${name} ${count(v.answers)} of ${count(n ?? v.given)}, ${subject(v.me)} ${count(v.tddlog_answers)}`),
-    `. Over ${totals(v, name)}; ${subject(v.me)}'s speed-up: ${speedup(v)}.`);
+// Numbers in cells of their own, each under its label ([label, value,
+// title]), never run together in a sentence.
+function cells(...items) {
+  return element("div", { class: "cells" }, ...items.map(([label, value, title]) =>
+    element("div", { class: "cell", title }, element("span", {}, label), element("b", {}, value))));
+}
+
+// A text that would take more than a line, folded under its summary.
+const fold = (summary, ...text) => element("details", { class: "fold" }, element("summary", {}, summary), element("p", {}, ...text));
+
+// tddlog's speed-up in a cell: "too few" where too few instances both answer.
+const speedCell = (v) => (v?.speedup == null ? "too few" : speedup(v));
+
+// A comparison in cells: the instances, the two systems' answers, their
+// PAR-2 totals over the instances the system is given and either answers,
+// and the speed-up of the members of mine it is with.
+function versusCells(v, name, n) {
+  if (!v) return note("No instances.");
+  const me = subject(v.me), over = `over the ${plural(v.either, "instance")} ${name} is given and either answers, PAR-${data.measure.par}`;
+  return cells(["instances", count(n ?? v.given)], [`${name} answers`, count(v.answers)], [`${me} answers`, count(v.tddlog_answers)],
+    [`${name}'s total`, duration(v.total), over], [`${me}'s total`, duration(v.tddlog_total), over],
+    [`${me}'s speed-up`, speedCell(v), speedup(v, true)]);
 }
 
 // The cactus plot of x and the members it is with over rows (kindRows' me,
@@ -142,26 +157,26 @@ function draftHome() {
 
 function toolsView() {
   const out = [crumbs(["Home", { view: "home" }], ["By tool"]), element("h2", {}, "By tool"),
-    element("p", { class: "lede" }, "tddlog against each system. Head-to-head: both read the benchmark's program as its authors or "
-      + "its generator wrote it, or the same network in another network format. Translated: one of them, or both, read a "
-      + "translation. Each line gives the instances and tddlog's speed-up (the results page's measure, below), and what "
-      + "the system answers that tddlog does not.")];
+    element("p", { class: "lede" }, "tddlog against each system, head-to-head where both read the same program and translated where one of them read a translation."),
+    fold("How the speed-up is measured", measureText())];
   const grid = element("div", { class: "tool-grid" });
   for (const s of data.systems) {
-    if (s.key === "tddlog") continue;
     const v = draft.views.systems[s.key];
-    if (!v) continue;
-    const t = v.n.s + v.n.m + v.n.b;
-    const line = (label, n, w) => element("div", { class: "kv" }, element("span", {}, label),
-      element("b", {}, n ? `${count(n)}, ${speedup(w)}` : "none"));
-    const native = nativeTo(s.key).map((c) => c.title);
+    if (isMine(s.key) || !v) continue;
+    const row = (label, n, w) => element("tr", {}, element("th", { scope: "row" }, label),
+      element("td", { class: "num" }, n ? count(n) : "–"), element("td", { class: "num", title: n ? speedup(w, true) : null }, n ? speedCell(w) : "–"));
+    const native = nativeTo(s.key).map((c) => lower(c.title));
     grid.append(element("a", { href: `#/tools/${encodeURIComponent(s.key)}`, class: "tool-card" },
       element("span", { class: "tname" }, swatch(s.key), data.names[s.key]),
-      element("span", { class: "muted small" }, native.length ? `Native to ${and(native.map(lower))}` : "Given programs through a translation"),
-      line("head-to-head", v.n.h, v.head), line("translated", t, v.translated),
-      element("div", { class: "kv" }, element("span", {}, "answers tddlog does not"), element("b", {}, count(v.beyond.length)))));
+      element("span", { class: "muted small one", title: native.length ? `Native to ${and(native)}` : null },
+        native.length ? `Native to ${and(native)}` : "Given programs through a translation"),
+      cells(["answers", count(s.answers), `of the ${count(s.given)} instances it was given`],
+        ["tddlog does not", count(v.beyond.length), `instances ${data.names[s.key]} answers that tddlog does not`]),
+      element("table", { class: "mini" }, element("thead", {}, element("tr", {}, element("td"), element("th", { scope: "col" }, "instances"),
+        element("th", { scope: "col", title: "tddlog's speed-up" }, "speed-up"))),
+      element("tbody", {}, row("head-to-head", v.n.h, v.head), row("translated", v.n.s + v.n.m + v.n.b, v.translated)))));
   }
-  out.push(grid, note(measureText()));
+  out.push(grid);
   return out;
 }
 
@@ -173,33 +188,31 @@ function toolView(route) {
   const out = [crumbs(["Home", { view: "home" }], ["By tool", { view: "tools" }], [name]),
     element("h2", { class: "solver" }, swatch(x), `tddlog against ${name}`),
     element("p", { class: "lede" }, `${s.about} `, element("a", { href: s.link }, site)),
-    element("p", { class: "headline" }, element("b", {}, `${name} answers ${count(s.answers)} of the ${count(s.given)} instances it was given`),
-      `, of ${and(typesOf(x).map((c) => lower(c.title)))}.`),
+    cells(["given", count(s.given), `instances of ${and(typesOf(x).map((c) => lower(c.title)))}`], ["answers", count(s.answers)],
+      ["tddlog does not", count(v.beyond.length), `instances ${name} answers that tddlog does not`]),
     element("nav", { class: "panels-nav", "aria-label": "Panels" }, element("a", { href: "#head" }, "Head-to-head"), element("a", { href: "#translated" }, "Translated"),
       element("a", { href: "#coverage" }, "Coverage"), element("a", { href: "#run" }, "How it was run"))];
   // head-to-head
   const head = rows.filter((r) => r.kind === "h");
   const p1 = element("section", { class: "panel", id: "head" }, element("h3", {}, "Head-to-head"),
-    note(`The ${plural(head.length, "instance")} where ${name} and tddlog read the same program: the benchmark's as its authors or its `
-      + "generator wrote it, or the same network in another network format (the same variables and tables)."));
-  if (head.length) p1.append(versusLine(v.head, name, head.length), pairPlot(head, x, v.head, "h"), familyCounts(head));
+    note("Both read the same program: the benchmark's own, or the same network in another network format."));
+  if (head.length) p1.append(versusCells(v.head, name, head.length), pairPlot(head, x, v.head, "h"), familyCounts(head));
   out.push(p1);
   // translated, by direction and translator
   const tr = rows.filter((r) => "smb".includes(r.kind));
   const p2 = element("section", { class: "panel", id: "translated" }, element("h3", {}, "Translated"),
-    note(`The ${plural(tr.length, "instance")} where one of them, or both, read a translation: below, each direction and the `
-      + "translator, with its source on the baselines branch. tddlog's own readers (of Dice programs, LPADs and networks) are front ends, not translations."));
+    note("One of them, or both, read a translation; tddlog's own readers (of Dice programs, LPADs and networks) are front ends, not translations."));
   if (tr.length) {
-    p2.append(versusLine(v.translated, name, tr.length));
+    p2.append(versusCells(v.translated, name, tr.length));
     const ways = element("div", { class: "ways" });
     for (const w of v.ways) {
-      const kind = KIND_TEXT[w.kind](name);
-      ways.append(element("div", { class: "way" },
-        element("p", { class: "way-head" }, element("b", {}, kind), element("span", { class: "n" }, ` ${plural(w.n, "instance")}`)),
-        ...(w.reason ? [element("p", {}, element("span", { class: "muted" }, `${name} read: `), w.reason)] : []),
-        ...(w.mine ? [element("p", {}, element("span", { class: "muted" }, "tddlog read: "), w.mine)] : []),
-        ...(w.by.length ? [element("p", { class: "by" }, "Written by ", ...w.by.flatMap(([n, path], i) => [i ? ", " : "", scriptLink(n, path)]))] : []),
-        element("p", { class: "small" }, w.vs ? `${name} ${count(w.vs.answers)}, tddlog ${count(w.vs.tddlog_answers)}; tddlog's speed-up: ${speedup(w.vs)}` : "")));
+      const how = [...(w.reason ? [element("span", { class: "muted" }, `${name} read: `), w.reason, element("br")] : []),
+        ...(w.mine ? [element("span", { class: "muted" }, "tddlog read: "), w.mine, element("br")] : []),
+        ...(w.by.length ? ["Written by ", ...w.by.flatMap(([n, path], i) => [i ? ", " : "", scriptLink(n, path)])] : [])];
+      ways.append(element("div", { class: "way" }, element("p", { class: "way-head" }, element("b", {}, KIND_TEXT[w.kind](name))),
+        cells(["instances", count(w.n)], ...(w.vs ? [[`${name} answers`, count(w.vs.answers)], ["tddlog answers", count(w.vs.tddlog_answers)],
+          ["speed-up", speedCell(w.vs), speedup(w.vs, true)]] : [])),
+        ...(how.length ? [fold("The programs and the translator", ...how)] : [])));
     }
     p2.append(ways, pairPlot(tr, x, v.translated, "t"), familyCounts(tr));
   }
@@ -244,7 +257,7 @@ function toolView(route) {
   dl.append(element("dt", {}, "Site"), element("dd", {}, element("a", { href: s.link }, s.link)),
     element("dt", {}, "Commands"), element("dd", {}, "Each instance's page shows the exact command each system's job ran, and the files it read."));
   out.push(element("section", { class: "panel", id: "run" }, element("h3", {}, "How it was run"), element("div", { class: "facts" }, dl),
-    note(measureText()), element("p", {}, link({ view: "system", system: x }, `${name}'s full page`),
+    fold("How the speed-up is measured", measureText()), element("p", {}, link({ view: "system", system: x }, `${name}'s full page`),
       ": its plots in each type of program among the other systems, its own benchmarks, and how it was given each suite.")));
   return out;
 }
@@ -270,22 +283,23 @@ function typeSplit(c, route) {
     const body = element("tbody");
     for (const x of have) {
       const w = v[field][x];
-      const dirs = keep === "h" ? [] : [element("td", { class: "num" }, ["s", "m", "b"].map((k) => count(n(x, k))).join(" / "))];
+      const num = (text) => element("td", { class: "num" }, text);
+      const dirs = keep === "h" ? [] : ["s", "m", "b"].map((k) => num(count(n(x, k))));
       body.append(element("tr", { class: x === route.vs ? "vs" : null }, element("th", { scope: "row" }, toolLink(x)),
-      element("td", { class: "num" }, link({ view: "category", category: c.key, vs: x }, count(n(x, keep)))), ...dirs,
-      element("td", { class: "num" }, w ? `${count(w.answers)} / ${count(w.tddlog_answers)}` : ""),
-      element("td", { class: "num" }, w ? `${duration(w.total)} / ${duration(w.tddlog_total)}` : ""),
-      element("td", { class: "num" }, w ? speedup(w) : "")));
+        num(link({ view: "category", category: c.key, vs: x }, count(n(x, keep)))), ...dirs,
+        num(w ? count(w.answers) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.total) : ""), num(w ? duration(w.tddlog_total) : ""),
+        num(w ? speedup(w) : "")));
     }
     const sec = element("section", { class: "panel split", id }, element("h3", {}, `${title}: ${have.length ? and(have.map((x) => data.names[x])) : "no system"}`),
       note(`Where ${text}.`));
     if (have.length) {
+      const col = (text, title) => element("th", { scope: "col", class: "num", title }, text);
+      const par = `PAR-${data.measure.par}, over the instances the system is given and either answers`;
       sec.append(scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
-        element("th", { scope: "col" }, "system"), element("th", { scope: "col", class: "num" }, "instances"),
-        ...(keep === "h" ? [] : [element("th", { scope: "col", class: "num", title: "a translation for the system / for tddlog / for both" }, "for it / tddlog / both")]),
-        element("th", { scope: "col", class: "num" }, "answers, it / tddlog"),
-        element("th", { scope: "col", class: "num", title: "PAR-2, over the instances the system is given and either answers" }, "total times, it / tddlog"),
-        element("th", { scope: "col", class: "num" }, "tddlog faster"))), body)), "whole"));
+        element("th", { scope: "col" }, "system"), col("instances"),
+        ...(keep === "h" ? [] : [col("for it", "a translation for the system"), col("for tddlog", "a translation for tddlog"),
+          col("for both", "a translation of the original for both")]),
+        col("it answers"), col("tddlog answers"), col("its total", par), col("tddlog's total", par), col("tddlog faster"))), body)), "whole"));
       const x = have.includes(route.vs) ? route.vs : have[0];
       const rows = kindRows(c, x).filter((r) => keep.includes(r.kind));
       sec.append(element("p", { class: "small" }, `The plots: tddlog against ${data.names[x]} on these ${plural(rows.length, "instance")}; a system's count of instances above sets them, its name opens its page.`),
@@ -306,17 +320,19 @@ function typesView() {
     body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: c.key }, c.title)),
       element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(answeredBy(catRows(c)))),
       element("td", {}, and((c.key === ALL ? [] : c.native).map((x) => data.names[x])) || "every system"),
-      element("td", { class: "num" }, `${count(kinds("h"))} / ${count(xs.filter((x) => /[smb]/.test(v.kinds[x])).length)}`)));
+      element("td", { class: "num" }, count(kinds("h"))), element("td", { class: "num" }, count(xs.filter((x) => /[smb]/.test(v.kinds[x])).length))));
   }
   return [crumbs(["Home", { view: "home" }], ["By type of program"]), element("h2", {}, "By type of program"),
-    element("p", { class: "lede" }, "Each instance counts in one type, the type of the model it is, whatever language its source was written in. "
-      + "Each type is compared with the systems native to it, head-to-head first and translated second; all programs is their union, with every system. "
-      + "A type opens its families, and a family its instances, each with the programs every system read and the commands its job ran."),
+    element("p", { class: "lede" }, "Each type against the systems native to it; all programs is their union, with every system."),
+    fold("How the instances are counted", "Each instance counts in one type, the type of the model it is, whatever language its source was written in. "
+      + "A type's comparisons are head-to-head first and translated second. A type opens its families, and a family its instances, "
+      + "each with the programs every system read and the commands its job ran."),
     scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
       element("th", { scope: "col" }, "type"), element("th", { scope: "col", class: "num" }, "instances"),
       element("th", { scope: "col", class: "num", title: "by each instance's subject: tddlog, or Alea.jl+tddlog on Alea.jl's circuits" }, "tddlog answers"),
       element("th", { scope: "col" }, "native systems"),
-      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance / through a translation on some" }, "systems head-to-head / translated"))),
+      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "systems head-to-head"),
+      element("th", { scope: "col", class: "num", title: "the systems compared through a translation on some instance" }, "systems translated"))),
     body)), "whole"),
     element("div", { class: "fig-head" }, element("h3", {}, "Each type against the systems native to it"),
       element("span", { class: "dots" }, element("i", { class: "me" }), "tddlog", element("i", { class: "you" }), "a native system")),
@@ -546,24 +562,3 @@ Object.assign(extend, {
     (draft.views?.scripts.includes(name) ? `<a href="${BRANCH}baselines/scripts/${name}"><code>${name}${rest}</code></a>` : whole)),
 });
 
-// The site's sections in the header, the one on show marked; the rail of
-// the results beside the views of the results only.
-function mark() {
-  const route = parse(location.hash);
-  const section = { "draft-home": "home", home: "home", tools: "tools", tool: "tools", types: "types", category: "types",
-    coverage: "coverage", how: "how", system: "tools" }[route.view] ?? "types";
-  for (const a of document.querySelectorAll("[data-nav]")) {
-    if (a.dataset.nav === section) a.setAttribute("aria-current", "page");
-    else a.removeAttribute("aria-current");
-  }
-  document.body.classList.toggle("wide", route.view in DRAFT_VIEWS);
-}
-window.addEventListener("hashchange", mark);
-document.addEventListener("DOMContentLoaded", () => {
-  const ready = setInterval(() => {
-    if (draft.views && data.categories.length) {
-      clearInterval(ready);
-      mark();
-    }
-  }, 50);
-});

@@ -874,11 +874,15 @@ function benchmarksOf(root) {
       ...sides(rowsOf(c), c.drawn.filter((x) => !isMine(x))), 0]), "the overview: each category's cactus plot and its scatter plot");
     assert.equal((await page.$$("#view table.board.own tbody tr")).length, cats.own.length, "the overview: each system on its own benchmarks");
     console.log(`ok the overview: ${overviewRows.length} native systems' speed-ups, each category's plots and the own benchmarks`);
-    // The menu: the overview and the categories; under all programs, on the
-    // overview, every solver by its answers.
+    // The menu, the site's: the front page, by tool every other system by
+    // its answers, by type the overview and the categories, the coverage and
+    // how it works; under all programs, on the overview, every solver by its
+    // answers.
     const menu = await page.$$eval("#tree .tree > li", (lis) => lis.map((li) => (li.classList.contains("group") ? li.textContent
       : li.querySelector("a").getAttribute("href"))));
-    assert.deepEqual(menu, ["#/", "Types of programs", ...categories.map((c) => `#/category/${c.key}`)], "the menu: the categories");
+    const tools = cats.systems.filter((s) => !isMine(s.key)).sort((a, b) => b.answers - a.answers).map((s) => `../#/tools/${s.key}`);
+    assert.deepEqual(menu, ["../#/", "By tool", ...tools, "By type", "#/", ...categories.map((c) => `#/category/${c.key}`), "../#/coverage", "../#/how"],
+      "the menu: the front page's sections, the tools and the categories");
     const solvers = async () => page.$$eval("#tree .tree > li > ul > li.solver a", (as) => as.map((a) => a.getAttribute("href")));
     assert.deepEqual(await solvers(), [...categories.at(-1).mine, ...categories.at(-1).native].map((x) => `#/system/${x}`), "the menu: every solver under all programs");
     for (const c of categories) {

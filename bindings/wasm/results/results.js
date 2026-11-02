@@ -36,9 +36,12 @@
 // The stamp of the page's own reference (results.js?v=<sha>) goes on to the
 // data, as the playground's does to its files. A page elsewhere that reuses
 // this app (the site's front page) names where the data is
-// (data-base="results/"). A view's title goes before the page's own.
+// (data-base="results/") and where the front page is from it
+// (data-front=""): the menu's sections are the front page's views. A view's
+// title goes before the page's own.
 const stamp = document.currentScript === null ? "" : new URL(document.currentScript.src).search;
 const dataRoot = document.currentScript?.dataset.base ?? "";
+const front = document.currentScript?.dataset.front ?? "../";
 const pageTitle = document.title;
 
 // What a page that reuses this app adds to it (next/next.js): views of its
@@ -2160,12 +2163,25 @@ async function runs(route) {
 
 // ------------------------------------------------------------- the rail
 
-// The categories; under the category on show, its families (the benchmarks'
+// The site's menu, the same on the front page and the results page: home; by
+// tool, every other system by the instances it answers; by type, the
+// categories, and under the category on show its families (the benchmarks'
 // pages of the family on show under it) and its solvers, the systems native
 // to a type or every system under all programs, by the instances they
-// answer; and a search.
+// answer; the coverage and how it works; and a search. Home, the tools, the
+// coverage and how it works are the front page's views (`front`); on the
+// results page its overview leads the categories.
 function rail(route) {
   const tree = element("ul", { class: "tree" });
+  const section = (hash, ...children) => element("a", { href: front + hash, "data-section": hash }, ...children);
+  tree.append(element("li", {}, section("#/", "Home")), element("li", { class: "group" }, section("#/tools", "By tool")));
+  const others = data.systems.filter((s) => !isMine(s.key)).sort((a, b) => b.answers - a.answers);
+  for (const s of others) {
+    tree.append(element("li", { class: "solver" }, section(`#/tools/${encodeURIComponent(s.key)}`, swatch(s.key), data.names[s.key],
+      element("span", { class: "n", title: `answers ${count(s.answers)} of the ${count(s.given)} instances it was given` }, count(s.answers)))));
+  }
+  tree.append(element("li", { class: "group" }, section("#/types", "By type")));
+  if (front) tree.append(element("li", {}, link({ view: "home" }, "Overview")));
   // a benchmark's page is in the category and the family of its instance,
   // and the rail marks that family as it marks a category narrowed to it; a
   // solver's in the category the reader came from where the solver is native
@@ -2175,7 +2191,6 @@ function rail(route) {
   const current = route.view === "category" ? route.category : at ? at.c.key : route.suite ? categoryFor(route.suite).key
     : route.view === "system" && from && (from.mine.includes(route.system) || from.native.includes(route.system)) ? from.key : ALL;
   const family = route.view === "category" ? route.only : at?.g.key;
-  tree.append(element("li", {}, link({ view: "home" }, "Overview")), element("li", { class: "group" }, "Types of programs"));
   for (const c of data.categories) {
     const li = element("li", {}, link({ view: "category", category: c.key }, c.title, element("span", { class: "n" }, count(c.instances))));
     if (route.view === "category" && route.category === c.key && route.only === undefined) li.firstChild.setAttribute("aria-current", "page");
@@ -2197,6 +2212,14 @@ function rail(route) {
       li.append(ul);
     }
     tree.append(li);
+  }
+  tree.append(element("li", {}, section("#/coverage", "Coverage")), element("li", {}, section("#/how", "How it works")));
+  // on the front page, the section on show: its view, else the view it is in
+  if (!front && route.view !== "missing") {
+    const at = href(route);
+    const sections = [...tree.querySelectorAll("a[data-section]")];
+    const on = sections.find((a) => a.dataset.section === at) ?? sections.find((a) => at.startsWith(`${a.dataset.section}/`));
+    on?.setAttribute("aria-current", "page");
   }
   document.getElementById("tree").replaceChildren(tree);
 }

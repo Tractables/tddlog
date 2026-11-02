@@ -90,7 +90,11 @@ reads the results page's data and `next/views.json`, which is generated
 with it: each comparison's kind on each instance, the comparisons over
 each kind, and the census of the programs tddlog does not run. The front
 page was a draft at `next/` first, and `next/index.html` sends a link to
-the draft to the same view of the front page.
+the draft to the same view of the front page. Beside every view of the
+front page and of the results page is the site's menu (`results.js`'s
+rail): the front page, every other system by the instances it answers,
+the types of program with the families and solvers of the one on show,
+the coverage and how it works; on a phone it folds behind a toggle.
 
 ## Memory
 

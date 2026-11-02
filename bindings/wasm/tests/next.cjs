@@ -4,11 +4,13 @@
 // step of its walkthrough) draws without an error, its views.json written
 // from the same results as categories.json, with a member of tddlog's
 // (tddlog or a pipeline) for each row a system was given, named where a
-// tool's page compares with it; a benchmark's page has its
-// playground link; an address of nothing is not found; a link to the
-// draft it was at next/ opens the same view; no sideways scrolling at a
-// desktop's width or a phone's, in both themes, with the screenshots where
-// asked for.
+// tool's page compares with it; the tools' numbers each in a cell of its
+// own; a benchmark's page has its playground link; an address of nothing
+// is not found; a link to the draft it was at next/ opens the same view;
+// the site's menu beside every view, the view on show marked in it, every
+// other system in it by its answers, and on a phone behind its toggle; no
+// sideways scrolling at a desktop's width or a phone's, in both themes,
+// with the screenshots where asked for.
 //
 //   node tests/next.cjs <site> [<directory for screenshots>]
 //
@@ -83,14 +85,19 @@ function drawn(page) {
       assert.equal(await page.locator(".entries a.entry").count(), 3);
       await page.waitForSelector("#view figure.overview svg");
     }],
-    ["#/tools", "tools", async () => assert.equal(await page.locator(".tool-card").count(), systems.length)],
+    ["#/tools", "tools", async () => {
+      assert.equal(await page.locator(".tool-card").count(), systems.length);
+      assert.equal(await page.locator(".tool-card table.mini td.num").count(), 4 * systems.length, "two numbers a comparison, each in its cell");
+      const text = await page.locator(".tool-grid").textContent();
+      assert.doesNotMatch(text, /\d, \d/, "no numbers run together");
+    }],
     ...["dice", "alea", "problog", "ace", "roulette"].filter((x) => systems.includes(x)).map((x) => [`#/tools/${x}`, "tool", async () => {
       for (const id of ["head", "translated", "coverage", "run"]) assert.equal(await page.locator(`section.panel#${id}`).count(), 1, `${x}: ${id}`);
       const v = views.systems[x];
       if (v.n.s + v.n.m + v.n.b) assert.equal(await page.locator("#translated .way").count(), v.ways.length, `${x}: ways`);
       if (v.n.h) {
         await page.waitForSelector("#head figure svg");
-        const line = await page.locator("#head p.headline").textContent();
+        const line = await page.locator("#head .cells").first().textContent();
         for (const m of v.head.me) assert.ok(line.includes(cats.names[m]), `${x}: head-to-head names ${m}`);
       }
     }]),
@@ -120,14 +127,19 @@ function drawn(page) {
       await page.waitForSelector("#programs");
     }]);
   }
+  // the menu: every other system by its answers, a tool's page each
+  const tools = cats.systems.filter((s) => s.key !== "tddlog" && !s.key.endsWith("-tddlog")).sort((a, b) => b.answers - a.answers)
+    .map((s) => `#/tools/${s.key}`);
   for (const [hash, view, check] of checks) {
     await page.goto(base + hash);
     await drawn(page);
     await check();
-    const nav = await page.locator(".site-nav a[aria-current]").count();
-    assert.equal(nav, 1, `${hash}: one section of the header marked`);
-    console.log(`ok ${hash} (${view})`);
+    assert.deepEqual(await page.$$eval("#tree .tree > li.solver > a", (as) => as.map((a) => a.getAttribute("href"))), tools, `${hash}: the tools in the menu`);
+    const marked = await page.$$eval("#tree a[aria-current]", (as) => as.map((a) => a.getAttribute("href")));
+    assert.equal(marked.length, view === "missing" ? 0 : 1, `${hash}: the menu marks ${marked.join(", ") || "nothing"}`);
+    console.log(`ok ${hash} (${view})${marked.length ? `, marked ${marked[0]}` : ""}`);
   }
+  for (const x of tools) assert.ok(systems.includes(x.slice("#/tools/".length)), `${x}: a tool's page`);
 
   // the draft's former address
   await page.goto(`${base}next/#/tools`);
@@ -148,6 +160,14 @@ function drawn(page) {
         await drawn(shot);
         await shot.waitForTimeout(300);
         await noSidewaysScroll(shot, `${hash} at ${width} px (${colorScheme})`);
+        // on a phone the menu is behind its toggle
+        if (width < 600 && hash === "#/") {
+          assert.equal(await shot.isVisible("#tree"), false, "the menu folded on a phone");
+          await shot.click("#browse");
+          assert.equal(await shot.isVisible("#tree a[href='#/tools']"), true, "the menu open on a phone");
+          if (shots) await shot.screenshot({ path: path.join(shots, `next-menu-${colorScheme}-${width}.png`), fullPage: true });
+          await shot.click("#browse");
+        }
         const name = hash.replace(/^#\/?/, "").replace(/\//g, "-") || "home";
         if (shots) await shot.screenshot({ path: path.join(shots, `next-${name}-${colorScheme}-${width}.png`), fullPage: true });
         await shot.close();

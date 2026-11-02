@@ -29,12 +29,12 @@
 </header>
 
 <div class="shell">
-  <aside id="rail" aria-label="Browse the results">
-    <button id="browse" class="plain" type="button" aria-expanded="false" aria-controls="tree">Browse the results</button>
+  <aside id="rail" aria-label="The site's menu">
+    <button id="browse" class="plain" type="button" aria-expanded="false" aria-controls="tree">Menu</button>
     <input id="search" type="search" placeholder="Find a suite, system or instance" aria-label="Find a kind, suite, family, system or instance by its name"
       autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="found-list" aria-expanded="false">
     <div id="found"><p id="found-n" class="n" aria-live="polite"></p><ul id="found-list" role="listbox" aria-label="Found"></ul></div>
-    <nav id="tree" aria-label="Kinds, suites and families"></nav>
+    <nav id="tree" aria-label="Home, the tools, the types of program, the coverage and how it works"></nav>
   </aside>
   <div id="view">
     <p class="note">Loading the results…</p>
@@ -58,7 +58,7 @@
 </main>
 
 <script src="../code.js"></script>
-<script src="results.js"></script>
+<script src="results.js" data-front="../"></script>
 
 </body>
 </html>

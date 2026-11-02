@@ -1007,6 +1007,10 @@ div.facts dd { max-width: 80ch; }
 /* The rail's two groups: the types of programs, then the solvers. */
 .tree li.group { margin: 0.9rem 0 0.15rem; padding: 0 0.5rem; color: var(--muted); font-size: 11px; font-weight: 600;
   letter-spacing: 0.04em; text-transform: uppercase; }
+/* A group of the site's menu that is a view of its own (by tool, by type). */
+.tree li.group > a { display: inline; padding: 0; color: inherit; font-weight: 600; }
+.tree li.group > a:hover { color: var(--accent); background: none; }
+.tree li.group > a[aria-current] { color: var(--accent); background: none; }
 .tree > li.solver > a { font-weight: 400; }
 .tree li.solver i.sw { width: 0.9rem; }
 
