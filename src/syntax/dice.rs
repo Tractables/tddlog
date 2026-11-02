@@ -935,31 +935,45 @@ impl Value {
 }
 
 /// The variables in scope: each binding shadows the ones after it.
+/// The variables in scope, in frames, the innermost first: a `let`
+/// chain's, a call's parameters, a branch's variables restricted to the
+/// values its guard allows. A frame is a table, so that a variable bound
+/// early in a chain of a hundred thousand `let`s is found at once, and
+/// the frames are as deep as the program's nesting, not as long as its
+/// chains: a binding each, they were a list that took time quadratic in a
+/// chain's length to search and that overflowed the stack when dropped.
 #[derive(Clone, Default)]
-struct Env<'a>(Option<Rc<Binding<'a>>>);
+struct Env<'a>(Option<Rc<Frame<'a>>>);
 
-struct Binding<'a> {
-    name: &'a str,
-    value: Value,
+#[derive(Clone)]
+struct Frame<'a> {
+    vars: FxHashMap<&'a str, Value>,
     next: Env<'a>,
 }
 
 impl<'a> Env<'a> {
-    fn bind(&self, name: &'a str, value: Value) -> Env<'a> {
-        Env(Some(Rc::new(Binding {
-            name,
-            value,
+    /// `self` with an empty frame inside it.
+    fn enter(&self) -> Env<'a> {
+        Env(Some(Rc::new(Frame {
+            vars: FxHashMap::default(),
             next: self.clone(),
         })))
     }
 
+    /// `name` bound to `value` in the innermost frame, which [`Env::enter`]
+    /// made: a binding of the same name before it is shadowed.
+    fn bind(&mut self, name: &'a str, value: Value) {
+        let frame = self.0.as_mut().expect("a frame entered");
+        Rc::make_mut(frame).vars.insert(name, value);
+    }
+
     fn get(&self, name: &str) -> Option<&Value> {
         let mut at = &self.0;
-        while let Some(b) = at {
-            if b.name == name {
-                return Some(&b.value);
+        while let Some(f) = at {
+            if let Some(v) = f.vars.get(name) {
+                return Some(v);
             }
-            at = &b.next.0;
+            at = &f.next.0;
         }
         None
     }
@@ -1823,10 +1837,10 @@ impl<'a> Translator<'a> {
         let line = e.line;
         match &e.kind {
             Kind::Let(binds, body) => {
-                let mut env = env.clone();
+                let mut env = env.enter();
                 for (x, v) in binds {
                     let value = self.eval(v, &env, path, x)?;
-                    env = env.bind(x, value);
+                    env.bind(x, value);
                 }
                 self.eval(body, &env, path, name)
             }
@@ -2326,9 +2340,9 @@ impl<'a> Translator<'a> {
             return self.default(fun.ret.as_ref(), fun.name, line);
         }
         self.active.insert(fun.name, depth + 1);
-        let mut env = Env::default();
+        let mut env = Env::default().enter();
         for (p, a) in fun.params.iter().zip(args) {
-            env = env.bind(p, a);
+            env.bind(p, a);
         }
         let out = self.eval(&fun.body, &env, path, name);
         self.active.insert(fun.name, depth);
@@ -2480,7 +2494,7 @@ impl<'a> Translator<'a> {
         let Some(known) = known else {
             return Ok(None);
         };
-        let mut out = env.clone();
+        let mut out = env.enter();
         for (&var, allowed) in known {
             let Some(x) = env.get(var) else {
                 continue;
@@ -2496,7 +2510,7 @@ impl<'a> Translator<'a> {
                         .collect();
                     match left.as_slice() {
                         [] => return Ok(None),
-                        [b] => out = out.bind(var, boolean(*b)),
+                        [b] => out.bind(var, boolean(*b)),
                         _ => {}
                     }
                 }
@@ -2514,7 +2528,7 @@ impl<'a> Translator<'a> {
                     }
                     if support.len() == 1 {
                         let k = self.constant(support[0], x.width, 0)?;
-                        out = out.bind(var, Value::Int(k));
+                        out.bind(var, Value::Int(k));
                     } else if support.len() < have.len() {
                         // The bits on which the values left agree are
                         // constants.
@@ -2546,7 +2560,7 @@ impl<'a> Translator<'a> {
                                 Some(x.size),
                             )))
                         })?;
-                        out = out.bind(var, v);
+                        out.bind(var, v);
                     }
                 }
                 Value::Tuple(_) => {}
@@ -2830,6 +2844,31 @@ mod tests {
         let text =
             read("let xs = if flip 0.5 then [true] else [] : list(bool) in head xs").unwrap();
         assert_eq!(text.matches("evidence(").count(), 1, "{text}");
+    }
+
+    /// A chain of tens of thousands of `let`s, its flips bound first and
+    /// read last, as in Roulette's programs written in Dice: each variable
+    /// is found at once, and the bindings are dropped without a recursion
+    /// as deep as the chain, which overflowed a test's stack.
+    #[test]
+    fn a_long_chain_of_lets_is_read() {
+        let n = 50_000;
+        let mut text = String::new();
+        for i in (1..=n).rev() {
+            text += &format!("let a{i} = flip 0.5 in\n");
+        }
+        text += "let s0 = true in\n";
+        for i in 1..=n {
+            text += &format!("let s{i} = s{} && a{i} in\n", i - 1);
+        }
+        text += &format!("s{n}\n");
+        let program = read(&text).unwrap();
+        let flips = program.lines().filter(|l| l.starts_with("0.5::")).count();
+        assert_eq!(flips, n);
+        assert_eq!(
+            program.lines().filter(|l| l.starts_with("query(")).count(),
+            1
+        );
     }
 
     #[test]
