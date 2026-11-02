@@ -76,6 +76,19 @@ baselines' programs, so it is on the baselines branch, which the Pages
 workflow fetches it from. `404.html` sends a link to a benchmark's former
 page (`results/benchmarks/SUITE/NAME.html`) to its view.
 
+`next/` is a draft of the site's redesign, served at `next/` beside the
+pages above and linked from none of them: the results by tool (tddlog
+against each system, head-to-head apart from translated, with each
+translation's direction and translator) and by type of program, the
+programs each system's sources hold that tddlog does not run, and how a
+program is answered, with a walkthrough of `examples/cycle_graph.pl`
+(`next/walk/`, the outputs of tddlog 0.1.0's `--ground` and `--stats`).
+`next/next.js` adds these views to the results page's app through its
+`extend` hooks and reads the results page's data and `next/views.json`,
+which is generated with it: each comparison's kind on each instance,
+the comparisons over each kind, and the census of the programs tddlog
+does not run.
+
 ## Memory
 
 WebAssembly's 32-bit address space caps the heap at 4 GB, and a browser
@@ -126,14 +139,15 @@ node tests/examples.cjs site/tddlog.js
 npm install --no-save playwright@1.49.1
 npx playwright install chromium
 node tests/browser.cjs site screenshots
+node tests/next.cjs site screenshots
 ```
 
 The first tests the wrapper natively, the second the page's runtime with
 a stand-in for the module, the third runs every example through the built
 module against ProbLog's answers and P(e) (or the larger examples' exact
 ones), as `examples.js` records them,
-and the last drives the assembled site, the results page among it, in a
-headless Chromium.
+and the last two drive the assembled site, the results page among it,
+and the draft of its redesign in a headless Chromium.
 
 ## Publishing
 

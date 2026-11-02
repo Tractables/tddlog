@@ -34,8 +34,21 @@
 // README's figures do.
 
 // The stamp of the page's own reference (results.js?v=<sha>) goes on to the
-// data, as the playground's does to its files.
+// data, as the playground's does to its files. A page elsewhere that reuses
+// this app (the site's draft, next/) names where the data is
+// (data-base="../results/").
 const stamp = document.currentScript === null ? "" : new URL(document.currentScript.src).search;
+const dataRoot = document.currentScript?.dataset.base ?? "";
+
+// What a page that reuses this app adds to it (next/next.js): views of its
+// own, by their routes (parse: an address's hash, without its #, to a route
+// or null; href: a route to its hash or null; draw: a route to the view's
+// parts or null; title: a route's title or null), the parts a category's
+// view shows after its headline (category), the HTML of a line on how a
+// file was made (made), and the data of its own, loaded with this app's
+// (load).
+const extend = { parse: () => null, href: () => null, draw: () => null, title: () => null, category: () => [],
+  made: (html) => html, load: async () => null };
 
 // The time axis starts at 0.2 s: runs under 0.2 s are not told apart.
 const FLOOR = 0.2;
@@ -258,7 +271,7 @@ function lazy(attributes, summary, build) {
 // Where a view's numbers come from: the data's files, as links.
 function raw(...files) {
   return note("The data of this view: ", ...files.flatMap((file, i) => [i === 0 ? "" : i === files.length - 1 ? " and " : ", ",
-    element("a", { href: file }, file.split("/").pop())]), ".");
+    element("a", { href: dataRoot + file }, file.split("/").pop())]), ".");
 }
 
 // ------------------------------------------------------------- the plot
@@ -890,7 +903,7 @@ const data = {
 };
 
 async function load(file) {
-  const response = await fetch(file + stamp);
+  const response = await fetch(dataRoot + file + stamp);
   if (!response.ok) throw new Error(`${file}: ${response.status}`);
   return response.json();
 }
@@ -932,6 +945,8 @@ const OLD_KINDS = { programs: "logic-programs", networks: "bayesian-networks", p
 // The view an address names, or what it names that the data does not have.
 function parse(hash) {
   const old = hash.replace(/^#/, "");
+  const added = extend.parse(old);
+  if (added) return added;
   if (old === "" || old === "/") return { view: "home" };
   // the pages before this one named a family of suites, or a kind, by its key
   if (!old.startsWith("/")) {
@@ -1000,7 +1015,7 @@ function href(route) {
       return out;
     }
     case "missing": return `#/${route.what}`;
-    default: return "#/";
+    default: return extend.href(route) ?? "#/";
   }
 }
 
@@ -1168,7 +1183,7 @@ function categoryView(route) {
   if (g && !g.source) out.push(prose("p", g.about, { class: "lede" }), note("The type on its own, against the systems native to it: ",
     link({ view: "category", category: g.key }, g.title), "."));
   else if (g) out.push(prose("p", g.about, { class: "lede" }), note(`From ${g.source}.`));
-  out.push(headline(c, rows, tal, only));
+  out.push(headline(c, rows, tal, only), ...extend.category(c, route, rows));
   const filters = filtersOf(c);
   const chips = filters.filter((f) => f.key === only || f.key.startsWith("own:"));
   if (chips.length) {
@@ -1878,7 +1893,7 @@ function filePane(fam, tab, fi, pick, cap) {
 // its name ends in .gz.
 async function fileText(fam, file) {
   if (fam.texts[file.sha] !== undefined) return fam.texts[file.sha];
-  const response = await fetch(`benchmarks/${file.src}`);
+  const response = await fetch(`${dataRoot}benchmarks/${file.src}`);
   if (!response.ok) throw new Error(String(response.status));
   return file.src.endsWith(".gz") ? new Response(response.body.pipeThrough(new DecompressionStream("gzip"))).text() : response.text();
 }
@@ -1903,7 +1918,7 @@ function fileIn(box, fam, file) {
     element("span", { class: "sha", title: "SHA-256" }, `sha256 ${file.sha}`)));
   const above = Object.keys(file).filter((field) => !FILE_FIELDS.has(field) && typeof file[field] === "string")
     .sort((a, b) => (b === "made") - (a === "made"));
-  for (const field of above) box.append(markup("p", file[field], { class: "made" }));
+  for (const field of above) box.append(markup("p", field === "made" ? extend.made(file[field]) : file[field], { class: "made" }));
   if (file.held) {
     box.append(markup("p", file.held, { class: "held" }));
     return box;
@@ -2232,7 +2247,7 @@ function title(route) {
     case "suite": return data.suites.get(route.suite).title;
     case "family": return `${route.instance} · ${route.suite}/${route.family}`;
     case "missing": return "Not found";
-    default: return null;
+    default: return extend.title(route);
   }
 }
 
@@ -2254,7 +2269,7 @@ function show(again = false) {
     view.dataset.route = page;
     const parts = route.view === "category" ? categoryView(route) : route.view === "system" ? systemView(route)
       : route.view === "suite" ? suiteView(route)
-      : route.view === "family" ? familyView(route, view) : route.view === "missing" ? missing(route) : home();
+      : route.view === "family" ? familyView(route, view) : route.view === "missing" ? missing(route) : extend.draw(route) ?? home();
     view.replaceChildren(...parts);
     // A family's view starts at its top, and another instance of it keeps the
     // place; a category's times set against a system start at its plots.
@@ -2289,7 +2304,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // the categories (categories.json), and the benchmarks' data
     // (benchmarks/, from the baselines branch) where the site has it.
     const [suites, ppl, cats, bench] = await Promise.all([load("suites.json"), load("ppl.json").catch(() => null),
-      load("categories.json"), load("benchmarks/index.json").catch(() => null)]);
+      load("categories.json"), load("benchmarks/index.json").catch(() => null), extend.load()]);
     data.bench = bench;
     for (const [suite, fams] of Object.entries(bench?.suites ?? {})) {
       for (const f of fams) for (const name of f.instances) data.family.set(`${suite}/${name}`, f);
