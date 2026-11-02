@@ -11,9 +11,9 @@ use tddlog::Options;
 /// holds where every one of its 20000 independent literals does, with
 /// probability 0.9999^20000. A walk with a stack frame for each literal
 /// overflowed a stack of 2 MB, a test thread's, from 5000 literals on in a
-/// release build. The layout reads the program's order: one from the
-/// interaction graph would expand each body into a clique of 20000 atoms,
-/// 2 * 10^8 edges.
+/// release build. Every layout reads each body as a chain of links
+/// (`vtree::chained`): one from the interaction graph would otherwise
+/// expand it into a clique of 20000 atoms, 2 * 10^8 edges.
 #[test]
 fn a_body_of_20000_literals() {
     const N: usize = 20000;

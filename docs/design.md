@@ -1659,7 +1659,17 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   (atoms of one rule that one body reads) for this, so that a conjunction
   is chained alike however its gates associate it: Roulette conjoins the
   states from the last step back, which put every gate of the joint at the
-  end of the order. A reader after a cut reads the
+  end of the order. The chain is written once, as the first step of every
+  layout's rewrite with the linear recursion's (`Kind::eliminated`):
+  the layouts that read the program's graph take a wide body for a clique
+  of its atoms, and Roulette's circuit of a hardware design, the check of
+  every step conjoined in one body, was as wide as its steps under
+  `families`. A switch that other rows of its table read too counts for
+  nothing in a body's width and stays out of its chain: the rows of an
+  annotated disjunction read its switches together, a table the families
+  layout reads as one, and chained they took bn_pathfinder from 0.25 s to
+  15 s.
+  A reader after a cut reads the
   atoms crossing it through indicator copies, the segments between the
   cuts being the units, and each segment's copies are laid out at its
   start, before its facts. A formula then holds its own segment's facts

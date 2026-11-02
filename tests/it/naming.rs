@@ -592,6 +592,27 @@ fn a_joint_over_a_chain_is_cut_however_it_is_written() {
     }
 }
 
+/// A joint over more states than a cut is named for is written as a chain
+/// for every layout, whatever its gates: the layouts that read the
+/// program's graph would otherwise take it for a clique of its states. Each
+/// answers as the forward pass.
+#[test]
+fn a_wide_joint_is_chained_for_every_layout() {
+    let steps = 24;
+    let want = joint_chain_exact(steps);
+    for writing in [Writing::FactsFirst, Writing::Roulette] {
+        for layout in ["families", "families:0", "closed", "td", "program"] {
+            let what = format!("joint chain {steps}, {writing:?}, {layout}");
+            let options = common::options(layout.parse().unwrap(), Projection::default());
+            let run = common::run(&joint_chain(steps, writing, "query(joint).\n"), &options)
+                .unwrap_or_else(|e| panic!("{what}: {e}"));
+            let got = run.results.as_ref().expect("no evidence")[0].probability;
+            assert!((got - want).abs() < 1e-12, "{what}: {got} against {want}");
+            assert_eq!(run.ground.stats.links, steps - 2, "{what}");
+        }
+    }
+}
+
 /// A coupon collector that draws two coupons at a time and observes them
 /// different (noDice's coupon, smaller): at each of `steps` steps two
 /// draws `a_t` and `b_t` are each one of `types` types, uniformly, `obs_t`

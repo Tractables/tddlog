@@ -254,6 +254,12 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
     if g.stats.chained > 0 {
         line.push_str(&format!("; {} atoms of chains inlined", g.stats.chained));
     }
+    if g.stats.links > 0 {
+        line.push_str(&format!(
+            "; wide bodies written as chains of {} links",
+            g.stats.links
+        ));
+    }
     if g.stats.merged > 0 {
         line.push_str(&format!(
             "; {} atoms merged into equal ones",
