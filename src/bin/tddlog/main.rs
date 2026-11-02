@@ -299,6 +299,10 @@ fn main() -> ExitCode {
     let started = Instant::now();
     let mut input = match tddlog::read(&data, args.format, &options) {
         Ok(input) => input,
+        Err(e @ tddlog::Error::Options(_)) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
         Err(e) => {
             eprintln!("{}: {e}", args.file);
             return ExitCode::FAILURE;

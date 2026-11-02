@@ -510,6 +510,9 @@ impl Network {
                         format!("{} given ({}): {e}", self.names[v], at.join(", "))
                     })?;
                     head.clear();
+                    if !written[v] {
+                        continue;
+                    }
                     let heads: Vec<(f64, usize)> = row
                         .iter()
                         .enumerate()
