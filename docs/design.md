@@ -1559,7 +1559,13 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   first boundary after a derived atom whose width is at most twice the
   facts since the cut, and runs until those facts double; the cut is the
   narrowest boundary in the window, and a window whose narrowest boundary
-  is wider than `WIDEST` (20) has none. The facts keep the order the
+  is wider than `WIDEST` (20) has none. The narrowest boundary the cut
+  skips is cut too where its names are no more than the facts on each side
+  of it, so that a window reaching a narrow end of the program does not run
+  two days of the weather together. A cut then stands only where its names
+  hide something: where the cones of the atoms crossing it, back to the
+  last cut that stands, reach a fact or an atom that no later rule reads.
+  The facts keep the order the
   program states them in, the variable order its exporter chose, each as
   late as that order allows (before the first rule that reads it or a
   fact stated after it), and each derived atom goes at its last rule, so

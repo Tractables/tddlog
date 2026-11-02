@@ -33,6 +33,14 @@
 //! Where no boundary is narrow, nothing is named and the layout is the
 //! order's.
 //!
+//! Two comparisons of a cut's names with what they hide refine the window.
+//! A boundary the window skips on its way to a narrower one is cut too
+//! where its names are no more than the facts on each side of it. Without
+//! it a window that reaches the end of a program runs its last two days of
+//! the weather together, the readers holding both days' facts. And a cut
+//! stands only where its names hide something ([`hiding`]): a fact or an
+//! atom behind the cut before that no later rule reads.
+//!
 //! A body that reads more than [`WIDEST`] atoms crosses every boundary in
 //! its span with everything it has read before it, so no cut there could
 //! be narrow; it is first written as a chain along the order ([`chained`]).
@@ -88,8 +96,8 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
         (Some(c), Some(d)) => (c, d, positions(c, fan_in)),
         _ => (gp, deps, order),
     };
-    let (at, boundaries) = profile(gp, &order);
-    let cuts = cuts(&boundaries);
+    let (at, boundaries, last) = profile(gp, &order);
+    let cuts = hiding(gp, deps, &at, &last, &cuts(&boundaries));
     if cuts.is_empty() {
         return Laid { facts, named: None };
     }
@@ -422,7 +430,7 @@ struct Boundary {
 
 /// Each atom's position in `order`, and the boundaries of `order` that a
 /// cut may take, with their widths: the profile, computed once.
-fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>) {
+fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>, Vec<u32>) {
     let n = order.len();
     let mut at = vec![0u32; gp.num_atoms()];
     for (p, &a) in order.iter().enumerate() {
@@ -462,11 +470,11 @@ fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>) {
             });
         }
     }
-    (at, boundaries)
+    (at, boundaries, last)
 }
 
 /// The cuts among an order's `boundaries`: the one place the rule lives
-/// (the module's comment), which reads the profile alone. The window opens
+/// (the module's comment) that reads the profile alone. The window opens
 /// where the width is at most twice the facts since the last cut: GeNI's
 /// link grids, the Roulette chains and the weather at 12 factories took 10
 /// to 30% less work than at once the facts, the weather by days the same,
@@ -475,6 +483,15 @@ fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>) {
 /// only facts cross: cut inside the facts a program starts with, the
 /// weather at 3 days counted its facts from there and found no day's
 /// frontier.
+///
+/// The narrowest boundary the cut skips is cut too where its names are no
+/// more than the facts on each side of it. GeNI's weather at 17 factories
+/// has 70 facts a day and a window that ended at the program's last
+/// boundary, 2 wide, skipping that day's frontier, 19 wide: the compile
+/// took 3.57 G work units with it skipped and 30 M with it cut. The link
+/// grid at side 16 skips boundaries of 17 names with 9 facts on each side:
+/// cutting those halved a compile of 1.1 M work units and took a fifth more
+/// work in the walk.
 fn cuts(boundaries: &[Boundary]) -> Vec<Boundary> {
     let mut cuts = Vec::new();
     // The facts at or before the last cut, and the next boundary.
@@ -496,10 +513,82 @@ fn cuts(boundaries: &[Boundary]) -> Vec<Boundary> {
             i = end + 1;
             continue;
         }
+        let skipped = (i..best)
+            .filter(|&j| {
+                let b = boundaries[j];
+                b.width <= WIDEST
+                    && b.width <= b.facts - behind
+                    && b.width <= boundaries[best].facts - b.facts
+            })
+            .min_by_key(|&j| (boundaries[j].width, j));
+        cuts.extend(skipped.map(|j| boundaries[j]));
         cuts.push(boundaries[best]);
         (behind, i) = (boundaries[best].facts, best + 1);
     }
     cuts
+}
+
+/// The `cuts` that stand, in order: those where the cones of the derived
+/// atoms crossing the cut, back to the last cut that stands, reach a fact or
+/// an atom behind that cut that no rule after this cut reads. A reader after
+/// the cut then holds a name in place of it. Anywhere else the names replace
+/// nothing the later formulas would otherwise hold, and leave the links in
+/// the evidence: a hidden Markov model's cut after an observation, with the
+/// state crossing it unchanged since the cut before (each of Roulette's
+/// models had a quarter to a half of its cuts so), or the pass-through cuts
+/// of linreg_w10, 10 of its 17, without which its query work falls by 40%.
+/// Pluck's sorted list has one such cut, and its compile goes from 1.37 G to
+/// 1.10 G work units without it.
+fn hiding(
+    gp: &GroundProgram,
+    deps: &Deps,
+    at: &[u32],
+    last: &[u32],
+    cuts: &[Boundary],
+) -> Vec<Boundary> {
+    let mut derived: Vec<AtomId> = (0..gp.num_atoms() as AtomId)
+        .filter(|&a| !gp.is_fact(a) && last[a as usize] > at[a as usize])
+        .collect();
+    derived.sort_unstable_by_key(|&a| at[a as usize]);
+    let mut derived = derived.into_iter().peekable();
+    let mut crossing: Vec<AtomId> = Vec::new();
+    let mut seen = vec![usize::MAX; gp.num_atoms()];
+    let mut stack: Vec<AtomId> = Vec::new();
+    let mut stand: Vec<Boundary> = Vec::new();
+    for (k, cut) in cuts.iter().enumerate() {
+        let p = cut.after as u32;
+        while let Some(a) = derived.next_if(|&a| at[a as usize] <= p) {
+            crossing.push(a);
+        }
+        crossing.retain(|&a| last[a as usize] > p);
+        stack.clear();
+        stack.extend_from_slice(&crossing);
+        for &a in &crossing {
+            seen[a as usize] = k;
+        }
+        while let Some(a) = stack.pop() {
+            let behind = stand
+                .last()
+                .is_some_and(|c| at[a as usize] as usize <= c.after);
+            if gp.is_fact(a) || behind {
+                if last[a as usize] <= p {
+                    stand.push(*cut);
+                    break;
+                }
+                continue;
+            }
+            for &r in &deps.by_head[a as usize] {
+                for l in &gp.rules[r].body {
+                    let b = l.atom();
+                    if seen[b as usize] != k {
+                        seen[b as usize] = k;
+                        stack.push(b);
+                    }
+                }
+            }
+        }
+    }
+    stand
 }
 
 #[cfg(test)]
@@ -727,6 +816,93 @@ mod tests {
                 assert!(place[ind.var as usize] < place[a], "{note}");
             }
         }
+    }
+
+    /// A boundary a window skips on its way to a narrower one is cut too
+    /// where its names are no more than the facts on each side, as the last
+    /// day but one of a weather whose last boundary is 2 wide, and not
+    /// where they are more, as on a link grid.
+    #[test]
+    fn a_skipped_boundary_is_cut_where_its_names_are_few_against_the_facts() {
+        let b = |width, facts| Boundary {
+            after: facts,
+            width,
+            facts,
+        };
+        let weather = [b(19, 70), b(19, 140), b(2, 208)];
+        let facts: Vec<usize> = cuts(&weather).iter().map(|c| c.facts).collect();
+        assert_eq!(facts, [70, 140, 208]);
+        let grid = [b(17, 9), b(16, 18)];
+        let facts: Vec<usize> = cuts(&grid).iter().map(|c| c.facts).collect();
+        assert_eq!(facts, [18]);
+        // Wider than a cut is named: left out however many facts surround it.
+        let wide = [b(21, 60), b(2, 100)];
+        let facts: Vec<usize> = cuts(&wide).iter().map(|c| c.facts).collect();
+        assert_eq!(facts, [100]);
+    }
+
+    /// Three chains stated a day at a time, each day's facts first, and a
+    /// last day that reads them into one atom. The window from the last day
+    /// but one reaches that atom's boundary, 1 wide, and skips the day's
+    /// frontier, 3 wide with 6 facts on each side, which is cut too.
+    #[test]
+    fn a_program_that_narrows_at_its_end_keeps_the_day_before_it() {
+        let mut src = String::from("0.5::s0_0. 0.5::s0_1. 0.5::s0_2.\n");
+        for t in 1..=4 {
+            for j in 0..3 {
+                src += &format!("0.7::f{t}_{j}. 0.2::g{t}_{j}.\n");
+            }
+            for j in 0..3 {
+                src += &format!(
+                    "s{t}_{j} :- s{p}_{j}, f{t}_{j}. s{t}_{j} :- \\+s{p}_{j}, g{t}_{j}.\n",
+                    p = t - 1
+                );
+            }
+        }
+        src += "0.3::q0. 0.4::q1. 0.5::q2. 0.6::h. 0.2::i. 0.9::k.\n\
+                a :- s4_0, q0. a :- s4_1, q1. a :- s4_2, q2.\n\
+                b :- a, h. b :- \\+a, i. z :- b, k. query(z).\n";
+        let gp = grounded(&src);
+        let order = positions(&gp, false);
+        let (_, boundaries, _) = profile(&gp, &order);
+        let cut_after: Vec<String> = cuts(&boundaries)
+            .iter()
+            .map(|c| gp.atoms[order[c.after] as usize].to_string())
+            .collect();
+        for t in 1..=4 {
+            assert!(cut_after.contains(&format!("s{t}_2")), "{cut_after:?}");
+        }
+    }
+
+    /// A hidden Markov model stated step by step: each state reads the one
+    /// before and two facts, and each observation reads the state and two
+    /// facts of its own. The window cuts after every atom, and a cut after
+    /// an observation hides nothing: the state crossing it is the one
+    /// the cut before it named, and no atom it reaches stops crossing there.
+    #[test]
+    fn a_cut_that_hides_nothing_does_not_stand() {
+        let mut src = String::from("0.5::s0.\n");
+        for i in 1..=6 {
+            src += &format!(
+                "0.3::a{i}. 0.6::b{i}.\ns{i} :- s{p}, a{i}. s{i} :- \\+s{p}, b{i}.\n\
+                 0.9::c{i}. 0.2::d{i}.\no{i} :- s{i}, c{i}. o{i} :- \\+s{i}, d{i}.\nevidence(o{i}).\n",
+                p = i - 1
+            );
+        }
+        src += "query(s6).\n";
+        let gp = grounded(&src);
+        let order = positions(&gp, false);
+        let (at, boundaries, last) = profile(&gp, &order);
+        let every = cuts(&boundaries);
+        let stand = hiding(&gp, &Deps::of(&gp), &at, &last, &every);
+        let after = |c: &Boundary| gp.atoms[order[c.after] as usize].to_string();
+        let names: Vec<String> = stand.iter().map(after).collect();
+        assert!(
+            every.iter().map(after).any(|a| a.starts_with('o')),
+            "{every:?}"
+        );
+        assert!(names.iter().all(|a| a.starts_with('s')), "{names:?}");
+        assert!(names.len() >= 4, "{names:?}");
     }
 
     /// Where the rules read facts alone, no derived atom crosses a

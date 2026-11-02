@@ -354,6 +354,71 @@ fn weather_answers_and_evidence_are_the_forward_pass() {
     }
 }
 
+/// Three independent chains stated a day at a time, each day's facts first,
+/// and a last day that reads them into one atom: the window reaches that
+/// atom's narrow boundary, and the last day's frontier before it is cut too.
+/// The answer is each chain's forward pass, combined.
+#[test]
+fn a_program_that_narrows_at_its_end_keeps_the_forward_pass() {
+    let (stay, turn) = (0.7, 0.2);
+    let reads = [0.3, 0.4, 0.5];
+    let (h, i, k) = (0.6, 0.2, 0.9);
+    for days in [2, 4, 7] {
+        let mut src = String::from("0.5::s0_0. 0.5::s0_1. 0.5::s0_2.\n");
+        let mut p = 0.5;
+        for t in 1..=days {
+            for j in 0..3 {
+                src += &format!("{stay}::f{t}_{j}. {turn}::g{t}_{j}.\n");
+            }
+            for j in 0..3 {
+                src += &format!(
+                    "s{t}_{j} :- s{b}_{j}, f{t}_{j}. s{t}_{j} :- \\+s{b}_{j}, g{t}_{j}.\n",
+                    b = t - 1
+                );
+            }
+            p = p * stay + (1.0 - p) * turn;
+        }
+        src += &format!(
+            "{}::q0. {}::q1. {}::q2. {h}::h. {i}::i. {k}::k.\n\
+             a :- s{days}_0, q0. a :- s{days}_1, q1. a :- s{days}_2, q2.\n\
+             b :- a, h. b :- \\+a, i. z :- b, k. query(z).\n",
+            reads[0], reads[1], reads[2]
+        );
+        let a = 1.0 - reads.iter().map(|q| 1.0 - p * q).product::<f64>();
+        let want = (a * h + (1.0 - a) * i) * k;
+        check(&format!("narrow end {days}"), &src, want, 1.0);
+    }
+}
+
+/// A hidden Markov model stated step by step, every observation true. Half
+/// the window's cuts, those after an observation, hide nothing and do not
+/// stand; the answers are the forward pass's, with `program` still naming.
+#[test]
+fn a_hidden_markov_models_cuts_keep_the_forward_pass() {
+    let (a, b, c, d) = (0.7, 0.2, 0.9, 0.3);
+    for steps in [3, 6, 12] {
+        let mut src = String::from("0.5::s0.\n");
+        let mut alpha = [0.5, 0.5];
+        for i in 1..=steps {
+            src += &format!(
+                "{a}::a{i}. {b}::b{i}.\ns{i} :- s{p}, a{i}. s{i} :- \\+s{p}, b{i}.\n\
+                 {c}::c{i}. {d}::d{i}.\no{i} :- s{i}, c{i}. o{i} :- \\+s{i}, d{i}.\nevidence(o{i}).\n",
+                p = i - 1
+            );
+            let on = alpha[1] * a + alpha[0] * b;
+            let off = alpha[1] * (1.0 - a) + alpha[0] * (1.0 - b);
+            alpha = [off * d, on * c];
+        }
+        src += &format!("query(s{steps}).\n");
+        let e = alpha[0] + alpha[1];
+        let (named, _) = check(&format!("hmm {steps}"), &src, alpha[1] / e, e);
+        assert!(
+            named || steps < 12,
+            "hmm {steps}: `program` names its states"
+        );
+    }
+}
+
 #[test]
 fn grid_answers_and_evidence_are_the_forward_pass() {
     for side in [3, 4, 5] {
