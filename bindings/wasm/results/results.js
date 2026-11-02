@@ -2185,11 +2185,14 @@ function rail(route) {
   // a benchmark's page is in the category and the family of its instance,
   // and the rail marks that family as it marks a category narrowed to it; a
   // solver's in the category the reader came from where the solver is native
-  // to it, else all programs, as the overview is
+  // to it, else all programs, as the overview is; the front page's own views
+  // (home, the tools, the types, coverage, how it works) in none, since the
+  // tools are listed above
   const at = route.view === "family" ? data.place.get(`${route.suite}/${route.instance}`) : undefined;
   const from = data.types.find((c) => c.key === lastCategory);
   const current = route.view === "category" ? route.category : at ? at.c.key : route.suite ? categoryFor(route.suite).key
-    : route.view === "system" && from && (from.mine.includes(route.system) || from.native.includes(route.system)) ? from.key : ALL;
+    : route.view === "system" ? (from && (from.mine.includes(route.system) || from.native.includes(route.system)) ? from.key : ALL)
+    : route.view === "home" ? ALL : undefined;
   const family = route.view === "category" ? route.only : at?.g.key;
   for (const c of data.categories) {
     const li = element("li", {}, link({ view: "category", category: c.key }, c.title, element("span", { class: "n" }, count(c.instances))));

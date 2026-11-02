@@ -210,7 +210,9 @@ function toolView(route) {
       const how = [...(w.reason ? [element("span", { class: "muted" }, `${name} read: `), w.reason, element("br")] : []),
         ...(w.mine ? [element("span", { class: "muted" }, "tddlog read: "), w.mine, element("br")] : []),
         ...(w.by.length ? ["Written by ", ...w.by.flatMap(([n, path], i) => [i ? ", " : "", scriptLink(n, path)])] : [])];
+      const by = w.by.map(([n]) => n).join(", ");
       ways.append(element("div", { class: "way" }, element("p", { class: "way-head" }, element("b", {}, KIND_TEXT[w.kind](name))),
+        by ? element("p", { class: "muted small one", title: `Written by ${by}` }, `Written by ${by}`) : null,
         cells(["instances", count(w.n)], ...(w.vs ? [[`${name} answers`, count(w.vs.answers)], ["tddlog answers", count(w.vs.tddlog_answers)],
           ["speed-up", speedCell(w.vs), speedup(w.vs, true)]] : [])),
         ...(how.length ? [fold("The programs and the translator", ...how)] : [])));

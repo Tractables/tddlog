@@ -89,6 +89,7 @@ function drawn(page) {
     ["#/", "draft-home", async () => {
       assert.equal(await page.locator(".entries a.entry").count(), 3);
       await page.waitForSelector("#view figure.overview svg");
+      assert.equal(await page.locator("#tree .tree ul").count(), 0, "no type open in the menu, its tools listed above");
     }],
     ["#/tools", "tools", async () => {
       assert.equal(await page.locator(".tool-card").count(), systems.length);
