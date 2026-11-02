@@ -150,6 +150,7 @@
            racket/file
            data/order
            rosette/base/core/term
+           (only-in rosette/base/core/reporter current-reporter)
            (only-in rosette/base/core/bool @! @&& @|| @=> @<=>)
            (only-in roulette/private/util flatten-symbolic))
 
@@ -169,6 +170,18 @@
 
   (define (fail fmt . args)
     (raise-user-error 'roulette2problog (apply format fmt args)))
+
+  ;; Every term Rosette makes, held. Roulette's example language makes
+  ;; Rosette's table of terms weak (`gc-terms!`), so that a term nothing else
+  ;; holds can be collected and, when the program asks for it again, made anew
+  ;; with a later id. The ids number the gates and when the collector runs
+  ;; varies with the addresses the process gets, so that two runs would write
+  ;; one circuit under two numberings.
+  (define held '())
+  (current-reporter
+   (λ (event . args)
+     (when (eq? event 'new-term)
+       (set! held (cons (car args) held)))))
 
   (define (seconds-since t) (/ (- (current-inexact-milliseconds) t) 1000.0))
 
@@ -206,19 +219,20 @@
       [(? constant?) '()]
       [_ (fail "a guard holds ~s, which is not a Boolean term" n)]))
 
-  ;; The terms under `roots`, each once, in the order Rosette created them
-  ;; (a term's operands before it).
+  ;; The terms under `roots`, each once, as a vector by term id, #f at the
+  ;; others: so in the order Rosette created them, a term's operands before it.
   (define (circuit-nodes roots)
-    (define seen (make-hasheq))
-    (let loop ([stack (filter term? roots)])
+    (define terms (filter term? roots))
+    (define seen (make-vector (for/fold ([size 0]) ([t (in-list terms)]) (max size (add1 (term-id t)))) #f))
+    (let loop ([stack terms])
       (unless (null? stack)
         (define n (car stack))
         (cond
-          [(hash-ref seen n #f) (loop (cdr stack))]
+          [(vector-ref seen (term-id n)) (loop (cdr stack))]
           [else
-           (hash-set! seen n #t)
+           (vector-set! seen (term-id n) n)
            (loop (append (children n) (cdr stack)))])))
-    (sort (hash-keys seen) < #:key term-id))
+    seen)
 
   (define (negated? n) (match n [(expression (== @!) _) #t] [_ #f]))
 
@@ -231,26 +245,35 @@
     (define bodies (for*/list ([q (in-list queries)] [e (in-list (second q))] #:when (third e))
                      (third e)))
     (define nodes (circuit-nodes (append (append* bodies) evidence)))
-    (define names (make-hasheq))
+    (define names (make-vector (vector-length nodes) #f))
+    (define (name-of n) (vector-ref names (term-id n)))
     (define-values (flips gates)
       (for/fold ([fs '()] [gs '()] [nf 0] [ng 0] #:result (values (reverse fs) (reverse gs)))
-                ([n (in-list nodes)])
+                ([n (in-vector nodes)]
+                 #:when n)
         (cond
           [(constant? n)
-           (hash-set! names n (format "f~a" (add1 nf)))
+           (vector-set! names (term-id n) (string-append "f" (number->string (add1 nf))))
            (values (cons n fs) gs (add1 nf) ng)]
           [(negated? n) (values fs gs nf ng)]
           [else
-           (hash-set! names n (format "g~a" (add1 ng)))
+           (vector-set! names (term-id n) (string-append "g" (number->string (add1 ng))))
            (values fs (cons n gs) nf (add1 ng))])))
     (define (lit n [pos #t])
       (match n
         [(expression (== @!) x) (lit x (not pos))]
-        [_ (define name (hash-ref names n))
+        [_ (define name (name-of n))
            (if pos name (string-append "\\+" name))]))
+    ;; Written piece by piece: `fprintf` took about half of a large circuit's time.
     (define (rule head . bodies)
       (for ([body (in-list bodies)])
-        (fprintf out "~a :- ~a.\n" head (string-join body ", "))))
+        (write-string head out)
+        (write-string " :- " out)
+        (write-string (car body) out)
+        (for ([b (in-list (cdr body))])
+          (write-string ", " out)
+          (write-string b out))
+        (write-string ".\n" out)))
     (define n-queries (for/sum ([q (in-list queries)]) (length (second q))))
     (fprintf out "% ~a: the circuit Roulette builds, written by tddlog's scripts/roulette2problog.rkt.\n"
              (program-label))
@@ -259,9 +282,12 @@
     (for ([note (in-list notes)])
       (fprintf out "% ~a\n" note))
     (for ([f (in-list flips)])
-      (fprintf out "~a::~a.\n" (number->string (exact->inexact (probability f))) (hash-ref names f)))
+      (write-string (number->string (exact->inexact (probability f))) out)
+      (write-string "::" out)
+      (write-string (name-of f) out)
+      (write-string ".\n" out))
     (for ([g (in-list gates)])
-      (define head (hash-ref names g))
+      (define head (name-of g))
       (match g
         [(expression (== @&&) xs ...) (rule head (map lit xs))]
         [(expression (== @||) xs ...) (apply rule head (for/list ([x (in-list xs)]) (list (lit x))))]
