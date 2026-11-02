@@ -209,8 +209,10 @@ measured behind it.
 ## Performance
 
 tddlog was compared with every exact inference system we could find, on
-six types of program, each against the systems that natively handle it,
+five types of program, each against the systems that natively handle it,
 and on [all programs](#all-programs) together, against every system.
+Where another system's code runs first and hands the inference to tddlog,
+the [integrations](#integrations) compare the two.
 Every answer is checked against an exact reference. Each table gives a
 system's answers, its total time and tddlog's over the instances it is
 given and either answers, and how many times faster tddlog is. The
@@ -224,9 +226,9 @@ instance, time and program, and a page for each system.
   written in. A system is given every instance it can take, through a
   translation where it cannot read the original (an LPAD for ProbLog, a
   Dice program for Roulette).
-- On the programs Alea.jl compiles to Boolean circuits (the bit-blasted
-  programs, Cao et al.'s integer programs and Pluck's sequence models),
-  tddlog runs as **Alea.jl+tddlog**: Alea.jl runs the program up to the
+- On the programs Alea.jl compiles to Boolean circuits (Cao et al.'s
+  integer programs, Pluck's sequence models and the bit-blasting paper's
+  programs), tddlog runs as **Alea.jl+tddlog**: Alea.jl runs the program up to the
   circuit it builds, and tddlog answers from the circuit, so that against
   Alea.jl only the inference differs. Its time is Alea.jl's run up to
   the circuit, timed warm as Alea.jl's own, and tddlog's on the circuit;
@@ -286,11 +288,11 @@ examples.
   that tddlog does not: numberguessing_1, which uses ProbLog's
   `subquery/3`.
 
-### Probabilistic database queries
+### Probabilistic databases
 
 <p align="center">
   <img src="docs/images/results-database-queries.svg"
-       alt="Probabilistic database queries answered within each time limit, and tddlog's time against the fastest native system's">
+       alt="Queries over probabilistic databases answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
 tddlog answers **308 of 320** Boolean queries over tuple-independent
@@ -392,36 +394,6 @@ Alea.jl builds the Boolean circuit that Alea.jl+tddlog answers.
 | Genfer | 99 | 66 h | 1.2 h | 405× |
 | 4 others: Geni, noDice, SPPL, Psi | 8 to 91 | over 68 h each | 1.2 h | at least 78× |
 
-### Bit-blasted programs
-
-<p align="center">
-  <img src="docs/images/results-bit-blasted.svg"
-       alt="Bit-blasted programs answered within each time limit, and Alea.jl+tddlog's time against the fastest native system's">
-</p>
-
-Alea.jl+tddlog and Roulette+tddlog answer **256 of 295** programs over
-integers: programs written in Alea.jl, which compiles each to a Boolean
-circuit, and the netlists of Circulette, a language on Roulette for the
-fault analysis of digital circuits. Alea.jl runs its own program,
-Alea.jl+tddlog runs it up to the circuit and hands the circuit to tddlog,
-and every other system is given the circuit; Roulette+tddlog runs a
-netlist as Roulette does, up to the formulas of its queries, and hands
-them to tddlog.
-
-| System | Answers | Its total time | Alea.jl+tddlog or Roulette+tddlog's total time | Alea.jl+tddlog or Roulette+tddlog faster |
-|---|--:|--:|--:|--:|
-| Alea.jl | 139 | 32 h | 3.4 h | 6.7× |
-| Roulette | 121 | 47 h | 2.3 h | 23× |
-| Pluck | 54 | 58 h | 2.0 h | 30× |
-| Dice | 19 | 69 h | 2.0 h | too few in common |
-| Genfer | 12 | 71 h | 2.0 h | too few in common |
-| 4 others: noDice, Psi, SPPL, Geni | 0 to 7 | over 72 h each | 2.0 h to 2.7 h | too few in common |
-
-- Where others win: Alea.jl on 63 circuits, four of which Alea.jl+tddlog
-  does not answer, and Roulette on 23; Genfer on the population models, which it
-  answers in milliseconds; Psi on two linear regressions it solves
-  symbolically.
-
 ### All programs
 
 <p align="center">
@@ -429,7 +401,7 @@ them to tddlog.
        alt="All programs answered within each time limit, and the time of tddlog or Alea.jl+tddlog against the fastest other system's">
 </p>
 
-tddlog, Alea.jl+tddlog and Roulette+tddlog answer **2053 of 2237**: the six types
+tddlog, Alea.jl+tddlog and Roulette+tddlog answer **2053 of 2237**: the five types
 together, every system on every program it is given, natively or through
 a translation.
 
@@ -448,9 +420,28 @@ a translation.
   answer Geni's four largest router networks (PRISM alone the largest,
   48 routers), which tddlog does not, by
   value iteration over decision diagrams in double precision; their
-  exact engines time out from 18 to 20 routers. Ace, pyAgrum and pgmpy
-  answer two clinical trial circuits that tddlog does not, and Merlin
-  one of them.
+  exact engines time out from 18 to 20 routers.
+
+### Integrations
+
+Where another system's own code runs first and hands its inference to
+tddlog, the pipeline is named after both and compared with that system
+alone, so that only the inference differs. Alea.jl+tddlog runs an
+Alea.jl program up to the Boolean circuit Alea.jl builds and tddlog
+answers from the circuit: the bit-blasting paper's programs, Cao et
+al.'s integer programs and Pluck's sequence models. Roulette+tddlog runs
+a Roulette program up to the formulas of its queries and tddlog answers
+from them: the Roulette paper's programs, the netlists of Circulette, a
+language on Roulette for the fault analysis of digital circuits, and the
+other probabilistic programs translated into Roulette's language. A
+pipeline's time includes all of the other system's own time after its
+warm-up. Its answers and total time come first, the other system's in
+brackets.
+
+| Integration | Instances | Answers | Total time | Faster |
+|---|--:|--:|--:|--:|
+| Alea.jl+tddlog against Alea.jl | 0 | 0 (Alea.jl 0) | 0 s (Alea.jl 0 s) | too few in common |
+| Roulette+tddlog against Roulette | 0 | 0 (Roulette 0) | 0 s (Roulette 0 s) | too few in common |
 
 ## Building and testing
 
