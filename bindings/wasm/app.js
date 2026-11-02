@@ -37,6 +37,11 @@ const AUTO_SECONDS = 2;
 const stamp = typeof document === "undefined" || document.currentScript === null
   ? ""
   : new URL(document.currentScript.src).search;
+// The site's root, where this script is: the page (playground/index.html)
+// loads the files and links to the pages from there.
+const root = typeof document === "undefined" || document.currentScript === null
+  ? ""
+  : new URL(".", document.currentScript.src).href;
 
 // ------------------------------------------------------------- the address
 
@@ -104,8 +109,8 @@ function summarise(result, elapsed) {
   const layouts = [...new Set(parts.map((p) => p.trial))].join(", ");
   let out = "";
   if (result.answers !== null) out += stat(count(result.answers.length), result.answers.length === 1 ? "query" : "queries");
-  if (layouts) out += stat(escapeHtml(layouts), '<a href="guide/#terms">layout</a>');
-  if (parts.length > 0) out += stat(count(largest), '<a href="guide/#terms">pairs</a> at most');
+  if (layouts) out += stat(escapeHtml(layouts), `<a href="${root}guide/#terms">layout</a>`);
+  if (parts.length > 0) out += stat(count(largest), `<a href="${root}guide/#terms">pairs</a> at most`);
   out += stat(escapeHtml(duration(elapsed / 1000)), "in the browser");
   return out;
 }
@@ -307,7 +312,7 @@ function nativeRun(records, suite, instance) {
 // The text of a file the site keeps on its own, gzipped where its name ends
 // in .gz.
 async function keptText(src) {
-  const response = await fetch(`results/benchmarks/${src}`);
+  const response = await fetch(`${root}results/benchmarks/${src}`);
   if (!response.ok) throw new Error(`${src}: ${response.status}`);
   if (!src.endsWith(".gz")) return response.text();
   return new Response(response.body.pipeThrough(new DecompressionStream("gzip"))).text();
@@ -326,7 +331,7 @@ async function holdsFile(text, file) {
 // answers that go beside it, or why the page cannot run it (`refused`, HTML:
 // a held file's reason comes from the results).
 async function benchmark([suite, family, instance]) {
-  const response = await fetch(`results/benchmarks/${suite}/${family}.json${stamp}`);
+  const response = await fetch(`${root}results/benchmarks/${suite}/${family}.json${stamp}`);
   if (response.status === 404) return { refused: "the results have no such benchmark." };
   if (!response.ok) throw new Error(`${suite}/${family}.json: ${response.status}`);
   const fam = await response.json();
@@ -353,7 +358,7 @@ async function benchmark([suite, family, instance]) {
 let recordsLoaded = null;
 function records() {
   const load = async (file) => {
-    const response = await fetch(`results/${file}${stamp}`);
+    const response = await fetch(`${root}results/${file}${stamp}`);
     if (!response.ok) throw new Error(`${file}: ${response.status}`);
     return response.json();
   };
@@ -506,7 +511,7 @@ if (typeof document !== "undefined") {
     const ticket = ++loading;
     let text;
     try {
-      const response = await fetch(tddlogExamplePath(tddlogExamples[i]) + stamp);
+      const response = await fetch(root + tddlogExamplePath(tddlogExamples[i]) + stamp);
       if (!response.ok) throw new Error(`${response.status}`);
       text = await response.text();
     } catch (failure) {
@@ -532,7 +537,7 @@ if (typeof document !== "undefined") {
   async function openBench(value) {
     const ticket = ++loading;
     const path = benchPath(value);
-    const back = path === null ? "results/" : `results/#/${path.join("/")}`;
+    const back = path === null ? `${root}results/` : `${root}results/#/${path.join("/")}`;
     const name = path === null ? "" : `<b>${escapeHtml(path[2])}</b> from ${escapeHtml(`${path[0]}/${path[1]}`)}: `;
     setProgram("", null, "program.pl");
     showSource(`${name}loading.`);
@@ -722,7 +727,7 @@ if (typeof document !== "undefined") {
   function startSolver() {
     ready = false;
     element("run").disabled = true;
-    worker = new Worker("worker.js" + stamp);
+    worker = new Worker(root + "worker.js" + stamp);
     worker.onmessage = (event) => {
       const data = event.data;
       if (data.ready === true) {

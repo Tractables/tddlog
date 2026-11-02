@@ -6,7 +6,7 @@
   <br>
   <a href="https://github.com/Tractables/tddlog/actions/workflows/ci.yml"><img
      src="https://github.com/Tractables/tddlog/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://tractables.github.io/tddlog/"><img
+  <a href="https://tractables.github.io/tddlog/playground/"><img
      src="https://img.shields.io/badge/run-in%20the%20browser-blue" alt="Run in the browser"></a>
   <a href="https://tractables.github.io/tddlog/guide/"><img
      src="https://img.shields.io/badge/docs-guide-blue" alt="Guide"></a>
@@ -31,7 +31,7 @@ it, compiles it bottom up into tree decision diagrams (TDDs) with the
 [tididi](https://github.com/Tractables/tididi) library, and reads every
 query's probability off the diagrams. It is a Rust library and
 command-line tool with Python, C and WebAssembly bindings, and it
-[runs in the browser](https://tractables.github.io/tddlog/).
+[runs in the browser](https://tractables.github.io/tddlog/playground/).
 
 <p align="center">
   <img src="docs/images/overview.svg"
@@ -478,7 +478,7 @@ Apache-2.0 ([LICENSE](LICENSE)). The copies of third-party programs in
 compiled into the binaries.
 
 [guide]: https://tractables.github.io/tddlog/guide/
-[playground]: https://tractables.github.io/tddlog/
+[playground]: https://tractables.github.io/tddlog/playground/
 [Rust API]: https://tractables.github.io/tddlog/api/tddlog/
 [`tddlog::solve`]: https://tractables.github.io/tddlog/api/tddlog/fn.solve.html
 [`tddlog::read`]: https://tractables.github.io/tddlog/api/tddlog/fn.read.html

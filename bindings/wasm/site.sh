@@ -3,9 +3,16 @@
 # https://tractables.github.io/tddlog/ in the directory OUT, which is
 # replaced:
 #
-#   /           the playground: index.html, its scripts and styles, and
-#               tddlog.js and tddlog.wasm from this crate's release build
+#   /           the front page (index.html): the views by tool and by type of
+#               program, the coverage and how it works, as the results page's
+#               app (/results/results.js) with the views of /next/next.js
+#               added, over the results page's data and /next/views.json;
+#               the site's scripts and styles, the playground's among them,
+#               and tddlog.js and tddlog.wasm from this crate's release build
 #               (target/wasm32-unknown-emscripten/release)
+#   /playground/
+#               the playground (playground/index.html), which runs tddlog in
+#               the browser with the scripts at the root
 #   /examples/  the example programs, copied from where examples.js says
 #               the repository keeps them
 #   /guide/     the guide (guide/index.html, its code highlighted by code.js)
@@ -21,13 +28,11 @@
 #               benchmarks/ directory of the baselines branch (it holds the
 #               baselines' programs, which main does not); without it the
 #               results page shows the plots and times alone
-#   /next/      the site's redesign, a draft for review: its page (next/), the
-#               views by tool and by type of program, the coverage and how it
-#               works, as the results page's app (/results/results.js) with
-#               the views of next.js added, over the results page's data and
+#   /next/      the front page's script, styles and data: next.js, next.css,
 #               views.json (each comparison head-to-head or translated, the
-#               coverage's census), and walk/, the outputs its walkthrough
-#               shows
+#               coverage's census) and walk/, the outputs its walkthrough
+#               shows; its index.html sends the address of the draft the
+#               front page once was to the front page
 #   /404.html   the page for an address the site does not have, which sends
 #               a link to a benchmark's former page to its view of the
 #               results page
@@ -63,7 +68,7 @@ benchmarks=${6:-}
 module=$here/target/wasm32-unknown-emscripten/release
 
 rm -rf "$out"
-mkdir -p "$out/examples" "$out/guide" "$out/results" "$out/next/walk"
+mkdir -p "$out/playground" "$out/examples" "$out/guide" "$out/results" "$out/next/walk"
 out=$(cd "$out" && pwd)
 cd "$here"
 cp index.html 404.html styles.css theme.js code.js app.js worker.js runtime.js examples.js "$module/tddlog.js" "$module/tddlog.wasm" "$out/"
@@ -74,6 +79,7 @@ cp sitemap.xml social.png ../../docs/logo.svg "$out/"
 # square; the frame is the logo's own, so a new logo needs a new crop.
 sed 's/viewBox="-65 -45 720 365"/viewBox="-40 44 235 235"/' ../../docs/logo.svg > "$out/favicon.svg"
 grep -q 'viewBox="-40 44 235 235"' "$out/favicon.svg"
+cp playground/index.html "$out/playground/"
 cp guide/index.html "$out/guide/"
 cp results/index.html results/results.js results/suites.json results/ppl.json results/categories.json "$out/results/"
 cp next/index.html next/next.js next/next.css next/views.json "$out/next/"
@@ -95,13 +101,13 @@ if [ "$stamp" = hash ]; then
     LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-12)
 fi
 if [ -n "$stamp" ]; then
-  for page in "$out/index.html" "$out/guide/index.html" "$out/results/index.html" "$out/next/index.html" "$out/404.html"; do
-    sed -i -E "s#(href|src)=\"((\.\./)?(results/)?(styles\.css|theme\.js|code\.js|runtime\.js|examples\.js|app\.js|results\.js|next\.js|next\.css))\"#\1=\"\2?v=$stamp\"#" "$page"
+  for page in "$out/index.html" "$out/playground/index.html" "$out/guide/index.html" "$out/results/index.html" "$out/404.html"; do
+    sed -i -E "s#(href|src)=\"((\.\./)?(results/|next/)?(styles\.css|theme\.js|code\.js|runtime\.js|examples\.js|app\.js|results\.js|next\.js|next\.css))\"#\1=\"\2?v=$stamp\"#" "$page"
   done
   test "$(grep -c "?v=$stamp\"" "$out/index.html")" = 6
+  test "$(grep -c "?v=$stamp\"" "$out/playground/index.html")" = 6
   test "$(grep -c "?v=$stamp\"" "$out/guide/index.html")" = 3
   test "$(grep -c "?v=$stamp\"" "$out/results/index.html")" = 4
-  test "$(grep -c "?v=$stamp\"" "$out/next/index.html")" = 6
   test "$(grep -c "?v=$stamp\"" "$out/404.html")" = 2
 fi
 # The logo heads the pages, and their heads get the icon and what a shared

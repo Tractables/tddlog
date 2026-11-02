@@ -1,13 +1,14 @@
-// The site's draft (next/) in headless Chromium: each of its views (the
-// home page, by tool and a tool's page, by type and a type's page with its
+// The site's front page in headless Chromium: each of its views (the home
+// page, by tool and a tool's page, by type and a type's page with its
 // head-to-head and translated parts, the coverage, how it works and each
 // step of its walkthrough) draws without an error, its views.json written
 // from the same results as categories.json, with a member of tddlog's
 // (tddlog or a pipeline) for each row a system was given, named where a
 // tool's page compares with it; a benchmark's page has its
-// playground link; an address of nothing is not found; no sideways
-// scrolling at a desktop's width or a phone's, in both themes, with the
-// screenshots where asked for.
+// playground link; an address of nothing is not found; a link to the
+// draft it was at next/ opens the same view; no sideways scrolling at a
+// desktop's width or a phone's, in both themes, with the screenshots where
+// asked for.
 //
 //   node tests/next.cjs <site> [<directory for screenshots>]
 //
@@ -57,7 +58,7 @@ function drawn(page) {
 
 (async () => {
   const server = await serve(site);
-  const base = `http://127.0.0.1:${server.address().port}/next/`;
+  const base = `http://127.0.0.1:${server.address().port}/`;
   const views = JSON.parse(fs.readFileSync(path.join(site, "next", "views.json"), "utf8"));
   const cats = JSON.parse(fs.readFileSync(path.join(site, "results", "categories.json"), "utf8"));
   const browser = await chromium.launch();
@@ -102,7 +103,7 @@ function drawn(page) {
     ["#/how", "how", async () => {
       await page.waitForSelector(".pipe svg.pipeline");
       await page.waitForFunction(() => document.querySelector(".walk-code pre.src")?.textContent.includes("path(X,Y)"));
-      assert.equal(await page.locator('a[href="../?example=reachability"]').count(), 1);
+      assert.equal(await page.locator('a[href="playground/?example=reachability"]').count(), 1);
     }],
     ...[2, 3, 4, 5, 6].map((n) => [`#/how/${n}`, "how", async () => {
       await page.waitForFunction(() => document.querySelector(".walk-code pre.src") !== null);
@@ -127,6 +128,12 @@ function drawn(page) {
     assert.equal(nav, 1, `${hash}: one section of the header marked`);
     console.log(`ok ${hash} (${view})`);
   }
+
+  // the draft's former address
+  await page.goto(`${base}next/#/tools`);
+  await page.waitForURL(`${base}#/tools`);
+  await drawn(page);
+  console.log("ok next/#/tools opens #/tools");
 
   await page.close();
 

@@ -2,71 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>tddlog (draft site)</title>
-<meta name="robots" content="noindex">
-<meta name="description" content="A draft of tddlog's redesigned site: tddlog against each system, by tool and by type of program, head-to-head apart from translated, what each system's sources hold that tddlog does not run, and how a program is answered.">
-<script src="../theme.js"></script>
-<link rel="stylesheet" href="../styles.css">
-<link rel="stylesheet" href="next.css">
+<title>tddlog</title>
+<!-- The site's redesign was a draft here before it became the front page:
+     a link to the draft goes to the same view there. -->
+<script>location.replace(`../${location.hash}`);</script>
+<meta http-equiv="refresh" content="0; url=../">
+<link rel="canonical" href="../">
 </head>
-<body class="results draft">
-
-<main>
-
-<header>
-  <div>
-    <h1 class="unseen">tddlog</h1>
-  </div>
-  <nav class="site-nav" aria-label="Site">
-    <a href="#/" data-nav="home">Home</a>
-    <a href="#/tools" data-nav="tools">By tool</a>
-    <a href="#/types" data-nav="types">By type of program</a>
-    <a href="#/coverage" data-nav="coverage">Coverage</a>
-    <a href="#/how" data-nav="how">How it works</a>
-    <a href="../">Playground</a>
-    <a href="../guide/">Guide</a>
-    <a href="../api/">API</a>
-    <a href="https://github.com/Tractables/tddlog">GitHub</a>
-    <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
-  </nav>
-</header>
-
-<p class="draft-note">A draft of the redesigned site, for review. The site as it is stays at
-<a href="../">the playground</a> and <a href="../results/">the results page</a>; this draft reads the same data.</p>
-
-<div class="shell">
-  <aside id="rail" aria-label="Browse the results">
-    <button id="browse" class="plain" type="button" aria-expanded="false" aria-controls="tree">Browse the results</button>
-    <input id="search" type="search" placeholder="Find a suite, system or instance" aria-label="Find a kind, suite, family, system or instance by its name"
-      autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="found-list" aria-expanded="false">
-    <div id="found"><p id="found-n" class="n" aria-live="polite"></p><ul id="found-list" role="listbox" aria-label="Found"></ul></div>
-    <nav id="tree" aria-label="Kinds, suites and families"></nav>
-  </aside>
-  <div id="view">
-    <p class="note">Loading the results…</p>
-    <noscript><p class="note">The plots and tables of this page need
-    JavaScript; the same results are in
-    <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">docs/benchmarks.md</a>
-    on the baselines branch.</p></noscript>
-  </div>
-</div>
-
-<div id="drawer" role="dialog" aria-labelledby="drawer-title" hidden></div>
-
-<footer>
-  tddlog is open source under the Apache-2.0 license:
-  <a href="https://github.com/Tractables/tddlog">repository</a> ·
-  <a href="https://github.com/Tractables/tididi">tididi</a>, the TDD library ·
-  <a href="https://github.com/Tractables/goatd">goatd</a>, its tree decompositions ·
-  <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a>
-</footer>
-
-</main>
-
-<script src="../code.js"></script>
-<script src="../results/results.js" data-base="../results/"></script>
-<script src="next.js"></script>
-
+<body>
+<p>This page is now the site's <a href="../">front page</a>.</p>
 </body>
 </html>

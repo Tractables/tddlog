@@ -1,9 +1,10 @@
-// The assembled site in headless Chromium: every example's answers on the
-// page against the ProbLog column beside them, P(evidence), the editor's
-// colours under its text (the same text, laid out alike, following the
-// scroll; plain for a long program and under forced colours), an edited
-// program through the address (none for a program too long for it), an
-// error and its line, Cancel and Escape, a long table, a file opened,
+// The assembled site in headless Chromium: in the playground
+// (playground/), every example's answers on the page against the ProbLog
+// column beside them, P(evidence), the editor's colours under its text (the
+// same text, laid out alike, following the scroll; plain for a long program
+// and under forced colours), an edited program through the address (none
+// for a program too long for it), a former address of the playground (the
+// site's root) sent to it, an error and its line, Cancel and Escape, a long table, a file opened,
 // dropped and downloaded, the answers copied, a benchmark of the results
 // opened through #bench= (its answers against the release run's reference;
 // a held, a partial, a slow and a malformed one; a gzipped text with a
@@ -195,6 +196,7 @@ function benchmarksOf(root) {
   const browser = await chromium.launch();
   const server = await serve(site);
   const base = `http://127.0.0.1:${server.address().port}/`;
+  const play = `${base}playground/`;
   const errors = [];
   try {
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, permissions: ["clipboard-read", "clipboard-write"] });
@@ -204,7 +206,7 @@ function benchmarksOf(root) {
     if (!only) {
     // The page opens on the first example and runs it, with the release
     // run's results at a glance under it.
-    await page.goto(base);
+    await page.goto(play);
     await answered(page, tddlogExamples[0].problog[0][0]);
     await page.waitForSelector("#glance:not([hidden])");
     const glance = (await page.textContent("#glance-stats")).replace(/(\d),(?=\d)/g, "$1").replace(/\s+/g, " ");
@@ -263,6 +265,17 @@ function benchmarksOf(root) {
     assert.equal(await again.isChecked("#evidence"), true);
     await again.close();
     console.log("ok an edited program through the address");
+
+    // The playground was once the site's root: an address of it there opens
+    // the same program in the playground.
+    const former = await context.newPage();
+    await former.goto(link.replace(play, base));
+    await answered(former, "c");
+    assert.equal(former.url(), link, "a former address of the playground");
+    await former.goto(`${base}?example=win`);
+    await former.waitForURL(`${play}?example=win`);
+    await former.close();
+    console.log("ok a former address of the playground");
 
     // An error is shown as one, a parse error's line is marked and the
     // caret put there, and the solver answers after it.
@@ -419,7 +432,7 @@ function benchmarksOf(root) {
     // A page's address changed only after the # does not load it again.
     const visit = async (p, address) => {
       await p.goto("about:blank");
-      await p.goto(`${base}${address}`);
+      await p.goto(`${play}${address}`);
     };
     if (benches.length > 0) {
       const quick = (b) => b.readable && b.file.bytes <= 1024 * 1024 && typeof b.native === "number" && b.native <= 2;
@@ -441,7 +454,7 @@ function benchmarksOf(root) {
       assert.equal(await page.inputValue("#program"), text);
       const opening = `${whole.name} from ${whole.suite}/${whole.family}: `;
       assert.ok((await page.textContent("#source")).startsWith(`${opening}the program tddlog was given`), await page.textContent("#source"));
-      assert.equal(await page.getAttribute("#source a", "href"), `results/#/${whole.path}`);
+      assert.equal(await page.getAttribute("#source a", "href"), `${base}results/#/${whole.path}`);
       assert.ok(page.url().endsWith(`#bench=${whole.path}`), page.url());
       await page.reload();
       await answered(page);
@@ -491,7 +504,7 @@ function benchmarksOf(root) {
         const note = await page.textContent("#source");
         assert.match(note, said, address);
         assert.doesNotMatch(note, /the program tddlog was given/, address);
-        assert.match(await page.getAttribute("#source a:last-of-type", "href"), /^results\//, `${address}: a link to the results`);
+        assert.ok((await page.getAttribute("#source a:last-of-type", "href")).startsWith(`${base}results/`), `${address}: a link to the results`);
         assert.equal(await page.inputValue("#program"), "", `${address}: nothing to run`);
         await page.waitForTimeout(300);
         assert.equal(await page.textContent("#answers"), "Press Run.", `${address}: no run`);
@@ -535,7 +548,7 @@ function benchmarksOf(root) {
     await page.goto(`${base}guide/`);
     const links = await page.$$eval("a[href]", (anchors) => anchors.map((a) => a.getAttribute("href")));
     const keys = new Set(tddlogExamples.map((e) => e.key));
-    const tried = links.filter((h) => h.startsWith("../?")).map((h) => new URLSearchParams(h.slice(4)).get("example"));
+    const tried = links.filter((h) => h.startsWith("../playground/?")).map((h) => new URLSearchParams(h.split("?")[1]).get("example"));
     assert.ok(tried.length >= 5, `the guide links to ${tried.length} examples`);
     for (const key of tried) assert.ok(keys.has(key), `the guide links to ${key}, which is not an example`);
     const within = links.filter((h) => h.startsWith("#"));
@@ -580,7 +593,7 @@ function benchmarksOf(root) {
     // Each page's head: the icon, and for a page of its own what a shared
     // link to it shows; the picture is 1200 by 630. The sitemap's pages are
     // the site's.
-    for (const at of ["", "guide/", "results/"]) {
+    for (const at of ["", "playground/", "guide/", "results/"]) {
       await page.goto(`${base}${at}`);
       const meta = await page.evaluate(() => {
         const get = (selector, name) => document.querySelector(selector)?.getAttribute(name) ?? null;
@@ -591,7 +604,7 @@ function benchmarksOf(root) {
           canonical: get('link[rel="canonical"]', "href"), card: get('meta[name="twitter:card"]', "content"),
         };
       });
-      const what = at || "the playground";
+      const what = at || "the front page";
       assert.ok(meta.icon && (await context.request.get(meta.icon)).status() === 200, `${what}: the icon`);
       assert.ok(meta.title && meta.description, `${what}: the title and description a shared link shows`);
       assert.equal(meta.url, `https://tractables.github.io/tddlog/${at}`, `${what}: its address`);
@@ -606,14 +619,14 @@ function benchmarksOf(root) {
     for (const address of sitemap) assert.equal((await context.request.get(`${base}${address}`)).status(), 200, `the sitemap's page ${address}`);
     console.log(`ok the pages' icon and shared-link tags; the sitemap's ${sitemap.length} pages`);
 
-    // Every link from the playground, the guide and the results page to a
-    // file of the site leads to one.
+    // Every link from the front page, the playground, the guide and the
+    // results page to a file of the site leads to one.
     const checked = new Set();
-    for (const at of ["", "guide/", "results/"]) {
+    for (const at of ["", "playground/", "guide/", "results/"]) {
       await page.goto(`${base}${at}`);
       assert.ok(await page.$eval(".site-logo", (img) => img.complete && img.naturalWidth > 0),
-        `${at || "the playground"}: the project logo loads`);
-      if (at === "results/") await page.waitForSelector("#view figure.overview svg");
+        `${at || "the front page"}: the project logo loads`);
+      if (at === "" || at === "results/") await page.waitForSelector("#view figure.overview svg");
       // an SVG link's href is an SVGAnimatedString
       const hrefs = await page.$$eval("a[href]", (anchors) => anchors.map((a) => (typeof a.href === "string" ? a.href : new URL(a.href.baseVal, location.href).href)));
       for (const href of hrefs) {
@@ -622,7 +635,7 @@ function benchmarksOf(root) {
         if (!url.href.startsWith(base) || url.search !== "" || checked.has(url.href)) continue;
         checked.add(url.href);
         const response = await context.request.get(url.href);
-        assert.equal(response.status(), 200, `${at || "the playground"}: the link to ${url.href}`);
+        assert.equal(response.status(), 200, `${at || "the front page"}: the link to ${url.href}`);
       }
     }
     console.log(`ok ${checked.size} links within the site`);
@@ -1276,7 +1289,7 @@ function benchmarksOf(root) {
       // part says why it does not.
       if (tried) {
         await visit(hashOf(tried), "#programs select.version");
-        const link = `../#bench=${[tried.suite, tried.key, tried.name].map(encodeURIComponent).join("/")}`;
+        const link = `../playground/#bench=${[tried.suite, tried.key, tried.name].map(encodeURIComponent).join("/")}`;
         assert.equal(await page.getAttribute("#programs .pick .try a", "href"), link, `${tried.name}: the link to the playground`);
         await page.click(`#view button[data-runs="${tried.suite}/${tried.name}/tddlog"]`);
         await page.waitForSelector("#drawer:not([hidden]) h4");
@@ -1352,7 +1365,7 @@ function benchmarksOf(root) {
         const shot = await view.newPage();
         shot.on("pageerror", (error) => errors.push(String(error)));
         if (!only) {
-        await shot.goto(`${base}?example=asia&evidence=1`);
+        await shot.goto(`${play}?example=asia&evidence=1`);
         await answered(shot, "asia(yes)");
         await noSidewaysScroll(shot, `${colorScheme}, ${width} px`);
         if (shots) await shot.screenshot({ path: path.join(shots, `page-${colorScheme}-${width}.png`), fullPage: true });

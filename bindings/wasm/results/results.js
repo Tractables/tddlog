@@ -35,10 +35,11 @@
 
 // The stamp of the page's own reference (results.js?v=<sha>) goes on to the
 // data, as the playground's does to its files. A page elsewhere that reuses
-// this app (the site's draft, next/) names where the data is
-// (data-base="../results/").
+// this app (the site's front page) names where the data is
+// (data-base="results/"). A view's title goes before the page's own.
 const stamp = document.currentScript === null ? "" : new URL(document.currentScript.src).search;
 const dataRoot = document.currentScript?.dataset.base ?? "";
+const pageTitle = document.title;
 
 // What a page that reuses this app adds to it (next/next.js): views of its
 // own, by their routes (parse: an address's hash, without its #, to a route
@@ -1766,7 +1767,7 @@ function playground(s, f, inst, name) {
   const [file] = pl;
   if (file.held) return element("span", { class: "no-try" }, "Not in the playground: the site does not show this program; its file says why.");
   if (file.part) return element("span", { class: "no-try" }, `Not in the playground: the site keeps the first ${size(file.part)} of this ${size(file.bytes)} program.`);
-  return element("span", { class: "try" }, element("a", { href: `../#bench=${[s.key, f.key, inst.name].map(encodeURIComponent).join("/")}` },
+  return element("span", { class: "try" }, element("a", { href: `${dataRoot}../playground/#bench=${[s.key, f.key, inst.name].map(encodeURIComponent).join("/")}` },
     "Open in the playground"), element("span", { class: "muted" }, ` the ${tab.lang} program tddlog read, ${size(file.bytes)}`));
 }
 
@@ -2331,7 +2332,7 @@ function show(again = false) {
     else if (!again && (family === null || family !== show.family)) window.scrollTo({ top: 0 });
     show.family = family;
     const t = title(route);
-    document.title = t === null ? "tddlog results" : `${t} · tddlog results`;
+    document.title = t === null ? pageTitle : `${t} · ${pageTitle}`;
   } else if (route.view === "category" && (route.vs !== before.vs || route.only !== before.only)) {
     // the same category narrowed otherwise, or against another system: drawn
     // again in place, the menu marking the family it is narrowed to

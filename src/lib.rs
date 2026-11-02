@@ -9,7 +9,7 @@
 //! query on the diagrams. The same solver is a command-line tool, and runs
 //! from [Python](https://tractables.github.io/tddlog/python/),
 //! [C](https://tractables.github.io/tddlog/c/) and
-//! [the browser](https://tractables.github.io/tddlog/).
+//! [the browser](https://tractables.github.io/tddlog/playground/).
 //!
 //! # A first program
 //!

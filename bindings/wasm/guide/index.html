@@ -22,7 +22,7 @@
     ProbLog or a count by hand, and each opens in the playground.</p>
   </div>
   <nav class="site-nav" aria-label="Site">
-    <a href="../">Playground</a>
+    <a href="../playground/">Playground</a>
     <a href="./" aria-current="page">Guide</a>
     <a href="../results/">Results</a>
     <a href="../api/">Rust API</a>
@@ -74,7 +74,7 @@
   tree decision diagrams and counts the queries on them.</p>
   <p>There are three ways to run it:</p>
   <ul>
-    <li>In the browser: the <a href="../">playground</a> runs tddlog in
+    <li>In the browser: the <a href="../playground/">playground</a> runs tddlog in
     the tab, built for WebAssembly. Nothing is installed.</li>
     <li>On the command line: Cargo builds <code>tddlog</code> from the
     repository and installs it in its <code>bin</code> directory
@@ -136,7 +136,7 @@ burglary:       0.357143
 earthquake:     0.714286
 calls(mary):    0.400000
 P(e):   1.960000e-1     log10 -0.707744</pre>
-  <p class="try"><a href="../?example=alarm&amp;evidence=1">Open this
+  <p class="try"><a href="../playground/?example=alarm&amp;evidence=1">Open this
   program in the playground</a>, where it can be edited and run
   again.</p>
 </section>
@@ -354,7 +354,7 @@ P(e):   3.961994e-2     log10 -1.402086</pre>
   is the probability of the two observations together.
   tddlog reads such programs from the usual network files itself
   (<a href="#networks">below</a>).</p>
-  <p class="try"><a href="../?example=asia&amp;evidence=1">Open it in the
+  <p class="try"><a href="../playground/?example=asia&amp;evidence=1">Open it in the
   playground</a>.</p>
 
   <h3 id="reachability">Reachability in a graph with cycles</h3>
@@ -387,7 +387,7 @@ path(1,7):      0.199812</pre>
   atoms positively, is reachability, and tddlog writes it without
   recursion by eliminating its nodes one at a time, as Floyd and
   Warshall's transitive closure does, before it compiles the program.</p>
-  <p class="try"><a href="../?example=reachability">Open it in the
+  <p class="try"><a href="../playground/?example=reachability">Open it in the
   playground</a>.</p>
 
   <h3 id="binary-integers">Integers in binary</h3>
@@ -435,7 +435,7 @@ P(e):   4.600000e-1     log10 -0.337242</pre>
   checks them against that sum and against ProbLog.
   tddlog reads a Dice program as a program like this one
   (<a href="#dice">below</a>).</p>
-  <p class="try"><a href="../?example=adder&amp;evidence=1">Open it in the
+  <p class="try"><a href="../playground/?example=adder&amp;evidence=1">Open it in the
   playground</a>.</p>
 
   <h3 id="negation">Negation through recursion</h3>
@@ -476,7 +476,7 @@ win(2) :- move(2,3), \+win(3).
 query(win(1)).
 query(win(2)).
 query(win(3)).</pre>
-  <p class="try"><a href="../?example=win">Open it in the
+  <p class="try"><a href="../playground/?example=win">Open it in the
   playground</a>.</p>
 
   <h4 id="gear-wheels">Gear wheels</h4>
@@ -506,7 +506,7 @@ turns2(1):      0.720000</pre>
   not let the two support each other, so neither turns. At time 1 a wheel
   turns where its button is pressed, and then both turn:
   1 − 0.7 × 0.4 = 0.72.</p>
-  <p class="try"><a href="../?example=gears">Open it in the
+  <p class="try"><a href="../playground/?example=gears">Open it in the
   playground</a>.</p>
 
   <h4 id="no-distribution">A program with no distribution</h4>
@@ -619,7 +619,7 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   <code>.inst</code> file for any other; they query every variable.</p>
 <pre data-lang="python">solution = tddlog.solve(open("examples/asia.net").read(), format="hugin",
                         evidence=open("tests/networks/asia_leaves.inst").read())</pre>
-  <p class="try"><a href="../?example=chest">Open the asia network's
+  <p class="try"><a href="../playground/?example=chest">Open the asia network's
   file in the playground</a>.</p>
 
   <h3 id="dice">Dice programs</h3>
@@ -635,7 +635,7 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   <code>%</code> and <code>sample</code> are refused.
   <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a> on the baselines branch holds the Dice paper's programs.
   The bindings read a Dice program with the format <code>dice</code>.</p>
-  <p class="try"><a href="../?example=walk&amp;evidence=1">Open a random
+  <p class="try"><a href="../playground/?example=walk&amp;evidence=1">Open a random
   walk in the playground</a>.</p>
 
   <h3 id="alea">Alea.jl programs</h3>

@@ -5,7 +5,7 @@ checks every program's answers (`tests/it/examples.rs`), against
 ProbLog's or, for the Dice translations, Dice's, and for the Alea.jl
 program the ones computed by hand in its header. The
 [guide](https://tractables.github.io/tddlog/guide/) works through four of
-them, and the [playground](https://tractables.github.io/tddlog/) opens
+them, and the [playground](https://tractables.github.io/tddlog/playground/) opens
 those and a few more, the larger programs below among them.
 
 ## Start here

@@ -104,7 +104,7 @@ documents each function and exception, `examples/` holds this program
 and one built from Python data, and the
 [guide](https://tractables.github.io/tddlog/guide/) describes the
 language, with worked examples that open in the
-[playground](https://tractables.github.io/tddlog/).
+[playground](https://tractables.github.io/tddlog/playground/).
 
 ## Develop
 

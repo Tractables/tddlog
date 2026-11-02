@@ -1,7 +1,7 @@
 "use strict";
 
-// The draft of the site's redesign: views of the results by tool and by type
-// of program, head-to-head apart from translated, what the systems' own
+// The site's front page (index.html): views of the results by tool and by
+// type of program, head-to-head apart from translated, what the systems' own
 // sources hold that tddlog does not run, and how a program is answered. It
 // is the results page's app (results.js, loaded before this script, whose
 // helpers and data it uses) with these views added through its `extend`:
@@ -133,7 +133,7 @@ function draftHome() {
     element("div", { class: "fig-head" }, element("h2", {}, "Each type of program against the systems native to it"),
       element("span", { class: "dots" }, element("i", { class: "me" }), "tddlog", element("i", { class: "you" }), "a native system")),
     overview(),
-    element("p", { class: "also" }, element("a", { href: "../" }, "The playground"), " runs tddlog in the browser; the ",
+    element("p", { class: "also" }, element("a", { href: "playground/" }, "The playground"), " runs tddlog in the browser; the ",
       element("a", { href: "#/coverage" }, "coverage"), " lists what each system's own sources hold that tddlog does not run, and why."),
   ];
 }
@@ -442,7 +442,7 @@ const WALK = [
 async function walkFiles() {
   if (!draft.walk) {
     draft.walk = Promise.all(["program", "ground", "ground_closed", "stats", "answers"].map((f) =>
-      fetch(f === "program" ? `../examples/cycle_graph.pl${stamp}` : `walk/${f}.txt${stamp}`).then((r) => (r.ok ? r.text() : `(${f}: ${r.status})`)))).then(([program, ground, ground_closed, stats, answers]) =>
+      fetch(f === "program" ? `examples/cycle_graph.pl${stamp}` : `next/walk/${f}.txt${stamp}`).then((r) => (r.ok ? r.text() : `(${f}: ${r.status})`)))).then(([program, ground, ground_closed, stats, answers]) =>
       ({ program, ground, ground_closed, stats, answers }));
   }
   return draft.walk;
@@ -458,7 +458,7 @@ function howView(route) {
     pipeline(step),
     element("h3", {}, "A walk through one run: reachability in a graph with cycles"),
     element("p", { class: "small" }, "From a run of tddlog 0.1.0 on ", element("a", { href: `${BRANCH}main/examples/cycle_graph.pl` }, element("code", {}, "examples/cycle_graph.pl")),
-      ": what each stage printed. ", element("a", { href: "../?example=reachability", class: "try-btn" }, "Open in playground"))];
+      ": what each stage printed. ", element("a", { href: "playground/?example=reachability", class: "try-btn" }, "Open in playground"))];
   const steps = element("ol", { class: "steps" }, ...WALK.map((w, i) => element("li", {},
     element("a", { href: `#/how/${i + 1}`, "aria-current": i === step ? "step" : null }, `${i + 1}. ${w.title}`))));
   const body = element("div", { class: "step" }, element("h4", {}, `${step + 1}. ${s.title}`), element("p", {}, s.text),
@@ -504,14 +504,14 @@ function staleViews() {
   }
   return draft.stale;
 }
-const staleNote = (stale) => note(`This draft's views (views.json) were written from other results than these (${and(stale)}); `
+const staleNote = (stale) => note(`These views (views.json) were written from other results than these (${and(stale)}); `
   + "views.py writes them again from the results page's data.");
 
 const DRAFT_VIEWS = { "draft-home": draftHome, tools: toolsView, tool: toolView, types: typesView, coverage: coverageView, how: howView };
 
 Object.assign(extend, {
   load: async () => {
-    const response = await fetch(`views.json${stamp}`);
+    const response = await fetch(`next/views.json${stamp}`);
     if (!response.ok) throw new Error(`views.json: ${response.status}`);
     draft.views = await response.json();
   },
@@ -538,7 +538,7 @@ Object.assign(extend, {
     if (stale.length && route.view !== "draft-home" && route.view !== "how") return [staleNote(stale)];
     return DRAFT_VIEWS[route.view](route);
   },
-  title: (route) => ({ "draft-home": "Home", tools: "By tool", tool: `tddlog against ${data.names[route.system]}`, types: "By type of program",
+  title: (route) => ({ "draft-home": null, tools: "By tool", tool: `tddlog against ${data.names[route.system]}`, types: "By type of program",
     coverage: "Coverage", how: "How it works" })[route.view] ?? null,
   category: (c, route, rows) => (staleViews().length ? [staleNote(staleViews())] : typeSplit(c, route, rows)),
   // a translator's or generator's name in a line on how a file was made, as a link to its source

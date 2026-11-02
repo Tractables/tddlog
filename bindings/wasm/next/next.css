@@ -1,17 +1,9 @@
-/* The site's draft (next/): the results page's styles (../styles.css) and
-   these, for its own views: the home page's sections, the tools' grid, a
+/* The site's front page (index.html): the results page's styles (styles.css)
+   and these, for its own views: the home page's sections, the tools' grid, a
    tool's panels, the coverage's census and the pipeline's walkthrough. */
 
-.draft-note {
-  margin: 0 0 0.75rem;
-  padding: 0.45rem 0.75rem;
-  border: 1px solid var(--amber);
-  border-radius: 6px;
-  background: var(--amber-fill);
-  font-size: 13px;
-}
-
-/* The draft's own views take the whole width: the rail is for the results. */
+/* The front page's own views take the whole width: the rail is for the
+   results. */
 body.wide .shell { grid-template-columns: minmax(0, 1fr); }
 body.wide #rail { display: none; }
 #view { min-width: 0; }

@@ -14,10 +14,7 @@ import sys
 URL = "https://tractables.github.io/tddlog/"
 # The pages that are addresses of their own; 404.html, which GitHub Pages
 # serves at any address the site does not have, has the logo and the icon.
-PAGES = ["index.html", "guide/index.html", "results/index.html"]
-# Pages for review, not for search engines or shared links: the logo and
-# the icon alone, as 404.html.
-DRAFTS = ["next/index.html"]
+PAGES = ["index.html", "playground/index.html", "guide/index.html", "results/index.html"]
 # The page's background in either theme (styles.css's --bg).
 THEME_COLOURS = {"light": "#f5f5f2", "dark": "#16181b"}
 
@@ -56,10 +53,10 @@ def head(page, content, root, version):
 def brand(site, stamp=""):
     site = Path(site).resolve()
     version = f"?v={stamp}" if stamp else ""
-    for page in PAGES + DRAFTS + ["404.html"]:
+    for page in PAGES + ["404.html"]:
         path = site / page
         root = Path(os.path.relpath(site, path.parent)).as_posix()
-        mark = (f'<a class="site-brand" href="{root}/" aria-label="tddlog playground">'
+        mark = (f'<a class="site-brand" href="{root}/" aria-label="tddlog home">'
                 f'<img class="site-logo" src="{html.escape(f"{root}/logo.svg{version}", quote=True)}" '
                 'alt="tddlog" width="720" height="365"></a>\n    ')
         content = path.read_text(encoding="utf-8")
