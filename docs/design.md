@@ -856,10 +856,14 @@ are skipped. Several steps have a program in `examples/` that shows them.
    compile carries the bits, the comparisons and the guards as atoms of
    their own. The pass finds the variables on the ground program from
    their readers: atoms that no query names and that every rule reading
-   one reads all of, outside the variable's own rules. Each such set
-   owns the atoms that only its rules read, through their rules (its
-   private gates, its flips and switches), and its bits that what it
-   owns does not connect are separate variables. A variable is written
+   one reads all of, directly or through what the rest of its body
+   depends on (a decision chain's guard fixes the bits the rule does not
+   read), outside the variable's own rules. Each such set owns the atoms
+   that only its rules read, through their rules (its private gates, its
+   flips and switches), and its bits that what it owns does not connect
+   are separate variables. A set that owns no fact (a comparison and a
+   guard read together) is dropped and the others found again without
+   it. A variable is written
    where it owns a fact, so that it is a draw of its own and not a
    function of its inputs, and its readers test two of its values or
    more: its rules and the views it reads are expanded over the cone's
@@ -869,8 +873,11 @@ are skipped. Several steps have a program in `examples/` that shows them.
    and a switch chain per row under the parents' values, each bit the
    disjunction of the values that set it, and a reader's cube over the
    bits the value it spells. A variable of one bit is written so where
-   its rows read a variable written so. A number whose bits an adder
-   reads one at a time is not read as values and stays. Variables whose
+   its rows read a variable written so, and where a variable's rows
+   would pass their bound, the gates of one bit that they sum in and that
+   read a value of another are written apart first. A number whose bits
+   an adder reads one at a time is not read as values and stays.
+   Variables whose
    cones share inputs are written together or not at all. A variable
    one of whose atoms reads one of its bits both ways draws its lower
    bits under the values of the higher ones, as a trie (the index
@@ -880,8 +887,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    cone's literals and a row's sum by what a row of the variable can
    write; it stops as soon as it passes a bound, the variable then left
    as written, and a cone without inputs whose rules alone pass its
-   row's bound is not expanded. The pass as a whole is bounded by the
-   program's literals.
+   row's bound is not expanded. Finding the variables is bounded by the
+   program's literals, and writing them by what the program's rows may
+   hold; a variable that a rule reads in part, over atoms that cannot
+   depend on the rest, is declined before anything is found again.
 
    Then **tables of one atom** written as noisy-ors
    (`noisy_or::rows_as_noisy_ors`). A two-valued variable written by hand

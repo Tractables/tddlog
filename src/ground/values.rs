@@ -21,7 +21,11 @@
 //! The variables. A variable's bits are atoms that no query or observation
 //! names and that every rule reading one of them reads all of, outside the
 //! variable's own rules: a comparison or a row's context reads all of a
-//! variable's bits. They are found from their readers: the atoms that
+//! variable's bits. A rule may read them through what the rest of its body
+//! depends on (a decision chain's guard, which fixes the bits the rule does
+//! not read), or read nothing but the variable, through gates, where the
+//! rules reading its head read the variable so in turn. They are found
+//! from their readers: the atoms that
 //! every rule reading an atom also reads, where at least two rules read it
 //! and read them as two codes or more (each such set a *candidate*, the
 //! largest first, none sharing an atom). A fact that only those rules read
@@ -35,15 +39,21 @@
 //! connect are separate variables (two parents that a child reads
 //! together). A variable of two bits or more is written where it owns a
 //! fact, so that its values are a draw of its own and not a function of
-//! its inputs, and its readers test two of its values or more. An atom
-//! that is not a candidate's and owns a fact is a variable of one bit,
-//! written where its rules read a variable written before, so that its
-//! rows read that variable's values.
+//! its inputs, and its readers test two of its values or more. A candidate
+//! that owns no fact (a comparison and a guard read together) is dropped
+//! and what owns what is found again without it, since it stops the
+//! ownership and the reading of the others. An atom that is not a
+//! candidate's and owns a fact is a variable of one bit, written where its
+//! rules read a variable written before, so that its rows read that
+//! variable's values. The bits of a candidate not read as values are no
+//! such variables.
 //!
 //! The rows. A variable's cone is what it owns and the views it reads:
-//! the atoms that read only bits of variables, through such views. Its
-//! inputs are what the cone reads besides: the facts it does not own and
-//! the bits of other variables. The cone's rules are expanded over the
+//! the atoms that read only bits of variables and facts that no one atom
+//! owns (the flips of variables of one bit that several read), through
+//! such views. Its inputs are what the cone reads besides: the facts it
+//! does not own and the bits of other variables. The cone's rules are
+//! expanded over the
 //! inputs as Shannon would: under each value of the first input that a
 //! rule still reads, the rules that read it the other way are dropped,
 //! the atoms left without rules are false and those with an empty body
@@ -53,6 +63,15 @@
 //! gives the row's distribution over the codes. A variable written before
 //! is read through its values: the context's literals on its bits are the
 //! value they spell, or a row per value where they leave several.
+//!
+//! Where a variable's rows pass their bounds, the variables of one bit that
+//! they sum in are written apart from it, each read through its values: a
+//! gate of the variable that its readers read both ways, with what only it
+//! reads, where that holds a fact and reads a view or an atom the variable
+//! does not hold. A gate read one way only is part of its reader's table,
+//! and one that reads neither is a flip, which adds no row. Such a variable
+//! reading nothing written stays as bits, and the views it reads stay for
+//! it.
 //!
 //! A variable's draw is its own where each fact its cone reads that is no
 //! variable's bit is read only by atoms that variables hold. Where an atom
@@ -78,17 +97,23 @@
 //!
 //! The bounds. The rows written hold at most [`GROWTH`] times the literals
 //! of the cone's rules, and the expansion takes at most
-//! [`WORK_PER_LITERAL`] steps per literal of the cone and [`WORK_FLOOR`]
-//! more. A row's sum over the facts takes at most [`WORK_PER_LITERAL`]
-//! steps per literal the row may write and [`WORK_FLOOR`] more: a row is a
-//! draw over the variable's values, and a sum that takes longer infers its
+//! [`WORK_PER_LITERAL`] steps per literal those rows may hold and
+//! [`WORK_FLOOR`] more. A row's sum over the facts takes at most
+//! [`WORK_PER_LITERAL`] steps per literal the row may write and
+//! [`WORK_FLOOR`] more: a row is a draw over the variable's values, and a
+//! sum that takes longer infers its
 //! distribution from a computation over the facts (an adder's sum over
 //! thousands of flips), which the compile does better. The expansion stops
 //! as soon as a bound is passed, and the variable is left as written; a
 //! variable with no input is one row, and its rules are not expanded where
-//! they alone pass that row's steps. The pass as a whole takes at most
+//! they alone pass that row's steps. Finding the variables takes at most
 //! [`WORK_PER_LITERAL`] steps per literal of the program and
-//! [`WORK_FLOOR`] more, and writes no more groups once they are taken. A
+//! [`WORK_FLOOR`] more, of which the walks through gates take at most one
+//! per literal of the program and [`WORK_FLOOR`] more over all the
+//! variables. Writing them takes at most [`GROWTH`] times
+//! [`WORK_PER_LITERAL`] steps per literal of the program and [`WORK_FLOOR`]
+//! per unit, what the rows of the whole program may hold, and writes no
+//! more groups once they are taken. A
 //! variable that reads, through views, an atom that depends on it is left
 //! as written: its rows would read their own values. The rules outside
 //! the variables written that read a cube over a written variable's bits
@@ -364,27 +389,9 @@ fn co_read(
     let mut set: Vec<AtomId> = Vec::new();
     let mut signs = vec![0u8; gp.num_atoms()];
     let distinct = |rs: &[u32]| rs.len() - rs.windows(2).filter(|w| w[0] == w[1]).count();
-    let mut rs: Vec<u32> = Vec::new();
     for a in 0..gp.num_atoms() {
-        if !bit[a] || !start[a] || readers[a].len() < 2 {
-            continue;
-        }
-        // The rules reading `a` but those of atoms read with it: a trie's
-        // lower bits, which read its higher ones.
-        rs.clear();
-        for &r in &readers[a] {
-            let h = gp.rules[r as usize].head as usize;
-            if !any && bit[h] {
-                if !work.add(readers[h].len() + 1) {
-                    return None;
-                }
-                if readers[h].iter().any(|r| readers[a].binary_search(r).is_ok()) {
-                    continue;
-                }
-            }
-            rs.push(r);
-        }
-        if rs.len() < 2 || rs.iter().all(|&r| r == rs[0]) {
+        let rs = &readers[a];
+        if !bit[a] || !start[a] || rs.len() < 2 || rs.iter().all(|&r| r == rs[0]) {
             continue;
         }
         // From the shortest body that reads `a`, what every other reads.
@@ -418,7 +425,7 @@ fn co_read(
         }
         // A fact that only these rules read owns nothing that would join
         // it to the others: it is a variable of its own.
-        let n = distinct(&rs);
+        let n = distinct(rs);
         set.retain(|&x| {
             !matches!(gp.kinds[x as usize], AtomKind::Fact(_))
                 || distinct(&readers[x as usize]) != n
@@ -570,10 +577,52 @@ impl<'a> Units<'a> {
             // each: the others are found again without those that draw
             // nothing (a comparison and a guard read together) before
             // what reads them is read.
-            let mut drawn: Vec<Vec<AtomId>> = (0..n)
-                .filter(|&c| random[c] && of(c).len() > 1)
-                .map(|c| of(c).to_vec())
-                .collect();
+            let variable = |a: usize| {
+                let c = class[a] as usize;
+                is_candidate[a] && random[c] && of(c).len() > 1
+            };
+            // Where a rule above the bits reads some of them, over atoms
+            // that depend on none of the others, and its head reads more
+            // than the bits, they are not read as values: that needs
+            // nothing found again.
+            let refused = |i: &[AtomId], work: &mut Work| {
+                i.iter().any(|&a| {
+                    readers[a as usize].iter().any(|&ri| {
+                        let r = &gp.rules[ri as usize];
+                        let h = r.head as usize;
+                        let above = i
+                            .iter()
+                            .all(|&b| rank[b as usize] == NONE || rank[b as usize] < rank[h]);
+                        if !above || !work.add(r.body.len()) {
+                            return false;
+                        }
+                        let partial = i.iter().any(|b| !r.body.iter().any(|l| l.atom() == *b));
+                        partial
+                            && r.body.iter().all(|l| {
+                                let y = l.atom() as usize;
+                                rank[y] == NONE || variable(y)
+                            })
+                            && (variable(h)
+                                || named[h]
+                                || by_head[h].iter().any(|&rh| {
+                                    gp.rules[rh].body.iter().any(|l| {
+                                        rank[l.atom() as usize] == NONE && !i.contains(&l.atom())
+                                    })
+                                }))
+                    })
+                })
+            };
+            let mut drawn: Vec<Vec<AtomId>> = Vec::new();
+            for c in (0..n).filter(|&c| random[c] && of(c).len() > 1) {
+                let i = of(c);
+                if i.len() > BITS || refused(i, work) {
+                    for &a in i {
+                        declined[a as usize] = true;
+                    }
+                } else {
+                    drawn.push(i.to_vec());
+                }
+            }
             if drawn.is_empty() {
                 return None;
             }
@@ -590,9 +639,7 @@ impl<'a> Units<'a> {
                     && match i.len() {
                         0 => false,
                         1 => !is_candidate[i[0] as usize],
-                        k => {
-                            k <= BITS && reading.as_values(&class, &is_candidate, c as u32, i, work)
-                        }
+                        _ => reading.as_values(&class, &is_candidate, c as u32, i, work),
                     };
                 if kept[c] && i.len() > 1 {
                     variables.push(i.to_vec());
@@ -792,7 +839,8 @@ impl<'a> Units<'a> {
                     steps += body.len();
                     for l in body {
                         let y = l.atom();
-                        if self.class[y as usize] != self.class[g as usize] || self.view[y as usize] {
+                        if self.class[y as usize] != self.class[g as usize] || self.view[y as usize]
+                        {
                             outside = true;
                         } else if seen.insert(y) {
                             part.push(y);
