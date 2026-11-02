@@ -417,8 +417,8 @@ them to tddlog.
 | Genfer | 12 | 71 h | 2.0 h | too few in common |
 | 4 others: noDice, Psi, SPPL, Geni | 0 to 7 | over 72 h each | 2.0 h to 2.7 h | too few in common |
 
-- Where others win: Alea.jl on 65 circuits, five of which Alea.jl+tddlog
-  does not answer, and Roulette on 31; Genfer on the population models, which it
+- Where others win: Alea.jl on 63 circuits, four of which Alea.jl+tddlog
+  does not answer, and Roulette on 23; Genfer on the population models, which it
   answers in milliseconds; Psi on two linear regressions it solves
   symbolically.
 
