@@ -50,8 +50,10 @@
 //!
 //! The rows. A variable's cone is what it owns and the views it reads:
 //! the atoms that read only bits of variables and facts that no one atom
-//! owns (the flips of variables of one bit that several read), through
-//! such views. Its inputs are what the cone reads besides: the facts it
+//! owns (the flips of variables of one bit that several read, but not
+//! the bits of a candidate not read as values, which read such facts as
+//! their own draw), through such views. Its inputs are what the cone reads
+//! besides: the facts it
 //! does not own and the bits of other variables. The cone's rules are
 //! expanded over the
 //! inputs as Shannon would: under each value of the first input that a
@@ -669,7 +671,9 @@ impl<'a> Units<'a> {
             let members = Members::new(pairs);
             // The views, in dependency order, over the units' bits and the
             // facts that no one atom owns: the flips of variables of one
-            // bit that several read, as their values.
+            // bit that several read, as their values. The bits of a variable
+            // not read as values are no views of such flips: they are its
+            // draw.
             let free = |y: usize| {
                 owner[y] == y as u32
                     && !named[y]
@@ -691,7 +695,7 @@ impl<'a> Units<'a> {
                     && by_head[a as usize].iter().all(|&ri| {
                         gp.rules[ri].body.iter().all(|l| {
                             let y = l.atom() as usize;
-                            is_bit[y] || view[y] || free(y)
+                            is_bit[y] || view[y] || (free(y) && !declined[a as usize])
                         })
                     });
             }
