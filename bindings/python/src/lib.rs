@@ -47,7 +47,7 @@ fn py_error(error: tddlog::Error) -> PyErr {
     match error {
         tddlog::Error::Options(_) => PyValueError::new_err(message),
         tddlog::Error::Parse(_) | tddlog::Error::Network(_) => ParseError::new_err(message),
-        tddlog::Error::Ground(_) => GroundingError::new_err(message),
+        tddlog::Error::Ground(_) | tddlog::Error::Cnf(_) => GroundingError::new_err(message),
         tddlog::Error::Vtree(_) | tddlog::Error::Compile(_) | tddlog::Error::Trials { .. } => {
             CompilationError::new_err(message)
         }

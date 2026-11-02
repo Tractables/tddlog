@@ -220,7 +220,7 @@ pub unsafe extern "C" fn tddlog_solve(
             let status = match error {
                 tddlog::Error::Options(_) => TDDLOG_ERROR_INVALID_INPUT,
                 tddlog::Error::Parse(_) | tddlog::Error::Network(_) => TDDLOG_ERROR_PARSE,
-                tddlog::Error::Ground(_) => TDDLOG_ERROR_GROUND,
+                tddlog::Error::Ground(_) | tddlog::Error::Cnf(_) => TDDLOG_ERROR_GROUND,
                 tddlog::Error::Vtree(_)
                 | tddlog::Error::Compile(_)
                 | tddlog::Error::Trials { .. } => TDDLOG_ERROR_COMPILE,

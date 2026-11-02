@@ -11,6 +11,7 @@ mod tests;
 use std::time::Instant;
 
 use crate::auto;
+use crate::cnf::WeightedCnf;
 use crate::evaluation::Evaluation;
 use crate::ground::{self, GroundOptions, GroundProgram};
 use crate::strategy::{Prepared, Strategy};
@@ -292,6 +293,24 @@ pub fn rewritten(source: &str, options: &Options) -> Result<GroundProgram, Error
         Strategy::Auto => ground,
         Strategy::Trial(kind) => kind.prepare(ground)?.ground,
     })
+}
+
+/// The program [`rewritten`] gives under `auto`, written without its
+/// linear recursion (`Kind::eliminated`), as a weighted CNF
+/// ([`WeightedCnf`], `tddlog --cnf`). It comes before any layout and any
+/// compile, so a strategy other than `auto` or a projection is refused. A
+/// program that keeps a cyclic component fails with [`Error::Cnf`].
+pub fn weighted_cnf(source: &str, options: &Options) -> Result<WeightedCnf, Error> {
+    options.checked()?;
+    if options.strategy != Strategy::Auto || options.projection.is_some() {
+        return Err(Error::Options(
+            "the weighted CNF comes before any layout and any compile, so a strategy other than \
+             auto or a projection would do nothing"
+                .into(),
+        ));
+    }
+    let ground = ground::ground(&parsed(source, options)?, &options.ground_options())?;
+    WeightedCnf::of(&Kind::eliminated(ground)).map_err(Error::Cnf)
 }
 
 /// `source` parsed, without its queries where `options` leave them out.

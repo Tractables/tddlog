@@ -160,6 +160,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `eval/` | `mod.rs`: `Value`; `number.rs`: `Count`; `weights.rs`: the weights of facts and indicators; `count.rs`: a count's two passes, the count of a conjunction; `grid.rs` and `kernel.rs`: count passes over levels read as grids, and their vector kernels |
 | `by_hash.rs` | entries numbered as they come and found by a hash, kept in their owner's arrays: the lists, tuples, rules and rows of the modules below and of `ground` |
 | `cubes.rs` | cubes merged on complementary literals |
+| `cnf.rs` | `WeightedCnf`: the ground program as a weighted CNF (`tddlog --cnf`), for a weighted model counter |
 | `disjoint.rs` | the union-find |
 | `multisets.rs` | literal lists numbered as multisets, for `tp`'s templates and `vtree`'s families |
 
@@ -542,6 +543,19 @@ factor that steps 9 and 11 and `td`'s separator copies take out of
 `--stats` prints. The ground program prints as ProbLog that ProbLog
 accepts (`tddlog --ground`), which is how grounding is checked apart from
 compilation.
+
+`tddlog --cnf` (`weighted_cnf`, `cnf.rs`) writes the program `--ground`
+prints, without its linear recursion (`Kind::eliminated`), as a weighted
+CNF in DIMACS for a weighted model counter: a variable per fact weighed as
+the fact, a variable of weight one
+for each derived atom and each body of two literals or more, defined by
+Tseitin's encoding of the completion of its rules, each observation a unit
+clause, and each query a literal named in a `c query` line, whose unit
+clause makes the count `P(q, e)`. The completion has one model in each
+world of the facts only where no cyclic component is left, so a program
+that keeps one (negation through recursion, say) is refused. Without
+observations the count is the product of the facts' weights summed and
+the factor, which a `c count` line states.
 
 Steps 0 to 4 are the front end. `finish` runs steps 5 to 11, after the
 front end and again after each layout rewrite (step 12, `decision`'s

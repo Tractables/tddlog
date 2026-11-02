@@ -7,6 +7,7 @@ mod budget;
 mod stats;
 
 use std::borrow::Cow;
+use std::io::Write;
 use std::process::ExitCode;
 use std::time::Instant;
 
@@ -77,6 +78,12 @@ options:
   --program                             print the program a network, a Dice program or an LPAD
                                         is read as, or a program with its arguments or consulted
                                         files in place, and exit
+  --cnf                                 print the ground program, without its linear recursion,
+                                        as a weighted CNF (DIMACS with `c p weight` lines) and
+                                        exit: its weighted count is P(e) (with
+                                        --evidence-probability, every observation kept), and with
+                                        the literal of a `c query` line added as a unit clause,
+                                        P(q, e); refused for a program that keeps a cycle
   --stats                               print compilation statistics to stderr; a run that
                                         fails prints the ground program's line and auto's trials
                                         so far before the error
@@ -115,6 +122,7 @@ struct Args {
     evidence: Option<String>,
     rescale: bool,
     program_only: bool,
+    cnf_only: bool,
 }
 
 fn parse_args() -> Result<Request, String> {
@@ -126,6 +134,7 @@ fn parse_args() -> Result<Request, String> {
     let (mut ground_only, mut stats, mut evidence_probability, mut no_queries) =
         (None, None, None, None);
     let (mut queries, mut evidence, mut rescale, mut program_only) = (None, None, None, None);
+    let mut cnf_only = None;
     while let Some(a) = args.next() {
         match a.as_str() {
             "-h" | "--help" => return Ok(Request::Help),
@@ -153,6 +162,7 @@ fn parse_args() -> Result<Request, String> {
             }
             option @ "--rescale" => once(&mut rescale, (), option)?,
             option @ "--program" => once(&mut program_only, (), option)?,
+            option @ "--cnf" => once(&mut cnf_only, (), option)?,
             // A negative number is an argument.
             other
                 if other.starts_with('-')
@@ -217,6 +227,23 @@ fn parse_args() -> Result<Request, String> {
             }
         }
     }
+    // The CNF comes before any layout, whatever the strategy.
+    let cnf_only = cnf_only.is_some();
+    if cnf_only {
+        for (given, option) in [
+            (ground_only, "--ground"),
+            (program_only, "--program"),
+            (stats, "--stats"),
+            (precision.is_some(), "--precision"),
+            (strategy.is_some(), "--vtree"),
+        ] {
+            if given {
+                return Err(format!(
+                    "--cnf prints the weighted CNF and stops, so {option} would do nothing"
+                ));
+            }
+        }
+    }
     // Without queries, the network is read as the program for P(e) alone.
     let queries = match (queries, no_queries.is_some()) {
         (_, true) => Queries::None,
@@ -238,6 +265,7 @@ fn parse_args() -> Result<Request, String> {
         evidence,
         rescale: rescale.is_some(),
         program_only,
+        cnf_only,
     }))
 }
 
@@ -390,6 +418,20 @@ fn run(args: &Args, input: &Input, front: &Front) -> Result<(), tddlog::Error> {
     };
     if args.ground_only {
         print!("{}", tddlog::rewritten(&input.program, &options)?);
+        return Ok(());
+    }
+    if args.cnf_only {
+        let mut cnf = tddlog::weighted_cnf(&input.program, &options)?;
+        // A Markov network's count is its partition function.
+        if let Some(c) = input.log10_offset {
+            cnf.scale(c);
+        }
+        // Written through a buffer: a line at a time, a CNF of millions of
+        // clauses took a write each.
+        let mut out = std::io::BufWriter::new(std::io::stdout().lock());
+        write!(out, "{cnf}")
+            .and_then(|()| out.flush())
+            .expect("stdout takes the CNF");
         return Ok(());
     }
     let mut ground_secs = 0.0;
