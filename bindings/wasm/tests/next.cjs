@@ -2,7 +2,9 @@
 // home page, by tool and a tool's page, by type and a type's page with its
 // head-to-head and translated parts, the coverage, how it works and each
 // step of its walkthrough) draws without an error, its views.json written
-// from the same results as categories.json; a benchmark's page has its
+// from the same results as categories.json, with a member of tddlog's
+// (tddlog or a pipeline) for each row a system was given, named where a
+// tool's page compares with it; a benchmark's page has its
 // playground link; an address of nothing is not found; no sideways
 // scrolling at a desktop's width or a phone's, in both themes, with the
 // screenshots where asked for.
@@ -68,6 +70,13 @@ function drawn(page) {
   const systems = Object.keys(views.systems);
   assert.ok(systems.length > 10, "views.json has the systems");
   const fun = cats.categories.find((c) => c.key === "functional-programs");
+  assert.equal(views.mine[0], "tddlog");
+  for (const c of cats.categories) {
+    assert.equal(views.categories[c.key].with.length, c.rows.length, `${c.key}: a member of mine per row`);
+    for (const [x, v] of Object.entries(views.systems)) {
+      if (v.kinds[c.key] !== undefined) assert.equal(v.with[c.key].length, c.rows.length, `${x} in ${c.key}: a member per row`);
+    }
+  }
   const checks = [
     ["#/", "draft-home", async () => {
       assert.equal(await page.locator(".entries a.entry").count(), 3);
@@ -78,7 +87,11 @@ function drawn(page) {
       for (const id of ["head", "translated", "coverage", "run"]) assert.equal(await page.locator(`section.panel#${id}`).count(), 1, `${x}: ${id}`);
       const v = views.systems[x];
       if (v.n.s + v.n.m + v.n.b) assert.equal(await page.locator("#translated .way").count(), v.ways.length, `${x}: ways`);
-      if (v.n.h) await page.waitForSelector("#head figure svg");
+      if (v.n.h) {
+        await page.waitForSelector("#head figure svg");
+        const line = await page.locator("#head p.headline").textContent();
+        for (const m of v.head.me) assert.ok(line.includes(cats.names[m]), `${x}: head-to-head names ${m}`);
+      }
     }]),
     ["#/types", "types", async () => assert.equal(await page.locator("table.board tbody tr").count(), cats.categories.length)],
     ...cats.categories.map((c) => [`#/category/${c.key}`, "category", async () => {

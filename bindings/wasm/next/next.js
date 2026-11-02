@@ -20,7 +20,12 @@
 // of comparison on each instance of each type (head-to-head, or translated
 // for it, for tddlog or for both), and the comparisons over each kind, which
 // are panels.py's (rule 16), and the census of the programs tddlog does not
-// run. The page counts and draws; it computes no total or speed-up.
+// run. A system is compared on each instance with tddlog or one of its
+// pipelines (views.json's mine; Alea.jl+tddlog on Alea.jl's circuits): in a
+// type, with the instance's subject (the type's with); on the system's own
+// page, with its own pipeline where that ran (Roulette+tddlog for Roulette;
+// the system's kinds and with). The plots draw that member's times. The page
+// counts and draws; it computes no total or speed-up.
 
 const BRANCH = "https://github.com/Tractables/tddlog/blob/";
 const KIND_TEXT = {
@@ -32,20 +37,25 @@ const draft = { views: null };
 
 // ------------------------------------------------------------- the data
 
-// A category's rows (catRows) with the kind of comparison of system x on
-// each: h, s, m or b, or - where x was not given it.
-function kindRows(c, x) {
-  const kinds = draft.views.categories[c.key]?.kinds?.[x];
+// The rows of category c (catRows) that system x was given, each with the
+// kind of their comparison (h, s, m or b) and `me`, the member of mine it is
+// with: as the type compares them, or with own as x's page does.
+function kindRows(c, x, own = false) {
+  const v = own ? draft.views.systems[x] : draft.views.categories[c.key];
+  const kinds = own ? v?.kinds?.[c.key] : v?.kinds?.[x];
   if (!kinds) return [];
-  return catRows(c).map((r, i) => ({ ...r, kind: kinds[i] })).filter((r) => r.kind !== "-");
+  const ms = own ? v.with[c.key] : v.with;
+  return catRows(c).map((r, i) => [r, kinds[i], ms[i]]).filter(([, kind]) => kind !== "-")
+    .map(([r, kind, m]) => ({ ...r, kind, me: draft.views.mine[Number(m)] }));
 }
+
 
 // The six types (not all programs) a system was given.
 const typesOf = (x) => data.types.filter((c) => c.systems.includes(x));
 
-// A system's rows over the six types, each with its category.
+// A system's rows over the six types, as its page compares them, each with its category.
 function systemRows(x) {
-  return typesOf(x).flatMap((c) => kindRows(c, x).map((r) => ({ ...r, c })));
+  return typesOf(x).flatMap((c) => kindRows(c, x, true).map((r) => ({ ...r, c })));
 }
 
 // The types a system natively handles (panels.py NATIVE_TO, as the data's
@@ -63,20 +73,22 @@ function scriptLink(name, path) {
 // ------------------------------------------------------------- the parts
 
 // A comparison's line: the two systems' answers, their PAR-2 totals over the
-// instances the system is given and either answers, and tddlog's speed-up.
+// instances the system is given and either answers, and the speed-up of the
+// members of mine it is with.
 function versusLine(v, name, n) {
   if (!v) return note(`No instances.`);
-  return element("p", { class: "headline" }, element("b", {}, `${name} ${count(v.answers)} of ${count(n ?? v.given)}, tddlog ${count(v.tddlog_answers)}`),
-    `. Over ${totals(v, name)}; tddlog's speed-up: ${speedup(v)}.`);
+  return element("p", { class: "headline" }, element("b", {}, `${name} ${count(v.answers)} of ${count(n ?? v.given)}, ${subject(v.me)} ${count(v.tddlog_answers)}`),
+    `. Over ${totals(v, name)}; ${subject(v.me)}'s speed-up: ${speedup(v)}.`);
 }
 
-// tddlog's and x's cactus plot over rows, beside the scatter plot of their times.
+// The cactus plot of x and the members it is with over rows (kindRows' me,
+// drawn as one line), beside the scatter plot of their times.
 function pairPlot(rows, x, v, key) {
-  const name = data.names[x];
-  const both = { key: `${x}-${key}`, title: `${name} and tddlog`, noun: "instances", systems: ["tddlog", x],
-    instances: rows.map((r) => [r.name, r.v.tddlog, r.v[x]]), limit: Math.max(...rows.map((r) => r.limit)),
-    faster: { [x]: v?.speedup == null ? "too few in common" : `tddlog ${speedup(v, true)}` } };
-  return element("div", { class: "pair" }, plotted(both, data.names, { all: true }), scatter(rows, ["tddlog", x], x));
+  const name = data.names[x], me = subject(v?.me);
+  const both = { key: `${x}-${key}`, title: `${name} and ${me}`, noun: "instances", systems: ["tddlog", x],
+    instances: rows.map((r) => [r.name, r.v[r.me], r.v[x]]), limit: Math.max(...rows.map((r) => r.limit)),
+    faster: { [x]: v?.speedup == null ? "too few in common" : `${me} ${speedup(v, true)}` } };
+  return element("div", { class: "pair" }, plotted(both, { ...data.names, tddlog: me }, { all: true }), scatter(rows, ["tddlog", x], x, false, (r) => r.me));
 }
 
 // The families rows are of, with how many each, each opening its family in
@@ -104,7 +116,7 @@ const toolLink = (x) => element("a", { href: `#/tools/${encodeURIComponent(x)}`,
 
 function draftHome() {
   const all = data.categories.find((c) => c.key === ALL);
-  const others = data.systems.length - 1;
+  const others = Object.keys(draft.views.systems).length;
   const entries = [
     ["#/tools", "By tool", `tddlog against each of the ${count(others)} other systems: Dice, Alea.jl, ProbLog, PITA, Ace and the rest, head-to-head apart from translated.`],
     ["#/types", "By type of program", "The six types of program and all programs, each against the systems native to it, with every instance's programs and commands."],
@@ -292,7 +304,7 @@ function typesView() {
     const xs = (c.key === ALL ? c.systems : c.native).filter((x) => x !== "tddlog" && v.kinds[x]);
     const kinds = (k) => xs.filter((x) => v.kinds[x].includes(k)).length;
     body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: c.key }, c.title)),
-      element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(c.answers.tddlog)),
+      element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(answeredBy(catRows(c)))),
       element("td", {}, and((c.key === ALL ? [] : c.native).map((x) => data.names[x])) || "every system"),
       element("td", { class: "num" }, `${count(kinds("h"))} / ${count(xs.filter((x) => /[smb]/.test(v.kinds[x])).length)}`)));
   }
@@ -302,7 +314,8 @@ function typesView() {
       + "A type opens its families, and a family its instances, each with the programs every system read and the commands its job ran."),
     scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
       element("th", { scope: "col" }, "type"), element("th", { scope: "col", class: "num" }, "instances"),
-      element("th", { scope: "col", class: "num" }, "tddlog answers"), element("th", { scope: "col" }, "native systems"),
+      element("th", { scope: "col", class: "num", title: "by each instance's subject: tddlog, or Alea.jl+tddlog on Alea.jl's circuits" }, "tddlog answers"),
+      element("th", { scope: "col" }, "native systems"),
       element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance / through a translation on some" }, "systems head-to-head / translated"))),
     body)), "whole"),
     element("div", { class: "fig-head" }, element("h3", {}, "Each type against the systems native to it"),
