@@ -222,22 +222,38 @@ impl Trial {
         self.spent.saturating_sub(self.evaluation.query_work)
     }
 
-    /// The doublings its projection puts its finish past its target
-    /// ([`Self::projected`]), at least none and at most
+    /// The doublings its projection puts its finish past its target, or
+    /// past `earliest`, the earliest finish projected in the race
+    /// ([`Self::finish`]), where that is later: so trials all projected
+    /// past their targets take shares by their projections, not equal
+    /// ones (arith_gcd_medium). At least none and at most
     /// [`PROJECTED_DOUBLINGS`], which is what a trial without a projection
     /// counts. So does a compile projected from its first turn's mark to
-    /// finish within its target: its next turn would spend what the compile
-    /// leaves of it on the query phase, which the compile's pace does not
-    /// project (`program` on markov_n200, 99.5% compiled after its first
-    /// turn, spent two more on its query phase, where `families:0`, which
-    /// it went ahead of, answered in one).
-    pub(super) fn ahead(&self) -> f64 {
+    /// finish within its target: its next turn would spend what the
+    /// compile leaves of it on the query phase, which the compile's pace
+    /// does not project (`program` on markov_n200, 99.5% compiled after
+    /// its first turn, spent two more on its query phase, where
+    /// `families:0`, which it went ahead of, answered in one).
+    pub(super) fn ahead(&self, earliest: f64) -> f64 {
         let target = (self.target.max(1) as f64).log2();
         match self.projected() {
             Some(p) if p > target || !self.projected_from_mark() => {
-                (p - target).clamp(0.0, PROJECTED_DOUBLINGS)
+                (p - target.max(earliest)).clamp(0.0, PROJECTED_DOUBLINGS)
             }
             _ => PROJECTED_DOUBLINGS,
+        }
+    }
+
+    /// Its projected finish, for the race's earliest ([`Self::ahead`]):
+    /// its projection, not before its target, or [`PROJECTED_DOUBLINGS`]
+    /// past its target where it counts that many for want of one.
+    pub(super) fn finish(&self) -> f64 {
+        let target = (self.target.max(1) as f64).log2();
+        match self.projected() {
+            Some(p) if p.is_finite() && (p > target || !self.projected_from_mark()) => {
+                p.max(target)
+            }
+            _ => target + PROJECTED_DOUBLINGS,
         }
     }
 
@@ -248,14 +264,13 @@ impl Trial {
             .is_some_and(|m| self.progress.last().is_some_and(|&(t, _)| t == 2 * m))
     }
 
-    /// Its place in the turns, the least first: the base-2 logarithm of the
-    /// work it is projected to have spent once it has finished its phase,
-    /// for its weight, between its target and [`PROJECTED_DOUBLINGS`]
-    /// doublings past it ([`Self::ahead`]). Without projections every
-    /// trial counts the most and the trials take equal shares for their
-    /// weights.
-    pub(super) fn key(&self) -> f64 {
-        (self.target.max(1) as f64).log2() + self.ahead() - (self.weight as f64).log2()
+    /// Its place in the turns, the least first, in a race whose earliest
+    /// projected finish is `earliest`: the base-2 logarithm of its target
+    /// and the doublings it is projected past it ([`Self::ahead`]), for its
+    /// weight. Without projections every trial counts the most and the
+    /// trials take equal shares for their weights.
+    pub(super) fn key(&self, earliest: f64) -> f64 {
+        (self.target.max(1) as f64).log2() + self.ahead(earliest) - (self.weight as f64).log2()
     }
 
     /// Whether its attempts left anything built: the formulas of its phase,

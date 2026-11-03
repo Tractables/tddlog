@@ -13,7 +13,8 @@
 //! target, the target doubles. A trial's projection is the work at which
 //! the pace of its last doubling finishes its phase, or the pace since its
 //! query phase began where that phase is younger ([`Trial::projected`]),
-//! counted from its target to [`PROJECTED_DOUBLINGS`] doublings past it;
+//! counted from its target, or from the earliest finish projected in the
+//! race where that is later, to [`PROJECTED_DOUBLINGS`] doublings past it;
 //! one further out, or none, counts that many, so that without
 //! projections the trials take equal shares for their weights, and a
 //! trial projected to finish soon takes its turns ahead of the others,
@@ -586,11 +587,16 @@ fn run_within(
     let mut refused: Option<tididi::OperationError> = None;
     loop {
         // The next attempt goes to the trial projected to finish first, by
-        // its target and its weight ([`Trial::key`]); the first in order on
-        // a tie.
+        // its target, the race's earliest projected finish and its weight
+        // ([`Trial::key`]); the first in order on a tie.
+        let earliest = trials
+            .iter()
+            .filter(|t| !t.disabled)
+            .map(Trial::finish)
+            .fold(f64::INFINITY, f64::min);
         let next = (0..trials.len())
             .filter(|&i| !trials[i].disabled)
-            .min_by(|&i, &j| trials[i].key().total_cmp(&trials[j].key()));
+            .min_by(|&i, &j| trials[i].key(earliest).total_cmp(&trials[j].key(earliest)));
         let Some(i) = next else {
             // Trials retired while another held memory, which is freed now,
             // run again, once each.
@@ -629,7 +635,10 @@ fn run_within(
         }
         let alone = trials.iter().enumerate().all(|(j, t)| j == i || t.disabled);
         let t = &mut trials[i];
-        if let Some(projected) = t.projected().filter(|_| t.ahead() < PROJECTED_DOUBLINGS) {
+        if let Some(projected) = t
+            .projected()
+            .filter(|_| t.ahead(earliest) < PROJECTED_DOUBLINGS)
+        {
             ledger.notes.push(format!(
                 "turn: {} indicators={} projected to finish its {} at 2^{:.1} units, its target 2^{:.1}",
                 t.kind,
