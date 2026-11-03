@@ -29,6 +29,7 @@ mod naming;
 mod narrowed;
 mod negations;
 mod networks;
+mod observed_query;
 mod or_route;
 mod problog_suite;
 mod query_count;

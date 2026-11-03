@@ -261,6 +261,12 @@ pub struct GroundProgram {
     /// Evidence `(atom, value)`. An impossible atom observed true is kept as
     /// `None` and makes the evidence inconsistent.
     pub evidence: Vec<(Atom, Option<AtomId>, bool)>,
+    /// The query the evidence asks, `(atom, positive)`: where the program
+    /// asked one query and observed nothing, and observing it fixes or
+    /// merges a fact, the grounder observes the query instead, and the
+    /// probability of the evidence answers it
+    /// (`super::condition::observe_lone_query`).
+    pub(crate) observed_query: Option<(Atom, bool)>,
     /// How the program reads derived atoms through variables of their own
     /// ([`crate::indicators`]); empty for a program as grounded.
     pub encoding: Encoding,
@@ -359,6 +365,7 @@ impl Default for GroundProgram {
             rules: Vec::new(),
             queries: Vec::new(),
             evidence: Vec::new(),
+            observed_query: None,
             encoding: Encoding::default(),
             weight: Count::ONE,
             stats: GroundStats::default(),
@@ -372,9 +379,10 @@ impl GroundProgram {
     pub fn num_atoms(&self) -> usize {
         self.atoms.len()
     }
-    /// How many queries the program asks, a `query(\+a)` among them.
+    /// How many queries the program asks, a `query(\+a)` among them, and
+    /// the one its evidence asks ([`Self::observed_query`]).
     pub fn num_queries(&self) -> usize {
-        self.queries.len()
+        self.queries.len() + usize::from(self.observed_query.is_some())
     }
     /// How many of the ground atoms are probabilistic facts.
     pub fn num_facts(&self) -> usize {
@@ -424,6 +432,7 @@ impl GroundProgram {
             rules: _,
             queries,
             evidence,
+            observed_query,
             encoding,
             weight,
             stats,
@@ -436,6 +445,7 @@ impl GroundProgram {
             rules: Vec::new(),
             queries: queries.clone(),
             evidence: evidence.clone(),
+            observed_query: observed_query.clone(),
             encoding: encoding.clone(),
             weight: *weight,
             stats: stats.clone(),

@@ -142,6 +142,23 @@ pub(crate) fn on_evidence(
     backbones: bool,
     renormalize_rows: bool,
 ) -> (Conditioned, Count) {
+    let observing = observe_lone_query(gp);
+    let out = conditioned(gp, tables, cover, backbones, renormalize_rows, observing);
+    if observing && !out.0.any() {
+        ask_observed_query(gp);
+    }
+    out
+}
+
+/// [`on_evidence`], `observing` where it observed the program's lone query.
+fn conditioned(
+    gp: &mut GroundProgram,
+    tables: &Tables,
+    cover: &Cover,
+    backbones: bool,
+    renormalize_rows: bool,
+    observing: bool,
+) -> (Conditioned, Count) {
     if !observed(gp) || !tables.acyclic(gp) {
         return (Conditioned::default(), Count::ONE);
     }
@@ -181,6 +198,10 @@ pub(crate) fn on_evidence(
             Err(Contradiction) => return (Conditioned::default(), Count::ONE),
         }
     };
+    if observing && equal.is_empty() && gates.is_empty() && !fixes_a_fact(gp, &val, &cover.certain)
+    {
+        return (Conditioned::default(), Count::ONE);
+    }
     let (mut out, mut weight) = rewrite(gp, &val, &cover.certain, &equal, &gates, true);
     out.backbones = searched;
     if renormalize_rows {
@@ -205,6 +226,16 @@ pub(crate) fn on_evidence(
 /// of deterministic tables but for a few dozen rows, whose evidence
 /// settles nearly all of them thus (`ground::finish`).
 pub(crate) fn settle(gp: &mut GroundProgram) -> Option<(Conditioned, Count)> {
+    let observing = observe_lone_query(gp);
+    let out = settled(gp, observing);
+    if observing && out.is_none() {
+        ask_observed_query(gp);
+    }
+    out
+}
+
+/// [`settle`], `observing` where it observed the program's lone query.
+fn settled(gp: &mut GroundProgram, observing: bool) -> Option<(Conditioned, Count)> {
     if !observed(gp) {
         return None;
     }
@@ -235,6 +266,9 @@ pub(crate) fn settle(gp: &mut GroundProgram) -> Option<(Conditioned, Count)> {
         }
         p.val
     };
+    if observing && !fixes_a_fact(gp, &val, &none) {
+        return None;
+    }
     // Each derived atom fixed here is certain once the facts fixed are
     // propagated, a true one by its rule that holds and a false one by
     // its rules all dead, and [`drop_settled_evidence`] would drop its
@@ -247,6 +281,56 @@ pub(crate) fn settle(gp: &mut GroundProgram) -> Option<(Conditioned, Count)> {
 /// impossible observed true: evidence the conditioning can read.
 fn observed(gp: &GroundProgram) -> bool {
     !gp.evidence.is_empty() && !gp.evidence.iter().any(|&(_, a, v)| a.is_none() && v)
+}
+
+/// Where `gp` asks one query and observes nothing, under
+/// [`GroundOptions::observe_query`](super::GroundOptions::observe_query),
+/// the query observed instead, the atom and polarity it asked kept
+/// ([`GroundProgram::observed_query`]); whether it was. `P(q) = P(e)` for
+/// the evidence `e` that observes `q`, so the probability of the evidence
+/// answers the query (`crate::evaluation`), and the conditioning
+/// propagates the query's value through the program. A query whose value
+/// fixes much of what it reads is a rare event: pluck's sorted list asks
+/// one of probability `2^-37`, which as a query compiles 4 248 derived
+/// atoms in 1.4 G work units, and observed fixes 37 facts and leaves no
+/// derived atom. The observation stays only where the conditioning fixes
+/// or merges a fact, or sums one out as a gate ([`fixes_a_fact`]);
+/// elsewhere the query is asked again ([`ask_observed_query`]) and the
+/// program is the one it asked.
+fn observe_lone_query(gp: &mut GroundProgram) -> bool {
+    let lone = gp.options.observe_query && gp.evidence.is_empty() && gp.queries.len() == 1;
+    if lone {
+        let (atom, id, positive) = gp.queries.pop().expect("one query");
+        gp.observed_query = Some((atom.clone(), positive));
+        gp.evidence.push((atom, id, positive));
+    }
+    lone
+}
+
+/// The query that [`observe_lone_query`] observed asked again.
+fn ask_observed_query(gp: &mut GroundProgram) {
+    let (atom, positive) = gp.observed_query.take().expect("a query observed");
+    let (a, id, v) = gp.evidence.pop().expect("its observation");
+    debug_assert!(a == atom && v == positive && gp.evidence.is_empty());
+    gp.queries.push((a, id, v));
+}
+
+/// Whether `val` fixes a fact that is neither among `certain` nor
+/// observed. Where it fixes none, the conditioning on an observed query
+/// leaves the worlds to count as they were, the query's formula among the
+/// observations, and the evidence walk counts them at more cost than the
+/// query's product: Roulette's motivating chain of 10 000 steps, of which
+/// the observation fixes nothing, takes 2.9 G work units observed and
+/// 7.7 M asked.
+fn fixes_a_fact(gp: &GroundProgram, val: &[Val], certain: &[bool]) -> bool {
+    let mut known = certain.to_vec();
+    for &(_, a, _) in &gp.evidence {
+        if let Some(a) = a {
+            known[a as usize] = true;
+        }
+    }
+    (0..gp.num_atoms())
+        .any(|a| matches!(gp.kinds[a], AtomKind::Fact(_)) && val[a] != Val::Unknown && !known[a])
 }
 
 /// `gp` rewritten on the values `val` the propagation found, `certain` the

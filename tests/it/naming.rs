@@ -564,10 +564,10 @@ fn a_joint_over_a_chain_is_cut_however_it_is_written() {
                 value,
                 want,
             );
-            let options = common::options(
+            let options = asked(common::options(
                 Strategy::Trial(Kind::Program { fan_in: false }),
                 Projection::default(),
-            );
+            ));
             let run = common::run(&joint_chain(steps, writing, "query(joint).\n"), &options)
                 .unwrap_or_else(|e| panic!("{what}: {e}"));
             copies.push(run.ground.encoding.indicators.len());
@@ -592,6 +592,19 @@ fn a_joint_over_a_chain_is_cut_however_it_is_written() {
     }
 }
 
+/// `options` with the joint asked, not observed
+/// (`GroundOptions::observe_query`): observed, the joint fixes every state
+/// and leaves no chain to name.
+fn asked(options: Options) -> Options {
+    Options {
+        ground: tddlog::GroundOptions {
+            observe_query: false,
+            ..options.ground
+        },
+        ..options
+    }
+}
+
 /// A joint over more states than a cut is named for is written as a chain
 /// for every layout, whatever its gates: the layouts that read the
 /// program's graph would otherwise take it for a clique of its states. Each
@@ -603,7 +616,10 @@ fn a_wide_joint_is_chained_for_every_layout() {
     for writing in [Writing::FactsFirst, Writing::Roulette] {
         for layout in ["families", "families:0", "closed", "td", "program"] {
             let what = format!("joint chain {steps}, {writing:?}, {layout}");
-            let options = common::options(layout.parse().unwrap(), Projection::default());
+            let options = asked(common::options(
+                layout.parse().unwrap(),
+                Projection::default(),
+            ));
             let run = common::run(&joint_chain(steps, writing, "query(joint).\n"), &options)
                 .unwrap_or_else(|e| panic!("{what}: {e}"));
             let got = run.results.as_ref().expect("no evidence")[0].probability;

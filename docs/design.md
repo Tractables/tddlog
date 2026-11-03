@@ -1170,6 +1170,20 @@ are skipped. Several steps have a program in `examples/` that shows them.
    (`Propagation::equal_facts`). This is what Ace gets from compiling with
    its evidence and c2d's unit resolution.
 
+   A program that asks one query and observes nothing has its query
+   observed instead (`condition::observe_lone_query`), and the probability
+   of that evidence answers it: `P(q) = P(e)` for the evidence `e` that
+   observes `q`, so the conditioning reads the query's value too. A rare
+   query fixes much of what it reads: Pluck's sorted list asks one of
+   probability `2^-37`, and observed it fixes 37 facts and leaves no
+   derived atom to compile. The observation stays only where it fixes or
+   merges a fact; where it fixes none, the worlds are counted as before,
+   and the evidence walk counts the query's formula as an observation at
+   more cost than the query's product (Roulette's motivating chain of
+   10 000 steps: 2.9 G work units observed, 7.7 M asked). `--ground` and
+   `--cnf` keep the query a query, since the factor the conditioning takes
+   out would be the answer.
+
    Before the copies, a **SAT search** (`backbone.rs`, on the CDCL solver
    of `sat.rs`) reads the clauses the propagation leaves over facts, one
    solver variable per class of equal facts. Every world the evidence

@@ -33,8 +33,9 @@ pub struct Options {
     /// Whether the program's queries are answered; without them the program
     /// is ground for its evidence alone, as for the partition function.
     pub queries: bool,
-    /// For tests: the grounder's options, [`GroundOptions::default`] in a
-    /// run; `detach` is off where `evidence_probability` is on.
+    /// For tests: the grounder's options, in a run [`GroundOptions::default`]
+    /// with a lone query observed ([`GroundOptions::observe_query`]);
+    /// `detach` is off where `evidence_probability` is on.
     pub ground: GroundOptions,
     /// For tests: the projection, where not [`Projection::default`] as in a
     /// run. A dynamic layout compiles unprojected ([`Kind::projection`]),
@@ -56,7 +57,12 @@ impl Default for Options {
             strategy: Strategy::Auto,
             evidence_probability: false,
             queries: true,
-            ground: GroundOptions::default(),
+            // A lone query is conditioned on
+            // ([`GroundOptions::observe_query`]).
+            ground: GroundOptions {
+                observe_query: true,
+                ..GroundOptions::default()
+            },
             projection: None,
             dynamic_first_pairs: None,
             trace: false,
@@ -297,10 +303,17 @@ fn solve_split(
 /// The program [`solve`] hands the compile under `options`, as `--ground`
 /// prints it: parsed and ground, and for a layout other than `auto`'s as
 /// the layout compiles it (`Kind::prepare`), which lays it out: `td`'s
-/// separator copies follow its layout.
+/// separator copies follow its layout. A lone query stays a query
+/// ([`GroundOptions::observe_query`]): observed, its answer would be the
+/// factor the conditioning takes out, which the program printed does not
+/// carry.
 pub fn rewritten(source: &str, options: &Options) -> Result<GroundProgram, Error> {
     options.checked()?;
-    let ground = ground::ground(&parsed(source, options)?, &options.ground_options())?;
+    let opts = GroundOptions {
+        observe_query: false,
+        ..options.ground_options()
+    };
+    let ground = ground::ground(&parsed(source, options)?, &opts)?;
     Ok(match options.strategy {
         Strategy::Auto => ground,
         Strategy::Trial(kind) => std::sync::Arc::unwrap_or_clone(kind.prepare(ground)?.ground),
@@ -326,8 +339,10 @@ pub fn weighted_cnf(source: &str, options: &Options) -> Result<WeightedCnf, Erro
     // compile's, and in the CNF it costs a variable and a clause per row
     // where the shared switches give the rows of one distribution their
     // parameters (`ground::shared_for_cnf`) and an entry of one no clause.
+    // A lone query stays a query: the counter asserts each query itself.
     let opts = GroundOptions {
         classes: false,
+        observe_query: false,
         ..options.ground_options()
     };
     let ground = ground::ground(&parsed(source, options)?, &opts)?;
