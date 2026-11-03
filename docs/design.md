@@ -878,7 +878,16 @@ are skipped. Several steps have a program in `examples/` that shows them.
    tuple shares (DeepProbLog's handwritten formulas, whose label is the
    same in every demand). A literal with bound arguments, the delta's included, takes
    its candidate tuples from a per-position index of its relation, each
-   position indexed when a join first binds it. `--stats` counts the
+   position indexed when a join first binds it. A literal followed by a
+   test `V is E` whose `E` reads only its variables, with `V` bound when
+   the walk reaches it, takes them also from an index of its relation by
+   the value of `E` (`IsKey`): the chain that the bound-end rewrite grounds
+   from a loop's end, `r(S, T) :- r(S, T1), step(T), T1 is T + 1`,
+   otherwise scanned every step for each new link. A semi-naive round
+   weighs that index too when it chooses to start from its new tuples: a
+   loop written from its end, `s(T) :- T > 0, J is T - 1, s(J), route(J)`,
+   reaches its demand from each new `s(J)` through `J is T - 1` alone,
+   where its own order walked every demand each round. `--stats` counts the
    body literals the walks entered, over every grounding tried, kept or
    given up. A negative literal on an impossible
    atom is dropped as true, and one on an atom true in every world fails

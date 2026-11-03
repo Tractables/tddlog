@@ -328,7 +328,7 @@ type PredId = u32;
 
 /// A body literal in internal form. Variables are indices into the rule's
 /// substitution vector.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Arg {
     Var(u32),
     Val(Val),
@@ -361,7 +361,7 @@ struct ICollect {
 }
 
 /// An arithmetic expression in internal form.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum IExpr {
     Arg(Arg),
     Op(ArithFn, Vec<IExpr>),
@@ -399,9 +399,92 @@ struct IRule {
     /// Body literals, reordered so every negative/comparison literal comes
     /// right after the positive literals that bind its variables.
     body: Vec<ILit>,
+    /// The key of each positive literal of `body`, where it has one
+    /// ([`IsKey`]).
+    keys: Vec<Option<IsKey>>,
     num_vars: u32,
     /// Of a rule of a predicate a findall reads.
     counted: Option<Box<Counted>>,
+}
+
+/// What a join looks a positive atom's tuples up by besides its bound
+/// arguments: the value of `E` in a later `V is E` whose `E` reads only
+/// variables of the atom, which the walk tests once the atom binds them.
+/// Where `V` is bound when the walk enters the atom, the tuples that can
+/// pass the test are those whose `E` evaluates to `V`: the posting list
+/// of `V`'s value in the relation's index by `E` ([`Relation::keyed`]).
+/// Without it the walk tried every tuple of the atom against the test: a
+/// chain grounded from its bound end, `r(S, T) :- r(S, T1), step(T),
+/// T1 is T + 1`, scanned every step for each new link, and a loop of
+/// 3 000 steps entered 27 million body literals where its levels take
+/// 63 000.
+#[derive(Clone, Debug)]
+struct IsKey {
+    /// `V`.
+    result: Arg,
+    /// `E`, each variable the place in the atom's arguments that binds it.
+    expr: IExpr,
+}
+
+/// The key of each positive atom of `body` ([`IsKey`]): the first `V is E`
+/// after it whose `E` reads variables of the atom alone, one at least, and
+/// whose `V` the atom does not bind, with no built-in or findall between,
+/// whose errors the walk raises for the tuples the test then rejects.
+fn keys(body: &[ILit]) -> Vec<Option<IsKey>> {
+    // `e` with each variable the place of the argument that binds it, where
+    // the atom of `args` binds them all and there is one.
+    fn at_places(e: &IExpr, args: &[Arg], any: &mut bool) -> Option<IExpr> {
+        Some(match e {
+            IExpr::Arg(Arg::Var(v)) => {
+                *any = true;
+                let place = args.iter().position(|a| *a == Arg::Var(*v))?;
+                IExpr::Arg(Arg::Var(place as u32))
+            }
+            IExpr::Arg(a) => IExpr::Arg(a.clone()),
+            IExpr::Op(f, xs) => IExpr::Op(
+                *f,
+                xs.iter()
+                    .map(|x| at_places(x, args, any))
+                    .collect::<Option<_>>()?,
+            ),
+        })
+    }
+    body.iter()
+        .enumerate()
+        .map(|(i, l)| {
+            let ILit::Pos(_, args) = l else {
+                return None;
+            };
+            let between = |l: &&ILit| !matches!(l, ILit::Builtin(..) | ILit::Collect(_));
+            body[i + 1..].iter().take_while(between).find_map(|l| {
+                let ILit::Is(result, e) = l else {
+                    return None;
+                };
+                let mut any = false;
+                let expr = at_places(e, args, &mut any)?;
+                let binds = matches!(result, Arg::Var(_)) && args.contains(result);
+                (any && !binds).then(|| IsKey {
+                    result: result.clone(),
+                    expr,
+                })
+            })
+        })
+        .collect()
+}
+
+/// Whether `a` is bound once a walk of `body` reaches place `k`: a value,
+/// or a variable that a literal before it can bind.
+fn bound_at(body: &[ILit], k: usize, a: &Arg) -> bool {
+    let Arg::Var(_) = a else {
+        return true;
+    };
+    body[..k].iter().any(|l| match l {
+        ILit::Pos(_, args) | ILit::Switch(_, args) | ILit::Builtin(_, args, _) => args.contains(a),
+        ILit::Is(result, _) => result == a,
+        ILit::Build(target, _, args) => target == a || args.contains(a),
+        ILit::Collect(c) => c.result == *a,
+        _ => false,
+    })
 }
 
 /// What a body literal of a counted rule contributes to a derivation.
@@ -455,6 +538,11 @@ struct Relation {
     index: Vec<FxHashMap<Val, Vec<usize>>>,
     /// Number of tuples already indexed, by position.
     indexed: Vec<usize>,
+    /// For each expression over a tuple's arguments that a join has looked
+    /// tuples up by ([`IsKey`]), the tuple indices by the value it evaluates
+    /// to, and the number of tuples indexed: built when a join first looks
+    /// up by it, as `index` is ([`keyed`]).
+    keyed: Vec<(IExpr, FxHashMap<Val, Vec<usize>>, usize)>,
 }
 
 impl Relation {
@@ -468,6 +556,7 @@ impl Relation {
             placeholder_ids: Vec::new(),
             index: Vec::new(),
             indexed: Vec::new(),
+            keyed: Vec::new(),
         }
     }
 
@@ -534,28 +623,71 @@ impl Relation {
     }
 
     /// The tuples among `s..e` that may have value `v` at each position
-    /// `pos` of `bound`, in tuple order: those of the shortest posting list
-    /// of `bound`, or all of `s..e` where nothing is bound. The caller
-    /// checks the other positions. A posting list is in tuple order, so the
-    /// range is a slice of it.
-    fn candidates(&mut self, bound: &[(usize, Val)], (s, e): (usize, usize)) -> Vec<usize> {
-        if bound.is_empty() {
+    /// `pos` of `bound`, and whose expression `keyed[k]` evaluates to `x`
+    /// where `key` is `(k, x)`, in tuple order: those of the shortest
+    /// posting list, or all of `s..e` where nothing is bound. The caller
+    /// checks the other positions, and the test the key stands for. A
+    /// posting list is in tuple order, so the range is a slice of it.
+    fn candidates(
+        &mut self,
+        bound: &[(usize, Val)],
+        key: Option<(usize, Val)>,
+        (s, e): (usize, usize),
+    ) -> Vec<usize> {
+        if bound.is_empty() && key.is_none() {
             return (s..e).collect();
         }
         for &(pos, _) in bound {
             self.ensure_index(pos);
         }
-        let index = &self.index;
+        fn slice(list: Option<&Vec<usize>>, (s, e): (usize, usize)) -> &[usize] {
+            let list = list.map_or(&[][..], |l| &l[..]);
+            &list[list.partition_point(|&t| t < s)..list.partition_point(|&t| t < e)]
+        }
+        let (index, keyed) = (&self.index, &self.keyed);
         bound
             .iter()
-            .map(|(pos, v)| {
-                let list = index[*pos].get(v).map_or(&[][..], |l| &l[..]);
-                &list[list.partition_point(|&t| t < s)..list.partition_point(|&t| t < e)]
-            })
+            .map(|(pos, v)| slice(index[*pos].get(v), (s, e)))
+            .chain(key.map(|(k, x)| slice(keyed[k].1.get(&x), (s, e))))
             .min_by_key(|l| l.len())
-            .expect("a bound position")
+            .expect("a bound position or a key")
             .to_vec()
     }
+}
+
+/// The place of `expr` in `p`'s [`Relation::keyed`], every tuple indexed
+/// there by the value `expr` evaluates to over its arguments, as `V is E`
+/// evaluates it: a tuple over which it is undefined is in no list, as the
+/// test fails for it.
+fn keyed(g: &mut Grounder, p: PredId, expr: &IExpr) -> usize {
+    let rel = &mut g.rels[p as usize];
+    let k = match rel.keyed.iter().position(|(e, ..)| e == expr) {
+        Some(k) => k,
+        None => {
+            rel.keyed.push((expr.clone(), FxHashMap::default(), 0));
+            rel.keyed.len() - 1
+        }
+    };
+    let rel = &g.rels[p as usize];
+    if rel.keyed[k].2 == rel.len() {
+        return k;
+    }
+    let mut args = vec![None; rel.arity];
+    let values: Vec<(Val, usize)> = (rel.keyed[k].2..rel.len())
+        .filter_map(|t| {
+            for (a, v) in args.iter_mut().zip(rel.tuple(t)) {
+                *a = Some(*v);
+            }
+            eval_num(g, expr, &args).map(|n| (n.rounded().val(), t))
+        })
+        .collect();
+    let n = rel.len();
+    let (_, by_value, indexed) = &mut g.rels[p as usize].keyed[k];
+    for (x, t) in values {
+        by_value.entry(x).or_default().push(t);
+    }
+    *indexed = n;
+    k
 }
 
 struct Pred<'a> {
@@ -1286,6 +1418,7 @@ fn compile_rule<'a>(
     });
     Ok(IRule {
         head: (head_pred, head_args),
+        keys: keys(&body),
         body,
         num_vars: vars.len() as u32,
         counted,
@@ -1843,7 +1976,7 @@ fn collect(g: &mut Grounder, c: &ICollect, shared: &[Val]) -> Option<Vec<lists::
     let candidates = {
         let rel = &mut g.rels[c.aux as usize];
         let all = (0, rel.len());
-        rel.candidates(&bound, all)
+        rel.candidates(&bound, None, all)
     };
     let rel = &g.rels[c.aux as usize];
     let answers: Vec<(Val, u32)> = candidates
@@ -3025,8 +3158,10 @@ struct FromDelta {
     /// The positive atoms the rule's own order joins before the atom, and
     /// their arguments bound there.
     before: Vec<(PredId, Vec<usize>)>,
-    /// The positive atom joined after it, and its arguments bound there.
-    next: Option<(PredId, Vec<usize>)>,
+    /// The positive atom joined after it, its arguments bound there, and
+    /// the expression of its key ([`IsKey`]) where the value the key's test
+    /// compares with is bound there too.
+    next: Option<(PredId, Vec<usize>, Option<IExpr>)>,
 }
 
 /// Rule `r` with its body ordered from literal `i`, a positive atom: that
@@ -3094,10 +3229,19 @@ fn from_delta(g: &Grounder, r: usize, i: usize) -> FromDelta {
     let before = (0..i)
         .filter_map(|k| atom_at(&rule.body, &own, k))
         .collect();
-    let next = (at + 1..body.len()).find_map(|k| atom_at(&body, &ordered, k));
+    let keys = keys(&body);
+    let next = (at + 1..body.len()).find_map(|k| {
+        let (p, bound) = atom_at(&body, &ordered, k)?;
+        let key = keys[k]
+            .as_ref()
+            .filter(|key| bound_at(&body, k, &key.result))
+            .map(|key| key.expr.clone());
+        Some((p, bound, key))
+    });
     FromDelta {
         rule: IRule {
             head: rule.head.clone(),
+            keys,
             body,
             num_vars: rule.num_vars,
             counted,
@@ -3115,7 +3259,12 @@ fn from_delta(g: &Grounder, r: usize, i: usize) -> FromDelta {
 /// reach the atom, the product of the tuples each atom before it is
 /// expected to match. A relation is expected to hold as many tuples for a
 /// value of an argument as it holds for each of the values there, the
-/// fewest over the arguments bound. The walk from the new tuples pays
+/// fewest over the arguments bound, or as many as it holds for each value
+/// of the atom's key where the key's test is bound ([`IsKey`]): a loop
+/// written from its end, `s(T) :- T > 0, J is T - 1, s(J), route(J)`,
+/// reaches its demand `s(T)` from each new `s(J)` through `J is T - 1`
+/// alone, and in its own order walked every demand each round. The walk
+/// from the new tuples pays
 /// where it reaches the next atom by a value that few of its tuples share,
 /// pcfg's demand by its whole state, and where the own order reaches the
 /// atom only after a join, as PSouffle's side-channel analyses do after
@@ -3150,7 +3299,16 @@ fn from_pays(g: &mut Grounder, v: &FromDelta, (s, e): (usize, usize)) -> bool {
             .unwrap_or(n)
     };
     let from = match &v.next {
-        Some((q, bound)) => (e - s).saturating_mul(expected(g, *q, bound)),
+        Some((q, bound, key)) => {
+            let mut each = expected(g, *q, bound);
+            // A key's list holds as many tuples as each of its values.
+            if let Some(expr) = key {
+                let k = keyed(g, *q, expr);
+                let rel = &g.rels[*q as usize];
+                each = each.min(rel.len().div_ceil(rel.keyed[k].1.len().max(1)));
+            }
+            (e - s).saturating_mul(each)
+        }
         None => e - s,
     };
     let mut own = 1usize;
@@ -3451,9 +3609,16 @@ fn enter(
                     Arg::Var(v) => subst[*v as usize].map(|val| (pos, val)),
                 })
                 .collect();
+            // And by the value of the expression a later test computes
+            // over the tuple, where the value it is tested against is bound
+            // ([`IsKey`]).
+            let key = rule.keys[i]
+                .as_ref()
+                .and_then(|key| Some((&key.expr, arg_val(&key.result, subst)?)))
+                .map(|(expr, x)| (keyed(g, *p, expr), x));
             let rel = &mut g.rels[*p as usize];
             let range = range.unwrap_or((0, rel.len()));
-            let candidates = rel.candidates(&bound, range);
+            let candidates = rel.candidates(&bound, key, range);
             Alts::Tuples {
                 candidates,
                 next: 0,

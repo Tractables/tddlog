@@ -813,6 +813,35 @@ mod tests {
         );
     }
 
+    /// A loop of n steps grounds in walks that grow with n, written over its
+    /// steps or from its end ([`engine`]'s `IsKey`). Over its steps, the
+    /// bound-end grounding tried after the one level by level reaches each
+    /// new link's step through `T1 is T + 1`; from its end, each new `s(J)`
+    /// reaches its demand through `J is T - 1`. Trying every step for each
+    /// link, 3 000 steps walked 27 million body literals over the steps and
+    /// 54 million from the end.
+    #[test]
+    fn a_loop_grounds_in_walks_linear_in_its_length() {
+        let n: u64 = 3000;
+        let steps = include_str!("../../tests/regress/bound_end_chain.pl")
+            .replace("(12)", &format!("({n})"));
+        let from_end = format!(
+            "s(0).\n\
+             s(T) :- T > 0, J is T - 1, s(J), route(J).\n\
+             s(T) :- T > 0, J is T - 1, s(J), \\+route(J), \\+drop(J).\n\
+             0.5::route(T).\n0.0001::drop(T).\nquery(s({n})).\n"
+        );
+        for (writing, source) in [("steps", steps), ("from_end", from_end)] {
+            let program = crate::syntax::parse_program(&source).expect("parses");
+            let gp = ground(&program, &GroundOptions::default()).expect("grounds");
+            assert!(
+                gp.stats.walked <= 100 * n,
+                "{writing}: {} body literals walked",
+                gp.stats.walked
+            );
+        }
+    }
+
     /// Under a demand, the atoms of facts are numbered as the demand reaches
     /// them, in the order the rules first read them, and not in the order
     /// of the facts; a fact no rule reads comes last where a query names
