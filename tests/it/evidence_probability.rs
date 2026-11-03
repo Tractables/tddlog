@@ -852,6 +852,7 @@ fn without_evidence_it_is_one_and_inconsistent_evidence_zero() {
         "condition_inconsistent.pl",
         "detach_inconsistent.pl",
         "alias_evidence_inconsistent.pl",
+        "false_observation.pl",
     ] {
         check(file, &read(&format!("tests/regress/{file}")), 0.0);
     }

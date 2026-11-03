@@ -875,6 +875,36 @@ mod dice {
         assert_eq!(read, 10);
     }
 
+    /// An observation of false makes the evidence impossible, and Dice
+    /// gives each value the probability 0: the reader writes evidence on an
+    /// atom defined false, once however often it is observed, as
+    /// tests/regress/false_observation.pl, on which ProbLog and tddlog find
+    /// the evidence inconsistent.
+    #[test]
+    fn an_impossible_observation() {
+        let program = read(
+            "let x = flip 0.5 in\nlet _ = observe false in\nlet _ = observe false in\nx",
+            "an impossible observation",
+        );
+        for line in [
+            "false_observation :- fail.",
+            "evidence(false_observation, true).",
+        ] {
+            assert_eq!(
+                program.lines().filter(|l| *l == line).count(),
+                1,
+                "{program}"
+            );
+        }
+        let options = Options {
+            evidence_probability: true,
+            ..Options::default()
+        };
+        let solution = tddlog::solve(&program, &options, &mut |_| {}).unwrap();
+        assert!(solution.answers.is_none(), "{program}");
+        assert_eq!(solution.evidence_probability.unwrap().to_f64(), 0.0);
+    }
+
     /// Under `x == 1 || x == 3`, x takes the values 1 and 3 alone (the
     /// reader's unit tests check that the branch's bit 0 is the constant
     /// true); the answers by hand: x is 3 with probability 0.4, and 1
