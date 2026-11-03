@@ -771,6 +771,31 @@ mod tests {
         assert_eq!(ground(&program, &opts).expect("grounds").stats.levels, 0);
     }
 
+    /// A loop's steps counted from a fact ground as its steps given as
+    /// facts do (tests/regress/levels_count.pl against levels.pl): an atom
+    /// true in every world, the count's fact or a step derived from it,
+    /// reads as true in the graph that proves a level's atoms constant,
+    /// and any(T), on(T) or not, is proved true in both.
+    #[test]
+    fn a_loops_count_read_as_a_fact_grounds_as_its_steps_given() {
+        let opts = GroundOptions::default();
+        let ground_of = |source: &str| {
+            let program = crate::syntax::parse_program(source).expect("parses");
+            ground(&program, &opts).expect("grounds")
+        };
+        let given = ground_of(include_str!("../../tests/regress/levels.pl"));
+        let counted = ground_of(include_str!("../../tests/regress/levels_count.pl"));
+        assert_eq!(counted.to_string(), given.to_string());
+        // any(3) proved true: on(4)'s rules, grounded after level 3, do
+        // not read it
+        let text = counted.to_string();
+        assert!(
+            text.lines()
+                .all(|l| l.starts_with("any(3)") || !l.contains("any(3)")),
+            "{text}"
+        );
+    }
+
     /// Under a demand, the atoms of facts are numbered as the demand reaches
     /// them, in the order the rules first read them, and not in the order
     /// of the facts; a fact no rule reads comes last where a query names

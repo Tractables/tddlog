@@ -2894,14 +2894,27 @@ fn prune_key(
     for r in &g.ground_rules[r0..] {
         bodies.entry(r.head).or_default().push(&r.body);
     }
-    // An atom of the stratum read but never derived is false: its
-    // key is done.
-    let absent = |x: AtomId| g.key_of(x).is_some() && !g.derived(x);
+    // An atom true in every world, a deterministic fact or derived from
+    // them alone, is true; an atom of the stratum read but never derived
+    // is false: its key is done. A loop's count read as a fact,
+    // `step(T1) :- step(T), steps(N), T1 is T + 1, T1 < N`, left its steps
+    // inputs of the graph, which kept the sweep from proving the steps'
+    // dead branches at the loop's end (pmc1 at 150 steps grounded 46 903
+    // atoms where its count written as a number grounds 32 845).
+    let known = |x: AtomId| {
+        if g.certain(x) {
+            Some(true)
+        } else if g.key_of(x).is_some() && !g.derived(x) {
+            Some(false)
+        } else {
+            None
+        }
+    };
     let values: Vec<(AtomId, bool)> = atoms
         .iter()
         .filter_map(|&a| {
             let b = bodies.get(&a).map_or(&[][..], |b| &b[..]);
-            pruner.gate(a, b, &absent).map(|v| (a, v))
+            pruner.gate(a, b, &known).map(|v| (a, v))
         })
         .collect();
     for (a, v) in values {
