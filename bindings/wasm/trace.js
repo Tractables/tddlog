@@ -40,8 +40,8 @@ const tddlogTrace = (() => {
     return { label, text: t.text, lang, more };
   }
 
-  const ops = (o) => [["and", "conjunctions"], ["or", "disjunctions"], ["negate", "negations"], ["minimize", "minimizations"], ["equivalent", "equivalence tests"]]
-    .filter(([k]) => o[k] > 0).map(([k, name]) => `${count(o[k])} ${name}`).join(", ") || "none";
+  const ops = (o) => [["and", "conjunction"], ["or", "disjunction"], ["negate", "negation"], ["minimize", "minimization"], ["equivalent", "equivalence test"]]
+    .filter(([k]) => o[k] > 0).map(([k, name]) => plural(o[k], name)).join(", ") || "none";
 
   const sizes = (s) => `${plural(s.atoms, "atom")} (${count(s.facts)} facts, ${count(s.derived)} derived), ${plural(s.rules, "rule")}`;
 
