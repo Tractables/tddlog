@@ -173,38 +173,44 @@ fn the_counts_of_each_examples_cnf_are_tddlogs_answers() {
         .collect();
     assert!(large.is_empty(), "too many facts to enumerate: {large:?}");
     for (file, source) in &programs {
-        let options = Options::default();
-        let cnf = read(&cnf_text(source, &options));
-        let solution = tddlog::solve(source, &options, &mut |_| {}).unwrap();
-        let evidence = total(&cnf, file);
-        let Some(answers) = solution.answers else {
-            assert_eq!(evidence, 0.0, "{file}: the evidence is inconsistent");
-            continue;
-        };
-        assert_eq!(answers.len(), cnf.queries.len(), "{file}");
-        for (answer, (l, text)) in answers.iter().zip(&cnf.queries) {
-            assert_eq!(answer.to_string(), *text, "{file}");
-            let p = count(&cnf, Some(*l)) / evidence;
-            assert!(
-                (p - answer.probability).abs() < 1e-9,
-                "{file}: {text} counts {p}, tddlog answers {}",
-                answer.probability
-            );
-        }
-        // With every observation kept, the count is P(e).
-        let options = Options {
-            evidence_probability: true,
-            ..Options::default()
-        };
-        let cnf = read(&cnf_text(source, &options));
-        let solution = tddlog::solve(source, &options, &mut |_| {}).unwrap();
-        let pe = solution.evidence_probability.unwrap().to_f64();
-        let counted = total(&cnf, file);
+        assert_counts(file, source);
+    }
+}
+
+/// The counts of `source`'s CNF, with each query's literal added and with
+/// every observation kept, are tddlog's answers and its `P(e)`.
+fn assert_counts(file: &str, source: &str) {
+    let options = Options::default();
+    let cnf = read(&cnf_text(source, &options));
+    let solution = tddlog::solve(source, &options, &mut |_| {}).unwrap();
+    let evidence = total(&cnf, file);
+    let Some(answers) = solution.answers else {
+        assert_eq!(evidence, 0.0, "{file}: the evidence is inconsistent");
+        return;
+    };
+    assert_eq!(answers.len(), cnf.queries.len(), "{file}");
+    for (answer, (l, text)) in answers.iter().zip(&cnf.queries) {
+        assert_eq!(answer.to_string(), *text, "{file}");
+        let p = count(&cnf, Some(*l)) / evidence;
         assert!(
-            (counted - pe).abs() <= 1e-12 * pe.max(1e-300) + 1e-15,
-            "{file}: the CNF counts {counted}, tddlog's P(e) is {pe}"
+            (p - answer.probability).abs() < 1e-9,
+            "{file}: {text} counts {p}, tddlog answers {}",
+            answer.probability
         );
     }
+    // With every observation kept, the count is P(e).
+    let options = Options {
+        evidence_probability: true,
+        ..Options::default()
+    };
+    let cnf = read(&cnf_text(source, &options));
+    let solution = tddlog::solve(source, &options, &mut |_| {}).unwrap();
+    let pe = solution.evidence_probability.unwrap().to_f64();
+    let counted = total(&cnf, file);
+    assert!(
+        (counted - pe).abs() <= 1e-12 * pe.max(1e-300) + 1e-15,
+        "{file}: the CNF counts {counted}, tddlog's P(e) is {pe}"
+    );
 }
 
 fn cnf_text(source: &str, options: &Options) -> String {
@@ -266,6 +272,69 @@ fn a_markov_networks_cnf_counts_its_partition_function() {
         assert!(
             (counted - z).abs() < 1e-9 * z,
             "{args:?}: the CNF counts {counted}, Z is {z}"
+        );
+    }
+}
+
+/// Two networks whose tables have zeros, entries equal to their table's
+/// largest and equal entries (tests/networks/local_structure*.uai), each
+/// with and without its evidence file: the counts of their CNFs are
+/// tddlog's answers, and through the command line Z, or P(e).
+#[test]
+fn a_networks_cnf_shares_its_equal_entries_and_writes_its_zeros_as_clauses() {
+    // By enumeration of the worlds: the Markov network's Z is 825, and 165
+    // given x2 = 1; the Bayesian network's P(x2 = 1) is 0.46.
+    for (file, evidence, z) in [
+        ("tests/networks/local_structure.uai", false, 825.0),
+        ("tests/networks/local_structure.uai", true, 165.0),
+        ("tests/networks/local_structure_bayes.uai", false, 1.0),
+        ("tests/networks/local_structure_bayes.uai", true, 0.46),
+    ] {
+        let evid = format!("{file}.evid");
+        let (data, evid_data) = (std::fs::read(file).unwrap(), std::fs::read(&evid).unwrap());
+        let format = tddlog::Format::of_path(file);
+        let options = tddlog::network::ReadOptions {
+            evidence: evidence.then(|| format.evidence(&evid_data)),
+            ..Default::default()
+        };
+        let input = tddlog::read(&data, format, &options).unwrap();
+        assert_counts(file, &input.program);
+        let mut args = vec!["--cnf", "--evidence-probability", file];
+        if evidence {
+            args.extend(["--evidence", &evid]);
+        }
+        let out = tddlog_binary(&args);
+        assert!(out.status.success(), "{args:?}");
+        let cnf = read(&String::from_utf8(out.stdout).unwrap());
+        let counted = total(&cnf, file);
+        assert!(
+            (counted - z).abs() < 1e-9 * z,
+            "{args:?}: the CNF counts {counted}, Z is {z}"
+        );
+    }
+    // Without evidence, the Markov network's facts are its variables'
+    // switches (one each of x0, x2 and x3, two of x1) and a parameter for
+    // each entry of a table other than a zero and its largest, the equal
+    // entries of a table one: f0's 1/2 and 1/4, f1's 1/3 and f2's 1/2.
+    // Its variables are those and two of x1's values (the third is its
+    // switch); the factors and the rows have none, and each zero is a
+    // clause. The Bayesian network's facts are x0's switch, x1's three
+    // (its rows' switches 0.2, 1/2 and 1/2, 1/2, the first 1/2 of each
+    // row one) and x2's two (its rows' 1/2 one, 0.9), and its variables
+    // those, x1's three values and one for x2, its second value the
+    // first's negation.
+    for (file, facts, variables) in [
+        ("tests/networks/local_structure.uai", 9, 11),
+        ("tests/networks/local_structure_bayes.uai", 6, 10),
+    ] {
+        let data = std::fs::read(file).unwrap();
+        let format = tddlog::Format::of_path(file);
+        let input = tddlog::read(&data, format, &Default::default()).unwrap();
+        let cnf = read(&cnf_text(&input.program, &Options::default()));
+        assert_eq!(
+            (cnf.facts, cnf.weights.len() - 1),
+            (facts, variables),
+            "{file}"
         );
     }
 }

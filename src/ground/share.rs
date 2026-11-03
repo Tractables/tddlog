@@ -31,7 +31,8 @@
 //!   parents, not selectors of about one row each;
 //! - at least one in [`MIN_MERGED`] of its switches is merged away;
 //! - no atom of the table depends on an atom of the table, so the contexts
-//!   do not depend on the facts shared.
+//!   do not depend on the facts shared ([`Sharing::Compile`], the
+//!   grounder's).
 //!
 //! The `k`-th switch of probability `p` of each row, in atom order, becomes
 //! one fact, the first of them: the switches of one row do not exclude each
@@ -46,6 +47,13 @@
 //! tables of few rows, where few of a table's switches merge and on tables
 //! over selectors, which the layout splits on to lay their rows side by
 //! side, that cost more than the switches saved.
+//!
+//! A weighted CNF has no layout, and the program it is written from shares
+//! the switches of every table whose rows exclude each other
+//! ([`Sharing::Exclusive`]): one whose contexts each read one atom of each
+//! of the same exclusive sets, as the rows of a table of several parents
+//! and of a Markov network's factor do. Each shared fact is a variable
+//! fewer: a factor's equal entries are one parameter.
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
@@ -78,21 +86,44 @@ fn selectors(gp: &GroundProgram, tables: &Tables, rows: &[AtomId]) -> bool {
     rules < MIN_RULES_PER_ROW * rows.len()
 }
 
-/// What a table's rules say of its rows: the one exclusive set every
-/// context is an atom of, while there is one, and the atoms that are its
-/// rows.
+/// Which tables [`share_switches`] shares the switches of.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Sharing {
+    /// The tables whose compile the sharing helps, as above: the
+    /// grounder's.
+    Compile,
+    /// Every table whose rows exclude each other: each context reads one
+    /// positive atom of each of the same exclusive sets, and nothing else,
+    /// as the rows of a network's table and of a Markov network's factor
+    /// do. A weighted CNF ([`crate::cnf`]) has no layout for a shared fact
+    /// to cost, and a shared fact is a variable fewer.
+    Exclusive,
+}
+
+/// What a table's rules say of its rows: the exclusive sets every
+/// context reads one atom of, while they are the same, and the atoms that
+/// are its rows.
 #[derive(Default)]
 struct Shape {
-    parent: Option<usize>,
-    one_parent: bool,
+    /// The sets every context reads one atom of, in order: under
+    /// [`Sharing::Compile`] the one parent's.
+    parents: Option<Vec<usize>>,
+    same_parents: bool,
+    /// Under [`Sharing::Compile`], the atoms that are its rows.
     rows: Vec<AtomId>,
 }
 
-/// Merge the switches that can be shared, as described above, and compact
-/// the program. `tables` are `gp`'s. Returns the new number of each atom
-/// where a fact was merged away ([`simplify::compact`]), for the tables to
-/// be renumbered ([`Tables::renumbered`]); `gp` is unchanged if none was.
-pub(crate) fn share_switches(gp: &mut GroundProgram, tables: &mut Tables) -> Option<Vec<AtomId>> {
+/// Merge the switches that can be shared, as described above for
+/// `Sharing::Compile` and as [`Sharing::Exclusive`] says otherwise, and
+/// compact the program. `tables` are `gp`'s. Returns the new number of
+/// each atom where a fact was merged away ([`simplify::compact`]), for
+/// the tables to be renumbered ([`Tables::renumbered`]); `gp` is
+/// unchanged if none was.
+pub(crate) fn share_switches(
+    gp: &mut GroundProgram,
+    tables: &mut Tables,
+    sharing: Sharing,
+) -> Option<Vec<AtomId>> {
     const NONE: usize = usize::MAX;
     const UNREAD: AtomId = AtomId::MAX;
     const MIXED: AtomId = AtomId::MAX - 1;
@@ -103,35 +134,74 @@ pub(crate) fn share_switches(gp: &mut GroundProgram, tables: &mut Tables) -> Opt
     let mut shapes: FxHashMap<usize, Shape> = FxHashMap::default();
     for &t in own.iter().filter(|&&t| t != NONE) {
         shapes.entry(t).or_insert_with(|| Shape {
-            one_parent: true,
+            same_parents: true,
             ..Shape::default()
         });
     }
     if shapes.is_empty() {
         return None;
     }
-    // The context each own fact is read under, MIXED if under two.
+    // The context each own fact is read under, MIXED if under two: under
+    // `Compile` the context's one atom, under `Exclusive` its number among
+    // the contexts.
     let mut row_of: Vec<AtomId> = vec![UNREAD; n];
+    let mut contexts: FxHashMap<Vec<AtomId>, AtomId> = FxHashMap::default();
+    let sets = tables.sets().len();
     for r in &gp.rules {
         let t = tables.of(r.head);
         let Some(shape) = shapes.get_mut(&t) else {
             continue;
         };
         let mut context = r.body.iter().filter(|l| own[l.atom() as usize] != t);
-        let (Some(&GLit::Pos(a)), None) = (context.next(), context.next()) else {
-            shape.one_parent = false;
-            continue;
-        };
-        let set = tables.of(a);
-        if shape.parent.is_some_and(|p| p != set) {
-            shape.one_parent = false;
-        }
-        shape.parent = Some(set);
-        shape.rows.push(a);
-        for l in r.body.iter().filter(|l| own[l.atom() as usize] == t) {
-            let row = &mut row_of[l.atom() as usize];
-            *row = if *row == UNREAD || *row == a {
+        let row = match sharing {
+            Sharing::Compile => {
+                let (Some(&GLit::Pos(a)), None) = (context.next(), context.next()) else {
+                    shape.same_parents = false;
+                    continue;
+                };
+                let set = tables.of(a);
+                match &shape.parents {
+                    Some(p) if p[..] != [set] => shape.same_parents = false,
+                    Some(_) => {}
+                    None => shape.parents = Some(vec![set]),
+                }
+                shape.rows.push(a);
                 a
+            }
+            Sharing::Exclusive => {
+                let mut read: Vec<(usize, AtomId)> = Vec::new();
+                for l in context {
+                    match *l {
+                        GLit::Pos(a) if tables.of(a) < sets => read.push((tables.of(a), a)),
+                        _ => {
+                            shape.same_parents = false;
+                            break;
+                        }
+                    }
+                }
+                read.sort_unstable();
+                let parents: Vec<usize> = read.iter().map(|&(set, _)| set).collect();
+                if parents.windows(2).any(|w| w[0] == w[1]) {
+                    shape.same_parents = false;
+                }
+                match &shape.parents {
+                    Some(p) if *p != parents => shape.same_parents = false,
+                    Some(_) => {}
+                    None => shape.parents = Some(parents),
+                }
+                if !shape.same_parents {
+                    continue;
+                }
+                let next = contexts.len() as AtomId;
+                *contexts
+                    .entry(read.into_iter().map(|(_, a)| a).collect())
+                    .or_insert(next)
+            }
+        };
+        for l in r.body.iter().filter(|l| own[l.atom() as usize] == t) {
+            let at = &mut row_of[l.atom() as usize];
+            *at = if *at == UNREAD || *at == row {
+                row
             } else {
                 MIXED
             };
@@ -139,7 +209,8 @@ pub(crate) fn share_switches(gp: &mut GroundProgram, tables: &mut Tables) -> Opt
     }
     // A table other than an exclusive set has one atom, so the rows of a
     // table of one parent and MIN_ROWS rows are values of one set, and
-    // every two of them exclude each other.
+    // every two of them exclude each other; so do the rows of a table whose
+    // contexts read one atom of each of the same sets, each row a context.
     let mut shared: FxHashSet<usize> = FxHashSet::default();
     let mut tabs: Vec<usize> = shapes.keys().copied().collect();
     tabs.sort_unstable();
@@ -147,11 +218,11 @@ pub(crate) fn share_switches(gp: &mut GroundProgram, tables: &mut Tables) -> Opt
         let shape = shapes.get_mut(&t).expect("a table with own facts");
         shape.rows.sort_unstable();
         shape.rows.dedup();
-        if shape.one_parent
-            && shape.rows.len() >= MIN_ROWS
-            && !selectors(gp, tables, &shape.rows)
-            && tables.independent(gp, t)
-        {
+        let pays = match sharing {
+            Sharing::Compile => shape.rows.len() >= MIN_ROWS && !selectors(gp, tables, &shape.rows),
+            Sharing::Exclusive => true,
+        };
+        if shape.same_parents && pays && tables.independent(gp, t) {
             shared.insert(t);
         }
     }
@@ -182,7 +253,9 @@ pub(crate) fn share_switches(gp: &mut GroundProgram, tables: &mut Tables) -> Opt
     }
     let rename: FxHashMap<AtomId, AtomId> = merges
         .into_values()
-        .filter(|(facts, merged)| merged.len() * MIN_MERGED >= *facts)
+        .filter(|(facts, merged)| {
+            sharing == Sharing::Exclusive || merged.len() * MIN_MERGED >= *facts
+        })
         .flat_map(|(_, merged)| merged)
         .collect();
     if rename.is_empty() {

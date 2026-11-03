@@ -61,7 +61,7 @@ mod chain;
 pub(crate) mod classes;
 mod condition;
 mod contexts;
-mod cover;
+pub(crate) mod cover;
 pub(crate) mod deps;
 mod detach;
 pub(crate) mod eliminate;
@@ -553,7 +553,7 @@ fn conditioned_on_structure(
     if opts.classes && classes::row_classes(gp, &mut tables) {
         tables = Tables::of_structure(gp, Structure::of(gp));
     }
-    if let Some(map) = share::share_switches(gp, &mut tables) {
+    if let Some(map) = share::share_switches(gp, &mut tables, share::Sharing::Compile) {
         tables = tables.renumbered(gp, &map);
     }
     let cover = cover::Cover::of(gp, &tables);
@@ -570,6 +570,22 @@ fn conditioned_on_structure(
         gp.structure = OnceLock::from(Arc::new(tables.into_structure()));
     }
     (conditioned, weight)
+}
+
+/// The program a weighted CNF writes ([`crate::cnf`]), from `gp` as the
+/// layouts compile it ([`crate::vtree::Kind::eliminated`]): its switches
+/// shared in every table whose rows exclude each other
+/// ([`share::Sharing::Exclusive`]), where the grounder shares them only
+/// where the compile gains; with its tables, which say which rules exclude
+/// each other and which facts are a table's own, and their cover, which
+/// says which exclusive sets are exhaustive.
+pub(crate) fn shared_for_cnf(mut gp: GroundProgram) -> (GroundProgram, Tables, cover::Cover) {
+    let mut tables = Tables::of_structure(&gp, (*gp.structure()).clone());
+    if let Some(map) = share::share_switches(&mut gp, &mut tables, share::Sharing::Exclusive) {
+        tables = tables.renumbered(&gp, &map);
+    }
+    let cover = cover::Cover::of(&gp, &tables);
+    (gp, tables, cover)
 }
 
 /// The program for the queries at `queries` of `gp.queries` alone: what

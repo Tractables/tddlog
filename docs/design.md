@@ -557,16 +557,28 @@ compilation.
 
 `tddlog --cnf` (`weighted_cnf`, `cnf.rs`) writes the program `--ground`
 prints, without its linear recursion (`Kind::eliminated`), as a weighted
-CNF in DIMACS for a weighted model counter: a variable per fact weighed as
-the fact, a variable of weight one
-for each derived atom and each body of two literals or more, defined by
-Tseitin's encoding of the completion of its rules, each observation a unit
-clause, and each query a literal named in a `c query` line, whose unit
-clause makes the count `P(q, e)`. The completion has one model in each
-world of the facts only where no cyclic component is left, so a program
-that keeps one (negation through recursion, say) is refused. Without
-observations the count is the product of the facts' weights summed and
-the factor, which a `c count` line states.
+CNF in DIMACS for a weighted model counter, after every pass of the
+grounder (steps 5 to 11: the conditioning, backbones and equal facts,
+equal gates, bits over values, defined facts eliminated) but the row
+classes. The switches of every table whose rows exclude each other are
+shared first, in any number of parents (`share::Sharing::Exclusive`), so
+that a table's equal entries are one fact; that is what the row classes
+give the compile, without their atoms, which cost the CNF a variable per
+class and a clause per row, an entry of one's included. Each fact is a variable weighed as the fact; each derived
+atom is a variable of weight one, defined by Tseitin's encoding of the
+completion of its rules, but for two kinds of atom. The atoms of an
+exhaustive exclusive set (a network's values) are each a variable implied
+by its bodies, no two true, the second of a set of two the first's
+negation. An observed atom no rule reads and no query names (a Markov
+network's factor) has no variable: observed true, its rows' contexts
+imply their facts, an entry of one writes nothing, and each assignment of
+its parents without a row, a zero, is a clause. Each other observation is
+a unit clause, and each query a literal named in a `c query` line, whose
+unit clause makes the count `P(q, e)`. The completion has one model in
+each world of the facts only where no cyclic component is left, so a
+program that keeps one (negation through recursion, say) is refused.
+Without observations the count is the product of the facts' weights
+summed and the factor, which a `c count` line states.
 
 Steps 0 to 4 are the front end. `finish` runs steps 5 to 11, after the
 front end and again after each layout rewrite (step 12, `decision`'s
@@ -1095,7 +1107,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    per row in the parent (`MIN_RULES_PER_ROW`). A shared fact read in two
    parts of a split table keeps them on a spine instead of side by side,
    so elsewhere sharing costs more than it saves. Rows that can hold
-   together keep switches of their own (`examples/shared_rows.pl`).
+   together keep switches of their own (`examples/shared_rows.pl`). The
+   weighted CNF (`--cnf`) shares in every table whose rows read one atom
+   of each of the same exclusive sets, whatever its size: a model
+   counter has no spine to keep.
 8. **Certain by cover** (`cover.rs`; `examples/cover.pl`). A derived atom
    whose rule bodies together are valid is certain and leaves the bodies
    that read it. Validity is decided by merging bodies equal but for one
