@@ -878,7 +878,9 @@ are skipped. Several steps have a program in `examples/` that shows them.
    tuple shares (DeepProbLog's handwritten formulas, whose label is the
    same in every demand). A literal with bound arguments, the delta's included, takes
    its candidate tuples from a per-position index of its relation, each
-   position indexed when a join first binds it. A negative literal on an impossible
+   position indexed when a join first binds it. `--stats` counts the
+   body literals the walks entered, over every grounding tried, kept or
+   given up. A negative literal on an impossible
    atom is dropped as true, and one on an atom true in every world fails
    the rule, a demand's rule too; one inside its own stratum (negation through
    recursion) is kept for the compiler's well-founded fixpoint

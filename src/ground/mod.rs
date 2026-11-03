@@ -210,8 +210,25 @@ pub fn ground(program: &Program, opts: &GroundOptions) -> Result<GroundProgram, 
 /// [`GroundOptions::views`] alone, as `auto`'s `decision` trial does
 /// (`auto::ready`), without grounding and simplifying the
 /// program again. Where the bound-end grounding is kept, the kept program
-/// is its own.
+/// is its own. Both count the body literals the walks of every grounding
+/// tried entered (`stats.walked`).
 pub(crate) fn ground_keeping(
+    program: &Program,
+    opts: &GroundOptions,
+    keep: usize,
+) -> Result<(GroundProgram, Option<Simplified>), GroundError> {
+    let before = engine::walked();
+    let (mut gp, mut kept) = ground_tried(program, opts, keep)?;
+    let walked = engine::walked() - before;
+    gp.stats.walked = walked;
+    if let Some(k) = &mut kept {
+        k.gp.stats.walked = walked;
+    }
+    Ok((gp, kept))
+}
+
+/// [`ground_keeping`] but for the count of its walks.
+fn ground_tried(
     program: &Program,
     opts: &GroundOptions,
     keep: usize,

@@ -614,6 +614,10 @@ struct Grounder<'a> {
     /// T1 is T + 1, o(T)` asks `o(T+1)` of every `o(T)` it is asked,
     /// `step(T)` coming after the call.
     demands: usize,
+    /// The body literals the walks entered ([`enter`]), the grounding's
+    /// work, added to the thread's count ([`walked`]) when the grounder is
+    /// dropped, whether its grounding was kept or given up.
+    walked: u64,
     /// The values that grounding level by level proved, by atom
     /// ([`evaluate_by_levels`]).
     fixed: Vec<Option<bool>>,
@@ -683,6 +687,24 @@ fn level_of(v: Option<&Val>) -> i64 {
     }
 }
 
+thread_local! {
+    static WALKED: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// The body literals the walks of every grounding on this thread have
+/// entered, those given up included: the difference across a call is the
+/// work of the groundings it made ([`super::ground_keeping`]), a measure
+/// that does not hang on the machine.
+pub(crate) fn walked() -> u64 {
+    WALKED.with(std::cell::Cell::get)
+}
+
+impl Drop for Grounder<'_> {
+    fn drop(&mut self) {
+        WALKED.with(|w| w.set(w.get().saturating_add(self.walked)));
+    }
+}
+
 impl<'a> Grounder<'a> {
     /// A grounder of `clauses`, room made for `preds` predicates, given up
     /// past `bound` ([`ground_normalized`]).
@@ -705,6 +727,7 @@ impl<'a> Grounder<'a> {
             bound: bound.unwrap_or(usize::MAX),
             refused: false,
             demands: 0,
+            walked: 0,
             fixed: Vec::new(),
             certain: Vec::new(),
             weights: Vec::new(),
@@ -3397,6 +3420,7 @@ fn enter(
     delta: Option<(usize, (usize, usize))>,
     subst: &[Option<Val>],
 ) -> Alts {
+    g.walked += 1;
     match &rule.body[i] {
         ILit::Pos(p, args) => {
             let range = match delta {

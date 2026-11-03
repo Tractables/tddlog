@@ -221,6 +221,9 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
         g.num_derived(),
         g.rules.len()
     );
+    if g.stats.walked > 0 {
+        line.push_str(&format!("; {} body literals walked", g.stats.walked));
+    }
     if !g.stats.from_bound_end.is_empty() {
         line.push_str(&format!(
             "; {} grounded from the bound end",

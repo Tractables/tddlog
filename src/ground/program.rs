@@ -300,6 +300,12 @@ pub struct GroundStats {
     /// The predicates, as `name/arity`, whose right-linear recursion was
     /// grounded from its bound end (`linear`).
     pub from_bound_end: Vec<String>,
+    /// How many body literals the grounder's walks entered, over every
+    /// grounding it tried, kept or given up (`engine`): the work of
+    /// grounding, counted as it does not hang on the machine, which a join
+    /// that scans a relation for each new tuple makes grow with the square
+    /// of a loop's length.
+    pub walked: u64,
     /// How many keys (level, rank) the grounder completed, where it
     /// grounded the recursive strata level by level, and how many atoms
     /// it proved constant as their keys completed (`engine`).
