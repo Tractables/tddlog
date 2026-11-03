@@ -133,6 +133,7 @@ pub(crate) fn run(
     original: GroundProgram,
     projection: Projection,
     ready: Ready,
+    traced: bool,
 ) -> Result<Run, Error> {
     let mut trials = candidates(&original);
     let decision = ready.decides(&original);
@@ -155,6 +156,7 @@ pub(crate) fn run(
         projection,
         Watch::default(),
         laid,
+        traced,
     )
 }
 
@@ -497,13 +499,15 @@ fn book_layout(t: &mut Trial, layout: &mut vtree::Layout, seconds: f64, ledger: 
     ));
 }
 
-/// [`run`] over the given trials from `watch`.
+/// [`run`] over the given trials from `watch`, each trial's compile
+/// recording its components for a trace of the run where `traced`.
 fn run_within(
     programs: Programs,
     trials: Vec<Kind>,
     projection: Projection,
     watch: Watch,
     laid: Option<Box<Prepared>>,
+    traced: bool,
 ) -> Result<Run, Error> {
     let Watch {
         first_pairs,
@@ -519,7 +523,13 @@ fn run_within(
         written: programs.written.map(eliminated),
         ..programs
     };
-    let mut trials: Vec<_> = trials.into_iter().map(Trial::new).collect();
+    let mut trials: Vec<_> = trials
+        .into_iter()
+        .map(|kind| Trial {
+            evaluation: crate::evaluation::Evaluation::new(traced),
+            ..Trial::new(kind)
+        })
+        .collect();
     let mut ledger = Ledger {
         rewrite_seconds: start.elapsed().as_secs_f64(),
         ..Ledger::default()
@@ -999,6 +1009,7 @@ fn finish(
     query_sizes: query::QuerySizes,
     ledger: Ledger,
 ) -> Run {
+    let trace = t.evaluation.take_trace();
     let compiled = t.evaluation.compiled.as_ref().unwrap();
     let ground = t.ground.take().unwrap();
     Run {
@@ -1017,6 +1028,7 @@ fn finish(
         query_seconds: t.evaluation.query_seconds,
         query_sizes,
         stats: compiled.stats.clone(),
+        trace,
         results,
         spent: Spent::default(),
     }

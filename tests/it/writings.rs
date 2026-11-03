@@ -882,3 +882,66 @@ fn a_private_variable_left_as_bits_reads_the_views_it_shares_with_its_reader() {
         assert!((r.probability - want).abs() < 1e-9, "{r} against {want}");
     }
 }
+
+/// Wide integers read by comparisons with constants: uniforms of 16 and 20
+/// bits, a flip a bit; a uniform of 16 bits over 40 000 values, which Dice
+/// draws bit by bit from its masses; and a `discrete` of 300 values, 9 bits
+/// drawn so, its masses 1 to 300 over their sum. Each stays as bits
+/// (src/ground/values.rs), and answers as computed by hand.
+#[test]
+fn wide_integers_read_by_comparisons_stay_as_bits() {
+    let total = 300.0 * 301.0 / 2.0;
+    let masses: Vec<String> = (1..=300)
+        .map(|k| format!("{:?}", k as f64 / total))
+        .collect();
+    let discrete = format!(
+        "let x = discrete({}) in (x == int(9, 7), (x == int(9, 299), x < int(9, 150)))",
+        masses.join(", ")
+    );
+    let uniform = |w: u32, hi: u64, small: u64| {
+        format!(
+            "let x = uniform({w}, 0, {hi}) in \
+             (x == int({w}, 4242), (x == int({w}, 77), x < int({w}, {small})))"
+        )
+    };
+    let cases = [
+        (
+            "uniform(16, 0, 65536)",
+            uniform(16, 1 << 16, 30000),
+            [1.0 / 65536.0, 1.0 / 65536.0, 30000.0 / 65536.0],
+        ),
+        (
+            "uniform(20, 0, 1048576)",
+            uniform(20, 1 << 20, 300000),
+            [1.0 / 1048576.0, 1.0 / 1048576.0, 300000.0 / 1048576.0],
+        ),
+        (
+            "uniform(16, 0, 40000)",
+            uniform(16, 40000, 30000),
+            [1.0 / 40000.0, 1.0 / 40000.0, 0.75],
+        ),
+        (
+            "discrete of 300 values",
+            discrete,
+            [8.0 / total, 300.0 / total, 150.0 * 151.0 / 2.0 / total],
+        ),
+    ];
+    for (what, dice, expected) in cases {
+        let source = tddlog::syntax::dice::read(&dice).unwrap_or_else(|e| panic!("{what}: {e}"));
+        let gp = common::ground_as_written(&source, Rows::Classes, false);
+        assert_eq!(gp.stats.values, 0, "{what}: {gp}");
+        let run = common::run(
+            &source,
+            &common::options(Strategy::Auto, Projection::default()),
+        )
+        .unwrap_or_else(|e| panic!("{what}: {e}"));
+        let results = run.results.expect("no evidence");
+        assert_eq!(results.len(), expected.len(), "{what}");
+        for (r, &want) in results.iter().zip(&expected) {
+            assert!(
+                (r.probability - want).abs() < 1e-9,
+                "{what}: {r} against {want}"
+            );
+        }
+    }
+}

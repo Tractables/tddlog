@@ -1,0 +1,149 @@
+% A car that does not start: a small diagnosis network written for
+% tddlog's examples, its numbers our own. The battery's charge follows
+% its age and whether the lights were left on overnight; the headlights
+% show the charge; the engine cranks given the battery and the starter
+% motor; the spark plugs foul more often in the cold; a spark needs good
+% plugs and some charge; the engine fires given a spark and fuel, and
+% the car starts if the engine cranks and fires. The fuel gauge reads
+% the tank, not always right. Hugin format. Run it with `tddlog
+% examples/car.net`; with `--evidence examples/car.inst --query
+% fuel,plugs,starter` it is asked what keeps the car from starting on a
+% cold morning, and examples/bn_car_evidence.pl is the program
+% `tddlog --program` prints for that question.
+net
+{
+}
+node weather
+{
+  states = ( "cold" "mild" "hot" );
+}
+node battery_age
+{
+  states = ( "new" "old" );
+}
+node lights_left_on
+{
+  states = ( "yes" "no" );
+}
+node battery
+{
+  states = ( "charged" "weak" "flat" );
+}
+node headlights
+{
+  states = ( "bright" "dim" "off" );
+}
+node starter
+{
+  states = ( "ok" "faulty" );
+}
+node cranks
+{
+  states = ( "yes" "slowly" "no" );
+}
+node fuel
+{
+  states = ( "full" "low" "empty" );
+}
+node fuel_gauge
+{
+  states = ( "full" "low" "empty" );
+}
+node plugs
+{
+  states = ( "ok" "fouled" );
+}
+node spark
+{
+  states = ( "yes" "no" );
+}
+node fires
+{
+  states = ( "yes" "no" );
+}
+node starts
+{
+  states = ( "yes" "no" );
+}
+potential ( weather )
+{
+  data = ( 0.3 0.5 0.2 );
+}
+potential ( battery_age )
+{
+  data = ( 0.7 0.3 );
+}
+potential ( lights_left_on )
+{
+  data = ( 0.1 0.9 );
+}
+potential ( battery | battery_age lights_left_on )
+{
+  data = ((( 0.2 0.4 0.4 )      % battery_age = new, lights_left_on = yes
+           ( 0.9 0.08 0.02 ))   % battery_age = new, lights_left_on = no
+          (( 0.05 0.35 0.6 )    % battery_age = old, lights_left_on = yes
+           ( 0.6 0.3 0.1 )));   % battery_age = old, lights_left_on = no
+}
+potential ( headlights | battery )
+{
+  data = (( 0.95 0.04 0.01 )    % battery = charged
+          ( 0.15 0.75 0.1 )     % battery = weak
+          ( 0.0 0.1 0.9 ));     % battery = flat
+}
+potential ( starter )
+{
+  data = ( 0.97 0.03 );
+}
+potential ( cranks | battery starter )
+{
+  data = ((( 0.97 0.02 0.01 )   % battery = charged, starter = ok
+           ( 0.0 0.1 0.9 ))     % battery = charged, starter = faulty
+          (( 0.3 0.6 0.1 )      % battery = weak, starter = ok
+           ( 0.0 0.05 0.95 ))   % battery = weak, starter = faulty
+          (( 0.0 0.05 0.95 )    % battery = flat, starter = ok
+           ( 0.0 0.0 1.0 )));   % battery = flat, starter = faulty
+}
+potential ( fuel )
+{
+  data = ( 0.55 0.35 0.1 );
+}
+potential ( fuel_gauge | fuel )
+{
+  data = (( 0.9 0.08 0.02 )     % fuel = full
+          ( 0.1 0.8 0.1 )       % fuel = low
+          ( 0.0 0.3 0.7 ));     % fuel = empty
+}
+potential ( plugs | weather )
+{
+  data = (( 0.8 0.2 )           % weather = cold
+          ( 0.95 0.05 )         % weather = mild
+          ( 0.97 0.03 ));       % weather = hot
+}
+potential ( spark | plugs battery )
+{
+  data = ((( 0.99 0.01 )        % plugs = ok, battery = charged
+           ( 0.9 0.1 )          % plugs = ok, battery = weak
+           ( 0.0 1.0 ))         % plugs = ok, battery = flat
+          (( 0.4 0.6 )          % plugs = fouled, battery = charged
+           ( 0.2 0.8 )          % plugs = fouled, battery = weak
+           ( 0.0 1.0 )));       % plugs = fouled, battery = flat
+}
+potential ( fires | spark fuel )
+{
+  % the engine fires, if it is turned over
+  data = ((( 0.98 0.02 )        % spark = yes, fuel = full
+           ( 0.95 0.05 )        % spark = yes, fuel = low
+           ( 0.0 1.0 ))         % spark = yes, fuel = empty
+          (( 0.0 1.0 )          % spark = no, fuel = full
+           ( 0.0 1.0 )          % spark = no, fuel = low
+           ( 0.0 1.0 )));       % spark = no, fuel = empty
+}
+potential ( starts | cranks fires )
+{
+  data = ((( 0.99 0.01 )        % cranks = yes, fires = yes
+           ( 0.0 1.0 ))         % cranks = yes, fires = no
+          (( 0.6 0.4 )          % cranks = slowly, fires = yes
+           ( 0.0 1.0 ))         % cranks = slowly, fires = no
+          (( 0.0 1.0 )          % cranks = no, fires = yes
+           ( 0.0 1.0 )));       % cranks = no, fires = no
+}

@@ -29,8 +29,8 @@ const tddlogRuntime = {
   // The answers of `program`, text in `format` (a network's with `observed`
   // the text of its evidence file, or null; a ProbLog program's or an
   // LPAD's with `args` the strings that take its places $1, $2, ...), under
-  // `strategy`, with P(e) where `evidence` is true, as the object
-  // src/main.rs writes:
+  // `strategy`, with P(e) where `evidence` is true and the trace of the run
+  // where `trace` is, as the object src/main.rs writes:
   //   answers   [{query, probability}] in the program's order, or null where
   //             the evidence is inconsistent;
   //   evidence  {probability, log10, z} where P(e) was asked for, else null;
@@ -40,9 +40,13 @@ const tddlogRuntime = {
   //             the run fails (and then no answers);
   //   groundSeconds, compiling (the program handed to the last compile),
   //   notes (on the run as a whole) and parts (each part's run: the trial
-  //   that answered, its sizes in pairs and its seconds).
-  solve(module, program, strategy, evidence, format = "problog", observed = null, args = []) {
+  //   that answered, its sizes in pairs and its seconds);
+  //   trace     the trace of the run (src/trace.rs, the JSON `tddlog --trace`
+  //             writes: each stage with what it took in and gave out), or
+  //             null where it was not asked for.
+  solve(module, program, strategy, evidence, format = "problog", observed = null, args = [], trace = false) {
     if (typeof evidence !== "boolean") throw new Error("evidence must be true or false");
+    if (typeof trace !== "boolean") throw new Error("trace must be true or false");
     if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) throw new Error("args must be an array of strings");
     const encoder = new TextEncoder();
     // ccall's string conversion uses the stack, which cannot hold large
@@ -67,7 +71,7 @@ const tddlogRuntime = {
         const heap = new DataView(module.HEAPU8.buffer, module.HEAPU8.byteOffset);
         at.slice(4).forEach((ptr, k) => heap.setUint32(list + 4 * k, ptr, true));
       }
-      output = module._tddlog_solve_json(...at.slice(0, 4), evidence ? 1 : 0, list, args.length) >>> 0;
+      output = module._tddlog_solve_json(...at.slice(0, 4), evidence ? 1 : 0, list, args.length, trace ? 1 : 0) >>> 0;
       if (!output) throw new Error("the solver returned nothing");
       return JSON.parse(module.UTF8ToString(output));
     } finally {

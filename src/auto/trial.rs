@@ -270,7 +270,7 @@ impl Trial {
     /// another trial is refused memory). The layout stays, so that a later
     /// trial with the same one is not tried ([`super::prepare`]).
     pub(super) fn release(&mut self) {
-        self.evaluation = Evaluation::default();
+        self.evaluation = Evaluation::new(self.evaluation.traced());
         self.kept = None;
         self.progress.clear();
         self.querying = false;

@@ -628,7 +628,7 @@ fn centring_every_level_keeps_the_bits() {
     let mut products = 0;
     for name in [
         "alarm",
-        "bn_asia_evidence",
+        "bn_car_evidence",
         "dice_evidence",
         "query_beside_evidence",
     ] {

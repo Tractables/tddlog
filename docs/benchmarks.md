@@ -20,6 +20,39 @@ every suite below as a plot of the instances each system answers within
 a time limit, with a table of every instance's times; it reads the same
 records as these tables.
 
+## How the totals are counted
+
+A system's answers count over all of a type's instances. An instance it
+does not answer counts as unanswered, whatever the reason: out of time or
+memory, a wrong answer, a program it cannot express, or one it was not
+given. A system run in several forms (ProbLog's three compilers, Ace's
+two modes) counts as its fastest form on each instance.
+
+A system's total time and tddlog's cover the instances the system is
+given and either answers. A run that does not answer counts as twice its
+time limit (PAR-2, as in the SAT and model counting competitions), and a
+time under 0.2 s as 0.2 s.
+
+tddlog's speed-up over a system is the ratio of their total times over
+three sets of instances. The first is the instances both answer, less
+those both answer in under 0.2 s; it gives the measured speed-up. The
+second is the instances only the system answers, with tddlog at its time
+limit, so that tddlog's failures can only lower the speed-up. The third
+is the instances only tddlog answers, with the system at its time limit,
+where that lower bound (the limit over tddlog's time) is at least the
+measured speed-up, so that the system's timeouts can only raise it. With
+fewer than 20 instances both answer, there is no speed-up (too few in
+common).
+
+Where another system's own code runs first and hands its inference to
+tddlog, the pipeline is named after both (Alea.jl+tddlog,
+Roulette+tddlog) and compared with that system alone. Its time includes
+all of the other system's time after its warm-up: Alea.jl's run up to
+the circuit it exports, or Roulette's up to what its exporter writes,
+timed warm as that system's own record is, and then tddlog's. Against
+that system only the inference differs. Every other system given
+Alea.jl's circuit, or a translation of it, pays the same export time.
+
 ## Current results: tddlog 0.1.0
 
 tddlog 0.1.0 `auto` as of 2026-10-22 (tididi c7c0c5d6, goatd e592d1e),
@@ -88,7 +121,7 @@ timed.
 | literature | 328 | 303 (1659.6) | 91 of 94 (160 under 0.2 s) |  |  | 35 |
 | Ace's networks | 46 | 46 (15.6) | 46 of 46 | 3 of 17 (13 under 0.2 s) | 13 of 16 (12 under 0.2 s) | 0 |
 | large networks | 14 | 14 (15.2) | 14 of 14 | 10 of 14 | 4 of 14 | 0 |
-| TPC-H | 295 | 289 (2235.2) | 191 of 191 |  | 0 of 259 | 28 |
+| TPC-H | 295 | 289 (2221.8) | 195 of 195 |  | 0 of 259 | 28 |
 
 An instance that tddlog and the fastest baseline both finish in under
 0.2 s counts neither as faster nor as slower: differences of a few
@@ -1442,15 +1475,15 @@ of the database's load and its queries), in a second job, on a lab
 machine with 20 physical cores and 503 GB of memory, on 2026-10-19, in
 18 lanes of 55 GB of address space, 600 s a run.
 
-tddlog answers 289 of the 295 (2 235 s in all), each within 4.0e-14 of
+tddlog answers 289 of the 295 (2 222 s in all), each within 4.0e-14 of
 `exact:tpch`; it misses q21v and q21 at SF 0.1; q18v at SF 1; q7 and q7v
 at SF 0.2; q7 at SF 0.5. Against the fastest of ProbLog, PITA and aspmc
 on each instance, in total time: Of the 295 instances both are given,
-tddlog answers 289 and ProbLog, PITA or aspmc 191. Over the 289 that
+tddlog answers 289 and ProbLog, PITA or aspmc 195. Over the 289 that
 either answers, a run that does not answer counted at the 600 s limit,
-tddlog takes 2 235 s in all and the fastest of them 76 490 s; over the
-191 both answer, 230.3 s against 17 690. tddlog alone answers
-tpch_q10v_5, tpch_q7v_50, tpch_q7_50, tpch_q10_5, tpch_q11_50 and 93
+tddlog takes 2 222 s in all and the fastest of them 74 238 s; over the
+195 both answer, 230.5 s against 17 838. tddlog alone answers
+tpch_q10v_5, tpch_q7v_50, tpch_q7_50, tpch_q10_5, tpch_q11_50 and 89
 more. Neither answers tpch_q21v_100, tpch_q21_100, tpch_q18v_1000,
 tpch_q7_200, tpch_q7_500 and 1 more. By query, flat and views together
 (seconds in total time, as in "Against each baseline": over the
@@ -1470,10 +1503,10 @@ largest scale factor answered, times 1 000):
 | q12 | 20 | 20 | 10 | 187.9 | 6 723 | 1000 / 50 | 0 | 0.0 | 0.0 |
 | q14 | 20 | 20 | 11 | 143.9 | 7 042 | 1000 / 200 | 0 | 0.0 | 0.0 |
 | q15 | 20 | 20 | 16 | 166.9 | 5 399 | 1000 / 200 | 0 | 0.0 | 0.0 |
-| q16 | 20 | 20 | 16 | 16.1 | 3 111 | 1000 / 200 | 0 | 0.0 | 0.0 |
+| q16 | 20 | 20 | 20 | 5.8 | 800.1 | 1000 / 1000 | 0 | 0.0 | 0.0 |
 | q17 | 16 | 16 | 9 | 140.9 | 5 447 | 1000 / 100 | 0 | 0.0 | 0.0 |
 | q18 | 20 | 19 | 13 | 416.2 | 5 278 | 1000 / 100 | 0 | 0.0 | 0.0 |
-| q20 | 18 | 18 | 18 | 10.2 | 560.8 | 1000 / 1000 | 0 | 0.0 | 0.0 |
+| q20 | 18 | 18 | 18 | 7.2 | 620.6 | 1000 / 1000 | 0 | 0.0 | 0.0 |
 | q21 | 12 | 10 | 7 | 18.9 | 2 457 | 50 / 20 | 0 | 0.0 | 0.0 |
 
 ProvSQL runs 279 of the 295 instances and answers 259 (20 timeout
@@ -1963,20 +1996,16 @@ growth sizes ran a build of 2026-11-01 (tididi c5642b97, goatd e592d1e).
 The growth sizes ran a build of 2026-10-25 with twin contraction (tididi
 b9e5064e, goatd e592d1e) and a recursion over a successor relation
 grounded level by level, which lacks only the release's sparse route
-(tididi 9fc0a599). The runs beside Scallop ran a build of 2026-10-29
-(tididi df7b84a3, goatd e592d1e). Beside a cross job's systems, one run
-of tddlog on an instance where the rerun's was skipped ran that job's
-build, as of 2026-10-21 (tididi c7c0c5d6, goatd e592d1e). The release's
-main contains every solver change those builds have. Alea.jl at revision
-cf5e5b8 on Julia 1.11.9 with CUDD 3.0.0, Distributions.jl 0.25.131 and
-StatsFuns 2.2.1. One job on a lab machine (20 physical cores, 503 GB) on
-2026-10-29 and 30, in 15 lanes of 33 GB a process, with the earlier
-run's rotation, 600 s and the skip rule; the four run on an instance
-back to back in one lane, three repetitions. Dice and ProbLog were not
-rerun: their columns are the earlier run's (below; three repetitions for
-Dice, ProbLog's d-DNNF in a pass of its own), a run of their own, and
-their times are not compared with the others' here. The page's plots
-leave them out.
+(tididi 9fc0a599). The release's main contains every solver change those
+builds have. Alea.jl at revision cf5e5b8 on Julia 1.11.9 with CUDD
+3.0.0, Distributions.jl 0.25.131 and StatsFuns 2.2.1. One job on a lab
+machine (20 physical cores, 503 GB) on 2026-10-29 and 30, in 15 lanes of
+33 GB a process, with the earlier run's rotation, 600 s and the skip
+rule; the four run on an instance back to back in one lane, three
+repetitions. Dice and ProbLog were not rerun: their columns are the
+earlier run's (below; three repetitions for Dice, ProbLog's d-DNNF in a
+pass of its own), a run of their own, and their times are not compared
+with the others' here. The page's plots leave them out.
 
 Seconds are the median of the repetitions, a failed repetition counted
 as longer than any time; `(k/n)` marks an instance answered in k of n
@@ -2279,7 +2308,7 @@ The full table:
 | spacex_w15 | 357 | 2423 | 5.41 | 3.56 | - | - | 4.61 | 82.7 | - | alea | 5.4e-15 / 8.7e-15 | 5.4e-15 / 8.7e-15 |  |  | ref |
 | spacex_w17 | 435 | 2809 | 33.4 | 15.7 | - | - | 28.1 | 142 | - | alea | 2.8e-14 / 7.0e-14 | 2.8e-14 / 7.0e-14 |  |  | ref |
 | spacex_w19 | 513 | 3195 | 130 | 74 | - | - | 204 | 277 | - | alea | 8.5e-14 / 2.2e-13 | 8.5e-14 / 2.2e-13 |  |  | ref |
-| spacex_w21 | 577 | 3553 | - | oom | - | - | >600 | >600 | - |  |  |  |  |  |  |
+| spacex_w21 | 577 | 3553 | oom | oom | - | - | >600 | >600 | - |  |  |  |  |  |  |
 | spacex_p16 | 293 | 1752 | 57.7 | 29.2 | oom | - | 102 | 284 | - | alea | 6.2e-14 / 1.9e-13 | 6.2e-14 / 1.9e-13 |  |  | ref |
 | spacex_p256 | 2970 | 23577 | - | - | - | - | >600 | >600 | - |  |  |  |  |  |  |
 | spacex_p4 | 106 | 635 | 0.093 | 4.75 | 13.2 | >600 | 33.6 | 158 | >600 | alea | 6.7e-16 / 1.6e-14 | 1.1e-14 / 1.9e-14 | 4.4e-14 / 7.7e-14 |  | ref |

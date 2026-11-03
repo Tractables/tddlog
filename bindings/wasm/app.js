@@ -37,6 +37,11 @@ const AUTO_SECONDS = 2;
 const stamp = typeof document === "undefined" || document.currentScript === null
   ? ""
   : new URL(document.currentScript.src).search;
+// The site's root, where this script is: the page (playground/index.html)
+// loads the files and links to the pages from there.
+const root = typeof document === "undefined" || document.currentScript === null
+  ? ""
+  : new URL(".", document.currentScript.src).href;
 
 // ------------------------------------------------------------- the address
 
@@ -104,8 +109,8 @@ function summarise(result, elapsed) {
   const layouts = [...new Set(parts.map((p) => p.trial))].join(", ");
   let out = "";
   if (result.answers !== null) out += stat(count(result.answers.length), result.answers.length === 1 ? "query" : "queries");
-  if (layouts) out += stat(escapeHtml(layouts), '<a href="guide/#terms">layout</a>');
-  if (parts.length > 0) out += stat(count(largest), '<a href="guide/#terms">pairs</a> at most');
+  if (layouts) out += stat(escapeHtml(layouts), `<a href="${root}guide/#terms">layout</a>`);
+  if (parts.length > 0) out += stat(count(largest), `<a href="${root}guide/#terms">pairs</a> at most`);
   out += stat(escapeHtml(duration(elapsed / 1000)), "in the browser");
   return out;
 }
@@ -259,6 +264,15 @@ function workHtml(result, strategy) {
   return out;
 }
 
+// The trace of a run, step by step (trace.js), or why it cannot be drawn.
+function traceHtml(trace) {
+  try {
+    return tddlogTrace.html(trace);
+  } catch (failure) {
+    return `<p class="note">The trace cannot be drawn: ${escapeHtml(failure.message)}.</p>`;
+  }
+}
+
 // ------------------------------------------------------ a benchmark's program
 
 // The suite, family and instance an address names
@@ -307,7 +321,7 @@ function nativeRun(records, suite, instance) {
 // The text of a file the site keeps on its own, gzipped where its name ends
 // in .gz.
 async function keptText(src) {
-  const response = await fetch(`results/benchmarks/${src}`);
+  const response = await fetch(`${root}results/benchmarks/${src}`);
   if (!response.ok) throw new Error(`${src}: ${response.status}`);
   if (!src.endsWith(".gz")) return response.text();
   return new Response(response.body.pipeThrough(new DecompressionStream("gzip"))).text();
@@ -326,7 +340,7 @@ async function holdsFile(text, file) {
 // answers that go beside it, or why the page cannot run it (`refused`, HTML:
 // a held file's reason comes from the results).
 async function benchmark([suite, family, instance]) {
-  const response = await fetch(`results/benchmarks/${suite}/${family}.json${stamp}`);
+  const response = await fetch(`${root}results/benchmarks/${suite}/${family}.json${stamp}`);
   if (response.status === 404) return { refused: "the results have no such benchmark." };
   if (!response.ok) throw new Error(`${suite}/${family}.json: ${response.status}`);
   const fam = await response.json();
@@ -353,7 +367,7 @@ async function benchmark([suite, family, instance]) {
 let recordsLoaded = null;
 function records() {
   const load = async (file) => {
-    const response = await fetch(`results/${file}${stamp}`);
+    const response = await fetch(`${root}results/${file}${stamp}`);
     if (!response.ok) throw new Error(`${file}: ${response.status}`);
     return response.json();
   };
@@ -506,7 +520,7 @@ if (typeof document !== "undefined") {
     const ticket = ++loading;
     let text;
     try {
-      const response = await fetch(tddlogExamplePath(tddlogExamples[i]) + stamp);
+      const response = await fetch(root + tddlogExamplePath(tddlogExamples[i]) + stamp);
       if (!response.ok) throw new Error(`${response.status}`);
       text = await response.text();
     } catch (failure) {
@@ -532,7 +546,7 @@ if (typeof document !== "undefined") {
   async function openBench(value) {
     const ticket = ++loading;
     const path = benchPath(value);
-    const back = path === null ? "results/" : `results/#/${path.join("/")}`;
+    const back = path === null ? `${root}results/` : `${root}results/#/${path.join("/")}`;
     const name = path === null ? "" : `<b>${escapeHtml(path[2])}</b> from ${escapeHtml(`${path[0]}/${path[1]}`)}: `;
     setProgram("", null, "program.pl");
     showSource(`${name}loading.`);
@@ -621,7 +635,7 @@ if (typeof document !== "undefined") {
   // ----------------------------------------------------------- the address
 
   // The address carries the choices, so a result can be linked to:
-  // ?example=<key>&strategy=<s>&evidence=1&digits=<n>, an unedited benchmark
+  // ?example=<key>&strategy=<s>&evidence=1&trace=1&digits=<n>, an unedited benchmark
   // after #bench=, and an edited program after #program=, with &format=<f>
   // where it is not ProbLog. It is read once
   // when the page opens, and written at every run and after edits.
@@ -630,6 +644,7 @@ if (typeof document !== "undefined") {
     const strategy = params.get("strategy");
     if (tddlogRuntime.strategies.includes(strategy)) element("strategy").value = strategy;
     element("evidence").checked = params.get("evidence") === "1";
+    element("trace").checked = params.get("trace") === "1";
     if (params.get("digits") !== null) element("digits").value = params.get("digits");
     const hash = new URLSearchParams(location.hash.slice(1));
     return {
@@ -647,6 +662,7 @@ if (typeof document !== "undefined") {
     if (source?.example !== undefined) params.set("example", tddlogExamples[source.example].key);
     if (settings.strategy !== "auto") params.set("strategy", settings.strategy);
     if (settings.evidence) params.set("evidence", "1");
+    if (settings.trace) params.set("trace", "1");
     if (settings.digits !== 6) params.set("digits", String(settings.digits));
     if (source === null && settings.format !== "problog") params.set("format", settings.format);
     const query = params.toString();
@@ -722,7 +738,7 @@ if (typeof document !== "undefined") {
   function startSolver() {
     ready = false;
     element("run").disabled = true;
-    worker = new Worker("worker.js" + stamp);
+    worker = new Worker(root + "worker.js" + stamp);
     worker.onmessage = (event) => {
       const data = event.data;
       if (data.ready === true) {
@@ -800,6 +816,7 @@ if (typeof document !== "undefined") {
       format: format.value,
       strategy: element("strategy").value,
       evidence: element("evidence").checked,
+      trace: element("trace").checked,
       digits: tddlogRuntime.digits(element("digits").value),
       reference: source === null ? null : source.reference,
     };
@@ -826,8 +843,8 @@ if (typeof document !== "undefined") {
     element("run").hidden = true;
     element("cancel").hidden = false;
     document.body.classList.add("busy");
-    const { program, strategy, evidence, format } = chosenSettings;
-    worker.postMessage({ program, strategy, evidence, format });
+    const { program, strategy, evidence, format, trace } = chosenSettings;
+    worker.postMessage({ program, strategy, evidence, format, trace });
   }
 
   element("run").addEventListener("click", requestRun);
@@ -845,6 +862,8 @@ if (typeof document !== "undefined") {
     const trials = result.parts.flatMap((p) => p.trials);
     element("trials").hidden = trials.length === 0;
     element("trial-notes").textContent = trials.join("\n");
+    element("trace-card").hidden = !result.trace;
+    element("trace-steps").innerHTML = result.trace ? traceHtml(result.trace) : "";
   }
 
   function finish(result, elapsed) {
@@ -894,7 +913,7 @@ if (typeof document !== "undefined") {
 
 if (typeof module !== "undefined") {
   module.exports = {
-    encodeProgram, decodeProgram, answersHtml, workHtml, summarise, said, escapeHtml,
+    encodeProgram, decodeProgram, answersHtml, workHtml, traceHtml, summarise, said, escapeHtml,
     exampleReference, benchReference, benchPath, tddlogFile, holdBack, nativeRun, holdsFile,
   };
 }

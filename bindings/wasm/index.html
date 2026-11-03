@@ -4,131 +4,76 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>tddlog: exact probabilistic inference</title>
-<meta name="description" content="Run ProbLog programs in the browser: tddlog compiles them into tree decision diagrams and gives each query's exact probability.">
+<meta name="description" content="tddlog computes exact probabilities for probabilistic logic programs, Bayesian and Markov networks and probabilistic programs by compiling them into tree decision diagrams: how it compares with each other system, by baseline and by type of program, and how a program is answered.">
+<script>
+// The playground was once this page: an address of it (?example=...,
+// #program=..., #bench=..., app.js's readAddress) goes to its page.
+if (/[?&](example|strategy|evidence|digits|format)=/.test(location.search) || /^#(program|bench)=/.test(location.hash)) {
+  location.replace(`playground/${location.search}${location.hash}`);
+}
+</script>
 <script src="theme.js"></script>
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="next/next.css">
 </head>
-<body>
+<body class="results">
 
 <main>
 
 <header>
   <div>
-    <h1>tddlog: exact probabilistic inference</h1>
-    <p class="lede">Pick an example or write a ProbLog program, and
-    press Run: tddlog gives each query's exact
-    probability, here in this tab.<span class="aside"> It grounds the
-    program and compiles it bottom-up into tree decision diagrams with the
-    <a href="https://github.com/Tractables/tididi">tididi</a> library;
-    nothing is uploaded. The same solver runs from the command line, Rust,
-    Python and C, as the <a href="guide/">guide</a> shows.</span></p>
+    <h1 class="unseen">tddlog</h1>
   </div>
-  <nav class="site-nav" aria-label="Site">
-    <a href="./" aria-current="page">Playground</a>
-    <a href="guide/">Guide</a>
-    <a href="results/">Results</a>
-    <a href="api/">Rust API</a>
-    <a href="python/">Python</a>
-    <a href="c/">C</a>
+  <button id="menu" class="plain" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+  <nav class="site-nav" id="site-nav" aria-label="Site">
+    <a href="#/baselines" data-section="#/baselines">By baseline</a>
+    <a href="#/integrations" data-section="#/integrations">By integration</a>
+    <a href="#/types" data-section="#/types">By program type</a>
+    <a href="#/how" data-section="#/how">How it works</a>
+    <a href="playground/">Playground</a>
+    <details class="docs"><summary>Docs</summary><div>
+      <a href="guide/">Guide</a>
+      <a href="api/">Rust API</a>
+      <a href="python/">Python</a>
+      <a href="c/">C</a>
+    </div></details>
     <a href="https://github.com/Tractables/tddlog">GitHub</a>
     <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
   </nav>
 </header>
 
-<noscript><p class="card note">The playground runs tddlog in this tab and
-needs JavaScript. The <a href="guide/">guide</a> shows the same programs
-and their answers.</p></noscript>
-
-<section class="card">
-  <div class="examples">
-    <span class="lead" id="examples-lead">Try an example</span>
-    <div id="examples" role="group" aria-labelledby="examples-lead"></div>
+<div class="shell">
+  <aside id="rail" aria-label="The site's menu">
+    <input id="search" type="search" placeholder="Find a system or instance" aria-label="Find a kind, suite, family, system or instance by its name"
+      autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="found-list" aria-expanded="false">
+    <div id="found"><p id="found-n" class="n" aria-live="polite"></p><ul id="found-list" role="listbox" aria-label="Found"></ul></div>
+    <nav id="tree" aria-label="The site's sections and their entries"></nav>
+  </aside>
+  <div id="view">
+    <p class="note">Loading the results…</p>
+    <noscript><p class="note">The plots and tables of this page need
+    JavaScript; the same results are in
+    <a href="https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md">docs/benchmarks.md</a>
+    on the baselines branch.</p></noscript>
   </div>
-  <p id="source" class="source" hidden></p>
-  <div class="io">
-    <div class="program-input">
-      <label for="program">Program</label>
-      <div class="editor">
-        <pre id="program-hl" aria-hidden="true"></pre>
-        <textarea id="program" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-describedby="program-hint"></textarea>
-      </div>
-      <div class="under">
-        <p class="hint" id="program-hint">Ctrl+Enter (⌘+Enter on a Mac) runs
-        the program, and Escape stops it. <code>query/1</code> asks for a
-        probability, <code>evidence/1,2</code> conditions on an observation.
-        A file dropped on the editor opens in it.</p>
-        <div class="tools">
-          <button id="open" type="button">Open a file</button>
-          <button id="download" type="button">Download</button>
-          <input id="file" type="file" accept=".pl,.lp,.txt,.dice,.bif,.net,.hugin,.xdsl,.uai,text/plain" hidden>
-        </div>
-      </div>
-    </div>
+</div>
 
-    <div class="controls">
-      <div class="field">
-        <label for="format">Format</label>
-        <select id="format"></select>
-      </div>
-      <div class="field">
-        <label for="strategy">Vtree strategy</label>
-        <select id="strategy"></select>
-        <p id="strategy-note" class="note"></p>
-      </div>
-      <div class="field">
-        <label for="digits">Digits</label>
-        <input id="digits" type="number" min="0" max="17" value="6">
-      </div>
-      <label class="check"><input id="evidence" type="checkbox"> P(evidence)</label>
-      <button id="run" disabled>Run</button>
-      <button id="cancel" type="button" hidden>Cancel</button>
-      <p class="status"><span id="status" role="status">loading the solver</span> <span id="clock"></span></p>
-    </div>
-  </div>
-</section>
-
-<section class="card">
-  <div class="result-head">
-    <h2>Answers</h2>
-    <button id="link" type="button" hidden>Copy link</button>
-    <button id="copy" type="button" hidden>Copy answers</button>
-    <p id="too-long" class="note" hidden>The program is too long for a
-    link; Download saves it.</p>
-  </div>
-  <div id="summary"></div>
-
-  <div class="result">
-    <div id="answers"><p class="note">Press Run.</p></div>
-    <div id="work"></div>
-  </div>
-
-  <details id="trials" hidden>
-    <summary>The trials <code>auto</code> ran</summary>
-    <pre id="trial-notes"></pre>
-  </details>
-</section>
-
-<section class="card glance" id="glance" hidden>
-  <div id="glance-stats" class="stats"></div>
-  <p class="note">From the release run against the exact systems people
-  use for each kind of problem (ProbLog, Ace, Merlin, Dice, Alea.jl and
-  more), every answer of tddlog's checked against a reference:
-  <a href="results/">the plots, the tables and the findings</a>.</p>
-</section>
+<div id="drawer" role="dialog" aria-labelledby="drawer-title" hidden></div>
 
 <footer>
   tddlog is open source under the Apache-2.0 license:
   <a href="https://github.com/Tractables/tddlog">repository</a> ·
   <a href="https://github.com/Tractables/tididi">tididi</a>, the TDD library ·
-  <a href="https://github.com/Tractables/goatd">goatd</a>, its tree decompositions
+  <a href="https://github.com/Tractables/goatd">goatd</a>, its tree decompositions ·
+  <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a>
 </footer>
 
 </main>
 
-<script src="runtime.js"></script>
-<script src="examples.js"></script>
 <script src="code.js"></script>
-<script src="app.js"></script>
+<script src="trace.js"></script>
+<script src="results/results.js" data-base="results/" data-front=""></script>
+<script src="next/next.js"></script>
 
 </body>
 </html>

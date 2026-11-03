@@ -9,7 +9,7 @@ printed as JSON.
 
 The results are partitioned by type of program: each instance counts in
 one type, whatever language its source was written in, and all programs
-are a seventh category, their union. A type is compared with the systems
+are a sixth category, their union. A type is compared with the systems
 native to it, all programs with every system. A system's answers count
 over all of a category's instances, an instance it does not answer
 (out of time or memory, a wrong answer, a program it cannot express, a
@@ -51,9 +51,13 @@ Writes, as SVG:
                     under them, ordered by answers, each system's answers
                     and tddlog's speed-up over it.
 
-The JSON printed is {categories}: for each category, the numbers its
-text quotes and `table`, the lines of the README's table of its native
-systems (all programs: every system). Each system on its own benchmarks
+The JSON printed is {categories, integrations}: for each category, the
+numbers its text quotes and `table`, the lines of the README's table of
+its native systems (all programs: every system); for each integration
+(rule 26: a pipeline against the system whose code runs first, over the
+instances the pipeline is given, the data's `integrations`), its
+instances, answers and comparison, and `table`, the lines of the README's
+table of them all, a row each. Each system on its own benchmarks
 is the results page's table alone; the README leaves it out (the owner,
 2026-10-30).
 
@@ -616,6 +620,26 @@ def table(cat, names):
     return lines
 
 
+def integrations(data, names):
+    """Each integration's numbers (its instances, the pipeline's and the
+    system's given and answers, and the system against the pipeline, rule
+    16), and the lines of the README's table of them: a row each, the
+    pipeline's answers and total time with the system's in brackets, and
+    the pipeline's speed-up."""
+    out = {}
+    lines = ['| Integration | Instances | Answers | Total time | Faster |', '|---|--:|--:|--:|--:|']
+    for key, g in data['integrations'].items():
+        if 'pipeline' not in g:     # tddlog's own: its answers by type, no comparison
+            continue
+        p, x = g['pipeline'], g['system']
+        v = g['vs'][x]
+        out[key] = dict(instances=g['instances'], pipeline=p, system=x, given=g['given'], answers=g['answers'], vs=v)
+        lines.append(f"| {names[p]} against {names[x]} | {g['instances']} | {g['answers'][p]} ({names[x]} "
+                     f"{g['answers'][x]}) | {seconds(v['tddlog_total'])} ({names[x]} {seconds(v['total'])}) | "
+                     f"{faster(v)} |")
+    return dict(out, table=lines)
+
+
 def main():
     args = [a for a in sys.argv[1:] if a != '--png']
     path = os.path.join(SOURCE, 'bindings', 'wasm', 'results', 'categories.json')
@@ -651,7 +675,8 @@ def main():
                   + ', '.join(names[x] for x in res['ahead']), file=sys.stderr)
         numbers[cat['key']] = res
     overview(data, names, col, out)
-    json.dump(dict(categories=numbers), sys.stdout, indent=1, ensure_ascii=False)
+    json.dump(dict(categories=numbers, integrations=integrations(data, names)), sys.stdout, indent=1,
+              ensure_ascii=False)
     print()
 
 

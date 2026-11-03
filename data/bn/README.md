@@ -24,6 +24,6 @@ downloads them into this directory and `data/bn-large` and checks each
 SHA-256; `bench.py gen` stops, naming that command, while one is missing.
 munin.net is a different version of the full MUNIN network.
 
-asia and cancer are `examples/asia.net` and `examples/cancer.net`,
+asia and cancer are `tests/networks/asia.net` and `examples/cancer.net`,
 written out from their publications (the same networks, the same
 programs), which the README, the tests and the baselines branch's `bench.py` read.

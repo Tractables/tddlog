@@ -115,11 +115,11 @@ def main():
     ap.add_argument('--precision', type=int, default=6)
     a = ap.parse_args()
     text = open(a.program).read()
-    n = [int(m) for m in re.findall(r'^student\(S\) :- between\(1,(\d+),S\)\.$', text, re.M)]
-    n = n[0] if len(n) == 1 else 0   # (gen_uwcse.py N --template, its place $1 bound to N)
+    ids = [int(m) for m in re.findall(r'^student\((\d+)\)\.$', text, re.M)]
+    n = len(ids) if ids == list(range(1, len(ids) + 1)) else 0   # (gen_uwcse.py N --data: the students 1 to N)
     src = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'cplint', 'uwcse3s.pl')
-    model = [x for x in source_tree.program(src).splitlines() if not x.startswith('student(')]
-    read = [x for x in text.splitlines() if not x.startswith(('%', 'student('))]
+    model = [x for x in source_tree.program(src).splitlines() if x and not x.startswith('student(')]
+    read = [x for x in text.splitlines() if x and not x.startswith(('%', 'student('))]
     if n == 0 or read != model:
         sys.exit(f"uwcse_exact.py: {a.program} is not gen_uwcse.py's program")
     missing = [c for c in constants() if not re.search(rf'(?<![0-9.]){re.escape(c)}::', text)]

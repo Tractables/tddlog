@@ -30,6 +30,7 @@ fn run_with_watch(
             memory_bytes: None,
         },
         None,
+        false,
     )
 }
 
@@ -54,6 +55,7 @@ fn run_in_memory(
             ..Watch::default()
         },
         None,
+        false,
     )
 }
 
@@ -1397,6 +1399,7 @@ fn a_trial_refused_memory_takes_what_the_others_hold() {
             ..Watch::default()
         },
         None,
+        false,
     )
     .unwrap();
     let notes = &run.vtree_notes;
@@ -1435,6 +1438,7 @@ fn run_query_beside_evidence(budget: u64) -> (bool, Vec<String>) {
             ..Watch::default()
         },
         None,
+        false,
     );
     let failed = result.is_err();
     assert!(!failed || refused(&result), "budget {budget}");
@@ -1760,7 +1764,7 @@ fn auto_compiles_an_already_rewritten_program_as_it_is() {
         crate::ground::ground(&crate::syntax::parse_program(source).unwrap(), &options).unwrap();
     let gp = crate::indicators::introduce(&gp);
     assert!(!gp.encoding.is_empty());
-    let run = run(gp, Projection::default(), Ready::default()).unwrap();
+    let run = run(gp, Projection::default(), Ready::default(), false).unwrap();
     assert!(!run.ground.encoding.is_empty());
     let answers = run.results.unwrap();
     assert!(

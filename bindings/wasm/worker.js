@@ -21,11 +21,11 @@ Promise.resolve().then(() => {
 }).catch((failure) => postMessage({ loadError: String(failure) }));
 
 onmessage = (event) => {
-  const { program, strategy, evidence, format } = event.data;
+  const { program, strategy, evidence, format, trace } = event.data;
   stderr = [];
   try {
     const started = performance.now();
-    const result = tddlogRuntime.solve(solver, program, strategy, evidence, format);
+    const result = tddlogRuntime.solve(solver, program, strategy, evidence, format, null, [], trace === true);
     postMessage({ result, elapsed: performance.now() - started });
   } catch (failure) {
     // The module may have aborted, and an aborted module fails every call

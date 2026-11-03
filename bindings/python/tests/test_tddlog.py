@@ -168,10 +168,10 @@ def test_dice_program():
 
 
 def test_network_and_its_evidence():
-    # examples/asia.net given tests/networks/asia_leaves.inst, against
+    # tests/networks/asia.net given tests/networks/asia_leaves.inst, against
     # ProbLog's answers on the program it is read as
-    # (examples/bn_asia_evidence.pl).
-    network = (REPOSITORY / "examples" / "asia.net").read_text()
+    # (tests/networks/bn_asia_evidence.pl).
+    network = (REPOSITORY / "tests" / "networks" / "asia.net").read_text()
     observed = (REPOSITORY / "tests" / "networks" / "asia_leaves.inst").read_text()
     solution = tddlog.solve(network, format="hugin", evidence=observed, evidence_probability=True)
     assert solution.answers["asia(yes)"] == pytest.approx(0.01167842, abs=1e-7)

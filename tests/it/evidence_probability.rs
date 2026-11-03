@@ -160,7 +160,7 @@ fn examples_against_problog() {
         ("alarm.pl", 0.196),
         ("bn_split.pl", 0.44705),
         ("shared_rows.pl", 0.45),
-        ("bn_asia_evidence.pl", 0.0396199356),
+        ("bn_car_evidence.pl", 0.0226280992985857),
         ("dice.pl", 1.0 / 36.0),
         ("equal_atoms.pl", 0.3),
         ("row_classes.pl", 0.572),
@@ -243,7 +243,7 @@ fn without_queries_the_evidence_alone_is_ground_and_counted() {
     // `--no-queries`: the program ground for its evidence alone has the
     // same P(e), ProbLog's as above. On alarm, calls(mary) and
     // hears_alarm(mary), which only the query reads, are left out; on
-    // bn_asia_evidence nothing is (both leaves are observed); on
+    // bn_car_evidence nothing is (each query is an observation's ancestor); on
     // query_beside_evidence the queried parts, on detach.pl q, and on
     // condition_bn everything, the conditioning having settled every
     // observation into its weight. by_query_alone below is a
@@ -252,7 +252,7 @@ fn without_queries_the_evidence_alone_is_ground_and_counted() {
     let by_query_alone = "0.3::a.\n0.6::b :- a.\n0.1::b :- \\+a.\n0.8::c :- b.\n0.2::c :- \\+b.\nevidence(b).\nquery(c).\n";
     for (file, want, fewer) in [
         ("examples/alarm.pl", 0.196, true),
-        ("examples/bn_asia_evidence.pl", 0.0396199356, false),
+        ("examples/bn_car_evidence.pl", 0.0226280992985857, false),
         ("examples/dice_murder.pl", 0.569, false),
         ("examples/query_beside_evidence.pl", 0.1, true),
         ("tests/regress/condition_bn.pl", 0.12, true),

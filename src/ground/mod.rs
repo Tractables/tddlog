@@ -368,10 +368,11 @@ fn ground_norm(
 /// before its views are inlined where that holds at least `keep` derived
 /// atoms ([`ground_keeping`]).
 fn finish_keeping(
-    gp: GroundProgram,
+    mut gp: GroundProgram,
     opts: &GroundOptions,
     keep: usize,
 ) -> (GroundProgram, Option<Simplified>) {
+    gp.stats.as_ground = (gp.num_atoms(), gp.rules.len());
     let simplified = simplified(gp, opts);
     let kept = (simplified.gp.num_derived() >= keep).then(|| simplified.clone());
     (finished(simplified, opts, opts.views), kept)

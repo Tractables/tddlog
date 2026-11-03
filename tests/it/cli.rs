@@ -384,7 +384,7 @@ fn bad_and_inert_options_exit_with_status_two() {
             "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is dice",
         ),
         (
-            &["examples/asia.net", "3"],
+            &["tests/networks/asia.net", "3"],
             "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is hugin",
         ),
         (

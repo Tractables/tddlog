@@ -240,7 +240,7 @@ L 368.564375 279.077969
     <text style="fill: #59636e; font: 11px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="58.496375" y="46.621505" transform="rotate(-0, 58.496375, 46.621505)">all 320</text>
    </g>
    <g id="text_15">
-    <text style="fill: #1f2328; font: 700 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="55.364375" y="20.677969" transform="rotate(-0, 55.364375, 20.677969)">Probabilistic database queries</text>
+    <text style="fill: #1f2328; font: 700 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="55.364375" y="20.677969" transform="rotate(-0, 55.364375, 20.677969)">Probabilistic databases</text>
    </g>
    <g id="line2d_24">
     <path d="M 55.364375 279.077969 
@@ -260,28 +260,36 @@ L 57.516059 274.805033
 L 57.516059 274.092877 
 L 57.545291 274.092877 
 L 57.545291 273.380721 
-L 58.145591 273.380721 
-L 58.145591 272.668565 
-L 58.307411 272.668565 
-L 58.307411 271.956409 
+L 57.646559 273.380721 
+L 57.646559 272.668565 
+L 57.702413 272.668565 
+L 57.702413 271.956409 
 L 58.934855 271.956409 
 L 58.934855 271.244253 
-L 61.856489 271.244253 
-L 61.856489 270.532097 
-L 63.990947 270.532097 
-L 63.990947 269.819941 
-L 65.648819 269.819941 
-L 65.648819 269.107785 
-L 65.761049 269.107785 
-L 65.761049 268.395629 
-L 66.475667 268.395629 
-L 66.475667 267.683473 
-L 106.296959 267.683473 
-L 106.296959 266.971317 
-L 292.281905 266.971317 
-L 292.281905 266.259161 
-L 368.564375 266.259161 
-L 368.564375 266.259161 
+L 61.140305 271.244253 
+L 61.140305 270.532097 
+L 61.604363 270.532097 
+L 61.604363 269.819941 
+L 61.856489 269.819941 
+L 61.856489 269.107785 
+L 63.990947 269.107785 
+L 63.990947 268.395629 
+L 65.648819 268.395629 
+L 65.648819 267.683473 
+L 65.761049 267.683473 
+L 65.761049 266.971317 
+L 66.475667 266.971317 
+L 66.475667 266.259161 
+L 72.786647 266.259161 
+L 72.786647 265.547005 
+L 73.292987 265.547005 
+L 73.292987 264.834849 
+L 106.296959 264.834849 
+L 106.296959 264.122694 
+L 292.281905 264.122694 
+L 292.281905 263.410538 
+L 368.564375 263.410538 
+L 368.564375 263.410538 
 " clip-path="url(#p1bdf7a2ba9)" style="fill: none; stroke-dasharray: 2.55,4.25; stroke-dashoffset: 0; stroke: #c4720f; stroke-width: 1.7"/>
    </g>
    <g id="line2d_25">
@@ -858,50 +866,50 @@ L 103.126853 174.391042
 L 103.126853 173.678886 
 L 104.184425 173.678886 
 L 104.184425 172.96673 
-L 108.126047 172.96673 
-L 108.126047 172.254574 
+L 108.913745 172.96673 
 L 108.913745 172.254574 
-L 108.913745 171.542418 
+L 109.792793 172.254574 
 L 109.792793 171.542418 
-L 109.792793 170.830262 
+L 110.029781 171.542418 
 L 110.029781 170.830262 
-L 110.029781 170.118106 
+L 110.975645 170.830262 
 L 110.975645 170.118106 
-L 110.975645 169.40595 
+L 114.841055 170.118106 
 L 114.841055 169.40595 
-L 114.841055 168.693794 
+L 115.423607 169.40595 
 L 115.423607 168.693794 
-L 115.423607 167.981638 
+L 115.540535 168.693794 
 L 115.540535 167.981638 
-L 115.540535 167.269483 
+L 116.863283 167.981638 
 L 116.863283 167.269483 
-L 116.863283 166.557327 
+L 117.277229 167.269483 
 L 117.277229 166.557327 
-L 117.277229 165.845171 
+L 117.499601 166.557327 
 L 117.499601 165.845171 
-L 117.499601 165.133015 
+L 118.420931 165.845171 
 L 118.420931 165.133015 
-L 118.420931 164.420859 
+L 119.957177 165.133015 
 L 119.957177 164.420859 
-L 119.957177 163.708703 
+L 120.240101 164.420859 
 L 120.240101 163.708703 
-L 120.240101 162.996547 
+L 122.019077 163.708703 
+L 122.019077 162.996547 
 L 123.716099 162.996547 
 L 123.716099 162.284391 
 L 128.789417 162.284391 
 L 128.789417 161.572235 
-L 149.140631 161.572235 
+L 139.331207 161.572235 
+L 139.331207 160.860079 
 L 149.140631 160.860079 
-L 154.715591 160.860079 
+L 149.140631 160.147923 
 L 154.715591 160.147923 
-L 155.908361 160.147923 
+L 154.715591 159.435767 
 L 155.908361 159.435767 
-L 156.163619 159.435767 
+L 155.908361 158.723611 
 L 156.163619 158.723611 
-L 182.753255 158.723611 
+L 156.163619 158.011455 
 L 182.753255 158.011455 
-L 189.503237 158.011455 
-L 189.503237 157.299299 
+L 182.753255 157.299299 
 L 191.335979 157.299299 
 L 191.335979 156.587143 
 L 199.666055 156.587143 
@@ -926,36 +934,36 @@ L 229.361069 149.465583
 L 229.361069 148.753427 
 L 229.962413 148.753427 
 L 229.962413 148.041272 
-L 236.548487 148.041272 
+L 230.851379 148.041272 
+L 230.851379 147.329116 
 L 236.548487 147.329116 
-L 244.390493 147.329116 
+L 236.548487 146.61696 
 L 244.390493 146.61696 
-L 251.054867 146.61696 
+L 244.390493 145.904804 
 L 251.054867 145.904804 
-L 256.509245 145.904804 
+L 251.054867 145.192648 
 L 256.509245 145.192648 
-L 257.245787 145.192648 
+L 256.509245 144.480492 
 L 257.245787 144.480492 
-L 263.405387 144.480492 
+L 257.245787 143.768336 
 L 263.405387 143.768336 
-L 264.078767 143.768336 
+L 263.405387 143.05618 
 L 264.078767 143.05618 
-L 289.321121 143.05618 
+L 264.078767 142.344024 
 L 289.321121 142.344024 
-L 296.888033 142.344024 
+L 289.321121 141.631868 
 L 296.888033 141.631868 
-L 307.908497 141.631868 
+L 296.888033 140.919712 
 L 307.908497 140.919712 
-L 326.501615 140.919712 
+L 307.908497 140.207556 
 L 326.501615 140.207556 
-L 326.658737 140.207556 
+L 326.501615 139.4954 
 L 326.658737 139.4954 
-L 327.053369 139.4954 
+L 326.658737 138.783244 
 L 327.053369 138.783244 
-L 331.782167 138.783244 
+L 327.053369 138.071088 
 L 331.782167 138.071088 
-L 335.604251 138.071088 
-L 335.604251 137.358932 
+L 331.782167 137.358932 
 L 341.062283 137.358932 
 L 341.062283 136.646776 
 L 341.218361 136.646776 
@@ -1243,36 +1251,34 @@ L 368.564375 88.220171
 L 55.468775 279.077969 
 L 55.558559 184.361226 
 L 55.581527 184.361226 
-L 55.690103 165.845171 
-L 55.693235 165.845171 
-L 55.795025 160.147923 
-L 55.809119 160.147923 
-L 55.915085 155.162831 
-L 55.950581 155.162831 
-L 56.038799 146.61696 
-L 56.100917 146.61696 
-L 56.100917 145.904804 
-L 56.255951 145.904804 
-L 56.350433 143.05618 
-L 56.369225 143.05618 
-L 56.420381 140.207556 
-L 56.517473 140.207556 
-L 56.614043 136.646776 
-L 56.847377 136.646776 
-L 56.925677 130.949528 
-L 56.973701 130.949528 
-L 57.026423 128.81306 
-L 57.183545 128.81306 
-L 57.183545 128.100905 
-L 57.306737 128.100905 
-L 57.417401 125.252281 
-L 57.429929 125.252281 
-L 57.429929 124.540125 
-L 57.633509 124.540125 
+L 55.690103 165.133015 
+L 55.693235 165.133015 
+L 55.795025 158.011455 
+L 55.809119 158.011455 
+L 55.915085 152.314207 
+L 55.950581 152.314207 
+L 56.038799 143.05618 
+L 56.100917 143.05618 
+L 56.100917 142.344024 
+L 56.255951 142.344024 
+L 56.350433 139.4954 
+L 56.369225 139.4954 
+L 56.420381 136.646776 
+L 56.599427 136.646776 
+L 56.614043 134.510308 
+L 56.847377 134.510308 
+L 56.925677 128.81306 
+L 56.973701 128.81306 
+L 57.026423 126.676593 
+L 57.183545 126.676593 
+L 57.183545 125.964437 
+L 57.306737 125.964437 
+L 57.417401 123.827969 
+L 57.429929 123.827969 
+L 57.429929 123.115813 
 L 57.733211 123.115813 
-L 57.765053 123.115813 
+L 57.769229 120.979345 
 L 57.861101 120.979345 
-L 57.879371 120.979345 
 L 57.946709 119.555033 
 L 58.031795 119.555033 
 L 58.031795 118.842877 
@@ -1873,12 +1879,12 @@ z
      <use xlink:href="#m28d563fbeb" x="605.497097" y="172.099518" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="625.56162" y="148.99157" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="660.238186" y="129.718914" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="513.451637" y="266.239946" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="558.421194" y="209.121915" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="564.681004" y="188.859682" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="511.915565" y="267.231349" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="561.81642" y="210.040681" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="567.043992" y="191.653858" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="506.544246" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="531.765438" y="242.485312" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="561.753018" y="225.680692" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="507.200989" y="275.281834" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="533.864445" y="248.103241" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="562.531152" y="230.580371" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="573.742199" y="175.168199" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="600.381289" y="150.21105" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="622.849533" y="133.26361" style="fill: #0d6670; fill-opacity: 0.75"/>
@@ -1895,7 +1901,7 @@ z
      <use xlink:href="#m28d563fbeb" x="564.03106" y="194.207027" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="545.769982" y="271.962229" style="fill: #0d6670; fill-opacity: 0.75"/>
      <use xlink:href="#m28d563fbeb" x="545.800746" y="249.696895" style="fill: #0d6670; fill-opacity: 0.75"/>
-     <use xlink:href="#m28d563fbeb" x="563.893016" y="194.87411" style="fill: #0d6670; fill-opacity: 0.75"/>
+     <use xlink:href="#m28d563fbeb" x="563.893016" y="237.290683" style="fill: #0d6670; fill-opacity: 0.75"/>
     </g>
    </g>
   </g>
@@ -1956,7 +1962,7 @@ L 357.764375 418.577969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="404.83125" transform="rotate(-0, 213.764375, 404.83125)">268</text>
   </g>
   <g id="text_39">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="404.83125" transform="rotate(-0, 325.364375, 404.83125)">21×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="404.83125" transform="rotate(-0, 325.364375, 404.83125)">22×</text>
   </g>
   <g id="text_40">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="421.75125" transform="rotate(-0, 40.964375, 421.75125)">ProbLog</text>
@@ -1965,7 +1971,7 @@ L 357.764375 418.577969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="421.75125" transform="rotate(-0, 213.764375, 421.75125)">203</text>
   </g>
   <g id="text_42">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="421.75125" transform="rotate(-0, 325.364375, 421.75125)">123×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="421.75125" transform="rotate(-0, 325.364375, 421.75125)">126×</text>
   </g>
   <g id="text_43">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="40.964375" y="438.67125" transform="rotate(-0, 40.964375, 438.67125)">PSouffle</text>
@@ -1974,7 +1980,7 @@ L 357.764375 418.577969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="213.764375" y="438.67125" transform="rotate(-0, 213.764375, 438.67125)">189</text>
   </g>
   <g id="text_45">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="438.67125" transform="rotate(-0, 325.364375, 438.67125)">110×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="325.364375" y="438.67125" transform="rotate(-0, 325.364375, 438.67125)">117×</text>
   </g>
   <g id="text_46">
    <text style="fill: #59636e; font: 10px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="368.237344" transform="rotate(-0, 537.764375, 368.237344)">answers</text>
@@ -1989,7 +1995,7 @@ L 357.764375 418.577969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="387.91125" transform="rotate(-0, 537.764375, 387.91125)">123</text>
   </g>
   <g id="text_50">
-   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="387.91125" transform="rotate(-0, 649.364375, 387.91125)">392×</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="387.91125" transform="rotate(-0, 649.364375, 387.91125)">411×</text>
   </g>
   <g id="text_51">
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="404.83125" transform="rotate(-0, 364.964375, 404.83125)">Scallop</text>
@@ -2004,10 +2010,10 @@ L 357.764375 418.577969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="421.75125" transform="rotate(-0, 364.964375, 421.75125)">aspmc</text>
   </g>
   <g id="text_55">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="421.75125" transform="rotate(-0, 537.764375, 421.75125)">18</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="421.75125" transform="rotate(-0, 537.764375, 421.75125)">22</text>
   </g>
   <g id="text_56">
-   <text style="fill: #59636e; font: 9.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="421.199375" transform="rotate(-0, 649.364375, 421.199375)">too few in common</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="421.75125" transform="rotate(-0, 649.364375, 421.75125)">520×</text>
   </g>
  </g>
  <defs>

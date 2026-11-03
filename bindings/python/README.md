@@ -81,8 +81,8 @@ file's extension: `"problog"`, the default (an LPAD where it holds
 a UAI network, a UAI `.evid` file:
 
 ```python
-network = open("examples/asia.net").read()
-observed = open("tests/networks/asia_leaves.inst").read()
+network = open("examples/car.net").read()
+observed = open("examples/car.inst").read()
 solution = tddlog.solve(network, format="hugin", evidence=observed)
 ```
 
@@ -104,7 +104,7 @@ documents each function and exception, `examples/` holds this program
 and one built from Python data, and the
 [guide](https://tractables.github.io/tddlog/guide/) describes the
 language, with worked examples that open in the
-[playground](https://tractables.github.io/tddlog/).
+[playground](https://tractables.github.io/tddlog/playground/).
 
 ## Develop
 

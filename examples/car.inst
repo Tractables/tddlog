@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A cold morning: the headlights are bright, the fuel gauge reads low
+     and the car does not start (examples/car.net). -->
+<instantiation>
+<inst id="weather" value="cold"/>
+<inst id="headlights" value="bright"/>
+<inst id="fuel_gauge" value="low"/>
+<inst id="starts" value="no"/>
+</instantiation>

@@ -15,4 +15,4 @@ alarm example, checked against the probabilities worked out by hand:
 
 The [guide](https://tractables.github.io/tddlog/guide/) describes the
 language tddlog reads, with worked examples that open in the
-[playground](https://tractables.github.io/tddlog/).
+[playground](https://tractables.github.io/tddlog/playground/).

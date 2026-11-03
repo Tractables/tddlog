@@ -36,9 +36,31 @@ pub(crate) struct Evaluation {
     /// Whether the query phase started over with a walk that puts nothing
     /// off ([`Self::walk_again`]).
     walked_again: bool,
+    /// Whether the compile records its components for a trace of the run
+    /// ([`tp::CompileTrace`]).
+    traced: bool,
 }
 
 impl Evaluation {
+    /// An evaluation whose compile records its components for a trace of
+    /// the run where `traced` ([`Self::take_trace`]).
+    pub(crate) fn new(traced: bool) -> Self {
+        Evaluation {
+            traced,
+            ..Evaluation::default()
+        }
+    }
+
+    /// Whether the compile records its components for a trace.
+    pub(crate) fn traced(&self) -> bool {
+        self.traced
+    }
+
+    /// The finished compile's record for a trace, where it keeps one.
+    pub(crate) fn take_trace(&mut self) -> Option<Box<tp::CompileTrace>> {
+        self.compiled.as_mut().and_then(|c| c.trace.take())
+    }
+
     /// Whether the compile has finished, and only the query phase is left.
     pub(crate) fn is_compiled(&self) -> bool {
         self.compiled.is_some()
@@ -113,6 +135,11 @@ impl Evaluation {
                     backend,
                     kind.projection(projection),
                 )?;
+                let compilation = if self.traced {
+                    compilation.traced()
+                } else {
+                    compilation
+                };
                 self.compilation = Some(if kind.is_dynamic() {
                     compilation.dynamic(first_pairs)
                 } else {

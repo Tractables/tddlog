@@ -26,8 +26,10 @@ def answer(program_text):
 
 
 def program(n):
-    return subprocess.run([sys.executable, str(SCRIPTS / 'gen_uwcse.py'), str(n)],
-                          capture_output=True, text=True, check=True).stdout
+    def gen(mode):
+        return subprocess.run([sys.executable, str(SCRIPTS / 'gen_uwcse.py'), str(n), *mode],
+                              capture_output=True, text=True, check=True).stdout
+    return gen(['--template']).replace(':- consult($1).', gen(['--data', 'k']))
 
 
 class UwcseExact(unittest.TestCase):

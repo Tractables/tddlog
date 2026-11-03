@@ -5,9 +5,9 @@
 % a visit to Asia raises the chance of tuberculosis, smoking that of lung
 % cancer and of bronchitis; either is tuberculosis or lung cancer; a
 % positive X-ray follows either, dyspnoea either or bronchitis. Hugin
-% format. Run it with `tddlog examples/asia.net`; `tddlog --program
-% examples/asia.net` prints the program it is read as, and
-% examples/bn_asia_evidence.pl is one such program, with evidence.
+% format. Run it with `tddlog tests/networks/asia.net`; `tddlog --program
+% tests/networks/asia.net` prints the program it is read as, and
+% tests/networks/bn_asia_evidence.pl is one such program, with evidence.
 net
 {
 }

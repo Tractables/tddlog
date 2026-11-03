@@ -5,7 +5,7 @@
 //!
 //! ```text
 //! cargo run --release --example solve -- examples/alarm.pl
-//! cargo run --release --example solve -- examples/asia.net
+//! cargo run --release --example solve -- examples/car.net
 //! ```
 
 use std::process::ExitCode;
@@ -39,7 +39,7 @@ fn main() -> ExitCode {
     // each; every run reports the layout that answered it.
     let mut layouts = Vec::new();
     let solution = tddlog::solve(&input.program, &options, &mut |progress| match progress {
-        tddlog::Progress::Grounded { seconds } => eprintln!("ground in {seconds:.3} s"),
+        tddlog::Progress::Grounded { seconds, .. } => eprintln!("ground in {seconds:.3} s"),
         tddlog::Progress::Answered(run) => layouts.push(run.kind.to_string()),
         _ => {}
     });

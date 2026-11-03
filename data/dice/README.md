@@ -40,6 +40,14 @@ observation in the step), `geometric.dice` (recursion past Dice's limit
 of ten nested calls), `nested.dice` (a network as nested `discrete`s,
 rows of thirds that sum to 0.999999).
 
+Written for the census of the values pass (`scripts/gen_wide_dice.py`, seed
+20261102), integers wider than the other programs': `wide_uniform.dice`
+(uniforms of 16 bits compared and added), `wide_discrete.dice` (a
+`discrete` of 300 values read by comparisons), `wide_net.dice` (two roots
+of 16 values and a child of 32 that reads both) and `wide_chain.dice` (a
+chain of integers of 3 to 6 bits, each a table over its parent's values).
+No benchmark list names them.
+
 tests/dice/ holds copies of the programs and their translations, all but
 caesar-iter, simpleCaesar and the pmc programs, so that main tests the
 translator without this directory; they are checked against Dice's answers, or answers

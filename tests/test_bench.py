@@ -839,7 +839,7 @@ class CirculetteTests(unittest.TestCase):
 
     def test_the_suite_grows_two_families(self):
         spec = bench.instances(self.args())
-        self.assertEqual(len(spec), 41)
+        self.assertEqual(len(spec), 42)
         self.assertTrue(all(g[0] == 'gen_circulette.py' for _, g in spec.values()))
         self.assertEqual([n for n, (f, _) in spec.items() if f == 'ct_mac'], [f'ct_mac{w}' for w in range(1, 7)])
         self.assertEqual(bench.series('ct_fulladder', 'ct_fulladder8'), 'ct_fulladder')
@@ -895,6 +895,24 @@ class CirculetteTests(unittest.TestCase):
         self.assertIn('no posteriors', r['error'])
         r, _, _ = self.run_circulette(self.PROGRAM.replace('called 4 times', 'called 5 times'), self.OUT)
         self.assertIn('not 1 + n + C(n,2) + C(n,3)', r['error'])
+
+
+def fold_files(directory, names, suite='standard'):
+    """The files tddlog reads of the FOLD instances `names` (bench.py gen
+    writes them): their family's program, their data files and NAME.args,
+    empty, in `directory`, so that a run with a mocked `timed` finds its inputs."""
+    spec = {'standard': bench.SPEC, 'indicators': bench.INDICATORS}[suite]
+    directory = Path(directory)
+    for name in names:
+        gargs = spec.get(name, (None, ['none']))[1]
+        if gargs[0] not in bench.FOLD:
+            continue
+        program, _, keys = bench.FOLD[gargs[0]](gargs[1:])
+        for rel in [Path(bench.FOLD_DIR) / (program + '.pl'), *(Path(bench.DATA_DIR) / (k + '.pl') for k in keys),
+                    Path(name + '.args')]:
+            (directory / rel).parent.mkdir(parents=True, exist_ok=True)
+            (directory / rel).touch()
+    return str(directory)
 
 
 class SkipTests(unittest.TestCase):
@@ -1014,9 +1032,12 @@ class SkipTests(unittest.TestCase):
         self.assertTrue(bench.ran_out(r))
 
     def test_only_a_smaller_size_out_of_time_or_memory_skips(self):
-        args = SimpleNamespace(suite='standard', only=['grid4', 'grid5', 'grid6', 's6', 's10', 'bn_cancer', 'bn_asia'],
+        only = ['grid4', 'grid5', 'grid6', 's6', 's10', 'bn_cancer', 'bn_asia']
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        args = SimpleNamespace(suite='standard', only=only,
                                families=[], strategies=['auto'], kbs=[], pita='', aspmc='', scallop='', dice='',
-                               dir='bench', out='results.jsonl', tddlog='tddlog', timeout=1, no_skip=False,
+                               dir=fold_files(directory.name, only), out='results.jsonl', tddlog='tddlog', timeout=1, no_skip=False,
                                exact=False, ace='', merlin='', ganak='', pr=False, cnf=False)
         fails = {'grid4': {'status': 'timeout', 'seconds': 1}, 'bn_cancer': {'status': 'timeout', 'seconds': 1},
                  's6': {'status': 'error', 'seconds': 0.1, 'error': 'parse error: line 1', 'returncode': 1}}
@@ -1026,7 +1047,9 @@ class SkipTests(unittest.TestCase):
             # a program's stem, or a network's (tddlog reads bn_cancer's cancer.net itself)
             stems = {Path(a).stem for a in cmd}
             return dict(next((f for n, f in fails.items() if {n, n.removeprefix('bn_')} & stems), ok))
+        # a folded instance's command ends in its arguments: its name, for the mock to tell them apart
         with patch('builtins.open', mock_open()) as output, patch.object(bench, 'timed', timed), \
+                patch.object(bench, 'arguments_of', lambda path: [Path(path).stem]), \
                 patch.object(bench, 'queries', return_value=['q']), redirect_stdout(io.StringIO()):
             bench.run(args)
         records = [bench.json.loads(c.args[0]) for c in output().write.call_args_list]
@@ -1173,9 +1196,11 @@ class FoldTests(unittest.TestCase):
 
 class SuiteTests(unittest.TestCase):
     def test_large_instances_are_selected_and_recorded(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
         args = SimpleNamespace(suite='indicators', only=['grid40'], families=[],
                                strategies=['closed'], kbs=[], pita='', aspmc='', scallop='', dice='',
-                               dir='bench', out='results.jsonl', tddlog='tddlog', timeout=1, no_skip=True,
+                               dir=fold_files(directory.name, ['grid40'], 'indicators'), out='results.jsonl', tddlog='tddlog', timeout=1, no_skip=True,
                                exact=False, ace='', merlin='', ganak='', pr=False)
         result = {'status': 'ok', 'seconds': 0.1, 'stdout': 'path(n0_0,n39_39): 0.5\n', 'stderr': ''}
         with patch('builtins.open', mock_open()) as output, patch.object(bench, 'timed', return_value=result), \
@@ -1403,7 +1428,7 @@ class AspmcTests(unittest.TestCase):
             run.assert_called_once()
 
 
-# Ace's marginals file for examples/asia.net with smoke=yes and xray=yes, as
+# Ace's marginals file for tests/networks/asia.net with smoke=yes and xray=yes, as
 # Ace 3.0 wrote it (the times in the header are not measurements anyone
 # should use).
 ASIA_MARGINALS = """Network : asia.net
@@ -2436,6 +2461,7 @@ class ProcessTests(unittest.TestCase):
         scratch.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=scratch, prefix='bench-cancel-') as directory:
             directory = Path(directory)
+            fold_files(directory, ['g10_25'])
             ready, marker = directory / 'ready', directory / 'survived'
             child = f'import time; from pathlib import Path; time.sleep(1); Path({str(marker)!r}).touch(); time.sleep(30)'
             compiler = directory / 'compiler'
@@ -2471,11 +2497,15 @@ class ProcessTests(unittest.TestCase):
 
 class LaneTests(unittest.TestCase):
     def run_lanes(self, only, cpus, no_skip, timed):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
         args = SimpleNamespace(suite='standard', only=only, families=[], strategies=['closed'], kbs=[],
-                               pita='', aspmc='', scallop='', dice='', dir='bench', out='results.jsonl',
+                               pita='', aspmc='', scallop='', dice='', dir=fold_files(directory.name, only), out='results.jsonl',
                                tddlog='tddlog', timeout=1, no_skip=no_skip, exact=False, ace='', merlin='', ganak='',
                                pr=False, cpus=cpus)
+        # a folded instance's command ends in its arguments: its name, for the mock to tell them apart
         with patch('builtins.open', mock_open()) as output, patch.object(bench, 'timed', timed), \
+                patch.object(bench, 'arguments_of', lambda path: [Path(path).stem]), \
                 patch.object(bench, 'queries', return_value=['q']), redirect_stdout(io.StringIO()):
             bench.run(args)
         return [bench.json.loads(c.args[0]) for c in output().write.call_args_list]

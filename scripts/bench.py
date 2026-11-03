@@ -223,14 +223,15 @@ SPEC['bloodtype'] = ('cplint', ['gen_cplint.py', 'bloodtype'])
 # Bayesian networks from the bnlearn repository (data/bn, Hugin format, which
 # `fetch` downloads): every CPT row an annotated disjunction, the marginals
 # of the leaf variables queried. Listed by node count. asia and cancer are
-# examples/asia.net and examples/cancer.net, the same networks written out
+# tests/networks/asia.net and examples/cancer.net, the same networks written out
 # from their publications.
 BN = ['cancer', 'earthquake', 'asia', 'survey', 'sachs', 'child', 'insurance', 'water', 'alarm',
       'hailfinder', 'hepar2', 'win95pts', 'pathfinder', 'andes', 'pigs', 'link', 'munin']
 
 
 def bn_source(net):
-    return os.path.join(source_tree.SOURCE / 'examples' if net in ('asia', 'cancer') else os.path.join(ROOT, 'data', 'bn'), f'{net}.net')
+    mine = {'asia': ('tests', 'networks'), 'cancer': ('examples',)}
+    return os.path.join(source_tree.SOURCE, *mine[net], f'{net}.net') if net in mine else os.path.join(ROOT, 'data', 'bn', f'{net}.net')
 
 
 for net in BN:
@@ -365,7 +366,7 @@ FOLD = {
     'gen_grid.py': lambda a: ('gridev' if '--evidence' in a else 'grid', a,
                               [fold_key('grid', [w for w in a if w != '--evidence'])]),
     'gen_smokers.py': lambda a: ('smokers', a, [fold_key('smokers', a)]),
-    'gen_uwcse.py': lambda a: ('uwcse', a, []),
+    'gen_uwcse.py': lambda a: ('uwcse', a, [fold_key('uwcse', a)]),
     'gen_pedigree.py': lambda a: ('pedigree', a, [fold_key('pedigree', a)]),
     'gen_tpch.py': lambda a: (lambda f: (f[0], a, f[1]))(gen_tpch.family(a[:])),
     'gen_taint.py': lambda a: ('taint', a, ['taint_' + os.path.basename(a[0]).split('.')[0].replace('-', '_')]),
@@ -558,7 +559,7 @@ CT_DESIGNS = {'halfAdder': 'adder/halfAdder.v', 'fullAdder': 'adder/halfAdder.v,
                                        'openfpga_asyn_spram_4x1', 'openfpga_clock_divider',
                                        'openfpga_dual_port_ram_1k', 'openfpga_pulse_generator',
                                        'openfpga_syn_spram_4x1', 'openfpga_syn_spram_4x1_tmr']}}
-CT_SIZES = {'fulladder': [2, 4, 6, 8, 10, 12, 16, 20, 24, 32, 48], 'mac': [1, 2, 3, 4, 5, 6]}
+CT_SIZES = {'fulladder': [2, 4, 6, 8, 10, 12, 16, 18, 20, 24, 32, 48], 'mac': [1, 2, 3, 4, 5, 6]}
 CIRCULETTE = {}
 for _n in CT_ROOT:
     CIRCULETTE[f'ct_{_n}'] = ('circulette', ['gen_circulette.py', 'root', _n])

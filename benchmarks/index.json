@@ -622,6 +622,7 @@
      "ct_fulladder10",
      "ct_fulladder12",
      "ct_fulladder16",
+     "ct_fulladder18",
      "ct_fulladder20"
     ],
     "key": "fulladder",

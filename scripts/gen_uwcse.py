@@ -3,14 +3,17 @@
 
     gen_uwcse.py N --template
     gen_uwcse.py N --arguments
+    gen_uwcse.py N --data KEY
 
-The family is one program and its argument (bench.py's FOLD): --template
+The family is one program and its data (bench.py's FOLD): --template
 prints data/cplint/uwcse3s.pl converted to ProbLog (`tddlog --program`, the
 binary $TDDLOG or the source tree's), with its three students replaced by
-the rule `student(S) :- between(1, $1, S).`, the students 1 to its place $1;
-the course, the professor and the query taught_by(c1,p1) stay. --arguments
-prints $1, N. The formula of taught_by aggregates over the students, which
-is what makes the family grow.
+`:- consult($1).`, the file of the students; the course, the professor and
+the query taught_by(c1,p1) stay. --data prints the facts student(1) to
+student(N) (KEY is only its name); --arguments prints nothing. The formula
+of taught_by aggregates over the students, which is what makes the family
+grow. The students are facts, not a rule over between/3, which aspmc and
+PSouffle read as another program.
 """
 import argparse
 import os
@@ -29,8 +32,8 @@ def template():
             continue
         out.append(line)
         if line == 'course(c1).':
-            out.append('student(S) :- between(1,$1,S).')
-    return '% UW-CSE (cplint uwcse3s) with $1 students\n' + '\n'.join(out) + '\n'
+            out.append(':- consult($1).')
+    return '% UW-CSE (cplint uwcse3s) with the students of $1\n' + '\n'.join(out) + '\n'
 
 
 def main():
@@ -39,11 +42,13 @@ def main():
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument('--template', action='store_true')
     mode.add_argument('--arguments', action='store_true')
+    mode.add_argument('--data', metavar='KEY')
     a = ap.parse_args()
     if a.template:
         print(template(), end='')
-    else:
-        print(a.n)
+    elif a.data:
+        print(f'% UW-CSE: {a.n} students')
+        print(''.join(f'student({i}).\n' for i in range(1, a.n + 1)), end='')
 
 
 if __name__ == '__main__':

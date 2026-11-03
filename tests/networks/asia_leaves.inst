@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- asia.net's leaves as examples/bn_asia_evidence.pl observes them. -->
+<!-- asia.net's leaves as tests/networks/bn_asia_evidence.pl observes them. -->
 <instantiation>
 <inst id="dysp" value="no"/>
 <inst id="xray" value="yes"/>

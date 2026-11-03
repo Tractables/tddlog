@@ -141,7 +141,7 @@ The [header](https://github.com/Tractables/tddlog/blob/main/bindings/c/include/t
 documents every type and function, and the
 [guide](https://tractables.github.io/tddlog/guide/) describes the
 language, with worked examples that open in the
-[playground](https://tractables.github.io/tddlog/).
+[playground](https://tractables.github.io/tddlog/playground/).
 
 ## Develop
 

@@ -16,25 +16,30 @@
   <div>
     <h1 class="unseen">tddlog results</h1>
   </div>
-  <nav class="site-nav" aria-label="Site">
-    <a href="../">Playground</a>
-    <a href="../guide/">Guide</a>
-    <a href="./" aria-current="page">Results</a>
-    <a href="../api/">Rust API</a>
-    <a href="../python/">Python</a>
-    <a href="../c/">C</a>
+  <button id="menu" class="plain" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+  <nav class="site-nav" id="site-nav" aria-label="Site">
+    <a href="../#/baselines" data-section="#/baselines">By baseline</a>
+    <a href="../#/integrations" data-section="#/integrations">By integration</a>
+    <a href="../#/types" data-section="#/types" aria-current="page">By program type</a>
+    <a href="../#/how" data-section="#/how">How it works</a>
+    <a href="../playground/">Playground</a>
+    <details class="docs"><summary>Docs</summary><div>
+      <a href="../guide/">Guide</a>
+      <a href="../api/">Rust API</a>
+      <a href="../python/">Python</a>
+      <a href="../c/">C</a>
+    </div></details>
     <a href="https://github.com/Tractables/tddlog">GitHub</a>
     <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
   </nav>
 </header>
 
 <div class="shell">
-  <aside id="rail" aria-label="Browse the results">
-    <button id="browse" class="plain" type="button" aria-expanded="false" aria-controls="tree">Browse the results</button>
-    <input id="search" type="search" placeholder="Find a suite, system or instance" aria-label="Find a kind, suite, family, system or instance by its name"
+  <aside id="rail" aria-label="The site's menu">
+    <input id="search" type="search" placeholder="Find a system or instance" aria-label="Find a kind, suite, family, system or instance by its name"
       autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="found-list" aria-expanded="false">
     <div id="found"><p id="found-n" class="n" aria-live="polite"></p><ul id="found-list" role="listbox" aria-label="Found"></ul></div>
-    <nav id="tree" aria-label="Kinds, suites and families"></nav>
+    <nav id="tree" aria-label="The site's sections and their entries"></nav>
   </aside>
   <div id="view">
     <p class="note">Loading the results…</p>
@@ -58,7 +63,7 @@
 </main>
 
 <script src="../code.js"></script>
-<script src="results.js"></script>
+<script src="results.js" data-front="../"></script>
 
 </body>
 </html>

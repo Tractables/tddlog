@@ -32,6 +32,7 @@ mod settle;
 mod stats;
 mod template;
 mod tie;
+pub mod trace;
 
 #[cfg(test)]
 #[path = "tests/clause_memo.rs"]
@@ -56,6 +57,7 @@ pub use stats::{
     SearchStats,
 };
 pub(crate) use template::Template;
+pub use trace::{CompileTrace, ComponentTrace, RestTrace};
 
 use std::fmt;
 

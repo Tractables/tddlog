@@ -50,20 +50,27 @@ test("every program the guide shows whole is its file in the repository", () => 
   }
 });
 
-// Each page's links to the site's pages: the same, in the same order, the
-// page's own marked as the current one.
-test("every page has the site's navigation, its own page marked", () => {
-  const names = ["Playground", "Guide", "Results", "Rust API", "Python", "C", "GitHub"];
-  for (const [file, current] of [["index.html", "Playground"], ["guide/index.html", "Guide"], ["results/index.html", "Results"]]) {
-    const nav = page(file).match(/<nav class="site-nav" aria-label="Site">([\s\S]*?)<\/nav>/);
-    assert.ok(nav, `${file}: the navigation`);
-    const links = [...nav[1].matchAll(/<a href="([^"]+)"( aria-current="page")?>([^<]+)<\/a>/g)];
-    assert.deepEqual(links.map((l) => l[3]), names, `${file}: the navigation's links`);
-    assert.deepEqual(links.filter((l) => l[2]).map((l) => l[3]), [current], `${file}: the current page`);
+// Each page's bar: the site's sections (results.js's SECTIONS, the names
+// its menu gives them), the playground, the docs in a list under their
+// name, and GitHub, the same in the same order, the page's own marked as
+// the current one (the front page, which the logo leads to, is none of
+// them; the results page is By program type's).
+test("every page has the site's bar, its own page marked", () => {
+  const sections = JSON.parse(page("results/results.js").match(/^const SECTIONS = (\[.*\]);$/m)[1]);
+  const names = [...sections.map(([, name]) => name), "Playground", "Guide", "Rust API", "Python", "C", "GitHub"];
+  for (const [file, current] of [["index.html", null], ["playground/index.html", "Playground"], ["guide/index.html", "Guide"],
+    ["results/index.html", "By program type"], ["404.html", null]]) {
+    const nav = page(file).match(/<nav class="site-nav" id="site-nav" aria-label="Site">([\s\S]*?)<\/nav>/);
+    assert.ok(nav, `${file}: the bar`);
+    assert.match(nav[1], /<details class="docs"><summary[^>]*>Docs<\/summary><div>\s*<a href="[^"]+"[^>]*>Guide</, `${file}: the docs' list`);
+    const links = [...nav[1].matchAll(/<a href="([^"]+)"(?: data-section="[^"]+")?( aria-current="page")?>([^<]+)<\/a>/g)];
+    assert.deepEqual(links.map((l) => l[3]), names, `${file}: the bar's links`);
+    assert.deepEqual(links.filter((l) => l[2]).map((l) => l[3]), current ? [current] : [], `${file}: the current page`);
     const up = file.includes("/") ? "../" : "";
-    const where = { Playground: up || "./", Guide: `${up}guide/`, Results: `${up}results/`, "Rust API": `${up}api/`, Python: `${up}python/`, C: `${up}c/` };
+    const where = { ...Object.fromEntries(sections.map(([key, name]) => [name, `${up}#/${key}`])), Playground: `${up}playground/`,
+      Guide: `${up}guide/`, "Rust API": `${up}api/`, Python: `${up}python/`, C: `${up}c/` };
     for (const [, href, , name] of links) {
-      const expected = name === current ? "./" : where[name] ?? "https://github.com/Tractables/tddlog";
+      const expected = name === current && !name.startsWith("By ") ? "./" : where[name] ?? "https://github.com/Tractables/tddlog";
       assert.equal(href, expected, `${file}: ${name}`);
     }
   }

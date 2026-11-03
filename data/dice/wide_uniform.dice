@@ -1,0 +1,5 @@
+// Uniform integers of 16 bits compared and added.
+let x = uniform(16, 0, 65536) in
+let y = uniform(16, 0, 40000) in
+let z = x + y in
+(x < y, (x == int(16, 4242), z < int(16, 30000)))

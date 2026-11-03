@@ -12,6 +12,7 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 use tddlog::network::{Evidence, Queries, ReadOptions};
+use tddlog::trace::Trace;
 use tddlog::{Format, Input, Options, Progress, Strategy};
 
 use stats::{ground_line, print_stats};
@@ -87,6 +88,11 @@ options:
   --stats                               print compilation statistics to stderr; a run that
                                         fails prints the ground program's line and auto's trials
                                         so far before the error
+  --trace <file>                        write a trace of the run to the file as JSON: each stage
+                                        with what it took in and gave out, in summary (the
+                                        program as read, ground and rewritten, the vtree, each
+                                        component's compile, the evidence and the answers), or
+                                        how far the run got before its error
   --precision <n>                       digits after the decimal point (default: 6; for P(e),
                                         after the point of the mantissa and of the logarithm,
                                         and for an answer under 1e-4 that is not zero, after
@@ -123,6 +129,8 @@ struct Args {
     rescale: bool,
     program_only: bool,
     cnf_only: bool,
+    /// The file the trace of the run is written to.
+    trace: Option<String>,
 }
 
 fn parse_args() -> Result<Request, String> {
@@ -134,7 +142,7 @@ fn parse_args() -> Result<Request, String> {
     let (mut ground_only, mut stats, mut evidence_probability, mut no_queries) =
         (None, None, None, None);
     let (mut queries, mut evidence, mut rescale, mut program_only) = (None, None, None, None);
-    let mut cnf_only = None;
+    let (mut cnf_only, mut trace) = (None, None);
     while let Some(a) = args.next() {
         match a.as_str() {
             "-h" | "--help" => return Ok(Request::Help),
@@ -163,6 +171,10 @@ fn parse_args() -> Result<Request, String> {
             option @ "--rescale" => once(&mut rescale, (), option)?,
             option @ "--program" => once(&mut program_only, (), option)?,
             option @ "--cnf" => once(&mut cnf_only, (), option)?,
+            option @ "--trace" => {
+                let v = args.next().ok_or("--trace needs a file")?;
+                once(&mut trace, v, option)?;
+            }
             // A negative number is an argument.
             other
                 if other.starts_with('-')
@@ -180,7 +192,11 @@ fn parse_args() -> Result<Request, String> {
     let ground_only = ground_only.is_some();
     let stats = stats.is_some();
     if ground_only {
-        for (given, option) in [(stats, "--stats"), (precision.is_some(), "--precision")] {
+        for (given, option) in [
+            (stats, "--stats"),
+            (precision.is_some(), "--precision"),
+            (trace.is_some(), "--trace"),
+        ] {
             if given {
                 return Err(format!(
                     "--ground stops before the compile, so {option} would do nothing"
@@ -219,6 +235,7 @@ fn parse_args() -> Result<Request, String> {
             (precision.is_some(), "--precision"),
             (strategy.is_some(), "--vtree"),
             (evidence_probability.is_some(), "--evidence-probability"),
+            (trace.is_some(), "--trace"),
         ] {
             if given {
                 return Err(format!(
@@ -236,6 +253,7 @@ fn parse_args() -> Result<Request, String> {
             (stats, "--stats"),
             (precision.is_some(), "--precision"),
             (strategy.is_some(), "--vtree"),
+            (trace.is_some(), "--trace"),
         ] {
             if given {
                 return Err(format!(
@@ -266,6 +284,7 @@ fn parse_args() -> Result<Request, String> {
         rescale: rescale.is_some(),
         program_only,
         cnf_only,
+        trace,
     }))
 }
 
@@ -294,8 +313,32 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+    // The trace's file is made before the run, so that a run is not lost
+    // to a file it cannot write.
+    let mut trace_file = match args.trace.as_deref().map(std::fs::File::create).transpose() {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!(
+                "cannot write {}: {e}",
+                args.trace.as_deref().unwrap_or_default()
+            );
+            return ExitCode::from(2);
+        }
+    };
+    let code = answer(&args, &mut trace_file);
+    // A run that stopped before it read its program has no trace, and its
+    // file goes rather than stay empty.
+    if let (Some(file), Some(path)) = (trace_file.take(), &args.trace) {
+        drop(file);
+        let _ = std::fs::remove_file(path);
+    }
+    code
+}
+
+/// Read the program and answer it, handing `trace_file` to the run.
+fn answer(args: &Args, trace_file: &mut Option<std::fs::File>) -> ExitCode {
     let started = Instant::now();
-    let (data, evidence) = match read_files(&args) {
+    let (data, evidence) = match read_files(args) {
         Ok(files) => files,
         Err(e) => {
             eprintln!("{e}");
@@ -369,7 +412,7 @@ fn main() -> ExitCode {
         print!("{program}");
         return ExitCode::SUCCESS;
     }
-    match run(&args, &input, &front) {
+    match run(args, &input, &front, (&data, trace_file.take())) {
         Ok(()) => ExitCode::SUCCESS,
         // Options the library refuses are option errors, as above.
         Err(e @ tddlog::Error::Options(_)) => {
@@ -409,11 +452,19 @@ struct Front {
     text_secs: f64,
 }
 
-fn run(args: &Args, input: &Input, front: &Front) -> Result<(), tddlog::Error> {
+/// Answer `input`, read from `data`, writing its trace to `trace_file`
+/// where `--trace` asks for one.
+fn run(
+    args: &Args,
+    input: &Input,
+    front: &Front,
+    (data, trace_file): (&[u8], Option<std::fs::File>),
+) -> Result<(), tddlog::Error> {
     let options = Options {
         strategy: args.strategy,
         evidence_probability: args.evidence_probability,
         queries: !args.no_queries,
+        trace: trace_file.is_some(),
         ..Options::default()
     };
     if args.ground_only {
@@ -440,21 +491,35 @@ fn run(args: &Args, input: &Input, front: &Front) -> Result<(), tddlog::Error> {
     // the program its compile ended on, with `auto`'s indicators) and,
     // under `auto`, the trials so far.
     let mut failed = None;
+    let mut trace = match trace_file {
+        Some(file) => Some((Trace::new(args.format, data, input, &options)?, file)),
+        None => None,
+    };
     let solved = tddlog::solve(&input.program, &options, &mut |progress| {
+        if let Some((trace, _)) = trace.as_mut() {
+            trace.observe(&progress);
+        }
         if !args.stats {
             return;
         }
         match progress {
-            Progress::Parsed { seconds } => eprintln!(
+            Progress::Parsed { seconds, .. } => eprintln!(
                 "read: {} bytes, file {:.3}s, program text {:.3}s, parse {seconds:.3}s",
                 front.bytes, front.read_secs, front.text_secs
             ),
-            Progress::Grounded { seconds } => ground_secs = seconds,
+            Progress::Grounded { seconds, .. } => ground_secs = seconds,
             Progress::Note(line) => eprintln!("{line}"),
             Progress::Compiling(ground) => failed = Some(ground_line(ground, ground_secs)),
             Progress::Answered(run) => print_stats(args, run, ground_secs),
         }
     });
+    if let Some((trace, file)) = trace.as_mut() {
+        match &solved {
+            Ok(solution) => trace.answered(solution, input),
+            Err(e) => trace.failed(e),
+        }
+        write_trace(trace, file);
+    }
     let solution = match solved {
         Ok(solution) => solution,
         Err(e) => {
@@ -494,6 +559,14 @@ fn run(args: &Args, input: &Input, front: &Front) -> Result<(), tddlog::Error> {
     // to 1% of a large network's run.
     std::mem::forget(solution);
     Ok(())
+}
+
+/// Writes `trace` to `file`, or says on stderr that it could not.
+fn write_trace(trace: &Trace, file: &mut std::fs::File) {
+    let mut out = std::io::BufWriter::new(file);
+    if let Err(e) = write!(out, "{trace}").and_then(|()| out.flush()) {
+        eprintln!("cannot write the trace: {e}");
+    }
 }
 
 /// The least answer written in fixed notation.
