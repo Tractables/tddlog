@@ -322,10 +322,8 @@ function integrationsView() {
   }
   return [crumbs(HOME, [sectionName("integrations")]), element("h2", {}, sectionName("integrations")),
     element("p", { class: "lede" }, "tddlog with its own front ends, and tddlog doing the inference after another system's own code."),
-    scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
-      element("th", { scope: "col" }, "integration"), element("th", { scope: "col" }, "what reads the program"),
-      element("th", { scope: "col", class: "num" }, "given"), element("th", { scope: "col", class: "num" }, "answers"),
-      element("th", { scope: "col", class: "num", title: "the system alone, on the same instances" }, "the system alone answers"))),
+    scroller(stacked(element("table", { class: "board" }, head2(["integration"], ["what reads the program"], ["given", null, "num"],
+      { group: "answers", cols: [["the integration", null, "num"], ["the system alone", "the system alone, on the same instances", "num"]] }),
     body)), "whole")];
 }
 

@@ -112,6 +112,7 @@ function drawn(page) {
         for (const m of v.head.me) assert.ok(line.includes(cats.names[m]), `${x}: head-to-head names ${m}`);
       }
       assert.equal(await page.locator(`.panels-nav a[href="#/baselines/${x}/run"]`).count(), 1, `${x}: a link to how it was run`);
+      assert.equal(await page.getByText(/its time limit \(PAR-/).count(), 1, `${x}: how the totals are counted, once`);
     }]),
     ["#/integrations", "integrations", async () => assert.equal(await page.locator("table.board tbody tr").count(), integrations.length)],
     ...integrations.map((k) => [`#/integrations/${k}`, "integration", async () => {

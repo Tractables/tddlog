@@ -1022,6 +1022,9 @@ table.board .num { text-align: right; font-variant-numeric: tabular-nums; }
 table.board tr.mine th, table.board tr.mine td { font-weight: 600; }
 table.board tr.vs th, table.board tr.vs td { background: var(--accent-fill); }
 table.board thead th { position: sticky; top: 0; background: var(--card); white-space: normal; vertical-align: bottom; }
+/* A group's name over its columns (head2): the system's, or tddlog's. */
+table.board thead tr + tr th { position: static; }
+table.board thead th.group { color: var(--ink); font-weight: 600; text-align: center; border-bottom: 1px solid var(--line); }
 table.h2h td.ratio { font-weight: 600; }
 table.h2h tr.words td { white-space: normal; background: var(--bg); font-size: 14px; }
 table.h2h tr.words p { max-width: 80ch; }
