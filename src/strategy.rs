@@ -138,7 +138,8 @@ impl Kind {
     }
 
     /// The first step of every layout's rewrite: `gp` written without its
-    /// linear recursion ([`ground::without_linear_recursion`]). Every
+    /// linear recursion ([`ground::without_linear_recursion`]), and its
+    /// wide bodies as chains ([`vtree::chained`]). Every
     /// layout took less work on the rewrite of the twelve benchmark
     /// programs with linear recursion counted (sickness18_20 under
     /// `families:0` 3.41 M units against 170 k, under `td` 3.66 G against
@@ -148,7 +149,7 @@ impl Kind {
     /// under `auto`: a test of a mechanism of the indicators builds one.
     pub(crate) fn eliminated(gp: GroundProgram) -> GroundProgram {
         if gp.encoding.is_empty() {
-            ground::without_linear_recursion(gp)
+            vtree::chained(ground::without_linear_recursion(gp))
         } else {
             gp
         }

@@ -7,8 +7,7 @@ whose README says which version of each baseline ran on which programs
 and which script reproduces each table. That branch holds the benchmark
 driver `scripts/bench.py`, the scripts that run or feed a baseline
 (`alea_bench.jl`, `dice2alea.py`, `problog2pita.py`, `ground2scallop.py`,
-`gen_geni.py`, `gen_roulette.py`), the harnesses of the one-hot arm
-(`dice2problog_onehot.py`), the scaled loops (`dice_scale.py`,
+`gen_geni.py`, `gen_roulette.py`), the scaled loops (`dice_scale.py`,
 `bench_one.py`) and the samplers (`scripts/samplers/`), the programs of
 Alea.jl's, Geni's, noDice's and Roulette's evaluations and the
 bit-blasting artifact's (`data/alea`, `data/geni`, `data/nodice`,
@@ -998,11 +997,10 @@ symbols that tddlog's grounder reads:
 - **threedie** `threedie<n>` (`gen_threedie.py`): PITA's three-sided die
   thrown until it shows 3 (Riguzzi and Swift, ICLP 2010, Fig. 3), the
   probability that throw n shows 1.
-- **pcfg**, **pcfgcount** `pcfg<n>`, `pcfgcount<n>` (`gen_pcfg.py`): the
+- **pcfg** `pcfg<n>` (`gen_pcfg.py`): the
   ProbLog tutorial's probabilistic context-free grammar, each choice
-  identified by the derivation's stack (pcfg) or by its nonterminal's
-  count of expansions (pcfgcount), asked how the derivation of a balanced
-  word of length n starts, given the word.
+  identified by the derivation's stack, asked how the derivation of a
+  balanced word of length n starts, given the word.
 - **dnahmm** `dnahmm<n>` (`gen_dnahmm.py`): cplint's HMM of DNA sequences
   (Christiansen and Gallagher, ICLP 2009; PITA's evaluation, Riguzzi and
   Swift, TPLP 2011), each choice indexed by the states before it, the
@@ -1699,47 +1697,6 @@ faster than tddlog from 100 steps on (0.35 s against 1.45 at 6 400
 steps). Alea answers ladder up to 1 600 steps (oom at 6 400). On pmc1
 and pmc2 Dice fails on 6 of the 7 sizes; Alea answers 7, in 3.38 to
 22.78 s in the process, and tddlog 7, in 0.06 to 0.69 s.
-
-tddlog holds a Dice program's integers in bits, as Dice and Alea do (its
-Dice reader); an integer of n values takes about log2 n atoms. The same
-binary ran on the translation that held them one-hot, an atom per value,
-in the same lanes: on the 48 programs of noDice and data/dice that both
-answer, one-hot takes 139 s in all against 91.8 s in bits, and their
-answers agree to a relative 1.7e-13. Where either takes 0.1 s or more
-and the two differ by a quarter or more:
-
-| program | bits | one-hot | bits pairs | one-hot pairs |
-|---|---:|---:|---:|---:|
-| dice_caesar-iter | 1.60 | 0.49 | 77 124 | 84 024 |
-| dice_caesar-iter_k1000 | 0.41 | 0.19 | 14 006 | 28 024 |
-| dice_caesar-iter_k3000 | 0.93 | 0.49 | 77 124 | 84 024 |
-| dice_diamond_k1600 | 0.14 | 0.25 | 17 595 | 19 182 |
-| dice_diamond_k400 | 0.03 | 0.11 | 4 395 | 4 800 |
-| dice_diamond_k6400 | 0.35 | 0.90 | 70 395 | 76 800 |
-| dice_ladder | 0.05 | 0.11 | 2 861 | 2 590 |
-| dice_ladder_k100 | 0.06 | 0.11 | 2 861 | 2 590 |
-| dice_ladder_k1600 | 0.46 | 0.77 | 50 405 | 49 562 |
-| dice_ladder_k400 | 0.20 | 0.31 | 12 077 | 12 356 |
-| dice_ladder_k6400 | 1.45 | 1.97 | 204 005 | 198 356 |
-| dice_pmc1 | 0.69 | 0.98 | 184 | 147 |
-| dice_pmc1_k20 | 0.26 | 0.14 | 0 | 0 |
-| dice_pmc1_k75 | 0.69 | 0.96 | 184 | 147 |
-| dice_pmc2 | 0.23 | 0.30 | 41 | 30 |
-| dice_simpleCaesar | 3.84 | 0.74 | 76 062 | 161 074 |
-| dice_simpleCaesar_k100 | 0.35 | 0.12 | 6 476 | 17 074 |
-| dice_simpleCaesar_k1000 | 3.90 | 0.74 | 76 062 | 161 074 |
-| dice_simpleCaesar_k300 | 0.87 | 0.25 | 17 733 | 49 074 |
-| nodice_alarm | 0.05 | 0.14 | 13 698 | 15 969 |
-| nodice_coupon2-10-obs | 0.10 | 0.18 | 502 608 | 1 004 262 |
-| nodice_coupon2-11-obs | 0.20 | 0.27 | 1 740 428 | 2 236 628 |
-| nodice_coupon2-12-obs | 0.17 | 0.71 | 2 857 960 | 10 237 648 |
-| nodice_coupon2-13-obs | 0.58 | 2.26 | 8 252 950 | 25 871 969 |
-| nodice_coupon2-14-obs | 0.74 | 3.04 | 19 626 442 | 64 259 106 |
-| nodice_coupon2-16-obs | 5.84 | 22.16 | 30 473 630 | 217 660 970 |
-| nodice_coupon2-18-obs | 65.45 | 96.46 | 517 450 552 | 402 338 412 |
-| nodice_hepar2 | 0.08 | 0.14 | 8 622 | 119 550 |
-| nodice_insurance | 0.10 | 0.19 | 1 158 747 | 141 555 |
-| nodice_water | 0.36 | 0.73 | 471 618 | 1 105 004 |
 
 The repetitions differ by more than half in two places where one takes a
 second or more, most on dice_pmc1_k75 (tddlog 0.69 to 1.12 s) and

@@ -7,12 +7,10 @@ programs `dice_scale.py` wrote.
     bench_one.py SCRIPTS SYSTEM PROGRAM REP CPU TIMEOUT OUT
 
 SCRIPTS is a tddlog scripts directory with dice2alea.py; SYSTEM is
-tddlog, onehot, dice, alea or problog (ProbLog's d-DNNF on the .pl, the
+tddlog, dice, alea or problog (ProbLog's d-DNNF on the .pl, the
 reference); PROGRAM a path without extension whose .dice and
 .pl (`tddlog --program`'s translation) exist. tddlog reads the .dice
-itself, so that reading it is part of its time (bench.py's `original`);
-`onehot` is tddlog on the program's one-hot translation, $ONEHOT/NAME.pl
-(dice2problog_onehot.py), recorded as tddlog's variant auto+onehot. The
+itself, so that reading it is part of its time (bench.py's `original`). The
 runs are bench.py's own: `timed` for the wall time, pinned to CPU,
 `run_dice` and `run_alea` for Dice and Alea.jl with the program as a
 `dice` instance (the Alea script written by dice2alea.py, untimed, to a
@@ -39,12 +37,11 @@ work = os.path.join(os.path.dirname(program), 'work', f'{name}.{system}.{rep}')
 os.makedirs(work, exist_ok=True)
 args = SimpleNamespace(dir=work, timeout=float(timeout),
                        dice=os.environ['DICE'] + ' {file}', alea=os.environ['ALEA'])
-if system in ('tddlog', 'onehot'):
-    src = dice if system == 'tddlog' else os.path.join(os.environ['ONEHOT'], name + '.pl')
-    r = bench.timed([os.environ['TDDLOG'], '--stats', '--precision', '17', src], args.timeout)
+if system == 'tddlog':
+    r = bench.timed([os.environ['TDDLOG'], '--stats', '--precision', '17', dice], args.timeout)
     if r['status'] == 'ok':
         r['answers'] = bench.parse_answers(r['stdout'])
-    system, variant = 'tddlog', 'auto' if system == 'tddlog' else 'auto+onehot'
+    variant = 'auto'
 elif system == 'dice':
     r, variant = bench.run_dice(args, name, pl), 'bdd'
 elif system == 'alea':

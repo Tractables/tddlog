@@ -305,6 +305,9 @@ pub struct GroundStats {
     /// How many of the atoms inlined were of a recursive predicate, a
     /// chain (`inline`).
     pub chained: usize,
+    /// How many links the bodies wider than a layout reads well were
+    /// written as chains of (`vtree::chained`).
+    pub links: usize,
     /// How many derived atoms the grounder merged, after the views, into an
     /// earlier atom with the same rules or proved equal in function
     /// (`aig::reduce`).

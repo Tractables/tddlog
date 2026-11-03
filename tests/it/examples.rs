@@ -875,6 +875,36 @@ mod dice {
         assert_eq!(read, 10);
     }
 
+    /// An observation of false makes the evidence impossible, and Dice
+    /// gives each value the probability 0: the reader writes evidence on an
+    /// atom defined false, once however often it is observed, as
+    /// tests/regress/false_observation.pl, on which ProbLog and tddlog find
+    /// the evidence inconsistent.
+    #[test]
+    fn an_impossible_observation() {
+        let program = read(
+            "let x = flip 0.5 in\nlet _ = observe false in\nlet _ = observe false in\nx",
+            "an impossible observation",
+        );
+        for line in [
+            "false_observation :- fail.",
+            "evidence(false_observation, true).",
+        ] {
+            assert_eq!(
+                program.lines().filter(|l| *l == line).count(),
+                1,
+                "{program}"
+            );
+        }
+        let options = Options {
+            evidence_probability: true,
+            ..Options::default()
+        };
+        let solution = tddlog::solve(&program, &options, &mut |_| {}).unwrap();
+        assert!(solution.answers.is_none(), "{program}");
+        assert_eq!(solution.evidence_probability.unwrap().to_f64(), 0.0);
+    }
+
     /// Under `x == 1 || x == 3`, x takes the values 1 and 3 alone (the
     /// reader's unit tests check that the branch's bit 0 is the constant
     /// true); the answers by hand: x is 3 with probability 0.4, and 1
@@ -1496,10 +1526,10 @@ mod lpad {
     }
 }
 
-/// The circuits that scripts/alea2problog.jl writes for the Alea.jl
-/// programs beside them (tests/test_alea2problog.py checks that it does),
-/// with the answers computed by hand in those programs' comments, which
-/// Alea gives too.
+/// The circuits that Alea.jl's tddlog backend (`write_problog`, on the
+/// branch tddlog of Tractables/Alea.jl) writes for the Alea.jl programs
+/// beside them, with the answers computed by hand in those programs'
+/// comments, which Alea gives too.
 mod alea {
     use super::*;
 
@@ -1759,12 +1789,14 @@ mod roulette {
     }
 }
 
-/// The circuits that scripts/roulette2problog.rkt writes for the Roulette
-/// programs beside them in tests/roulette/ and tests/roulette/lib/
-/// (tests/test_roulette2problog.py checks that it does), with the answers
-/// or weights computed by hand in those
-/// programs' comments, which Roulette gives too. qK(I) is the I-th value of
-/// the K-th query, in Racket's `datum-order`.
+/// The circuits Roulette builds for the programs beside them, with the
+/// answers or weights computed by hand in those programs' comments, which
+/// Roulette gives too: in tests/roulette/lib/, programs of Roulette's
+/// package, written by Roulette's tddlog engine (`roulette/engine/tddlog`,
+/// on the branch tddlog of Tractables/roulette); in tests/roulette/,
+/// programs of Roulette's PLDI 2025 artifact, written by the exporter the
+/// engine replaced. qK(I) is the I-th value of the K-th query, in Racket's
+/// `datum-order`.
 mod roulette_circuits {
     use super::*;
 

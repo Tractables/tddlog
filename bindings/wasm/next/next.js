@@ -8,7 +8,7 @@
 //   #/                     the home page: what tddlog is, each type of program against its best baselines, the integrations
 //   #/baselines            by baseline: every other system, what it is native to and what it answers
 //   #/baselines/SYSTEM[/AT]
-//                          tddlog against SYSTEM: head-to-head, translated (each direction and translator), in
+//                          tddlog against SYSTEM: head-to-head, translated (by family), in
 //                          each type of program, its own benchmarks, coverage, and how it was run; AT names
 //                          one of these, which the page scrolls to
 //   #/integrations         by integration: tddlog alone, and in a pipeline after another system's own code
@@ -33,11 +33,6 @@
 // times. The page counts and draws; it computes no total or speed-up.
 
 const BRANCH = "https://github.com/Tractables/tddlog/blob/";
-const KIND_TEXT = {
-  s: (name) => `${name} read a translation of the program tddlog read`,
-  m: (name) => `tddlog read a translation of ${name}'s program`,
-  b: () => "both read a translation of the original, which neither read",
-};
 const draft = { views: null };
 
 // ------------------------------------------------------------- the data
@@ -196,6 +191,56 @@ function baselinesView() {
     body)), "whole")];
 }
 
+// A list of nodes in prose: "A", "A and B", "A, B and C".
+const andNodes = (items) => items.flatMap((x, i) => [i === 0 ? "" : i === items.length - 1 ? " and " : ", ", x]);
+
+// What one side read on a baseline's translated instances (views.json's
+// read), in a few words: the original programs, those the scripts wrote,
+// other translations.
+function whatRead(side) {
+  const out = [];
+  if (side.original) out.push(["the original programs"]);
+  if (side.by.length) out.push(["programs written by ", ...andNodes(side.by.map(([n, path]) => scriptLink(n, path)))]);
+  if (side.other) out.push([side.by.length ? "other translations" : "translations"]);
+  return out.flatMap((part, i) => [i ? " or " : "", ...part]);
+}
+
+// A baseline's translated instances by family (views.json's families, as
+// the types name them, most first; those of few instances in one row, their
+// names its title): the instances, each side's answers and total, and
+// tddlog's speed-up; a family opens on its program's page, where its type
+// has several, on the type's view of it. Under it, one line on what each
+// side read.
+function translatedTable(v, name, rows) {
+  const me = subject(v.translated.me), par = `over the instances ${name} is given and either answers (PAR-${data.measure.par})`;
+  const num = (text) => element("td", { class: "num" }, text);
+  const group = ([c, key]) => data.categories.find((y) => y.key === c).groups.find((g) => g.key === key);
+  const of = new Map();
+  for (const r of rows) {
+    const at = data.place.get(`${r.suite}/${r.name}`);
+    const key = `${at.c.key}/${at.g.key}`;
+    if (!of.has(key)) of.set(key, []);
+    of.get(key).push(r);
+  }
+  // A title two types share (Mastermind) names its type too.
+  const titles = v.families.filter((f) => f.family).map((f) => group(f.family).title);
+  const title = (f) => titles.filter((t) => t === group(f).title).length > 1
+    ? `${group(f).title} (${lower(data.categories.find((y) => y.key === f[0]).title)})` : group(f).title;
+  const familyLink = (f) => {
+    const pages = pagesOf(of.get(f.join("/")) ?? []);
+    return link(pages.length === 1 ? pages[0].route : { view: "category", category: f[0], only: f[1] }, title(f));
+  };
+  const body = element("tbody", {}, ...v.families.map((f) => element("tr", {},
+    f.families ? element("th", { scope: "row", title: f.families.map((k) => group(k).title).join(", ") }, `other families (${f.families.length})`)
+      : element("th", { scope: "row" }, familyLink(f.family)),
+    ...[count(f.n), count(f.vs.answers), duration(f.vs.total), count(f.vs.tddlog_answers), duration(f.vs.tddlog_total), speedCell(f.vs)].map(num))));
+  return [scroller(stacked(element("table", { class: "board fams-tr" },
+    head2(["family", "each family's page shows the programs both read"], ["instances", null, "num"],
+      { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
+      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], ["faster", `${me}'s speed-up`, "num"]] }), body)), "whole"),
+  note(`${name} read `, ...whatRead(v.read.system), `; ${me} read `, ...whatRead(v.read.mine), ". Each family's page shows both.")];
+}
+
 // The sections of a baseline's page, by the ids a link names (#/baselines/X/AT).
 const BASELINE_AT = [["head", "Head-to-head"], ["translated", "Translated"], ["language", "Its own language"], ["types", "In each type"],
   ["own", "Its own benchmarks"], ["coverage", "Coverage"], ["run", "How it was run"]];
@@ -207,7 +252,10 @@ function baselineView(route) {
   const rows = systemRows(x);
   const parts = solverParts(x);
   const site = s.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-  const at = BASELINE_AT.filter(([id]) => (id !== "own" || parts.own.length) && (id !== "language" || parts.languages.length));
+  const head = rows.filter((r) => r.kind === "h"), tr = rows.filter((r) => "smb".includes(r.kind));
+  // a section with no instances is left out, with its entry in the nav
+  const has = { head: head.length, translated: tr.length, own: parts.own.length, language: parts.languages.length };
+  const at = BASELINE_AT.filter(([id]) => has[id] ?? true);
   const out = [crumbs(HOME, inSection("baselines"), [name]),
     element("h2", { class: "solver" }, swatch(x), `tddlog against ${name}`),
     element("p", { class: "lede" }, `${s.about} `, element("a", { href: s.link }, site)),
@@ -215,37 +263,20 @@ function baselineView(route) {
       ["answers tddlog misses", count(v.beyond.length), `instances ${name} answers that tddlog does not`]),
     element("nav", { class: "panels-nav", "aria-label": "Sections" }, ...at.map(([id, text]) => link({ view: "baseline", system: x, at: id }, text)))];
   // head-to-head, its own benchmarks among them
-  const head = rows.filter((r) => r.kind === "h");
-  const own = head.filter((r) => r.cls[r.c.systems.indexOf(x)] === "o").length;
-  const p1 = element("section", { class: "panel", id: "head" }, element("h3", {}, "Head-to-head"),
-    note("Both read the same program: the benchmark's own, or the same network in another network format",
-      own ? `; ${count(own)} of them are ${name}'s own benchmarks.` : "."));
-  if (head.length) p1.append(versusCells(v.head, name, head.length), pairPlot(head, x, v.head, "h"), familyCounts(head));
-  out.push(p1);
-  // translated, by direction and translator
-  const tr = rows.filter((r) => "smb".includes(r.kind));
-  const p2 = element("section", { class: "panel", id: "translated" }, element("h3", {}, "Translated"),
-    note("One of them, or both, read a translation; tddlog's own readers (of Dice programs, LPADs and networks) are front ends, not translations."));
-  if (tr.length) {
-    p2.append(versusCells(v.translated, name, tr.length));
-    // the ways, under their direction, each named by its translators
-    for (const kind of new Set(v.ways.map((w) => w.kind))) {
-      const ways = element("div", { class: "ways" });
-      for (const w of v.ways.filter((y) => y.kind === kind)) {
-        const how = [...(w.reason ? [element("span", { class: "muted" }, `${name} read: `), w.reason, element("br")] : []),
-          ...(w.mine ? [element("span", { class: "muted" }, "tddlog read: "), w.mine, element("br")] : []),
-          ...(w.by.length ? ["Written by ", ...w.by.flatMap(([n, path], i) => [i ? ", " : "", scriptLink(n, path)])] : [])];
-        ways.append(element("div", { class: "way" },
-          w.by.length ? element("p", { class: "way-head" }, element("span", { class: "muted" }, "Written by "),
-            ...w.by.flatMap(([n], i) => [i ? ", " : "", element("code", {}, n)])) : null,
-          w.vs ? versusCells(w.vs, name, w.n) : cells(["instances", count(w.n)]),
-          ...(how.length ? [fold("The programs and the translator", ...how)] : [])));
-      }
-      p2.append(element("h4", {}, KIND_TEXT[kind](name)), ways);
-    }
-    p2.append(pairPlot(tr, x, v.translated, "t"), familyCounts(tr));
+  if (head.length) {
+    const own = head.filter((r) => r.cls[r.c.systems.indexOf(x)] === "o").length;
+    out.push(element("section", { class: "panel", id: "head" }, element("h3", {}, "Head-to-head"),
+      note("Both read the same program: the benchmark's own, or the same network in another network format",
+        own ? `; ${count(own)} of them are ${name}'s own benchmarks.` : "."),
+      versusCells(v.head, name, head.length), pairPlot(head, x, v.head, "h"), familyCounts(head)));
   }
-  out.push(p2);
+  // translated, by family
+  if (tr.length) {
+    out.push(element("section", { class: "panel", id: "translated" }, element("h3", {}, "Translated"),
+      note(head.length ? "One of them, or both, read a translation" : `Every instance ${name} was given is a translation for one of them or both`,
+        "; tddlog's own readers (of Dice programs, LPADs and networks) are front ends, not translations."),
+      versusCells(v.translated, name, tr.length), ...translatedTable(v, name, tr), pairPlot(tr, x, v.translated, "t")));
+  }
   // in its own language and translated for it, then in each type of program it was given
   if (parts.languages.length) {
     out.push(element("section", { class: "panel", id: "language" }, element("h3", {}, "In its own language and translated for it"),
@@ -287,8 +318,7 @@ function baselineView(route) {
   // how it was run
   parts.facts.append(element("dt", {}, "Counted"), element("dd", {}, measureLine()),
     element("dt", {}, "Commands"), element("dd", {}, "Each instance's page shows the commands each system ran and the files it read."));
-  out.push(element("section", { class: "panel", id: "run" }, element("h3", {}, "How it was run"), element("div", { class: "facts" }, parts.facts),
-    lazy({ class: "given" }, "How it was given each suite's instances", () => [parts.given])));
+  out.push(element("section", { class: "panel", id: "run" }, element("h3", {}, "How it was run"), element("div", { class: "facts" }, parts.facts)));
   return out;
 }
 
@@ -342,7 +372,8 @@ function integrationView(route) {
   const x = i.system, me = i.pipeline, name = data.names[x], v = i.vs[x];
   const rows = catRows(i).map((r) => ({ ...r, me }));
   out.push(element("h2", { class: "solver", title: i.about ?? null }, swatch(me), `${i.title} against ${name}`),
-    note(`${name}'s own code, then tddlog's inference; the time includes ${name}'s after its warm-up.`),
+    note(`${name}'s own code, then tddlog's inference; the time includes ${name}'s after its warm-up.`,
+      ...(i.code ? [" The integration's code: ", element("a", { href: i.code }, i.code.replace("https://github.com/", ""))] : [])),
     versusCells(v, name, i.instances), note(measureLine()), pairPlot(rows, x, v, `int-${k}`));
   // the families
   const fams = element("tbody");
@@ -643,7 +674,7 @@ const WALKS = [
     command: "tddlog --trace roulette.json --evidence-probability tests/roulette/lib/diagnosis.pl",
     lede: "A fault diagnosis in Roulette (tests/roulette/lib/diagnosis.rkt): an and gate fails with probability 0.1, an or gate with 0.2, and the output is observed wrong. Which gate failed?",
     captions: {
-      read: "Roulette+tddlog: Roulette runs the program symbolically into a circuit, which scripts/roulette2problog.rkt writes as this program: a flip per random choice, a rule per gate.",
+      read: "Roulette+tddlog: Roulette runs the program symbolically into a circuit, which Roulette's tddlog engine writes as this program: a flip per random choice, a rule per gate.",
       parse: "20 clauses: 4 flips (the inputs, of probability 1 and 0, and the faults `f3` and `f4`), 15 rules and a fact; the output `g9` observed, and 4 queries.",
       ground: "The inputs are constants, so the gates fold away: 16 rules over 17 atoms become 6 over 7, the output the exclusive or of the faults. The observation makes `q4(1)` false.",
       rewrite: "No recursion to write out and no indicators: the program compiles as ground.",

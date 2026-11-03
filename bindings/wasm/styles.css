@@ -17,6 +17,13 @@
   --amber-fill: #fbeed0;
   --code: #f2f2ed;
   --bad: #b3261e;
+  /* The logo's blue and gold (docs/logo.svg), and the gold's tint and
+     edge: How it works marks its stages in the blue and its walkthroughs
+     in the gold. */
+  --logo-blue: #2774ae;
+  --logo-gold: #ffd100;
+  --gold-fill: #fff3c2;
+  --gold-line: #d9b100;
   /* Syntax highlighting (code.js): comments, strings, numbers, keywords
      and operators, variables, called names, types and the prompt; each,
      and --muted, at least 4.5:1 on --code (tests/browser.cjs checks). */
@@ -45,6 +52,8 @@
     --amber-fill: #46381a;
     --code: #15181b;
     --bad: #f2827a;
+    --gold-fill: #3a3214;
+    --gold-line: #9c8114;
     --t-com: #8b949e;
     --t-str: #7ee787;
     --t-num: #f0a35e;
@@ -69,6 +78,8 @@
   --amber-fill: #46381a;
   --code: #15181b;
   --bad: #f2827a;
+  --gold-fill: #3a3214;
+  --gold-line: #9c8114;
   --t-com: #8b949e;
   --t-str: #7ee787;
   --t-num: #f0a35e;
@@ -1061,12 +1072,10 @@ table.board.own td.about { white-space: normal; min-width: 18rem; max-width: 40r
 table.board.families thead th, table.board.families td.about { white-space: normal; }
 table.board.families td.about { min-width: 10rem; max-width: 30rem; }
 /* A solver's page: its name and line's sample, its plot in each category
-   (two to a row where they fit), how it was given the instances, and its
-   version, settings and paper. */
+   (two to a row where they fit), and its version, settings and paper. */
 h2.solver { display: flex; align-items: center; gap: 0.6rem; }
 .cat-figs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: 0.5rem 1.5rem; }
 .cat-figs section h3 { margin: 0.6rem 0 0; font-size: 1rem; }
-table.board.how-given td.about { white-space: normal; min-width: 12rem; max-width: 36rem; }
 div.facts dl { margin: 0.4rem 0 0; font-size: 14px; }
 div.facts dd { max-width: 80ch; min-width: 0; overflow-wrap: anywhere; }
 .tree li.solver i.sw { width: 0.8rem; flex: none; align-self: center; }
@@ -1293,6 +1302,8 @@ details.about h4 { margin: 0.6rem 0 0; font-size: 13px; }
   white-space: nowrap;
 }
 .ftabs button small { margin-left: 0.45rem; font-family: var(--sans); opacity: 0.8; }
+/* what tells a file from the tab's other files of its name: whose it is */
+.ftabs button .twin { margin-left: 0.45rem; padding: 0 0.4rem; border-radius: 3px; background: var(--amber-fill); color: var(--ink); font: 500 11.5px/1.5 var(--sans); }
 .ftabs button:hover:not(:disabled) { background: var(--accent-fill); color: var(--ink); }
 .ftabs button[aria-selected="true"], .ftabs button[aria-selected="true"]:hover:not(:disabled) {
   background: var(--card); color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }

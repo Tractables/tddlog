@@ -278,14 +278,17 @@ fn evidence_probability_prints_one_line_after_the_answers() {
         "{}",
         stdout(&out)
     );
-    let out = tddlog(&[
-        "--evidence-probability",
+    for file in [
         "tests/regress/condition_inconsistent.pl",
-    ]);
-    assert_eq!(
-        stdout(&out),
-        "evidence is inconsistent: probability zero\nP(e):\t0.000000e0\tlog10 -inf\n"
-    );
+        "tests/regress/false_observation.pl",
+    ] {
+        let out = tddlog(&["--evidence-probability", file]);
+        assert_eq!(
+            stdout(&out),
+            "evidence is inconsistent: probability zero\nP(e):\t0.000000e0\tlog10 -inf\n",
+            "{file}"
+        );
+    }
     // 2^-1100, under the least float, is read off its logarithm.
     let path =
         std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("evidence_probability_1100.pl");

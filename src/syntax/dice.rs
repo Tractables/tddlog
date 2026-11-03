@@ -1817,7 +1817,11 @@ impl<'a> Translator<'a> {
             self.rule(&a, body);
         }
         if path.is_empty() && (is(&c, "true") || is(&c, "false")) {
-            if is(&c, "false") {
+            // An impossible observation: evidence on an atom defined false,
+            // which ProbLog and tddlog find inconsistent, once a program.
+            const FALSE: &str = "false_observation :- fail.";
+            if is(&c, "false") && !self.lines.iter().any(|l| l == FALSE) {
+                self.lines.push(FALSE.into());
                 self.lines.push("evidence(false_observation, true).".into());
             }
             return;

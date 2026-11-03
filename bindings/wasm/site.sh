@@ -3,10 +3,11 @@
 # https://tractables.github.io/tddlog/ in the directory OUT, which is
 # replaced:
 #
-#   /           the front page (index.html): the views by tool and by type of
-#               program, the coverage and how it works, as the results page's
-#               app (/results/results.js) with the views of /next/next.js
-#               added, over the results page's data and /next/views.json;
+#   /           the front page (index.html): the views by baseline, by
+#               integration and by program type, the coverage and how it
+#               works, as the results page's app (/results/results.js) with
+#               the views of /next/next.js added, over the results page's
+#               data and /next/views.json;
 #               the site's scripts and styles, the playground's among them,
 #               and tddlog.js and tddlog.wasm from this crate's release build
 #               (target/wasm32-unknown-emscripten/release)

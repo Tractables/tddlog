@@ -43,16 +43,20 @@
 //!
 //! A body that reads more than [`WIDEST`] atoms crosses every boundary in
 //! its span with everything it has read before it, so no cut there could
-//! be narrow; it is first written as a chain along the order ([`chained`]).
+//! be narrow; every layout's rewrite writes it as a chain along the order
+//! first ([`chained`]).
 //!
 //! Whether a cut's names pay is settled on the compiled program
 //! ([`crate::tp::settle`]): where the joint of a cut's links is larger than
 //! what the formulas reading its copies would hold with them expanded, the
 //! copies are composed away and the cut's links leave the evidence.
 
+use std::sync::Arc;
+
 use rustc_hash::FxHashSet;
 
 use crate::ground::deps::{Deps, fan_in};
+use crate::ground::tables::Tables;
 use crate::ground::{AtomId, AtomKind, GLit, GroundProgram, GroundRule};
 use crate::indicators;
 use crate::syntax::{Atom, Term};
@@ -87,15 +91,6 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
     if !gp.encoding.is_empty() {
         return Laid { facts, named: None };
     }
-    let chained = chained(gp, deps, &order);
-    let chained_deps = chained.as_ref().map(Deps::of);
-    let links = chained
-        .as_ref()
-        .map_or(0, |c| c.num_atoms() - gp.num_atoms());
-    let (gp, deps, order) = match (&chained, &chained_deps) {
-        (Some(c), Some(d)) => (c, d, positions(c, fan_in)),
-        _ => (gp, deps, order),
-    };
     let (at, boundaries, last) = profile(gp, &order);
     let cuts = hiding(gp, deps, &at, &last, &cuts(&boundaries));
     if cuts.is_empty() {
@@ -162,16 +157,13 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
     laid.extend(next.map(|c| c.2));
     named.encoding.segments = units;
     let atoms: FxHashSet<AtomId> = named.encoding.indicators.iter().map(|i| i.atom).collect();
-    let mut note = format!(
+    let note = format!(
         "naming: {} cuts, widest {}, {} copies of {} atoms",
         cuts.len(),
         cuts.iter().map(|c| c.width).max().unwrap_or(0),
         named.encoding.indicators.len(),
         atoms.len()
     );
-    if links > 0 {
-        note += &format!(", wide bodies chained by {links} links");
-    }
     Laid {
         facts: laid,
         named: Some((named, note)),
@@ -179,13 +171,20 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
 }
 
 /// `gp` with each body that reads more atoms than [`WIDEST`] written as a
-/// chain along `order`, or `None` where no body is that wide. Such a body
-/// crosses every boundary in its span with all it has read before it, so
-/// no cut there can be narrow: a hidden Markov model's joint query, the
-/// conjunction of its states, keeps the states of every step alive to the
-/// end. As a chain, each link the conjunction of the link before and the
-/// body's next literal in the order, it crosses each boundary as one atom,
-/// and the cuts name the link and the step's state there.
+/// chain along its order ([`positions`], the file's), counted in its stats
+/// (`GroundStats::links`); `gp` itself where no body is that wide. Such a
+/// body crosses every boundary of `program`'s order in its span with all
+/// it has read before it, so no cut there can be narrow: a hidden Markov
+/// model's joint query, the conjunction of its states, keeps the states of
+/// every step alive to the end. As a chain, each link the conjunction of
+/// the link before and the body's next literal in the order, it crosses
+/// each boundary as one atom, and the cuts name the link and the step's
+/// state there. The layouts that read the program's graph (`families`,
+/// `closed`, `td`) take a wide body for a clique of its atoms: Roulette's
+/// circuits of a hardware design conjoin the check of every step in one
+/// body, and the families layout of 300 steps was 304 wide where the chain
+/// is 15. Every layout's rewrite starts from the chained program
+/// ([`crate::strategy::Kind::eliminated`]).
 ///
 /// A body is read through its views first: a derived atom of one rule
 /// that one body reads, positively, and that is neither queried nor
@@ -195,12 +194,30 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
 /// state of its step and the gate after it, which puts every gate at the
 /// end of the order and every state across the boundaries up to there.
 /// The views a chained body reads are left out with their rules.
-fn chained(gp: &GroundProgram, deps: &Deps, order: &[AtomId]) -> Option<GroundProgram> {
+///
+/// A switch that other rows of its table read too counts for nothing in a
+/// body's width and stays out of its chain, in the rule of its last link:
+/// the rows of an annotated disjunction read its switches together, each
+/// row the switches before its own negated, and the families layout reads
+/// them as one table. Chained, the rows of a variable of 63 values
+/// (bn_pathfinder's fault) took 15 s under families:0 against 0.25 s as
+/// written.
+pub(crate) fn chained(gp: GroundProgram) -> GroundProgram {
     let n = gp.num_atoms();
-    let (taken, flat) = wide_bodies(gp, deps);
+    let deps = Deps::of(&gp);
+    let reads = reads(&gp);
+    // Every literal counted first: a program with no body that wide is not
+    // asked for its tables.
+    let (_, flat) = wide_bodies(&gp, &deps, &reads, &vec![false; n]);
     if flat.iter().all(Option::is_none) {
-        return None;
+        return gp;
     }
+    let shared = shared_switches(&gp, &reads);
+    let (taken, flat) = wide_bodies(&gp, &deps, &reads, &shared);
+    if flat.iter().all(Option::is_none) {
+        return gp;
+    }
+    let order = positions(&gp, false);
     let mut at = vec![0usize; n];
     for (p, &a) in order.iter().enumerate() {
         at[a as usize] = p;
@@ -210,7 +227,7 @@ fn chained(gp: &GroundProgram, deps: &Deps, order: &[AtomId]) -> Option<GroundPr
     // never after the body it is chained from. Keys of `3 * rule`, before,
     // `3 * rule + 1`, the rule itself, and `3 * rule + 2`, after, sorted
     // stably, keep the rules' own order and each chain's.
-    let (first_read, last_rule) = rule_places(gp);
+    let (first_read, last_rule) = rule_places(&gp);
     let mut out = gp.without_rules();
     let mut rules: Vec<(usize, GroundRule)> = Vec::with_capacity(gp.rules.len());
     let mut links = 0;
@@ -219,17 +236,19 @@ fn chained(gp: &GroundProgram, deps: &Deps, order: &[AtomId]) -> Option<GroundPr
             continue;
         }
         let key = 3 * ri + 1;
-        let Some(mut body) = body else {
+        let Some(body) = body else {
             rules.push((key, r.clone()));
             continue;
         };
+        let (mut chain, kept): (Vec<GLit>, Vec<GLit>) =
+            body.iter().partition(|l| !shared[l.atom() as usize]);
         // Literals read twice through views count once.
-        if body.len() <= WIDEST {
+        if chain.len() <= WIDEST {
             rules.push((key, GroundRule::new(r.head, body)));
             continue;
         }
-        body.sort_by_key(|l| at[l.atom() as usize]);
-        let (&last, inner) = body.split_last().expect("a wide body");
+        chain.sort_by_key(|l| at[l.atom() as usize]);
+        let (&last, inner) = chain.split_last().expect("a wide body");
         let mut link = inner[0];
         let mut placed = 0;
         for &l in &inner[1..] {
@@ -246,16 +265,20 @@ fn chained(gp: &GroundProgram, deps: &Deps, order: &[AtomId]) -> Option<GroundPr
             rules.push((placed, GroundRule::new(a, vec![link, l])));
             link = GLit::Pos(a);
         }
-        rules.push((key, GroundRule::new(r.head, vec![link, last])));
+        let mut tail = vec![link, last];
+        tail.extend(kept);
+        rules.push((key, GroundRule::new(r.head, tail)));
     }
     rules.sort_by_key(|&(key, _)| key);
     out.rules = rules.into_iter().map(|(_, r)| r).collect();
-    Some(out)
+    out.stats.links += links as usize;
+    out
 }
 
-fn wide_bodies(gp: &GroundProgram, deps: &Deps) -> (Vec<bool>, Vec<Option<Vec<GLit>>>) {
-    let n = gp.num_atoms();
-    let mut reads = vec![0u32; n];
+/// How many rules read each atom, `u32::MAX` for one a query or the
+/// evidence names.
+fn reads(gp: &GroundProgram) -> Vec<u32> {
+    let mut reads = vec![0u32; gp.num_atoms()];
     for r in &gp.rules {
         for l in &r.body {
             reads[l.atom() as usize] += 1;
@@ -266,6 +289,29 @@ fn wide_bodies(gp: &GroundProgram, deps: &Deps) -> (Vec<bool>, Vec<Option<Vec<GL
             reads[*a as usize] = u32::MAX;
         }
     }
+    reads
+}
+
+/// The switches that more than one row of their table reads: the facts
+/// that more than one rule reads, every one of them defining an atom of
+/// one table ([`Tables::owner`]), an exclusive set or one atom.
+fn shared_switches(gp: &GroundProgram, reads: &[u32]) -> Vec<bool> {
+    let tables = Tables::of_structure(gp, Arc::unwrap_or_clone(gp.structure()));
+    (0..gp.num_atoms())
+        .map(|a| reads[a] > 1 && tables.owner(gp, a as AtomId).is_some())
+        .collect()
+}
+
+/// The views the wide bodies take in, and each wide body read through its
+/// views, where the `shared` switches count for nothing in a body's width
+/// ([`chained`]).
+fn wide_bodies(
+    gp: &GroundProgram,
+    deps: &Deps,
+    reads: &[u32],
+    shared: &[bool],
+) -> (Vec<bool>, Vec<Option<Vec<GLit>>>) {
+    let n = gp.num_atoms();
     let one_rule = |a: AtomId| match &deps.by_head[a as usize][..] {
         &[ri] if !gp.rules[ri].pairs => Some(ri),
         _ => None,
@@ -285,36 +331,22 @@ fn wide_bodies(gp: &GroundProgram, deps: &Deps) -> (Vec<bool>, Vec<Option<Vec<GL
     // The literals each atom of one rule stands for, read through views,
     // counted in dependency order.
     let mut width = vec![1usize; n];
+    let weight = |width: &[usize], l: &GLit| {
+        if is_view(l) {
+            width[l.atom() as usize]
+        } else {
+            usize::from(!shared[l.atom() as usize])
+        }
+    };
     for scc in &deps.sccs {
         for &a in scc {
             if let Some(ri) = one_rule(a) {
-                width[a as usize] = gp.rules[ri]
-                    .body
-                    .iter()
-                    .map(|l| {
-                        if is_view(l) {
-                            width[l.atom() as usize]
-                        } else {
-                            1
-                        }
-                    })
-                    .sum();
+                width[a as usize] = gp.rules[ri].body.iter().map(|l| weight(&width, l)).sum();
             }
         }
     }
     let wide = |r: &GroundRule| {
-        !r.pairs
-            && r.body
-                .iter()
-                .map(|l| {
-                    if is_view(l) {
-                        width[l.atom() as usize]
-                    } else {
-                        1
-                    }
-                })
-                .sum::<usize>()
-                > WIDEST
+        !r.pairs && r.body.iter().map(|l| weight(&width, l)).sum::<usize>() > WIDEST
     };
     // Readers before the views they read: a view a wide body takes in is
     // not chained on its own.
@@ -764,17 +796,35 @@ mod tests {
                     },
                 )
                 .expect("grounds");
+                let gp = chained(gp);
+                assert_eq!(gp.stats.links, 28, "{joint:?}");
                 [false, true].map(|fan_in| {
                     let laid = lay_out(&gp, &Deps::of(&gp), fan_in);
                     laid.named.expect("named").1
                 })
             })
             .collect();
-        assert!(
-            notes[0].contains("29 cuts, widest 2") && notes[0].contains("chained by 28 links"),
-            "{notes:?}"
-        );
+        assert!(notes[0].contains("29 cuts, widest 2"), "{notes:?}");
         assert!(notes.iter().all(|n| *n == notes[0]), "{notes:?}");
+    }
+
+    /// The rows of an annotated disjunction of 40 values read its switches
+    /// together, the last row all of them: a table, left as written. A
+    /// conjunction of 40 facts that nothing else reads is chained.
+    #[test]
+    fn the_rows_of_a_wide_disjunction_are_left_as_written() {
+        let values: Vec<String> = (1..=40).map(|i| format!("0.025::x({i})")).collect();
+        let queries: String = (1..=40).map(|i| format!("query(x({i})).\n")).collect();
+        let gp = grounded(&format!("{}.\n{queries}", values.join("; ")));
+        assert!(gp.rules.iter().any(|r| r.body.len() > WIDEST));
+        let rules = gp.rules.clone();
+        let gp = chained(gp);
+        assert_eq!(gp.stats.links, 0);
+        assert_eq!(gp.rules, rules);
+        let facts: String = (1..=40).map(|i| format!("0.5::f{i}.\n")).collect();
+        let reads: Vec<String> = (1..=40).map(|i| format!("f{i}")).collect();
+        let gp = grounded(&format!("{facts}q :- {}.\nquery(q).\n", reads.join(", ")));
+        assert_eq!(chained(gp).stats.links, 38);
     }
 
     #[test]

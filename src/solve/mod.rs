@@ -307,8 +307,9 @@ pub fn rewritten(source: &str, options: &Options) -> Result<GroundProgram, Error
     })
 }
 
-/// The program [`rewritten`] gives under `auto`, written without its
-/// linear recursion (`Kind::eliminated`), as a weighted CNF
+/// The program [`rewritten`] gives under `auto`, ground without row
+/// classes and written without its linear recursion (`Kind::eliminated`),
+/// as a weighted CNF
 /// ([`WeightedCnf`], `tddlog --cnf`). It comes before any layout and any
 /// compile, so a strategy other than `auto` or a projection is refused. A
 /// program that keeps a cyclic component fails with [`Error::Cnf`].
@@ -321,8 +322,16 @@ pub fn weighted_cnf(source: &str, options: &Options) -> Result<WeightedCnf, Erro
                 .into(),
         ));
     }
-    let ground = ground::ground(&parsed(source, options)?, &options.ground_options())?;
-    WeightedCnf::of(&Kind::eliminated(ground)).map_err(Error::Cnf)
+    // Without row classes: a class atom per distribution of a table is the
+    // compile's, and in the CNF it costs a variable and a clause per row
+    // where the shared switches give the rows of one distribution their
+    // parameters (`ground::shared_for_cnf`) and an entry of one no clause.
+    let opts = GroundOptions {
+        classes: false,
+        ..options.ground_options()
+    };
+    let ground = ground::ground(&parsed(source, options)?, &opts)?;
+    WeightedCnf::of(Kind::eliminated(ground)).map_err(Error::Cnf)
 }
 
 /// `source` parsed, without its queries where `options` leave them out.

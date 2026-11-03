@@ -3,15 +3,14 @@ answers as Alea does.
 
 Julia runs only where TDDLOG_ALEA names it, as a command template with
 {file} for the script (bench.py's --alea, e.g. "julia --project=ALEA
-{file}"); otherwise the tests are skipped. Each test program of the
-source tree's tests/alea/ is answered by Alea (`run`), its circuit is
-written (`export`), and the ProbLog program and the Dice programs are
-evaluated here by enumerating the worlds of their flips; both must give
-Alea's answers, and Alea's must be the hand-computed ones in the
-program's comment. The ProbLog program must be the one committed beside
-the program, which the source tree's scripts/alea2problog.jl writes
-(its tests/test_alea2problog.py) and tests/it/examples.rs answers with
-tddlog.
+{file}", ALEA a checkout of Alea.jl's branch tddlog); otherwise the tests
+are skipped. Each test program of the source tree's tests/alea/ is
+answered by Alea (`run`), its circuit is written (`export`), and the
+ProbLog program and the Dice programs are evaluated here by enumerating
+the worlds of their flips; both must give Alea's answers, and Alea's must
+be the hand-computed ones in the program's comment. The ProbLog program
+must be the one committed beside the program, which Alea.jl's tddlog
+backend writes and tests/it/examples.rs answers with tddlog.
 """
 import itertools
 import os

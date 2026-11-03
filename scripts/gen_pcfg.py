@@ -12,15 +12,11 @@ grammar
     M -> 0.7 :: b | 0.3 :: S C        C -> b
 
 which derives the nonempty balanced words of a and b (a opens, b closes),
-in two ways that give each choice of a rule an identifier of its own, as
-a PCFG's repeated choices are independent:
-
-    stack    the page's second program: the state of a leftmost
-             derivation, the terminals derived (reversed) and the symbols
-             still to expand, identifies the choice made in it;
-    counter  its fourth: each nonterminal counts its expansions, threaded
-             through the derivation, and the count identifies the choice,
-             with split/3 placing the parts of a word.
+in a way that gives each choice of a rule an identifier of its own, as
+a PCFG's repeated choices are independent: the page's second program, in
+which the state of a leftmost derivation, the terminals derived (reversed)
+and the symbols still to expand, identifies the choice made in it (the
+only encoding, `stack`).
 
 The program is the page's, as written, but for its queries: the page asks
 the probability of every word of a few lengths (`query(word([_,_]))`).
@@ -28,8 +24,7 @@ This asks, for one word W of length N, drawn uniformly with seed S from
 the balanced words of three or more top-level blocks (a ... b, balanced
 inside), how its derivation starts, given W: `evidence(word(W))` and the
 probability that the first S and the first S it expands to both expand
-to S S (`state([],[s,s,s])`, the stack's second step, or `s_to(1,ss)`,
-the second count's choice), the same answer in both encodings. The
+to S S (`state([],[s,s,s])`, the stack's second step). The
 word's blocks fix the first rule (S -> S S, as there are two or more),
 not how S S brackets them: the k blocks' bracketings are equally likely,
 so the answer is 1 - C(k-2)/C(k-1) in Catalan numbers, 1/2 for three
@@ -52,10 +47,10 @@ import re
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 PAGE = os.path.join(ROOT, 'data', 'problog-tutorial', '06_pcfg.html')
-# The page's programs, in order; each encoding's, and the atom that holds
+# The page's program of the encoding (its second), and the atom that holds
 # when the first S and the first S it expands to both expand to S S.
-BLOCK = {'stack': 2, 'counter': 4}
-SECOND = {'stack': 'state([],[s,s,s])', 'counter': 's_to(1,ss)'}
+BLOCK = {'stack': 2}
+SECOND = {'stack': 'state([],[s,s,s])'}
 # The fewest top-level blocks of the word: with fewer, the posterior is 0.
 BLOCKS = 3
 

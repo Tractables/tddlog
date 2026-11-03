@@ -19,7 +19,6 @@ Q = {
  'tug_of_war':         [('tug_of_war.E_ans', lambda r: r['ans'])],
  'altermu2':           [('altermu2.E_mu1', lambda r: r['mu.1'])],
  'conjugate_gaussians':   [('conjugate_gaussians.E_mu', lambda r: r['mu'])],
- 'conjugate_gaussians_2': [('conjugate_gaussians_2.E_mu', lambda r: r['mu'])],
  'normal_mixture':     [('normal_mixture.E_theta', lambda r: r['theta']),
                         ('normal_mixture.E_mu1', lambda r: r['mu.1']),
                         ('normal_mixture.E_mu2', lambda r: r['mu.2'])],

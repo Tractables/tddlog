@@ -1,7 +1,8 @@
 #lang roulette/example/disrupt
-;; A program of Roulette's language whose circuit scripts/roulette2problog.rkt
-;; writes to tiny_pr.pl (tests/test_roulette2problog.py), with its answers
-;; by hand (tests/it/examples.rs). Observed: a or b, of probability
+;; A program of Roulette's language whose circuit Roulette's tddlog engine
+;; wrote to tiny_pr.pl on the
+;; PLDI 2025 artifact's Roulette, with its answers by hand
+;; (tests/it/examples.rs). Observed: a or b, of probability
 ;; 1 - 0.7 * 0.4 = 0.72.
 ;;
 ;;   q1, c: #f 0.03 / 0.72 (a and not the flip 0.9), #t 0.69 / 0.72.

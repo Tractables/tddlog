@@ -473,21 +473,15 @@ FAMILIES.update({'liftsep': liftsep, 'rgraph': rgraph, 'eventcalc': eventcalc})
 def pcfg(text):
     """The inside algorithm over the observed word for the ProbLog
     tutorial's grammar S -> O M | S S, O -> a, M -> b | S C, C -> b, its
-    probabilities read from either encoding gen_pcfg.py writes: the
+    probabilities read from the program gen_pcfg.py writes: the
     probability that the first S and the first S it expands to both
     expand to S -> S S, given the word, in long doubles, whose range holds
     the word's probability."""
     t = re.sub(r'\s+', '', text)
-    stack = re.search(r'([0-9.]+)::state\(W,\[o,m\|S\]\);([0-9.]+)::state\(W,\[s,s\|S\]\):-state\(W,\[s\|S\]\)\.', t)
-    if stack:
-        m = re.search(r'([0-9.]+)::state\(\[b\|W\],S\);([0-9.]+)::state\(W,\[s,c\|S\]\):-state\(W,\[m\|S\]\)\.', t)
-        assert 'state([a|W],S):-state(W,[o|S]).' in t and 'state([b|W],S):-state(W,[c|S]).' in t
-        (om, ss), (mb, sc) = stack.groups(), m.groups()
-    else:
-        s, m = re.search(r'([0-9.]+)::s_to\(N,om\);([0-9.]+)::s_to\(N,ss\)\.', t), \
-            re.search(r'([0-9.]+)::m_to\(N,b\);([0-9.]+)::m_to\(N,sc\)\.', t)
-        assert "o([a],s(N,N),m(M,M))." in t and "c([b],s(N,N),m(M,M))." in t
-        (om, ss), (mb, sc) = s.groups(), m.groups()
+    s = re.search(r'([0-9.]+)::state\(W,\[o,m\|S\]\);([0-9.]+)::state\(W,\[s,s\|S\]\):-state\(W,\[s\|S\]\)\.', t)
+    m = re.search(r'([0-9.]+)::state\(\[b\|W\],S\);([0-9.]+)::state\(W,\[s,c\|S\]\):-state\(W,\[m\|S\]\)\.', t)
+    assert 'state([a|W],S):-state(W,[o|S]).' in t and 'state([b|W],S):-state(W,[c|S]).' in t
+    (om, ss), (mb, sc) = s.groups(), m.groups()
     om, ss, mb, sc = (np.longdouble(p) for p in (om, ss, mb, sc))
     w = re.search(r'evidence\(word\(\[([a-z,]*)\]\)\)\.', t).group(1).split(',')
     n = len(w)
@@ -506,7 +500,7 @@ def pcfg(text):
     # by an S that derives the rest.
     second = ss * sum(ss * np.dot(S[0, 1:j], S[1:j, j]) * S[j, n] for j in range(2, n))
     (q,) = queries(text)
-    assert q in ('state([],[s,s,s])', 's_to(1,ss)'), q
+    assert q == 'state([],[s,s,s])', q
     return {q: float(second / S[0, n])}
 
 

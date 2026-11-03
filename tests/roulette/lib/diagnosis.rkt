@@ -1,7 +1,6 @@
 #lang roulette
 ;; A program of Roulette's package roulette-lib whose circuit
-;; scripts/roulette2problog.rkt writes to diagnosis.pl
-;; (tests/test_roulette2problog.py), with its weights by hand
+;; Roulette's tddlog engine writes to diagnosis.pl, with its weights by hand
 ;; (tests/it/examples.rs): a diagnosis of faults in a circuit. The inputs
 ;; x and y are 1 and 0, random choices of probability 1 and 0; an and gate
 ;; and an or gate each flip their output where they fail, f1 (0.1) and f2

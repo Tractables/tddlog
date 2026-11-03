@@ -557,16 +557,65 @@ compilation.
 
 `tddlog --cnf` (`weighted_cnf`, `cnf.rs`) writes the program `--ground`
 prints, without its linear recursion (`Kind::eliminated`), as a weighted
-CNF in DIMACS for a weighted model counter: a variable per fact weighed as
-the fact, a variable of weight one
-for each derived atom and each body of two literals or more, defined by
-Tseitin's encoding of the completion of its rules, each observation a unit
-clause, and each query a literal named in a `c query` line, whose unit
-clause makes the count `P(q, e)`. The completion has one model in each
-world of the facts only where no cyclic component is left, so a program
-that keeps one (negation through recursion, say) is refused. Without
-observations the count is the product of the facts' weights summed and
-the factor, which a `c count` line states.
+CNF in DIMACS for a weighted model counter, after every pass of the
+grounder (steps 5 to 11: the conditioning, backbones and equal facts,
+equal gates, bits over values, defined facts eliminated) but the row
+classes. The switches of every table whose rows exclude each other are
+shared first, in any number of parents (`share::Sharing::Exclusive`), so
+that a table's equal entries are one fact; that is what the row classes
+give the compile, without their atoms, which cost the CNF a variable per
+class and a clause per row, an entry of one's included. Each fact is a variable weighed as the fact; each derived
+atom is a variable of weight one, defined by Tseitin's encoding of the
+completion of its rules, but for two kinds of atom. The atoms of an
+exhaustive exclusive set (a network's values) are each a variable implied
+by its bodies, no two true, the second of a set of two the first's
+negation. An observed atom no rule reads and no query names (a Markov
+network's factor) has no variable: observed true, its rows' contexts
+imply their facts, an entry of one writes nothing, and each assignment of
+its parents without a row, a zero, is a clause. A fact that is its rows'
+one fact and that nothing else reads is their parameter, weighed (w, 1)
+and true exactly where one of their contexts is: false in each other
+row's context or, where that is more literals, implying one of its rows'
+contexts, so that a counter's preprocessing finds it defined and can
+eliminate it. Each other observation is a unit clause, and each query a
+literal named in a `c query` line, whose
+unit clause makes the count `P(q, e)`. The completion has one model in
+each world of the facts only where no cyclic component is left, so a
+program that keeps one (negation through recursion, say) is refused.
+Without observations the count is the product of the facts' weights
+summed and the factor, which a `c count` line states.
+
+The CNF is correct but slow to count. On 16 networks of the UAI
+inference competition's sets (Z of 12 from the MAR tuning set, P(e) of 4
+from the final PR set), the fastest weighted model counter on the CNFs
+tddlog writes (sharpSAT-TD, Ganak, or a compiler of CNFs) took 12 to 261
+times as long as tddlog on the network itself, tddlog's time taken as
+0.2 s at least (Grids_16 53.8 s against 4.5 s), and 7 of the 16 networks
+were counted by none in 300 s and 7 GB. The literature's encodings of the
+same networks (ENC1, ENC5) left a gap of the same size. Three causes were
+measured:
+
+- A counter returns one count, so each marginal costs a count of its
+  own: the 12 networks' marginals took 81 to 881 counts each. tddlog
+  answers them all in 0.25 to 5 times its time for Z.
+- A counter reads clauses, not tables. The tables are all in the CNF,
+  but it sees a variable per table entry and the graph of the clauses,
+  and chooses its decomposition from that graph. On ENC1's Grids_11
+  (binary, without a zero or a one), a TDD compile of the clauses one by
+  one took 27.4 s and 9.6M pairs; the same file with its clauses read
+  back as tables (each entry's parameter summed into its table, each
+  exactly-one group a variable of many values) took 0.16 s and 111K
+  pairs.
+- The search counters exploit determinism, and networks without zeros
+  and ones have none to exploit. On the Grids and DBN networks they
+  made 9 to 22 million decisions (Grids_11 8.7M in 209 s), where tddlog
+  builds 111K pairs in 0.09 s. On variables of 11 and 81 values, the
+  one-hot indicators raised their widths to 68 to 117, and no counter
+  answered.
+
+The structure tddlog compiles from (tables, variables of many values,
+the program's own decomposition) is what a CNF writes away, and a counter
+has to find it again from the clauses.
 
 Steps 0 to 4 are the front end. `finish` runs steps 5 to 11, after the
 front end and again after each layout rewrite (step 12, `decision`'s
@@ -1095,7 +1144,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    per row in the parent (`MIN_RULES_PER_ROW`). A shared fact read in two
    parts of a split table keeps them on a spine instead of side by side,
    so elsewhere sharing costs more than it saves. Rows that can hold
-   together keep switches of their own (`examples/shared_rows.pl`).
+   together keep switches of their own (`examples/shared_rows.pl`). The
+   weighted CNF (`--cnf`) shares in every table whose rows read one atom
+   of each of the same exclusive sets, whatever its size: a model
+   counter has no spine to keep.
 8. **Certain by cover** (`cover.rs`; `examples/cover.pl`). A derived atom
    whose rule bodies together are valid is certain and leaves the bodies
    that read it. Validity is decided by merging bodies equal but for one
@@ -1607,7 +1659,17 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   (atoms of one rule that one body reads) for this, so that a conjunction
   is chained alike however its gates associate it: Roulette conjoins the
   states from the last step back, which put every gate of the joint at the
-  end of the order. A reader after a cut reads the
+  end of the order. The chain is written once, as the first step of every
+  layout's rewrite with the linear recursion's (`Kind::eliminated`):
+  the layouts that read the program's graph take a wide body for a clique
+  of its atoms, and Roulette's circuit of a hardware design, the check of
+  every step conjoined in one body, was as wide as its steps under
+  `families`. A switch that other rows of its table read too counts for
+  nothing in a body's width and stays out of its chain: the rows of an
+  annotated disjunction read its switches together, a table the families
+  layout reads as one, and chained they took bn_pathfinder from 0.25 s to
+  15 s.
+  A reader after a cut reads the
   atoms crossing it through indicator copies, the segments between the
   cuts being the units, and each segment's copies are laid out at its
   start, before its facts. A formula then holds its own segment's facts
@@ -2492,9 +2554,11 @@ error. They run under the host's allocator: the binary's jemalloc set-up
   with a dynamic search after every step, checks formulas dropped as
   they die, resumes stopped cyclic components, and checks the primal's
   update in a cyclic component against enumeration.
-- The Python tests (`tests/test_*.py`) check `scripts/alea2problog.jl`
-  and `scripts/roulette2problog.rkt` (where Julia with Alea.jl and Racket
-  with Roulette are installed) and the release metadata check.
+- The Python tests (`tests/test_*.py`) check the release metadata. The
+  circuits of `tests/alea/` and `tests/roulette/lib/` are written by
+  Alea.jl's tddlog backend and Roulette's tddlog engine, on the branches
+  `tddlog` of Tractables/Alea.jl and Tractables/roulette, whose own tests
+  check what they write.
 - `bindings/wasm/tests/examples.cjs` runs the playground's examples
   through the WebAssembly build against ProbLog's answers and `P(e)`, and
   `bindings/wasm/tests/browser.cjs` the page in a headless browser.

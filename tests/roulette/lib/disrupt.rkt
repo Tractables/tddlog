@@ -1,8 +1,7 @@
 #lang roulette/example/disrupt
 ;; A program in the example language of Roulette's package `roulette`,
-;; whose circuit scripts/roulette2problog.rkt writes to disrupt.pl
-;; (tests/test_roulette2problog.py), with its weights by hand
-;; (tests/it/examples.rs). Two random choices, a (0.3) and b (0.6), the
+;; whose circuit Roulette's tddlog engine writes to disrupt.pl, with its
+;; weights by hand (tests/it/examples.rs). Two random choices, a (0.3) and b (0.6), the
 ;; observation a or b, and the value x where a holds, y where b alone
 ;; does, z otherwise. Its `query` calls `infer` twice: the value where the
 ;; observation holds, ⊥ otherwise, and the observation.

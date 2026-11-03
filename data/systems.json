@@ -10,7 +10,7 @@
       "link": "https://github.com/Tractables/tddlog"
     },
     "alea-tddlog": {
-      "about": "Alea.jl's front end with tddlog's inference: Alea.jl runs the program up to the Boolean circuit it builds, and tddlog compiles that circuit, written as a ProbLog program by alea2problog.jl, in place of Alea.jl's BDDs. Against Alea.jl it differs only in the inference.",
+      "about": "Alea.jl's front end with tddlog's inference: Alea.jl runs the program up to the Boolean circuit it builds, and tddlog compiles that circuit, written as a ProbLog program by Alea.jl's tddlog backend, in place of Alea.jl's BDDs. Against Alea.jl it differs only in the inference.",
       "version": "Alea.jl at revision cf5e5b8 on Julia 1.11.9, then tddlog {version}, linked statically",
       "settings": "tddlog's default strategy (auto) on the circuit. Its time is Alea.jl's run up to the circuit and the circuit's writing, timed warm as Alea.jl's own record is, and tddlog's on the circuit. Every other system that reads the circuit, or a translation of it, pays the same time for it.",
       "notgiven": "",
@@ -18,7 +18,7 @@
       "link": "https://github.com/Tractables/tddlog"
     },
     "roulette-tddlog": {
-      "about": "Roulette's front end with tddlog's inference: Roulette runs the program up to the formulas of its queries, and tddlog compiles them, written as a ProbLog program by roulette2problog.rkt, in place of Roulette's BDDs. Against Roulette it differs only in the inference.",
+      "about": "Roulette's front end with tddlog's inference: Roulette runs the program up to the formulas of its queries, and tddlog compiles them, written as a ProbLog program by Roulette's tddlog engine, in place of Roulette's BDDs. Against Roulette it differs only in the inference.",
       "version": "Roulette's upstream roulette-lib at revision 60f77cb on Racket 9.3, then tddlog {version}, linked statically",
       "settings": "tddlog's default strategy (auto) on the exported program. Its time is Roulette's run up to the export, timed after its warm-up as Roulette's own record is, and tddlog's on the program.",
       "notgiven": "",

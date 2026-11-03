@@ -1028,20 +1028,6 @@
    },
    {
     "instances": [
-     "pcfgcount8",
-     "pcfgcount16",
-     "pcfgcount24",
-     "pcfgcount32",
-     "pcfgcount48",
-     "pcfgcount64",
-     "pcfgcount96",
-     "pcfgcount128"
-    ],
-    "key": "pcfgcount",
-    "title": "pcfgcount"
-   },
-   {
-    "instances": [
      "pdb10",
      "pdb15",
      "pdb20",

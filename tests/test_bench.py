@@ -155,8 +155,8 @@ class PplTests(unittest.TestCase):
 
     def test_the_suite_names_programs_that_exist(self):
         spec = bench.instances(self.args())
-        self.assertEqual({family for family, _ in spec.values()}, {'arith', 'hybit', 'pluck', 'nodice'})
-        self.assertEqual(len(spec), 120)
+        self.assertEqual({family for family, _ in spec.values()}, {'arith', 'pluck', 'nodice'})
+        self.assertEqual(len(spec), 101)
         for name, (family, gargs) in spec.items():
             self.assertTrue(Path(gargs[1]).is_file(), name)
             self.assertEqual(gargs[0], 'dice2problog.py' if family == 'nodice' else 'alea_bench.jl')
@@ -404,10 +404,10 @@ class PplTests(unittest.TestCase):
             bench.gen(self.args(only=['nodice_survey'], cnf=False, alea='julia {file}'))
         with tempfile.TemporaryDirectory() as d, patch.object(bench.subprocess, 'run') as run, \
                 redirect_stdout(io.StringIO()):
-            bench.gen(self.args(only=['hybit_pi'], cnf=False, alea='julia {file}', dir=d))
+            bench.gen(self.args(only=['arith_book'], cnf=False, alea='julia {file}', dir=d))
         cmd = run.call_args.args[0]
-        self.assertEqual(cmd[2:], ['export', str(scripts.parent / 'data' / 'alea' / 'hybit' / 'pi.jl'),
-                                   os.path.abspath(os.path.join(d, 'hybit_pi'))])
+        self.assertEqual(cmd[2:], ['export', str(scripts.parent / 'data' / 'alea' / 'arith' / 'book.jl'),
+                                   os.path.abspath(os.path.join(d, 'arith_book'))])
 
     def test_the_table_shows_alea_times_in_the_process(self):
         recs = [{'instance': 'arith_book', 'family': 'arith', 'system': 'alea', 'variant': 'cudd', 'status': 'ok',
@@ -652,7 +652,7 @@ class RouletteTests(unittest.TestCase):
 
 
 class RouletteTddlogTests(unittest.TestCase):
-    """Roulette+tddlog: roulette2problog.rkt writes the circuit of
+    """Roulette+tddlog: Roulette's tddlog engine writes the circuit of
     Roulette's run as a ProbLog program, tddlog answers it, and the answers
     are read as Roulette's query reads its engine's."""
 
@@ -697,7 +697,7 @@ class RouletteTddlogTests(unittest.TestCase):
             if cmd[0] == 'tddlog':
                 self.assertTrue(Path(cmd[-1]).exists())
                 return {'status': 'ok', 'seconds': 0.5, 'stdout': tddlog_out, 'stderr': ''}
-            if 'make' in cmd or '--make' in cmd:
+            if 'make' in cmd:
                 return {'status': 'ok', 'seconds': 9.0, 'stdout': '', 'stderr': ''}
             return {'status': 'ok', 'seconds': 2.0, 'stdout': export_out or self.CIRCUIT, 'stderr': export_err}
         with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', side_effect=timed):
@@ -705,7 +705,7 @@ class RouletteTddlogTests(unittest.TestCase):
             self.assertEqual(os.listdir(d), [])
         return r, cmds
 
-    SUMMARY = 'roulette2problog: 1 queries, 5 values, 2 flips, 3 gates, 1 observations; program 1.25 s, circuit 0.25 s\n'
+    SUMMARY = 'tddlog-engine: 1 queries, 5 values, 2 flips, 3 gates, 1 observations; program 1.25 s, circuit 0.25 s\n'
 
     def test_a_driver_is_answered_as_the_atoms_it_prints(self):
         with tempfile.TemporaryDirectory() as d:
@@ -716,13 +716,12 @@ class RouletteTddlogTests(unittest.TestCase):
             out = ''.join(f'{q}: {p}\n' for q, p in self.ANSWERS.items())
             r, cmds = self.run_it({}, 'rl_motivating_1000', str(path), err, out)
         data = bench.ROULETTE_DATA
-        self.assertEqual([c for c, _ in cmds[:3]], [
+        self.assertEqual([c for c, _ in cmds[:2]], [
             ['racket', '-l-', 'raco', 'make', f'{data}/motivating.rkt'],
-            ['racket', bench.RT_EXPORTER, '--make', f'{data}/motivating.rkt'],
-            ['racket', bench.RT_EXPORTER, f'{data}/motivating.rkt', '1000']])
-        self.assertEqual(cmds[3][0][:6], ['tddlog', '--stats', '--precision', '17', '--vtree', 'auto'])
+            ['racket', '-l-', 'roulette/engine/tddlog', f'{data}/motivating.rkt', '1000']])
+        self.assertEqual(cmds[2][0][:6], ['tddlog', '--stats', '--precision', '17', '--vtree', 'auto'])
         # tddlog's budget is what the export leaves of the limit
-        self.assertAlmostEqual(cmds[3][1], 30 - 1.5)
+        self.assertAlmostEqual(cmds[2][1], 30 - 1.5)
         self.assertEqual(r['status'], 'ok')
         self.assertAlmostEqual(r['answers']['a'], 5 / 12)
         self.assertAlmostEqual(r['answers']['b'], 7 / 12)
@@ -768,13 +767,13 @@ class RouletteTddlogTests(unittest.TestCase):
             err = 'roulette_q a 1 x\n' + self.SUMMARY.replace('program 1.25', 'program 29.75')
             out = ''.join(f'{q}: {p}\n' for q, p in self.ANSWERS.items())
             r, cmds = self.run_it({}, 'rl_motivating_1000', str(path), err, out)
-        self.assertEqual(cmds[3][1], 1.0)
+        self.assertEqual(cmds[2][1], 1.0)
         self.assertEqual(r['status'], 'timeout')
 
     def test_an_export_without_its_summary_is_an_error(self):
         r, cmds = self.run_it({}, 'rl_motivating_1000', 'p.pl', 'oops\n', '')
-        self.assertEqual(len(cmds), 3)
-        self.assertEqual((r['status'], r['error']), ('error', 'roulette2problog.rkt wrote no program: oops'))
+        self.assertEqual(len(cmds), 2)
+        self.assertEqual((r['status'], r['error']), ('error', "Roulette's tddlog engine wrote no program: oops"))
 
     def test_it_runs_the_roulette_suite_and_the_dice_programs_roulette_translates(self):
         self.assertTrue(bench.roulette_tddlog_accepts(self.args(), 'rl_motivating_1000'))
@@ -797,8 +796,8 @@ class RouletteTddlogTests(unittest.TestCase):
 
 class CirculetteTests(unittest.TestCase):
     """The circulette suite: Circulette's netlists, Roulette's circulette.rkt
-    on each, and the ProbLog program roulette2problog.rkt writes from its
-    run, one query a call of `infer`."""
+    on each, and the ProbLog program Roulette's tddlog engine writes from
+    its run, one query a call of `infer`."""
 
     def test_a_posterior_circulette_does_not_print_is_answered_only_below_its_threshold(self):
         # 3 faults: q1 P(fail), q2 to q4 the singles, q5 to q7 the pairs, q8 the triple
@@ -931,7 +930,7 @@ class SkipTests(unittest.TestCase):
         self.assertEqual(series('nodice', 'nodice_ladder-1-p'), 'nodice_ladder')
         self.assertEqual(series('dice_scaled', 'dice_ladder_k400'), 'dice_ladder')
         for family, name in [('arith', 'arith_book'), ('nodice', 'nodice_alarm'), ('nodice', 'nodice_uf20-0990'),
-                             ('nodice', 'nodice_3sat-0'), ('hybit', 'hybit_pi'),
+                             ('nodice', 'nodice_3sat-0'),
                              ('dice', 'dice_alarm'), ('bn', 'bn_asia'), ('bnev', 'bn_asia_ev'), ('bn', 'rl_bn_alarm'),
                              ('aceblockmap', 'ace_blockmap_05_01'), ('uaipromedus', 'uai_promedus_30')]:
             self.assertIsNone(series(family, name), name)

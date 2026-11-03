@@ -120,16 +120,15 @@ class LitTests(unittest.TestCase):
         for a word of k top-level blocks, 1 - C(k-2)/C(k-1)."""
         import gen_pcfg
         catalan = [1, 1, 2, 5, 14, 42, 132, 429, 1430]
-        for encoding in ('stack', 'counter'):
-            for n in (6, 8, 12, 16):
-                for seed in (1, 2, 3):
-                    with self.subTest(encoding=encoding, n=n, seed=seed):
-                        text = bench.folded_program(['gen_pcfg.py', encoding, str(n), '--seed', str(seed)])
-                        word = re.search(r'evidence\(word\(\[([a-z,]*)\]\)\)\.', text).group(1).split(',')
-                        k = gen_pcfg.blocks(word)
-                        self.assertGreaterEqual(k, 3)
-                        (p,) = lit_exact.FAMILIES['pcfg'](text).values()
-                        self.assertAlmostEqual(p, 1 - catalan[k - 2] / catalan[k - 1], delta=1e-12)
+        for n in (6, 8, 12, 16):
+            for seed in (1, 2, 3):
+                with self.subTest(n=n, seed=seed):
+                    text = bench.folded_program(['gen_pcfg.py', 'stack', str(n), '--seed', str(seed)])
+                    word = re.search(r'evidence\(word\(\[([a-z,]*)\]\)\)\.', text).group(1).split(',')
+                    k = gen_pcfg.blocks(word)
+                    self.assertGreaterEqual(k, 3)
+                    (p,) = lit_exact.FAMILIES['pcfg'](text).values()
+                    self.assertAlmostEqual(p, 1 - catalan[k - 2] / catalan[k - 1], delta=1e-12)
 
 
 if __name__ == '__main__':

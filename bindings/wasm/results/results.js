@@ -107,7 +107,7 @@ const HIGHLIGHT = { pl: "problog", py: "python", rs: "rust", c: "c", h: "c", tom
 
 // The fields of a file the page reads for itself; any other text a file
 // has (how it was made, a licence) is a line of HTML above its text.
-const FILE_FIELDS = new Set(["name", "bytes", "lines", "sha", "src", "part", "gzip", "held", "archive"]);
+const FILE_FIELDS = new Set(["name", "bytes", "lines", "sha", "src", "part", "gzip", "held", "archive", "form", "readers", "for"]);
 
 // The most of what the search finds that it lists.
 const SHOWN_HITS = 40;
@@ -1363,10 +1363,9 @@ function categoryView(route) {
 // on those a translator wrote for it, its answers, its total time, tddlog's
 // and tddlog's speed-up, and a fold of their plots; `types`, in each category it was
 // given, its answers, its total time, tddlog's and tddlog's speed-up, and a
-// fold of its plot among the others there; `own`, its own benchmarks;
-// `given`, how it was given the instances; and `facts`, its version,
-// settings, what it was not given, how it is compared, its paper and its
-// link.
+// fold of its plot among the others there; `own`, its own benchmarks; and
+// `facts`, its version, settings, what it was not given, how it is
+// compared, its paper and its link.
 function solverParts(x) {
   const s = data.systems.find((y) => y.key === x);
   const name = data.names[x];
@@ -1422,20 +1421,6 @@ function solverParts(x) {
       plotted(catSuite(c, rows, [...new Set([...c.drawn, x])], tal), data.names, { colour: [...c.mine, x] }))))])];
   const ownList = data.own.filter((o) => o.system === x);
   const own = ownList.length ? ownTable(ownList, `Against ${subject([...new Set(ownList.flatMap((o) => o.vs.me))])} on them`) : [];
-  // how it was given the instances: the rows of the classes that apply
-  const how = element("tbody");
-  for (const h of s.how) {
-    // the instances a row names: those whose name starts with its pattern (a
-    // regular expression; one that ends in $, that name alone)
-    const pattern = h.instances.endsWith("$") ? h.instances.slice(0, -1) : `${h.instances}…`;
-    how.append(element("tr", {}, element("td", {}, h.cls), element("td", { class: "num" }, count(h.n)),
-      element("td", { class: "about" }, and(h.suites.map((key) => data.suites.get(key)?.title ?? key)),
-        h.instances ? [": ", element("code", {}, pattern)] : ""),
-      prose("td", h.reason, { class: "about" })));
-  }
-  const given = scroller(stacked(element("table", { class: "board how-given" },
-    element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "as"), element("th", { scope: "col", class: "num" }, "instances"),
-      element("th", { scope: "col" }, "suites"), element("th", { scope: "col" }, "the program it read"))), how)), "whole");
   // version, settings, what it was not given, and how it is compared
   const short = parts.filter((p) => p.tal[x].given < p.c.instances)
     .map((p) => `${p.c.title}, ${count(p.c.instances - p.tal[x].given)} of ${count(p.c.instances)}`);
@@ -1450,7 +1435,7 @@ function solverParts(x) {
       c.doi ? element("a", { href: `https://doi.org/${c.doi}` }, c.title) : c.title, `. ${c.venue}, ${c.year}.`));
   }
   facts.append(element("dt", {}, "Site"), element("dd", {}, element("a", { href: s.link }, s.link)));
-  return { s, languages, types, own, given, facts };
+  return { s, languages, types, own, facts };
 }
 
 function findings(list) {
@@ -1744,7 +1729,8 @@ function uncaptured(inst) {
 // language tddlog reads, as a link, or why the playground cannot open it.
 function playground(s, f, inst, name) {
   const tab = (inst.tabs ?? []).find((t) => t.readers.includes(name) && t.files.some((file) => /\.pl$/.test(file.name)));
-  const pl = tab?.files.filter((file) => /\.pl$/.test(file.name)) ?? [];
+  // files of one name (a loop's two forms) each name their readers
+  const pl = tab?.files.filter((file) => /\.pl$/.test(file.name) && mayRead(file, (r) => r === name)) ?? [];
   if (pl.length !== 1) return null;
   const [file] = pl;
   if (file.held) return element("span", { class: "no-try" }, "Not in the playground: the site does not show this program; its file says why.");
@@ -1754,7 +1740,7 @@ function playground(s, f, inst, name) {
 }
 
 // The systems that read a tab, each once: a form's label ("ProbLog -k sdd")
-// under its system's name, an arm of tddlog's ("tddlog (auto+onehot)") as it
+// under its system's name, an arm of tddlog's ("tddlog (auto+arm)") as it
 // is, and the reference apart.
 function readersOf(tab) {
   const names = Object.values(data.names);
@@ -1769,6 +1755,34 @@ function shownFiles(tab) {
   return [...tab.files.keys()].sort((a, b) => observed(a) - observed(b));
 }
 
+const FORMS = { recursive: "recursive form", unrolled: "unrolled form" };
+
+// Whether a reader that `who` picks may have read a file: any reader, where
+// the file's name is its tab's only one; else those it names.
+const mayRead = (file, who) => !(file.readers || file.for) || (file.readers ?? []).some(who);
+
+// What tells file k of a tab from the tab's other files of its name (a path
+// read with other contents in other runs, a loop's two forms, an arm's copy
+// in a directory of its own): its form, else who read it, else its
+// directory, else its place among them; null where no other file of the tab
+// has its name.
+function twinLabel(tab, k) {
+  const base = (j) => tab.files[j].name.split("/").pop();
+  const same = [...tab.files.keys()].filter((j) => base(j) === base(k));
+  if (same.length < 2) return null;
+  const who = (f) => (f.readers ?? []).map((r) => (r === "reference" ? "the reference" : r));
+  const label = (j) => {
+    const f = tab.files[j];
+    if (f.form) return FORMS[f.form] ?? `${f.form} form`;
+    if (who(f).length) return and(who(f));
+    if (f.for?.length) return `for ${and(f.for)}`;
+    return f.name.slice(0, -base(j).length).replace(/\/$/, "");
+  };
+  const labels = same.map(label);
+  const mine = labels[same.indexOf(k)];
+  return mine && labels.filter((l) => l === mine).length === 1 ? mine : `${mine ? `${mine}, ` : ""}${same.indexOf(k) + 1} of ${same.length}`;
+}
+
 // The file an instance's view shows first: the program tddlog read (its
 // ProbLog file, where its tab has others), else the original's first.
 function firstFile(inst) {
@@ -1776,7 +1790,8 @@ function firstFile(inst) {
   const reads = inst.tabs.map((t, i) => [t, i]).filter(([t]) => t.readers.some(tddlog));
   const ti = (reads.find(([t]) => t.files.some((file) => /\.pl$/.test(file.name))) ?? reads[0] ?? [null, -1])[1];
   if (ti < 0) return [0, shownFiles(inst.tabs[0])[0]];
-  const pl = inst.tabs[ti].files.findIndex((file) => /\.pl$/.test(file.name));
+  // of a loop's two forms (files of one name, each with its readers), the one tddlog read
+  const pl = inst.tabs[ti].files.findIndex((file) => /\.pl$/.test(file.name) && mayRead(file, tddlog));
   return [ti, pl < 0 ? shownFiles(inst.tabs[ti])[0] : pl];
 }
 
@@ -1918,8 +1933,12 @@ function filePane(fam, tab, fi, pick, cap) {
       if (!step) return;
       e.preventDefault();
       choose(ks[(ks.indexOf(fi) + step + ks.length) % ks.length]);
-    } }, ...ks.map((k) => element("button", { type: "button", role: "tab", "aria-selected": String(k === fi), tabindex: k === fi ? "0" : "-1",
-      "data-file": k, onclick: () => k !== fi && choose(k) }, tab.files[k].name.split("/").pop(), element("small", {}, size(tab.files[k].bytes)))));
+    } }, ...ks.map((k) => {
+      const twin = twinLabel(tab, k);
+      return element("button", { type: "button", role: "tab", "aria-selected": String(k === fi), tabindex: k === fi ? "0" : "-1",
+        "data-file": k, onclick: () => k !== fi && choose(k) }, tab.files[k].name.split("/").pop(),
+      ...(twin ? [element("span", { class: "twin" }, twin)] : []), element("small", {}, size(tab.files[k].bytes)));
+    }));
     box.append(strip);
   }
   return fileIn(box, fam, tab.files[fi]);
@@ -1955,6 +1974,11 @@ function fileIn(box, fam, file) {
   const above = Object.keys(file).filter((field) => !FILE_FIELDS.has(field) && typeof file[field] === "string")
     .sort((a, b) => (b === "made") - (a === "made"));
   for (const field of above) box.append(markup("p", field === "made" ? extend.made(file[field]) : file[field], { class: "made" }));
+  // a file whose name the tab shows more than once: who read this one (a
+  // form's line above says which systems were scored on it)
+  const who = (file.readers ?? []).map((r) => (r === "reference" ? "the reference" : r));
+  if (who.length && !file.form) box.append(element("p", { class: "made" }, `Read by ${and(who)}.`));
+  else if (file.for?.length) box.append(element("p", { class: "made" }, `Translated in the jobs of ${and(file.for)}, which read what it is translated into.`));
   if (file.held) {
     box.append(markup("p", file.held, { class: "held" }));
     return box;

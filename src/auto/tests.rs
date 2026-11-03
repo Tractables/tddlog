@@ -1777,6 +1777,10 @@ fn close(p: Option<f64>, want: f64) -> bool {
     p.is_some_and(|p| (p - want).abs() < 1e-9)
 }
 
+/// A race whose earliest projected finish is before every trial's target
+/// ([`Trial::ahead`]): each trial counts from its own target.
+const SOONER: f64 = f64::NEG_INFINITY;
+
 #[test]
 fn a_trial_is_projected_from_its_last_doubling() {
     // A share of the components per doubling of its target, over the last
@@ -1801,25 +1805,64 @@ fn a_trial_is_projected_from_its_last_doubling() {
     t.progress = vec![(1 << 21, 0.5), (1 << 22, 0.9)];
     assert!(close(t.projected(), 22.25), "{:?}", t.projected());
     t.target = 1 << 23;
-    assert_eq!(t.ahead(), 0.0);
-    assert!(close(Some(t.key()), 23.0));
+    assert_eq!(t.ahead(SOONER), 0.0);
+    assert!(close(Some(t.key(SOONER)), 23.0));
     t.progress = vec![(1 << 20, 0.1), (1 << 21, 0.2), (1 << 22, 0.4)];
-    assert!(close(Some(t.ahead()), 2.0));
+    assert!(close(Some(t.ahead(SOONER)), 2.0));
     t.weight = 8;
-    assert!(close(Some(t.key()), 22.0));
+    assert!(close(Some(t.key(SOONER)), 22.0));
     t.weight = 1;
     t.target = 1 << 25;
-    assert_eq!(t.ahead(), 0.0);
+    assert_eq!(t.ahead(SOONER), 0.0);
     // A doubling that finished no component and a trial that has not
     // doubled its target count the most, whatever its target, and so does
     // a projection further out.
     t.progress = vec![(1 << 20, 0.5), (1 << 21, 0.5)];
-    assert_eq!(t.ahead(), d);
+    assert_eq!(t.ahead(SOONER), d);
     t.progress = vec![(3 << 20, 0.5), (1 << 22, 0.6)];
-    assert_eq!(t.ahead(), d);
+    assert_eq!(t.ahead(SOONER), d);
     t.progress = vec![(1 << 20, 0.01), (1 << 21, 0.02)];
-    assert_eq!(t.ahead(), d);
-    assert!(close(Some(t.key()), 25.0 + d));
+    assert_eq!(t.ahead(SOONER), d);
+    assert!(close(Some(t.key(SOONER)), 25.0 + d));
+}
+
+#[test]
+fn trials_projected_past_their_targets_count_from_the_earliest_finish() {
+    // Two trials at a target of 2^30 units, projected to finish at 2^38
+    // and 2^39: from their targets each counts the most, as an unprojected
+    // trial does; from the earliest finish, 2^38, the first counts none and
+    // the second one doubling.
+    let d = super::policy::PROJECTED_DOUBLINGS;
+    let projected = |before, done| {
+        let mut t = Trial::new(Kind::Closed);
+        t.target = 1 << 30;
+        t.progress = vec![(1 << 29, before), (1 << 30, done)];
+        t
+    };
+    let first = projected(0.4375, 0.5);
+    let second = projected(0.375, 0.4375);
+    assert!(close(first.projected(), 38.0), "{:?}", first.projected());
+    assert!(close(second.projected(), 39.0), "{:?}", second.projected());
+    assert_eq!((first.ahead(SOONER), second.ahead(SOONER)), (d, d));
+    let earliest = first.finish().min(second.finish());
+    assert!(close(Some(earliest), 38.0));
+    assert_eq!(first.ahead(earliest), 0.0);
+    assert!(close(Some(second.ahead(earliest)), 1.0));
+    // An unprojected trial at the same target finishes at 2^(30 + d) for
+    // the race, earlier than both: each counts from it the most again.
+    let blind = Trial {
+        target: 1 << 30,
+        ..Trial::new(Kind::Closed)
+    };
+    assert!(close(Some(blind.finish()), 30.0 + d));
+    let earliest = earliest.min(blind.finish());
+    assert_eq!((first.ahead(earliest), second.ahead(earliest)), (d, d));
+    // A projection within the target counts from the target, earlier or
+    // not: the earliest finish is never before the targets.
+    let mut soon = projected(0.4375, 0.5);
+    soon.target = 1 << 39;
+    assert_eq!(soon.finish(), 39.0);
+    assert_eq!(soon.ahead(soon.finish()), 0.0);
 }
 
 #[test]
@@ -1840,7 +1883,7 @@ fn a_first_turn_is_projected_from_half_its_target() {
     // Its target doubled, it takes its turns ahead of an unprojected trial
     // of its weight by 1.75 doublings.
     t.target = 1 << 32;
-    assert!(close(Some(t.ahead()), 1.25));
+    assert!(close(Some(t.ahead(SOONER)), 1.25));
     // Without the mark the first turn projects nothing.
     assert_eq!(first_turn(None).projected(), None);
     // A first turn that leaves its compile projected to finish within the
@@ -1852,12 +1895,12 @@ fn a_first_turn_is_projected_from_half_its_target() {
     nearly.record(false, Some((99, 100)), Some((60, 100)));
     nearly.target = 1 << 32;
     assert!(close(nearly.projected(), 31.0 + 0.01 / 0.39));
-    assert_eq!(nearly.ahead(), PROJECTED_DOUBLINGS);
+    assert_eq!(nearly.ahead(SOONER), PROJECTED_DOUBLINGS);
     // A later turn's projection within the target counts as before.
     nearly.spent = 1 << 32;
     nearly.record(false, Some((999, 1000)), None);
     nearly.target = 1 << 33;
-    assert_eq!(nearly.ahead(), 0.0);
+    assert_eq!(nearly.ahead(SOONER), 0.0);
     // A turn whose target has a record at half of it keeps that one.
     t.record(false, Some((75, 100)), Some((60, 100)));
     assert_eq!(
@@ -1896,7 +1939,7 @@ fn a_query_phase_is_projected_from_where_it_began() {
     let want = 22.0 + 3.0 * (16.0f64 / 15.0).log2();
     assert!(close(t.projected(), want), "{:?}", t.projected());
     t.target = 1 << 23;
-    assert_eq!(t.ahead(), 0.0);
+    assert_eq!(t.ahead(SOONER), 0.0);
     // A phase that has spent nothing is not projected.
     let t = compile_then_query(0);
     assert_eq!(t.projected(), None);

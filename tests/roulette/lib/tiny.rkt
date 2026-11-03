@@ -1,7 +1,6 @@
 #lang roulette
 ;; A program of Roulette's package roulette-lib whose circuit
-;; scripts/roulette2problog.rkt writes to tiny.pl
-;; (tests/test_roulette2problog.py), with its weights by hand
+;; Roulette's tddlog engine writes to tiny.pl, with its weights by hand
 ;; (tests/it/examples.rs). Three random choices, a (0.3), b (0.6) and c
 ;; (0.9), and d, which is c where a holds and b otherwise. No conjunct is
 ;; common to the guards asked, so the circuit has no evidence, and each

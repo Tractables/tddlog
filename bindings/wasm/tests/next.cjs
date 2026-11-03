@@ -102,10 +102,29 @@ function drawn(page) {
     ["#/baselines", "baselines", async () => {
       assert.equal(await page.locator("table.baselines-t tbody tr").count(), systems.length);
     }],
-    ...["dice", "alea", "problog", "ace", "roulette"].filter((x) => systems.includes(x)).map((x) => [`#/baselines/${x}`, "baseline", async () => {
-      for (const id of ["head", "translated", "types", "coverage", "run"]) assert.equal(await page.locator(`section.panel#${id}`).count(), 1, `${x}: ${id}`);
-      const v = views.systems[x];
-      if (v.n.s + v.n.m + v.n.b) assert.equal(await page.locator("#translated .way").count(), v.ways.length, `${x}: ways`);
+    ...["dice", "alea", "problog", "ace", "roulette", "prism"].filter((x) => systems.includes(x)).map((x) => [`#/baselines/${x}`, "baseline", async () => {
+      const v = views.systems[x], given = { head: v.n.h, translated: v.n.s + v.n.m + v.n.b };
+      for (const id of ["head", "translated", "types", "coverage", "run"]) {
+        // a section with no instances is left out, with its entry in the nav
+        const n = (given[id] ?? 1) ? 1 : 0;
+        assert.equal(await page.locator(`section.panel#${id}`).count(), n, `${x}: ${id}`);
+        assert.equal(await page.locator(`.panels-nav a[href="#/baselines/${x}/${id}"]`).count(), n, `${x}: ${id} in the nav`);
+      }
+      if (given.translated) {
+        // a row a family, each named as its type names it and opening its page, those of few instances one row
+        const rows = page.locator("#translated table.fams-tr tbody tr");
+        assert.equal(await rows.count(), v.families.length, `${x}: a row a family`);
+        const folded = v.families.filter((f) => f.families).length;
+        assert.equal(await page.locator("#translated table.fams-tr tbody th a").count(), v.families.length - folded, `${x}: each family a link`);
+        const names = await page.locator("#translated table.fams-tr tbody th a").allTextContents();
+        assert.equal(new Set(names).size, names.length, `${x}: each family named once`);
+        assert.equal(await page.locator("#translated table.fams-tr tbody th[title]").count(), folded, `${x}: the folded families' names on hover`);
+        assert.equal(await page.locator("#translated table.fams-tr tbody tr").first().locator("td").count(), 6, `${x}: the instances, two sides' answers and totals, the speed-up`);
+        // one line under it, no reasons or routes
+        assert.equal(await page.locator("#translated p.note", { hasText: "Each family's page shows both." }).count(), 1, `${x}: what each side read, once`);
+        assert.ok(!/other routes/.test(await page.locator("#translated").textContent()), `${x}: no routes`);
+        assert.ok(!/written by/.test(await page.locator("#translated table.fams-tr thead").textContent()), `${x}: no scripts in the table`);
+      }
       if (v.n.h) {
         await page.waitForSelector("#head figure svg");
         const line = await page.locator("#head .versus").first().textContent();

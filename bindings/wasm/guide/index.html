@@ -670,21 +670,32 @@ tddlog --program examples/car.net &gt; car.pl</pre>
   walk in the playground</a>.</p>
 
   <h3 id="alea">Alea.jl programs</h3>
-  <p><a href="https://github.com/Tractables/tddlog/blob/main/scripts/alea2problog.jl"><code>scripts/alea2problog.jl</code></a>
-  writes the Boolean circuit that
+  <p>Alea.jl's tddlog backend, on the branch
+  <a href="https://github.com/Tractables/Alea.jl/tree/tddlog"><code>tddlog</code> of Tractables/Alea.jl</a>,
+  hands the Boolean circuit that
   <a href="https://github.com/Tractables/Alea.jl">Alea.jl</a> builds for a
-  program as ProbLog: each flip a probabilistic fact, each gate a rule,
-  each observation evidence. It runs in Julia, with ALEA a checkout of
-  Alea.jl:</p>
-<pre data-lang="shell">julia --project=ALEA scripts/alea2problog.jl examples/alea_dice.jl &gt; alea_dice.pl</pre>
-  <p>The program file defines <code>model()</code>, which returns what an
-  <code>@alea</code> block returns, and <code>QUERY</code>,
-  <code>:pr</code> or <code>:expectation</code>. Each component of the
-  value is queried: a Boolean's probability, under <code>:pr</code> the
-  probability of each world of a number's bits, and under
-  <code>:expectation</code> each bit's probability, of which the
-  expectation is a weighted sum. The script's header names the
-  queries.</p>
+  program to tddlog as ProbLog: each flip a probabilistic fact, each gate a
+  rule, each observation evidence. <code>pr(x; algo = Tddlog())</code>
+  answers with tddlog, and <code>write_problog(io, x)</code> writes the
+  program, here with ALEA a checkout of that branch:</p>
+<pre data-lang="shell">julia --project=ALEA -e 'using Alea; include("examples/alea_dice.jl");
+  open(io -> write_problog(io, model(); query = QUERY, label = "alea_dice.jl"), "alea_dice.pl", "w")'</pre>
+  <p>Each component of the value is queried: a Boolean's probability,
+  under <code>query = :pr</code> the probability of each world of a
+  number's bits, and under <code>query = :expectation</code> each bit's
+  probability, of which the expectation is a weighted sum.
+  <code>write_problog</code>'s documentation names the queries.</p>
+
+  <h3 id="roulette">Roulette programs</h3>
+  <p>Roulette's tddlog engine, on the branch
+  <a href="https://github.com/Tractables/roulette/tree/tddlog"><code>tddlog</code> of Tractables/roulette</a>
+  (a fork of <a href="https://github.com/neuppl/roulette">Roulette</a>),
+  runs a Roulette program unchanged with tddlog in place of RSDD: the
+  circuit Roulette builds for each query goes to tddlog as ProbLog.
+  Without <code>--tddlog</code> it writes one program for all the
+  queries:</p>
+<pre data-lang="shell">racket -l- roulette/engine/tddlog PROGRAM.rkt &gt; PROGRAM.pl
+racket -l- roulette/engine/tddlog --tddlog tddlog PROGRAM.rkt</pre>
 
   <h3 id="lpad">LPADs</h3>
   <p>tddlog reads a logic program with annotated disjunctions (an LPAD)

@@ -90,8 +90,7 @@ its own.
 
 tddlog's time includes the conversion of a program from its original
 language into the file tddlog reads: the ProbLog program of a Dice or
-noDice program (and `dice2problog_onehot.py`'s, which tddlog's one-hot
-arm reads), of a network and of a cplint LPAD, which `tddlog --program`
+noDice program, of a network and of a cplint LPAD, which `tddlog --program`
 writes (`dice2problog.py`, `gen_bn.py` and `lpad2problog.py` wrote the
 same text before tddlog's readers replaced them). The circuit Alea.jl
 writes of a bit-blasted program is the benchmark's input: every system
@@ -632,6 +631,18 @@ julia --project=Alea.jl -e 'using Pkg; Pkg.resolve(); Pkg.instantiate(); Pkg.pre
 julia --project=Alea.jl -e 'using Alea; println(pr(flip(0.7)))'
 ```
 
+Alea.jl+tddlog's circuits are written by Alea.jl's
+tddlog backend (src/inference/tddlog.jl, `write_problog`) on the branch
+tddlog of Tractables/Alea.jl, 12fe923acde5fb635badff5136cd94e74d3c5971:
+cf5e5b8 with the backend, which writes them as tddlog's
+scripts/alea2problog.jl wrote them until 2026-11-03, and nothing else
+changed. The one difference is an impossible observation, which the
+backend writes as evidence on an atom defined false
+(`false_observation :- fail.`) and the script wrote on an atom without
+clauses, which tddlog refused; no run's program has one. A run installs
+it with `ALEA_COMMIT=12fe923acde5fb635badff5136cd94e74d3c5971
+install_alea.sh`; the baseline's records run cf5e5b8.
+
 `PYTHON` is the interpreter PyCall builds against, for Alea's SymPy
 dependency; it needs `sympy` (1.9 was used). Julia takes 1 GB and the
 depot 2.1 GB, so both go to a local disk. The Manifest Pkg resolved has
@@ -744,9 +755,10 @@ point of its fixed-point numbers (`--suite bitblast`, below).
 `export` writes PREFIX.pl, a ProbLog program (a flip `P::fN.`, numbered
 in creation order, an `&` one rule, an `|` two, `!` a negated literal,
 each observation `evidence/2`, each answer a query defined by its
-literals), which main's front end `scripts/alea2problog.jl` writes (a
-user's Alea.jl program in the same form, without `--set`; alea_bench.jl
-includes it and runs the program it loads), and PREFIX__dJ.dice, Dice programs over the same circuit with
+literals), which Alea.jl's tddlog backend writes (`write_problog`, on
+the branch tddlog of Tractables/Alea.jl, which writes a user's Alea.jl
+program in the same form, without `--set`; alea_bench.jl calls it on the
+program it loads), and PREFIX__dJ.dice, Dice programs over the same circuit with
 the flips first in Alea's order (so that Dice's BDD has Alea's variable
 order), one per Boolean or `:pr` number (returning its bits as nested
 pairs, printed as a joint table) or per expectation bit, listed in
@@ -788,18 +800,18 @@ Alea (a command template like `--alea`).
 
 `bench.py --suite ppl` holds the benchmark programs of the papers on
 Dice and Alea.jl, and of later papers that compare with them, that are
-exact inference on a discrete (or bit-blasted) program: 120 instances in
-four families. The survey of 2026-10-11:
+exact inference on a discrete (or bit-blasted) program: 101 instances in
+three families (the bit-blasting paper's programs are the `bitblast` suite). The survey of 2026-10-11:
 
 | paper | artifact (license) | programs | here |
 |---|---|---|---|
 | Dice, OOPSLA 2020 | SHoltzen/dice (Apache-2.0) | Table 1's eight against Psi; digit recognition; Fig. 10's Caesar, diamond and ladder generators; Tables 2 and 3's networks | `data/dice`, the `bn` family (before this survey) |
 | Cao et al., "Scaling Integer Arithmetic in Probabilistic Programs", UAI 2023 | Tractables/Alea.jl branch `arithmetic` 7e9ff23 (Apache-2.0) | Table 1's 25 programs (book, tugofwar, caesar, ranking, radar, Floyd-Warshall, linext, triangle, gcd, disease, luhn), integers of 2 to 20 bits | `arith`: all 25 and caesar_huge, disease_large, plankton (`data/alea/arith`) |
-| Garg et al., "Bit Blasting Probabilistic Programs", PLDI 2024 | Alea.jl branch `hybit` 96b69a5 (Apache-2.0); Zenodo 10.5281/zenodo.10901544 (CC-BY-4.0) | Table 2's 19 programs, continuous distributions as fixed-point numbers of 8 to 25 bits and 16 to 4 096 pieces | `hybit`: all 19 at the bits and pieces of the paper's HyBit column (`data/alea/hybit`) |
+| Garg et al., "Bit Blasting Probabilistic Programs", PLDI 2024 | Alea.jl branch `hybit` 96b69a5 (Apache-2.0); Zenodo 10.5281/zenodo.10901544 (CC-BY-4.0) | Table 2's 19 programs, continuous distributions as fixed-point numbers of 8 to 25 bits and 16 to 4 096 pieces | the `bitblast` suite: all 19, the paper's HyBit column's bits and pieces as one rung of each ladder (`data/alea/hybit`) |
 | Bowers et al., "Stochastic Lazy Knowledge Compilation for Inference in Discrete Probabilistic Programs" (Pluck), PLDI 2025 | Zenodo 10.5281/zenodo.15051140 (CC-BY-4.0) | Table 1 against Dice.jl: the Dice paper's networks, diamond and ladder; four sequence models (HMM, PCFG, string editing, sorted lists) on inductive types | `pluck`: the four sequence models' Dice.jl programs ported to Alea.jl (`data/alea/pluck`) |
 | Gürtler and Kaminski, noDice, OOPSLA 2026 | Zenodo 10.5281/zenodo.18739789 (CC-BY-4.0, code Apache-2.0) | Table 1's Dice programs, some with nondeterminism (`nflip`); the artifact's `benchmarks/nodice/` holds more programs and sizes than Table 1 | `nodice`: the 11 without `nflip` (`data/nodice`); the artifact's other programs without `nflip` from 2026-10-30 (below) |
 
-The `arith`, `hybit` and `pluck` programs are Alea.jl programs: Alea
+The `arith` and `pluck` programs, and the `bitblast` suite's, are Alea.jl programs: Alea
 runs them, and tddlog, ProbLog and Dice run the circuit Alea builds for
 them (below). The `nodice` ones are Dice programs, translated by
 `dice2problog.py`. Left out:
@@ -1431,6 +1443,17 @@ and rosette at 373c8c35e4a7667f38fce10cf0b74ae17de07f1d, all from git,
 under `$HOME/local/roulette-upstream`. A run stops where roulette or
 roulette-lib is installed at another commit.
 
+Roulette+tddlog runs Roulette's tddlog engine: the
+branch tddlog of Tractables/roulette, a fork of neuppl/roulette under its
+Apache License 2.0, at d86c46c91d0a1a0fd164b3a7f3cf02b6cfd0f0c2, upstream's
+60f77cb with the engine roulette/engine/tddlog, which was tddlog's
+scripts/roulette2problog.rkt until 2026-11-03 and writes the same
+programs, but for evidence that is false, which it writes as evidence on
+an atom defined false and which no run's program has. It is installed apart, under `$HOME/local/roulette-tddlog`, on
+the same Racket, Rosette and roulette-x86_64-linux, with a copy of
+Circulette compiled by its Racket, which `bench.py gen
+--circulette-racket` runs (`install_roulette_tddlog.sh`).
+
 The paper's artifact (Zenodo 10.5281/zenodo.15253254, CC-BY-4.0, a
 2.6 GB Docker image whose Roulette is camoy/roulette at
 54d6185f0b5143bdaabbd9ed35bb22c9dcaddc60 on Racket 8.16) is no longer
@@ -1547,9 +1570,11 @@ translated Dice programs it answers what Roulette alone answers, to
 
 Roulette+tddlog (`--roulette-tddlog CMD`, records `roulette-tddlog:auto`)
 is tddlog on the circuit Roulette builds for a
-program: tddlog's scripts/roulette2problog.rkt runs the program as
-Roulette does, with Roulette's engine replaced by one that records each
-`infer`, and writes the circuit as one ProbLog program for every query;
+program: Roulette's tddlog engine (`racket -l- roulette/engine/tddlog`,
+on the branch tddlog of Tractables/roulette, a fork of neuppl/roulette)
+runs the program as Roulette does, with Roulette's engine replaced by
+one that records each `infer`, and writes the circuit as one ProbLog
+program for every query;
 tddlog (strategy auto) answers it, and the answers are read as Roulette's
 `query` reads its engine's (`run_roulette_tddlog`). A query's
 observations reach tddlog as evidence, where Roulette's `query` divides
@@ -1706,8 +1731,8 @@ and P(fail) is kept as `p_fail`. circulette.rkt computes every posterior
 and prints a single's above 0, a pair's above 2e-4 and a triple's above
 1e-8, so a posterior it leaves out counts as answered where the reference
 puts it at or below that threshold, and as left out otherwise
-(`printed_answers`). Roulette+tddlog is tddlog on the ProbLog program that tddlog's
-`scripts/roulette2problog.rkt` writes from circulette.rkt's own run with
+(`printed_answers`). Roulette+tddlog is tddlog on the ProbLog program that
+Roulette's tddlog engine writes from circulette.rkt's own run with
 Roulette's engine replaced by one that records each `infer`:
 P(fail) is the evidence's probability, which tddlog prints under
 `--evidence-probability`, and each posterior a query's answer. The export
@@ -1775,7 +1800,7 @@ Every system runs on every suite whose programs it can be given. The
 instances that have a Dice program behind them (`dice_source`: the dice
 paper's programs, the networks as Dice programs, the loops, noDice's
 programs, Geni's and Roulette's generators') and the circuits of the
-Alea.jl programs (the ppl suite's arith, hybit and pluck families and the
+Alea.jl programs (the ppl suite's arith and pluck families and the
 bitblast suite, whose Dice programs `alea_bench.jl export` writes and Dice
 runs, NAME.dicemap) reach Genfer, SPPL and Geni through a translator each: `scripts/dice2genfer.py` (SGCL),
 `scripts/dice2sppl.py` (SPPL) and `scripts/dice2geni.py` (Geni's IR), over
@@ -2496,20 +2521,17 @@ Alea.jl builds). Each system's page on the results page
 evaluates it separately on the instances native to it, its own among
 them, and on those translated for it.
 
-The ProbLog family is scored on the dice suite's 21 scaled loops in the
-form of the ProbLog program on which it does better, so that no system
-loses answers to the form chosen for it: ProbLog's d-DNNF, PITA and
-aspmc ran on both forms, the recursion and the loops unrolled step by
-step, in the same lanes of one job (three repetitions, tddlog on the
-recursion beside them), and each system takes the form on
-which it answers more of the loops, on a tie the one with the smaller
-total time, for the whole suite. ProbLog is scored on the unrolled form
-(15 answered against 10 on the recursion), aspmc on the unrolled form
-(16 on each, 3412 s against 3949 s) and PITA on the recursion (10 on
-each, 6739 s against 6752 s); tddlog stays on the recursion. An
-answer that fails the answer check against tddlog's counts as
-unanswered. Both forms are translations of the Dice program. Each
-loop's page shows both forms and which systems are scored on each.
+Every system that reads a Dice loop's ProbLog program reads the loop as
+recursion over a step index, the form tddlog reads (the owner,
+2026-11-02): no system is scored on a form chosen for
+it, and each loop's page shows the one program. The cost was measured
+once on the dice suite's 21 scaled loops, where ProbLog's d-DNNF, PITA
+and aspmc ran on the recursion and on the loops unrolled step by step in
+the same lanes of one job (three repetitions, a failure or an answer off
+tddlog's counted at the 600 s limit): ProbLog answers 10 on the
+recursion against 15 unrolled (7022 s against 4067 s), aspmc 16 either
+way (3949 s against 3412 s) and PITA 10 either way (6739 s against
+6752 s). The tables keep the recursion's records alone.
 
 The first row that matches an instance's system, suite and name (a
 regular expression the name starts with) classifies it; the processes
@@ -2611,15 +2633,14 @@ the same model) has the class of the program it is written from.
 | nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
 | alea | ppl | `pluck_` | translated | the Dice.jl versions of Pluck's sequence models in the paper's artifact, ported to Alea.jl (Pluck's own programs are the models) |
 | alea-tddlog | ppl | `pluck_` | translated | the Alea.jl port of Pluck's sequence model (Pluck's own programs are the models), whose circuit Alea.jl hands to tddlog |
-| alea-tddlog | ppl, bitblast | `(bb\|arith\|pluck)_` | native | the Alea.jl program, which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog as ProbLog (alea2problog.jl) |
-| roulette-tddlog | circulette | all | native | the netlist, which circulette.rkt runs on Roulette's package roulette-lib up to the formulas of its queries, handed to tddlog as ProbLog (roulette2problog.rkt) |
-| roulette-tddlog | roulette | all | native | the Roulette paper's program, which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (roulette2problog.rkt) |
-| roulette-tddlog | dice, ppl, geni | all | translated | a Dice program translated for Roulette (dice2roulette.py), which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (roulette2problog.rkt) |
-| problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | translated | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog (alea2problog.jl) or as Dice programs of its gates |
-| problog, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the loops unrolled step by step, the form of its ProbLog program on which the system answers more of them |
+| alea-tddlog | ppl, bitblast | `(bb\|arith\|pluck)_` | native | the Alea.jl program, which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog as ProbLog (Alea.jl's tddlog backend) |
+| roulette-tddlog | circulette | all | native | the netlist, which circulette.rkt runs on Roulette's package roulette-lib up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
+| roulette-tddlog | roulette | all | native | the Roulette paper's program, which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
+| roulette-tddlog | dice, ppl, geni | all | translated | a Dice program translated for Roulette (dice2roulette.py), which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
+| problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | translated | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog (Alea.jl's tddlog backend) or as Dice programs of its gates |
 | tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | roulette | all | translated | the paper's model written as a ProbLog program (gen_roulette.py) |
-| tddlog, problog, pita, aspmc | circulette | all | translated | the ProbLog program roulette2problog.rkt writes from circulette.rkt's run on the netlist (tddlog's records are Roulette+tddlog's) |
+| tddlog, problog, pita, aspmc | circulette | all | translated | the ProbLog program Roulette's tddlog engine writes from circulette.rkt's run on the netlist (tddlog's records are Roulette+tddlog's) |
 | tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | translated | a loop-free Dice program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | storm, prism | geni | `geni_weather_` | native | Rubicon's PRISM model of the weather factory (CAV 2021) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | dice, ppl, bitblast, roulette, geni | all | translated | a Dice program, translated into the system's language where it reads another (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |

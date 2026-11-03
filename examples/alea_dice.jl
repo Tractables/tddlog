@@ -4,9 +4,11 @@
 # that the dice sum to 7 (one value of the second die for each of the
 # first's, 1/6) and that the first shows more (in 3, 4 or 5 of the
 # second's 6 values, (3 + 4 + 5) / 18 = 2/3).
-# scripts/alea2problog.jl writes the circuit Alea.jl builds for it, which
-# is alea_dice.pl:
-#   julia --project=ALEA scripts/alea2problog.jl examples/alea_dice.jl > alea_dice.pl
+# Alea.jl's tddlog backend (the branch tddlog of Tractables/Alea.jl, ALEA
+# its checkout) writes the circuit Alea.jl builds for it, which is
+# alea_dice.pl:
+#   julia --project=ALEA -e 'using Alea; include("examples/alea_dice.jl");
+#     open(io -> write_problog(io, model(); query = QUERY, label = "alea_dice.jl"), "alea_dice.pl", "w")'
 #   tddlog alea_dice.pl
 using Alea
 

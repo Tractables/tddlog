@@ -4,6 +4,10 @@
 #     julia --project=ALEA alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl [PREFIX]
 #     julia --project=ALEA alea_bench.jl export [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl PREFIX
 #
+# ALEA is a checkout of Alea.jl's branch tddlog (Tractables/Alea.jl), which
+# adds a tddlog backend, and the writer of the circuit, to Alea.jl at
+# cf5e5b8 and leaves its Cudd backend as it was.
+#
 # PROGRAM.jl is a program in the form of data/alea/: Julia code, evaluated
 # in a module of its own, that defines `model()`, returning what an
 # `@alea begin ... end` block returns (a MetaDist) or a plain distribution,
@@ -56,14 +60,13 @@
 # as deep as the circuit.
 #
 # `export` builds the program and writes its circuit, without inference.
-# PREFIX.pl is the ProbLog program that the source tree's
-# scripts/alea2problog.jl writes of the program run with the `--set`s,
-# whose first line names them: a flip is a probabilistic fact `P::fN.`
-# (the N-th flip of the circuit in the order Alea created them), an `&` a
-# rule, a `|` two rules, a `!` a negated literal, every observation
-# `evidence(...)`, every answer a query, `qK(U)` defined by the
-# conjunction of its world's bit literals. alea2problog.jl also builds the
-# model that `run` answers.
+# PREFIX.pl is the ProbLog program that Alea.jl's tddlog backend
+# (`write_problog`) writes of the program run with the `--set`s, whose first
+# line names them: a flip is a probabilistic fact `P::fN.` (the N-th flip of
+# the circuit in the order Alea created them), an `&` a rule, a `|` two
+# rules, a `!` a negated literal, every observation `evidence(...)`, every
+# answer a query, `qK(U)` defined by the conjunction of its world's bit
+# literals.
 # Under `--warm-below S`, `export` is timed as `run` times Alea, for the
 # time a reader of the circuit pays for it: after the small program,
 # `alea_seconds T` and `alea_compile_seconds T` are those of building the
@@ -90,15 +93,52 @@ import CUDD
 using Alea: JointQuery, MetaDist, Flip, DistAnd, DistOr, DistNot, CondError,
     returnvalue, allobservations, tobits
 
-# The program's model and its circuit, as the source tree's
-# scripts/alea2problog.jl builds and writes them: beside this script on the
-# baselines branch and in a flat copy, in tddlog/scripts/ in a checkout that
-# holds the source tree there (as scripts/source_tree.py finds it).
-include(let own = joinpath(@__DIR__, "alea2problog.jl")
-    isfile(own) ? own : joinpath(dirname(@__DIR__), "tddlog", "scripts", "alea2problog.jl")
-end)
-using .Alea2ProbLog: Model, load, build, allbits, isbool, queried, MAX_WORLD_BITS,
-    circuit, flip_numbers, flips, gates, literal, prob_text, write_problog
+# The circuit's writer, and the functions that name its flips and gates,
+# which the Dice programs share: Alea.jl's tddlog backend.
+using Alea: write_problog, component_atoms, problog_components, problog_bits, world_bits, isbool,
+    MAX_WORLD_BITS, problog_flip_numbers, problog_circuit, circuit_flips, circuit_gates, circuit_literal,
+    problog_probability
+
+# The program's module.
+module Program end
+
+# Evaluate the program's text (read from `path`) in Program; its QUERY and
+# whether it ignores errors.
+function load(text, path)
+    Base.include_string(Program, text, path)
+    name = basename(path)
+    isdefined(Program, :model) || error("$name defines no model()")
+    isdefined(Program, :QUERY) || error("$name defines no QUERY (:pr or :expectation)")
+    query = Program.QUERY
+    query in (:pr, :expectation) || error("QUERY must be :pr or :expectation, not $query")
+    query, isdefined(Program, :IGNORE_ERRORS) && Program.IGNORE_ERRORS
+end
+
+# A run of the program's model(): its value, the value's components, the
+# observations and the errors the inference keeps.
+struct Model
+    value::Any
+    comps::Vector{Any}
+    evidence::Vector{AnyBool}
+    errors::Vector{CondError}
+end
+
+function build(ignore_errors)
+    m = Base.invokelatest(Program.model)
+    if m isa MetaDist
+        Model(m, problog_components(returnvalue(m)), m.observations, ignore_errors ? CondError[] : m.errors)
+    else
+        Model(m, problog_components(m), AnyBool[], CondError[])
+    end
+end
+
+# The flips of the model's circuit (its answers and observations), numbered
+# as write_problog numbers them.
+function flip_numbers(model::Model, query)
+    roots = Any[n for (_, conj) in component_atoms(model.comps, query) if conj !== nothing for (n, _) in conj]
+    append!(roots, model.evidence)
+    problog_flip_numbers(roots)
+end
 
 const USAGE = "usage: alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl [PREFIX] | export [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl PREFIX"
 
@@ -120,9 +160,9 @@ function queries_of(model::Model, query)
             push!(queries, JointQuery(tobits(c)))
         elseif query == :pr
             push!(shape, (:pr, length(queries) + 1, 1))
-            push!(queries, JointQuery(Dist{Bool}[b for b in allbits(c) if b isa Dist{Bool}]))
+            push!(queries, JointQuery(Dist{Bool}[b for b in problog_bits(c) if b isa Dist{Bool}]))
         else
-            bits = allbits(c)
+            bits = problog_bits(c)
             push!(shape, (:bits, length(queries) + 1, length(bits)))
             append!(queries, [JointQuery(tobits(b)) for b in bits])
         end
@@ -171,7 +211,7 @@ function report(model::Model, query, shape, worlds)
         if kind == :bool
             println("alea_q q$k ", prob_true(c, worlds[i]))
         elseif kind == :pr
-            bits = queried(c, query)
+            bits = world_bits(c)
             dist = Dict{Int, Float64}()
             for (w, p) in worlds[i]
                 u = 0
@@ -185,7 +225,7 @@ function report(model::Model, query, shape, worlds)
                 println("alea_q q$k($u) ", get(dist, u, 0.0))
             end
         else
-            bits = allbits(c)
+            bits = problog_bits(c)
             probs = [prob_true(b, worlds[i + j - 1]) for (j, b) in enumerate(bits)]
             seen = Set{Dist{Bool}}()
             for (j, b) in enumerate(bits)
@@ -248,13 +288,13 @@ function write_dice(prefix, model::Model, query, source)
         if isbool(c)
             push!(groups, (:bool, "q$k", c))
         elseif query == :pr
-            bits = queried(c, query)
+            bits = world_bits(c)
             length(bits) <= MAX_WORLD_BITS ||
                 error("component $k has $(length(bits)) bits that are not constant")
             push!(groups, (:joint, "q$k", bits))
         else
             seen = Set{Dist{Bool}}()
-            for (j, b) in enumerate(allbits(c))
+            for (j, b) in enumerate(problog_bits(c))
                 (b isa Dist{Bool} && !(b in seen)) || continue
                 push!(seen, b)
                 push!(groups, (:bool, "e$k($j)", b))
@@ -266,17 +306,17 @@ function write_dice(prefix, model::Model, query, source)
             file = "$(basename(prefix))__d$j.dice"
             roots = Any[(ret isa AbstractVector ? ret : [ret])...]
             append!(roots, model.evidence)
-            c = circuit(roots, flipno)
+            c = problog_circuit(roots, flipno)
             lit(n) = begin
-                name, neg = literal(c, n, false)
+                name, neg = circuit_literal(c, n, false)
                 neg ? "!$name" : name
             end
             open(joinpath(dirname(prefix), file), "w") do io
                 println(io, "// $source: the circuit Alea.jl builds, written by tddlog's scripts/alea_bench.jl.")
-                for f in flips(c)
-                    println(io, "let ", c.names[f], " = flip ", prob_text(f.prob), " in")
+                for f in circuit_flips(c)
+                    println(io, "let ", c.names[f], " = flip ", problog_probability(f), " in")
                 end
-                for g in gates(c)
+                for g in circuit_gates(c)
                     op = g isa DistAnd ? " && " : " || "
                     println(io, "let ", c.names[g], " = ", lit(g.x), op, lit(g.y), " in")
                 end
@@ -365,7 +405,7 @@ function main()
 end
 
 write_circuit(prefix, model, query, source) =
-    open(io -> write_problog(io, model, query, source), prefix * ".pl", "w")
+    open(io -> write_problog(io, model.value; query, label = source), prefix * ".pl", "w")
 
 function export_model(prefix, model, query, source)
     write_circuit(prefix, model, query, source)

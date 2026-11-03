@@ -1035,7 +1035,6 @@ function benchmarksOf(root) {
       const rows = cs.flatMap(rowsOf);
       assert.equal(s.answers, virtual(rows, [s.key]), `${what}: its answers`);
       assert.equal(s.given, cs.reduce((n, c) => n + c.given[s.key], 0), `${what}: the instances it was given`);
-      assert.equal(s.how.reduce((n, h) => n + h.n, 0), s.given, `${what}: how it was given each instance`);
       // the instances in its own language (its own among them) and those translated for it
       const ways = [["on", "native"], ["t", "translated"]].map(([letters, key]) => ({ key,
         rows: cs.flatMap((c) => rowsOf(c).filter((r) => letters.includes(r.cls[c.systems.indexOf(s.key)]))) }));
@@ -1052,7 +1051,7 @@ function benchmarksOf(root) {
       const given = ways.filter((w) => w.rows.length);
       assert.deepEqual(await page.$$eval("#view table.languages tbody tr", (trs) => trs.map((tr) => [tr.cells[1].textContent, tr.cells[tr.cells.length - 1].textContent])),
         given.map((w) => [count(w.rows.length), s[w.key].speedup === null ? "too few in common" : speed(s[w.key].speedup)]), `${what}: its own language and translated`);
-      for (const fold of ["lang-figs", "cat-figs-fold", "given"]) await page.click(`#view details.${fold} > summary`);
+      for (const fold of ["lang-figs", "cat-figs-fold"]) await page.click(`#view details.${fold} > summary`);
       // its plots in its own language, translated for it, and in each type (the page's other panels have theirs)
       const figs = (await plots("#view #language figure.plot, #view #types figure.plot")).map((f) => [f.systems.join(" "), f.instances, [...f.coloured].sort().join(" ")]);
       assert.deepEqual(figs, [...given.map((w) => [[...s[w.key].me, s.key].join(" "), w.rows.length, [...s[w.key].me, s.key].sort().join(" ")]),
@@ -1064,7 +1063,6 @@ function benchmarksOf(root) {
       assert.deepEqual(await page.$$eval("#view details.lang-figs figure.scatter", (fs) => fs.map((f) => [f.dataset.faster, f.dataset.slower])),
         given.map((w) => sides(w.rows, [s.key], pairKey(s.key))), `${what}: tddlog against it`);
       assert.equal(await page.$$eval("#view section#types > div table.board tbody tr", (trs) => trs.length), cs.length, `${what}: a row for each category`);
-      assert.equal(await page.$$eval("#view table.how-given tbody tr", (trs) => trs.length), s.how.length, `${what}: how it was given the instances`);
       assert.equal(await page.getAttribute("#view p.lede a", "href"), s.link, `${what}: its link`);
       if (s.cite) assert.ok((await page.textContent("#view div.facts")).includes(s.cite.title), `${what}: its paper`);
       assert.equal(await page.getAttribute(`#tree a[href="${hash}"]`, "aria-current"), "page", `${what}: marked in the menu`);

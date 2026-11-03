@@ -88,14 +88,15 @@ roulette_timer.rkt after Racket's start and the modules' load; with
 `--roulette-variants rsdd,bayes` it also runs a Bayesian network that
 observes nothing as the artifact runs its own networks (`roulette:bayes`,
 `roulette_bif`). `--roulette-tddlog CMD` adds `roulette-tddlog:auto`,
-Roulette+tddlog (`run_roulette_tddlog`): roulette2problog.rkt writes the
+Roulette+tddlog (`run_roulette_tddlog`): Roulette's tddlog engine (the
+branch tddlog of Tractables/roulette, a fork of neuppl/roulette) writes the
 circuit Roulette builds and tddlog answers it, charged Roulette's run up
 to the circuit and tddlog's (docs/baselines.md, section 11). On `--suite
 circulette` the template's Racket has Roulette's package roulette-lib and
 Circulette installed, and `roulette:rsdd` is circulette.rkt on an instance's
 netlist (`run_circulette`); gen writes the instance's ProbLog program with
-roulette2problog.rkt (`--circulette-racket`, gen_circulette.py), and tddlog
-answers it with `--evidence-probability`, P(fail) with the posteriors.
+the engine (`--circulette-racket`, the fork's Racket, gen_circulette.py), and
+tddlog answers it with `--evidence-probability`, P(fail) with the posteriors.
 
 `--suite ppl` is the benchmark programs of the Dice and Alea.jl papers and
 of later papers (`PPL`): Dice programs (`nodice`), which run as a `dice`
@@ -250,23 +251,17 @@ DICE = ['twocoins', 'evidence1', 'evidence2', 'grass', 'alarm', 'noisyOr', 'murd
 for name in DICE:
     SPEC[f'dice_{name}'] = ('dice', ['dice2problog.py', os.path.join(ROOT, 'data', 'dice', f'{name}.dice')])
 
-# Larger instances, outside the standard suite so that it stays stable.
-# The suite was assembled to evaluate selective indicators, a rewrite since
-# removed, and keeps its name.
-INDICATORS = {name: SPEC[name] for name in [
-    *(f'bn_{net}{suffix}' for net in ['insurance', 'water', 'hailfinder', 'hepar2',
-                                    'win95pts', 'pathfinder', 'andes', 'pigs', 'link', 'munin']
-      for suffix in ['', '_ev']),
-    'g20_60', 'g30_100', 'grid15', 'grid30', 'uwcse8', 'uwcse10', 'cora500',
-    'dice_digitRecognition',
-]}
-INDICATORS.update({
+# Larger instances, outside the standard suite so that it stays stable, and
+# the Dice programs with loops. The suite was assembled to evaluate selective
+# indicators, a rewrite since removed, and keeps its name; the standard
+# suite's own instances are not listed again.
+INDICATORS = {
     'g40_140': ('graph', ['gen_graph.py', '40', '140', '--seed', '1']),
     'grid40': ('grid', ['gen_grid.py', '40', '--seed', '1']),
     'uwcse12': ('uwcse', ['gen_uwcse.py', '12']),
     'cora1000': ('cora', ['gen_cora.py', os.path.join(ROOT, 'data', 'cplint', 'cora_m1.pl'),
                          '--queries', '1000', '--seed', '1']),
-})
+}
 for n in [15, 30]:
     INDICATORS[f'grid{n}_ev'] = ('gridev', ['gen_grid.py', str(n), '--seed', '1', '--evidence'])
 INDICATORS['cora1000_ev'] = ('coraev', ['gen_cora.py', os.path.join(ROOT, 'data', 'cplint', 'cora_m1.pl'),
@@ -306,9 +301,6 @@ ARITH = ['book', 'tugofwar', 'caesar_small', 'caesar_medium', 'caesar_large', 'c
          'linext_small', 'linext_medium', 'linext_large', 'triangle_small', 'triangle_medium', 'triangle_large',
          'gcd_small', 'gcd_medium', 'gcd_large', 'disease_small', 'disease_medium', 'disease_large',
          'luhn_small', 'luhn_medium', 'plankton']
-HYBIT = ['pi', 'weekend', 'spacex', 'GPA', 'tug_of_war', 'altermu2', 'conjugate_gaussians',
-         'normal_mixture_theta', 'normal_mixture_mu1', 'normal_mixture_mu2', 'zeroone_w1', 'zeroone_w2',
-         'coinBias', 'addFun_sum', 'clickGraph', 'trueskill', 'clinicalTrial1', 'clinicalTrial2', 'addFun_max']
 PLUCK = ['hmm', 'pcfg', 'string_editing', 'sorted_list']
 NODICE = ([f'coupon2-{n}-obs' for n in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20]] +
           ['survey', 'hepar2', 'insurance', 'water', 'alarm', '3sat-0'] +
@@ -318,7 +310,7 @@ NODICE = ([f'coupon2-{n}-obs' for n in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 
                                       10000]] +
           [f'ladder-{n}-p' for n in [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]])
 PPL = {}
-for family, names in [('arith', ARITH), ('hybit', HYBIT), ('pluck', PLUCK)]:
+for family, names in [('arith', ARITH), ('pluck', PLUCK)]:
     for name in names:
         PPL[f'{family}_{name}'] = (family, ['alea_bench.jl', os.path.join(ROOT, 'data', 'alea', family, f'{name}.jl')])
 for name in NODICE:
@@ -358,7 +350,7 @@ def fold_key(family, a):
 FOLD = {
     'gen_threedie.py': lambda a: ('threedie', [], []),
     'gen_pgrid.py': lambda a: (f'pgrid{a[0]}', [a[0]], []),
-    'gen_pcfg.py': lambda a: ({'stack': 'pcfg', 'counter': 'pcfgcount'}[a[0]], [a[0]], []),
+    'gen_pcfg.py': lambda a: ('pcfg', [a[0]], []),
     'gen_dnahmm.py': lambda a: ('dnahmm', [], []),
     'gen_plcg.py': lambda a: ('plcg', [], []),
     'gen_hmmpos.py': lambda a: ('hmmpos', [], []),
@@ -546,7 +538,7 @@ for _h in GENI_WEATHER_H:
 # fullAdder8.v's adder by its bits (ct_fulladder, 8 the file as written)
 # and openfpga_mac_2.v's multiply-accumulate by DATA_WIDTH (ct_mac, 2 and
 # 4 openfpga_mac_2.v and openfpga_mac_4.v). gen_circulette.py writes the
-# netlist and, through roulette2problog.rkt, the ProbLog program of
+# netlist and, through Roulette's tddlog engine, the ProbLog program of
 # Circulette's queries; Roulette runs circulette.rkt itself on the netlist
 # (`run_circulette`). The other netlists are no sizes of one another
 # (COLLECTIONS).
@@ -728,17 +720,14 @@ for family in ['eventcalc', 'liftsep', 'rgraph']:
                                                                     '--precision', '17'])
 
 # Grammars and an HMM over lists, which tddlog's grounder reads since it
-# grounds function symbols and lists: the ProbLog tutorial's PCFG in its
-# two encodings (the derivation's stack, pcfg, and counts of expansions,
-# pcfgcount), each asked how the derivation of a balanced word of length
+# grounds function symbols and lists: the ProbLog tutorial's PCFG (the
+# derivation's stack), asked how the derivation of a balanced word of length
 # N and three or more top-level blocks brackets them, given the word (the
 # first two rules: 1/2 for three blocks), and cplint's HMM of DNA, whose
 # choices are indexed by
 # the states before them, asked the probability of a sequence of length N.
 for n in [8, 12, 16, 20, 24, 28, 32]:
     LIT[f'pcfg{n}'] = ('pcfg', ['gen_pcfg.py', 'stack', str(n), '--seed', '1'])
-for n in [8, 16, 24, 32, 48, 64, 96, 128]:
-    LIT[f'pcfgcount{n}'] = ('pcfgcount', ['gen_pcfg.py', 'counter', str(n), '--seed', '1'])
 for n in [4, 8, 12, 16, 20, 24, 28]:
     LIT[f'dnahmm{n}'] = ('dnahmm', ['gen_dnahmm.py', str(n), '--seed', '1'])
 for script, family in [('gen_pcfg.py', 'pcfg'), ('gen_dnahmm.py', 'dnahmm')]:
@@ -921,7 +910,7 @@ def instances(args):
 # bench_one.py's scaled Dice loops. The taint family's apps
 # are one analysis of fifteen programs, none a size of another, and so are
 # the side-channel family's cases, whose rules differ from case to case.
-COLLECTIONS = {'dice': None, 'cplint': None, 'hybit': None, 'pluck': None, 'taint': None, 'sidechannel': None,
+COLLECTIONS = {'dice': None, 'cplint': None, 'pluck': None, 'taint': None, 'sidechannel': None,
                'circulette': None,
                'problogtut': None, 'problogex': None, 'cplintpita': None,
                'arith': r'(arith_[a-z]+)_(?:small|medium|large|huge)', 'nodice': r'(nodice_(?:coupon2|brp|diamond|ladder))-?\d+-(?:obs|2|p)',
@@ -1119,10 +1108,7 @@ def original(gargs, variant):
     conversion of a whole file (`write_program`): a Dice program
     (dice2problog.py) or a cplint LPAD (gen_cplint.py), so that reading it
     is part of tddlog's time, as a network's is (`network_args`). None for
-    another instance, and for the one-hot arm (`+onehot`), which reads the
-    one-hot translation in place of NAME.pl (tddlog-onehot.sh)."""
-    if 'onehot' in variant.split('+')[1:]:
-        return None
+    another instance."""
     if gargs[0] == 'dice2problog.py':
         return gargs[1]
     if gargs[0] == 'gen_cplint.py':
@@ -1134,9 +1120,8 @@ def folded(args, name, gargs, variant):
     """What tddlog reads of an instance of FOLD: its family's program and
     its arguments' file, (DIR/programs/PROGRAM.pl, DIR/NAME.args), so that
     reading the program, its data and binding its places is part of
-    tddlog's time. None for another instance, and for the one-hot arm,
-    which reads the one-hot translation of NAME.pl (tddlog-onehot.sh)."""
-    if gargs[0] not in FOLD or 'onehot' in variant.split('+')[1:]:
+    tddlog's time. None for another instance."""
+    if gargs[0] not in FOLD:
         return None
     program = FOLD[gargs[0]](gargs[1:])[0]
     return os.path.join(args.dir, FOLD_DIR, program + '.pl'), os.path.join(args.dir, name + '.args')
@@ -1386,8 +1371,8 @@ def gen(args):
                          + args.suite)
     circulette = [n for n, e in spec.items() if e[1][0] == 'gen_circulette.py']
     if circulette and not getattr(args, 'circulette_racket', ''):
-        raise SystemExit(f'{circulette[0]} is a netlist of Circulette, whose program roulette2problog.rkt writes '
-                         f'under --circulette-racket ({len(circulette)} instances)')
+        raise SystemExit(f'{circulette[0]} is a netlist of Circulette, whose program Roulette\'s tddlog engine '
+                         f'writes under --circulette-racket ({len(circulette)} instances)')
     if not circulette:
         for opt, given in [('--circulette-racket', getattr(args, 'circulette_racket', '')),
                            ('--export-timeout', getattr(args, 'export_timeout', None)),
@@ -1709,7 +1694,7 @@ def reference_records(records):
     """The records an answer is checked against, of `records` (one
     instance's): those that answered (ok, a non-empty dict of finite
     answers, reference_answers's), in REFERENCE_ORDER, then tddlog's
-    default arm (`auto`; another arm, a one-hot encoding say, may answer
+    default arm (`auto`; another arm may answer
     other queries). An Ace record stands with its reference_answers alone,
     a copy. The first is the instance's reference."""
     def rank(r):
@@ -1754,7 +1739,7 @@ def full_reference(rec, refs):
     that leaves a query out answers less than was asked):
     answer_reference's, else the first above rec, where rec shares a query
     with none. Not for another arm of tddlog's than its default, which may
-    answer other queries (a one-hot program names its own: reference_records),
+    answer other queries (it may name its own: reference_records),
     and is checked where it shares one."""
     x = answer_reference(rec, refs)
     if x is not None or (rec['system'] == 'tddlog' and rec.get('variant') not in (None, 'auto')):
@@ -2475,7 +2460,7 @@ def roulette_program(args, name, variant):
 def roulette_command(template, prog, *words):
     """A Racket command template (`--roulette`'s, `--roulette-tddlog`'s) on
     program `prog`; with words, Racket runs them on it instead (`-l- raco
-    make`, roulette_timer.rkt, roulette2problog.rkt)."""
+    make`, roulette_timer.rkt, `-l- roulette/engine/tddlog`)."""
     file = ' '.join(words + (prog,))
     return template.format(file=file, dir=os.path.dirname(prog), base=os.path.basename(prog)).split()
 
@@ -2485,7 +2470,7 @@ def roulette_timed(args, prog, rest, budget, cwd=None):
     seconds, under roulette_timer.rkt, the program and the timer compiled
     by `raco make` before, untimed. Its record holds the timer's seconds,
     the program's run once Racket and the modules it imports are loaded,
-    as `inproc_seconds` (own_seconds): the span roulette2problog.rkt's
+    as `inproc_seconds` (own_seconds): the span Roulette's tddlog engine's
     `program S s` reports, which Roulette+tddlog pays.
     An error record where the compile fails or the timer prints no line."""
     c = timed(roulette_command(args.roulette, prog, '-l-', 'raco', 'make') + [ROULETTE_TIMER], args.timeout)
@@ -2612,12 +2597,13 @@ def roulette_record(r, path, printed, stats):
     return {'status': 'ok', 'seconds': r['seconds'], 'answers': {q: printed.get(q, 0.0) for q in qs}, 'stats': stats}
 
 
-# Roulette+tddlog: Roulette's own run of a program up to
-# the circuit it builds, which tddlog's scripts/roulette2problog.rkt writes
-# as a ProbLog program, and tddlog on it. The exporter's summary line, and
-# its notes of the calls of `infer` and of each value asked.
-RT_EXPORTER = str(source_tree.script('roulette2problog.rkt'))
-RT_SUMMARY = re.compile(r'^roulette2problog: \d+ queries, .*; program ([0-9.eE+-]+) s, circuit ([0-9.eE+-]+) s$', re.M)
+# Roulette+tddlog: Roulette's own run of a program up to the circuit it
+# builds, which Roulette's tddlog engine writes as a ProbLog program, and
+# tddlog on it. The engine's command line (`racket -l- roulette/engine/tddlog
+# PROGRAM.rkt ARG ...`, in the branch tddlog of Tractables/roulette), its
+# summary line, and its notes of the calls of `infer` and of each value asked.
+RT_ENGINE = ('-l-', 'roulette/engine/tddlog')
+RT_SUMMARY = re.compile(r'^tddlog-engine: \d+ queries, .*; program ([0-9.eE+-]+) s, circuit ([0-9.eE+-]+) s$', re.M)
 RT_VALUE = re.compile(r'^% q(\d+)\((\d+)\): (.*)$', re.M)
 # The value of Roulette's query where its observations fail (a gensym).
 RT_FAILED = re.compile(r'^⊥\d*$')
@@ -2694,14 +2680,14 @@ def roulette_tddlog_atom(family, atom, value, dist):
 
 def run_roulette_tddlog(args, name, path):
     """Roulette+tddlog on an instance: Roulette's program for it
-    (`roulette_program`, variant rsdd) run by roulette2problog.rkt under
-    --roulette-tddlog's Racket, which writes the circuit Roulette builds as
-    a ProbLog program, and tddlog (--tddlog's binary, strategy auto) on that
-    program. The program and the exporter's language are compiled before
-    (raco make, roulette2problog.rkt --make), untimed. The time charged,
-    kept as `inproc_seconds` (own_seconds), is the exporter's `program S
-    s` (Roulette's run of the program, as roulette_timer.rkt times
-    Roulette's own), its `circuit S s` (writing the program) and tddlog's
+    (`roulette_program`, variant rsdd) run on Roulette's tddlog engine under
+    --roulette-tddlog's Racket (the fork's), which writes the circuit
+    Roulette builds as a ProbLog program, and tddlog (--tddlog's binary,
+    strategy auto) on that program. The program is compiled before (raco
+    make), untimed. The time charged, kept as `inproc_seconds`
+    (own_seconds), is the engine's `program S s` (Roulette's run of the
+    program, as roulette_timer.rkt times Roulette's own), its `circuit S s`
+    (writing the program) and tddlog's
     run; the record's seconds are the two processes' wall times. tddlog's
     answers are read as Roulette's query reads its engine's
     (roulette_tddlog_calls): a driver's single query's values as the atoms
@@ -2714,19 +2700,17 @@ def run_roulette_tddlog(args, name, path):
     if err:
         return err
     racket = args.roulette_tddlog
-    for what, cmd in [('raco make', roulette_command(racket, prog, '-l-', 'raco', 'make')),
-                      ('roulette2problog.rkt --make', roulette_command(racket, prog, RT_EXPORTER, '--make'))]:
-        c = timed(cmd, args.timeout)
-        if c['status'] != 'ok':
-            return {'status': 'error', 'seconds': 0, 'error': f"{what}: {c['status']} {c.get('error', '')[-2000:]}"}
-    x = timed(roulette_command(racket, prog, RT_EXPORTER) + rest, args.timeout)
+    c = timed(roulette_command(racket, prog, '-l-', 'raco', 'make'), args.timeout)
+    if c['status'] != 'ok':
+        return {'status': 'error', 'seconds': 0, 'error': f"raco make: {c['status']} {c.get('error', '')[-2000:]}"}
+    x = timed(roulette_command(racket, prog, *RT_ENGINE) + rest, args.timeout)
     if x['status'] != 'ok':
         return x
     m = RT_SUMMARY.search(x.get('stderr', ''))
     if m is None or not x['stdout']:
         tail = x.get('stderr', '').strip().splitlines()
         return {'status': 'error', 'seconds': x['seconds'],
-                'error': 'roulette2problog.rkt wrote no program: ' + (tail[-1] if tail else 'empty output')}
+                'error': "Roulette's tddlog engine wrote no program: " + (tail[-1] if tail else 'empty output')}
     program_s, circuit_s = float(m.group(1)), float(m.group(2))
     pl = os.path.abspath(os.path.join(args.dir, f'{name}.roulette.pl'))
     write_new(pl, x['stdout'])
@@ -2773,7 +2757,7 @@ def run_roulette_tddlog(args, name, path):
 CT_PRINTED_ABOVE = {1: 0.0, 2: 2e-4, 3: 1e-8}
 CT_FAIL = re.compile(r'^Diagnosis: \(Circuit-Fault: #t\) \| Prob: (\S+)$', re.M)
 CT_FAULTS = re.compile(r'^Gates? (\d+)(?: & (\d+))?(?: & (\d+))? Fault \| Posterior P\([^)]*\): (\S+)$', re.M)
-# The note of roulette2problog.rkt's program that counts the calls of `infer`.
+# The note of the engine's program that counts the calls of `infer`.
 CT_CALLS = re.compile(r'^% infer was called (\d+) times', re.M)
 
 
@@ -2921,8 +2905,8 @@ def circulette_lost(args, name, system):
         return None
     if export['status'] == 'timeout':
         return {'status': 'timeout', 'seconds': args.timeout,
-                'error': f"roulette2problog.rkt: no program within {export['seconds']:g} s"}
-    return {'status': 'error', 'seconds': 0, 'error': f"roulette2problog.rkt: {export.get('error', 'failed')}"}
+                'error': f"Roulette's tddlog engine: no program within {export['seconds']:g} s"}
+    return {'status': 'error', 'seconds': 0, 'error': f"Roulette's tddlog engine: {export.get('error', 'failed')}"}
 
 
 # --- Systems for probabilistic programs (rule 15: every exact method with an
@@ -5726,8 +5710,9 @@ def main():
                    help="the uai suite's programs for the partition function alone, for run --pr: no queries, and "
                    "a Potts network's colour symmetry broken (gen_bn.py --query none)")
     g.add_argument('--circulette-racket', default='',
-                   help='the Racket with roulette-lib and Circulette installed, split at spaces, which runs '
-                   "roulette2problog.rkt on circulette.rkt for --suite circulette (gen_circulette.py)")
+                   help="the Racket with the fork's roulette-lib, which has Roulette's tddlog engine, split at "
+                   'spaces, which runs circulette.rkt on that engine for --suite circulette (gen_circulette.py), '
+                   "--circulette-benchmarks a Circulette compiled by it")
     g.add_argument('--circulette-python', default='python3',
                    help="the Python with pyrtl that runs Circulette's rkt_of_verilog.py, yosys on PATH")
     g.add_argument('--export-timeout', type=float,
@@ -5796,7 +5781,7 @@ def main():
                    "BIF file, one queried variable at a time)")
     r.add_argument('--roulette-tddlog', default='',
                    help="command template, as --roulette's, for the Racket that runs Roulette+tddlog "
-                   "(roulette2problog.rkt, then tddlog on the circuit it writes) on --suite roulette and the "
+                   "(Roulette's tddlog engine, then tddlog on the circuit it writes) on --suite roulette and the "
                    "Dice programs of data/dice, data/nodice and gen_geni.py; empty = not run")
     for opt, ps in PROGRAM_SYSTEMS.items():
         r.add_argument('--' + opt, default='', help=ps['help'] + '; empty = not run')

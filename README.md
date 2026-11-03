@@ -23,11 +23,10 @@ README this file replaces here.
   `tddlog --ground` prints it, for Scallop), `dice2alea.py` (a Dice
   program as a Julia script for Alea.jl), `alea_bench.jl` (runs an
   Alea.jl program, or writes the circuit Alea builds for it as a ProbLog
-  program, through main's `scripts/alea2problog.jl`, and as Dice
-  programs), `gen_geni.py` and `gen_roulette.py` (the
+  program, through Alea.jl's tddlog backend, and as Dice programs),
+  `gen_geni.py` and `gen_roulette.py` (the
   programs of Geni's and Roulette's evaluations for tddlog, ProbLog and
-  Dice, and their exact answers), `dice2problog_onehot.py` and
-  `tddlog-onehot.sh` (the one-hot arm), `dice_scale.py` and
+  Dice, and their exact answers), `dice_scale.py` and
   `bench_one.py` (Dice's loops scaled), and `scripts/samplers/` (Stan,
   WebPPL and Psi).
 - Copies of the baselines' benchmark programs: `data/alea` (Alea.jl's,
@@ -58,8 +57,8 @@ README this file replaces here.
   weighted CNFs of `scripts/uai_wcnf.py` against Ganak and sharpSAT-TD).
 
 The front ends (tddlog's readers of networks, Dice programs and LPADs,
-`--program` printing the program a file is read as, and
-`scripts/alea2problog.jl`), the generators of tddlog's own suites, the
+and `--program` printing the program a file is read as), the generators
+of tddlog's own suites, the
 exact references (`bn_exact.py`, `lit_exact.py`, `tpch_exact.py`,
 `reliability_exact.py`) and the Dice paper's programs (`data/dice`) are
 on main. The Python scripts the readers replaced (`dice2problog.py`,
@@ -77,12 +76,12 @@ and the counters) and for the records made before the switch.
 | PITA | the cplint pack on SWI-Prolog 9.2.9 | the program suites | `problog2pita.py` | `--pita`, `--pita-packs` | 2 |
 | Scallop | scallop-core 0.2.5, top-k proofs at the largest k, every proof kept (exact) | the program suites | `ground2scallop.py` | `--scallop` | 3 |
 | Dice | 1.0, the binary of the sholtzen/dice image | `data/dice`, the networks, `data/nodice`, the circuits of `data/alea`, Geni's and Roulette's programs | the program, or `gen_bn.py --format dice`, `alea_bench.jl export`, `gen_geni.py`, `gen_roulette.py` | `--dice` | 4 |
-| Alea.jl | cf5e5b8 on Julia 1.11.9, CUDD 3.0.0 | the Dice programs above; the programs of `data/alea` | `dice2alea.py`; `alea_bench.jl run` | `--alea` | 5 |
+| Alea.jl | cf5e5b8 on Julia 1.11.9, CUDD 3.0.0; Alea.jl+tddlog's circuits by its branch tddlog, 12fe923 | the Dice programs above; the programs of `data/alea` | `dice2alea.py`; `alea_bench.jl run` | `--alea` | 5 |
 | aspmc | 1.1.1, sharpSAT-TD | the program suites; with evidence, the evidence asked as queries | the program itself | `--aspmc` | 6 |
 | Ace | 3.0 | the networks | the network file, with the evidence of `gen_bn.py --inst` | `--ace`, `--ace-variants auto,forceC2d`, `--ace-heap` | 7 |
 | Merlin | 1.7.0, built at ad37783 | the networks, the UAI sets | `gen_bn.py --uai` | `--merlin` | 8 |
 | Ganak, sharpSAT-TD | a static Ganak; sharpSAT-TD at 0c234c1 | the UAI PR sets, a second reference for log10 Z, not timed | `gen --cnf` (`uai_wcnf.py`) | `--ganak`, `--sharpsat-td`, `--sharpsat-td-decot 1,10` | 9 |
-| Roulette | neuppl/roulette 60f77cb (main of 2026-10-31) on Racket 9.3 | `data/roulette` and the artifact's networks; the Dice programs | the artifact's programs (Zenodo 10.5281/zenodo.15253254) in the current language; `dice2roulette.py` | `--roulette`, `--roulette-variants rsdd,bayes`; Roulette+tddlog `--roulette-tddlog` | 11 |
+| Roulette | neuppl/roulette 60f77cb (main of 2026-10-31) on Racket 9.3; Roulette+tddlog by the branch tddlog of the fork Tractables/roulette, d86c46c | `data/roulette` and the artifact's networks; the Dice programs | the artifact's programs (Zenodo 10.5281/zenodo.15253254) in the current language; `dice2roulette.py` | `--roulette`, `--roulette-variants rsdd,bayes`; Roulette+tddlog `--roulette-tddlog` | 11 |
 
 The exact references written for this repository run with `--exact`:
 `bn_exact.py` (a clique tree) on the networks, `lit_exact.py`,
@@ -237,20 +236,7 @@ bench.py run --suite roulette --roulette-benchmarks RL_BENCH --dir RL --strategi
   --roulette-variants rsdd,nocomplement --rotate R --timeout 600
 ```
 
-### The one-hot arm, Dice's scaled loops and the samplers
-
-The tables on Dice's programs have a column for tddlog on the programs'
-one-hot translation (variant `auto+onehot`): `dice2problog_onehot.py` is
-`dice2problog.py` as it was before it held integers in bits. Each Dice
-program is translated into a directory `$ONEHOT` under its instance's
-name (the name `bench.py gen` gives it), and `tddlog-onehot.sh` runs
-tddlog on that file in place of the one `bench.py` names:
-
-```
-export ONEHOT=DIR TDDLOG=PATH
-python3 scripts/dice2problog_onehot.py data/dice/PROGRAM.dice > "$ONEHOT/INSTANCE.pl"
-bench.py run ... --strategies auto,auto+onehot --tddlog-arm auto+onehot=scripts/tddlog-onehot.sh
-```
+### Dice's scaled loops and the samplers
 
 The table of Dice's loops scaled to more steps: `dice_scale.py` sets the
 count of a program's `iterate` call, and `bench_one.py` runs one system
@@ -265,10 +251,9 @@ for k in 100 400 1600 6400; do
 done   # and ladder at the same counts, pmc1 at 10 20 40 75, pmc2 at 10 20 51,
        # caesar-iter at 100 1000 3000, simpleCaesar at 100 300 1000
 $TDDLOG --program S/NAME.dice > S/NAME.pl   # tddlog itself reads S/NAME.dice
-python3 scripts/dice2problog_onehot.py S/NAME.dice > "$ONEHOT/NAME.pl"
 DICE="prlimit --stack=unlimited $DICE" ALEA="$JULIA" PROBLOG=... TDDLOG=... \
   python3 scripts/bench_one.py scripts SYSTEM S/NAME REP CPU 600 scaled.jsonl
-# SYSTEM: tddlog, onehot, dice, alea; problog for the reference
+# SYSTEM: tddlog, dice, alea; problog for the reference
 ```
 
 The bit-blasting section's samplers (Stan, WebPPL) and Psi ran on the

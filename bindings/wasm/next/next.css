@@ -44,16 +44,10 @@ tr.vs th { font-weight: 700; }
 .fams { font-size: 13px; color: var(--muted); }
 .fams p { margin: 0.4rem 0 0; }
 .fams details summary { cursor: pointer; color: var(--accent-ink); }
-.ways {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
-  gap: 0.6rem;
-  margin: 0.6rem 0 1rem;
-}
-.way { padding: 0.5rem 0.8rem; border: 1px solid var(--line); border-radius: 6px; background: var(--card); font-size: 13px; }
-.way .versus { margin: 0.3rem 0; gap: 0.3rem 1.4rem; }
-.way p { margin: 0.25rem 0; }
-.way-head code { font-size: 12px; }
+/* A baseline's translated instances by family (translatedTable): a
+   family's name wraps; the folded row's names are on hover. */
+table.fams-tr tbody th { min-width: 10rem; max-width: 24rem; white-space: normal; }
+table.fams-tr tbody th[title] { cursor: help; text-decoration: underline dotted color-mix(in oklab, var(--muted) 60%, transparent); text-underline-offset: 3px; }
 details.beyond summary { cursor: pointer; font-size: 14px; }
 ul.insts { columns: 16rem; margin: 0.4rem 0 0.8rem; font-size: 13px; }
 
@@ -79,19 +73,22 @@ table.census-t td.about { white-space: normal; min-width: 14rem; max-width: 40ch
 table.census-t td { vertical-align: top; }
 
 /* How it works: the walkthroughs in a row of tabs, the stages a strip of
-   one line, each a link to its step, the step on show marked. */
+   one line, each a link to its step, the step on show marked. Each kind
+   has a colour of the logo's: the walkthroughs gold, the stages blue, a
+   tab tinted and the one on show solid; the buttons (the playground, back
+   and next) are outlined in the blue and fill on hover. */
 .results p.lede.one { margin-bottom: 0.4rem; }
-nav.walks { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.4rem 0; font-size: 14px; }
-nav.walks a { padding: 0.15rem 0.6rem; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; color: var(--ink); }
-nav.walks a:hover { border-color: var(--accent); }
-nav.walks a[aria-current] { border-color: var(--accent); background: var(--accent-fill); color: var(--accent-ink); font-weight: 600; }
+nav.walks { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.4rem 0 0.6rem; font-size: 14px; }
+nav.walks a { padding: 0.15rem 0.7rem; border: 1px solid var(--gold-line); border-radius: 999px; background: var(--gold-fill); color: var(--ink); text-decoration: none; }
+nav.walks a:hover { border-color: var(--logo-gold); box-shadow: inset 0 0 0 1px var(--logo-gold); }
+nav.walks a[aria-current] { border-color: var(--gold-line); background: var(--logo-gold); color: #1d1f21; font-weight: 600; }
 .pipe { margin: 0.5rem 0; overflow-x: auto; }
-ol.pipeline { display: flex; gap: 0; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 6px; width: max-content; min-width: 100%; }
+ol.pipeline { display: flex; gap: 0; margin: 0; padding: 0; list-style: none; border: 1px solid color-mix(in oklab, var(--accent) 45%, var(--line)); border-radius: 6px; overflow: hidden; width: max-content; min-width: 100%; background: var(--accent-fill); }
 ol.pipeline li { flex: 1 0 auto; }
-ol.pipeline li + li { border-left: 1px solid var(--line); }
-ol.pipeline a { display: block; padding: 0.3rem 0.65rem; color: var(--ink); font-size: 13px; font-weight: 500; text-align: center; text-decoration: none; white-space: nowrap; }
-ol.pipeline a:hover { background: var(--accent-fill); }
-ol.pipeline a[aria-current] { background: var(--accent-fill); color: var(--accent-ink); font-weight: 700; box-shadow: inset 0 -2px var(--accent); }
+ol.pipeline li + li { border-left: 1px solid color-mix(in oklab, var(--accent) 35%, var(--line)); }
+ol.pipeline a { display: block; padding: 0.3rem 0.65rem; color: var(--accent-ink); font-size: 13px; font-weight: 500; text-align: center; text-decoration: none; white-space: nowrap; }
+ol.pipeline a:hover { background: color-mix(in oklab, var(--accent) 22%, var(--card)); }
+ol.pipeline a[aria-current] { background: var(--logo-blue); color: #fff; font-weight: 700; }
 .walk-head .lede { margin: 0.4rem 0 0.2rem; }
 .walk-head p.run { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.8rem; margin: 0 0 0.3rem; }
 .walk-head p.run code { overflow-wrap: anywhere; }
@@ -100,14 +97,20 @@ ol.pipeline a[aria-current] { background: var(--accent-fill); color: var(--accen
 .step > p { max-width: 80ch; }
 .step pre.src { max-height: 26rem; overflow: auto; font-size: 12.5px; }
 .step-nav { display: flex; justify-content: space-between; max-width: 80ch; }
-a.try-btn {
+a.try-btn, .step-nav a {
   display: inline-block;
-  padding: 0 0.5rem;
+  padding: 0.1rem 0.7rem;
   border: 1px solid var(--accent);
   border-radius: 5px;
+  background: var(--card);
+  color: var(--accent-ink);
+  font-weight: 600;
   text-decoration: none;
-  font-weight: 500;
 }
+a.try-btn:hover, .step-nav a:hover { background: var(--accent); border-color: var(--accent); color: var(--card); }
+nav.walks a:focus-visible, a.try-btn:focus-visible, .step-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* inside the strip, which clips what is outside its cells */
+ol.pipeline a:focus-visible { outline: 2px solid var(--ink); outline-offset: -3px; }
 
 /* On a phone: the sentence smaller, and the walkthroughs one line that
    scrolls, as the stages do. */
