@@ -192,11 +192,6 @@ const PUT_OFF_BELOW: usize = 32;
 /// documentation).
 const LEVEL_PAIRS: usize = 8;
 
-/// Where the last full minimization freed nothing, one due on a result over
-/// this many times the result the last one was due on is a prune instead
-/// (see `EvidenceWalk::run`).
-const FULL_GROWTH: usize = 16;
-
 /// The pairs each operand of a node's last join reaches for the join to be
 /// tried capped, and the cap, a multiple of their pairs (see the module
 /// documentation).
@@ -424,10 +419,6 @@ pub(super) struct EvidenceWalk {
     pending: Option<PendingFormula>,
     /// When a join's result is minimized in full rather than pruned.
     full: FullSchedule,
-    /// Whether the last full minimization freed a pair, and the pairs of
-    /// the result the last one due was due on ([`FULL_GROWTH`]).
-    full_freed: bool,
-    full_due_on: usize,
     /// The slots whose results are minimized in full off the schedule: the
     /// last results of given-up batches' chains (`None`), and the batches'
     /// products where they hold fewer pairs than their target's slot
@@ -488,8 +479,6 @@ impl EvidenceWalk {
             defer_growth: DEFER_GROWTH,
             pending: None,
             full: FullSchedule::default(),
-            full_freed: true,
-            full_due_on: 0,
             in_full: FxHashMap::default(),
             sum_out: None,
             put_off: true,
@@ -1394,12 +1383,6 @@ impl EvidenceWalk {
     /// conjunctions' work for a few freed pairs; the prune alone lets twins
     /// compound (dice_digitRecognition, where most joins leave some).
     ///
-    /// The schedule counts joins, and the full plan's twin search costs as much
-    /// as its result is large: a seventeenth join can be the walk's largest.
-    /// Where the full plan last freed nothing, a result over [`FULL_GROWTH`]
-    /// times the one it was last due on is pruned instead, and the schedule
-    /// goes on as after a full plan that freed nothing.
-    ///
     /// A result over the watch is measured as the schedule left it: a full plan
     /// there frees next to nothing and never brings a result under the watch.
     ///
@@ -1433,19 +1416,10 @@ impl EvidenceWalk {
                 counted = Some(backend.size(f));
             } else {
                 match self.full.full_is_due().then(|| backend.size(f)) {
-                    // Passed over, the full plan counts as one that freed
-                    // nothing.
-                    Some(before) if !self.full_freed && before > FULL_GROWTH * self.full_due_on => {
-                        self.full_due_on = before;
-                        backend.minimize(f, Reduce::Prune)?;
-                        self.full.observed(0, 0);
-                    }
                     Some(before) => {
-                        self.full_due_on = before;
                         backend.minimize(f, Reduce::Settled)?;
                         let after = backend.size(f);
                         self.full.observed(before - after, 0);
-                        self.full_freed = after < before;
                         counted = Some(after);
                     }
                     None => {
