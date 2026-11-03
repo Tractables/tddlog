@@ -91,10 +91,11 @@ with each translation's direction and translator, and the programs each
 system's sources hold that tddlog does not run), by integration (tddlog
 alone, and tddlog after another system's own code: Alea.jl+tddlog,
 Roulette+tddlog), by program type, and how a program is answered, with
-walkthroughs of four small programs (a graph's reachability, a Bayesian
-network with evidence, a Dice program and Alea.jl's circuit), each drawn
+walkthroughs of six small programs (a graph's reachability, negation
+through a loop, a Bayesian network with evidence, a Markov network's
+partition function, a Dice program and Alea.jl's circuit), each drawn
 from its `--trace` (`next/walk/`) by `trace.js`, a step a stage, and opened
-in the playground with its trace. `next/next.js` adds these views to the
+in the playground with its trace where the playground makes that run. `next/next.js` adds these views to the
 results page's app through its `extend` hooks and reads the results
 page's data and `next/views.json`, which is generated with it: each
 comparison's kind on each instance, the comparisons over each kind, and

@@ -141,7 +141,7 @@ and its operations by kind, the evidence and the answers. `Trace` observes
 `Options.trace` the compile records its components (`tp::CompileTrace`),
 and without it records nothing, so a run without a trace does the same
 work. The browser build hands the same JSON to the playground, and the
-site's walkthroughs are traces of four small programs.
+site's walkthroughs are traces of six small programs.
 
 ## Where the code is
 

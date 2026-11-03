@@ -554,6 +554,31 @@ const WALKS = [
     },
   },
   {
+    key: "gears", what: "Atoms that support only each other are false; the loop left is written without recursion.",
+    file: "examples/gearwheels.pl", example: "gears", evidence: false,
+    command: "tddlog --trace gears.json examples/gearwheels.pl",
+    lede: "Two gear wheels that turn each other, and a button that toggles each from time 0 to time 1 (Bogaerts and Van den Broeck 2015, "
+      + "Example 4.13). Each wheel's turning is defined through the other's, and at time 1 through its own negation at time 0, so the program "
+      + "is not stratified; its meaning is its well-founded model in each world.",
+    captions: {
+      read: "A ProbLog file is its own program, so there is no translation to show.",
+      parse: "10 clauses: the two buttons as probabilistic facts and 8 rules, two of them reading `turns1(0)` and `turns2(0)` under negation; "
+        + "three queries.",
+      ground: "At time 0 nothing starts the wheels: `turns1(0)` and `turns2(0)` have no support but each other, and the well-founded model "
+        + "does not let them support each other, so both are false. `turns1(0)` stays as `turns1(0) :- fail` for its query, `turns2(0)` drops "
+        + "out, and the rules that read them simplify: a wheel turns at time 1 where its button is pressed or the other wheel turns. 4 rules "
+        + "are left, and `turns1(1)` and `turns2(1)` form one cyclic component.",
+      rewrite: "Each rule of the cyclic component reads one of its atoms, so the rewrite writes it without recursion, as in the reachability "
+        + "walkthrough (src/ground/eliminate.rs): `turns1(1)` now reads the two buttons, and `turns2(1)` its own button and `turns1(1)`. "
+        + "Two acyclic components of one atom are left.",
+      layout: "`auto` gives this program the `dynamic` trial, and it finished in its first attempt. The vtree's two leaves are the buttons.",
+      compile: "The two components compile in dependency order, each formula from its rules' bodies by TDD operations: `turns1(1)` first, "
+        + "then `turns2(1)`, which reads it. Each has 3 pairs. No component is cyclic, so no fixpoint runs.",
+      evidence: "No evidence: the queries were counted during the compile, and `turns1(0)` is false.",
+      answers: "0 at time 0, and 1 − 0.7 × 0.4 = 0.72 for each wheel at time 1: ProbLog 2.3.0's answers (tests/it/examples.rs).",
+    },
+  },
+  {
     key: "network", what: "A network file read as a program: its tables, its families and the evidence.",
     file: "examples/asia.net", example: "asia", evidence: true,
     command: "tddlog --trace network.json --evidence-probability --evidence tests/networks/asia_leaves.inst examples/asia.net",
@@ -577,6 +602,37 @@ const WALKS = [
       evidence: "The 10 observations are conjoined along the vtree into one diagram of 120 pairs, whose count is P(e) = 0.0396199356. Each query is counted "
         + "against it: P(q | e) = WMC(q ∧ e) / WMC(e).",
       answers: "Twelve marginals and P(e): ProbLog 2.3.0's answers on examples/bn_asia_evidence.pl, the program the network was read as.",
+    },
+  },
+  {
+    key: "markov", what: "A UAI Markov network: its factors as observed atoms, its colour symmetry broken, Z from P(e).",
+    file: "tests/regress/potts.uai", example: null, evidence: false,
+    command: "tddlog --trace markov.json --no-queries --evidence-probability tests/regress/potts.uai",
+    lede: "A Markov network in the UAI format: five variables of three values and six factors over pairs, each a Potts table (one entry "
+      + "on the diagonal, one off it), a weighted graph colouring. Asked nothing (`--no-queries`), tddlog answers its partition function Z.",
+    captions: {
+      read: "The network is read as a program, which `tddlog --program` prints: each variable an annotated disjunction over its values, a "
+        + "uniform prior, and each factor an atom `fJ(ok)`, observed, with a rule for each assignment of its pair, weighted by the entry over "
+        + "the factor's largest; an entry of 0 has no rule. Any permutation of the colours keeps a world's weight, so the program fixes `x0` "
+        + "to `v_0`, lets its neighbour `x2` take `v_0` or `v_1` with weights 1 and 2, and adds `f6`, a table of `x1` given `x2`: a third of "
+        + "Z is left, and the first line's offset holds log10 3 besides (docs/design.md).",
+      parse: "55 clauses: the fact `x0(v_0)`, four annotated disjunctions, 31 rules and 19 probabilistic rules (the entries below their "
+        + "factor's largest), and seven observations, `f0` to `f6`. No queries.",
+      ground: "The observations fix what they decide before any diagram is built: `x0` is `v_0` and `f5` says `x2` differs from it, so `x2` "
+        + "is `v_1`, and both drop out with `f5`. The annotated disjunctions become switches, as in the Bayesian network's walkthrough, and "
+        + "the rows of a table that hold one weight are read through a class atom (`'$c_f1_0'(1)` for two rows of `f1` at 0.5). 41 rules "
+        + "over 42 atoms become 33 over 29, none cyclic.",
+      rewrite: "`families:0` reads the program through indicators: each atom that another family reads is read there through a copy (`'$v'`, "
+        + "22 copies of 13 atoms), tied to the atom by a link (`'$c'`) that the program observes. The 14 observations are the program's 6 "
+        + "and the 8 links.",
+      layout: "`auto` gives the program the `families:0` trial, and it finished in its first attempt. Its 14 families fall in 10 groups, laid "
+        + "out by a tree decomposition of width 2 over the groups. The vtree's 32 leaves are the 10 switches and the 22 copies.",
+      compile: "27 components of one atom each, none cyclic, compiled in dependency order, each formula stored as its atom's negation (the "
+        + "dual). The largest, `f3(ok)` at 34 pairs, is the one factor whose two variables, `x3` and `x4`, nothing fixed.",
+      evidence: "Nothing is asked, so the 14 observations are conjoined along the vtree and each variable is summed out once no later join "
+        + "reads it (docs/design.md, Summing out): 11 summing joins, ending in one pair. Its count is P(e) = 5/81, about 0.0617.",
+      answers: "Z = P(e) × 10^c, c the offset of the program's first line: 112.5, the 225/2 that tests/it/networks.rs takes from an "
+        + "enumeration of the network's worlds.",
     },
   },
   {

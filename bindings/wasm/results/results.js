@@ -63,7 +63,8 @@ const inSection = (key) => [sectionName(key), { view: "section", key }];
 
 // The walkthroughs of How it works (the front page's next.js draws them), by
 // their keys, in the menu's order.
-const WALK_TITLES = [["reach", "Reachability in a graph with cycles"], ["network", "A Bayesian network with evidence"],
+const WALK_TITLES = [["reach", "Reachability in a graph with cycles"], ["gears", "Negation through a loop"],
+  ["network", "A Bayesian network with evidence"], ["markov", "A Markov network's partition function"],
   ["dice", "A Dice program"], ["circuit", "A bit-blasted circuit"]];
 
 // The integrations, tddlog's own and its pipelines (categories.json's

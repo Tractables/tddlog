@@ -86,8 +86,9 @@ function drawn(page) {
       if (v.kinds[c.key] !== undefined) assert.equal(v.with[c.key].length, c.rows.length, `${x} in ${c.key}: a member per row`);
     }
   }
-  // the walkthroughs: each one's key, playground example and steps
-  const WALKS = [["reach", "reachability"], ["network", "asia"], ["dice", "walk"], ["circuit", "circuit"]].map(([key, example]) =>
+  // the walkthroughs: each one's key, playground example (none for a run the playground does not make) and steps
+  const WALKS = [["reach", "reachability"], ["gears", "gears"], ["network", "asia"], ["markov", null], ["dice", "walk"],
+    ["circuit", "circuit"]].map(([key, example]) =>
     [key, example, tddlogTrace.steps(JSON.parse(fs.readFileSync(path.join(site, "next", "walk", `${key}.json`), "utf8")))]);
   const integrations = Object.keys(cats.integrations ?? {});
   const checks = [
@@ -150,7 +151,7 @@ function drawn(page) {
       assert.deepEqual(await page.$$eval("ol.pipeline a", (as) => as.map((a) => a.textContent)), steps.map((t, k) => `${k + 1}. ${t.title}`), `${key} ${i + 1}: the steps`);
       assert.equal(await page.textContent("ol.pipeline a[aria-current]"), `${i + 1}. ${step.title}`, `${key} ${i + 1}: the step marked`);
       assert.equal(await page.locator(".step > p").count(), 1, `${key} ${i + 1}: its caption`);
-      assert.equal(await page.locator(`a.try-btn[href^="playground/?example=${example}&"]`).count(), 1);
+      assert.equal(await page.locator(example ? `a.try-btn[href^="playground/?example=${example}&"]` : "a.try-btn").count(), example ? 1 : 0);
       if (step.key === "layout") await page.waitForSelector(".walk-trace svg.trace-vtree");
     }])),
     ["#/how/reach/99", "how", async () => {
