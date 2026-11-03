@@ -1,4 +1,4 @@
-% alea_dice.jl: the circuit Alea.jl builds, written by tddlog's scripts/alea2problog.jl.
+% alea_dice.jl: the circuit Alea.jl builds, written by Alea.jl's tddlog backend.
 % 8 flips, 78 gates, 1 observations, 2 queries.
 0.6666666666666666::f1.
 0.5::f2.

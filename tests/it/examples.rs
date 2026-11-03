@@ -1496,10 +1496,10 @@ mod lpad {
     }
 }
 
-/// The circuits that scripts/alea2problog.jl writes for the Alea.jl
-/// programs beside them (tests/test_alea2problog.py checks that it does),
-/// with the answers computed by hand in those programs' comments, which
-/// Alea gives too.
+/// The circuits that Alea.jl's tddlog backend (`write_problog`, on the
+/// branch tddlog of Tractables/Alea.jl) writes for the Alea.jl programs
+/// beside them, with the answers computed by hand in those programs'
+/// comments, which Alea gives too.
 mod alea {
     use super::*;
 
@@ -1759,12 +1759,14 @@ mod roulette {
     }
 }
 
-/// The circuits that scripts/roulette2problog.rkt writes for the Roulette
-/// programs beside them in tests/roulette/ and tests/roulette/lib/
-/// (tests/test_roulette2problog.py checks that it does), with the answers
-/// or weights computed by hand in those
-/// programs' comments, which Roulette gives too. qK(I) is the I-th value of
-/// the K-th query, in Racket's `datum-order`.
+/// The circuits Roulette builds for the programs beside them, with the
+/// answers or weights computed by hand in those programs' comments, which
+/// Roulette gives too: in tests/roulette/lib/, programs of Roulette's
+/// package, written by Roulette's tddlog engine (`roulette/engine/tddlog`,
+/// on the branch tddlog of Tractables/roulette); in tests/roulette/,
+/// programs of Roulette's PLDI 2025 artifact, written by the exporter the
+/// engine replaced. qK(I) is the I-th value of the K-th query, in Racket's
+/// `datum-order`.
 mod roulette_circuits {
     use super::*;
 

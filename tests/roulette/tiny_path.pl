@@ -1,4 +1,4 @@
-% tiny_path.rkt: the circuit Roulette builds, written by tddlog's scripts/roulette2problog.rkt.
+% tiny_path.rkt: the circuit Roulette builds, written by Roulette's tddlog engine.
 % 2 flips, 2 gates, 1 observations, 3 queries.
 0.5::f1.
 0.25::f2.

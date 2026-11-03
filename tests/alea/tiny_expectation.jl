@@ -1,4 +1,4 @@
-# A test program for scripts/alea2problog.jl: the expectation of a signed
+# A test program for Alea.jl's tddlog backend: the expectation of a signed
 # number under an observation. By hand: y is uniform on -3 .. 2, and given
 # y != 0 its expectation is (-3 - 2 - 1 + 1 + 2) / 5 = -0.6; with
 # `const lo = -1`, y is uniform on -1 .. 2 and the expectation (-1 + 1 + 2)

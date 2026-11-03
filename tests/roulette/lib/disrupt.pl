@@ -1,4 +1,4 @@
-% disrupt.rkt: the circuit Roulette builds, written by tddlog's scripts/roulette2problog.rkt.
+% disrupt.rkt: the circuit Roulette builds, written by Roulette's tddlog engine.
 % 2 flips, 2 gates, 1 observations, 6 queries.
 % A value's weight is P(e) times its query's probability, both of which tddlog --evidence-probability prints; a failed observation's value answers 0 under the evidence.
 % infer was called 2 times; query K is its K-th call.

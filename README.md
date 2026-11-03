@@ -120,8 +120,8 @@ inference:
 | Bayesian networks in BIF, Hugin, GeNIe or UAI, with evidence in Ace's `.inst` or UAI's `.evid` | tddlog, by the file's extension | one annotated disjunction per row of each table |
 | Markov networks in UAI | tddlog | one observed atom per factor; `--evidence-probability` prints the partition function |
 | Dice programs | tddlog, by the extension `.dice` | each integer as its bits, each operation as rules over them, a loop as recursion over a step index |
-| Alea.jl programs (`model()` and `QUERY`) | [`scripts/alea2problog.jl`](scripts/alea2problog.jl), in Julia with Alea.jl | the Boolean circuit Alea.jl builds: each flip a probabilistic fact, each gate a rule, each observation evidence; Alea.jl+tddlog in the results |
-| Roulette programs (`#lang roulette/example/disrupt`) | [`scripts/roulette2problog.rkt`](scripts/roulette2problog.rkt), in Racket with Roulette; with `--tddlog`, the program runs with tddlog answering its queries | the Boolean circuit Roulette builds: each flip a probabilistic fact, each gate a rule, each observation evidence |
+| Alea.jl programs | Alea.jl's tddlog backend, on the branch [`tddlog` of Tractables/Alea.jl](https://github.com/Tractables/Alea.jl/tree/tddlog): `pr(x; algo = Tddlog())` runs tddlog on the circuit, `write_problog(io, x)` writes it | the Boolean circuit Alea.jl builds: each flip a probabilistic fact, each gate a rule, each observation evidence; Alea.jl+tddlog in the results |
+| Roulette programs | Roulette's tddlog engine, on the branch [`tddlog` of Tractables/roulette](https://github.com/Tractables/roulette/tree/tddlog), a fork of neuppl/roulette: `racket -l- roulette/engine/tddlog PROGRAM.rkt` writes the circuit, and with `--tddlog` the program runs with tddlog answering its queries | the Boolean circuit Roulette builds: each flip a probabilistic fact, each gate a rule, each observation evidence; Roulette+tddlog in the results |
 | LPADs written for cplint and PITA | tddlog, where the file holds `:- begin_lpad.` | the same clauses in ProbLog's syntax, with the database clauses they call and the file's example queries; under PITA's depth bound, each predicate with the depth as an argument; PRISM's switches as annotated disjunctions of `msw/2` |
 
 ```text
@@ -396,7 +396,13 @@ a translation.
 X+tddlog runs X's own code, then tddlog's inference on what X exports,
 against X alone, whose numbers are in brackets. The
 [integrations' pages](https://tractables.github.io/tddlog/#/integrations)
-have the programs and plots.
+have the programs and plots. Each integration lives in its system's own
+code base, under that system's licence: Alea.jl+tddlog is Alea.jl's tddlog
+backend, on the branch [`tddlog` of
+Tractables/Alea.jl](https://github.com/Tractables/Alea.jl/tree/tddlog), and
+Roulette+tddlog is Roulette's tddlog engine, on the branch [`tddlog` of
+Tractables/roulette](https://github.com/Tractables/roulette/tree/tddlog), a
+fork of neuppl/roulette.
 
 | Integration | Instances | Answers | Total time | Faster |
 |---|--:|--:|--:|--:|

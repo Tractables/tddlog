@@ -372,7 +372,8 @@ function integrationView(route) {
   const x = i.system, me = i.pipeline, name = data.names[x], v = i.vs[x];
   const rows = catRows(i).map((r) => ({ ...r, me }));
   out.push(element("h2", { class: "solver", title: i.about ?? null }, swatch(me), `${i.title} against ${name}`),
-    note(`${name}'s own code, then tddlog's inference; the time includes ${name}'s after its warm-up.`),
+    note(`${name}'s own code, then tddlog's inference; the time includes ${name}'s after its warm-up.`,
+      ...(i.code ? [" The integration's code: ", element("a", { href: i.code }, i.code.replace("https://github.com/", ""))] : [])),
     versusCells(v, name, i.instances), note(measureLine()), pairPlot(rows, x, v, `int-${k}`));
   // the families
   const fams = element("tbody");
@@ -673,7 +674,7 @@ const WALKS = [
     command: "tddlog --trace roulette.json --evidence-probability tests/roulette/lib/diagnosis.pl",
     lede: "A fault diagnosis in Roulette (tests/roulette/lib/diagnosis.rkt): an and gate fails with probability 0.1, an or gate with 0.2, and the output is observed wrong. Which gate failed?",
     captions: {
-      read: "Roulette+tddlog: Roulette runs the program symbolically into a circuit, which scripts/roulette2problog.rkt writes as this program: a flip per random choice, a rule per gate.",
+      read: "Roulette+tddlog: Roulette runs the program symbolically into a circuit, which Roulette's tddlog engine writes as this program: a flip per random choice, a rule per gate.",
       parse: "20 clauses: 4 flips (the inputs, of probability 1 and 0, and the faults `f3` and `f4`), 15 rules and a fact; the output `g9` observed, and 4 queries.",
       ground: "The inputs are constants, so the gates fold away: 16 rules over 17 atoms become 6 over 7, the output the exclusive or of the faults. The observation makes `q4(1)` false.",
       rewrite: "No recursion to write out and no indicators: the program compiles as ground.",

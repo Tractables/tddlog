@@ -10,10 +10,6 @@ data, under their own terms:
   from Dice (https://github.com/SHoltzen/dice, commit 0ea228e,
   resources/), Apache License 2.0. The other programs there were written
   for tddlog.
-- scripts/roulette2problog.rkt: its language submodule follows
-  example/disrupt/rsdd.rkt of Roulette
-  (https://github.com/neuppl/roulette, commits 54d6185 and 60f77cb), its
-  `query` replaced, Apache License 2.0.
 - tests/networks/asia.net and examples/cancer.net: two Bayesian networks
   written out from their publications (Lauritzen and Spiegelhalter, 1988;
   Korb and Nicholson, 2004), under the Apache License 2.0 with the rest.
