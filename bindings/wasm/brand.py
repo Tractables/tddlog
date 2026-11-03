@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Brand the assembled site's pages: the project logo above each page's
-heading, and in each page's head its icon, the theme's colour for the
+"""Brand the assembled site's pages: the project logo at the left of each
+page's bar, beside the site's links, and in each page's head its icon, the theme's colour for the
 browser's frame, and for a page of its own the address, title, description
 and picture that a link to it shows where it is shared."""
 
@@ -60,11 +60,11 @@ def brand(site, stamp=""):
                 f'<img class="site-logo" src="{html.escape(f"{root}/logo.svg{version}", quote=True)}" '
                 'alt="tddlog" width="720" height="365"></a>\n    ')
         content = path.read_text(encoding="utf-8")
-        heading = re.compile(r"<h1(?=[\s>])")
-        if not heading.search(content) or "</head>" not in content or 'class="site-brand"' in content:
-            raise ValueError(f"{path}: expected an unbranded page with a head and a heading")
+        bar = re.compile(r"<header>\s*<div>\s*")
+        if not bar.search(content) or "<h1" not in content or "</head>" not in content or 'class="site-brand"' in content:
+            raise ValueError(f"{path}: expected an unbranded page with a head, a bar and a heading")
         content = content.replace("</head>", head(page, content, root, version) + "</head>", 1)
-        path.write_text(heading.sub(lambda m: mark + m.group(0), content, count=1), encoding="utf-8")
+        path.write_text(bar.sub(lambda m: m.group(0) + mark, content, count=1), encoding="utf-8")
 
 
 if __name__ == "__main__":

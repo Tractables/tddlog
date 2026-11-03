@@ -1824,6 +1824,9 @@ probability of each assignment of the N instead).
   `elif`, and Python refuses more than 200 nested parentheses: a switch
   on more values does not compile (bb_laplace_w13's joint, written as a
   sum, did not, which is why a joint is asked by assignments).
+  `dice2sppl.py` refuses (exit 3) an operation whose two variables' values
+  make more than 65536 cases (`TABLE`): data/dice/wide_uniform's x < y,
+  65536 by 40000, held the unit tests past their time limit.
 - Geni: its interpreter answers Booleans and tuples of them, so an int(w)
   is w bits, as in Dice and Geni's own surface language: `discrete` a
   chain of Bernoullis, + and - ripple-carry adders, * shifted partial
@@ -2278,8 +2281,10 @@ without unbounded loops is such a chain:
   back as the program's double, a discrete's outcomes summing to one in
   rationals (the largest takes up the rounding), a uniform's as fractions.
 - Refused (exit 3, `unsupported`): what every translator of section 12
-  refuses (lists, `/`, `%`, `::`, recursion), and an int wider than 30
-  bits or a product beyond 2^31, past PRISM's 32-bit integers.
+  refuses (lists, `/`, `%`, `::`, recursion), an int wider than 30
+  bits or a product beyond 2^31, past PRISM's 32-bit integers, and a step
+  of more than 4096 commands (`BRANCHES`: data/dice/wide_uniform's
+  65536-way uniform held the unit tests past their time limit).
 
 The installation (in a prefix, `$HOME/local/code/modelcheckers` in the
 release run): stormpy 1.14.0 in a venv, PRISM 4.8.1 (sha256 checked;

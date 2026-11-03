@@ -290,7 +290,7 @@ class NetworkTests(unittest.TestCase):
         for net in ['cancer', 'asia', 'traffic']:
             with self.subTest(net=net):
                 network = gen_bn.parse_net(TRAFFIC) if net == 'traffic' else \
-                    gen_bn.parse(str(SOURCE / 'examples' / f'{net}.net'))
+                    gen_bn.parse(str(SOURCE / ('tests/networks' if net == 'asia' else 'examples') / f'{net}.net'))
                 text = gen_bn.to_dice(network, 'leaves')
                 program = gen_bn.to_problog(network, 'leaves')
                 predicates = list(dict.fromkeys(q.split('(')[0] for q in reference.queries(program)))

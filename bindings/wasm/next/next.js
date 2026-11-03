@@ -77,13 +77,6 @@ function scriptLink(name, path) {
 
 // ------------------------------------------------------------- the parts
 
-// Numbers in cells of their own, each under its label ([label, value,
-// title]), never run together in a sentence.
-function cells(...items) {
-  return element("div", { class: "cells" }, ...items.map(([label, value, title]) =>
-    element("div", { class: "cell", title }, element("span", {}, label), element("b", {}, value))));
-}
-
 // tddlog's speed-up in a cell: "too few" where too few instances both answer.
 const speedCell = (v) => (v?.speedup == null ? "too few" : speedup(v));
 
@@ -322,10 +315,8 @@ function integrationsView() {
   }
   return [crumbs(HOME, [sectionName("integrations")]), element("h2", {}, sectionName("integrations")),
     element("p", { class: "lede" }, "tddlog with its own front ends, and tddlog doing the inference after another system's own code."),
-    scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
-      element("th", { scope: "col" }, "integration"), element("th", { scope: "col" }, "what reads the program"),
-      element("th", { scope: "col", class: "num" }, "given"), element("th", { scope: "col", class: "num" }, "answers"),
-      element("th", { scope: "col", class: "num", title: "the system alone, on the same instances" }, "the system alone answers"))),
+    scroller(stacked(element("table", { class: "board" }, head2(["integration"], ["what reads the program"], ["given", null, "num"],
+      { group: "answers", cols: [["the integration", null, "num"], ["the system alone", "the system alone, on the same instances", "num"]] }),
     body)), "whole")];
 }
 
@@ -361,9 +352,9 @@ function integrationView(route) {
       element("td", { class: "num" }, count(rs.length)), element("td", { class: "num" }, count(rs.filter((r) => r.t[me] !== null).length)),
       element("td", { class: "num" }, count(rs.filter((r) => r.t[x] !== null).length))));
   }
-  out.push(element("h3", {}, "Families"), scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
-    element("th", { scope: "col" }, "family"), element("th", { scope: "col", title: "the family's programs, each system's, and its runs" }, "program"),
-    element("th", { scope: "col", class: "num" }, "instances"), element("th", { scope: "col", class: "num" }, `${i.title} answers`), element("th", { scope: "col", class: "num" }, `${name} answers`))), fams)), "whole"));
+  out.push(element("h3", {}, "Families"), scroller(stacked(element("table", { class: "board" },
+    head2(["family"], ["program", "the family's programs, each system's, and its runs"], ["instances", null, "num"],
+      { group: "answers", cols: [[i.title, null, "num"], [name, null, "num"]] }), fams)), "whole"));
   return out;
 }
 
@@ -392,18 +383,17 @@ function typeSplit(c, route) {
       const dirs = keep === "h" ? [] : ["s", "m", "b"].map((k) => num(count(n(x, k))));
       body.append(element("tr", { class: x === route.vs ? "vs" : null }, element("th", { scope: "row" }, systemLink(x)),
         num(count(n(x, keep))), ...dirs,
-        num(w ? count(w.answers) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.total) : ""), num(w ? duration(w.tddlog_total) : ""),
+        num(w ? count(w.answers) : ""), num(w ? duration(w.total) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.tddlog_total) : ""),
         num(w ? speedup(w) : "")));
     }
     const sec = element("section", { class: "panel split", id }, element("h3", {}, title), note(`Where ${text}.`));
     if (have.length) {
-      const col = (text, title) => element("th", { scope: "col", class: "num", title }, text);
       const par = `PAR-${data.measure.par}, over the instances the system is given and either answers`;
-      sec.append(scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
-        element("th", { scope: "col" }, "system"), col("instances"),
-        ...(keep === "h" ? [] : [col("for it", "a translation for the system"), col("for tddlog", "a translation for tddlog"),
-          col("for both", "a translation of the original for both")]),
-        col("it answers"), col("tddlog answers"), col("its total", par), col("tddlog's total", par), col("faster", "tddlog's speed-up"))), body)), "whole"));
+      sec.append(scroller(stacked(element("table", { class: "board" }, head2(["system"], ["instances", null, "num"],
+        ...(keep === "h" ? [] : [{ group: "translated for", cols: [["it", "a translation for the system", "num"],
+          ["tddlog", "a translation for tddlog", "num"], ["both", "a translation of the original for both", "num"]] }]),
+        { group: "the system", cols: [["answers", null, "num"], ["total", par, "num"]] },
+        { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], ["faster", "tddlog's speed-up", "num"]] }), body)), "whole"));
       const x = have.includes(route.vs) ? route.vs : have[0];
       const rows = kindRows(c, x).filter((r) => keep.includes(r.kind));
       sec.append(element("p", { class: "small" }, `tddlog against ${data.names[x]} on ${plural(rows.length, "instance")}:`),
@@ -433,7 +423,7 @@ function typesView() {
       element("th", { scope: "col" }, "type"), element("th", { scope: "col", class: "num" }, "instances"),
       element("th", { scope: "col", class: "num", title: "by each instance's subject: tddlog, or the pipeline that ran it" }, "tddlog answers"),
       element("th", { scope: "col" }, "native systems"),
-      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "head-to-head"),
+      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "head\u2011to\u2011head"),
       element("th", { scope: "col", class: "num", title: "the systems compared through a translation on some instance" }, "translated"))),
     body)), "whole"),
     element("div", { class: "fig-head" }, element("h3", {}, "Each type against the systems native to it"),
@@ -446,28 +436,33 @@ function typesView() {
 // A source of the census: what it holds, how many programs and how many
 // tddlog runs, each in a cell of its own, and why it does not run the others
 // (folded on the census's page, open on a baseline's, where it is the point).
+// A reason of the census as its badge, what it means on hover.
+const reason = (k) => element("span", { class: `cls cls-${k.replace(/ /g, "-")}`, title: draft.views.census.classes[k] ?? null }, k);
+
 function censusSource(src, tool = false, open = false) {
   const n = (x) => (typeof x === "number" ? count(x) : x);
-  const rows = src.items.map((it) => element("tr", {}, element("td", {}, element("span", { class: `cls cls-${it.class.replace(/ /g, "-")}` }, it.class)),
+  const rows = src.items.map((it) => element("tr", {}, element("td", {}, reason(it.class)),
     element("td", { class: "num" }, n(it.n)), element("td", { class: "about" }, it.programs), element("td", { class: "about" }, it.why)));
   const table = () => [scroller(stacked(element("table", { class: "board census-t" }, element("thead", {}, element("tr", {},
     element("th", { scope: "col" }, "why"), element("th", { scope: "col", class: "num" }, "programs"), element("th", { scope: "col" }, "which"),
     element("th", { scope: "col" }, "what stops tddlog"))), element("tbody", {}, ...rows))), "whole")];
-  // counts in cells; a source counted in words says so in its line
+  // counts in cells; a source counted in words, the words under the same labels
   const counted = typeof src.programs === "number" && typeof src.runs === "number";
   return element("div", { class: "census" },
-    element("p", {}, element("b", {}, src.source), ...(tool ? [" (", systemLink(src.system), ")"] : []), `: ${src.what}.`,
-      ...(counted ? [] : [" ", element("span", { class: "muted" }, `${n(src.programs)}; tddlog runs ${n(src.runs)}.`)])),
-    ...(counted ? [cells(["programs", count(src.programs)], ["tddlog runs", count(src.runs)], ["tddlog does not run", count(src.programs - src.runs)])] : []),
+    element("p", {}, element("b", {}, src.source), ...(tool ? [" (", systemLink(src.system), ")"] : []), `: ${src.what}.`),
+    counted ? cells(["programs", count(src.programs)], ["tddlog runs", count(src.runs)], ["tddlog does not run", count(src.programs - src.runs)])
+      : element("dl", { class: "classes words" }, element("dt", {}, "programs"), element("dd", {}, n(src.programs)),
+        element("dt", {}, "tddlog runs"), element("dd", {}, n(src.runs))),
     ...(!rows.length ? [] : open ? table() : [lazy({ class: "census-fold" }, `Why tddlog does not run the others: ${plural(rows.length, "kind")}`, table)]));
 }
 
 function coverageView() {
   const cen = draft.views.census;
-  const out = [crumbs(HOME, inSection("types"), [COVERAGE]), element("h2", {}, COVERAGE),
-    element("p", { class: "lede" }, cen.about),
-    element("dl", { class: "classes" }, ...Object.entries(cen.classes).flatMap(([k, text]) => [element("dt", {},
-      element("span", { class: `cls cls-${k.replace(/ /g, "-")}` }, k)), element("dd", {}, text)]))];
+  // the census's account in its first sentence, the reasons in one line, each opening what it means
+  const out = [crumbs(HOME, inSection("types"), [COVERAGE]), element("h2", {}, COVERAGE), brief(cen.about, "lede"),
+    element("details", { class: "reasons" }, element("summary", {}, "Why tddlog does not run a program: ",
+      ...Object.keys(cen.classes).map(reason)),
+    element("dl", { class: "classes" }, ...Object.entries(cen.classes).flatMap(([k, text]) => [element("dt", {}, reason(k)), element("dd", {}, text)])))];
   // the run's side: each system, what it answers that tddlog does not, and what tddlog answers that it cannot be given
   const body = element("tbody");
   const sums = (v) => Object.values(v.unexpressed).reduce(([a, b], [c, d]) => [a + c, b + d], [0, 0]);
@@ -563,6 +558,22 @@ const WALKS = [
     },
   },
   {
+    key: "tpch", what: "A database query: grounding evaluates its joins and selections, and its lineage is compiled.",
+    file: "examples/tpch_q2.pl", example: "tpch", evidence: false,
+    command: "tddlog --trace tpch.json examples/tpch_q2.pl",
+    lede: "TPC-H's query 2 as a Boolean query: is a brass part of size 15 supplied from Europe? Five relations of 334 tuples, each an independent probabilistic fact.",
+    captions: {
+      read: "A ProbLog file is its own program: each relation's tuples as probabilistic facts, then the query.",
+      parse: "335 clauses: the 334 tuples of `region`, `nation`, `supplier`, `part` and `partsupp`, and the rule of `q2`; one query.",
+      ground: "Grounding evaluates the joins and selections as a database does: one part is brass of size 15, and two of its four suppliers are in Europe. Left: the lineage, 2 rules over 8 tuples.",
+      rewrite: "No recursion to write out and no indicators: the two rules compile as ground.",
+      layout: "`auto`'s `td` trial finished in its first attempt: a vtree over the 8 tuples, from a tree decomposition of width 5.",
+      compile: "`q2`, the disjunction of its two rules' conjunctions, by TDD operations: one component of 30 pairs, stored as its negation (the dual).",
+      evidence: "No evidence: `q2` was counted during the compile, once nothing read its formula.",
+      answers: "0.017751203, the product formula in the program's header, each tuple read once, and ProbLog 2.3.0's answer (tests/it/examples.rs).",
+    },
+  },
+  {
     key: "network", what: "A network file read as a program: its tables, its families and the evidence.",
     file: "examples/car.net", example: "car", evidence: true,
     command: "tddlog --trace network.json --evidence-probability --evidence examples/car.inst --query fuel,plugs,starter examples/car.net",
@@ -626,6 +637,22 @@ const WALKS = [
       answers: "1/6 and 2/3, the answers the two dice give by hand (tests/it/examples.rs).",
     },
   },
+  {
+    key: "roulette", what: "Roulette+tddlog: Roulette builds a circuit of the program, and tddlog does the inference.",
+    file: "tests/roulette/lib/diagnosis.pl", example: "roulette", evidence: true,
+    command: "tddlog --trace roulette.json --evidence-probability tests/roulette/lib/diagnosis.pl",
+    lede: "A fault diagnosis in Roulette (tests/roulette/lib/diagnosis.rkt): an and gate fails with probability 0.1, an or gate with 0.2, and the output is observed wrong. Which gate failed?",
+    captions: {
+      read: "Roulette+tddlog: Roulette runs the program symbolically into a circuit, which scripts/roulette2problog.rkt writes as this program: a flip per random choice, a rule per gate.",
+      parse: "20 clauses: 4 flips (the inputs, of probability 1 and 0, and the faults `f3` and `f4`), 15 rules and a fact; the output `g9` observed, and 4 queries.",
+      ground: "The inputs are constants, so the gates fold away: 16 rules over 17 atoms become 6 over 7, the output the exclusive or of the faults. The observation makes `q4(1)` false.",
+      rewrite: "No recursion to write out and no indicators: the program compiles as ground.",
+      layout: "`auto`'s `td` trial finished in its first attempt: a vtree of two leaves, the faults.",
+      compile: "5 components of one atom each, in dependency order; the largest, `g9`, has 2 pairs.",
+      evidence: "The observations, `g9` true and `q4(1)` false, are conjoined into 2 pairs: P(e) = 0.26, the probability that exactly one gate fails.",
+      answers: "The and gate failed with probability 0.08 / 0.26, the or gate with 0.18 / 0.26, never both: the answers computed by hand in the program (tests/it/examples.rs).",
+    },
+  },
 ];
 
 for (const w of WALKS) {
@@ -650,6 +677,17 @@ const caption = (text, cls) => element("p", cls ? { class: cls } : {},
 
 const playgroundHref = (w) => `playground/?example=${w.example}${w.evidence ? "&evidence=1" : ""}&trace=1`;
 
+// A strip that scrolls sideways (on a phone) scrolled to show its marked
+// item, once it is laid out.
+function showMarked(strip) {
+  requestAnimationFrame(() => {
+    const on = strip.querySelector("[aria-current]");
+    if (!on || strip.scrollWidth <= strip.clientWidth) return;
+    const [a, b] = [on.getBoundingClientRect(), strip.getBoundingClientRect()];
+    if (a.left < b.left || a.right > b.right) strip.scrollLeft += a.left - b.left - 24;
+  });
+}
+
 // How it works: the walkthroughs, the one on show (the first where the
 // address names none) at its step, the strip of the stages above it.
 function howView(route) {
@@ -660,6 +698,7 @@ function howView(route) {
       element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"), " describes each stage."),
     element("nav", { class: "walks", "aria-label": "Walkthroughs" }, ...WALKS.map((x) =>
       element("a", { href: `#/how/${x.key}`, title: x.what, "aria-current": x === w ? "page" : null }, x.title)))];
+  showMarked(out[out.length - 1]);
   const walk = element("div", { class: "walk" }, note("Loading the trace…"));
   out.push(walk, counted());
   walkTrace(w.key).then((trace) => {
@@ -679,7 +718,9 @@ function howView(route) {
     body.append(drawn);
     const nav = element("p", { class: "step-nav" }, i > 0 ? element("a", { href: `#/how/${w.key}/${i}` }, "← Back") : "",
       i < steps.length - 1 ? element("a", { href: `#/how/${w.key}/${i + 2}` }, "Next →") : "");
-    walk.replaceChildren(stepper(w, steps, i), head, body, nav);
+    const strip = stepper(w, steps, i);
+    walk.replaceChildren(strip, head, body, nav);
+    showMarked(strip);
   }, (e) => walk.replaceChildren(note(`The trace did not load: ${e.message}.`)));
   return out;
 }
@@ -691,9 +732,8 @@ function counted() {
   const items = [["answers", "Over all of a type's instances: a run out of time or memory, wrong, refused or not given counts as unanswered."],
     ["total", `Over the instances a system is given and either answers: an unanswered run counts as ${twice(par)} its time limit `
       + `(PAR-${par}), a time under ${floor} s as ${floor} s.`],
-    ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s), with those only the other `
-      + "answers, tddlog at its limit, and those only tddlog answers, the other at its limit where that bound is at least the "
-      + `measured ratio; none with fewer than ${common} in common.`],
+    ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s), with tddlog's unanswered `
+      + `runs at its limit and the other's where that bound is at least the ratio; none under ${common} in common.`],
     ["X+tddlog", "X's own code, then tddlog's inference; its time includes X's after its warm-up, so that against X it differs only in the inference."]];
   return element("section", { class: "counted" }, element("h3", {}, "How the results are counted"),
     element("dl", { class: "classes" }, ...items.flatMap(([k, text]) => [element("dt", {}, k), element("dd", {}, text)])));

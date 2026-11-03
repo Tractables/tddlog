@@ -63,9 +63,9 @@ const inSection = (key) => [sectionName(key), { view: "section", key }];
 
 // The walkthroughs of How it works (the front page's next.js draws them), by
 // their keys, in the menu's order.
-const WALK_TITLES = [["reach", "Reachability in a graph with cycles"], ["gears", "Negation through a loop"],
-  ["network", "A Bayesian network with evidence"], ["markov", "A Markov network's partition function"],
-  ["dice", "A Dice program"], ["circuit", "A bit-blasted circuit"]];
+const WALK_TITLES = [["reach", "Reachability with cycles"], ["gears", "Negation through a loop"], ["tpch", "A TPC-H query"],
+  ["network", "A Bayesian network"], ["markov", "A Markov network"], ["dice", "A Dice program"], ["circuit", "An Alea.jl circuit"],
+  ["roulette", "A Roulette program"]];
 
 // The integrations, tddlog's own and its pipelines (categories.json's
 // integrations: tddlog alone, Alea.jl+tddlog, Roulette+tddlog), in the
@@ -169,6 +169,12 @@ function brief(text, cls) {
 }
 
 const note = (...children) => element("p", { class: "note" }, ...children);
+// Numbers in cells of their own, each under its label ([label, value,
+// title]), never run together in a sentence.
+function cells(...items) {
+  return element("div", { class: "cells" }, ...items.map(([label, value, title]) =>
+    element("div", { class: "cell", title }, element("span", {}, label), element("b", {}, value))));
+}
 // A text that would take more than a line, folded under its summary.
 const fold = (summary, ...text) => element("details", { class: "fold" }, element("summary", {}, summary), element("p", {}, ...text));
 
@@ -299,7 +305,15 @@ function scroller(table, cls = "") {
 // A board whose rows a phone stacks (styles.css), each value named by its
 // column.
 function stacked(table) {
-  const names = [...table.tHead.rows[0].cells].map((th) => th.textContent);
+  // each column's name, under its group's where a head has two rows (head2)
+  const names = [];
+  const [top, below] = table.tHead.rows;
+  const under = [...(below?.cells ?? [])];
+  for (const th of top.cells) {
+    if (th.colSpan > 1 || (below && th.rowSpan < 2)) {
+      for (let k = 0; k < th.colSpan; k++) names.push(`${th.textContent} ${under.shift().textContent}`);
+    } else names.push(th.textContent);
+  }
   for (const row of table.tBodies[0].rows) {
     if (row.cells.length !== names.length) continue;
     [...row.cells].forEach((cell, i) => {
@@ -308,6 +322,23 @@ function stacked(table) {
   }
   table.classList.add("stack");
   return table;
+}
+
+// A table's head of two rows, so that a long name stands once over the
+// columns it names: a column alone, [label, title, class], spans both rows;
+// a group, { group, cols: [[label, title, class], ...] }, names its columns
+// above them.
+function head2(...items) {
+  const th = ([label, title, cls], extra = {}) => element("th", { scope: "col", class: cls ?? null, title: title ?? null, ...extra }, label);
+  const top = element("tr"), below = element("tr");
+  for (const it of items) {
+    if (Array.isArray(it)) top.append(th(it, { rowspan: 2 }));
+    else {
+      top.append(element("th", { scope: "colgroup", colspan: it.cols.length, class: "group" }, it.group));
+      below.append(...it.cols.map((c) => th(c)));
+    }
+  }
+  return element("thead", {}, top, below);
 }
 
 // A <details> whose body is built when it is first opened.
@@ -676,27 +707,22 @@ function catSuite(c, rows, drawn, tal, only) {
 const totals = (v, name) => `the ${plural(v.either, "instance")} ${name} is given and either answers, ${name} takes `
   + `${duration(v.total)} and ${subject(v.me)} ${duration(v.tddlog_total)} (PAR-${data.measure.par})`;
 
-// A category's headline: tddlog's answers, the best native system's (the
-// most answers, then the least speed-up; on all programs the best other
-// system's), their total times and tddlog's speed-up.
+// A category's headline, in cells: the answers of the rows' subjects (tal,
+// tally's), and with several of tddlog and its pipelines each one's of the
+// instances it was given; the best native system's (the most answers, then
+// the least speed-up; on all programs the best other system's) and tddlog's
+// speed-up over it.
 function headline(c, rows, tal, only) {
-  const best = ranked(c, c.native.filter((x) => tal[x]?.given > 0), tal, only)[0];
-  const parts = [element("b", {}, mineAnswers(c, rows, tal))];
-  const v = best && versus(c, best, only);
-  if (v) {
-    const name = data.names[best];
-    parts.push(`; the best ${c.key === ALL ? "other" : "native"} system, ${name}, ${count(tal[best].answers)}; `
-      + `${subject(v.me)}'s speed-up over it: ${speedup(v)}`);
-  }
-  return element("p", { class: "headline" }, ...parts, ".");
-}
-
-// The answers of the rows' subjects (tal, tally's): "Alea.jl+tddlog 224 of 257",
-// or with several of tddlog and its pipelines each one's too.
-function mineAnswers(c, rows, tal) {
   const ms = c.systems.filter((x) => isMine(x) && tal[x].given > 0);
-  return `${subject(subjectsOf(rows))} ${count(answeredBy(rows))} of ${count(rows.length)}` + (ms.length < 2 ? ""
-    : ` (${ms.map((x) => `${data.names[x]} ${count(tal[x].answers)} of ${count(tal[x].given)}`).join(", ")})`);
+  const best = ranked(c, c.native.filter((x) => tal[x]?.given > 0), tal, only)[0];
+  const v = best && versus(c, best, only);
+  const which = c.key === ALL ? "other" : "native";
+  const box = cells([`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(rows.length)}`],
+    ...(ms.length < 2 ? [] : ms.map((x) => [data.names[x], `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`])),
+    ...(v ? [[`best ${which}: ${data.names[best]}`, count(tal[best].answers), `the ${which} system with the most answers`],
+      ["speed-up over it", speedup(v), `${subject(v.me)}'s speed-up over ${data.names[best]}`]] : []));
+  box.classList.add("headline");
+  return box;
 }
 
 // How the totals and the speed-up are counted, in one line under a table
@@ -1157,7 +1183,7 @@ function home() {
       element("div", { class: "pair" }, plotted(catSuite(c, rows, c.drawn, tal), data.names, { bare: true, all: true }),
         scatter(rows, c.drawn))));
   }
-  out.push(...ownTable(), raw("categories.json"));
+  out.push(...ownTable(), note(measureLine()), raw("categories.json"));
   return out;
 }
 
@@ -1166,7 +1192,8 @@ function home() {
 // one's answers and total time over the instances either answers, and
 // tddlog's speed-up; a system opens the category that holds most of them,
 // narrowed to them. `list` is the rows shown (all of them, or one
-// system's), `head` their heading.
+// system's), `head` their heading. How the totals are counted is the
+// caller's to say, once on its page.
 function ownTable(list = data.own, head = "Each system on its own benchmarks") {
   const body = element("tbody");
   for (const o of list) {
@@ -1175,16 +1202,16 @@ function ownTable(list = data.own, head = "Each system on its own benchmarks") {
     const name = cs.length ? link({ view: "category", category: cs[0].key, only: `own:${o.system}` }, data.names[o.system]) : data.names[o.system];
     body.append(element("tr", {}, element("th", { scope: "row" }, swatch(o.system), name), prose("td", o.about, { class: "about" }),
       element("td", { class: "num" }, count(o.instances)),
-      element("td", { class: "num" }, `${count(o.vs.answers)} in ${duration(o.vs.total)}`),
-      element("td", { class: "num" }, `${count(o.vs.tddlog_answers)} in ${duration(o.vs.tddlog_total)}`,
-        o.vs.me.every((x) => x === "tddlog") ? "" : element("span", { class: "muted" }, ` (${subject(o.vs.me)})`)),
-      element("td", { class: "num" }, speedup(o.vs))));
+      element("td", { class: "num" }, count(o.vs.answers)), element("td", { class: "num" }, duration(o.vs.total)),
+      element("td", { class: "num" }, o.vs.me.every((x) => x === "tddlog") ? "" : element("span", { class: "muted" }, `${subject(o.vs.me)} `),
+        count(o.vs.tddlog_answers)),
+      element("td", { class: "num" }, duration(o.vs.tddlog_total)), element("td", { class: "num" }, speedup(o.vs))));
   }
+  const par = `over the instances either answers (PAR-${data.measure.par})`;
   return [element("h3", { class: "own-head" }, head), scroller(stacked(element("table", { class: "board own" },
-    element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "system"), element("th", { scope: "col" }, "its benchmarks"),
-      element("th", { scope: "col", class: "num" }, "instances"), element("th", { scope: "col", class: "num" }, "the system"),
-      element("th", { scope: "col", class: "num" }, "tddlog"), element("th", { scope: "col", class: "num" }, "tddlog faster"))), body)), "whole"),
-  note(measureLine())];
+    head2(["system"], ["its benchmarks"], ["instances", null, "num"],
+      { group: "the system", cols: [["answers", null, "num"], ["total", par, "num"]] },
+      { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], ["faster", "tddlog's speed-up", "num"]] }), body)), "whole")];
 }
 
 // A category's systems by their answers, then tddlog's speed-up over them,
@@ -1358,14 +1385,13 @@ function solverParts(x) {
     return { letters, label, v, rows, own: letters === "on" ? own : 0 };
   }).filter((w) => w.rows.length && w.v);
   const num = (text) => element("td", { class: "num" }, text);
-  const col = (text, title) => element("th", { scope: "col", class: "num", title }, text);
+  const par = `over the instances it is given and either answers (PAR-${data.measure.par})`;
+  const sides = (me) => [{ group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
+    { group: subject(me), cols: [["answers", null, "num"], ["total", par, "num"], ["faster", `${subject(me)}'s speed-up`, "num"]] }];
   const languages = sets.length ? [scroller(stacked(element("table", { class: "board languages" },
-    element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "programs"), col("instances"),
-      col("its own", "from its own papers, benchmarks or distribution"), col(`${name} answers`), col(`${subject(ms)} answers`),
-      col("its total", `over the instances it is given and either answers (PAR-${data.measure.par})`),
-      col(`${subject(ms)}'s total`, `over the same instances (PAR-${data.measure.par})`), col(`${subject(ms)} faster`))),
+    head2(["programs"], ["instances", null, "num"], ["its own", "from its own papers, benchmarks or distribution", "num"], ...sides(ms)),
     element("tbody", {}, ...sets.map((w) => element("tr", {}, element("th", { scope: "row" }, w.label), num(count(w.rows.length)),
-      num(w.own ? count(w.own) : ""), num(count(w.v.answers)), num(count(w.v.tddlog_answers)), num(duration(w.v.total)),
+      num(w.own ? count(w.own) : ""), num(count(w.v.answers)), num(duration(w.v.total)), num(count(w.v.tddlog_answers)),
       num(duration(w.v.tddlog_total)), num(speedup(w.v))))))), "whole"),
   lazy({ class: "lang-figs" }, "Their plots", () => sets.map((w) => element("div", { class: "pair" },
     plotted({ key: `${x}-${w.letters}`, title: `${name} and ${subject(w.v.me)}, ${w.label}`, noun: "instances", systems: [...w.v.me, x],
@@ -1379,18 +1405,17 @@ function solverParts(x) {
     const k = (key) => count(t.classes[key]);
     body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: c.key, vs: x }, c.title)),
       element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(t.given)),
-      element("td", { class: "num" }, `${k("own")} / ${k("native")} / ${k("translated")}`),
-      element("td", { class: "num" }, count(t.answers)), element("td", { class: "num" }, count(answeredBy(rows))),
-      element("td", { class: "num" }, duration(v.total)), element("td", { class: "num" }, duration(v.tddlog_total)),
+      ...["own", "native", "translated"].map((key) => element("td", { class: "num" }, k(key))),
+      element("td", { class: "num" }, count(t.answers)), element("td", { class: "num" }, duration(v.total)),
+      element("td", { class: "num" }, count(answeredBy(rows))), element("td", { class: "num" }, duration(v.tddlog_total)),
       element("td", { class: "num" }, speedup(v))));
   }
   const cms = subjectsOf(all);
   const types = [scroller(stacked(element("table", { class: "board" },
-    element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "type"), col("instances"), col("given"),
-      col("own / native / translated", "from its own papers, benchmarks or distribution / in its own language / translated for it"),
-      col(`${name} answers`), col(`${subject(cms)} answers`),
-      col("its total", `over the instances it is given and either it or ${subject(cms)} answers (PAR-${data.measure.par})`),
-      col(`${subject(cms)}'s total`, `over the same instances (PAR-${data.measure.par})`), col(`${subject(cms)} faster`))),
+    head2(["type"], ["instances", null, "num"],
+      { group: "given", cols: [["all", null, "num"], ["own", "from its own papers, benchmarks or distribution", "num"],
+        ["native", "in its own language", "num"], ["translated", "translated for it", "num"]] },
+      ...sides(cms)),
     body)), "whole"),
   lazy({ class: "cat-figs-fold" }, `Its plot in each type, among the other systems there`, () => [element("div", { class: "cat-figs" },
     ...parts.map(({ c, rows, tal }) => element("section", {}, element("h4", {}, link({ view: "category", category: c.key, vs: x }, c.title)),

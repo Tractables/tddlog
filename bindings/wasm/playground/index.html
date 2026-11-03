@@ -14,14 +14,6 @@
 
 <header>
   <div>
-    <h1>tddlog playground</h1>
-    <p class="lede">Pick an example or write a ProbLog program, and
-    press Run: tddlog gives each query's exact
-    probability, here in this tab.<span class="aside"> It grounds the
-    program and compiles it bottom-up into tree decision diagrams with the
-    <a href="https://github.com/Tractables/tididi">tididi</a> library;
-    nothing is uploaded. The same solver runs from the command line, Rust,
-    Python and C, as the <a href="../guide/">guide</a> shows.</span></p>
   </div>
   <button id="menu" class="plain" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
   <nav class="site-nav" id="site-nav" aria-label="Site">
@@ -40,6 +32,12 @@
     <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
   </nav>
 </header>
+
+<h1>tddlog playground</h1>
+<p class="lede">Pick an example or write a ProbLog program and press
+Run: tddlog computes each query's exact probability in this tab; nothing
+is uploaded.<span class="aside"> The <a href="../guide/">guide</a> runs it
+from the command line, Rust, Python and C.</span></p>
 
 <noscript><p class="card note">The playground runs tddlog in this tab and
 needs JavaScript. The <a href="../guide/">guide</a> shows the same programs

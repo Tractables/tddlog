@@ -97,6 +97,8 @@ EXAMPLES = {
 class LitTests(unittest.TestCase):
     def test_generators_write_the_programs(self):
         for name, (family, args, _) in EXAMPLES.items():
+            if family == 'pedigree':
+                continue   # one program and its data (bench.py's FOLD), not a file; the next test reads the file
             with self.subTest(name=name):
                 out = subprocess.run([sys.executable, str(scripts / f'gen_{family}.py')] + args,
                                      capture_output=True, text=True, check=True).stdout

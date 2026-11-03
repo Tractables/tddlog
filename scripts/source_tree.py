@@ -16,8 +16,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'tddlog' if (ROOT / 'tddlog' / 'Cargo.toml').is_file() else ROOT
-# The command-line program, as `cargo build --release` writes it.
+# The command-line program, as `cargo build --release` writes it. Without
+# one, the quick profile's (`cargo test --profile quick`, which the public
+# CI builds), so that the tests find a binary; `bench.py run` refuses a quick
+# binary (`refuse_quick`), so that no timed run uses one by default.
 BINARY = SOURCE / 'target' / 'release' / 'tddlog'
+if not BINARY.is_file() and (SOURCE / 'target' / 'quick' / 'tddlog').is_file():
+    BINARY = SOURCE / 'target' / 'quick' / 'tddlog'
+
+
+def refuse_quick(binary):
+    """Stop when BINARY is a build of the quick profile: its timings are not
+    the solver's."""
+    if Path(binary).parent.name == 'quick':
+        raise SystemExit(f'{binary} is a quick-profile build, which is not timed: build with --release')
 
 
 def script(name):

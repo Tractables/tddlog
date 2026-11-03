@@ -209,12 +209,12 @@ class RowTests(unittest.TestCase):
 class SourceTests(unittest.TestCase):
     def test_a_gzipped_network_reads_as_the_plain_one(self):
         root = Path(__file__).resolve().parents[1]
-        plain = gen_bn.parse(str(SOURCE / 'examples' / 'asia.net'))
+        plain = gen_bn.parse(str(SOURCE / 'tests' / 'networks' / 'asia.net'))
         target = root / 'tmp' / 'asia.net.gz'
         target.parent.mkdir(exist_ok=True)
         import gzip
         with gzip.open(target, 'wt') as f:
-            f.write((SOURCE / 'examples' / 'asia.net').read_text())
+            f.write((SOURCE / 'tests' / 'networks' / 'asia.net').read_text())
         self.assertEqual(gen_bn.parse(str(target)), plain)
 
 
@@ -246,7 +246,7 @@ class BifFormatTests(unittest.TestCase):
         """asia's BIF file reads back as asia's normalized tables under the
         names x<i> and s<k>, with a line for each leaf: the leaf, then it
         and its ancestors in program_order."""
-        network = gen_bn.parse(str(SOURCE / 'examples' / 'asia.net'))
+        network = gen_bn.parse(str(SOURCE / 'tests' / 'networks' / 'asia.net'))
         order, variables, tables = network
         text, lines, names = gen_bn.to_bif(network, 'leaves')
         back_order, back_variables, back_tables = gen_bn.parse_bif(text)
@@ -280,7 +280,7 @@ class BifFormatTests(unittest.TestCase):
     def test_observations_and_factors_have_no_bif_file(self):
         """BIF holds no observations and no factors: bif_programs is None for
         a network with evidence and for a Markov network."""
-        asia = str(SOURCE / 'examples' / 'asia.net')
+        asia = str(SOURCE / 'tests' / 'networks' / 'asia.net')
         self.assertIsNotNone(gen_bn.bif_programs([asia, '--query', 'leaves']))
         self.assertIsNone(gen_bn.bif_programs([asia, '--query', 'leaves', '--evidence', '1']))
         regress = SOURCE / 'tests' / 'regress'
@@ -316,7 +316,7 @@ class DiceFormatTests(unittest.TestCase):
         return [sum(p for value, p in dist.items() if value[0] == k) for k in range(n)]
 
     def test_a_bayesian_network_observes_its_evidence(self):
-        net = str(SOURCE / 'examples' / 'asia.net')
+        net = str(SOURCE / 'tests' / 'networks' / 'asia.net')
         network = gen_bn.parse(net)
         order, variables, _ = network
         evidence = gen_bn.sampled_evidence(network, 'half', 1)
@@ -362,7 +362,7 @@ class DiceFormatTests(unittest.TestCase):
         self.assertAlmostEqual(math.log10(p) + offset, math.log10(165), places=12)
         if bn_exact is None:
             self.skipTest('bn_exact.py is on the baselines branch')
-        net = str(SOURCE / 'examples' / 'asia.net')
+        net = str(SOURCE / 'tests' / 'networks' / 'asia.net')
         network = gen_bn.parse(net)
         evidence = gen_bn.sampled_evidence(network, 'half', 1)
         [(_, text)] = gen_bn.dice_programs([net, '--query', 'all', '--evidence', 'half'], pe=True)
@@ -378,7 +378,7 @@ class DiceFormatTests(unittest.TestCase):
         1.0 prints zeros where the observations' probability is under 1e-6)."""
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         import test_dice2problog
-        net = str(SOURCE / 'examples' / 'asia.net')
+        net = str(SOURCE / 'tests' / 'networks' / 'asia.net')
         network = gen_bn.parse(net)
         order, variables, _ = network
         evidence = gen_bn.sampled_evidence(network, 'half', 1)
@@ -430,7 +430,7 @@ class DiceFormatTests(unittest.TestCase):
             self.assertAlmostEqual(float(got), float(want), places=12)
 
     def test_a_program_defines_the_ancestors_it_needs(self):
-        network = gen_bn.parse(str(SOURCE / 'examples' / 'asia.net'))
+        network = gen_bn.parse(str(SOURCE / 'tests' / 'networks' / 'asia.net'))
         order, _, tables = network
         top = next(v for v in order if not tables[v][0])
         text = gen_bn.to_dice(network, top)
@@ -826,7 +826,7 @@ class ReaderTests(unittest.TestCase):
             ([regress / 'markov_pr.uai', '--evid', regress / 'markov_pr.uai.evid'], regress / 'markov_pr_ev.pl'),
             ([regress / 'potts.uai', '--query', 'none'], regress / 'potts.pl'),
             ([examples / 'cancer.net', '--query', 'leaves'], examples / 'bn_cancer.pl'),
-            ([examples / 'asia.net', '--evidence-file', net / 'asia_leaves.inst'], examples / 'bn_asia_evidence.pl'),
+            ([net / 'asia.net', '--evidence-file', net / 'asia_leaves.inst'], net / 'bn_asia_evidence.pl'),
             ([net / 'sprinkler.bif', '--query', 'WetGrass'], net / 'sprinkler_bif.pl'),
             ([net / 'sprinkler.xdsl', '--query', 'leaves', '--evidence-file', net / 'sprinkler.inst'],
              net / 'sprinkler_xdsl.pl'),

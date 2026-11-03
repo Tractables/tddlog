@@ -91,7 +91,8 @@ class Litscan3Tests(unittest.TestCase):
         # its place $1 outside its comments, and each size one argument
         programs = {}
         for name, (family, gargs) in bench.LIT.items():
-            if gargs[0] not in bench.FOLD or (gargs[0] == 'gen_pcfg.py' and not (root / 'data' / 'problog-tutorial').exists()):
+            if gargs[0] not in bench.FOLD or (gargs[0] == 'gen_pcfg.py' and not (root / 'data' / 'problog-tutorial').exists()) \
+                    or (gargs[0] == 'gen_taint.py' and not (root / 'data' / 'psouffle').exists()):
                 continue
             if gargs[0] in bench.PROGRAM_OF_TDDLOG and not os.access(bench.source_tree.BINARY, os.X_OK):
                 continue   # its template is converted by tddlog --program

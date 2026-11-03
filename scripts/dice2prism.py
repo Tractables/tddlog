@@ -239,6 +239,10 @@ class Flat:
                 return live
 
 
+# The most cases (commands) one step of the chain may hold.
+BRANCHES = 1 << 12
+
+
 def outcomes(s):
     """The values of a sample and their probabilities, exact: a decimal as
     the shortest one that reads back as the program's double, the outcomes
@@ -443,7 +447,11 @@ class Chain:
                 return None
             (_, env), = path.branches
             v = s[1]
-            path.branches = [(q, {**env, v: Const(v.t, k)}) for k, q in outcomes(s)]
+            outs = outcomes(s)
+            if len(path.branches) * len(outs) > BRANCHES:
+                raise NotImplementedError(f'{len(path.branches)} cases times {len(outs)} outcomes of {v}, '
+                                          f'beyond {BRANCHES} commands of a step')
+            path.branches = [(q, {**env, v: Const(v.t, k)}) for k, q in outs]
             path.sampled = path.moved = True
             path.pos = i + 1
             return None

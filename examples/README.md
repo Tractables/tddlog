@@ -31,6 +31,7 @@ those and a few more, the larger programs below among them.
 | [negcycle_sound.pl](negcycle_sound.pl) | negation through a cycle that is two-valued in every world, which ProbLog refuses |
 | [dice_evidence.pl](dice_evidence.pl), [dice_murder.pl](dice_murder.pl) | Dice programs as tddlog's Dice reader reads them (`tddlog --program`) |
 | [alea_dice.jl](alea_dice.jl), [alea_dice.pl](alea_dice.pl) | an Alea.jl program and the circuit Alea.jl builds for it, which `scripts/alea2problog.jl` writes |
+| [tpch_q2.pl](tpch_q2.pl) | a TPC-H query over a tuple-independent database: grounding evaluates its joins and selections, and leaves a formula of eight of its 334 tuples |
 | [query_beside_evidence.pl](query_beside_evidence.pl) | a query's formula beside evidence it does not read |
 | [chain.pl](chain.pl) | a program whose size, probability and query are the arguments that follow it on the command line, in its places `$1`, `$2` and `$3`: `tddlog examples/chain.pl 10 0.9 4` |
 

@@ -74,6 +74,10 @@ def literal_op(s):
     return s[2] in ('eq', 'ne', 'lt', 'le') and sum(isinstance(x, Const) for x in s[3]) == 1
 
 
+# The most cases a table on two variables may hold.
+TABLE = 1 << 16
+
+
 class Emitter:
     def __init__(self, stmts, inline):
         self.inline = inline
@@ -188,6 +192,8 @@ class Emitter:
         if len(xs) == 1:
             return self.switch(xs[0], lambda k: f([k]), n)
         x, y = sorted(xs, key=lambda a: len(a.support))
+        if len(x.support) * len(y.support) > TABLE:
+            raise NotImplementedError(f'a table of {len(x.support)} times {len(y.support)} cases, beyond {TABLE}')
         swap = x is not xs[0]
         cases = [(frozenset([a]), self.switch(y, lambda b, a=a: f([b, a] if swap else [a, b]), n))
                  for a in x.support]

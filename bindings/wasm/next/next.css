@@ -22,12 +22,6 @@ ul.home-int { margin: 0.2rem 0 0.6rem; padding-left: 1.2rem; }
 ul.home-int li { margin: 0.15rem 0; }
 table.baselines-t td.about, table.types-t td.about { white-space: normal; min-width: 16rem; }
 
-/* Numbers in cells of their own, each under its label; a text folded under
-   its summary. */
-.cells { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin: 0.6rem 0; }
-.cell { display: flex; flex-direction: column; min-width: 4.5rem; }
-.cell span { color: var(--muted); font-size: 12px; line-height: 1.3; }
-.cell b { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
 /* A comparison's cells, grouped under each side's name. */
 .versus { display: flex; flex-wrap: wrap; gap: 0.4rem 2.2rem; margin: 0.6rem 0; }
 .versus .side { display: flex; flex-direction: column; }
@@ -66,6 +60,13 @@ ul.insts { columns: 16rem; margin: 0.4rem 0 0.8rem; font-size: 13px; }
 /* Coverage: the classes and each source's census. */
 dl.classes { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.3rem 1rem; max-width: 90ch; font-size: 14px; }
 dl.classes dt, dl.classes dd { margin: 0; }
+/* A census source counted in words: its programs and what tddlog runs, labelled as the counts are. */
+dl.classes.words { margin: 0.3rem 0 0.5rem; font-size: 13px; }
+dl.classes.words dt { color: var(--muted); }
+details.reasons { margin: 0.5rem 0 0.8rem; font-size: 14px; }
+details.reasons summary { cursor: pointer; }
+details.reasons summary .cls { margin-left: 0.3rem; }
+details.reasons dl { margin-top: 0.5rem; }
 section.counted { margin-top: 2rem; padding-top: 0.6rem; border-top: 1px solid var(--line); }
 section.counted dt { font-weight: 600; }
 .cls { display: inline-block; padding: 0.05rem 0.45rem; border-radius: 999px; font-size: 12px; white-space: nowrap; background: var(--code); border: 1px solid var(--line); }

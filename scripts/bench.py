@@ -1202,12 +1202,15 @@ def folded_program(gargs, binary=None):
 
 
 def write_once(path, text, written):
-    """Writes `text` to `path` unless this gen did (`written`, the paths so far)."""
+    """Writes `text` to `path` unless this gen did (`written`, the paths so far).
+    Gens running in parallel may write the same data file, with the same
+    text: each writes a part of its own and replaces `path` with it."""
     if path not in written:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path + '.part', 'w') as f:
+        part = f'{path}.{os.getpid()}.part'
+        with open(part, 'w') as f:
             f.write(text)
-        os.replace(path + '.part', path)
+        os.replace(part, path)
         written.add(path)
 
 
@@ -5043,6 +5046,8 @@ def tddlog_arms(arms, strategies):
 
 
 def run(args):
+    if getattr(args, 'tddlog', None):
+        source_tree.refuse_quick(args.tddlog)
     if getattr(args, 'mem_cap', None) is not None:
         cap_memory(args.mem_cap)
     spec = instances(args)
@@ -5100,6 +5105,8 @@ def run(args):
     strategies = [pr_variant(s) for s in args.strategies] if args.pr else args.strategies
     args.tddlog_binary = {pr_variant(s) if args.pr else s: b
                           for s, b in tddlog_arms(getattr(args, 'tddlog_arm', []), args.strategies).items()}
+    for binary in args.tddlog_binary.values():
+        source_tree.refuse_quick(binary)
     systems = [('tddlog', s) for s in strategies] + [('problog', k) for k in args.kbs]
     if args.pita:
         systems.append(('pita', 'bdd'))

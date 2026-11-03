@@ -185,7 +185,7 @@ class PplTests(unittest.TestCase):
         # leaf, which observes nothing and returns the leaf beside whether
         # the observations hold; the rows where they hold, over their sum,
         # are the queries' answers, also where their sum is under 1e-6.
-        asia = str(SOURCE / 'examples' / 'asia.net')
+        asia = str(SOURCE / 'tests' / 'networks' / 'asia.net')
         spec = {'asia_ev': ('bnev', ['gen_bn.py', asia, '--query', 'leaves', '--evidence', 'half'])}
         with tempfile.TemporaryDirectory() as d:
             program = Path(d, 'asia_ev.pl')
@@ -212,7 +212,7 @@ class PplTests(unittest.TestCase):
     def test_nodice_reads_a_network_program_that_observes_the_evidence(self):
         # noDice prints six decimals, too few for the joint of a variable and
         # improbable observations: its programs observe them, its rows the answers.
-        asia = str(SOURCE / 'examples' / 'asia.net')
+        asia = str(SOURCE / 'tests' / 'networks' / 'asia.net')
         spec = {'asia_ev': ('bnev', ['gen_bn.py', asia, '--query', 'leaves', '--evidence', 'half'])}
         with tempfile.TemporaryDirectory() as d:
             program = Path(d, 'asia_ev.pl')
@@ -236,7 +236,7 @@ class PplTests(unittest.TestCase):
     def test_observations_of_probability_zero_are_an_error_after_every_program(self):
         # Each program still runs (a capture answers every run with an
         # empty table), and the instance is an error.
-        asia = str(SOURCE / 'examples' / 'asia.net')
+        asia = str(SOURCE / 'tests' / 'networks' / 'asia.net')
         spec = {'asia_ev': ('bnev', ['gen_bn.py', asia, '--query', 'leaves', '--evidence', 'half'])}
         with tempfile.TemporaryDirectory() as d:
             program = Path(d, 'asia_ev.pl')
@@ -1576,7 +1576,7 @@ class AceTests(unittest.TestCase):
         """Ace's posteriors keyed as the program's queries, against
         bn_exact.py on the program gen_bn.py writes for the same evidence."""
         import bn_exact
-        network = bench.gen_bn.parse(str(SOURCE / 'examples' / 'asia.net'))
+        network = bench.gen_bn.parse(str(SOURCE / 'tests' / 'networks' / 'asia.net'))
         program = bench.gen_bn.to_problog(network, 'all', [('smoke', 'yes'), ('xray', 'yes')])
         rows, values, evidence, qs = bn_exact.parse(program)
         states, tables = bn_exact.factors(rows, values)
@@ -2091,7 +2091,7 @@ class MerlinTests(unittest.TestCase):
         systems that read ProbLog programs are given is `tddlog
         --program`'s (the built tddlog), the text gen_bn.py writes, of a
         gzipped network's copy that gen decompresses once."""
-        asia = str(SOURCE / 'examples' / 'asia.net')
+        asia = str(SOURCE / 'tests' / 'networks' / 'asia.net')
         regress = SOURCE / 'tests' / 'regress'
         uai, evid = str(regress / 'markov.uai'), str(regress / 'markov.uai.evid')
         plain, pr = SimpleNamespace(dir='/b', pr=False), SimpleNamespace(dir='/b', pr=True)

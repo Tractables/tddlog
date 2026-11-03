@@ -195,6 +195,7 @@ class LitscanTests(unittest.TestCase):
                      ('0', 0.3 * 0.3 + 0.4 * 0.1 * 0.7), ('-1', 0.6 * 0.1 * 0.7), ('0.6667', 0.6 * 0.2 * 0.7)]:
             self.assertAlmostEqual(got[f'expression([i1,i2,i3],{x})'], p, delta=1e-12, msg=x)
 
+    @unittest.skipUnless((root / 'data' / 'psouffle').exists(), "PSouffle's programs are not shipped")
     def test_taint_rewrites_what_tddlog_does_not_read(self):
         src = root / 'data' / 'psouffle' / 'taint' / 'angulo.pl.gz'
         with gzip.open(src, 'rt') as f:
@@ -216,6 +217,7 @@ class LitscanTests(unittest.TestCase):
                       out.replace('I \\= 0', '\\+(I = 0)'), flags=re.M)
         self.assertEqual(sorted(back.splitlines()), sorted(original.splitlines()))
 
+    @unittest.skipUnless((root / 'data' / 'psouffle').exists(), "PSouffle's programs are not shipped")
     def test_sidechannel_reads_souffles_equations_as_souffle_does(self):
         """P1's equations evaluate their arithmetic (`is`), after the atoms
         that bind their variables and before the negations; its empty

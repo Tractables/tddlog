@@ -295,7 +295,7 @@ class EncodingTests(unittest.TestCase):
                 self.assertIn('no --cnf', r.stderr)
             self.assertNotEqual(uai_wcnf.encode(sizes, scopes, tables, [], 'enc5')[0],
                                 uai_wcnf.encode(sizes, scopes, tables, [])[0])
-            for argv, error in [([str(SOURCE / 'examples' / 'asia.net')], 'not one'),
+            for argv, error in [([str(SOURCE / 'tests' / 'networks' / 'asia.net')], 'not one'),
                                 ([str(regress / 'markov.uai'), '--rescale'], 'rescale'),
                                 ([str(regress / 'markov.uai'), '--format', 'dice'], 'Dice')]:
                 with self.subTest(error=error):

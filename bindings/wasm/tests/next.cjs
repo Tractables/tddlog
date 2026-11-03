@@ -87,8 +87,8 @@ function drawn(page) {
     }
   }
   // the walkthroughs: each one's key, playground example (none for a run the playground does not make) and steps
-  const WALKS = [["reach", "reachability"], ["gears", "gears"], ["network", "car"], ["markov", null], ["dice", "walk"],
-    ["circuit", "circuit"]].map(([key, example]) =>
+  const WALKS = [["reach", "reachability"], ["gears", "gears"], ["tpch", "tpch"], ["network", "car"], ["markov", null], ["dice", "walk"],
+    ["circuit", "circuit"], ["roulette", "roulette"]].map(([key, example]) =>
     [key, example, tddlogTrace.steps(JSON.parse(fs.readFileSync(path.join(site, "next", "walk", `${key}.json`), "utf8")))]);
   const integrations = Object.keys(cats.integrations ?? {});
   const checks = [
@@ -112,6 +112,7 @@ function drawn(page) {
         for (const m of v.head.me) assert.ok(line.includes(cats.names[m]), `${x}: head-to-head names ${m}`);
       }
       assert.equal(await page.locator(`.panels-nav a[href="#/baselines/${x}/run"]`).count(), 1, `${x}: a link to how it was run`);
+      assert.equal(await page.getByText(/its time limit \(PAR-/).count(), 1, `${x}: how the totals are counted, once`);
     }]),
     ["#/integrations", "integrations", async () => assert.equal(await page.locator("table.board tbody tr").count(), integrations.length)],
     ...integrations.map((k) => [`#/integrations/${k}`, "integration", async () => {

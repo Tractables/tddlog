@@ -88,7 +88,7 @@ class Dice2RouletteTests(unittest.TestCase):
                 self.assertNotRegex(code, r'\n\((?!define|statement|require)')
 
     def test_a_network_translates(self):
-        text = subprocess.run([sys.executable, str(source_tree.script('gen_bn.py')), str(SOURCE / 'examples' / 'asia.net'),
+        text = subprocess.run([sys.executable, str(source_tree.script('gen_bn.py')), str(SOURCE / 'tests' / 'networks' / 'asia.net'),
                                '--query', 'leaves', '--format', 'dice'], capture_output=True, text=True,
                               check=True).stdout
         code = translate(text)
