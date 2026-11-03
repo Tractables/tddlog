@@ -133,7 +133,10 @@ $ tddlog --program tests/lpad/coin.cplint.pl
 `--program` prints the program an input is read as, and `--ground` the
 ground program after it, which ProbLog also reads, so each reduction can
 be checked on its own. `--cnf` writes that ground program as a weighted CNF
-for a weighted model counter. As a library, [`tddlog::read`] reads an input in
+for a weighted model counter. On the UAI networks measured, the counters
+took 12 to 261 times as long as tddlog, since they read clauses where
+tddlog compiles tables ([why](docs/design.md#grounding-srcground)). As a
+library, [`tddlog::read`] reads an input in
 any of these formats as a program and [`tddlog::solve`] answers it; the
 [Python](bindings/python/README.md) (`tddlog.solve(text, format="dice")`),
 [C](bindings/c/README.md) and [WebAssembly](bindings/wasm/README.md)

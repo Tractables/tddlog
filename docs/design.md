@@ -585,6 +585,38 @@ program that keeps one (negation through recursion, say) is refused.
 Without observations the count is the product of the facts' weights
 summed and the factor, which a `c count` line states.
 
+The CNF is correct but slow to count. On 16 networks of the UAI
+inference competition's sets (Z of 12 from the MAR tuning set, P(e) of 4
+from the final PR set), the fastest weighted model counter on the CNFs
+tddlog writes (sharpSAT-TD, Ganak, or a compiler of CNFs) took 12 to 261
+times as long as tddlog on the network itself, tddlog's time taken as
+0.2 s at least (Grids_16 53.8 s against 4.5 s), and 7 of the 16 networks
+were counted by none in 300 s and 7 GB. The literature's encodings of the
+same networks (ENC1, ENC5) left a gap of the same size. Three causes were
+measured:
+
+- A counter returns one count, so each marginal costs a count of its
+  own: the 12 networks' marginals took 81 to 881 counts each. tddlog
+  answers them all in 0.25 to 5 times its time for Z.
+- A counter reads clauses, not tables. The tables are all in the CNF,
+  but it sees a variable per table entry and the graph of the clauses,
+  and chooses its decomposition from that graph. On ENC1's Grids_11
+  (binary, without a zero or a one), a TDD compile of the clauses one by
+  one took 27.4 s and 9.6M pairs; the same file with its clauses read
+  back as tables (each entry's parameter summed into its table, each
+  exactly-one group a variable of many values) took 0.16 s and 111K
+  pairs.
+- The search counters exploit determinism, and networks without zeros
+  and ones have none to exploit. On the Grids and DBN networks they
+  made 9 to 22 million decisions (Grids_11 8.7M in 209 s), where tddlog
+  builds 111K pairs in 0.09 s. On variables of 11 and 81 values, the
+  one-hot indicators raised their widths to 68 to 117, and no counter
+  answered.
+
+The structure tddlog compiles from (tables, variables of many values,
+the program's own decomposition) is what a CNF writes away, and a counter
+has to find it again from the clauses.
+
 Steps 0 to 4 are the front end. `finish` runs steps 5 to 11, after the
 front end and again after each layout rewrite (step 12, `decision`'s
 guards, `td`'s separator copies); where unit propagation settles the
