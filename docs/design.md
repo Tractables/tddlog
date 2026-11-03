@@ -572,8 +572,13 @@ by its bodies, no two true, the second of a set of two the first's
 negation. An observed atom no rule reads and no query names (a Markov
 network's factor) has no variable: observed true, its rows' contexts
 imply their facts, an entry of one writes nothing, and each assignment of
-its parents without a row, a zero, is a clause. Each other observation is
-a unit clause, and each query a literal named in a `c query` line, whose
+its parents without a row, a zero, is a clause. A fact that is its rows'
+one fact and that nothing else reads is their parameter, weighed (w, 1)
+and true exactly where one of their contexts is: false in each other
+row's context or, where that is more literals, implying one of its rows'
+contexts, so that a counter's preprocessing finds it defined and can
+eliminate it. Each other observation is a unit clause, and each query a
+literal named in a `c query` line, whose
 unit clause makes the count `P(q, e)`. The completion has one model in
 each world of the facts only where no cyclic component is left, so a
 program that keeps one (negation through recursion, say) is refused.

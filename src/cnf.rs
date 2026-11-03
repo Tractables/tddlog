@@ -38,12 +38,19 @@
 //!   each of the same exclusive sets and the contexts all different, is a
 //!   clause `¬context ∨ s` for each of the table's own facts `s` a row
 //!   reads (`¬s` where it reads `¬s`): a zero of the table is a clause
-//!   `¬context` of the assignment without a row, an entry of one is a row
-//!   without facts and writes nothing, and a row's fact, shared by the
-//!   rows of its probability, weighs its entry where its context holds and
-//!   sums out to one elsewhere (Sang, Beame and Kautz's chance variables;
-//!   Chavira and Darwiche's ENC5 without the merge of the cubes). Any
-//!   other atom observed true is its definition and a unit clause.
+//!   `¬context` of the assignment without a row, and an entry of one is a
+//!   row without facts and writes nothing. A fact that is the one fact of
+//!   its rows, shared by the rows of its probability, and that nothing
+//!   else reads is the table's parameter for them (Chavira and Darwiche's
+//!   ENC1, a table's equal entries one parameter): weighed (w, 1), it is
+//!   true exactly where one of its rows' contexts is, so that a counter
+//!   finds it defined. Its other half is a clause `¬context ∨ ¬s` for each
+//!   other row of the table, or where that is more literals, `s` implies
+//!   its one context or one of its contexts, each a variable of its own
+//!   ([`WeightedCnf::define_parameters`]). Any other fact of a row weighs
+//!   its entry where its context holds and sums out to one elsewhere
+//!   (Sang, Beame and Kautz's chance variables). Any other atom observed
+//!   true is its definition and a unit clause.
 //!
 //! Each other observation is a unit clause, so that the count is `P(e)`
 //! up to the factor the grounder took out of it (`GroundProgram::weight`),
@@ -65,7 +72,7 @@
 
 use std::fmt;
 
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::eval::Count;
 use crate::ground::cover::Cover;
@@ -153,7 +160,8 @@ impl WeightedCnf {
         }
         let order = tables.order();
         let sets = SetClauses::of(&gp, &mut tables, &cover, &order);
-        let absorbed = absorbed(&gp, &sets);
+        let reads = reads(&gp);
+        let absorbed = absorbed(&gp, &sets, &reads);
         // Every atom after those it reads.
         for &h in &order {
             let mut bodies = Vec::new();
@@ -169,7 +177,7 @@ impl WeightedCnf {
                 (Some(observed), _) => {
                     cnf.observation(
                         &gp,
-                        (&tables, &cover),
+                        (&tables, &cover, &reads),
                         (h as AtomId, observed),
                         bodies,
                         &value,
@@ -250,11 +258,11 @@ impl WeightedCnf {
     /// (the module's documentation): false, a clause per body; true, its
     /// one body's literals, or the rows of a table its rules are
     /// ([`Rows::of`], [`WeightedCnf::observed_table`]), or else its
-    /// definition and a unit clause.
+    /// definition and a unit clause. `reads` is [`reads`]'s.
     fn observation(
         &mut self,
         gp: &GroundProgram,
-        (tables, cover): (&Tables, &Cover),
+        (tables, cover, reads): (&Tables, &Cover, &[u32]),
         (h, observed): (AtomId, bool),
         mut bodies: Vec<Vec<i32>>,
         value: &[Value],
@@ -281,7 +289,8 @@ impl WeightedCnf {
             _ => {}
         }
         if let Some(rows) = Rows::of(gp, tables, h).filter(|rows| rows.bounded(tables)) {
-            return self.observed_table(&rows, tables, cover, value);
+            self.observed_table(&rows, tables, cover, value);
+            return self.define_parameters(gp, &rows, reads, value);
         }
         match self.disjunction(bodies) {
             Value::Literal(v) => self.clause(&[v]),
@@ -330,6 +339,95 @@ impl WeightedCnf {
                 at[j] = 0;
                 tuple[j] = sets[j][0];
             }
+        }
+    }
+
+    /// The other half of each parameter of an observed table's `rows`, with
+    /// each atom's `value` and [`reads`]'s `reads`: a fact that is the one
+    /// literal of its rows and that nothing else reads, already implied by
+    /// their contexts ([`WeightedCnf::observed_table`]), weighed (w, 1) and
+    /// true only where one of those contexts is. That is a clause `¬context
+    /// ∨ ¬s` for each other row of the table, since one assignment of the
+    /// parents' sets holds and those without a row are ruled out; or, where
+    /// that is more literals, `s` implies its one context's literals, or of
+    /// several, one of them, each context of two literals or more a
+    /// variable of its own.
+    fn define_parameters(
+        &mut self,
+        gp: &GroundProgram,
+        rows: &Rows,
+        reads: &[u32],
+        value: &[Value],
+    ) {
+        // Each row's context as literals; `None` where it cannot hold.
+        let contexts: Vec<Option<Vec<i32>>> = rows
+            .rows
+            .iter()
+            .map(|(context, _)| {
+                let lits: Vec<GLit> = context.iter().map(|&a| GLit::Pos(a)).collect();
+                literals(&lits, value)
+            })
+            .collect();
+        let all: usize = contexts.iter().flatten().map(|c| c.len() + 1).sum();
+        let mut by_fact: FxHashMap<AtomId, Vec<usize>> = FxHashMap::default();
+        for (i, (_, own)) in rows.rows.iter().enumerate() {
+            if let [GLit::Pos(o)] = own[..] {
+                by_fact.entry(o).or_default().push(i);
+            }
+        }
+        let mut facts: Vec<_> = by_fact.into_iter().collect();
+        facts.sort_unstable_by_key(|&(o, _)| o);
+        for (o, at) in facts {
+            let (AtomKind::Fact(_), Value::Literal(x)) = (&gp.kinds[o as usize], value[o as usize])
+            else {
+                continue;
+            };
+            if reads[o as usize] as usize != at.len() {
+                continue;
+            }
+            let own: Vec<&Vec<i32>> = at.iter().filter_map(|&i| contexts[i].as_ref()).collect();
+            // A context that always holds makes the fact true as written.
+            if own.iter().any(|c| c.is_empty()) {
+                continue;
+            }
+            let by_others = all - own.iter().map(|c| c.len() + 1).sum::<usize>();
+            let by_own = match &own[..] {
+                [] => 1,
+                [only] => 2 * only.len(),
+                _ => {
+                    let defined: usize = own
+                        .iter()
+                        .filter(|c| c.len() >= 2)
+                        .map(|c| 3 * c.len() + 1)
+                        .sum();
+                    defined + own.len() + 1
+                }
+            };
+            if by_others <= by_own {
+                for (i, context) in contexts.iter().enumerate() {
+                    if let Some(context) = context
+                        && rows.rows[i].1[..] != [GLit::Pos(o)]
+                    {
+                        let mut clause: Vec<i32> = context.iter().map(|&l| -l).collect();
+                        clause.push(-x);
+                        clause.sort_unstable_by_key(|y| (y.abs(), *y));
+                        self.clause(&clause);
+                    }
+                }
+            } else if let [only] = &own[..] {
+                for &l in only.iter() {
+                    self.clause(&[-x, l]);
+                }
+            } else {
+                let mut clause = vec![-x];
+                for context in &own {
+                    clause.push(self.conjunction(context));
+                }
+                self.clause(&clause);
+            }
+            // The facts are the first variables, in order.
+            debug_assert_eq!(self.weights[x as usize - 1].0, x as u32);
+            self.weights[x as usize - 1].2 = 1.0;
         }
     }
 
@@ -529,35 +627,34 @@ impl SetClauses {
     }
 }
 
+/// How many times each atom is read: by the rules' bodies, the queries and
+/// the observations.
+fn reads(gp: &GroundProgram) -> Vec<u32> {
+    let mut reads = vec![0; gp.num_atoms()];
+    let bodies = gp.rules.iter().flat_map(|r| &r.body).map(|l| l.atom());
+    for a in bodies.chain(gp.named_atoms()) {
+        reads[a as usize] += 1;
+    }
+    reads
+}
+
 /// The value each atom is observed at where its observation is written as
 /// clauses of its own, without a variable for the atom
-/// ([`WeightedCnf::observation`]): a derived atom observed once that no
-/// rule reads, no query names and no set written as clauses holds
+/// ([`WeightedCnf::observation`]): a derived atom that its one observation
+/// alone reads ([`reads`]) and no set written as clauses holds
 /// ([`SetClauses`]).
-fn absorbed(gp: &GroundProgram, sets: &SetClauses) -> Vec<Option<bool>> {
-    let n = gp.num_atoms();
-    let mut kept = vec![false; n];
-    for r in &gp.rules {
-        for l in &r.body {
-            kept[l.atom() as usize] = true;
-        }
-    }
-    for &(_, id, _) in &gp.queries {
-        if let Some(a) = id {
-            kept[a as usize] = true;
-        }
-    }
-    let mut observed = vec![None; n];
+fn absorbed(gp: &GroundProgram, sets: &SetClauses, reads: &[u32]) -> Vec<Option<bool>> {
+    let mut observed = vec![None; gp.num_atoms()];
     for &(_, id, v) in &gp.evidence {
         if let Some(a) = id {
-            kept[a as usize] |= observed[a as usize].is_some();
             observed[a as usize] = Some(v);
         }
     }
-    (0..n)
+    (0..gp.num_atoms())
         .map(|a| {
-            observed[a]
-                .filter(|_| !kept[a] && gp.kinds[a] == AtomKind::Derived && sets.set[a].is_none())
+            observed[a].filter(|_| {
+                reads[a] == 1 && gp.kinds[a] == AtomKind::Derived && sets.set[a].is_none()
+            })
         })
         .collect()
 }

@@ -276,6 +276,51 @@ fn a_markov_networks_cnf_counts_its_partition_function() {
     }
 }
 
+/// A Markov network of one factor over three variables of three values
+/// (tests/networks/local_structure_wide.uai): its entries are 8 (the
+/// largest, twice), 0 (twice), 2 (twice), 1 (once), 3 (three times) and 4
+/// (seventeen times), so that Z is their sum, 98, and given x2 = 0 the sum
+/// of the nine entries of x2 = 0, 36. Each parameter is weighed (w, 1)
+/// and defined by its rows, each way: 4's as false in the other eight
+/// rows' contexts, 1's as implying its one context, and 2's and 3's as
+/// implying one of their contexts, each a variable of its own (five).
+#[test]
+fn a_factors_parameters_are_defined_by_their_rows() {
+    let file = "tests/networks/local_structure_wide.uai";
+    let evid = format!("{file}.evid");
+    for (evidence, z) in [(false, 98.0), (true, 36.0)] {
+        let mut args = vec!["--cnf", "--evidence-probability", file];
+        if evidence {
+            args.extend(["--evidence", &evid]);
+        }
+        let out = tddlog_binary(&args);
+        assert!(out.status.success(), "{args:?}");
+        let cnf = read(&String::from_utf8(out.stdout).unwrap());
+        let counted = total(&cnf, file);
+        assert!(
+            (counted - z).abs() < 1e-9 * z,
+            "{args:?}: the CNF counts {counted}, Z is {z}"
+        );
+    }
+    let data = std::fs::read(file).unwrap();
+    let input = tddlog::read(&data, tddlog::Format::of_path(file), &Default::default()).unwrap();
+    assert_counts(file, &input.program);
+    // The facts are two switches of each variable and the four parameters,
+    // the variables those, two values of each variable (the third is its
+    // first switch) and the five contexts.
+    let text = cnf_text(&input.program, &Options::default());
+    let cnf = read(&text);
+    let mut defined: Vec<f64> = cnf
+        .weights
+        .iter()
+        .filter(|w| w[0] == 1.0 && w[1] != 1.0)
+        .map(|w| w[1])
+        .collect();
+    defined.sort_by(f64::total_cmp);
+    assert_eq!(defined, [0.125, 0.25, 0.375, 0.5], "{text}");
+    assert_eq!((cnf.facts, cnf.weights.len() - 1), (10, 21), "{text}");
+}
+
 /// Two networks whose tables have zeros, entries equal to their table's
 /// largest and equal entries (tests/networks/local_structure*.uai), each
 /// with and without its evidence file: the counts of their CNFs are
