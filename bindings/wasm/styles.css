@@ -598,18 +598,20 @@ footer {
 }
 
 /* The playground on a phone: the lede one sentence, the examples one row
-   that scrolls sideways, fading at its edge, so that the editor comes on
-   the first screen; and 16px text in the fields, which iOS otherwise
-   zooms into. */
+   that scrolls sideways from edge to edge of the card (the block takes the
+   card's padding, so that nothing runs past a box), fading at its edge, so
+   that the editor comes on the first screen; and 16px text in the fields,
+   which iOS otherwise zooms into. */
 @media (max-width: 52rem) {
   .lede .aside { display: none; }
-  .examples { display: block; }
+  .examples { display: block; margin: 0 -1.1rem 1rem; }
+  .examples .lead { display: block; padding: 0 1.1rem; }
   .examples #examples {
     flex-wrap: nowrap;
     overflow-x: auto;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
-    margin: 0.4rem -1.1rem 0;
+    margin: 0.4rem 0 0;
     padding: 3px 2.5rem 3px 1.1rem;
     scroll-padding-left: 1.1rem;
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
