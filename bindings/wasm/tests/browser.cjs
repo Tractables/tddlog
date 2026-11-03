@@ -897,8 +897,8 @@ function benchmarksOf(root) {
     assert.equal((await page.$$("#view table.board.own tbody tr")).length, cats.own.length, "the overview: each system on its own benchmarks");
     console.log(`ok the overview: ${overviewRows.length} native systems' speed-ups, each category's plots and the own benchmarks`);
     // The menu, the site's: its sections, each a heading with its entries:
-    // what tddlog does not run and every other system by its answers; the
-    // integrations; the overview and the categories; the walkthroughs.
+    // every other system by its answers; the integrations; the overview, the
+    // categories and the programs tddlog does not run; the walkthroughs.
     // by integration where the data has the integrations
     const sectionNames = (await page.evaluate(() => SECTIONS)).map(([, name]) => name);
     const menuNames = (await page.evaluate(() => SECTIONS)).filter(([key]) => key !== "integrations" || cats.integrations).map(([, name]) => name);
@@ -907,10 +907,11 @@ function benchmarksOf(root) {
     const menu = cats.integrations ? groups : [groups[0], [""], ...groups.slice(1)];
     const baselines = cats.systems.filter((s) => !isMine(s.key)).sort((a, b) => b.answers - a.answers).map((s) => `../#/baselines/${s.key}`);
     assert.deepEqual(groups.map(([name]) => name), menuNames, "the menu: the bar's sections");
-    assert.deepEqual(menu[0].slice(1), ["../#/coverage", ...baselines], "the menu: what tddlog does not run, then the baselines");
+    assert.deepEqual(menu[0].slice(1), baselines, "the menu: the baselines");
     assert.deepEqual(menu[1].slice(1), ["tddlog", "alea", "roulette"].filter((k) => cats.integrations?.[k]).map((k) => `../#/integrations/${k}`),
       "the menu: the integrations");
-    assert.deepEqual(menu[2].slice(1), ["#/", ...categories.map((c) => `#/category/${c.key}`)], "the menu: the overview and the categories");
+    assert.deepEqual(menu[2].slice(1), ["#/", ...categories.map((c) => `#/category/${c.key}`), "../#/coverage"],
+      "the menu: the overview, the categories and the programs tddlog does not run");
     assert.ok(menu[3].length > 1 && menu[3].slice(1).every((h) => h.startsWith("../#/how/")), "the menu: the walkthroughs");
     for (const c of categories) {
       const what = `the category ${c.key}`;

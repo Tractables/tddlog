@@ -2107,18 +2107,19 @@ async function runs(route) {
 // ------------------------------------------------------------- the rail
 
 // The menu: the front page's sections, as the bar at the top names them,
-// each a heading with its entries under it. By baseline lists what tddlog
-// does not run, then the other systems, the ten that answer most and the
-// rest behind a control whose choice the viewer keeps; By integration,
-// tddlog alone and its pipelines; By program type, the types and all
-// programs, the one on show (or that holds the family or instance on show)
-// with its families; How it works, its walkthroughs. The results page's own
-// overview is under By program type; the logo above is the front page.
+// each a heading with its entries under it. By baseline lists the other
+// systems, the ten that answer most and the rest behind a control whose
+// choice the viewer keeps; By integration, tddlog alone and its pipelines;
+// By program type, the types and all programs, the one on show (or that
+// holds the family or instance on show) with its families, then the
+// programs tddlog does not run; How it works, its walkthroughs. The
+// results page's own overview is under By program type; the logo above is
+// the front page.
 const MENU_TOP = 10;
-// The page of what tddlog does not run, the first entry under By baseline.
-const COVERAGE = "Not run by tddlog";
+// The page of the programs tddlog does not run, the last entry under By program type.
+const COVERAGE = "Programs tddlog does not run";
 // The section each view is in, which the bar marks.
-const SECTION_OF = { baselines: "baselines", baseline: "baselines", coverage: "baselines", integrations: "integrations",
+const SECTION_OF = { baselines: "baselines", baseline: "baselines", coverage: "types", integrations: "integrations",
   integration: "integrations", types: "types", category: "types", suite: "types", family: "types", how: "how" };
 const MENU_KEY = "tddlog-baselines";
 function rail(route) {
@@ -2137,7 +2138,7 @@ function rail(route) {
     // no storage: the ten alone
   }
   const more = others.length - MENU_TOP;
-  const list = element("ul", { class: `baselines${open ? " all" : ""}` }, entry("#/coverage", COVERAGE), ...others.map((s, i) => {
+  const list = element("ul", { class: `baselines${open ? " all" : ""}` }, ...others.map((s, i) => {
     const li = entry(`#/baselines/${encodeURIComponent(s.key)}`, data.names[s.key], count(s.answers), s.key);
     li.firstChild.title = `${data.names[s.key]} answers ${count(s.answers)} of the ${count(s.given)} instances it was given`;
     if (i >= MENU_TOP) li.classList.add("more");
@@ -2182,6 +2183,7 @@ function rail(route) {
     }
     types.append(li);
   }
+  types.append(entry("#/coverage", COVERAGE));
   tree.append(group("types", types));
   // how it works
   tree.append(group("how", element("ul", {}, ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)))));

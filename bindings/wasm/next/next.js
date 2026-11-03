@@ -261,32 +261,35 @@ function baselineView(route) {
   }
   out.push(element("section", { class: "panel", id: "types" }, element("h3", {}, "In each type of program it was given"), ...parts.types));
   if (parts.own.length) out.push(element("section", { class: "panel", id: "own" }, element("h3", {}, "Its own benchmarks"), ...parts.own.slice(1)));
-  // coverage: what it answers that tddlog does not, what tddlog answers it cannot be given, its sources' census
+  // coverage: what it answers that tddlog does not, what tddlog answers that it cannot be given, each in a cell;
+  // then the programs of its own sources that tddlog does not run, and why
   const p3 = element("section", { class: "panel", id: "coverage" }, element("h3", {}, "Coverage"));
+  const unexp = Object.entries(v.unexpressed).filter(([, [a, b]]) => a + b > 0);
+  const [refused, missing] = unexp.reduce(([a, b], [, [c, d]]) => [a + c, b + d], [0, 0]);
+  p3.append(cells(["it answers, tddlog does not", count(v.beyond.length), `instances ${name} answers that tddlog does not`],
+    ...(refused ? [["tddlog answers, it cannot express", count(refused), "its translator refuses what its language lacks"]] : []),
+    ["tddlog answers, it was not given", count(missing)]));
   const fails = new Map();
   for (const [cat, suite, inst, rec] of v.beyond) {
     const key = typeof rec === "string" ? rec : "other";
     if (!fails.has(key)) fails.set(key, []);
     fails.get(key).push([cat, suite, inst]);
   }
-  p3.append(element("h4", {}, `What ${name} answers that tddlog does not: ${count(v.beyond.length)}`));
   for (const [key, list] of fails) {
     const what = FAILURES[key]?.[1].split(":")[0] ?? key;
-    p3.append(element("details", { class: "beyond" }, element("summary", {}, `${count(list.length)} where tddlog's run: ${what}`),
+    p3.append(element("details", { class: "beyond" }, element("summary", {}, `${count(list.length)} it answers where tddlog's run: ${what}`),
       element("ul", { class: "insts" }, ...list.map(([, suite, inst]) => element("li", {}, element("a", { href: instanceHref(suite, inst) }, inst))))));
   }
-  const unexp = Object.entries(v.unexpressed).filter(([, [a, b]]) => a + b > 0);
-  p3.append(element("h4", {}, `What tddlog answers that ${name} cannot be given`));
   if (unexp.length) {
-    p3.append(element("ul", {}, ...unexp.map(([cat, [refused, missing]]) => element("li", {},
-      `${data.categories.find((c) => c.key === cat)?.title ?? cat}: `,
-      [refused ? `${count(refused)} it cannot express (its translator refuses what its language lacks)` : "",
-        missing ? `${count(missing)} it was not given` : ""].filter(Boolean).join("; "), "."))));
-  } else p3.append(note("None: it was given every instance tddlog answers."));
+    p3.append(fold(`What tddlog answers that ${name} cannot be given, by type`, ...unexp.flatMap(([cat, [r, m]], i) => [i ? "; " : "",
+      `${data.categories.find((c) => c.key === cat)?.title ?? cat}: `, [r ? `${count(r)} it cannot express` : "", m ? `${count(m)} it was not given` : ""]
+        .filter(Boolean).join(", ")]), "."));
+  }
   const census = draft.views.census.sources.filter((src) => src.system === x);
-  p3.append(element("h4", {}, `What ${name}'s own sources hold that tddlog does not run`));
-  if (census.length) p3.append(...census.map((src) => censusSource(src)));
+  p3.append(element("h4", {}, `Programs of ${name}'s own that tddlog does not run`));
+  if (census.length) p3.append(...census.map((src) => censusSource(src, false, true)));
   else p3.append(note(`The census has no source of ${name}'s; its programs are the suites'.`));
+  p3.append(element("p", { class: "small" }, "Every system's: ", element("a", { href: "#/coverage" }, COVERAGE), "."));
   out.push(p3);
   // how it was run
   parts.facts.append(element("dt", {}, "Counted"), element("dd", {}, measureLine()),
@@ -425,6 +428,7 @@ function typesView() {
   }
   return [crumbs(HOME, [sectionName("types")]), element("h2", {}, sectionName("types")),
     element("p", { class: "lede" }, "Each instance counts in one type, that of the model it is; all programs is their union, with every system."),
+    element("p", { class: "small" }, element("a", { href: "#/coverage" }, COVERAGE), ": from the systems' own tutorials, tests, papers and repositories, and why."),
     scroller(stacked(element("table", { class: "board types-t" }, element("thead", {}, element("tr", {},
       element("th", { scope: "col" }, "type"), element("th", { scope: "col", class: "num" }, "instances"),
       element("th", { scope: "col", class: "num", title: "by each instance's subject: tddlog, or the pipeline that ran it" }, "tddlog answers"),
@@ -439,25 +443,28 @@ function typesView() {
 
 // ------------------------------------------------------------- coverage
 
-// A source of the census: what it holds, how many tddlog runs, and why it
-// does not run the others.
-function censusSource(src, tool = false) {
+// A source of the census: what it holds, how many programs and how many
+// tddlog runs, each in a cell of its own, and why it does not run the others
+// (folded on the census's page, open on a baseline's, where it is the point).
+function censusSource(src, tool = false, open = false) {
+  const n = (x) => (typeof x === "number" ? count(x) : x);
   const rows = src.items.map((it) => element("tr", {}, element("td", {}, element("span", { class: `cls cls-${it.class.replace(/ /g, "-")}` }, it.class)),
-    element("td", { class: "num" }, typeof it.n === "number" ? count(it.n) : it.n), element("td", { class: "about" }, it.programs),
-    element("td", { class: "about" }, it.why)));
+    element("td", { class: "num" }, n(it.n)), element("td", { class: "about" }, it.programs), element("td", { class: "about" }, it.why)));
+  const table = () => [scroller(stacked(element("table", { class: "board census-t" }, element("thead", {}, element("tr", {},
+    element("th", { scope: "col" }, "why"), element("th", { scope: "col", class: "num" }, "programs"), element("th", { scope: "col" }, "which"),
+    element("th", { scope: "col" }, "what stops tddlog"))), element("tbody", {}, ...rows))), "whole")];
+  // counts in cells; a source counted in words says so in its line
+  const counted = typeof src.programs === "number" && typeof src.runs === "number";
   return element("div", { class: "census" },
-    element("p", {}, element("b", {}, src.source), ...(tool ? [" (", systemLink(src.system), ")"] : []), `: ${src.what}. `,
-      element("span", { class: "muted" }, `${typeof src.programs === "number" ? `${count(src.programs)} programs` : src.programs}; tddlog runs `
-        + `${typeof src.runs === "number" ? count(src.runs) : src.runs}.`)),
-    ...(rows.length ? [lazy({ class: "census-fold" }, `Why tddlog does not run the others: ${plural(rows.length, "kind")}`, () => [scroller(stacked(
-      element("table", { class: "board census-t" }, element("thead", {}, element("tr", {},
-        element("th", { scope: "col" }, "why"), element("th", { scope: "col", class: "num" }, "programs"), element("th", { scope: "col" }, "which"),
-        element("th", { scope: "col" }, "what stops tddlog"))), element("tbody", {}, ...rows))), "whole")])] : []));
+    element("p", {}, element("b", {}, src.source), ...(tool ? [" (", systemLink(src.system), ")"] : []), `: ${src.what}.`,
+      ...(counted ? [] : [" ", element("span", { class: "muted" }, `${n(src.programs)}; tddlog runs ${n(src.runs)}.`)])),
+    ...(counted ? [cells(["programs", count(src.programs)], ["tddlog runs", count(src.runs)], ["tddlog does not run", count(src.programs - src.runs)])] : []),
+    ...(!rows.length ? [] : open ? table() : [lazy({ class: "census-fold" }, `Why tddlog does not run the others: ${plural(rows.length, "kind")}`, table)]));
 }
 
 function coverageView() {
   const cen = draft.views.census;
-  const out = [crumbs(HOME, inSection("baselines"), [COVERAGE]), element("h2", {}, COVERAGE),
+  const out = [crumbs(HOME, inSection("types"), [COVERAGE]), element("h2", {}, COVERAGE),
     element("p", { class: "lede" }, cen.about),
     element("dl", { class: "classes" }, ...Object.entries(cen.classes).flatMap(([k, text]) => [element("dt", {},
       element("span", { class: `cls cls-${k.replace(/ /g, "-")}` }, k)), element("dd", {}, text)]))];
@@ -473,9 +480,8 @@ function coverageView() {
       element("td", { class: "num" }, count(v.beyond.length)), ...(refusals ? [element("td", { class: "num" }, count(refused))] : []),
       element("td", { class: "num" }, count(missing))));
   }
-  out.push(element("h3", {}, "In the release run"), note(`Over the ${inWords(data.types.length)} types: the instances a system answers that tddlog does not `
-    + "(out of time or memory, or refused), and those tddlog answers that the system cannot express (its translator refuses what its "
-    + "language lacks) or was not given."),
+  out.push(element("h3", {}, "In the release run"), note(`Over the ${inWords(data.types.length)} types: what a system answers that tddlog does not, `
+    + "and what tddlog answers that the system cannot express or was not given."),
   scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "system"),
     element("th", { scope: "col", class: "num" }, "it answers, tddlog does not"),
     ...(refusals ? [element("th", { scope: "col", class: "num" }, "tddlog answers, it cannot express")] : []),
