@@ -99,17 +99,19 @@ main {
   main { padding: 1rem 1rem 2rem; }
 }
 
+/* Every page's bar: the logo, small, beside the site's links; a page's
+   heading and lede come under it. */
 header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1.1rem 2rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
-
-.site-brand { display: inline-block; margin-bottom: 0.6rem; }
-.site-logo { display: block; width: 12rem; max-width: 100%; height: auto; }
+.site-brand { display: inline-block; }
+main > h1 + .lede { margin-bottom: 1rem; }
+.site-logo { display: block; width: 8.5rem; max-width: 100%; height: auto; }
 
 h1 {
   margin: 0 0 0.35rem;
@@ -792,11 +794,8 @@ footer {
    one view, and a system's runs of an instance in a drawer at the right.
    Its buttons are the plain kind, not the playground's. */
 body.results main { max-width: 100rem; }
-/* The results page's header: the logo, small, beside the site's links; the
-   heading is for screen readers. */
-body.results header { align-items: center; margin-bottom: 0.5rem; }
-body.results .site-brand { margin-bottom: 0; }
-body.results .site-logo { width: 8.5rem; }
+/* The results' views: their heading is for screen readers. */
+body.results header { margin-bottom: 0.5rem; }
 .unseen { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .results button { width: auto; font: inherit; }
 /* A button that reads as the text it is: a sortable header, a legend's name. */

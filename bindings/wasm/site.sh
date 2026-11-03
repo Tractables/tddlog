@@ -38,8 +38,8 @@
 #               a link to a benchmark's former page to its view of the
 #               results page
 #   /logo.svg, /favicon.svg, /social.png
-#               the project logo (docs/logo.svg), which brand.py puts above
-#               the pages' headings; the pages' icon, the logo's first
+#               the project logo (docs/logo.svg), which brand.py puts in
+#               the pages' bars; the pages' icon, the logo's first
 #               letters in a square; and the picture a shared link to a
 #               page shows
 #   /sitemap.xml
