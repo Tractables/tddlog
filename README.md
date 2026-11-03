@@ -219,45 +219,11 @@ given and either answers, and how many times faster tddlog is. The
 [results page](https://tractables.github.io/tddlog/results/) has every
 instance, time and program, and a page for each system.
 
-<details>
-<summary>How the systems were run and compared</summary>
-
-- Each instance counts in one type, whatever language its source was
-  written in. A system is given every instance it can take, through a
-  translation where it cannot read the original (an LPAD for ProbLog, a
-  Dice program for Roulette).
-- On the programs Alea.jl compiles to Boolean circuits (Cao et al.'s
-  integer programs, Pluck's sequence models and the bit-blasting paper's
-  programs), tddlog runs as **Alea.jl+tddlog**: Alea.jl runs the program up to the
-  circuit it builds, and tddlog answers from the circuit, so that against
-  Alea.jl only the inference differs. Its time is Alea.jl's run up to
-  the circuit, timed warm as Alea.jl's own, and tddlog's on the circuit;
-  every other system given the circuit pays the same time for it.
-- Runs are single-threaded, under each suite's time limit (300 to 1200
-  seconds). A suite's systems ran side by side on the same machines, and
-  tddlog's current version in the same lanes, with the same memory per
-  run.
-- **Answers** count over all of a type's instances. **Total times** count
-  a run that does not answer as twice its time limit (PAR-2, as in the
-  SAT and model counting competitions) and a time under 0.2 s as 0.2 s.
-- **tddlog faster** is the ratio of the total times on the instances both
-  answer, leaving out those both answer in under 0.2 s. An instance only
-  the other system answers is added with tddlog at its time limit, and
-  one only tddlog answers with the other system at its limit, where that
-  limit over tddlog's time is at least the ratio: the other system's
-  timeouts can only raise the speed-up. With fewer than 20 instances both
-  answer there is no speed-up.
-- A system run in several forms (ProbLog's three compilers, Ace's two
-  modes) counts as its fastest form on each instance.
-- The plots count the instances each system answers within each time
-  limit, and put tddlog's time against the fastest other system's,
-  instance by instance.
-- The [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
-  has the code that runs each system,
-  [how each was given each suite](https://github.com/Tractables/tddlog/blob/baselines/docs/baselines.md),
-  and the [machines, versions and tables](https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md).
-
-</details>
+Runs are single-threaded, under each suite's time limit (300 to 1200
+seconds); a run that does not answer counts as twice its limit, and a
+time under 0.2 s as 0.2 s. The results page says how the speed-up is
+counted, and the [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
+how each system was run.
 
 ### Probabilistic logic programs
 
@@ -424,19 +390,10 @@ a translation.
 
 ### Integrations
 
-Where another system's own code runs first and hands its inference to
-tddlog, the pipeline is named after both and compared with that system
-alone, so that only the inference differs. Alea.jl+tddlog runs an
-Alea.jl program up to the Boolean circuit Alea.jl builds and tddlog
-answers from the circuit: the bit-blasting paper's programs, Cao et
-al.'s integer programs and Pluck's sequence models. Roulette+tddlog runs
-a Roulette program up to the formulas of its queries and tddlog answers
-from them: the Roulette paper's programs, the netlists of Circulette, a
-language on Roulette for the fault analysis of digital circuits, and the
-other probabilistic programs translated into Roulette's language. A
-pipeline's time includes all of the other system's own time after its
-warm-up. Its answers and total time come first, the other system's in
-brackets.
+X+tddlog runs X's own code, then tddlog's inference on what X exports,
+against X alone, whose numbers are in brackets. The
+[integrations' pages](https://tractables.github.io/tddlog/#/integrations)
+have the programs and plots.
 
 | Integration | Instances | Answers | Total time | Faster |
 |---|--:|--:|--:|--:|
