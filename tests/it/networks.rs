@@ -371,7 +371,10 @@ fn a_network_answers_as_problog_and_enumeration_do() {
     let (got, log10_e) = answers(&out, "P(e)");
     assert_close("car.net", &got, &car, 1e-11);
     let log10_e = log10_e.expect("a P(e) line");
-    assert!((log10_e - 0.0226280992985857f64.log10()).abs() < 1e-11, "{log10_e}");
+    assert!(
+        (log10_e - 0.0226280992985857f64.log10()).abs() < 1e-11,
+        "{log10_e}"
+    );
     // ProbLog's answers on the programs of tests/networks/, one query at
     // a time.
     for (args, expected) in [
