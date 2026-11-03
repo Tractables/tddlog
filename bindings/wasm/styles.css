@@ -877,6 +877,8 @@ button.plain:hover:not(:disabled) { border-color: var(--accent); background: var
 
 figure.overview { margin: 0.3rem 0 0; }
 figure.overview figcaption { font-size: 13px; }
+figure.overview figcaption details.how { margin-top: 0.4rem; }
+figure.overview figcaption details.how p { font-size: 13px; }
 svg.overview { display: block; max-width: 100%; }
 .overview text { font: 12px var(--sans); fill: var(--ink); }
 .overview text.tick, .overview text.col { font-size: 11px; fill: var(--muted); }

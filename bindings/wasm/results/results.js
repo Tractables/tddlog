@@ -320,8 +320,9 @@ function cactus(box, suite, names, series, coloured) {
   const hi = suite.limit;
   const ends = series.map(({ key, times }, i) => ({ key, y: times.length, text: narrow ? String(i + 1) : `${names[key]} ${times.length}` }))
     .filter((end) => !narrow || coloured.has(end.key));
-  // The end labels' room: the longest at 7 px a character.
-  const left = 46, right = narrow ? 30 : Math.max(128, 16 + 7 * Math.max(0, ...ends.map((end) => end.text.length))), top = 22, bottom = 46;
+  // The end labels' room: the longest at 7 px a character; the counts' on
+  // the left, at about 6.5 px a digit, clear of the axis's name.
+  const left = Math.max(46, 28 + 6.5 * String(n).length), right = narrow ? 30 : Math.max(128, 16 + 7 * Math.max(0, ...ends.map((end) => end.text.length))), top = 22, bottom = 46;
   const x0 = left, x1 = width - right, y0 = top, y1 = height - bottom;
   const lx = (t) => x0 + Math.min(Math.max(t, FLOOR), hi) / hi * (x1 - x0);
   const ly = (k) => y1 - (k / n) * (y1 - y0);
@@ -371,13 +372,13 @@ function cactus(box, suite, names, series, coloured) {
       d, "data-key": key }));
   }
   // The end labels: each line's name at its last height, moved apart where
-  // two would overlap: pushed down, the lowest kept above the axis and those
-  // over it pushed up, so that a crowd at the bottom moves up only as far as
-  // it must.
+  // two would overlap: pushed down, the lowest kept above the time axis's
+  // last number and those over it pushed up, so that a crowd at the bottom
+  // moves up only as far as it must.
   const labels = ends.map((end) => ({ ...end, y: ly(end.y) })).sort((a, b) => a.y - b.y);
-  for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 13);
-  if (labels.length) labels[labels.length - 1].y = Math.min(labels[labels.length - 1].y, y1 + 4);
-  for (let i = labels.length - 2; i >= 0; i--) labels[i].y = Math.min(labels[i].y, labels[i + 1].y - 13);
+  for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 14);
+  if (labels.length) labels[labels.length - 1].y = Math.min(labels[labels.length - 1].y, y1 - 3);
+  for (let i = labels.length - 2; i >= 0; i--) labels[i].y = Math.min(labels[i].y, labels[i + 1].y - 14);
   for (const l of labels) {
     plot.append(svg("text", { class: `end${coloured.has(l.key) ? "" : " grey"}`, x: x1 + 8, y: l.y + 4, "data-key": l.key }, l.text));
   }
@@ -702,20 +703,35 @@ function limitsText() {
 // their speed-ups. A type's title or row opens the type.
 function overview() {
   const box = element("div", { class: "box" });
+  // how the numbers are counted, folded under the caption's first lines
   const figure = element("figure", { class: "overview" }, box,
     element("figcaption", { class: "note" }, `The release run of tddlog ${data.version}. Each instance counts in one type, `
-      + "each type against the systems native to it. A system's answers are over all of the type's instances. A run that "
-      + "does not answer is out of time or memory, a wrong answer, or a program the system cannot express; the time limits "
-      + `are ${limitsText()}. ${measureText()} A type opens its details.`));
+      + "each type against the systems native to it. A type opens its details.",
+    element("details", { class: "how" }, element("summary", {}, "How the answers, totals and speed-ups are counted"),
+      element("p", {}, "A system's answers are over all of the type's instances. A run that does not answer is out of time or "
+        + `memory, a wrong answer, or a program the system cannot express; the time limits are ${limitsText()}. ${measureText()}`))));
   onWidth(box, () => drawOverview(box));
   return figure;
 }
 
 function drawOverview(box) {
-  const groups = data.types.map((c) => ({ c, rows: c.named.map((x) => ({ x, v: c.vs[x] })), others: c.others }));
   const width = Math.max(300, Math.floor(box.clientWidth));
   const narrow = width < 640;
-  const row = 23, head = 32, top = 46, bottom = 30;
+  // a type's title in as many lines as its width needs, about 7.5 px a letter at 13 px
+  const titleLines = (text) => {
+    const lines = [""];
+    for (const word of text.split(" ")) {
+      if (lines.at(-1) && (lines.at(-1).length + 1 + word.length) * 7.5 > width) lines.push(word);
+      else lines[lines.length - 1] = lines.at(-1) ? `${lines.at(-1)} ${word}` : word;
+    }
+    return lines;
+  };
+  const groups = data.types.map((c) => {
+    const ms = subjectsOf(catRows(c));
+    const title = `${c.title}, ${count(c.instances)} ${c.noun}: ${subject(ms)} ${ms.length > 1 ? "answer" : "answers"} ${count(answeredBy(catRows(c)))}`;
+    return { c, rows: c.named.map((x) => ({ x, v: c.vs[x] })), others: c.others, ms, lines: titleLines(title) };
+  });
+  const row = 23, top = 46, bottom = 30, head = (g) => 32 + 16 * (g.lines.length - 1);
   const nameRight = narrow ? 112 : 190, answersRight = nameRight + 38;
   const ratio = width - (narrow ? 56 : 110);
   const x0 = answersRight + 14, x1 = ratio - (narrow ? 10 : 18);
@@ -723,7 +739,7 @@ function drawOverview(box) {
     ...(g.others.systems.length ? [g.others.total] : [])]).filter((t) => t > 0);
   const lo = Math.min(...all) / 3, hi = Math.max(...all) * 3;
   const lx = (t) => x0 + Math.log(Math.max(t, lo) / lo) / Math.log(hi / lo) * (x1 - x0);
-  const height = top + groups.reduce((h, g) => h + head + row * (g.rows.length + (g.others.systems.length ? 1 : 0)), 0) + bottom;
+  const height = top + groups.reduce((h, g) => h + head(g) + row * (g.rows.length + (g.others.systems.length ? 1 : 0)), 0) + bottom;
   const plot = svg("svg", { class: "overview", width, height, viewBox: `0 0 ${width} ${height}`, role: "group",
     "aria-label": "Each type of program: each native system's answers, its total time and tddlog's, and tddlog's speed-up" });
   const ticks = [];
@@ -734,7 +750,9 @@ function drawOverview(box) {
   }
   for (const [t, label] of ticks) {
     plot.append(svg("line", { class: "grid", x1: lx(t), y1: top - 6, x2: lx(t), y2: height - bottom + 4 }));
-    for (const y of [top - 12, height - 10]) plot.append(svg("text", { class: "tick", x: lx(t), y, "text-anchor": "middle" }, label));
+    // above, beside the answers' header, a name only where it clears it (about 6 px a letter at 11 px)
+    const clear = lx(t) - label.length * 3 > answersRight + 6;
+    for (const y of clear ? [top - 12, height - 10] : [height - 10]) plot.append(svg("text", { class: "tick", x: lx(t), y, "text-anchor": "middle" }, label));
   }
   plot.append(svg("text", { class: "col", x: answersRight, y: top - 12, "text-anchor": "end" }, "answers"));
   plot.append(svg("text", { class: "col", x: ratio, y: top - 25 }, "tddlog"), svg("text", { class: "col", x: ratio, y: top - 12 }, "faster"));
@@ -762,13 +780,14 @@ function drawOverview(box) {
     ? svg("text", { class: "ratio few", x: ratio, y: y + row / 2 + 4 }, narrow ? "too few" : "too few in common")
     : svg("text", { class: `ratio${r >= 1 ? "" : " slower"}`, x: ratio, y: y + row / 2 + 4 },
       r >= 1 ? `${least ? "≥" : ""}${times(r, 1, least)}` : `${least ? "≤" : ""}${times(1, r)} slower`));
-  for (const { c, rows, others } of groups) {
+  for (const g of groups) {
+    const { c, rows, others, ms, lines } = g;
     const to = { view: "category", category: c.key };
     const title = svg("a", { href: href(to), class: "kind" });
-    const all = catRows(c), ms = subjectsOf(all);
-    title.append(svg("text", { x: 0, y: y + head - 9 }, `${c.title}, ${count(c.instances)} ${c.noun}: ${subject(ms)} ${ms.length > 1 ? "answer" : "answers"} ${count(answeredBy(all))}`));
+    // each line but the last keeps its space, so that the link's text is the title's
+    lines.forEach((text, i) => title.append(svg("text", { x: 0, y: y + 23 + 16 * i }, i < lines.length - 1 ? `${text} ` : text)));
     plot.append(title);
-    y += head;
+    y += head(g);
     for (const { x, v } of rows) {
       const mine = v.tddlog_total, theirs = v.total;
       const [left, right] = mine <= theirs ? [-1, 1] : [1, -1];
@@ -783,7 +802,8 @@ function drawOverview(box) {
       const several = who.length > 1;
       // their names where they fit (about 6.5 px a letter), on hover in any case
       const tail = `${several ? "each more than " : ""}${atLeast(others.total)} in total`;
-      const text = `${and(who)}: ${tail}`.length * 6.5 <= x1 - x0 ? `${and(who)}: ${tail}` : tail;
+      const text = [`${and(who)}: ${tail}`, tail, `${several ? "each over " : ""}${atLeast(others.total)}`].find((t) => t.length * 6.5 <= x1 - x0)
+        ?? `${several ? "each over " : ""}${atLeast(others.total)}`;
       const r = others.speedup;
       line(to, `${and(who)}: ${several ? "each " : ""}more than ${atLeast(others.total)} in total over the instances `
         + `${several ? "each" : "it"} is given and either answers (PAR-${data.measure.par})`
