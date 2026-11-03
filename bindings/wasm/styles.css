@@ -1016,6 +1016,8 @@ details.fold p { margin: 0.3rem 0 0; color: var(--muted); }
 }
 table.board { font-size: 13px; }
 table.board th, table.board td { padding: 0.35rem 0.7rem; white-space: nowrap; }
+/* A family's programs, a link each: they wrap, so that the counts after them stay in view. */
+table.board td.code-links { white-space: normal; min-width: 14rem; }
 table.board tbody th { font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--ink); font-weight: 500; vertical-align: middle; }
 table.board tbody th i.sw { margin-right: 0.5rem; vertical-align: middle; }
 .results .tscroll.whole { max-height: none; }
@@ -1061,7 +1063,7 @@ h2.solver { display: flex; align-items: center; gap: 0.6rem; }
 .cat-figs section h3 { margin: 0.6rem 0 0; font-size: 1rem; }
 table.board.how-given td.about { white-space: normal; min-width: 12rem; max-width: 36rem; }
 div.facts dl { margin: 0.4rem 0 0; font-size: 14px; }
-div.facts dd { max-width: 80ch; }
+div.facts dd { max-width: 80ch; min-width: 0; overflow-wrap: anywhere; }
 .tree li.solver i.sw { width: 0.8rem; flex: none; align-self: center; }
 /* The type open, its families under it; the baselines past the first ten
    folded under their control, which reads as the entries' link it is. */
