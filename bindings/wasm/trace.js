@@ -98,17 +98,18 @@ const tddlogTrace = (() => {
     const comps = c.components;
     if (!comps.length) return "";
     const most = Math.max(1, ...comps.map((k) => k.largest));
-    const bw = Math.max(4, Math.min(24, Math.floor(640 / comps.length))), h = 120, w = comps.length * bw;
-    let out = `<svg class="trace-bars" viewBox="0 0 ${w + 2} ${h + 18}" style="max-width:${Math.max(w + 2, 160)}px" role="img" aria-label="The pairs of each component's largest formula, in the order they compiled; the largest ${count(most)}">`;
+    // a few components draw at their own size, at least the width of their labels
+    const bw = Math.max(4, Math.min(24, Math.floor(640 / comps.length))), h = 120, w = comps.length * bw, wide = Math.max(w + 2, 160);
+    let out = `<svg class="trace-bars" viewBox="0 0 ${wide} ${h + 18}" style="max-width:${wide}px" role="img" aria-label="The pairs of each component's largest formula, in the order they compiled; the largest ${count(most)}">`;
     comps.forEach((k, i) => {
       const bh = Math.max(1, (k.largest / most) * h);
       const name = k.atoms.join(", ") + (k.size > k.atoms.length ? `, … (${count(k.size)} atoms)` : "");
       const what = `${name}: ${plural(k.largest, "pair")} at most, ${plural(k.updates, "update")}${k.cyclic ? (k.negation ? ", its well-founded model" : `, ${plural(k.rounds, "round")}`) : ""}`;
       out += `<rect class="${k.cyclic ? "cyclic" : "acyclic"}" x="${1 + i * bw}" y="${h - bh}" width="${bw - 1}" height="${bh}"><title>${esc(what)}</title></rect>`;
     });
-    out += `<line x1="0" y1="${h + 0.5}" x2="${w + 2}" y2="${h + 0.5}"/>`;
+    out += `<line x1="0" y1="${h + 0.5}" x2="${wide}" y2="${h + 0.5}"/>`;
     out += `<text x="1" y="${h + 14}">${esc(plural(comps.length, "component"))} in order</text>`;
-    out += `<text x="${w + 1}" y="10" text-anchor="end">${esc(plural(most, "pair"))}</text>`;
+    out += `<text x="${wide - 1}" y="10" text-anchor="end">${esc(plural(most, "pair"))}</text>`;
     return out + "</svg>";
   }
 
