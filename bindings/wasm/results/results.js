@@ -77,17 +77,20 @@ const integrationOf = (x) => (x === "tddlog" ? "tddlog" : x.replace(/-tddlog$/, 
 // The time axis starts at 0.2 s: runs under 0.2 s are not told apart.
 const FLOOR = 0.2;
 
-// How a failure reads in a table cell, and what it means.
+// How a failure reads in a table cell, and what it means: a key's short
+// form before the colon, the whole in a cell's title.
 const FAILURES = {
   timeout: [(limit) => `>${limit}`, "the time limit ran out"],
-  memout: [() => "memory", "out of memory (the address space a run gets, or the Java heap)"],
+  memout: [() => "memory", "out of memory: the address space a run gets, or the Java heap"],
   error: [() => "error", "the system stopped with an error"],
   unsupported: [() => "n/a", "the system cannot express the program: a translator refuses what its target language lacks (lists, division and recursion in a Dice program's translation; negation through recursion, or more than two million conjunctions, in a ground program's network), as aspmc's harness refuses an observation with a body"],
   skipped: [() => "skipped", "not run: the system had run out of time or memory on a smaller size of the same program"],
-  wrong: [() => "wrong", "an answer off the reference by more than 1e-9 and either by more than 1e-6 or by more than 1e-3 of it, beyond the last digit either of the two prints"],
-  zero: [() => "zero", "every answer printed as 0 where the reference's are positive"],
-  underflow: [() => "underflow", "every answer printed as 0 where the probability of the evidence is below the smallest double"],
+  wrong: [() => "wrong", "a wrong answer: off the reference by more than 1e-9 and either by more than 1e-6 or by more than 1e-3 of it, beyond the last digit either of the two prints"],
+  zero: [() => "zero", "every answer 0: printed as 0 where the reference's are positive"],
+  underflow: [() => "underflow", "every answer 0, underflowing: printed as 0 where the probability of the evidence is below the smallest double"],
 };
+// A failure in a key: its cell and its short meaning, the whole as its title.
+const failureKey = (v, limit) => element("span", { title: FAILURES[v][1] }, `${FAILURES[v][0](limit)}: ${FAILURES[v][1].split(":")[0]}`);
 // All programs: the union of the types of program, every system on every
 // program it is given (categories.json's last category).
 const ALL = "all-programs";
@@ -675,8 +678,8 @@ function headline(c, rows, tal, only) {
   const v = best && versus(c, best, only);
   if (v) {
     const name = data.names[best];
-    parts.push(`; the best ${c.key === ALL ? "other" : "native"} system, ${name}, ${count(tal[best].answers)}. `
-      + `Over ${totals(v, name)}; ${subject(v.me)}'s speed-up: ${speedup(v)}`);
+    parts.push(`; the best ${c.key === ALL ? "other" : "native"} system, ${name}, ${count(tal[best].answers)}; `
+      + `${subject(v.me)}'s speed-up over it: ${speedup(v)}`);
   }
   return element("p", { class: "headline" }, ...parts, ".");
 }
@@ -689,32 +692,14 @@ function mineAnswers(c, rows, tal) {
     : ` (${ms.map((x) => `${data.names[x]} ${count(tal[x].answers)} of ${count(tal[x].given)}`).join(", ")})`);
 }
 
-// How the speed-up is measured, and the totals with it, in words (rule 16),
-// from the data's parameters of the measure (data.measure, panels.py's).
+// How the totals and the speed-up are counted, in one line under a table
+// (rule 16), from the data's parameters of the measure (data.measure,
+// panels.py's); How it works holds the whole definition.
 const twice = (par) => (par === 2 ? "twice" : `${par} times`);
-function speedupText() {
-  const { floor, common } = data.measure;
-  return "tddlog's speed-up over a system is the ratio of their total times on the instances both answer, "
-    + "together with the instances only one of them answers: tddlog's failures counted at its time limit, and the other "
-    + "system's timeouts counted at the limit where that lower bound is at least the speed-up measured on the instances both "
-    + `answer, a time under ${floor} s counted as ${floor} s. With fewer than ${common} instances both answer (those both `
-    + `answer in under ${floor} s left out), there are too few in common for a speed-up. On a program another `
-    + "system's code runs first and hands to tddlog, tddlog is that pipeline: Alea.jl+tddlog on the circuits Alea.jl "
-    + "builds, its time Alea.jl's warm run up to the circuit and tddlog's, so that against Alea.jl it differs only in "
-    + "the inference; every other system given the circuit pays the same time for it. A pipeline run beside tddlog on the same programs (Roulette+tddlog) is a system of its own, "
-    + "which that system's page compares it with.";
-}
-function measureText() {
-  const { floor, par } = data.measure;
-  return "A system's total time and tddlog's cover the instances the system is given and either answers, a run that "
-    + `does not answer counted as ${twice(par)} its time limit (PAR-${par}, as in the SAT and model counting competitions) `
-    + `and a time under ${floor} s as ${floor} s. ${speedupText()}`;
-}
-
-// The time limits of the data, in words: "300, 600 or 1200 s".
-function limitsText() {
-  const limits = [...new Set(data.categories.flatMap((c) => c.rows.map((r) => r[2])))].sort((a, b) => a - b);
-  return `${limits.length > 1 ? `${limits.slice(0, -1).join(", ")} or ` : ""}${limits.at(-1)} s`;
+function measureLine() {
+  const { floor, par, common } = data.measure;
+  return `An unanswered run counts as ${twice(par)} its time limit (PAR-${par}) and a time under ${floor} s as ${floor} s; `
+    + `a speed-up needs ${common} instances both answer.`;
 }
 
 
@@ -726,13 +711,8 @@ function limitsText() {
 // their speed-ups. A type's title or row opens the type.
 function overview() {
   const box = element("div", { class: "box" });
-  // how the numbers are counted, folded under the caption's first lines
   const figure = element("figure", { class: "overview" }, box,
-    element("figcaption", { class: "note" }, `The release run of tddlog ${data.version}. Each instance counts in one type, `
-      + "each type against the systems native to it. A type opens its details.",
-    element("details", { class: "how" }, element("summary", {}, "How the answers, totals and speed-ups are counted"),
-      element("p", {}, "A system's answers are over all of the type's instances. A run that does not answer is out of time or "
-        + `memory, a wrong answer, or a program the system cannot express; the time limits are ${limitsText()}. ${measureText()}`))));
+    element("figcaption", { class: "note" }, `${measureLine()} A type opens its details.`));
   onWidth(box, () => drawOverview(box));
   return figure;
 }
@@ -1159,7 +1139,7 @@ function home() {
       element("div", { class: "pair" }, plotted(catSuite(c, rows, c.drawn, tal), data.names, { bare: true, all: true }),
         scatter(rows, c.drawn))));
   }
-  out.push(...ownTable(), how(), raw("categories.json"));
+  out.push(...ownTable(), raw("categories.json"));
   return out;
 }
 
@@ -1186,35 +1166,7 @@ function ownTable(list = data.own, head = "Each system on its own benchmarks") {
     element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "system"), element("th", { scope: "col" }, "its benchmarks"),
       element("th", { scope: "col", class: "num" }, "instances"), element("th", { scope: "col", class: "num" }, "the system"),
       element("th", { scope: "col", class: "num" }, "tddlog"), element("th", { scope: "col", class: "num" }, "tddlog faster"))), body)), "whole"),
-  note("Each one's answers, and its total time over the instances either answers."),
-  fold("How the totals and the speed-up are counted", measureText())];
-}
-
-// How the plots and totals are read, under every overview.
-function how() {
-  return element("details", { class: "how" }, element("summary", {}, "How to read these results"),
-    element("p", {}, "The results are partitioned by type of program: each instance counts in one category, whatever "
-      + "language its source was written in, and a copy of an instance (the same files) counts once. A UAI 2022 network "
-      + "is a Bayesian network when its factors are conditional probability tables over an acyclic graph, else a Markov "
-      + "network. Within a category, the instances are grouped by family: the program or model whose sizes they are, "
-      + `wherever it was written. All programs is the union of the ${inWords(data.types.length)} types.`),
-    element("p", {}, "Each type is compared with the systems that natively handle it, and all programs with every system. "
-      + "A system's answers count over all of a category's instances, an instance it does not answer counted as "
-      + "unanswered, whatever the reason: out of time or memory, a wrong answer, a program the system cannot express, or "
-      + `one it was not given. ${measureText()} `
-      + "A system run in several forms counts as its fastest form on each instance. On each instance a system is marked own (from its own papers, "
-      + "benchmarks or distribution), native (the program it read is in its own language, as the benchmark's authors or "
-      + "generator wrote it, or is the network converted to another network format, the same variables and tables) or "
-      + "translated (a translator wrote the program it read from a program in another language, or wrote a Markov "
-      + "network as a Bayesian network, a node per factor)."),
-    element("p", {}, "A plot counts the instances each system answers within a time limit, on a linear scale from 0 to "
-      + "the longest limit: a line further up and to the left is better. A type's plots draw tddlog (or the pipeline that "
-      + "ran an instance) and the native "
-      + `systems given at least ${data.measure.drawn} of its instances; a name in the legend greys its line or colours it again.`),
-    element("p", {}, "Every system ran single-threaded, and each comparison pairs a baseline with tddlog run on the same "
-      + "machine in the same lanes; every answer of tddlog's is checked against a reference. The numbers come from the "
-      + "same records as the README's and ",
-      element("a", { href: "https://github.com/Tractables/tddlog/blob/baselines/docs/benchmarks.md" }, "docs/benchmarks.md"), "'s."));
+  note(measureLine())];
 }
 
 // A category's systems by their answers, then tddlog's speed-up over them,
@@ -1301,18 +1253,16 @@ function categoryView(route) {
   }
   out.push(element("h3", {}, c.key === ALL ? `Each system's answers, and its total time against ${me}'s`
     : `The native systems' answers, and their total times against ${me}'s`), scoreboard(c, rows, tal, rows.length, route.vs, only),
-    fold("How the totals and the speed-up are counted", measureText()),
+    note(measureLine()),
     ...(hidden.length ? [note(`Not on the plots, given fewer than ${data.measure.drawn} of the ${c.noun}: `
       + `${and(hidden.map((x) => `${data.names[x]} (${count(tal[x].given)})`))}.`)] : []),
     ...(foreign.length ? [note(`Given some of these ${c.noun} through a translation, but not native to them: `,
       `${and(foreign.map((x) => data.names[x]))}; `, link({ view: "category", category: ALL }, "all programs"), " has every system.")] : []),
     element("h3", { id: "figures" }, `Instances answered within each time limit, and ${me}'s times against another system's`),
     element("div", { class: "pair" }, plotted(whole, data.names, { also: route.vs, all: true }), scatter(rows, drawn, route.vs, true)),
-    note(`The ${count(rows.length)} ${c.noun}${only ? ` of ${filters.find((f) => f.key === only).title}` : ""}`
-      + `${c.key === ALL ? ", every system" : `, ${me} and the systems native to them`}. A system's answers count over all of `
-      + "them, an instance it does not answer or was not given counted as unanswered."
-      + (Object.keys(c.copies).length ? ` ${plural(Object.values(c.copies).flat().length, "instance")} of other suites `
-        + "are the same problems as instances here (the same files): each counts once, its systems' fastest answers joined." : "")),
+    note(`Answers count over all ${count(rows.length)} ${c.noun}${only ? ` of ${filters.find((f) => f.key === only).title}` : ""}; `
+      + "one not given counts as unanswered."
+      + (Object.keys(c.copies).length ? ` ${plural(Object.values(c.copies).flat().length, "copy", "copies")} of instances of other suites count once.` : "")),
     cannot(whole));
   // Each family of the instances shown: tddlog's answers, and the most of
   // another system; a family narrows the category to it.
@@ -1441,12 +1391,7 @@ function solverParts(x) {
   if (short.length || s.notgiven) {
     facts.append(element("dt", {}, "Not given"), prose("dd", `${short.length ? `${and(short)}. ` : ""}${s.notgiven}`.trim()));
   }
-  facts.append(element("dt", {}, "Compared"), prose("dd", `On every instance of the categories it was given, against ${subject(ms)} run on `
-    + "the same machine in the same lanes. An instance it does not answer counts at its time limit, whatever the reason (out of time "
-    + `or memory, a wrong answer, a program it cannot express, or not given), and a time under ${FLOOR} s as ${FLOOR} s. An instance `
-    + "is its own (from its own papers, benchmarks or distribution), native (the program it read is in its own language, or is the "
-    + "network converted to another network format) or translated (a translator wrote the program it read from a "
-    + "program in another language, or wrote a Markov network as a Bayesian network, a node per factor)."));
+  facts.append(element("dt", {}, "Compared"), element("dd", {}, `Against ${subject(ms)}, on the same machine in the same lanes.`));
   if (s.cite) {
     const c = s.cite;
     facts.append(element("dt", {}, "Paper"), element("dd", {}, `${c.authors}. `,
@@ -1480,9 +1425,8 @@ function suiteView(route) {
     element("h3", {}, "Instances answered within each time limit"), plotted(s, data.names)];
   const fams = familiesOf(s.key);
   if (fams) {
-    out.push(element("h3", {}, "Families"), note(
-      "A family is one program at several sizes, or programs written the same way. Each cell counts the family's instances "
-      + "a system answers; a family opens to its times, every run and the programs the systems were given."), familyTable(s, fams));
+    out.push(element("h3", {}, "Families"), note("Each cell counts the family's instances a system answers; a family opens to its programs."),
+      familyTable(s, fams));
   }
   const rows = against(s);
   if (rows.length) {
@@ -1557,8 +1501,7 @@ function headToHead(s, rows, paras) {
       element("th", { scope: "col", class: "num" }, `answers, ${me} / it`),
       element("th", { scope: "col", class: "num" }, `total time, ${me} / it`),
       element("th", { scope: "col", class: "num" }, me))), body)), "whole"),
-    note(`Over the instances both are given: how many each answers, and the two total times over those either answers, `
-      + `a run that does not answer counted as ${twice(data.measure.par)} the ${s.limit} s limit (PAR-${data.measure.par}). ${speedupText()}`));
+    note(`Over the instances both are given. ${measureLine()}`));
 }
 
 // Every instance's times, sortable by a column; an instance's name opens
@@ -1628,14 +1571,11 @@ function table(suite) {
     parts.push(element("label", { class: "check" }, hide,
       ` Hide the ${count(nquick)} instances every system that ran finishes in under ${FLOOR} s`));
   }
-  parts.push(scroller(grid), element("p", { class: "key" }, ...shades(seen.has("unsupported"))));
-  const notes = ["Seconds. A header sorts by its column, and again the other way."];
-  if (familiesOf(suite.key)) notes.push("An instance's name opens its family: its times, every run and the programs the systems were given.");
-  for (const status of Object.keys(FAILURES)) {
-    if (!seen.has(status)) continue;
-    notes.push(`${FAILURES[status][0](suite.limit)}: ${FAILURES[status][1]}.`);
-  }
-  if (suite.instances.some((row) => row.slice(1).includes(null))) notes.push("An empty cell: the system was not given the instance.");
+  parts.push(scroller(grid), element("p", { class: "key" }, ...shades(seen.has("unsupported")),
+    ...Object.keys(FAILURES).filter((v) => seen.has(v)).map((v) => failureKey(v, suite.limit)),
+    ...(suite.instances.some((row) => row.slice(1).includes(null)) ? [element("span", {}, "empty: not given")] : [])));
+  const notes = ["Seconds; a header sorts by its column."];
+  if (familiesOf(suite.key)) notes.push("An instance's name opens its family, with its programs.");
   parts.push(note(notes.join(" ")));
   return parts;
 }
@@ -1721,7 +1661,7 @@ function timesGrid(s, f, rows, short, route) {
     body.append(tr);
   }
   const key = shades(seen.has("unsupported"));
-  for (const v of Object.keys(FAILURES)) if (seen.has(v)) key.push(element("span", {}, `${FAILURES[v][0](s.limit)}: ${FAILURES[v][1].split(":")[0]}`));
+  for (const v of Object.keys(FAILURES)) if (seen.has(v)) key.push(failureKey(v, s.limit));
   key.push(element("span", {}, "a time opens its runs"));
   const hidden = s.systems.length - given.length;
   const box = element("div", { class: "times-box" }, scroller(element("table", { class: "grid" }, element("thead", {}, head), body)),

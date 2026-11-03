@@ -66,6 +66,8 @@ ul.insts { columns: 16rem; margin: 0.4rem 0 0.8rem; font-size: 13px; }
 /* Coverage: the classes and each source's census. */
 dl.classes { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.3rem 1rem; max-width: 90ch; font-size: 14px; }
 dl.classes dt, dl.classes dd { margin: 0; }
+section.counted { margin-top: 2rem; padding-top: 0.6rem; border-top: 1px solid var(--line); }
+section.counted dt { font-weight: 600; }
 .cls { display: inline-block; padding: 0.05rem 0.45rem; border-radius: 999px; font-size: 12px; white-space: nowrap; background: var(--code); border: 1px solid var(--line); }
 .cls-not-yet { background: var(--accent-fill); border-color: var(--accent); }
 .cls-impossible { background: var(--amber-fill); border-color: var(--amber); }
