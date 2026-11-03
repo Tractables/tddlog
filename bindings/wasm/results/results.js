@@ -166,6 +166,8 @@ function brief(text, cls) {
 }
 
 const note = (...children) => element("p", { class: "note" }, ...children);
+// A text that would take more than a line, folded under its summary.
+const fold = (summary, ...text) => element("details", { class: "fold" }, element("summary", {}, summary), element("p", {}, ...text));
 
 function count(n) {
   return n.toLocaleString("en");
@@ -1184,7 +1186,8 @@ function ownTable(list = data.own, head = "Each system on its own benchmarks") {
     element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "system"), element("th", { scope: "col" }, "its benchmarks"),
       element("th", { scope: "col", class: "num" }, "instances"), element("th", { scope: "col", class: "num" }, "the system"),
       element("th", { scope: "col", class: "num" }, "tddlog"), element("th", { scope: "col", class: "num" }, "tddlog faster"))), body)), "whole"),
-  note(`Each one's answers, and its total time over the instances either answers. ${measureText()}`)];
+  note("Each one's answers, and its total time over the instances either answers."),
+  fold("How the totals and the speed-up are counted", measureText())];
 }
 
 // How the plots and totals are read, under every overview.
@@ -1298,7 +1301,7 @@ function categoryView(route) {
   }
   out.push(element("h3", {}, c.key === ALL ? `Each system's answers, and its total time against ${me}'s`
     : `The native systems' answers, and their total times against ${me}'s`), scoreboard(c, rows, tal, rows.length, route.vs, only),
-    note(measureText()),
+    fold("How the totals and the speed-up are counted", measureText()),
     ...(hidden.length ? [note(`Not on the plots, given fewer than ${data.measure.drawn} of the ${c.noun}: `
       + `${and(hidden.map((x) => `${data.names[x]} (${count(tal[x].given)})`))}.`)] : []),
     ...(foreign.length ? [note(`Given some of these ${c.noun} through a translation, but not native to them: `,

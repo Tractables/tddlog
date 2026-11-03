@@ -507,10 +507,8 @@ th {
   padding: 0 0.6rem 0.4rem 0;
   border-bottom: 1px solid var(--line);
   text-align: left;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--muted);
 }
 
@@ -983,7 +981,7 @@ svg.scatter { display: block; max-width: 100%; touch-action: pan-y; }
 table.board .bar {
   position: relative;
   display: inline-block;
-  width: 9rem;
+  width: 7rem;
   height: 0.5rem;
   margin-right: 0.4rem;
   border-radius: 4px;
@@ -995,6 +993,10 @@ table.board tr.mine .bar i { background: var(--accent); opacity: 1; }
 
 details.how { max-width: 80ch; margin-top: 2rem; }
 details.how p { font-size: 14px; }
+/* A text that would take more than a line, folded under its summary. */
+details.fold { max-width: 80ch; margin: 0.4rem 0; font-size: 13px; }
+details.fold summary { cursor: pointer; color: var(--accent-ink); }
+details.fold p { margin: 0.3rem 0 0; color: var(--muted); }
 
 /* A kind's and a suite's tables of systems. A table scrolls in its box, with
    a shade at the right edge while more of it is to the right. */
@@ -1019,7 +1021,7 @@ table.board tbody th i.sw { margin-right: 0.5rem; vertical-align: middle; }
 table.board .num { text-align: right; font-variant-numeric: tabular-nums; }
 table.board tr.mine th, table.board tr.mine td { font-weight: 600; }
 table.board tr.vs th, table.board tr.vs td { background: var(--accent-fill); }
-table.board thead th { position: sticky; top: 0; background: var(--card); }
+table.board thead th { position: sticky; top: 0; background: var(--card); white-space: normal; vertical-align: bottom; }
 table.h2h td.ratio { font-weight: 600; }
 table.h2h tr.words td { white-space: normal; background: var(--bg); font-size: 14px; }
 table.h2h tr.words p { max-width: 80ch; }

@@ -84,9 +84,6 @@ function cells(...items) {
     element("div", { class: "cell", title }, element("span", {}, label), element("b", {}, value))));
 }
 
-// A text that would take more than a line, folded under its summary.
-const fold = (summary, ...text) => element("details", { class: "fold" }, element("summary", {}, summary), element("p", {}, ...text));
-
 // tddlog's speed-up in a cell: "too few" where too few instances both answer.
 const speedCell = (v) => (v?.speedup == null ? "too few" : speedup(v));
 
@@ -149,8 +146,11 @@ function draftHome() {
   const others = data.systems.filter((s) => !isMine(s.key)).length;
   const body = element("tbody");
   for (const c of data.types) {
+    // tddlog's answers; on a type it is not given, those of the pipelines it is in
+    const answers = c.answers.tddlog !== undefined ? [count(c.answers.tddlog)]
+      : [element("span", { class: "muted small" }, `${subject(subjectsOf(catRows(c)))} `), count(answeredBy(catRows(c)))];
     body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: c.key }, c.title)),
-      element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(c.answers.tddlog ?? 0)),
+      element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, ...answers),
       element("td", { class: "best" }, element("div", { class: "chips" }, ...c.named.map((x) => element("span", { class: "chip" }, systemLink(x),
         element("span", { class: /×/.test(speedup(c.vs[x])) ? "x" : "x none", title: `${subject(c.vs[x].me)} ${speedup(c.vs[x], true)}` }, speedup(c.vs[x]))))))));
   }
@@ -173,7 +173,7 @@ function draftHome() {
       element("th", { scope: "col", title: "the baselines that answer most, each with tddlog's speed-up over it" }, "its best baselines, and tddlog's speed-up"))),
     body)), "whole"),
     ...(lines.length ? [element("h2", { class: "home-h" }, "tddlog after another system's own code"), element("ul", { class: "home-int" }, ...lines)] : []),
-    fold("How the speed-up is measured", measureText()),
+    fold("How the totals and the speed-up are counted", measureText()),
   ];
 }
 
@@ -289,7 +289,7 @@ function baselineView(route) {
   parts.facts.append(element("dt", {}, "Commands"), element("dd", {}, "Each instance's page shows the exact command each system's job ran, and the files it read."));
   out.push(element("section", { class: "panel", id: "run" }, element("h3", {}, "How it was run"), element("div", { class: "facts" }, parts.facts),
     lazy({ class: "given" }, "How it was given each suite's instances", () => [parts.given]),
-    fold("How the speed-up is measured", measureText())));
+    fold("How the totals and the speed-up are counted", measureText())));
   return out;
 }
 
@@ -361,7 +361,7 @@ function integrationView(route) {
   out.push(element("h3", {}, "Families"), scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
     element("th", { scope: "col" }, "family"), element("th", { scope: "col", class: "num" }, "instances"),
     element("th", { scope: "col", class: "num" }, `${i.title} answers`), element("th", { scope: "col", class: "num" }, `${name} answers`))), fams)), "whole"));
-  out.push(fold("How the speed-up is measured", measureText()));
+  out.push(fold("How the totals and the speed-up are counted", measureText()));
   return out;
 }
 

@@ -34,9 +34,6 @@ table.baselines-t td.about, table.types-t td.about { white-space: normal; min-wi
 .versus .who { min-height: 1.2em; font-size: 12px; font-weight: 600; line-height: 1.2; border-bottom: 1px solid var(--line); padding-bottom: 0.15rem; }
 .versus .side:first-child .who { border-color: transparent; }
 .versus .cells { margin: 0.25rem 0 0; gap: 0.4rem 1.2rem; }
-details.fold { max-width: 80ch; margin: 0.4rem 0; font-size: 13px; }
-details.fold summary { cursor: pointer; color: var(--accent-ink); }
-details.fold p { margin: 0.3rem 0 0; color: var(--muted); }
 
 .way .cells { gap: 0.3rem 1.2rem; }
 .way .cell b { font-size: 1rem; }
