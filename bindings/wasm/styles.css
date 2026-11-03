@@ -17,6 +17,13 @@
   --amber-fill: #fbeed0;
   --code: #f2f2ed;
   --bad: #b3261e;
+  /* The logo's blue and gold (docs/logo.svg), and the gold's tint and
+     edge: How it works marks its stages in the blue and its walkthroughs
+     in the gold. */
+  --logo-blue: #2774ae;
+  --logo-gold: #ffd100;
+  --gold-fill: #fff3c2;
+  --gold-line: #d9b100;
   /* Syntax highlighting (code.js): comments, strings, numbers, keywords
      and operators, variables, called names, types and the prompt; each,
      and --muted, at least 4.5:1 on --code (tests/browser.cjs checks). */
@@ -45,6 +52,8 @@
     --amber-fill: #46381a;
     --code: #15181b;
     --bad: #f2827a;
+    --gold-fill: #3a3214;
+    --gold-line: #9c8114;
     --t-com: #8b949e;
     --t-str: #7ee787;
     --t-num: #f0a35e;
@@ -69,6 +78,8 @@
   --amber-fill: #46381a;
   --code: #15181b;
   --bad: #f2827a;
+  --gold-fill: #3a3214;
+  --gold-line: #9c8114;
   --t-com: #8b949e;
   --t-str: #7ee787;
   --t-num: #f0a35e;
