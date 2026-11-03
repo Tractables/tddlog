@@ -444,9 +444,12 @@ function typesView() {
 // A source of the census: what it holds, how many programs and how many
 // tddlog runs, each in a cell of its own, and why it does not run the others
 // (folded on the census's page, open on a baseline's, where it is the point).
+// A reason of the census as its badge, what it means on hover.
+const reason = (k) => element("span", { class: `cls cls-${k.replace(/ /g, "-")}`, title: draft.views.census.classes[k] ?? null }, k);
+
 function censusSource(src, tool = false, open = false) {
   const n = (x) => (typeof x === "number" ? count(x) : x);
-  const rows = src.items.map((it) => element("tr", {}, element("td", {}, element("span", { class: `cls cls-${it.class.replace(/ /g, "-")}` }, it.class)),
+  const rows = src.items.map((it) => element("tr", {}, element("td", {}, reason(it.class)),
     element("td", { class: "num" }, n(it.n)), element("td", { class: "about" }, it.programs), element("td", { class: "about" }, it.why)));
   const table = () => [scroller(stacked(element("table", { class: "board census-t" }, element("thead", {}, element("tr", {},
     element("th", { scope: "col" }, "why"), element("th", { scope: "col", class: "num" }, "programs"), element("th", { scope: "col" }, "which"),
@@ -462,10 +465,11 @@ function censusSource(src, tool = false, open = false) {
 
 function coverageView() {
   const cen = draft.views.census;
-  const out = [crumbs(HOME, inSection("types"), [COVERAGE]), element("h2", {}, COVERAGE),
-    element("p", { class: "lede" }, cen.about),
-    element("dl", { class: "classes" }, ...Object.entries(cen.classes).flatMap(([k, text]) => [element("dt", {},
-      element("span", { class: `cls cls-${k.replace(/ /g, "-")}` }, k)), element("dd", {}, text)]))];
+  // the census's account in its first sentence, the reasons in one line, each opening what it means
+  const out = [crumbs(HOME, inSection("types"), [COVERAGE]), element("h2", {}, COVERAGE), brief(cen.about, "lede"),
+    element("details", { class: "reasons" }, element("summary", {}, "Why tddlog does not run a program: ",
+      ...Object.keys(cen.classes).map(reason)),
+    element("dl", { class: "classes" }, ...Object.entries(cen.classes).flatMap(([k, text]) => [element("dt", {}, reason(k)), element("dd", {}, text)])))];
   // the run's side: each system, what it answers that tddlog does not, and what tddlog answers that it cannot be given
   const body = element("tbody");
   const sums = (v) => Object.values(v.unexpressed).reduce(([a, b], [c, d]) => [a + c, b + d], [0, 0]);
