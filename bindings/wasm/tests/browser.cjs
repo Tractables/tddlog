@@ -693,10 +693,16 @@ function benchmarksOf(root) {
     const number = (v) => typeof v === "number";
     const count = (n) => n.toLocaleString("en");
     // tddlog and its pipelines (Alea.jl+tddlog: another system's front end,
-    // then tddlog), the subject of every comparison. A row's subject is the
-    // first of them given it, tddlog where it ran; on system x's own page,
-    // x's own pipeline where it ran (results.js's and panels.py's).
+    // then tddlog), the subjects of the comparisons. A row's subject is the
+    // first of them with a record in the systems' order: tddlog in a type,
+    // its record "unread" (unanswered and not given) where only another
+    // system's front end reads the program; on system x's own page, x's own
+    // pipeline where it ran (results.js's and panels.py's). A system on another system's export
+    // (Roulette+ProbLog, categories.json's via) opens its exporter's
+    // integration page.
     const isMine = (x) => x === "tddlog" || x.endsWith("-tddlog");
+    const viaOf = (x) => cats.via?.[x.replace(/-process$/, "")] ?? null;
+    const given = (r, x) => r.v[x] !== null && r.v[x] !== "unread";
     const myKey = (r) => Object.keys(r.v).find((x) => isMine(x) && r.v[x] !== null);
     const pairKey = (x) => (r) => ((r.v[`${x}-tddlog`] ?? null) !== null ? `${x}-tddlog` : myKey(r));
     const subjectsOf = (rows) => [...new Set(rows.map(myKey))].filter(Boolean)
@@ -828,7 +834,7 @@ function benchmarksOf(root) {
       assert.ok(rows.every(myKey), `${what}: tddlog or a pipeline of it given each instance`);
       for (const x of c.systems) {
         assert.equal(c.answers[x], virtual(rows, [x]), `${what}: ${x}'s answers`);
-        assert.equal(c.given[x], rows.filter((r) => r.v[x] !== null).length, `${what}: the instances ${x} was given`);
+        assert.equal(c.given[x], rows.filter((r) => given(r, x)).length, `${what}: the instances ${x} was given`);
         if (!isMine(x)) same(c.vs[x], versus(rows, x), `${what}: tddlog against ${x}`);
       }
       const parts = [...c.groups.map((g) => [g.key, g.rows.map((i) => rows[i])]),
@@ -931,7 +937,7 @@ function benchmarksOf(root) {
       const board = await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => [r.cells[0].textContent.trim(),
         r.cells[1].textContent.trim().replace(/,/g, "")]));
       assert.deepEqual(board, [...c.mine, ...c.native].map((x) => [names[x], String(c.answers[x])]), `${what}: its board`);
-      const pageOf = (x) => (isMine(x) ? `../#/integrations/${x === "tddlog" ? x : x.replace(/-tddlog$/, "")}` : `../#/baselines/${x}`);
+      const pageOf = (x) => (isMine(x) ? `../#/integrations/${x === "tddlog" ? x : x.replace(/-tddlog$/, "")}` : viaOf(x) ? `../#/integrations/${viaOf(x)[0]}` : `../#/baselines/${x}`);
       assert.deepEqual(await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[0].querySelector("a").getAttribute("href"))),
         [...c.mine, ...c.native].map(pageOf), `${what}: each system's name opens its page`);
       const missing = order.filter((x) => rows.some((r) => r.v[x] === null)).length;
@@ -1124,7 +1130,7 @@ function benchmarksOf(root) {
     for (const row of bySuite.get(first).instances) {
       const ts = bySuite.get(first).systems.map((x, i) => (x.endsWith("-process") ? null : row[i + 1])).filter(number);
       const fastest = ts.length ? Math.max(0.2, Math.min(...ts)) : null;
-      const want = row.slice(1).map((v) => (v === null ? "none" : !number(v) ? (v === "unsupported" ? "na" : "fail")
+      const want = row.slice(1).map((v) => (v === null ? "none" : !number(v) ? (v === "unsupported" || v === "unread" ? "na" : "fail")
         : Math.max(v, 0.2) <= fastest ? "best" : "slow"));
       assert.deepEqual(cells[row[0]], want, `${first}/${row[0]}: each time against the instance's fastest`);
     }
@@ -1469,8 +1475,13 @@ function benchmarksOf(root) {
           await shot.goto(`${base}results/${hash}`);
           await shot.waitForSelector(`#view[data-route="${hash || "#/"}"] ${ready}`);
           if (name === "results") {
-            // (a pipeline of tddlog's is drawn in tddlog's colour, its line dashed)
-            const keys = [...new Set(Object.keys(names).map((key) => key.replace(/-process$/, "")))].filter((key) => key === "tddlog" || !isMine(key));
+            // (a pipeline of tddlog's is drawn in tddlog's colour, its line dashed; a
+            // system on another system's export, EXPORTER-SYSTEM, in that system's
+            // colour, dotted, the names naming it whether or not it has records)
+            const exporters = new Set(Object.values(cats.via ?? {}).map(([y]) => y));
+            const onExport = (key) => exporters.has(key.split("-")[0]) && key.includes("-");
+            const keys = [...new Set(Object.keys(names).map((key) => key.replace(/-process$/, "")))]
+              .filter((key) => key === "tddlog" || (!isMine(key) && !onExport(key)));
             const colours = await shot.evaluate((keys) => {
               const style = getComputedStyle(document.documentElement);
               const get = (name) => style.getPropertyValue(name).trim();

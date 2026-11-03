@@ -72,7 +72,16 @@ const WALK_TITLES = [["reach", "Reachability with cycles"], ["gears", "Negation 
 // menu's order, and the integration a member of tddlog's is.
 const INTEGRATIONS = ["tddlog", "alea", "roulette"];
 const integrationsOf = () => INTEGRATIONS.filter((k) => data.integrations?.[k]);
-const integrationOf = (x) => (x === "tddlog" ? "tddlog" : x.replace(/-tddlog$/, ""));
+const integrationOf = (x) => (x === "tddlog" ? "tddlog" : viaOf(x)?.[0] ?? x.replace(/-tddlog$/, ""));
+// A system on another system's export (Roulette+ProbLog: ProbLog on what
+// Roulette's code exported, categories.json's `via`): [the exporter, the
+// system]; null for any other key. Its line and swatch take the system's
+// colour, dotted (`tint`), and its address is its integration's.
+const viaOf = (x) => data.via?.[x.replace(/-process$/, "")] ?? null;
+const tint = (key) => {
+  const v = isMine(key) ? null : viaOf(key);
+  return v ? `s-${v[1]} via` : `s-${base(key)}`;
+};
 
 // The time axis starts at 0.2 s: runs under 0.2 s are not told apart.
 const FLOOR = 0.2;
@@ -88,6 +97,7 @@ const FAILURES = {
   wrong: [() => "wrong", "a wrong answer: off the reference by more than 1e-9 and either by more than 1e-6 or by more than 1e-3 of it, beyond the last digit either of the two prints"],
   zero: [() => "zero", "every answer 0: printed as 0 where the reference's are positive"],
   underflow: [() => "underflow", "every answer 0, underflowing: printed as 0 where the probability of the evidence is below the smallest double"],
+  unread: [() => "not read", "not read by tddlog: only another system's front end reads the program, so tddlog counts as unanswered"],
 };
 // A failure in a key: its cell and its short meaning, the whole as its title.
 const failureKey = (v, limit) => element("span", { title: FAILURES[v][1] }, `${FAILURES[v][0](limit)}: ${FAILURES[v][1].split(":")[0]}`);
@@ -233,10 +243,12 @@ const answered = (value) => typeof value === "number";
 const base = (key) => key.replace(/-process$/, "");
 const dashed = (key) => key.endsWith("-process");
 // tddlog and its pipelines (Alea.jl+tddlog: Alea.jl runs the program up to the circuit
-// it builds and hands it to tddlog), the subject of every comparison. A pipeline
-// run beside tddlog on an instance (Roulette+tddlog) is a system of its own.
+// it builds and hands it to tddlog), the subjects of the comparisons. A pipeline is a
+// system of its own: in a type tddlog is every row's subject, unanswered ("unread")
+// where only another system's front end reads the program; in an integration the
+// pipeline is, plain tddlog beside it.
 const isMine = (key) => key === "tddlog" || key.endsWith("-tddlog");
-// A row's subject (catRows'): the first of them given it, tddlog where it ran,
+// A row's subject (catRows'): the first of them given it in the systems' order,
 // and its time there.
 const myKey = (r) => Object.keys(r.v).find((x) => isMine(x) && r.v[x] !== null);
 const myTime = (r) => r.t[myKey(r)] ?? null;
@@ -265,7 +277,7 @@ function fastestOf(values) {
 // "na", a program the system cannot express. `slower` is how many times the
 // fastest's time it takes, for a cell's title.
 function rated(v, fastest) {
-  if (!answered(v)) return { cls: v === "unsupported" ? "na" : "fail", p: 0 };
+  if (!answered(v)) return { cls: v === "unsupported" || v === "unread" ? "na" : "fail", p: 0 };
   const r = Math.max(v, FLOOR) / fastest;
   if (r <= 1) return { cls: "best", p: 0 };
   return { cls: "slow", p: Math.min(1, Math.log(r) / Math.log(SLOWEST)), slower: times(Math.max(v, FLOOR), fastest) };
@@ -283,7 +295,7 @@ function shades(na) {
 // A system's sample of line: in its colour, dashed for a process's time, or
 // grey where its line in a plot is.
 function swatch(key, grey = false) {
-  return element("i", { class: `sw s-${base(key)}${dashed(key) ? " dashed" : ""}${grey ? " grey" : ""}` });
+  return element("i", { class: `sw ${tint(key)}${dashed(key) ? " dashed" : ""}${grey ? " grey" : ""}` });
 }
 
 // ------------------------------------------------------------- tables
@@ -428,7 +440,7 @@ function cactus(box, suite, names, series, coloured) {
       d += `H${lx(t).toFixed(1)}V${ly(++k).toFixed(1)}`;
     }
     d += `H${x1}`;
-    plot.append(svg("path", { class: `line s-${base(key)}${isMine(key) ? " mine" : ""}${dashed(key) ? " dashed" : ""}${coloured.has(key) ? "" : " grey"}`,
+    plot.append(svg("path", { class: `line ${tint(key)}${isMine(key) ? " mine" : ""}${dashed(key) ? " dashed" : ""}${coloured.has(key) ? "" : " grey"}`,
       d, "data-key": key }));
   }
   // The end labels: each line's name at its last height, moved apart where
@@ -640,7 +652,7 @@ function codeCell(rows) {
   return element("td", { class: "code-links" }, ...pages.flatMap((p, i) => [i ? ", " : "", link(p.route, pages.length > 1 ? p.label : "code")]));
 }
 
-const LETTERS = { o: "own", n: "native", t: "translated" };
+const LETTERS = { o: "own", n: "native", t: "translated", u: "unread" };
 
 // Each system's instances given, answers and classes over rows: the data's
 // where rows are the whole category, else counted from the rows.
@@ -651,9 +663,9 @@ function tally(c, rows, only) {
       out[x] = { given: c.given[x], answers: c.answers[x], classes: c.classes[x] };
       return;
     }
-    const classes = { own: 0, native: 0, translated: 0 };
+    const classes = { own: 0, native: 0, translated: 0, unread: 0 };
     for (const r of rows) if (r.cls[j] !== "-") classes[LETTERS[r.cls[j]]]++;
-    out[x] = { given: rows.filter((r) => r.v[x] !== null).length, answers: rows.filter((r) => r.t[x] !== null).length, classes };
+    out[x] = { given: rows.filter((r) => r.v[x] !== null && r.v[x] !== "unread").length, answers: rows.filter((r) => r.t[x] !== null).length, classes };
   });
   return out;
 }
@@ -831,7 +843,7 @@ function drawOverview(box) {
         + `${totals(v, data.names[x])}; ${subject(v.me)}'s speed-up: ${speedup(v)}`,
       "other", data.names[x], c.answers[x],
       svg("line", { class: "span", x1: lx(mine), y1: y + row / 2, x2: lx(theirs), y2: y + row / 2 }),
-      ...at(theirs, `you s-${base(x)}`, right), ...at(mine, "me", left), mark(v.speedup));
+      ...at(theirs, `you ${tint(x)}`, right), ...at(mine, "me", left), mark(v.speedup));
     }
     if (others.systems.length) {
       const who = others.systems.map((x) => data.names[x]);
@@ -989,6 +1001,8 @@ const data = {
   suiteVs: {},      // a suite's key: tddlog against each other system of the suite (categories.json's `suites`)
   systems: [],      // each solver, by the instances it answers: what it is, its totals, how it was given the instances
   integrations: null,  // tddlog alone, and X+tddlog against X on X's programs (categories.json's `integrations`)
+  via: {},          // a system on another system's export (Roulette+ProbLog): [the exporter, the system]
+  splits: {},       // a suite's key: each system's answered time on its export, {answers, seconds, export}
   suites: new Map(),   // a suite's key: the suite, with `home`, the data's family that holds it, and `file`
   bench: null,      // benchmarks/index.json: every suite's families, where the site has them
   families: new Map(), // `${suite}/${family}`: the promise of that family's data
@@ -1106,7 +1120,7 @@ function href(route) {
   switch (route.view) {
     case "category": return `#/category/${route.category}${route.only ? `/in/${encodeURIComponent(route.only)}` : ""}`
       + `${route.vs ? `/vs/${encodeURIComponent(route.vs)}` : ""}`;
-    case "system": return `${front}#/${isMine(route.system) ? `integrations/${integrationOf(route.system)}` : `baselines/${encodeURIComponent(route.system)}`}`
+    case "system": return `${front}#/${isMine(route.system) || viaOf(route.system) ? `integrations/${integrationOf(route.system)}` : `baselines/${encodeURIComponent(route.system)}`}`
       + `${route.at ? `/${route.at}` : ""}`;
     case "suite": return `#/${route.suite}`;
     case "family": {
@@ -2456,6 +2470,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     data.suiteVs = cats.suites;
     data.systems = cats.systems;
     data.integrations = cats.integrations ?? null;
+    data.via = cats.via ?? {};
+    data.splits = cats.splits ?? {};
     for (const s of data.systems) if (!data.names[s.key]) throw new Error(`the solver ${s.key} has no name`);
     data.categories = [...cats.categories].sort((a, b) => a.order - b.order);
     data.types = data.categories.filter((c) => c.key !== ALL);
