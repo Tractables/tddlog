@@ -359,9 +359,9 @@ function integrationView(route) {
       element("td", { class: "num" }, count(rs.length)), element("td", { class: "num" }, count(rs.filter((r) => r.t[me] !== null).length)),
       element("td", { class: "num" }, count(rs.filter((r) => r.t[x] !== null).length))));
   }
-  out.push(element("h3", {}, "Families"), scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
-    element("th", { scope: "col" }, "family"), element("th", { scope: "col", title: "the family's programs, each system's, and its runs" }, "program"),
-    element("th", { scope: "col", class: "num" }, "instances"), element("th", { scope: "col", class: "num" }, `${i.title} answers`), element("th", { scope: "col", class: "num" }, `${name} answers`))), fams)), "whole"));
+  out.push(element("h3", {}, "Families"), scroller(stacked(element("table", { class: "board" },
+    head2(["family"], ["program", "the family's programs, each system's, and its runs"], ["instances", null, "num"],
+      { group: "answers", cols: [[i.title, null, "num"], [name, null, "num"]] }), fams)), "whole"));
   return out;
 }
 
@@ -390,18 +390,17 @@ function typeSplit(c, route) {
       const dirs = keep === "h" ? [] : ["s", "m", "b"].map((k) => num(count(n(x, k))));
       body.append(element("tr", { class: x === route.vs ? "vs" : null }, element("th", { scope: "row" }, systemLink(x)),
         num(count(n(x, keep))), ...dirs,
-        num(w ? count(w.answers) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.total) : ""), num(w ? duration(w.tddlog_total) : ""),
+        num(w ? count(w.answers) : ""), num(w ? duration(w.total) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.tddlog_total) : ""),
         num(w ? speedup(w) : "")));
     }
     const sec = element("section", { class: "panel split", id }, element("h3", {}, title), note(`Where ${text}.`));
     if (have.length) {
-      const col = (text, title) => element("th", { scope: "col", class: "num", title }, text);
       const par = `PAR-${data.measure.par}, over the instances the system is given and either answers`;
-      sec.append(scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
-        element("th", { scope: "col" }, "system"), col("instances"),
-        ...(keep === "h" ? [] : [col("for it", "a translation for the system"), col("for tddlog", "a translation for tddlog"),
-          col("for both", "a translation of the original for both")]),
-        col("it answers"), col("tddlog answers"), col("its total", par), col("tddlog's total", par), col("faster", "tddlog's speed-up"))), body)), "whole"));
+      sec.append(scroller(stacked(element("table", { class: "board" }, head2(["system"], ["instances", null, "num"],
+        ...(keep === "h" ? [] : [{ group: "translated for", cols: [["it", "a translation for the system", "num"],
+          ["tddlog", "a translation for tddlog", "num"], ["both", "a translation of the original for both", "num"]] }]),
+        { group: "the system", cols: [["answers", null, "num"], ["total", par, "num"]] },
+        { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], ["faster", "tddlog's speed-up", "num"]] }), body)), "whole"));
       const x = have.includes(route.vs) ? route.vs : have[0];
       const rows = kindRows(c, x).filter((r) => keep.includes(r.kind));
       sec.append(element("p", { class: "small" }, `tddlog against ${data.names[x]} on ${plural(rows.length, "instance")}:`),
