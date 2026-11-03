@@ -84,24 +84,26 @@ baselines' programs, so it is on the baselines branch, which the Pages
 workflow fetches it from. `404.html` sends a link to a benchmark's former
 page (`results/benchmarks/SUITE/NAME.html`) to its view.
 
-The front page, `index.html`, shows the results by tool (tddlog against
-each system, head-to-head apart from translated, with each translation's
-direction and translator) and by type of program, the programs each
-system's sources hold that tddlog does not run, and how a program is
-answered, with walkthroughs of four small programs (a graph's
-reachability, a Bayesian network with evidence, a Dice program and
-Alea.jl's circuit), each drawn from its `--trace` (`next/walk/`) by
-`trace.js` and opened in the playground with its trace. `next/next.js`
-adds these views to the results page's app through its `extend` hooks and
-reads the results page's data and `next/views.json`, which is generated
-with it: each comparison's kind on each instance, the comparisons over
-each kind, and the census of the programs tddlog does not run. The front
-page was a draft at `next/` first, and `next/index.html` sends a link to
-the draft to the same view of the front page. Beside every view of the
-front page and of the results page is the site's menu (`results.js`'s
-rail): the front page, every other system by the instances it answers,
-the types of program with the families and solvers of the one on show,
-the coverage and how it works; on a phone it folds behind a toggle.
+The front page, `index.html`, is the site's sections, which the bar at
+the top of every page names (`results.js`'s `SECTIONS`): by baseline
+(tddlog against each other system, head-to-head apart from translated,
+with each translation's direction and translator, and the programs each
+system's sources hold that tddlog does not run), by integration (tddlog
+alone, and tddlog after another system's own code: Alea.jl+tddlog,
+Roulette+tddlog), by program type, and how a program is answered, with
+walkthroughs of four small programs (a graph's reachability, a Bayesian
+network with evidence, a Dice program and Alea.jl's circuit), each drawn
+from its `--trace` (`next/walk/`) by `trace.js`, a step a stage, and opened
+in the playground with its trace. `next/next.js` adds these views to the
+results page's app through its `extend` hooks and reads the results
+page's data and `next/views.json`, which is generated with it: each
+comparison's kind on each instance, the comparisons over each kind, and
+the census of the programs tddlog does not run. The addresses the front
+page once had (`#/tools/...`, `#/system/...`, the draft at `next/`) open
+the same views. Beside every view of the front page and of the results
+page is the site's menu (`results.js`'s rail): each section a heading with
+its entries under it, the ten baselines that answer most and the rest
+behind a control; on a phone the bar and the menu fold behind one toggle.
 
 ## Memory
 

@@ -18,11 +18,13 @@ html_favicon = "https://tractables.github.io/tddlog/favicon.svg"
 html_static_path = [str(ROOT / "bindings/sphinx")]
 html_js_files = ["site-theme.js"]
 html_css_files = ["site.css"]
-# The site's links to its pages, as the other pages list them, in a bar
-# above the page (this page's name not a link; on a phone's width the bar
-# wraps between links), and its colours.
-SITE = [("Playground", "../playground/"), ("Guide", "../guide/"), ("Results", "../results/"), ("Rust API", "../api/"),
-        ("Python", "../python/"), ("C", None), ("GitHub", "https://github.com/Tractables/tddlog")]
+# The site's links to its pages, as the other pages' bar has them (its
+# sections, the playground, the docs, GitHub), in a bar above the page (this
+# page's name not a link; on a phone's width the bar wraps between links),
+# and its colours.
+SITE = [("tddlog", "../"), ("By baseline", "../#/baselines"), ("By integration", "../#/integrations"),
+        ("By program type", "../#/types"), ("How it works", "../#/how"), ("Playground", "../playground/"), ("Guide", "../guide/"),
+        ("Rust API", "../api/"), ("Python", "../python/"), ("C", None), ("GitHub", "https://github.com/Tractables/tddlog")]
 LINKS = [f'<a href="{href}">{name}</a>' if href else f"<b>{name}</b>" for name, href in SITE]
 html_theme_options = {
     "announcement": '<span style="font-size: 0.875em">'

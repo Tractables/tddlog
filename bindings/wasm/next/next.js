@@ -1,32 +1,36 @@
 "use strict";
 
-// The site's front page (index.html): views of the results by tool and by
-// type of program, head-to-head apart from translated, what the systems' own
-// sources hold that tddlog does not run, and how a program is answered. It
-// is the results page's app (results.js, loaded before this script, whose
-// helpers and data it uses) with these views added through its `extend`:
-//   #/                the home page: what tddlog is, the overview figure, the sections
-//   #/tools           by tool: every system, its head-to-head and translated speed-ups and its coverage
-//   #/tools/SYSTEM    tddlog against SYSTEM: head-to-head, translated (each direction and translator),
-//                     coverage, and how it was run
-//   #/types           by type of program: the six types and all programs
-//   #/coverage        the programs each system's sources hold that tddlog does not run, and why
-//   #/how             how a program is answered: the pipeline and four walkthroughs
-//   #/how/WALK[/N]    a walkthrough, at its step N: a run's trace, a stage at a time
-// A type of program is results.js's view (#/category/C), with its comparisons
-// head-to-head and translated before the rest; a solver's full page, a suite,
-// a family and an instance are results.js's views as they are.
+// The site's front page (index.html): its sections, as the bar at the top
+// of every page and the menu name them (results.js's SECTIONS), and how a
+// program is answered. It is the results page's app (results.js, loaded
+// before this script, whose helpers and data it uses) with these views
+// added through its `extend`:
+//   #/                     the home page: what tddlog is, each type of program against its best baselines, the integrations
+//   #/baselines            by baseline: every other system, what it is native to and what it answers
+//   #/baselines/SYSTEM[/AT]
+//                          tddlog against SYSTEM: head-to-head, translated (each direction and translator), in
+//                          each type of program, its own benchmarks, coverage, and how it was run; AT names
+//                          one of these, which the page scrolls to
+//   #/integrations         by integration: tddlog alone, and in a pipeline after another system's own code
+//   #/integrations/KEY     one of them: tddlog alone's answers by type; X+tddlog against X on X's programs
+//   #/types                by program type: the five types and all programs, against the systems native to each
+//   #/coverage             the programs each system's sources hold that tddlog does not run, and why
+//   #/how[/WALK[/N]]       how a program is answered: a run's stages, a walkthrough at its step N
+// #/tools/... and #/system/... are the addresses these pages once had. A
+// type of program is results.js's view (#/category/C), with its comparisons
+// head-to-head and translated before the rest; a suite, a family and an
+// instance are results.js's views as they are.
 //
 // The data is views.json (release/results/rel/views.py): each system's kind
 // of comparison on each instance of each type (head-to-head, or translated
 // for it, for tddlog or for both), and the comparisons over each kind, which
 // are panels.py's (rule 16), and the census of the programs tddlog does not
-// run. A system is compared on each instance with tddlog or one of its
-// pipelines (views.json's mine; Alea.jl+tddlog on Alea.jl's circuits): in a
-// type, with the instance's subject (the type's with); on the system's own
-// page, with its own pipeline where that ran (Roulette+tddlog for Roulette;
-// the system's kinds and with). The plots draw that member's times. The page
-// counts and draws; it computes no total or speed-up.
+// run; and categories.json's integrations (panels.py's). A system is
+// compared on each instance with tddlog or one of its pipelines (views.json's
+// mine): in a type, with the instance's subject (the type's with); on the
+// system's own page, with its own pipeline where that ran (Roulette+tddlog
+// for Roulette; the system's kinds and with). The plots draw that member's
+// times. The page counts and draws; it computes no total or speed-up.
 
 const BRANCH = "https://github.com/Tractables/tddlog/blob/";
 const KIND_TEXT = {
@@ -51,10 +55,10 @@ function kindRows(c, x, own = false) {
 }
 
 
-// The six types (not all programs) a system was given.
+// The types (not all programs) a system was given.
 const typesOf = (x) => data.types.filter((c) => c.systems.includes(x));
 
-// A system's rows over the six types, as its page compares them, each with its category.
+// A system's rows over the types, as its page compares them, each with its category.
 function systemRows(x) {
   return typesOf(x).flatMap((c) => kindRows(c, x, true).map((r) => ({ ...r, c })));
 }
@@ -86,117 +90,140 @@ const fold = (summary, ...text) => element("details", { class: "fold" }, element
 // tddlog's speed-up in a cell: "too few" where too few instances both answer.
 const speedCell = (v) => (v?.speedup == null ? "too few" : speedup(v));
 
-// A comparison in cells: the instances, the two systems' answers, their
-// PAR-2 totals over the instances the system is given and either answers,
-// and the speed-up of the members of mine it is with.
+// A comparison in cells, each side's under its name: the instances; the
+// system's answers and its PAR-2 total over the instances it is given and
+// either answers; the same of the members of mine it is with, and their
+// speed-up.
 function versusCells(v, name, n) {
   if (!v) return note("No instances.");
   const me = subject(v.me), over = `over the ${plural(v.either, "instance")} ${name} is given and either answers, PAR-${data.measure.par}`;
-  return cells(["instances", count(n ?? v.given)], [`${name} answers`, count(v.answers)], [`${me} answers`, count(v.tddlog_answers)],
-    [`${name}'s total`, duration(v.total), over], [`${me}'s total`, duration(v.tddlog_total), over],
-    [`${me}'s speed-up`, speedCell(v), speedup(v, true)]);
+  const side = (who, ...items) => element("div", { class: "side" }, element("span", { class: "who" }, who), cells(...items));
+  return element("div", { class: "versus" }, side("", ["instances", count(n ?? v.given)]),
+    side(name, ["answers", count(v.answers)], ["total", duration(v.total), over]),
+    side(me, ["answers", count(v.tddlog_answers)], ["total", duration(v.tddlog_total), over], ["speed-up", speedCell(v), speedup(v, true)]));
 }
 
 // The cactus plot of x and the members it is with over rows (kindRows' me,
-// drawn as one line), beside the scatter plot of their times.
+// drawn as one line), beside the scatter plot of their times; the speed-up
+// is in the cells above it (versusCells), once.
 function pairPlot(rows, x, v, key) {
   const name = data.names[x], me = subject(v?.me);
   const both = { key: `${x}-${key}`, title: `${name} and ${me}`, noun: "instances", systems: ["tddlog", x],
-    instances: rows.map((r) => [r.name, r.v[r.me], r.v[x]]), limit: Math.max(...rows.map((r) => r.limit)),
-    faster: { [x]: v?.speedup == null ? "too few in common" : `${me} ${speedup(v, true)}` } };
+    instances: rows.map((r) => [r.name, r.v[r.me], r.v[x]]), limit: Math.max(...rows.map((r) => r.limit)) };
   return element("div", { class: "pair" }, plotted(both, { ...data.names, tddlog: me }, { all: true }), scatter(rows, ["tddlog", x], x, false, (r) => r.me));
 }
 
 // The families rows are of, with how many each, each opening its family in
-// its type of program.
+// its type of program; past the first eight, the rest folded.
+const FAMILIES_SHOWN = 8;
 function familyCounts(rows) {
   const out = new Map();
   for (const r of rows) {
     const at = data.place.get(`${r.suite}/${r.name}`);
     const key = at ? `${at.c.key}/${at.g.key}` : r.suite;
-    if (!out.has(key)) out.set(key, { at, n: 0, a: 0 });
+    if (!out.has(key)) out.set(key, { at, n: 0 });
     out.get(key).n++;
   }
   const list = [...out.values()].sort((a, b) => b.n - a.n);
-  return element("p", { class: "fams" }, "From ", ...list.flatMap(({ at, n }, i) => [i ? ", " : "",
-    at ? link({ view: "category", category: at.c.key, only: at.g.key }, at.g.title) : "another suite", ` (${count(n)})`]), ".");
+  const named = (items) => items.flatMap(({ at, n }, i) => [i ? ", " : "",
+    at ? link({ view: "category", category: at.c.key, only: at.g.key }, at.g.title) : "another suite", ` (${count(n)})`]);
+  const first = list.slice(0, FAMILIES_SHOWN), rest = list.slice(FAMILIES_SHOWN);
+  return element("div", { class: "fams" }, element("p", {}, "From ", ...named(first), rest.length ? "," : "."),
+    ...(rest.length ? [element("details", {}, element("summary", {}, `and ${plural(rest.length, "more family", "more families")}`),
+      element("p", {}, ...named(rest), "."))] : []));
 }
 
 // A type's title within a sentence: "probabilistic logic programs", "Bayesian networks".
 const lower = (title) => title.toLowerCase().replace(/\bbayesian\b/, "Bayesian").replace(/\bmarkov\b/, "Markov");
 
-// A system's swatch and name, opening its page here.
-const toolLink = (x) => element("a", { href: `#/tools/${encodeURIComponent(x)}`, class: "tool" }, swatch(x), data.names[x]);
+// A system's swatch and name, opening its page: a baseline's, or an integration's.
+const systemLink = (x) => element("a", { href: href({ view: "system", system: x }), class: "tool" }, swatch(x), data.names[x]);
 
 // ------------------------------------------------------------- home
 
+// What tddlog is; each type of program, with tddlog's answers and its
+// speed-up over the best baselines native to it (the README's, c.named);
+// and a line per integration.
 function draftHome() {
   const all = data.categories.find((c) => c.key === ALL);
-  const others = Object.keys(draft.views.systems).length;
-  const entries = [
-    ["#/tools", "By tool", `tddlog against each of the ${count(others)} other systems: Dice, Alea.jl, ProbLog, PITA, Ace and the rest, head-to-head apart from translated.`],
-    ["#/types", "By type of program", "The six types of program and all programs, each against the systems native to it, with every instance's programs and commands."],
-    ["#/how", "How it works", "The pipeline from a program to its probabilities, and four runs traced step by step."],
-  ];
+  const others = data.systems.filter((s) => !isMine(s.key)).length;
+  const body = element("tbody");
+  for (const c of data.types) {
+    body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: c.key }, c.title)),
+      element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(c.answers.tddlog ?? 0)),
+      element("td", { class: "best" }, element("div", { class: "chips" }, ...c.named.map((x) => element("span", { class: "chip" }, systemLink(x),
+        element("span", { class: /×/.test(speedup(c.vs[x])) ? "x" : "x none", title: `${subject(c.vs[x].me)} ${speedup(c.vs[x], true)}` }, speedup(c.vs[x]))))))));
+  }
+  const lines = integrationsOf().filter((k) => data.integrations[k].system).map((k) => {
+    const i = data.integrations[k];
+    return element("li", {}, link({ view: "integration", key: k }, i.title), ` against ${data.names[i.system]}: `,
+      `${speedup(i.vs[i.system], true)}, on ${plural(i.instances, "instance")} of ${data.names[i.system]}'s.`);
+  });
   return [
     element("section", { class: "intro" },
       element("p", { class: "big" }, "tddlog computes exact probabilities for probabilistic logic programs, Bayesian and Markov networks, "
-        + "and probabilistic functional programs, by grounding them to probabilistic Datalog and compiling them bottom-up into tree decision diagrams."),
-      element("p", { class: "lede" }, `In its release run it answers ${count(all.answers.tddlog)} of ${count(all.instances)} instances of six types of program, `
-        + `against ${count(others)} systems run on the same machines.`)),
-    element("nav", { class: "entries", "aria-label": "Sections" }, ...entries.map(([href, title, text]) =>
-      element("a", { href, class: "entry" }, element("b", {}, title), element("span", {}, text)))),
-    element("div", { class: "fig-head" }, element("h2", {}, "Each type of program against the systems native to it"),
-      element("span", { class: "dots" }, element("i", { class: "me" }), "tddlog", element("i", { class: "you" }), "a native system")),
-    overview(),
-    element("p", { class: "also" }, element("a", { href: "playground/" }, "The playground"), " runs tddlog in the browser; the ",
-      element("a", { href: "#/coverage" }, "coverage"), " lists what each system's own sources hold that tddlog does not run, and why."),
+        + "and probabilistic functional programs, by compiling them into tree decision diagrams."),
+      element("p", { class: "lede" }, `In its release run it answers ${count(all.answers.tddlog ?? 0)} of ${count(all.instances)} instances of `
+        + `${inWords(data.types.length)} types of program, against ${count(others)} baselines run on the same machines. `,
+        element("a", { href: "playground/" }, "The playground"), " runs it in the browser.")),
+    element("h2", { class: "home-h" }, "Each type of program against its best baselines"),
+    scroller(stacked(element("table", { class: "board home-t" }, element("thead", {}, element("tr", {},
+      element("th", { scope: "col" }, "type of program"), element("th", { scope: "col", class: "num" }, "instances"),
+      element("th", { scope: "col", class: "num" }, "tddlog answers"),
+      element("th", { scope: "col", title: "the baselines that answer most, each with tddlog's speed-up over it" }, "its best baselines, and tddlog's speed-up"))),
+    body)), "whole"),
+    ...(lines.length ? [element("h2", { class: "home-h" }, "tddlog after another system's own code"), element("ul", { class: "home-int" }, ...lines)] : []),
+    fold("How the speed-up is measured", measureText()),
   ];
 }
 
-// ------------------------------------------------------------- by tool
+// ------------------------------------------------------------- by baseline
 
-function toolsView() {
-  const out = [crumbs(["Home", { view: "home" }], ["By tool"]), element("h2", {}, "By tool"),
-    element("p", { class: "lede" }, "tddlog against each system, head-to-head where both read the same program and translated where one of them read a translation."),
-    fold("How the speed-up is measured", measureText())];
-  const grid = element("div", { class: "tool-grid" });
-  for (const s of data.systems) {
+function baselinesView() {
+  const body = element("tbody");
+  for (const s of [...data.systems].sort((a, b) => b.answers - a.answers)) {
     const v = draft.views.systems[s.key];
     if (isMine(s.key) || !v) continue;
-    const row = (label, n, w) => element("tr", {}, element("th", { scope: "row" }, label),
-      element("td", { class: "num" }, n ? count(n) : "–"), element("td", { class: "num", title: n ? speedup(w, true) : null }, n ? speedCell(w) : "–"));
     const native = nativeTo(s.key).map((c) => lower(c.title));
-    grid.append(element("a", { href: `#/tools/${encodeURIComponent(s.key)}`, class: "tool-card" },
-      element("span", { class: "tname" }, swatch(s.key), data.names[s.key]),
-      element("span", { class: "muted small one", title: native.length ? `Native to ${and(native)}` : null },
-        native.length ? `Native to ${and(native)}` : "Given programs through a translation"),
-      cells(["answers", count(s.answers), `of the ${count(s.given)} instances it was given`],
-        ["tddlog does not", count(v.beyond.length), `instances ${data.names[s.key]} answers that tddlog does not`]),
-      element("table", { class: "mini" }, element("thead", {}, element("tr", {}, element("td"), element("th", { scope: "col" }, "instances"),
-        element("th", { scope: "col", title: "tddlog's speed-up" }, "speed-up"))),
-      element("tbody", {}, row("head-to-head", v.n.h, v.head), row("translated", v.n.s + v.n.m + v.n.b, v.translated)))));
+    body.append(element("tr", {}, element("th", { scope: "row" }, systemLink(s.key)),
+      element("td", { class: "about" }, native.length ? and(native) : "none: given programs through a translation"),
+      element("td", { class: "num" }, count(s.given)), element("td", { class: "num" }, count(s.answers)),
+      element("td", { class: "num" }, count(v.beyond.length))));
   }
-  out.push(grid);
-  return out;
+  return [crumbs(HOME, [sectionName("baselines")]), element("h2", {}, sectionName("baselines")),
+    element("p", { class: "lede" }, "Every other exact system, by the instances it answers; a system's page compares tddlog with it, "
+      + "head-to-head where both read the same program and translated where one of them read a translation."),
+    scroller(stacked(element("table", { class: "board baselines-t" }, element("thead", {}, element("tr", {},
+      element("th", { scope: "col" }, "baseline"), element("th", { scope: "col" }, "native to"),
+      element("th", { scope: "col", class: "num" }, "given"), element("th", { scope: "col", class: "num" }, "answers"),
+      element("th", { scope: "col", class: "num", title: "the instances it answers that tddlog does not" }, "answers tddlog misses"))),
+    body)), "whole")];
 }
 
-// tddlog against one system: head-to-head, translated, coverage, how it was run.
-function toolView(route) {
+// The sections of a baseline's page, by the ids a link names (#/baselines/X/AT).
+const BASELINE_AT = [["head", "Head-to-head"], ["translated", "Translated"], ["language", "Its own language"], ["types", "In each type"],
+  ["own", "Its own benchmarks"], ["coverage", "Coverage"], ["run", "How it was run"]];
+
+// tddlog against one baseline: head-to-head, translated, in each type of
+// program, its own benchmarks, coverage, how it was run.
+function baselineView(route) {
   const x = route.system, s = data.systems.find((y) => y.key === x), v = draft.views.systems[x], name = data.names[x];
   const rows = systemRows(x);
+  const parts = solverParts(x);
   const site = s.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-  const out = [crumbs(["Home", { view: "home" }], ["By tool", { view: "tools" }], [name]),
+  const at = BASELINE_AT.filter(([id]) => (id !== "own" || parts.own.length) && (id !== "language" || parts.languages.length));
+  const out = [crumbs(HOME, inSection("baselines"), [name]),
     element("h2", { class: "solver" }, swatch(x), `tddlog against ${name}`),
     element("p", { class: "lede" }, `${s.about} `, element("a", { href: s.link }, site)),
     cells(["given", count(s.given), `instances of ${and(typesOf(x).map((c) => lower(c.title)))}`], ["answers", count(s.answers)],
-      ["tddlog does not", count(v.beyond.length), `instances ${name} answers that tddlog does not`]),
-    element("nav", { class: "panels-nav", "aria-label": "Panels" }, element("a", { href: "#head" }, "Head-to-head"), element("a", { href: "#translated" }, "Translated"),
-      element("a", { href: "#coverage" }, "Coverage"), element("a", { href: "#run" }, "How it was run"))];
-  // head-to-head
+      ["answers tddlog misses", count(v.beyond.length), `instances ${name} answers that tddlog does not`]),
+    element("nav", { class: "panels-nav", "aria-label": "Sections" }, ...at.map(([id, text]) => link({ view: "baseline", system: x, at: id }, text)))];
+  // head-to-head, its own benchmarks among them
   const head = rows.filter((r) => r.kind === "h");
+  const own = head.filter((r) => r.cls[r.c.systems.indexOf(x)] === "o").length;
   const p1 = element("section", { class: "panel", id: "head" }, element("h3", {}, "Head-to-head"),
-    note("Both read the same program: the benchmark's own, or the same network in another network format."));
+    note("Both read the same program: the benchmark's own, or the same network in another network format",
+      own ? `; ${count(own)} of them are ${name}'s own benchmarks.` : "."));
   if (head.length) p1.append(versusCells(v.head, name, head.length), pairPlot(head, x, v.head, "h"), familyCounts(head));
   out.push(p1);
   // translated, by direction and translator
@@ -205,21 +232,32 @@ function toolView(route) {
     note("One of them, or both, read a translation; tddlog's own readers (of Dice programs, LPADs and networks) are front ends, not translations."));
   if (tr.length) {
     p2.append(versusCells(v.translated, name, tr.length));
-    const ways = element("div", { class: "ways" });
-    for (const w of v.ways) {
-      const how = [...(w.reason ? [element("span", { class: "muted" }, `${name} read: `), w.reason, element("br")] : []),
-        ...(w.mine ? [element("span", { class: "muted" }, "tddlog read: "), w.mine, element("br")] : []),
-        ...(w.by.length ? ["Written by ", ...w.by.flatMap(([n, path], i) => [i ? ", " : "", scriptLink(n, path)])] : [])];
-      const by = w.by.map(([n]) => n).join(", ");
-      ways.append(element("div", { class: "way" }, element("p", { class: "way-head" }, element("b", {}, KIND_TEXT[w.kind](name))),
-        by ? element("p", { class: "muted small one", title: `Written by ${by}` }, `Written by ${by}`) : null,
-        cells(["instances", count(w.n)], ...(w.vs ? [[`${name} answers`, count(w.vs.answers)], ["tddlog answers", count(w.vs.tddlog_answers)],
-          ["speed-up", speedCell(w.vs), speedup(w.vs, true)]] : [])),
-        ...(how.length ? [fold("The programs and the translator", ...how)] : [])));
+    // the ways, under their direction, each named by its translators
+    for (const kind of new Set(v.ways.map((w) => w.kind))) {
+      const ways = element("div", { class: "ways" });
+      for (const w of v.ways.filter((y) => y.kind === kind)) {
+        const how = [...(w.reason ? [element("span", { class: "muted" }, `${name} read: `), w.reason, element("br")] : []),
+          ...(w.mine ? [element("span", { class: "muted" }, "tddlog read: "), w.mine, element("br")] : []),
+          ...(w.by.length ? ["Written by ", ...w.by.flatMap(([n, path], i) => [i ? ", " : "", scriptLink(n, path)])] : [])];
+        ways.append(element("div", { class: "way" },
+          w.by.length ? element("p", { class: "way-head" }, element("span", { class: "muted" }, "Written by "),
+            ...w.by.flatMap(([n], i) => [i ? ", " : "", element("code", {}, n)])) : null,
+          w.vs ? versusCells(w.vs, name, w.n) : cells(["instances", count(w.n)]),
+          ...(how.length ? [fold("The programs and the translator", ...how)] : [])));
+      }
+      p2.append(element("h4", {}, KIND_TEXT[kind](name)), ways);
     }
-    p2.append(ways, pairPlot(tr, x, v.translated, "t"), familyCounts(tr));
+    p2.append(pairPlot(tr, x, v.translated, "t"), familyCounts(tr));
   }
   out.push(p2);
+  // in its own language and translated for it, then in each type of program it was given
+  if (parts.languages.length) {
+    out.push(element("section", { class: "panel", id: "language" }, element("h3", {}, "In its own language and translated for it"),
+      note("Its own language: the program it read is the benchmark's, or the network in another network format; translated: a translator wrote it."),
+      ...parts.languages));
+  }
+  out.push(element("section", { class: "panel", id: "types" }, element("h3", {}, "In each type of program it was given"), ...parts.types));
+  if (parts.own.length) out.push(element("section", { class: "panel", id: "own" }, element("h3", {}, "Its own benchmarks"), ...parts.own.slice(1)));
   // coverage: what it answers that tddlog does not, what tddlog answers it cannot be given, its sources' census
   const p3 = element("section", { class: "panel", id: "coverage" }, element("h3", {}, "Coverage"));
   const fails = new Map();
@@ -229,43 +267,105 @@ function toolView(route) {
     fails.get(key).push([cat, suite, inst]);
   }
   p3.append(element("h4", {}, `What ${name} answers that tddlog does not: ${count(v.beyond.length)}`));
-  if (v.beyond.length) {
-    for (const [key, list] of fails) {
-      const what = FAILURES[key]?.[1] ?? key;
-      p3.append(element("details", { class: "beyond" }, element("summary", {}, `${count(list.length)} where tddlog's run: ${what}`),
-        element("ul", { class: "insts" }, ...list.map(([, suite, inst]) => element("li", {}, element("a", { href: instanceHref(suite, inst) }, inst))))));
-    }
+  for (const [key, list] of fails) {
+    const what = FAILURES[key]?.[1] ?? key;
+    p3.append(element("details", { class: "beyond" }, element("summary", {}, `${count(list.length)} where tddlog's run: ${what}`),
+      element("ul", { class: "insts" }, ...list.map(([, suite, inst]) => element("li", {}, element("a", { href: instanceHref(suite, inst) }, inst))))));
   }
   const unexp = Object.entries(v.unexpressed).filter(([, [a, b]]) => a + b > 0);
   p3.append(element("h4", {}, `What tddlog answers that ${name} cannot be given`));
   if (unexp.length) {
     p3.append(element("ul", {}, ...unexp.map(([cat, [refused, missing]]) => element("li", {},
-      `${data.categories.find((c) => c.key === cat).title}: `,
+      `${data.categories.find((c) => c.key === cat)?.title ?? cat}: `,
       [refused ? `${count(refused)} it cannot express (its translator refuses what its language lacks)` : "",
         missing ? `${count(missing)} it was not given` : ""].filter(Boolean).join("; "), "."))));
   } else p3.append(note("None: it was given every instance tddlog answers."));
   const census = draft.views.census.sources.filter((src) => src.system === x);
   p3.append(element("h4", {}, `What ${name}'s own sources hold that tddlog does not run`));
-  if (census.length) p3.append(...census.map(censusSource));
+  if (census.length) p3.append(...census.map((src) => censusSource(src)));
   else p3.append(note(`The census has no source of ${name}'s; its programs are the suites'.`));
   out.push(p3);
   // how it was run
-  const dl = element("dl", {}, element("dt", {}, "Version"), prose("dd", s.version), element("dt", {}, "Settings"), prose("dd", s.settings));
-  if (s.notgiven) dl.append(element("dt", {}, "Not given"), prose("dd", s.notgiven));
-  if (s.cite) {
-    const c = s.cite;
-    dl.append(element("dt", {}, "Paper"), element("dd", {}, `${c.authors}. `,
-      c.doi ? element("a", { href: `https://doi.org/${c.doi}` }, c.title) : c.title, `. ${c.venue}, ${c.year}.`));
-  }
-  dl.append(element("dt", {}, "Site"), element("dd", {}, element("a", { href: s.link }, s.link)),
-    element("dt", {}, "Commands"), element("dd", {}, "Each instance's page shows the exact command each system's job ran, and the files it read."));
-  out.push(element("section", { class: "panel", id: "run" }, element("h3", {}, "How it was run"), element("div", { class: "facts" }, dl),
-    fold("How the speed-up is measured", measureText()), element("p", {}, link({ view: "system", system: x }, `${name}'s full page`),
-      ": its plots in each type of program among the other systems, its own benchmarks, and how it was given each suite.")));
+  parts.facts.append(element("dt", {}, "Commands"), element("dd", {}, "Each instance's page shows the exact command each system's job ran, and the files it read."));
+  out.push(element("section", { class: "panel", id: "run" }, element("h3", {}, "How it was run"), element("div", { class: "facts" }, parts.facts),
+    lazy({ class: "given" }, "How it was given each suite's instances", () => [parts.given]),
+    fold("How the speed-up is measured", measureText())));
   return out;
 }
 
-// ------------------------------------------------------------- by type of program
+// ------------------------------------------------------------- by integration
+
+// The integrations: tddlog alone, and each pipeline, by the instances it was given and answers.
+function integrationsView() {
+  // results from before the integrations had their own comparisons: the pipelines are a type of program there
+  if (!data.integrations) {
+    const bit = data.categories.find((c) => c.mine.some((m) => m !== "tddlog") && c.key !== ALL);
+    return [crumbs(HOME, [sectionName("integrations")]), element("h2", {}, sectionName("integrations")),
+      element("p", { class: "lede" }, "tddlog alone is compared in each type of program",
+        ...(bit ? ["; Alea.jl+tddlog and Roulette+tddlog in ", link({ view: "category", category: bit.key }, bit.title)] : []), ".")];
+  }
+  const body = element("tbody");
+  for (const k of integrationsOf()) {
+    const i = data.integrations[k], alone = !i.system;
+    body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "integration", key: k }, i.title)),
+      element("td", { class: "about" }, alone ? "its own front ends: ProbLog, LPADs, Dice, and the networks' formats"
+        : `${data.names[i.system]}'s own code, up to what it hands tddlog`),
+      element("td", { class: "num" }, count(alone ? i.given : i.given[i.pipeline])),
+      element("td", { class: "num" }, count(alone ? i.answers : i.answers[i.pipeline])),
+      element("td", { class: "num" }, alone ? "" : count(i.answers[i.system]))));
+  }
+  return [crumbs(HOME, [sectionName("integrations")]), element("h2", {}, sectionName("integrations")),
+    element("p", { class: "lede" }, "tddlog reading programs with its own front ends, and tddlog after another system's own code, "
+      + "which hands it the probabilistic inference: against that system alone, the two differ only in the inference."),
+    scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
+      element("th", { scope: "col" }, "integration"), element("th", { scope: "col" }, "what reads the program"),
+      element("th", { scope: "col", class: "num" }, "given"), element("th", { scope: "col", class: "num" }, "answers"),
+      element("th", { scope: "col", class: "num", title: "the system alone, on the same instances" }, "the system alone answers"))),
+    body)), "whole")];
+}
+
+// tddlog alone (its answers in each type, which open the type), or X+tddlog
+// against X on X's programs (an integration of categories.json, drawn as a
+// category is): the comparison, its plots and the families.
+function integrationView(route) {
+  const k = route.key, i = data.integrations[k];
+  const out = [crumbs(HOME, inSection("integrations"), [i.title])];
+  if (!i.system) {
+    const body = element("tbody");
+    for (const t of i.types) {
+      body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: t.key }, t.title)),
+        element("td", { class: "num" }, count(t.instances)), element("td", { class: "num" }, count(t.given)), element("td", { class: "num" }, count(t.answers))));
+    }
+    out.push(element("h2", { class: "solver" }, swatch("tddlog"), i.title),
+      element("p", { class: "lede" }, "tddlog reading each program with its own front ends: ProbLog programs and LPADs, Dice programs, and Bayesian "
+        + "and Markov networks in their formats. Each type of program compares it with the baselines native to it."),
+      scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
+        element("th", { scope: "col" }, "type of program"), element("th", { scope: "col", class: "num" }, "instances"),
+        element("th", { scope: "col", class: "num" }, "given"), element("th", { scope: "col", class: "num" }, "answers"))), body)), "whole"));
+    return out;
+  }
+  const x = i.system, me = i.pipeline, name = data.names[x], v = i.vs[x];
+  const rows = catRows(i).map((r) => ({ ...r, me }));
+  out.push(element("h2", { class: "solver" }, swatch(me), `${i.title} against ${name}`),
+    prose("p", i.about, { class: "lede" }),
+    note(`${i.title}'s time includes ${name}'s own after its warm-up, up to what it hands tddlog, so that against ${name} alone the two differ only in the inference.`),
+    versusCells(v, name, i.instances), pairPlot(rows, x, v, `int-${k}`));
+  // the families
+  const fams = element("tbody");
+  for (const g of i.groups) {
+    const rs = g.rows.map((j) => rows[j]);
+    fams.append(element("tr", {}, element("th", { scope: "row" }, element("a", { href: instanceHref(rs[0].suite, rs[0].name), title: g.about ?? null }, g.title)),
+      element("td", { class: "num" }, count(rs.length)), element("td", { class: "num" }, count(rs.filter((r) => r.t[me] !== null).length)),
+      element("td", { class: "num" }, count(rs.filter((r) => r.t[x] !== null).length))));
+  }
+  out.push(element("h3", {}, "Families"), scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
+    element("th", { scope: "col" }, "family"), element("th", { scope: "col", class: "num" }, "instances"),
+    element("th", { scope: "col", class: "num" }, `${i.title} answers`), element("th", { scope: "col", class: "num" }, `${name} answers`))), fams)), "whole"));
+  out.push(fold("How the speed-up is measured", measureText()));
+  return out;
+}
+
+// ------------------------------------------------------------- by program type
 
 // The comparisons of a type head-to-head and translated, before the rest of
 // its view (results.js's categoryView): each system's instances of each
@@ -281,20 +381,19 @@ function typeSplit(c, route) {
   const out = [];
   for (const [id, title, keep, field, text] of [
     ["head", "Head-to-head", "h", "head", "both read the benchmark's program as its authors or its generator wrote it, or the same network in another network format"],
-    ["translated", "Translated", "smb", "translated", "one of them, or both, read a translation (by: for the system, for tddlog, for both)"]]) {
+    ["translated", "Translated", "smb", "translated", "one of them, or both, read a translation (for the system, for tddlog, or for both)"]]) {
     const have = xs.filter((x) => n(x, keep) > 0);
     const body = element("tbody");
     for (const x of have) {
       const w = v[field][x];
       const num = (text) => element("td", { class: "num" }, text);
       const dirs = keep === "h" ? [] : ["s", "m", "b"].map((k) => num(count(n(x, k))));
-      body.append(element("tr", { class: x === route.vs ? "vs" : null }, element("th", { scope: "row" }, toolLink(x)),
-        num(link({ view: "category", category: c.key, vs: x }, count(n(x, keep)))), ...dirs,
+      body.append(element("tr", { class: x === route.vs ? "vs" : null }, element("th", { scope: "row" }, systemLink(x)),
+        num(count(n(x, keep))), ...dirs,
         num(w ? count(w.answers) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.total) : ""), num(w ? duration(w.tddlog_total) : ""),
         num(w ? speedup(w) : "")));
     }
-    const sec = element("section", { class: "panel split", id }, element("h3", {}, `${title}: ${have.length ? and(have.map((x) => data.names[x])) : "no system"}`),
-      note(`Where ${text}.`));
+    const sec = element("section", { class: "panel split", id }, element("h3", {}, title), note(`Where ${text}.`));
     if (have.length) {
       const col = (text, title) => element("th", { scope: "col", class: "num", title }, text);
       const par = `PAR-${data.measure.par}, over the instances the system is given and either answers`;
@@ -302,15 +401,15 @@ function typeSplit(c, route) {
         element("th", { scope: "col" }, "system"), col("instances"),
         ...(keep === "h" ? [] : [col("for it", "a translation for the system"), col("for tddlog", "a translation for tddlog"),
           col("for both", "a translation of the original for both")]),
-        col("it answers"), col("tddlog answers"), col("its total", par), col("tddlog's total", par), col("tddlog faster"))), body)), "whole"));
+        col("it answers"), col("tddlog answers"), col("its total", par), col("tddlog's total", par), col("faster", "tddlog's speed-up"))), body)), "whole"));
       const x = have.includes(route.vs) ? route.vs : have[0];
       const rows = kindRows(c, x).filter((r) => keep.includes(r.kind));
-      sec.append(element("p", { class: "small" }, `The plots: tddlog against ${data.names[x]} on these ${plural(rows.length, "instance")}; a system's count of instances above sets them, its name opens its page.`),
+      sec.append(element("p", { class: "small" }, `tddlog against ${data.names[x]} on ${plural(rows.length, "instance")}:`),
         pairPlot(rows, x, v[field][x], id));
-    }
+    } else sec.append(note("No system here."));
     out.push(sec);
   }
-  out.push(element("h3", { class: "every" }, `Every instance of the type, each system's answers over all of them`));
+  out.push(element("h3", { class: "every" }, "Every instance of the type, each system's answers over all of them"));
   return out;
 }
 
@@ -322,20 +421,18 @@ function typesView() {
     const kinds = (k) => xs.filter((x) => v.kinds[x].includes(k)).length;
     body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: c.key }, c.title)),
       element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(answeredBy(catRows(c)))),
-      element("td", {}, and((c.key === ALL ? [] : c.native).map((x) => data.names[x])) || "every system"),
+      element("td", { class: "about" }, c.key === ALL ? "every system" : element("div", { class: "chips" }, ...c.native.map((x) => element("span", { class: "chip" }, systemLink(x))))),
       element("td", { class: "num" }, count(kinds("h"))), element("td", { class: "num" }, count(xs.filter((x) => /[smb]/.test(v.kinds[x])).length))));
   }
-  return [crumbs(["Home", { view: "home" }], ["By type of program"]), element("h2", {}, "By type of program"),
-    element("p", { class: "lede" }, "Each type against the systems native to it; all programs is their union, with every system."),
-    fold("How the instances are counted", "Each instance counts in one type, the type of the model it is, whatever language its source was written in. "
-      + "A type's comparisons are head-to-head first and translated second. A type opens its families, and a family its instances, "
-      + "each with the programs every system read and the commands its job ran."),
-    scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
+  return [crumbs(HOME, [sectionName("types")]), element("h2", {}, sectionName("types")),
+    element("p", { class: "lede" }, "Each type against the systems native to it; all programs is their union, with every system. "
+      + "Each instance counts in one type, the type of the model it is, whatever language its source was written in."),
+    scroller(stacked(element("table", { class: "board types-t" }, element("thead", {}, element("tr", {},
       element("th", { scope: "col" }, "type"), element("th", { scope: "col", class: "num" }, "instances"),
-      element("th", { scope: "col", class: "num", title: "by each instance's subject: tddlog, or Alea.jl+tddlog on Alea.jl's circuits" }, "tddlog answers"),
+      element("th", { scope: "col", class: "num", title: "by each instance's subject: tddlog, or the pipeline that ran it" }, "tddlog answers"),
       element("th", { scope: "col" }, "native systems"),
-      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "systems head-to-head"),
-      element("th", { scope: "col", class: "num", title: "the systems compared through a translation on some instance" }, "systems translated"))),
+      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "head-to-head"),
+      element("th", { scope: "col", class: "num", title: "the systems compared through a translation on some instance" }, "translated"))),
     body)), "whole"),
     element("div", { class: "fig-head" }, element("h3", {}, "Each type against the systems native to it"),
       element("span", { class: "dots" }, element("i", { class: "me" }), "tddlog", element("i", { class: "you" }), "a native system")),
@@ -351,17 +448,18 @@ function censusSource(src, tool = false) {
     element("td", { class: "num" }, typeof it.n === "number" ? count(it.n) : it.n), element("td", { class: "about" }, it.programs),
     element("td", { class: "about" }, it.why)));
   return element("div", { class: "census" },
-    element("p", {}, ...(tool ? [toolLink(src.system), " · "] : []), element("b", {}, src.source), `: ${src.what}. `,
+    element("p", {}, element("b", {}, src.source), ...(tool ? [" (", systemLink(src.system), ")"] : []), `: ${src.what}. `,
       element("span", { class: "muted" }, `${typeof src.programs === "number" ? `${count(src.programs)} programs` : src.programs}; tddlog runs `
         + `${typeof src.runs === "number" ? count(src.runs) : src.runs}.`)),
-    ...(rows.length ? [scroller(stacked(element("table", { class: "board census-t" }, element("thead", {}, element("tr", {},
-      element("th", { scope: "col" }, "why"), element("th", { scope: "col", class: "num" }, "programs"), element("th", { scope: "col" }, "which"),
-      element("th", { scope: "col" }, "what stops tddlog"))), element("tbody", {}, ...rows))), "whole")] : []));
+    ...(rows.length ? [lazy({ class: "census-fold" }, `Why tddlog does not run the others: ${plural(rows.length, "kind")}`, () => [scroller(stacked(
+      element("table", { class: "board census-t" }, element("thead", {}, element("tr", {},
+        element("th", { scope: "col" }, "why"), element("th", { scope: "col", class: "num" }, "programs"), element("th", { scope: "col" }, "which"),
+        element("th", { scope: "col" }, "what stops tddlog"))), element("tbody", {}, ...rows))), "whole")])] : []));
 }
 
 function coverageView() {
   const cen = draft.views.census;
-  const out = [crumbs(["Home", { view: "home" }], ["Coverage"]), element("h2", {}, "Coverage"),
+  const out = [crumbs(HOME, inSection("baselines"), [COVERAGE]), element("h2", {}, COVERAGE),
     element("p", { class: "lede" }, cen.about),
     element("dl", { class: "classes" }, ...Object.entries(cen.classes).flatMap(([k, text]) => [element("dt", {},
       element("span", { class: `cls cls-${k.replace(/ /g, "-")}` }, k)), element("dd", {}, text)]))];
@@ -373,11 +471,11 @@ function coverageView() {
     const v = draft.views.systems[s.key];
     if (!v) continue;
     const [refused, missing] = sums(v);
-    body.append(element("tr", {}, element("th", { scope: "row" }, toolLink(s.key)),
+    body.append(element("tr", {}, element("th", { scope: "row" }, systemLink(s.key)),
       element("td", { class: "num" }, count(v.beyond.length)), ...(refusals ? [element("td", { class: "num" }, count(refused))] : []),
       element("td", { class: "num" }, count(missing))));
   }
-  out.push(element("h3", {}, "In the release run"), note("Over the six types: the instances a system answers that tddlog does not "
+  out.push(element("h3", {}, "In the release run"), note(`Over the ${inWords(data.types.length)} types: the instances a system answers that tddlog does not `
     + "(out of time or memory, or refused), and those tddlog answers that the system cannot express (its translator refuses what its "
     + "language lacks) or was not given."),
   scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "system"),
@@ -391,59 +489,45 @@ function coverageView() {
     if (!srcs.length) continue;
     out.push(element("h4", {}, c.title), ...srcs.map((src) => censusSource(src, true)));
   }
+  // the sources of programs of no type (the circuits), after them
+  const rest = cen.sources.filter((src) => !data.types.some((c) => c.key === src.type));
+  if (rest.length) out.push(element("h4", {}, "Programs of no type"), ...rest.map((src) => censusSource(src, true)));
   return out;
 }
 
 // ------------------------------------------------------------- how it works
 
-// The six stages of a run (docs/design.md, "How a program is answered"):
-// what each does, and where the code is.
+// The stages of a run, the steps of its trace (trace.js names them, and
+// these are its titles), and the six of `solve` between reading the program
+// and its answers (docs/design.md, "How a program is answered"): what each
+// does, and where the code is.
 const STAGES = [
-  ["Parse", "the text, or a network or a Dice program, read as a Program", "src/syntax"],
-  ["Ground", "rules without variables over the atoms the queries and evidence depend on", "src/ground"],
-  ["Rewrite", "linear recursion written without recursion; indicators", "src/ground"],
-  ["Choose a layout", "a vtree over the facts, by auto's trials under doubling bounds", "src/vtree"],
-  ["Compile", "a TDD per derived atom by Tp-compilation, component by component", "src/tp"],
-  ["Evidence and queries", "weighted model counts of the queries against the evidence", "src/query"],
+  ["read", "a ProbLog file, a network or a Dice program, as a program", "src/input.rs"],
+  ["parse", "the program's clauses, queries and evidence", "src/syntax"],
+  ["ground", "rules without variables over the atoms the queries and evidence need", "src/ground"],
+  ["rewrite", "linear recursion written without recursion; indicators", "src/ground"],
+  ["layout", "a vtree over the facts, by auto's trials", "src/vtree"],
+  ["compile", "a TDD per derived atom, component by component", "src/tp"],
+  ["evidence", "weighted model counts of the queries against the evidence", "src/query"],
+  ["answers", "the probabilities, in the program's order", "src/solve"],
 ];
 
-function pipeline(on) {
-  const w = 1000, bw = 150, gap = (w - STAGES.length * bw) / (STAGES.length - 1), h = 150;
-  const fig = svg("svg", { class: "pipeline", viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": "The pipeline: " + STAGES.map((s) => s[0]).join(", then ") });
-  STAGES.forEach(([title, text, where], i) => {
-    const x = i * (bw + gap);
-    const g = svg("g", { class: i === on ? "stage on" : "stage" });
-    g.append(svg("rect", { x, y: 8, width: bw, height: 132, rx: 8 }));
-    const lines = (str, y, cls, per) => {
-      let line = "", k = 0;
-      for (const word of str.split(" ")) {
-        if (`${line} ${word}`.trim().length > per) {
-          g.append(svg("text", { x: x + 10, y: y + 15 * k++, class: cls }, line.trim()));
-          line = word;
-        } else line += ` ${word}`;
-      }
-      if (line.trim()) g.append(svg("text", { x: x + 10, y: y + 15 * k++, class: cls }, line.trim()));
-      return k;
-    };
-    const k = lines(`${i + 1}. ${title}`, 30, "st", 16);
-    lines(text, 36 + 15 * k, "sx", 20);
-    g.append(svg("text", { x: x + 10, y: 128, class: "sw" }, where));
-    fig.append(g);
-    if (i < STAGES.length - 1) fig.append(svg("path", { d: `M${x + bw + 3} 74 h${gap - 6} m-6 -5 l6 5 l-6 5`, class: "arrow" }));
-  });
-  return element("figure", { class: "pipe" }, fig);
+// A walkthrough's steps as a strip of the stages' names, one line, each
+// opening its step of the walkthrough, the step on show marked.
+function stepper(w, steps, on) {
+  return element("nav", { class: "pipe", "aria-label": "The stages of a run" }, element("ol", { class: "pipeline" },
+    ...steps.map((t, k) => element("li", {}, element("a", { href: `#/how/${w.key}/${k + 1}`, "aria-current": k === on ? "step" : null,
+      title: STAGES.find(([key]) => key === t.key)?.[1] ?? null }, `${k + 1}. ${t.title}`)))));
 }
 
-// The stage of the pipeline each step of a trace belongs to.
-const STAGE_OF = { read: 0, parse: 0, ground: 1, rewrite: 2, layout: 3, compile: 4, evidence: 5, answers: 5 };
-
-// The walkthroughs: a run of tddlog on each program, its trace
+// The walkthroughs (each titled by results.js's WALK_TITLES, which the menu
+// lists): a run of tddlog on each program, its trace
 // (walk/KEY.json, written by the command shown, `tddlog --trace`) drawn by
 // trace.js a step per stage, and a caption by hand over each step. Each
 // fact a caption states is the trace's or docs/design.md's.
 const WALKS = [
   {
-    key: "reach", title: "Reachability in a graph with cycles", what: "Recursion, written without recursion before the compile; the fixpoint where a cycle stays.",
+    key: "reach", what: "Recursion, written without recursion before the compile; the fixpoint where a cycle stays.",
     file: "examples/cycle_graph.pl", example: "reachability", evidence: false,
     command: "tddlog --trace reach.json examples/cycle_graph.pl",
     lede: "The probability that node 1 reaches each other node of a graph with cycles, each of its 14 edges present with a probability of its own. "
@@ -470,7 +554,7 @@ const WALKS = [
     },
   },
   {
-    key: "network", title: "A Bayesian network with evidence", what: "A network file read as a program: its tables, its families and the evidence.",
+    key: "network", what: "A network file read as a program: its tables, its families and the evidence.",
     file: "examples/asia.net", example: "asia", evidence: true,
     command: "tddlog --trace network.json --evidence-probability --evidence tests/networks/asia_leaves.inst examples/asia.net",
     lede: "The asia network in Hugin's format, with its two leaves observed: `xray` yes and `dysp` no (tests/networks/asia_leaves.inst). tddlog reads the network "
@@ -496,7 +580,7 @@ const WALKS = [
     },
   },
   {
-    key: "dice", title: "A Dice program", what: "A probabilistic functional program: integers held as bits, a derived atom per bit and step.",
+    key: "dice", what: "A probabilistic functional program: integers held as bits, a derived atom per bit and step.",
     file: "tests/dice/walk.dice", example: "walk", evidence: true,
     command: "tddlog --trace dice.json --evidence-probability tests/dice/walk.dice",
     lede: "A random walk on 0..7 in Dice: ten steps of plus or minus one from 3, absorbed at either end, observed not to end at 0. tddlog reads Dice itself: an "
@@ -522,7 +606,7 @@ const WALKS = [
     },
   },
   {
-    key: "circuit", title: "A bit-blasted circuit", what: "The and-inverter graph of Alea.jl's circuit, optimized, then compiled gate by gate in dependency order.",
+    key: "circuit", what: "The and-inverter graph of Alea.jl's circuit, optimized, then compiled gate by gate in dependency order.",
     file: "examples/alea_dice.pl", example: "circuit", evidence: true,
     command: "tddlog --trace circuit.json --evidence-probability examples/alea_dice.pl",
     lede: "Two dice, the first at least 4, as the circuit Alea.jl builds for them: 8 flips and 78 gates, written as a ProbLog program by scripts/alea2problog.jl. "
@@ -550,6 +634,12 @@ const WALKS = [
   },
 ];
 
+for (const w of WALKS) {
+  w.title = WALK_TITLES.find(([key]) => key === w.key)[1];
+  if (!w.command.endsWith(` ${w.file}`)) throw new Error(`walk ${w.key}: its command does not end with its file`);
+}
+if (WALKS.length !== WALK_TITLES.length) throw new Error("a walkthrough without its title, or a title without its walkthrough");
+
 // A walkthrough's trace, fetched once.
 function walkTrace(key) {
   draft.walks ??= {};
@@ -566,46 +656,36 @@ const caption = (text, cls) => element("p", cls ? { class: cls } : {},
 
 const playgroundHref = (w) => `playground/?example=${w.example}${w.evidence ? "&evidence=1" : ""}&trace=1`;
 
+// How it works: the walkthroughs, the one on show (the first where the
+// address names none) at its step, the strip of the stages above it.
 function howView(route) {
-  const w = WALKS.find((x) => x.key === route.walk);
-  if (!w) {
-    return [crumbs(["Home", { view: "home" }], ["How it works"]), element("h2", {}, "How it works"),
-      element("p", { class: "lede" }, "tddlog answers a program in six stages, for the command line and a library caller alike; ",
-        element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"),
-        " describes each and the decisions behind it. The diagrams are built bottom-up, by TDD operations on the rules."),
-      pipeline(-1),
-      element("h3", {}, "Four runs, step by step"),
-      element("p", { class: "small" }, "Each is the trace of one run of tddlog (", element("code", {}, "tddlog --trace"),
-        "), drawn a stage at a time with a caption by hand."),
-      element("nav", { class: "entries walks", "aria-label": "Walkthroughs" }, ...WALKS.map((x) =>
-        element("a", { href: `#/how/${x.key}`, class: "entry" }, element("b", {}, x.title), element("span", {}, x.what)))),
-      element("p", { class: "also" }, "The playground draws the same trace for a program of your own: ",
-        element("a", { href: "playground/?trace=1" }, "tick Trace"), " and run it.")];
-  }
-  const pipe = element("div", {}, pipeline(-1));
-  const out = [crumbs(["Home", { view: "home" }], ["How it works", { view: "how" }], [w.title]), element("h2", {}, w.title),
-    caption(w.lede, "lede"),
-    element("p", { class: "small" }, "The trace of ", element("code", {}, w.command), " (",
-      element("a", { href: `${BRANCH}main/${w.file}` }, element("code", {}, w.file)), "). ",
-      element("a", { href: playgroundHref(w), class: "try-btn" }, "Open in playground")),
-    pipe];
+  const w = WALKS.find((x) => x.key === route.walk) ?? WALKS[0];
+  const out = [crumbs(HOME, ...(route.walk ? [inSection("how"), [w.title]] : [[sectionName("how")]])),
+    element("h2", {}, sectionName("how")),
+    element("p", { class: "lede one" }, "A run of tddlog a stage at a time, from its trace (", element("code", {}, "tddlog --trace"), "); ",
+      element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"), " describes each stage."),
+    element("nav", { class: "walks", "aria-label": "Walkthroughs" }, ...WALKS.map((x) =>
+      element("a", { href: `#/how/${x.key}`, title: x.what, "aria-current": x === w ? "page" : null }, x.title)))];
   const walk = element("div", { class: "walk" }, note("Loading the trace…"));
   out.push(walk);
   walkTrace(w.key).then((trace) => {
     const steps = tddlogTrace.steps(trace);
-    const i = Math.min(Math.max(route.step, 0), steps.length - 1);
+    const i = Math.min(Math.max(route.step ?? 0, 0), steps.length - 1);
     const s = steps[i];
-    pipe.replaceChildren(pipeline(STAGE_OF[s.key] ?? -1));
-    const list = element("ol", { class: "steps" }, ...steps.map((t, k) =>
-      element("li", {}, element("a", { href: `#/how/${w.key}/${k + 1}`, "aria-current": k === i ? "step" : null }, `${k + 1}. ${t.title}`))));
-    const body = element("div", { class: "step" }, element("h4", {}, `${i + 1}. ${s.title}`));
+    const stage = STAGES.find(([key]) => key === s.key);
+    const head = element("div", { class: "walk-head" }, caption(w.lede, "lede"),
+      element("p", { class: "small run" }, element("code", {}, w.command.slice(0, -w.file.length),
+        element("a", { href: `${BRANCH}main/${w.file}` }, w.file)),
+        ...(w.example ? [element("a", { href: playgroundHref(w), class: "try-btn" }, "Open in playground")] : [])));
+    const body = element("div", { class: "step" }, element("h3", {}, `${i + 1}. ${s.title}`,
+      ...(stage ? [element("span", { class: "muted small" }, `${stage[1]}, in `, element("code", {}, stage[2]))] : [])));
     if (w.captions[s.key]) body.append(caption(w.captions[s.key]));
     const drawn = element("div", { class: "walk-trace" });
     drawn.innerHTML = tddlogTrace.stepHtml(s);
     body.append(drawn);
     const nav = element("p", { class: "step-nav" }, i > 0 ? element("a", { href: `#/how/${w.key}/${i}` }, "← Back") : "",
       i < steps.length - 1 ? element("a", { href: `#/how/${w.key}/${i + 2}` }, "Next →") : "");
-    walk.replaceChildren(list, element("div", {}, body, nav));
+    walk.replaceChildren(stepper(w, steps, i), head, body, nav);
   }, (e) => walk.replaceChildren(note(`The trace did not load: ${e.message}.`)));
   return out;
 }
@@ -631,7 +711,8 @@ function staleViews() {
 const staleNote = (stale) => note(`These views (views.json) were written from other results than these (${and(stale)}); `
   + "views.py writes them again from the results page's data.");
 
-const DRAFT_VIEWS = { "draft-home": draftHome, tools: toolsView, tool: toolView, types: typesView, coverage: coverageView, how: howView };
+const DRAFT_VIEWS = { "draft-home": draftHome, baselines: baselinesView, baseline: baselineView, integrations: integrationsView,
+  integration: integrationView, types: typesView, coverage: coverageView, how: howView };
 
 Object.assign(extend, {
   load: async () => {
@@ -642,32 +723,46 @@ Object.assign(extend, {
   parse: (hash) => {
     const parts = hash.replace(/^\//, "").split("/").filter(Boolean).map((p) => decodeURIComponent(p));
     if (!parts.length) return { view: "draft-home" };
-    if (parts[0] === "tools") {
-      if (parts.length === 1) return { view: "tools" };
-      return draft.views?.systems?.[parts[1]] && parts.length === 2 ? { view: "tool", system: parts[1] } : null;
+    const [first, key, at] = parts;
+    // a baseline's page (#/tools/... before), or, at a solver's address, the page of its integration where it is tddlog's
+    const baseline = (x) => (draft.views?.systems?.[x] ? { view: "baseline", system: x } : null);
+    if (first === "baselines" || first === "tools") {
+      if (parts.length === 1) return { view: "baselines" };
+      const route = baseline(key);
+      if (route && parts.length === 2) return route;
+      return route && parts.length === 3 && BASELINE_AT.some(([id]) => id === at) ? { ...route, at } : null;
     }
-    if (parts[0] === "types" && parts.length === 1) return { view: "types" };
-    if (parts[0] === "coverage" && parts.length === 1) return { view: "coverage" };
-    if (parts[0] === "how" && parts.length === 1) return { view: "how" };
-    if (parts[0] === "how" && WALKS.some((w) => w.key === parts[1])) {
-      if (parts.length === 2) return { view: "how", walk: parts[1], step: 0 };
-      if (parts.length === 3 && /^[1-9]\d{0,2}$/.test(parts[2])) return { view: "how", walk: parts[1], step: Number(parts[2]) - 1 };
+    if (first === "system" && parts.length === 2) {
+      return isMine(key) ? (data.integrations?.[integrationOf(key)] ? { view: "integration", key: integrationOf(key) } : { view: "integrations" }) : baseline(key);
+    }
+    if (first === "integrations") {
+      if (parts.length === 1) return { view: "integrations" };
+      if (parts.length !== 2) return null;
+      // an integration the data does not have yet opens their page
+      return data.integrations?.[key] ? { view: "integration", key } : { view: "integrations" };
+    }
+    if (parts.length === 1 && (first === "types" || first === "coverage" || first === "how")) return { view: first };
+    if (first === "how" && WALKS.some((w) => w.key === key)) {
+      if (parts.length === 2) return { view: "how", walk: key, step: 0 };
+      if (parts.length === 3 && /^[1-9]\d{0,2}$/.test(at)) return { view: "how", walk: key, step: Number(at) - 1 };
     }
     return null;
   },
-  href: (route) => ({ "draft-home": "#/", tools: "#/tools", tool: `#/tools/${encodeURIComponent(route.system)}`, types: "#/types",
-    coverage: "#/coverage", how: route.walk ? `#/how/${route.walk}${route.step ? `/${route.step + 1}` : ""}` : "#/how" })[route.view] ?? null,
+  href: (route) => ({ "draft-home": "#/", baselines: "#/baselines",
+    baseline: `#/baselines/${encodeURIComponent(route.system)}${route.at ? `/${route.at}` : ""}`,
+    integrations: "#/integrations", integration: `#/integrations/${route.key}`, types: "#/types", coverage: "#/coverage",
+    how: route.walk ? `#/how/${route.walk}${route.step ? `/${route.step + 1}` : ""}` : "#/how" })[route.view] ?? null,
   draw: (route) => {
     if (!(route.view in DRAFT_VIEWS)) return null;
     const stale = staleViews();
-    if (stale.length && route.view !== "draft-home" && route.view !== "how") return [staleNote(stale)];
+    if (stale.length && route.view !== "draft-home" && route.view !== "how" && !route.view.startsWith("integration")) return [staleNote(stale)];
     return DRAFT_VIEWS[route.view](route);
   },
-  title: (route) => ({ "draft-home": null, tools: "By tool", tool: `tddlog against ${data.names[route.system]}`, types: "By type of program",
-    coverage: "Coverage", how: route.walk ? `How it works: ${WALKS.find((w) => w.key === route.walk).title}` : "How it works" })[route.view] ?? null,
+  title: (route) => ({ "draft-home": null, baselines: sectionName("baselines"), baseline: `tddlog against ${data.names[route.system]}`,
+    integrations: sectionName("integrations"), integration: data.integrations?.[route.key]?.title, types: sectionName("types"),
+    coverage: COVERAGE, how: route.walk ? `${sectionName("how")}: ${WALKS.find((w) => w.key === route.walk).title}` : sectionName("how") })[route.view] ?? null,
   category: (c, route, rows) => (staleViews().length ? [staleNote(staleViews())] : typeSplit(c, route, rows)),
   // a translator's or generator's name in a line on how a file was made, as a link to its source
   made: (html) => html.replace(/<code>([\w-]+\.(?:py|jl|rkt))(\b[^<]*)<\/code>/g, (whole, name, rest) =>
     (draft.views?.scripts.includes(name) ? `<a href="${BRANCH}baselines/scripts/${name}"><code>${name}${rest}</code></a>` : whole)),
 });
-

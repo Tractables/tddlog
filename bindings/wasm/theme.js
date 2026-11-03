@@ -31,4 +31,31 @@
     system.addEventListener("change", show);
     show();
   });
+
+  // The bar at the top: on a phone its links, and the menu of a page that
+  // has one, folded under the button with id `menu`; the docs' links in a
+  // list that closes once the pointer or the keys go elsewhere.
+  document.addEventListener("DOMContentLoaded", () => {
+    const menu = document.getElementById("menu");
+    menu?.addEventListener("click", () => {
+      const open = document.body.classList.toggle("menu-open");
+      menu.setAttribute("aria-expanded", String(open));
+    });
+    // a link followed in the fold closes it
+    window.addEventListener("hashchange", () => {
+      document.body.classList.remove("menu-open");
+      menu?.setAttribute("aria-expanded", "false");
+    });
+    const docs = document.querySelector(".site-nav details.docs");
+    if (docs === null) return;
+    document.addEventListener("click", (event) => {
+      if (docs.open && !docs.contains(event.target)) docs.open = false;
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && docs.open) {
+        docs.open = false;
+        docs.querySelector("summary").focus();
+      }
+    });
+  });
 })();

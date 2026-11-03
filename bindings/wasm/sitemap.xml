@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- The site's pages, for search engines; the browser test checks that each
-     one is there. The front page's and the results page's views (by tool, by
-     type of program, the suites and the benchmarks) are addresses within the
+     one is there. The front page's and the results page's views (by baseline,
+     by integration, by type of program, the suites and the benchmarks) are addresses within the
      page (#/...), not pages of their own. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://tractables.github.io/tddlog/</loc></url>

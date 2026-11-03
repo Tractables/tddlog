@@ -21,13 +21,19 @@
     example is a program in the repository that its tests check against
     ProbLog or a count by hand, and each opens in the playground.</p>
   </div>
-  <nav class="site-nav" aria-label="Site">
+  <button id="menu" class="plain" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+  <nav class="site-nav" id="site-nav" aria-label="Site">
+    <a href="../#/baselines" data-section="#/baselines">By baseline</a>
+    <a href="../#/integrations" data-section="#/integrations">By integration</a>
+    <a href="../#/types" data-section="#/types">By program type</a>
+    <a href="../#/how" data-section="#/how">How it works</a>
     <a href="../playground/">Playground</a>
-    <a href="./" aria-current="page">Guide</a>
-    <a href="../results/">Results</a>
-    <a href="../api/">Rust API</a>
-    <a href="../python/">Python</a>
-    <a href="../c/">C</a>
+    <details class="docs"><summary class="current">Docs</summary><div>
+      <a href="./" aria-current="page">Guide</a>
+      <a href="../api/">Rust API</a>
+      <a href="../python/">Python</a>
+      <a href="../c/">C</a>
+    </div></details>
     <a href="https://github.com/Tractables/tddlog">GitHub</a>
     <button id="theme" type="button" aria-label="Switch to the dark theme">Dark</button>
   </nav>
