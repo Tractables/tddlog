@@ -5,7 +5,7 @@
 //!
 //! ```text
 //! cargo run --release --example solve -- examples/alarm.pl
-//! cargo run --release --example solve -- examples/asia.net
+//! cargo run --release --example solve -- examples/car.net
 //! ```
 
 use std::process::ExitCode;

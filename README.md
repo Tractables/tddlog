@@ -125,7 +125,7 @@ inference:
 | LPADs written for cplint and PITA | tddlog, where the file holds `:- begin_lpad.` | the same clauses in ProbLog's syntax, with the database clauses they call and the file's example queries; under PITA's depth bound, each predicate with the depth as an argument; PRISM's switches as annotated disjunctions of `msw/2` |
 
 ```text
-$ tddlog examples/asia.net --query leaves
+$ tddlog examples/car.net --evidence examples/car.inst --query fuel,plugs,starter
 $ tddlog tests/dice/arith.dice
 $ tddlog --program tests/lpad/coin.cplint.pl
 ```

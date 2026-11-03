@@ -1404,8 +1404,8 @@ function benchmarksOf(root) {
         const shot = await view.newPage();
         shot.on("pageerror", (error) => errors.push(String(error)));
         if (!only) {
-        await shot.goto(`${play}?example=asia&evidence=1`);
-        await answered(shot, "asia(yes)");
+        await shot.goto(`${play}?example=car&evidence=1`);
+        await answered(shot, "fuel(full)");
         await noSidewaysScroll(shot, `${colorScheme}, ${width} px`);
         if (shots) await shot.screenshot({ path: path.join(shots, `page-${colorScheme}-${width}.png`), fullPage: true });
         // The code's colours, the muted text and the examples' buttons

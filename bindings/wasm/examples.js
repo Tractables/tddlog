@@ -11,11 +11,12 @@
 // the repository's differential tests take them; here to 12 significant
 // digits), and `evidence` its P(e): the probability of one rule whose body is
 // the evidence, queried without it, and 1 for a program without evidence.
-// For the Dice program and the network they are the answers of the program
-// tddlog reads each as, computed by hand: Dice's own for the walk
+// For the Dice program and the car network (its file and the program it is
+// read as) they are computed by hand: Dice's own answers for the walk
 // (tests/it/examples.rs), and the network's marginals by a sum over its
-// worlds. Alea.jl's circuit holds them by hand too, from the two dice it
-// was built from (tests/it/examples.rs).
+// worlds, which ProbLog's agree with (tests/it/networks.rs). Alea.jl's
+// circuit holds them by hand too, from the two dice it was built from
+// (tests/it/examples.rs).
 //
 // The examples marked `larger` take a few seconds each, and ProbLog does not
 // answer them within five minutes. Their `problog` holds exact answers,
@@ -56,18 +57,15 @@ const tddlogExamples = [
     evidence: 1,
   },
   {
-    key: "asia",
-    name: "Bayesian network: asia",
-    file: "examples/bn_asia_evidence.pl",
+    key: "car",
+    name: "Bayesian network: car trouble",
+    file: "examples/bn_car_evidence.pl",
     problog: [
-      ["asia(yes)", 0.0116784200427], ["asia(no)", 0.988321579957],
-      ["tub(yes)", 0.0540212892219], ["tub(no)", 0.945978710778],
-      ["smoke(yes)", 0.513207093653], ["smoke(no)", 0.486792906347],
-      ["lung(yes)", 0.252297229882], ["lung(no)", 0.747702770118],
-      ["bronc(yes)", 0.193211096486], ["bronc(no)", 0.806788903514],
-      ["either(yes)", 0.303694627914], ["either(no)", 0.696305372086],
+      ["fuel(full)", 0.0872227771756], ["fuel(low)", 0.621332505662], ["fuel(empty)", 0.291444717162],
+      ["plugs(ok)", 0.533974993546], ["plugs(fouled)", 0.466025006454],
+      ["starter(ok)", 0.90144965579], ["starter(faulty)", 0.09855034421],
     ],
-    evidence: 0.0396199356,
+    evidence: 0.0226280992986,
   },
   {
     key: "smokers",
@@ -142,15 +140,21 @@ const tddlogExamples = [
     evidence: 0.5,
   },
   {
-    key: "chest",
-    name: "Hugin network: the chest clinic",
-    file: "examples/asia.net",
+    key: "car-net",
+    name: "Hugin network: car trouble",
+    file: "examples/car.net",
     format: "hugin",
     problog: [
-      ["asia(yes)", 0.01], ["asia(no)", 0.99], ["tub(yes)", 0.0104], ["tub(no)", 0.9896],
-      ["smoke(yes)", 0.5], ["smoke(no)", 0.5], ["lung(yes)", 0.055], ["lung(no)", 0.945],
-      ["bronc(yes)", 0.45], ["bronc(no)", 0.55], ["either(yes)", 0.064828], ["either(no)", 0.935172],
-      ["xray(yes)", 0.11029004], ["xray(no)", 0.88970996], ["dysp(yes)", 0.4359706], ["dysp(no)", 0.5640294],
+      ["weather(cold)", 0.3], ["weather(mild)", 0.5], ["weather(hot)", 0.2],
+      ["battery_age(new)", 0.7], ["battery_age(old)", 0.3], ["lights_left_on(yes)", 0.1], ["lights_left_on(no)", 0.9],
+      ["battery(charged)", 0.7445], ["battery(weak)", 0.1699], ["battery(flat)", 0.0856],
+      ["headlights(bright)", 0.73276], ["headlights(dim)", 0.165765], ["headlights(off)", 0.101475],
+      ["starter(ok)", 0.97], ["starter(faulty)", 0.03],
+      ["cranks(yes)", 0.74994095], ["cranks(slowly)", 0.11996505], ["cranks(no)", 0.130094],
+      ["fuel(full)", 0.55], ["fuel(low)", 0.35], ["fuel(empty)", 0.1],
+      ["fuel_gauge(full)", 0.53], ["fuel_gauge(low)", 0.354], ["fuel_gauge(empty)", 0.116],
+      ["plugs(ok)", 0.909], ["plugs(fouled)", 0.091], ["spark(yes)", 0.839170165], ["spark(no)", 0.160829835],
+      ["fires(yes)", 0.731336798797], ["fires(no)", 0.268663201202], ["starts(yes)", 0.653079337485], ["starts(no)", 0.346920662515],
     ],
     evidence: 1,
   },

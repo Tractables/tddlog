@@ -54,15 +54,15 @@ fn a_dice_program() {
     assert_close("walk.dice", &got, &dice, 1e-9);
 }
 
-/// examples/asia.net with tests/networks/asia_leaves.inst, the evidence
+/// tests/networks/asia.net with tests/networks/asia_leaves.inst, the evidence
 /// file a Hugin network reads: ProbLog's answers and P(e) on the program
-/// it is read as, examples/bn_asia_evidence.pl (tests/it/networks.rs and
+/// it is read as, tests/networks/bn_asia_evidence.pl (tests/it/networks.rs and
 /// the playground's asia example).
 #[test]
 fn a_network_and_its_evidence_file() {
     let format: Format = "hugin".parse().unwrap();
     let (data, inst) = (
-        file("examples/asia.net"),
+        file("tests/networks/asia.net"),
         file("tests/networks/asia_leaves.inst"),
     );
     let options = ReadOptions {

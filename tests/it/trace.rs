@@ -359,7 +359,7 @@ fn asking_for_a_trace_changes_no_answer_and_no_work() {
             &ReadOptions::default(),
             "closed",
         ),
-        ("examples/asia.net", hugin, &networks, "auto"),
+        ("tests/networks/asia.net", hugin, &networks, "auto"),
         (
             "tests/dice/walk.dice",
             Format::Dice,
@@ -655,7 +655,7 @@ fn a_trace_it_cannot_serve_or_write_is_refused() {
             "so --trace would do nothing",
         ),
         (
-            &["--program", "--trace", path, "examples/asia.net"][..],
+            &["--program", "--trace", path, "tests/networks/asia.net"][..],
             "--trace",
         ),
         (

@@ -13,7 +13,7 @@ those and a few more, the larger programs below among them.
 | file | what it shows |
 |---|---|
 | [alarm.pl](alarm.pl) | facts, rules, evidence and queries; the program the README and [docs/design.md](../docs/design.md) follow |
-| [bn_asia_evidence.pl](bn_asia_evidence.pl) | a Bayesian network, one annotated disjunction per table row, with evidence ([guide](https://tractables.github.io/tddlog/guide/#bayesian-network)) |
+| [bn_car_evidence.pl](bn_car_evidence.pl) | a Bayesian network, one annotated disjunction per table row, with evidence: why a car does not start ([guide](https://tractables.github.io/tddlog/guide/#bayesian-network)) |
 | [cycle_graph.pl](cycle_graph.pl) | reachability in a graph with cycles ([guide](https://tractables.github.io/tddlog/guide/#reachability)) |
 | [adder.pl](adder.pl) | two integers in binary added bit by bit, as Dice compiles them ([guide](https://tractables.github.io/tddlog/guide/#binary-integers)) |
 | [win.pl](win.pl), [gearwheels.pl](gearwheels.pl), [unsound.pl](unsound.pl) | negation through recursion under the well-founded semantics, and a program without a distribution ([guide](https://tractables.github.io/tddlog/guide/#negation)) |
@@ -25,7 +25,7 @@ those and a few more, the larger programs below among them.
 
 | file | what it shows |
 |---|---|
-| [asia.net](asia.net), [cancer.net](cancer.net) | Bayesian networks in Hugin format, which tddlog reads as programs (`tddlog examples/asia.net`); `tddlog --program examples/asia.net` prints the program |
+| [car.net](car.net), [cancer.net](cancer.net) | Bayesian networks in Hugin format, which tddlog reads as programs (`tddlog examples/car.net`, with [car.inst](car.inst) its evidence); `tddlog --program examples/car.net` prints the program |
 | [bn_cancer.pl](bn_cancer.pl) | cancer.net as `tddlog --query leaves` reads it and `tddlog --program --query leaves` prints it |
 | [bn_split.pl](bn_split.pl) | a table that the indicator rewrite splits on a parent |
 | [negcycle_sound.pl](negcycle_sound.pl) | negation through a cycle that is two-valued in every world, which ProbLog refuses |

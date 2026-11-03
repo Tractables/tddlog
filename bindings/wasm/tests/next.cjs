@@ -87,7 +87,7 @@ function drawn(page) {
     }
   }
   // the walkthroughs: each one's key, playground example (none for a run the playground does not make) and steps
-  const WALKS = [["reach", "reachability"], ["gears", "gears"], ["network", "asia"], ["markov", null], ["dice", "walk"],
+  const WALKS = [["reach", "reachability"], ["gears", "gears"], ["network", "car"], ["markov", null], ["dice", "walk"],
     ["circuit", "circuit"]].map(([key, example]) =>
     [key, example, tddlogTrace.steps(JSON.parse(fs.readFileSync(path.join(site, "next", "walk", `${key}.json`), "utf8")))]);
   const integrations = Object.keys(cats.integrations ?? {});

@@ -554,28 +554,18 @@ const WALKS = [
   },
   {
     key: "network", what: "A network file read as a program: its tables, its families and the evidence.",
-    file: "examples/asia.net", example: "asia", evidence: true,
-    command: "tddlog --trace network.json --evidence-probability --evidence tests/networks/asia_leaves.inst examples/asia.net",
-    lede: "The asia network in Hugin's format, with its two leaves observed: `xray` yes and `dysp` no (tests/networks/asia_leaves.inst). tddlog reads the network "
-      + "as a program, each row of a table an annotated disjunction, and answers the marginals of the six other variables and P(e).",
+    file: "examples/car.net", example: "car", evidence: true,
+    command: "tddlog --trace network.json --evidence-probability --evidence examples/car.inst --query fuel,plugs,starter examples/car.net",
+    lede: "A car that does not start on a cold morning, a Hugin network of 13 variables: the headlights are bright, the fuel gauge low (examples/car.inst). Is it the fuel, the plugs or the starter?",
     captions: {
-      read: "The network and its evidence file (Ace's `.inst`) are read as one program, which `tddlog --program` prints: each row of a table an annotated "
-        + "disjunction over the variable's values, conditioned on its parents' values, and `either`, a logical or of `tub` and `lung`, as rules. It is "
-        + "examples/bn_asia_evidence.pl, which the playground opens.",
-      parse: "18 clauses: the 14 rows with a choice as annotated disjunctions and the four rows of `either` as rules; the two observations, and twelve queries, a "
-        + "value each of the six variables not observed.",
-      ground: "Each annotated disjunction of two values becomes a switch, a probabilistic fact true for its first value (`'$swtub_1_0'` for `tub` given "
-        + "`asia(yes)`), and rules over it. Of the observed variables only the observed values' rules remain. A network is acyclic: 14 components of one atom.",
-      rewrite: "`families:0` reads the program through indicators: each atom that another family reads is read there through a copy, a fact of its own "
-        + "(`'$v'`, 16 copies of 12 atoms), tied to the atom by a link (`'$c'`) that the program observes. The 10 observations are the network's 2 and the 8 links.",
-      layout: "Here `auto`'s first trial is `families:0`, and it finished in its first attempt. A family is a formula the query phase conjoins (a link, an observed "
-        + "or queried atom), and `families:0` lays them out by a min-fill decomposition of the graph of their groups. The vtree's 30 leaves are the 14 switches and the 16 copies.",
-      compile: "Each of the 22 components is one atom. The variables' own atoms take no pairs here; the work is in the links, which hold the tables' rows "
-        + "as their clauses (src/indicators), and in the observed atoms, the largest `dysp(no)` at 41 pairs. A formula is stored as the atom's negation (the "
-        + "dual) and compiles on the vtree projected to its component's ancestor cone.",
-      evidence: "The 10 observations are conjoined along the vtree into one diagram of 120 pairs, whose count is P(e) = 0.0396199356. Each query is counted "
-        + "against it: P(q | e) = WMC(q ∧ e) / WMC(e).",
-      answers: "Twelve marginals and P(e): ProbLog 2.3.0's answers on examples/bn_asia_evidence.pl, the program the network was read as.",
+      read: "The network and its evidence are read as one program, `tddlog --program`'s: each row of a table an annotated disjunction over the values it gives a chance. It is examples/bn_car_evidence.pl.",
+      parse: "42 clauses: 31 annotated disjunctions and 11 rules, the rows certain of one value (`cranks(no) :- battery(flat), starter(faulty)`); four observations and seven queries.",
+      ground: "A choice among n values becomes n − 1 switches, each given the ones before (`'$swbattery_3_1'` at 0.4/0.8 = 0.5). `weather(cold)` is fixed, its 0.3 a factor of P(e): 24 components.",
+      rewrite: "`families:0` reads each atom another family reads through a copy (`'$v'`, 29 copies of 21 atoms), tied to it by an observed link (`'$c'`): 16 observations, 3 of the network's and 13 links.",
+      layout: "`auto`'s `families:0` trial finished in its first attempt: 23 families in 12 groups, laid out by a tree decomposition of width 2; 65 leaves, 36 switches and 29 copies.",
+      compile: "37 components of one atom, none cyclic, each stored as its negation (the dual). The links hold the tables' rows; the largest, `cranks(yes)` as `starts(no)` reads it, has 106 pairs.",
+      evidence: "The 16 observations are conjoined along the vtree into 438 pairs, whose count is P(e) = 0.0226. Each query is counted against it: P(q | e) = WMC(q ∧ e) / WMC(e).",
+      answers: "An empty tank goes from 0.10 to 0.29, fouled plugs from 0.20 on a cold day to 0.47, a faulty starter from 0.03 to 0.10: a sum over the worlds' answers and ProbLog's (tests/it/networks.rs).",
     },
   },
   {

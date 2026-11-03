@@ -782,26 +782,21 @@ fn bn_cancer() {
     );
 }
 
-/// The asia network with both leaves observed (`tddlog --program
+/// The car network with four of its variables observed (`tddlog --program
 /// --evidence`); ProbLog's answers. The families layout reads the evidence
 /// and every query through indicators.
 #[test]
-fn bn_asia_evidence() {
+fn bn_car_evidence() {
     check(
-        "bn_asia_evidence.pl",
+        "bn_car_evidence.pl",
         &[
-            ("asia(yes)", 0.01167842),
-            ("asia(no)", 0.98832158),
-            ("tub(yes)", 0.054021289),
-            ("tub(no)", 0.94597871),
-            ("smoke(yes)", 0.51320709),
-            ("smoke(no)", 0.48679291),
-            ("lung(yes)", 0.25229723),
-            ("lung(no)", 0.74770277),
-            ("bronc(yes)", 0.1932111),
-            ("bronc(no)", 0.8067889),
-            ("either(yes)", 0.30369463),
-            ("either(no)", 0.69630537),
+            ("fuel(full)", 0.087222777),
+            ("fuel(low)", 0.62133251),
+            ("fuel(empty)", 0.29144472),
+            ("plugs(ok)", 0.53397499),
+            ("plugs(fouled)", 0.46602501),
+            ("starter(ok)", 0.90144966),
+            ("starter(faulty)", 0.098550344),
         ],
     );
 }

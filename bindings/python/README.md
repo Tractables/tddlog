@@ -81,8 +81,8 @@ file's extension: `"problog"`, the default (an LPAD where it holds
 a UAI network, a UAI `.evid` file:
 
 ```python
-network = open("examples/asia.net").read()
-observed = open("tests/networks/asia_leaves.inst").read()
+network = open("examples/car.net").read()
+observed = open("examples/car.inst").read()
 solution = tddlog.solve(network, format="hugin", evidence=observed)
 ```
 

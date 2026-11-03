@@ -173,7 +173,7 @@ path(X,Y) :- edge(X,Z), path(Z,Y).
 
   <h3 id="annotated-disjunctions">Annotated disjunctions</h3>
 <pre data-lang="problog">0.2::color(red); 0.5::color(green); 0.3::color(blue).
-0.05::tub(yes); 0.95::tub(no) :- asia(yes).</pre>
+0.15::headlights(bright); 0.75::headlights(dim); 0.1::headlights(off) :- battery(weak).</pre>
   <p>An annotated disjunction makes one choice among its heads: here the
   color is red with probability 0.2, green with 0.5 and blue with 0.3.
   Probabilities that sum to less than one leave the rest of the mass to
@@ -298,69 +298,86 @@ parse error: line 1: if-then-else is not supported</pre>
   strategies.</p>
 
   <h3 id="bayesian-network">A Bayesian network with evidence</h3>
-  <p><a href="https://github.com/Tractables/tddlog/blob/main/examples/bn_asia_evidence.pl"><code>examples/bn_asia_evidence.pl</code></a> is the asia network of
-  <a href="https://doi.org/10.1111/j.2517-6161.1988.tb01721.x">Lauritzen and
-  Spiegelhalter (1988)</a>, which relates a visit to Asia,
-  smoking, tuberculosis, lung cancer and bronchitis to an x-ray and to
-  dyspnoea. Each variable's table is one annotated disjunction per row of
-  its parents' values; <code>either</code>, which holds where the patient
-  has tuberculosis or lung cancer, is a deterministic node, written as
-  rules:</p>
-<pre data-lang="problog" data-file="examples/bn_asia_evidence.pl">0.01::asia(yes); 0.99::asia(no).
-0.05::tub(yes); 0.95::tub(no) :- asia(yes).
-0.01::tub(yes); 0.99::tub(no) :- asia(no).
-0.5::smoke(yes); 0.5::smoke(no).
-0.1::lung(yes); 0.9::lung(no) :- smoke(yes).
-0.01::lung(yes); 0.99::lung(no) :- smoke(no).
-0.6::bronc(yes); 0.4::bronc(no) :- smoke(yes).
-0.3::bronc(yes); 0.7::bronc(no) :- smoke(no).
-either(yes) :- lung(yes), tub(yes).
-either(yes) :- lung(yes), tub(no).
-either(yes) :- lung(no), tub(yes).
-either(no) :- lung(no), tub(no).
-0.98::xray(yes); 0.02::xray(no) :- either(yes).
-0.05::xray(yes); 0.95::xray(no) :- either(no).
-0.9::dysp(yes); 0.1::dysp(no) :- bronc(yes), either(yes).
-0.8::dysp(yes); 0.2::dysp(no) :- bronc(yes), either(no).
-0.7::dysp(yes); 0.3::dysp(no) :- bronc(no), either(yes).
-0.1::dysp(yes); 0.9::dysp(no) :- bronc(no), either(no).
-evidence(xray(yes)).
-evidence(dysp(no)).
-query(asia(yes)).
-query(asia(no)).
-query(tub(yes)).
-query(tub(no)).
-query(smoke(yes)).
-query(smoke(no)).
-query(lung(yes)).
-query(lung(no)).
-query(bronc(yes)).
-query(bronc(no)).
-query(either(yes)).
-query(either(no)).</pre>
-  <p>The patient has a positive x-ray and no dyspnoea, and the queries ask
-  for both values of six of the variables:</p>
-<pre data-lang="shell">$ tddlog --evidence-probability examples/bn_asia_evidence.pl
-asia(yes):      0.011678
-asia(no):       0.988322
-tub(yes):       0.054021
-tub(no):        0.945979
-smoke(yes):     0.513207
-smoke(no):      0.486793
-lung(yes):      0.252297
-lung(no):       0.747703
-bronc(yes):     0.193211
-bronc(no):      0.806789
-either(yes):    0.303695
-either(no):     0.696305
-P(e):   3.961994e-2     log10 -1.402086</pre>
-  <p>The positive x-ray alone would raise the probability of tuberculosis
-  or lung cancer (<code>either</code>) to 0.58; the absence of dyspnoea,
-  which either disease makes likely, brings it back to 0.30. The last line
-  is the probability of the two observations together.
-  tddlog reads such programs from the usual network files itself
+  <p><a href="https://github.com/Tractables/tddlog/blob/main/examples/bn_car_evidence.pl"><code>examples/bn_car_evidence.pl</code></a> is a car that
+  does not start, a network of thirteen variables written for these
+  examples (<a href="https://github.com/Tractables/tddlog/blob/main/examples/car.net"><code>examples/car.net</code></a>). The battery's charge
+  follows its age and the lights left on, the engine cranks given the
+  battery and the starter, the plugs foul more often in the cold, and the
+  car starts if the engine cranks and fires, which takes a spark and
+  fuel. Each variable's table is one annotated disjunction per row of its
+  parents' values; a row certain of one value is a rule:</p>
+<pre data-lang="problog" data-file="examples/bn_car_evidence.pl">0.3::weather(cold); 0.5::weather(mild); 0.2::weather(hot).
+0.7::battery_age(new); 0.3::battery_age(old).
+0.1::lights_left_on(yes); 0.9::lights_left_on(no).
+0.2::battery(charged); 0.4::battery(weak); 0.4::battery(flat) :- battery_age(new), lights_left_on(yes).
+0.9::battery(charged); 0.08::battery(weak); 0.02::battery(flat) :- battery_age(new), lights_left_on(no).
+0.05::battery(charged); 0.35::battery(weak); 0.6::battery(flat) :- battery_age(old), lights_left_on(yes).
+0.6::battery(charged); 0.3::battery(weak); 0.1::battery(flat) :- battery_age(old), lights_left_on(no).
+0.95::headlights(bright); 0.04::headlights(dim); 0.01::headlights(off) :- battery(charged).
+0.15::headlights(bright); 0.75::headlights(dim); 0.1::headlights(off) :- battery(weak).
+0.1::headlights(dim); 0.9::headlights(off) :- battery(flat).
+0.97::starter(ok); 0.03::starter(faulty).
+0.97::cranks(yes); 0.02::cranks(slowly); 0.01::cranks(no) :- battery(charged), starter(ok).
+0.1::cranks(slowly); 0.9::cranks(no) :- battery(charged), starter(faulty).
+0.3::cranks(yes); 0.6::cranks(slowly); 0.1::cranks(no) :- battery(weak), starter(ok).
+0.05::cranks(slowly); 0.95::cranks(no) :- battery(weak), starter(faulty).
+0.05::cranks(slowly); 0.95::cranks(no) :- battery(flat), starter(ok).
+cranks(no) :- battery(flat), starter(faulty).
+0.55::fuel(full); 0.35::fuel(low); 0.1::fuel(empty).
+0.9::fuel_gauge(full); 0.08::fuel_gauge(low); 0.02::fuel_gauge(empty) :- fuel(full).
+0.1::fuel_gauge(full); 0.8::fuel_gauge(low); 0.1::fuel_gauge(empty) :- fuel(low).
+0.3::fuel_gauge(low); 0.7::fuel_gauge(empty) :- fuel(empty).
+0.8::plugs(ok); 0.2::plugs(fouled) :- weather(cold).
+0.95::plugs(ok); 0.05::plugs(fouled) :- weather(mild).
+0.97::plugs(ok); 0.03::plugs(fouled) :- weather(hot).
+0.99::spark(yes); 0.01::spark(no) :- plugs(ok), battery(charged).
+0.9::spark(yes); 0.1::spark(no) :- plugs(ok), battery(weak).
+spark(no) :- plugs(ok), battery(flat).
+0.4::spark(yes); 0.6::spark(no) :- plugs(fouled), battery(charged).
+0.2::spark(yes); 0.8::spark(no) :- plugs(fouled), battery(weak).
+spark(no) :- plugs(fouled), battery(flat).
+0.98::fires(yes); 0.02::fires(no) :- spark(yes), fuel(full).
+0.95::fires(yes); 0.05::fires(no) :- spark(yes), fuel(low).
+fires(no) :- spark(yes), fuel(empty).
+fires(no) :- spark(no), fuel(full).
+fires(no) :- spark(no), fuel(low).
+fires(no) :- spark(no), fuel(empty).
+0.99::starts(yes); 0.01::starts(no) :- cranks(yes), fires(yes).
+starts(no) :- cranks(yes), fires(no).
+0.6::starts(yes); 0.4::starts(no) :- cranks(slowly), fires(yes).
+starts(no) :- cranks(slowly), fires(no).
+starts(no) :- cranks(no), fires(yes).
+starts(no) :- cranks(no), fires(no).
+evidence(weather(cold)).
+evidence(headlights(bright)).
+evidence(fuel_gauge(low)).
+evidence(starts(no)).
+query(fuel(full)).
+query(fuel(low)).
+query(fuel(empty)).
+query(plugs(ok)).
+query(plugs(fouled)).
+query(starter(ok)).
+query(starter(faulty)).</pre>
+  <p>On a cold morning the headlights are bright, the fuel gauge reads low
+  and the car does not start; the queries ask whether it is the fuel, the
+  plugs or the starter:</p>
+<pre data-lang="shell">$ tddlog --evidence-probability examples/bn_car_evidence.pl
+fuel(full):     0.087223
+fuel(low):      0.621333
+fuel(empty):    0.291445
+plugs(ok):      0.533975
+plugs(fouled):  0.466025
+starter(ok):    0.901450
+starter(faulty):        0.098550
+P(e):   2.262810e-2     log10 -1.645352</pre>
+  <p>An empty tank goes from 0.10 to 0.29, fouled plugs from 0.20 on a cold
+  day to 0.47, and a faulty starter from 0.03 to 0.10: bright headlights
+  leave the battery little to blame, so the engine most likely cranked
+  and did not fire. The last line is the probability of the four observations
+  together. tddlog reads such programs from the usual network files itself
   (<a href="#networks">below</a>).</p>
-  <p class="try"><a href="../playground/?example=asia&amp;evidence=1">Open it in the
+  <p class="try"><a href="../playground/?example=car&amp;evidence=1">Open it in the
   playground</a>.</p>
 
   <h3 id="reachability">Reachability in a graph with cycles</h3>
@@ -604,14 +621,14 @@ query(reach($3)).</pre>
 
   <h3 id="network-files">Bayesian and Markov networks</h3>
   <p>tddlog reads a discrete network file as a ground program, as in the
-  asia example: a Bayesian network in BIF (<code>.bif</code>), Hugin
+  car example: a Bayesian network in BIF (<code>.bif</code>), Hugin
   (<code>.net</code>, <code>.hugin</code>), GeNIe (<code>.xdsl</code>) or
   the UAI format (<code>.uai</code>), and a Markov network in the UAI
   format, each factor an observed atom. The file's extension names its
   format.</p>
-<pre data-lang="shell">tddlog examples/asia.net --query leaves
+<pre data-lang="shell">tddlog examples/car.net --query leaves
 tddlog tests/regress/markov.uai --evidence tests/regress/markov.uai.evid --evidence-probability
-tddlog --program examples/asia.net &gt; asia.pl</pre>
+tddlog --program examples/car.net &gt; car.pl</pre>
   <p>The program queries every value of every unobserved variable
   (<code>--query leaves</code> those of the variables without children,
   <code>--query a,b</code> those of the variables named), and its answers
@@ -630,9 +647,9 @@ tddlog --program examples/asia.net &gt; asia.pl</pre>
   network's text with its format and the evidence file's text, which is
   read as a UAI <code>.evid</code> file for a UAI network and as an Ace
   <code>.inst</code> file for any other; they query every variable.</p>
-<pre data-lang="python">solution = tddlog.solve(open("examples/asia.net").read(), format="hugin",
-                        evidence=open("tests/networks/asia_leaves.inst").read())</pre>
-  <p class="try"><a href="../playground/?example=chest">Open the asia network's
+<pre data-lang="python">solution = tddlog.solve(open("examples/car.net").read(), format="hugin",
+                        evidence=open("examples/car.inst").read())</pre>
+  <p class="try"><a href="../playground/?example=car-net">Open the car network's
   file in the playground</a>.</p>
 
   <h3 id="dice">Dice programs</h3>
@@ -732,7 +749,7 @@ for answer in solution.answers.as_deref().unwrap_or_default() {
   <code>Solution</code>. <code>tddlog::read</code> reads an input in any
   format as the program <code>solve</code> takes:</p>
 <pre data-lang="rust">let format: tddlog::Format = "hugin".parse()?;
-let (net, inst) = (std::fs::read("examples/asia.net")?, std::fs::read("tests/networks/asia_leaves.inst")?);
+let (net, inst) = (std::fs::read("examples/car.net")?, std::fs::read("examples/car.inst")?);
 let read = tddlog::network::ReadOptions { evidence: Some(format.evidence(&amp;inst)), ..Default::default() };
 let input = tddlog::read(&amp;net, format, &amp;read)?;
 let solution = tddlog::solve(&amp;input.program, &amp;options, &amp;mut |_| {})?;

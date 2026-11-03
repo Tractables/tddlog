@@ -5,7 +5,7 @@
 //!
 //! The programs are the ones the benchmarks' Python script `gen_bn.py`,
 //! which the reader replaced, wrote: tests/regress/markov*.pl and
-//! potts.pl, examples/bn_cancer.pl and bn_asia_evidence.pl, and
+//! potts.pl, examples/bn_cancer.pl and bn_car_evidence.pl, and
 //! tests/networks/*.pl, whose comments say how; the baselines branch
 //! checks that the script still writes them.
 use std::process::{Command, Output};
@@ -50,7 +50,7 @@ fn written(path: &str) -> Vec<String> {
 #[test]
 fn a_network_reads_as_the_program_beside_it() {
     let named = |names: &[&str]| Queries::Named(names.iter().map(|n| n.to_string()).collect());
-    let cases: [(&str, Queries, Option<&str>, bool, &str); 12] = [
+    let cases: [(&str, Queries, Option<&str>, bool, &str); 13] = [
         (
             "tests/regress/markov.uai",
             Queries::All,
@@ -94,11 +94,18 @@ fn a_network_reads_as_the_program_beside_it() {
             "examples/bn_cancer.pl",
         ),
         (
-            "examples/asia.net",
+            "tests/networks/asia.net",
             Queries::All,
             Some("tests/networks/asia_leaves.inst"),
             false,
-            "examples/bn_asia_evidence.pl",
+            "tests/networks/bn_asia_evidence.pl",
+        ),
+        (
+            "examples/car.net",
+            named(&["fuel", "plugs", "starter"]),
+            Some("examples/car.inst"),
+            false,
+            "examples/bn_car_evidence.pl",
         ),
         (
             "tests/networks/sprinkler.bif",
@@ -149,7 +156,7 @@ fn a_network_reads_as_the_program_beside_it() {
 /// prints, and its answers are the whole program's, to the bit.
 #[test]
 fn a_network_is_answered_on_the_rows_its_queries_read() {
-    let data = std::fs::read("examples/asia.net").unwrap();
+    let data = std::fs::read("tests/networks/asia.net").unwrap();
     let solved = |whole| {
         let options = ReadOptions {
             queries: Queries::Named(vec!["either".into()]),
@@ -316,7 +323,7 @@ fn a_network_answers_as_problog_and_enumeration_do() {
     ];
     assert_close("cancer.net", &answers(&out, "P(e)").0, &cancer, 1e-7);
     let out = tddlog(&[
-        "examples/asia.net",
+        "tests/networks/asia.net",
         "--evidence",
         "tests/networks/asia_leaves.inst",
         "--precision",
@@ -337,6 +344,34 @@ fn a_network_answers_as_problog_and_enumeration_do() {
         ("either(no)", 0.69630537),
     ];
     assert_close("asia.net", &answers(&out, "P(e)").0, &asia, 1e-7);
+    // The car network of the examples given a cold morning's observations:
+    // its marginals and P(e) by a sum over its 93,312 worlds, which
+    // ProbLog's answers on examples/bn_car_evidence.pl agree with to their
+    // eight digits; the queries move from their priors (an empty tank 0.1,
+    // fouled plugs 0.2 in the cold, a faulty starter 0.03).
+    let out = tddlog(&[
+        "examples/car.net",
+        "--evidence",
+        "examples/car.inst",
+        "--query",
+        "fuel,plugs,starter",
+        "--evidence-probability",
+        "--precision",
+        "12",
+    ]);
+    let car = [
+        ("fuel(full)", 0.0872227771755762),
+        ("fuel(low)", 0.62133250566198),
+        ("fuel(empty)", 0.291444717162443),
+        ("plugs(ok)", 0.533974993545689),
+        ("plugs(fouled)", 0.466025006454311),
+        ("starter(ok)", 0.901449655790024),
+        ("starter(faulty)", 0.0985503442099751),
+    ];
+    let (got, log10_e) = answers(&out, "P(e)");
+    assert_close("car.net", &got, &car, 1e-11);
+    let log10_e = log10_e.expect("a P(e) line");
+    assert!((log10_e - 0.0226280992985857f64.log10()).abs() < 1e-11, "{log10_e}");
     // ProbLog's answers on the programs of tests/networks/, one query at
     // a time.
     for (args, expected) in [
@@ -440,21 +475,21 @@ fn network_options_fail_where_they_would_do_nothing() {
             "--evidence",
             "tests/networks/asia_leaves.inst",
         ][..],
-        &["examples/asia.net.gz"][..],
+        &["tests/networks/asia.net.gz"][..],
         &[
-            "examples/asia.net",
+            "tests/networks/asia.net",
             "--query",
             "all",
             "--no-queries",
             "--evidence-probability",
         ][..],
-        &["examples/asia.net", "--program", "--stats"][..],
+        &["tests/networks/asia.net", "--program", "--stats"][..],
         &[
-            "examples/asia.net",
+            "tests/networks/asia.net",
             "--evidence",
             "tests/regress/markov.uai",
         ][..],
-        &["examples/asia.net", "--query", ""][..],
+        &["tests/networks/asia.net", "--query", ""][..],
     ] {
         let out = tddlog(args);
         assert_eq!(
@@ -468,7 +503,7 @@ fn network_options_fail_where_they_would_do_nothing() {
     for args in [
         &["tests/networks/sprinkler.bif", "--query", "Nothing"][..],
         &[
-            "examples/asia.net",
+            "tests/networks/asia.net",
             "--evidence",
             "tests/regress/markov.uai.evid",
         ][..],

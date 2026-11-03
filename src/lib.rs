@@ -54,7 +54,7 @@
 //! and open in the playground:
 //!
 //! 1. [A Bayesian network with evidence](https://tractables.github.io/tddlog/guide/#bayesian-network):
-//!    the asia network, each row of its tables an annotated disjunction.
+//!    a car that does not start, each row of its tables an annotated disjunction.
 //! 2. [Reachability in a graph with cycles](https://tractables.github.io/tddlog/guide/#reachability):
 //!    the probability of a path, defined by recursion.
 //! 3. [Integers in binary](https://tractables.github.io/tddlog/guide/#binary-integers):
