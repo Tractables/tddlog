@@ -454,12 +454,13 @@ function censusSource(src, tool = false, open = false) {
   const table = () => [scroller(stacked(element("table", { class: "board census-t" }, element("thead", {}, element("tr", {},
     element("th", { scope: "col" }, "why"), element("th", { scope: "col", class: "num" }, "programs"), element("th", { scope: "col" }, "which"),
     element("th", { scope: "col" }, "what stops tddlog"))), element("tbody", {}, ...rows))), "whole")];
-  // counts in cells; a source counted in words says so in its line
+  // counts in cells; a source counted in words, the words under the same labels
   const counted = typeof src.programs === "number" && typeof src.runs === "number";
   return element("div", { class: "census" },
-    element("p", {}, element("b", {}, src.source), ...(tool ? [" (", systemLink(src.system), ")"] : []), `: ${src.what}.`,
-      ...(counted ? [] : [" ", element("span", { class: "muted" }, `${n(src.programs)}; tddlog runs ${n(src.runs)}.`)])),
-    ...(counted ? [cells(["programs", count(src.programs)], ["tddlog runs", count(src.runs)], ["tddlog does not run", count(src.programs - src.runs)])] : []),
+    element("p", {}, element("b", {}, src.source), ...(tool ? [" (", systemLink(src.system), ")"] : []), `: ${src.what}.`),
+    counted ? cells(["programs", count(src.programs)], ["tddlog runs", count(src.runs)], ["tddlog does not run", count(src.programs - src.runs)])
+      : element("dl", { class: "classes words" }, element("dt", {}, "programs"), element("dd", {}, n(src.programs)),
+        element("dt", {}, "tddlog runs"), element("dd", {}, n(src.runs))),
     ...(!rows.length ? [] : open ? table() : [lazy({ class: "census-fold" }, `Why tddlog does not run the others: ${plural(rows.length, "kind")}`, table)]));
 }
 

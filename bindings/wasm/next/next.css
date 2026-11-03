@@ -66,6 +66,9 @@ ul.insts { columns: 16rem; margin: 0.4rem 0 0.8rem; font-size: 13px; }
 /* Coverage: the classes and each source's census. */
 dl.classes { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.3rem 1rem; max-width: 90ch; font-size: 14px; }
 dl.classes dt, dl.classes dd { margin: 0; }
+/* A census source counted in words: its programs and what tddlog runs, labelled as the counts are. */
+dl.classes.words { margin: 0.3rem 0 0.5rem; font-size: 13px; }
+dl.classes.words dt { color: var(--muted); }
 details.reasons { margin: 0.5rem 0 0.8rem; font-size: 14px; }
 details.reasons summary { cursor: pointer; }
 details.reasons summary .cls { margin-left: 0.3rem; }
