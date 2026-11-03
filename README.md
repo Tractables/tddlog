@@ -267,12 +267,12 @@ and Q9, and paths of two edges in random graphs.
 
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| ProvSQL | 268 | 16 h | 41 min | 21× |
-| ProbLog | 203 | 39 h | 41 min | 123× |
-| PSouffle | 189 | 41 h | 41 min | 110× |
-| PITA | 123 | 62 h | 41 min | 392× |
+| ProvSQL | 268 | 16 h | 41 min | 22× |
+| ProbLog | 203 | 39 h | 41 min | 126× |
+| PSouffle | 189 | 41 h | 41 min | 117× |
+| PITA | 123 | 62 h | 41 min | 411× |
 | Scallop | 30 | 90 h | 41 min | too few in common |
-| aspmc | 18 | 96 h | 41 min | too few in common |
+| aspmc | 22 | 95 h | 41 min | 520× |
 
 - Where others win: ProbLog on the paths of two edges in random graphs
   of 14 and 17 nodes, in 4.8 s and 39 s against tddlog's 18 s and 182 s.
@@ -342,7 +342,7 @@ the rus networks, weighted CSPs, and pedigree and diagnosis networks.
 
 tddlog and Alea.jl+tddlog answer **295 of 331** programs over discrete
 values with
-conditionals and loops, of 17 families: the Caesar cipher, diamond and
+conditionals and loops, of 18 families: the Caesar cipher, diamond and
 ladder networks, Geni's router grids with failing links or routers and
 its weather factory, hidden Markov models and Pluck's sequence models, a
 Markov chain, a lossy network, contract signing, a perturbed-memory
@@ -367,18 +367,18 @@ Alea.jl builds the Boolean circuit that Alea.jl+tddlog answers.
        alt="All programs answered within each time limit, and the time of tddlog or Alea.jl+tddlog against the fastest other system's">
 </p>
 
-tddlog, Alea.jl+tddlog and Roulette+tddlog answer **2053 of 2237**: the five types
+tddlog and Alea.jl+tddlog answer **1797 of 1942**: the five types
 together, every system on every program it is given, natively or through
 a translation.
 
-| System | Answers | Its total time | tddlog, Alea.jl+tddlog or Roulette+tddlog's total time | tddlog, Alea.jl+tddlog or Roulette+tddlog faster |
+| System | Answers | Its total time | tddlog or Alea.jl+tddlog's total time | tddlog or Alea.jl+tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 1098 | 185 h | 7.1 h | 30× |
-| libDAI | 943 | 233 h | 7.5 h | 40× |
-| TensorInference.jl | 917 | 250 h | 8.5 h | 31× |
-| pyAgrum | 898 | 239 h | 7.5 h | 37× |
-| Merlin | 890 | 244 h | 7.6 h | 32× |
-| 18 others: PITA, ProbLog, pgmpy, Alea.jl, aspmc, Roulette, Pluck, Storm, Dice, PRISM, PSouffle, ProvSQL, Scallop, noDice, Genfer, Geni, SPPL, Psi | 88 to 797 | over 16 h each | 41 min to 7.6 h | at least 21× |
+| Ace | 1008 | 128 h | 4.9 h | 29× |
+| libDAI | 891 | 164 h | 5.2 h | 37× |
+| TensorInference.jl | 872 | 179 h | 6.2 h | 30× |
+| pyAgrum | 836 | 173 h | 5.2 h | 37× |
+| Merlin | 829 | 179 h | 5.4 h | 33× |
+| 18 others: ProbLog, pgmpy, PITA, aspmc, Alea.jl, Roulette, Storm, Pluck, Dice, PRISM, PSouffle, ProvSQL, Scallop, noDice, Genfer, Geni, SPPL, Psi | 86 to 734 | over 16 h each | 41 min to 5.4 h | at least 22× |
 
 - Where others win: pgmpy answers grid25, a logic program's path query
   across a 25 by 25 grid of probabilistic edges, in 144 s on the
@@ -397,8 +397,8 @@ have the programs and plots.
 
 | Integration | Instances | Answers | Total time | Faster |
 |---|--:|--:|--:|--:|
-| Alea.jl+tddlog against Alea.jl | 0 | 0 (Alea.jl 0) | 0 s (Alea.jl 0 s) | too few in common |
-| Roulette+tddlog against Roulette | 0 | 0 (Roulette 0) | 0 s (Roulette 0 s) | too few in common |
+| Alea.jl+tddlog against Alea.jl | 289 | 254 (Alea.jl 168) | 3.5 h (Alea.jl 32 h) | 6.5× |
+| Roulette+tddlog against Roulette | 351 | 276 (Roulette 205) | 4.3 h (Roulette 27 h) | 4.6× |
 
 ## Building and testing
 
