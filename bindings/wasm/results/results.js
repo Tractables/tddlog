@@ -1363,10 +1363,9 @@ function categoryView(route) {
 // on those a translator wrote for it, its answers, its total time, tddlog's
 // and tddlog's speed-up, and a fold of their plots; `types`, in each category it was
 // given, its answers, its total time, tddlog's and tddlog's speed-up, and a
-// fold of its plot among the others there; `own`, its own benchmarks;
-// `given`, how it was given the instances; and `facts`, its version,
-// settings, what it was not given, how it is compared, its paper and its
-// link.
+// fold of its plot among the others there; `own`, its own benchmarks; and
+// `facts`, its version, settings, what it was not given, how it is
+// compared, its paper and its link.
 function solverParts(x) {
   const s = data.systems.find((y) => y.key === x);
   const name = data.names[x];
@@ -1422,20 +1421,6 @@ function solverParts(x) {
       plotted(catSuite(c, rows, [...new Set([...c.drawn, x])], tal), data.names, { colour: [...c.mine, x] }))))])];
   const ownList = data.own.filter((o) => o.system === x);
   const own = ownList.length ? ownTable(ownList, `Against ${subject([...new Set(ownList.flatMap((o) => o.vs.me))])} on them`) : [];
-  // how it was given the instances: the rows of the classes that apply
-  const how = element("tbody");
-  for (const h of s.how) {
-    // the instances a row names: those whose name starts with its pattern (a
-    // regular expression; one that ends in $, that name alone)
-    const pattern = h.instances.endsWith("$") ? h.instances.slice(0, -1) : `${h.instances}…`;
-    how.append(element("tr", {}, element("td", {}, h.cls), element("td", { class: "num" }, count(h.n)),
-      element("td", { class: "about" }, and(h.suites.map((key) => data.suites.get(key)?.title ?? key)),
-        h.instances ? [": ", element("code", {}, pattern)] : ""),
-      prose("td", h.reason, { class: "about" })));
-  }
-  const given = scroller(stacked(element("table", { class: "board how-given" },
-    element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "as"), element("th", { scope: "col", class: "num" }, "instances"),
-      element("th", { scope: "col" }, "suites"), element("th", { scope: "col" }, "the program it read"))), how)), "whole");
   // version, settings, what it was not given, and how it is compared
   const short = parts.filter((p) => p.tal[x].given < p.c.instances)
     .map((p) => `${p.c.title}, ${count(p.c.instances - p.tal[x].given)} of ${count(p.c.instances)}`);
@@ -1450,7 +1435,7 @@ function solverParts(x) {
       c.doi ? element("a", { href: `https://doi.org/${c.doi}` }, c.title) : c.title, `. ${c.venue}, ${c.year}.`));
   }
   facts.append(element("dt", {}, "Site"), element("dd", {}, element("a", { href: s.link }, s.link)));
-  return { s, languages, types, own, given, facts };
+  return { s, languages, types, own, facts };
 }
 
 function findings(list) {

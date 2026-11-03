@@ -1072,12 +1072,10 @@ table.board.own td.about { white-space: normal; min-width: 18rem; max-width: 40r
 table.board.families thead th, table.board.families td.about { white-space: normal; }
 table.board.families td.about { min-width: 10rem; max-width: 30rem; }
 /* A solver's page: its name and line's sample, its plot in each category
-   (two to a row where they fit), how it was given the instances, and its
-   version, settings and paper. */
+   (two to a row where they fit), and its version, settings and paper. */
 h2.solver { display: flex; align-items: center; gap: 0.6rem; }
 .cat-figs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr)); gap: 0.5rem 1.5rem; }
 .cat-figs section h3 { margin: 0.6rem 0 0; font-size: 1rem; }
-table.board.how-given td.about { white-space: normal; min-width: 12rem; max-width: 36rem; }
 div.facts dl { margin: 0.4rem 0 0; font-size: 14px; }
 div.facts dd { max-width: 80ch; min-width: 0; overflow-wrap: anywhere; }
 .tree li.solver i.sw { width: 0.8rem; flex: none; align-self: center; }

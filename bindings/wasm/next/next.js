@@ -8,7 +8,7 @@
 //   #/                     the home page: what tddlog is, each type of program against its best baselines, the integrations
 //   #/baselines            by baseline: every other system, what it is native to and what it answers
 //   #/baselines/SYSTEM[/AT]
-//                          tddlog against SYSTEM: head-to-head, translated (each direction and route), in
+//                          tddlog against SYSTEM: head-to-head, translated (by family), in
 //                          each type of program, its own benchmarks, coverage, and how it was run; AT names
 //                          one of these, which the page scrolls to
 //   #/integrations         by integration: tddlog alone, and in a pipeline after another system's own code
@@ -33,11 +33,6 @@
 // times. The page counts and draws; it computes no total or speed-up.
 
 const BRANCH = "https://github.com/Tractables/tddlog/blob/";
-const KIND_TEXT = {
-  s: (name) => `${name} read a translation of the program tddlog read`,
-  m: (name) => `tddlog read a translation of ${name}'s program`,
-  b: () => "both read a translation of the original, which neither read",
-};
 const draft = { views: null };
 
 // ------------------------------------------------------------- the data
@@ -196,45 +191,54 @@ function baselinesView() {
     body)), "whole")];
 }
 
-// The first clause of a reason of CLASSES (views.json's ways): what one side
-// read, in a few words.
-const clause = (reason) => reason.split(/,|:| \(/)[0];
+// A list of nodes in prose: "A", "A and B", "A, B and C".
+const andNodes = (items) => items.flatMap((x, i) => [i === 0 ? "" : i === items.length - 1 ? " and " : ", ", x]);
 
-// A baseline's translated instances by route (views.json's ways), a row
-// each under its direction: what the translated side read (each side's,
-// where both did; the class's reason in full its title), the instances,
-// each side's answers and total, tddlog's speed-up, and the scripts that
-// wrote the files. A direction's routes of few instances are one row,
-// other routes, as views.py folds them.
-function routesTable(v, name) {
+// What one side read on a baseline's translated instances (views.json's
+// read), in a few words: the original programs, those the scripts wrote,
+// other translations.
+function whatRead(side) {
+  const out = [];
+  if (side.original) out.push(["the original programs"]);
+  if (side.by.length) out.push(["programs written by ", ...andNodes(side.by.map(([n, path]) => scriptLink(n, path)))]);
+  if (side.other) out.push([side.by.length ? "other translations" : "translations"]);
+  return out.flatMap((part, i) => [i ? " or " : "", ...part]);
+}
+
+// A baseline's translated instances by family (views.json's families, as
+// the types name them, most first; those of few instances in one row, their
+// names its title): the instances, each side's answers and total, and
+// tddlog's speed-up; a family opens on its program's page, where its type
+// has several, on the type's view of it. Under it, one line on what each
+// side read.
+function translatedTable(v, name, rows) {
   const me = subject(v.translated.me), par = `over the instances ${name} is given and either answers (PAR-${data.measure.par})`;
   const num = (text) => element("td", { class: "num" }, text);
-  const read = (who, reason) => element("span", { title: reason }, ...(who ? [element("span", { class: "muted" }, `${who}: `)] : []), clause(reason));
-  const route = (w) => {
-    if (w.routes) {
-      return element("th", { scope: "row", title: w.routes.map(([a, b, n]) => `${[a, b].filter(Boolean).map(clause).join("; ")}: ${count(n)}`).join("\n") },
-        `other routes (${w.routes.length})`);
-    }
-    if (w.kind === "b") return element("th", { scope: "row" }, read(name, w.reason), element("br"), read(subject(w.vs?.me), w.mine));
-    return element("th", { scope: "row" }, read(null, w.kind === "s" ? w.reason : w.mine));
-  };
-  const body = element("tbody");
-  for (const kind of "smb") {
-    const ways = v.ways.filter((w) => w.kind === kind);
-    if (!ways.length) continue;
-    body.append(element("tr", { class: "dir" }, element("th", { scope: "rowgroup", colspan: 8 }, KIND_TEXT[kind](name))));
-    for (const w of ways) {
-      const t = w.vs;
-      body.append(element("tr", { class: "route" }, route(w), num(count(w.n)),
-        ...(t ? [count(t.answers), duration(t.total), count(t.tddlog_answers), duration(t.tddlog_total), speedCell(t)] : ["", "", "", "", ""]).map(num),
-        element("td", { class: "by" }, ...w.by.flatMap(([n, path], i) => [i ? " " : "", scriptLink(n, path)]))));
-    }
+  const group = ([c, key]) => data.categories.find((y) => y.key === c).groups.find((g) => g.key === key);
+  const of = new Map();
+  for (const r of rows) {
+    const at = data.place.get(`${r.suite}/${r.name}`);
+    const key = `${at.c.key}/${at.g.key}`;
+    if (!of.has(key)) of.set(key, []);
+    of.get(key).push(r);
   }
-  return scroller(stacked(element("table", { class: "board routes" },
-    head2(["route", "what the side that read a translation read; each row's title gives it in full"], ["instances", null, "num"],
+  // A title two types share (Mastermind) names its type too.
+  const titles = v.families.filter((f) => f.family).map((f) => group(f.family).title);
+  const title = (f) => titles.filter((t) => t === group(f).title).length > 1
+    ? `${group(f).title} (${lower(data.categories.find((y) => y.key === f[0]).title)})` : group(f).title;
+  const familyLink = (f) => {
+    const pages = pagesOf(of.get(f.join("/")) ?? []);
+    return link(pages.length === 1 ? pages[0].route : { view: "category", category: f[0], only: f[1] }, title(f));
+  };
+  const body = element("tbody", {}, ...v.families.map((f) => element("tr", {},
+    f.families ? element("th", { scope: "row", title: f.families.map((k) => group(k).title).join(", ") }, `other families (${f.families.length})`)
+      : element("th", { scope: "row" }, familyLink(f.family)),
+    ...[count(f.n), count(f.vs.answers), duration(f.vs.total), count(f.vs.tddlog_answers), duration(f.vs.tddlog_total), speedCell(f.vs)].map(num))));
+  return [scroller(stacked(element("table", { class: "board fams-tr" },
+    head2(["family", "each family's page shows the programs both read"], ["instances", null, "num"],
       { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
-      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], ["faster", `${me}'s speed-up`, "num"]] },
-      ["written by", "the scripts that wrote the two's files, on the baselines branch"]), body)), "whole");
+      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], ["faster", `${me}'s speed-up`, "num"]] }), body)), "whole"),
+  note(`${name} read `, ...whatRead(v.read.system), `; ${me} read `, ...whatRead(v.read.mine), ". Each family's page shows both.")];
 }
 
 // The sections of a baseline's page, by the ids a link names (#/baselines/X/AT).
@@ -266,12 +270,12 @@ function baselineView(route) {
         own ? `; ${count(own)} of them are ${name}'s own benchmarks.` : "."),
       versusCells(v.head, name, head.length), pairPlot(head, x, v.head, "h"), familyCounts(head)));
   }
-  // translated, by direction and route
+  // translated, by family
   if (tr.length) {
     out.push(element("section", { class: "panel", id: "translated" }, element("h3", {}, "Translated"),
       note(head.length ? "One of them, or both, read a translation" : `Every instance ${name} was given is a translation for one of them or both`,
         "; tddlog's own readers (of Dice programs, LPADs and networks) are front ends, not translations."),
-      versusCells(v.translated, name, tr.length), routesTable(v, name), pairPlot(tr, x, v.translated, "t"), familyCounts(tr)));
+      versusCells(v.translated, name, tr.length), ...translatedTable(v, name, tr), pairPlot(tr, x, v.translated, "t")));
   }
   // in its own language and translated for it, then in each type of program it was given
   if (parts.languages.length) {
@@ -314,8 +318,7 @@ function baselineView(route) {
   // how it was run
   parts.facts.append(element("dt", {}, "Counted"), element("dd", {}, measureLine()),
     element("dt", {}, "Commands"), element("dd", {}, "Each instance's page shows the commands each system ran and the files it read."));
-  out.push(element("section", { class: "panel", id: "run" }, element("h3", {}, "How it was run"), element("div", { class: "facts" }, parts.facts),
-    lazy({ class: "given" }, "How it was given each suite's instances", () => [parts.given])));
+  out.push(element("section", { class: "panel", id: "run" }, element("h3", {}, "How it was run"), element("div", { class: "facts" }, parts.facts)));
   return out;
 }
 

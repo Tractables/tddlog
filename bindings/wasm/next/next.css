@@ -44,14 +44,10 @@ tr.vs th { font-weight: 700; }
 .fams { font-size: 13px; color: var(--muted); }
 .fams p { margin: 0.4rem 0 0; }
 .fams details summary { cursor: pointer; color: var(--accent-ink); }
-/* A baseline's translated instances by route (routesTable): each direction
-   a row across the table, each route's name wrapping, its reason in full
-   on hover. */
-table.routes tbody tr.dir th { padding-top: 0.6rem; background: var(--bg); font-weight: 600; white-space: normal; }
-table.routes tbody tr.route th { min-width: 14rem; max-width: 28rem; white-space: normal; }
-table.routes tbody tr.route th span[title] { cursor: help; text-decoration: underline dotted color-mix(in oklab, var(--muted) 60%, transparent); text-underline-offset: 3px; }
-table.routes td.by { white-space: normal; min-width: 8rem; }
-table.routes td.by code { font-size: 12px; }
+/* A baseline's translated instances by family (translatedTable): a
+   family's name wraps; the folded row's names are on hover. */
+table.fams-tr tbody th { min-width: 10rem; max-width: 24rem; white-space: normal; }
+table.fams-tr tbody th[title] { cursor: help; text-decoration: underline dotted color-mix(in oklab, var(--muted) 60%, transparent); text-underline-offset: 3px; }
 details.beyond summary { cursor: pointer; font-size: 14px; }
 ul.insts { columns: 16rem; margin: 0.4rem 0 0.8rem; font-size: 13px; }
 
