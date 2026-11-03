@@ -602,6 +602,13 @@ function pagesOf(rows) {
   return list.map((p) => ({ ...p, label: twice.has(p.title) && p.title !== p.suite ? `${p.title} (${p.suite})` : p.title }));
 }
 
+// A cell of links to the benchmark pages of rows (pagesOf's), each opening
+// on the program: "code" where there is one, else each page's label.
+function codeCell(rows) {
+  const pages = pagesOf(rows);
+  return element("td", { class: "code-links" }, ...pages.flatMap((p, i) => [i ? ", " : "", link(p.route, pages.length > 1 ? p.label : "code")]));
+}
+
 const LETTERS = { o: "own", n: "native", t: "translated" };
 
 // Each system's instances given, answers and classes over rows: the data's
@@ -1231,7 +1238,14 @@ function categoryView(route) {
   if (g && !g.source) out.push(prose("p", g.about, { class: "lede" }), note("The type on its own, against the systems native to it: ",
     link({ view: "category", category: g.key }, g.title), "."));
   else if (g) out.push(prose("p", g.about, { class: "lede" }), note(`From ${g.source}.`));
-  out.push(headline(c, rows, tal, only), ...extend.category(c, route, rows));
+  // the families' table, last, and a way to it from the top: each family's code is a click away
+  const famHead = g ? null : element("h3", {}, c.key === ALL ? "Types of program" : "Families");
+  out.push(headline(c, rows, tal, only));
+  if (famHead && c.key !== ALL) {
+    out.push(element("p", { class: "jump" }, element("button", { type: "button", class: "plain",
+      onclick: () => famHead.scrollIntoView({ behavior: "smooth" }) }, `Its ${plural(c.groups.length, "family", "families")}, each with its code ↓`)));
+  }
+  out.push(...extend.category(c, route, rows));
   const filters = filtersOf(c);
   const chips = filters.filter((f) => f.key === only || f.key.startsWith("own:"));
   if (chips.length) {
@@ -1281,12 +1295,14 @@ function categoryView(route) {
       }
       const name = link({ view: "category", category: c.key, only: fam.key }, fam.title);
       name.title = fam.about;
-      body.append(element("tr", {}, element("th", { scope: "row" }, name),
+      body.append(element("tr", {}, element("th", { scope: "row" }, name), ...(c.key === ALL ? [] : [codeCell(mine)]),
         element("td", { class: "num" }, count(mine.length)), element("td", { class: "num" }, count(mine.filter((r) => myTime(r) !== null).length)),
         element("td", {}, best ? `${data.names[best[0]]}, ${count(best[1])}` : ""), prose("td", fam.source, { class: "about" })));
     }
-    out.push(element("h3", {}, c.key === ALL ? "Types of program" : "Families"), scroller(stacked(element("table", { class: "board families" },
-      element("thead", {}, element("tr", {}, element("th", { scope: "col" }, c.key === ALL ? "type" : "family"), element("th", { scope: "col", class: "num" }, "instances"),
+    out.push(famHead, scroller(stacked(element("table", { class: "board families" },
+      element("thead", {}, element("tr", {}, element("th", { scope: "col" }, c.key === ALL ? "type" : "family"),
+        ...(c.key === ALL ? [] : [element("th", { scope: "col", title: "the family's programs, each system's, and its runs" }, "program")]),
+        element("th", { scope: "col", class: "num" }, "instances"),
         element("th", { scope: "col", class: "num" }, `${me} answers`), element("th", { scope: "col" }, "the most answers of another system"),
         element("th", { scope: "col" }, "from"))), body))));
   }
@@ -1608,7 +1624,7 @@ function familyView(route, view) {
     element("div", { class: "chips" }, element("span", { class: "chip" }, plural(f.instances.length, "instance")),
       element("span", { class: "chip" }, `${s.limit} s a run`), Object.assign(link({ view: "suite", suite: s.key }, s.title), { className: "chip" }))];
   const programs = element("section", { class: "programs", id: "programs" }, note("Loading the programs and the runs…"));
-  out.push(element("h3", {}, "Times"), timesGrid(s, f, rows, short, route), programs, raw(`benchmarks/${s.key}/${f.key}.json`, s.file));
+  out.push(programs, element("h3", {}, "Times"), timesGrid(s, f, rows, short, route), raw(`benchmarks/${s.key}/${f.key}.json`, s.file));
   familyData(s.key, f.key).then((fam) => {
     if (view.dataset.route !== page) return;   // another view was chosen meanwhile
     programs.replaceChildren(...instanceView(s, f, fam, now, short));

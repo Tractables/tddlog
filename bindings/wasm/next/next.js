@@ -110,24 +110,28 @@ function pairPlot(rows, x, v, key) {
   return element("div", { class: "pair" }, plotted(both, { ...data.names, tddlog: me }, { all: true }), scatter(rows, ["tddlog", x], x, false, (r) => r.me));
 }
 
-// The families rows are of, with how many each, each opening its family in
-// its type of program; past the first eight, the rest folded.
+// The families rows are of, by how many each: a family opens in its type of
+// program, its code on its benchmark pages; past the first eight, the rest
+// folded.
 const FAMILIES_SHOWN = 8;
 function familyCounts(rows) {
   const out = new Map();
   for (const r of rows) {
     const at = data.place.get(`${r.suite}/${r.name}`);
     const key = at ? `${at.c.key}/${at.g.key}` : r.suite;
-    if (!out.has(key)) out.set(key, { at, n: 0 });
-    out.get(key).n++;
+    if (!out.has(key)) out.set(key, { at, rows: [] });
+    out.get(key).rows.push(r);
   }
-  const list = [...out.values()].sort((a, b) => b.n - a.n);
-  const named = (items) => items.flatMap(({ at, n }, i) => [i ? ", " : "",
-    at ? link({ view: "category", category: at.c.key, only: at.g.key }, at.g.title) : "another suite", ` (${count(n)})`]);
+  const list = [...out.values()].sort((a, b) => b.rows.length - a.rows.length);
+  const table = (items) => scroller(stacked(element("table", { class: "board fams-t" }, element("thead", {}, element("tr", {},
+    element("th", { scope: "col" }, "family"), element("th", { scope: "col", title: "the family's programs, each system's, and its runs" }, "program"),
+    element("th", { scope: "col", class: "num" }, "instances"))),
+  element("tbody", {}, ...items.map(({ at, rows: rs }) => element("tr", {},
+    element("th", { scope: "row" }, at ? link({ view: "category", category: at.c.key, only: at.g.key }, at.g.title) : "another suite"),
+    codeCell(rs), element("td", { class: "num" }, count(rs.length))))))), "whole");
   const first = list.slice(0, FAMILIES_SHOWN), rest = list.slice(FAMILIES_SHOWN);
-  return element("div", { class: "fams" }, element("p", {}, "From ", ...named(first), rest.length ? "," : "."),
-    ...(rest.length ? [element("details", {}, element("summary", {}, `and ${plural(rest.length, "more family", "more families")}`),
-      element("p", {}, ...named(rest), "."))] : []));
+  return element("div", { class: "fams" }, table(first),
+    ...(rest.length ? [lazy({ class: "fams-more" }, `${plural(rest.length, "more family", "more families")}`, () => [table(rest)])] : []));
 }
 
 // A type's title within a sentence: "probabilistic logic programs", "Bayesian networks".
@@ -350,13 +354,13 @@ function integrationView(route) {
   const fams = element("tbody");
   for (const g of i.groups) {
     const rs = g.rows.map((j) => rows[j]);
-    fams.append(element("tr", {}, element("th", { scope: "row" }, element("a", { href: instanceHref(rs[0].suite, rs[0].name), title: g.about ?? null }, g.title)),
+    fams.append(element("tr", {}, element("th", { scope: "row", title: g.about ?? null }, g.title), codeCell(rs),
       element("td", { class: "num" }, count(rs.length)), element("td", { class: "num" }, count(rs.filter((r) => r.t[me] !== null).length)),
       element("td", { class: "num" }, count(rs.filter((r) => r.t[x] !== null).length))));
   }
   out.push(element("h3", {}, "Families"), scroller(stacked(element("table", { class: "board" }, element("thead", {}, element("tr", {},
-    element("th", { scope: "col" }, "family"), element("th", { scope: "col", class: "num" }, "instances"),
-    element("th", { scope: "col", class: "num" }, `${i.title} answers`), element("th", { scope: "col", class: "num" }, `${name} answers`))), fams)), "whole"));
+    element("th", { scope: "col" }, "family"), element("th", { scope: "col", title: "the family's programs, each system's, and its runs" }, "program"),
+    element("th", { scope: "col", class: "num" }, "instances"), element("th", { scope: "col", class: "num" }, `${i.title} answers`), element("th", { scope: "col", class: "num" }, `${name} answers`))), fams)), "whole"));
   return out;
 }
 
