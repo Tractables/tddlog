@@ -102,10 +102,18 @@ function drawn(page) {
     ["#/baselines", "baselines", async () => {
       assert.equal(await page.locator("table.baselines-t tbody tr").count(), systems.length);
     }],
-    ...["dice", "alea", "problog", "ace", "roulette"].filter((x) => systems.includes(x)).map((x) => [`#/baselines/${x}`, "baseline", async () => {
-      for (const id of ["head", "translated", "types", "coverage", "run"]) assert.equal(await page.locator(`section.panel#${id}`).count(), 1, `${x}: ${id}`);
-      const v = views.systems[x];
-      if (v.n.s + v.n.m + v.n.b) assert.equal(await page.locator("#translated .way").count(), v.ways.length, `${x}: ways`);
+    ...["dice", "alea", "problog", "ace", "roulette", "prism"].filter((x) => systems.includes(x)).map((x) => [`#/baselines/${x}`, "baseline", async () => {
+      const v = views.systems[x], given = { head: v.n.h, translated: v.n.s + v.n.m + v.n.b };
+      for (const id of ["head", "translated", "types", "coverage", "run"]) {
+        // a section with no instances is left out, with its entry in the nav
+        const n = (given[id] ?? 1) ? 1 : 0;
+        assert.equal(await page.locator(`section.panel#${id}`).count(), n, `${x}: ${id}`);
+        assert.equal(await page.locator(`.panels-nav a[href="#/baselines/${x}/${id}"]`).count(), n, `${x}: ${id} in the nav`);
+      }
+      if (given.translated) {
+        assert.equal(await page.locator("#translated table.routes tr.route").count(), v.ways.length, `${x}: a row a route`);
+        assert.equal(await page.locator("#translated table.routes tr.dir").count(), new Set(v.ways.map((w) => w.kind)).size, `${x}: a row a direction`);
+      }
       if (v.n.h) {
         await page.waitForSelector("#head figure svg");
         const line = await page.locator("#head .versus").first().textContent();

@@ -8,7 +8,7 @@
 //   #/                     the home page: what tddlog is, each type of program against its best baselines, the integrations
 //   #/baselines            by baseline: every other system, what it is native to and what it answers
 //   #/baselines/SYSTEM[/AT]
-//                          tddlog against SYSTEM: head-to-head, translated (each direction and translator), in
+//                          tddlog against SYSTEM: head-to-head, translated (each direction and route), in
 //                          each type of program, its own benchmarks, coverage, and how it was run; AT names
 //                          one of these, which the page scrolls to
 //   #/integrations         by integration: tddlog alone, and in a pipeline after another system's own code
@@ -196,6 +196,47 @@ function baselinesView() {
     body)), "whole")];
 }
 
+// The first clause of a reason of CLASSES (views.json's ways): what one side
+// read, in a few words.
+const clause = (reason) => reason.split(/,|:| \(/)[0];
+
+// A baseline's translated instances by route (views.json's ways), a row
+// each under its direction: what the translated side read (each side's,
+// where both did; the class's reason in full its title), the instances,
+// each side's answers and total, tddlog's speed-up, and the scripts that
+// wrote the files. A direction's routes of few instances are one row,
+// other routes, as views.py folds them.
+function routesTable(v, name) {
+  const me = subject(v.translated.me), par = `over the instances ${name} is given and either answers (PAR-${data.measure.par})`;
+  const num = (text) => element("td", { class: "num" }, text);
+  const read = (who, reason) => element("span", { title: reason }, ...(who ? [element("span", { class: "muted" }, `${who}: `)] : []), clause(reason));
+  const route = (w) => {
+    if (w.routes) {
+      return element("th", { scope: "row", title: w.routes.map(([a, b, n]) => `${[a, b].filter(Boolean).map(clause).join("; ")}: ${count(n)}`).join("\n") },
+        `other routes (${w.routes.length})`);
+    }
+    if (w.kind === "b") return element("th", { scope: "row" }, read(name, w.reason), element("br"), read(subject(w.vs?.me), w.mine));
+    return element("th", { scope: "row" }, read(null, w.kind === "s" ? w.reason : w.mine));
+  };
+  const body = element("tbody");
+  for (const kind of "smb") {
+    const ways = v.ways.filter((w) => w.kind === kind);
+    if (!ways.length) continue;
+    body.append(element("tr", { class: "dir" }, element("th", { scope: "rowgroup", colspan: 8 }, KIND_TEXT[kind](name))));
+    for (const w of ways) {
+      const t = w.vs;
+      body.append(element("tr", { class: "route" }, route(w), num(count(w.n)),
+        ...(t ? [count(t.answers), duration(t.total), count(t.tddlog_answers), duration(t.tddlog_total), speedCell(t)] : ["", "", "", "", ""]).map(num),
+        element("td", { class: "by" }, ...w.by.flatMap(([n, path], i) => [i ? " " : "", scriptLink(n, path)]))));
+    }
+  }
+  return scroller(stacked(element("table", { class: "board routes" },
+    head2(["route", "what the side that read a translation read; each row's title gives it in full"], ["instances", null, "num"],
+      { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
+      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], ["faster", `${me}'s speed-up`, "num"]] },
+      ["written by", "the scripts that wrote the two's files, on the baselines branch"]), body)), "whole");
+}
+
 // The sections of a baseline's page, by the ids a link names (#/baselines/X/AT).
 const BASELINE_AT = [["head", "Head-to-head"], ["translated", "Translated"], ["language", "Its own language"], ["types", "In each type"],
   ["own", "Its own benchmarks"], ["coverage", "Coverage"], ["run", "How it was run"]];
@@ -207,7 +248,10 @@ function baselineView(route) {
   const rows = systemRows(x);
   const parts = solverParts(x);
   const site = s.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-  const at = BASELINE_AT.filter(([id]) => (id !== "own" || parts.own.length) && (id !== "language" || parts.languages.length));
+  const head = rows.filter((r) => r.kind === "h"), tr = rows.filter((r) => "smb".includes(r.kind));
+  // a section with no instances is left out, with its entry in the nav
+  const has = { head: head.length, translated: tr.length, own: parts.own.length, language: parts.languages.length };
+  const at = BASELINE_AT.filter(([id]) => has[id] ?? true);
   const out = [crumbs(HOME, inSection("baselines"), [name]),
     element("h2", { class: "solver" }, swatch(x), `tddlog against ${name}`),
     element("p", { class: "lede" }, `${s.about} `, element("a", { href: s.link }, site)),
@@ -215,37 +259,20 @@ function baselineView(route) {
       ["answers tddlog misses", count(v.beyond.length), `instances ${name} answers that tddlog does not`]),
     element("nav", { class: "panels-nav", "aria-label": "Sections" }, ...at.map(([id, text]) => link({ view: "baseline", system: x, at: id }, text)))];
   // head-to-head, its own benchmarks among them
-  const head = rows.filter((r) => r.kind === "h");
-  const own = head.filter((r) => r.cls[r.c.systems.indexOf(x)] === "o").length;
-  const p1 = element("section", { class: "panel", id: "head" }, element("h3", {}, "Head-to-head"),
-    note("Both read the same program: the benchmark's own, or the same network in another network format",
-      own ? `; ${count(own)} of them are ${name}'s own benchmarks.` : "."));
-  if (head.length) p1.append(versusCells(v.head, name, head.length), pairPlot(head, x, v.head, "h"), familyCounts(head));
-  out.push(p1);
-  // translated, by direction and translator
-  const tr = rows.filter((r) => "smb".includes(r.kind));
-  const p2 = element("section", { class: "panel", id: "translated" }, element("h3", {}, "Translated"),
-    note("One of them, or both, read a translation; tddlog's own readers (of Dice programs, LPADs and networks) are front ends, not translations."));
-  if (tr.length) {
-    p2.append(versusCells(v.translated, name, tr.length));
-    // the ways, under their direction, each named by its translators
-    for (const kind of new Set(v.ways.map((w) => w.kind))) {
-      const ways = element("div", { class: "ways" });
-      for (const w of v.ways.filter((y) => y.kind === kind)) {
-        const how = [...(w.reason ? [element("span", { class: "muted" }, `${name} read: `), w.reason, element("br")] : []),
-          ...(w.mine ? [element("span", { class: "muted" }, "tddlog read: "), w.mine, element("br")] : []),
-          ...(w.by.length ? ["Written by ", ...w.by.flatMap(([n, path], i) => [i ? ", " : "", scriptLink(n, path)])] : [])];
-        ways.append(element("div", { class: "way" },
-          w.by.length ? element("p", { class: "way-head" }, element("span", { class: "muted" }, "Written by "),
-            ...w.by.flatMap(([n], i) => [i ? ", " : "", element("code", {}, n)])) : null,
-          w.vs ? versusCells(w.vs, name, w.n) : cells(["instances", count(w.n)]),
-          ...(how.length ? [fold("The programs and the translator", ...how)] : [])));
-      }
-      p2.append(element("h4", {}, KIND_TEXT[kind](name)), ways);
-    }
-    p2.append(pairPlot(tr, x, v.translated, "t"), familyCounts(tr));
+  if (head.length) {
+    const own = head.filter((r) => r.cls[r.c.systems.indexOf(x)] === "o").length;
+    out.push(element("section", { class: "panel", id: "head" }, element("h3", {}, "Head-to-head"),
+      note("Both read the same program: the benchmark's own, or the same network in another network format",
+        own ? `; ${count(own)} of them are ${name}'s own benchmarks.` : "."),
+      versusCells(v.head, name, head.length), pairPlot(head, x, v.head, "h"), familyCounts(head)));
   }
-  out.push(p2);
+  // translated, by direction and route
+  if (tr.length) {
+    out.push(element("section", { class: "panel", id: "translated" }, element("h3", {}, "Translated"),
+      note(head.length ? "One of them, or both, read a translation" : `Every instance ${name} was given is a translation for one of them or both`,
+        "; tddlog's own readers (of Dice programs, LPADs and networks) are front ends, not translations."),
+      versusCells(v.translated, name, tr.length), routesTable(v, name), pairPlot(tr, x, v.translated, "t"), familyCounts(tr)));
+  }
   // in its own language and translated for it, then in each type of program it was given
   if (parts.languages.length) {
     out.push(element("section", { class: "panel", id: "language" }, element("h3", {}, "In its own language and translated for it"),
