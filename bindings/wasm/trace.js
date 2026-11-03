@@ -46,7 +46,10 @@ const tddlogTrace = (() => {
   const sizes = (s) => `${plural(s.atoms, "atom")} (${count(s.facts)} facts, ${count(s.derived)} derived), ${plural(s.rules, "rule")}`;
 
   // The vtree as SVG: `tree` an inner node as [left, right], a leaf as its
-  // fact's name, a subtree left closed as {leaves}.
+  // fact's name, a subtree left closed as {leaves}. The leaves sit in one
+  // row under the deepest inner node, in their order, so that their names,
+  // slanted below them, never cross another's or a line, however deep the
+  // vtree.
   function vtreeSvg(vtree) {
     const leaves = [];
     const nodes = [];
@@ -66,6 +69,7 @@ const tddlogTrace = (() => {
       return n;
     }
     place(vtree.tree, 0);
+    for (const n of leaves) n.d = depth;
     const label = Math.min(16, Math.max(...leaves.map((n) => (n.leaf ?? `${n.closed} leaves`).length)));
     const step = 22, dy = Math.max(10, Math.min(36, 300 / Math.max(depth, 1)));
     const w = Math.max(leaves.length * step, 120) + label * 3.5, top = 12, base = top + depth * dy, h = base + 8 + label * 6.2 + 8;
