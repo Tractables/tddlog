@@ -77,13 +77,6 @@ function scriptLink(name, path) {
 
 // ------------------------------------------------------------- the parts
 
-// Numbers in cells of their own, each under its label ([label, value,
-// title]), never run together in a sentence.
-function cells(...items) {
-  return element("div", { class: "cells" }, ...items.map(([label, value, title]) =>
-    element("div", { class: "cell", title }, element("span", {}, label), element("b", {}, value))));
-}
-
 // tddlog's speed-up in a cell: "too few" where too few instances both answer.
 const speedCell = (v) => (v?.speedup == null ? "too few" : speedup(v));
 

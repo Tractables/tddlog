@@ -939,10 +939,10 @@ function benchmarksOf(root) {
       assert.equal((await page.$$("#view ul.losses li")).length, c.losses?.length ?? 0, `${what}: where tddlog is slower`);
       assert.deepEqual(await page.$eval("#view figure.scatter", (f) => [f.dataset.faster, f.dataset.slower]),
         sides(rows, c.drawn.filter((x) => !isMine(x))), `${what}: tddlog against the fastest other system`);
-      const answers = `${subject(subjectsOf(rows))} ${count(answeredBy(rows))} of ${count(c.instances)}` + (c.mine.length < 2 ? ""
-        : ` (${c.mine.map((x) => `${names[x]} ${count(c.answers[x])} of ${count(c.given[x])}`).join(", ")})`);
-      const headline = await page.textContent("#view p.headline");
-      assert.ok(headline.startsWith(answers) && /[;.]/.test(headline[answers.length]), `${what}: its headline, ${headline}`);
+      const answers = [[`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(c.instances)}`],
+        ...(c.mine.length < 2 ? [] : c.mine.map((x) => [names[x], `${count(c.answers[x])} of ${count(c.given[x])}`]))];
+      const headline = await page.$$eval("#view .cells.headline .cell", (cs) => cs.map((x) => [x.querySelector("span").textContent, x.querySelector("b").textContent]));
+      assert.deepEqual(headline.slice(0, answers.length), answers, `${what}: its headline's answers, each in a cell`);
       const filters = c.systems.filter((x) => c.classes[x].own > 0).length;
       assert.equal((await page.$$("#view nav.filters a")).length, filters ? filters + 1 : 0, `${what}: its filters`);
       assert.deepEqual(await page.$$eval("#view table.families tbody th a", (as) => as.map((a) => a.getAttribute("href"))),

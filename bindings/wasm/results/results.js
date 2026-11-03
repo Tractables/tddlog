@@ -169,6 +169,12 @@ function brief(text, cls) {
 }
 
 const note = (...children) => element("p", { class: "note" }, ...children);
+// Numbers in cells of their own, each under its label ([label, value,
+// title]), never run together in a sentence.
+function cells(...items) {
+  return element("div", { class: "cells" }, ...items.map(([label, value, title]) =>
+    element("div", { class: "cell", title }, element("span", {}, label), element("b", {}, value))));
+}
 // A text that would take more than a line, folded under its summary.
 const fold = (summary, ...text) => element("details", { class: "fold" }, element("summary", {}, summary), element("p", {}, ...text));
 
@@ -701,27 +707,22 @@ function catSuite(c, rows, drawn, tal, only) {
 const totals = (v, name) => `the ${plural(v.either, "instance")} ${name} is given and either answers, ${name} takes `
   + `${duration(v.total)} and ${subject(v.me)} ${duration(v.tddlog_total)} (PAR-${data.measure.par})`;
 
-// A category's headline: tddlog's answers, the best native system's (the
-// most answers, then the least speed-up; on all programs the best other
-// system's), their total times and tddlog's speed-up.
+// A category's headline, in cells: the answers of the rows' subjects (tal,
+// tally's), and with several of tddlog and its pipelines each one's of the
+// instances it was given; the best native system's (the most answers, then
+// the least speed-up; on all programs the best other system's) and tddlog's
+// speed-up over it.
 function headline(c, rows, tal, only) {
-  const best = ranked(c, c.native.filter((x) => tal[x]?.given > 0), tal, only)[0];
-  const parts = [element("b", {}, mineAnswers(c, rows, tal))];
-  const v = best && versus(c, best, only);
-  if (v) {
-    const name = data.names[best];
-    parts.push(`; the best ${c.key === ALL ? "other" : "native"} system, ${name}, ${count(tal[best].answers)}; `
-      + `${subject(v.me)}'s speed-up over it: ${speedup(v)}`);
-  }
-  return element("p", { class: "headline" }, ...parts, ".");
-}
-
-// The answers of the rows' subjects (tal, tally's): "Alea.jl+tddlog 224 of 257",
-// or with several of tddlog and its pipelines each one's too.
-function mineAnswers(c, rows, tal) {
   const ms = c.systems.filter((x) => isMine(x) && tal[x].given > 0);
-  return `${subject(subjectsOf(rows))} ${count(answeredBy(rows))} of ${count(rows.length)}` + (ms.length < 2 ? ""
-    : ` (${ms.map((x) => `${data.names[x]} ${count(tal[x].answers)} of ${count(tal[x].given)}`).join(", ")})`);
+  const best = ranked(c, c.native.filter((x) => tal[x]?.given > 0), tal, only)[0];
+  const v = best && versus(c, best, only);
+  const which = c.key === ALL ? "other" : "native";
+  const box = cells([`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(rows.length)}`],
+    ...(ms.length < 2 ? [] : ms.map((x) => [data.names[x], `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`])),
+    ...(v ? [[`best ${which}: ${data.names[best]}`, count(tal[best].answers), `the ${which} system with the most answers`],
+      ["speed-up over it", speedup(v), `${subject(v.me)}'s speed-up over ${data.names[best]}`]] : []));
+  box.classList.add("headline");
+  return box;
 }
 
 // How the totals and the speed-up are counted, in one line under a table

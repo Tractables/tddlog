@@ -1034,9 +1034,14 @@ table.h2h tr.words p { max-width: 80ch; }
 .finding-text { max-width: 80ch; font-size: 14px; }
 ul.losses { max-width: 80ch; margin: 0; padding-left: 1.2rem; font-size: 14px; }
 ul.losses li { margin: 0.3rem 0; }
-/* A category's headline, and its filters: a source, or a system's own
-   benchmarks, in one row of chips above the tables and plots they narrow. */
-p.headline { margin: 0.2rem 0 0.6rem; font-size: 14px; }
+/* Numbers in cells of their own, each under its label (cells). */
+.cells { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin: 0.6rem 0; }
+.cell { display: flex; flex-direction: column; min-width: 4.5rem; }
+.cell span { color: var(--muted); font-size: 12px; line-height: 1.3; }
+.cell b { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
+/* A category's headline in cells, and its filters: a source, or a system's
+   own benchmarks, in one row of chips above the tables and plots they narrow. */
+.cells.headline { margin: 0.2rem 0 0.8rem; }
 nav.filters { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.4rem 0 0.8rem; }
 nav.filters a {
   padding: 0.1rem 0.6rem;
