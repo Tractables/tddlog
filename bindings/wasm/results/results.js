@@ -1113,6 +1113,17 @@ function categoryFor(suite) {
   return cs.find((c) => c.key === lastCategory) ?? cs.sort((a, b) => b.perSuite.get(suite) - a.perSuite.get(suite))[0];
 }
 
+// Where a suite's views sit in the crumbs: under its category, or, for a
+// suite in no type (the circuits, which only an integration compares),
+// under the integration whose rows hold it.
+function suiteHome(suite, c) {
+  if (c) return [inSection("types"), [c.title, { view: "category", category: c.key }]];
+  const k = integrationsOf().find((key) => data.integrations[key].rows?.some((row) => row[0] === suite));
+  if (k === undefined) throw new Error(`the suite ${suite} is in no type and no integration`);
+  const g = data.integrations[k];
+  return [inSection("integrations"), [g.title, { view: "system", system: g.pipeline }]];
+}
+
 function crumbs(...items) {
   const nav = element("nav", { class: "crumbs", "aria-label": "Where this is" });
   items.forEach(([text, route], i) => {
@@ -1436,7 +1447,7 @@ function setup(home) {
 function suiteView(route) {
   const s = data.suites.get(route.suite);
   const c = categoryFor(s.key);
-  const out = [crumbs(HOME, inSection("types"), [c.title, { view: "category", category: c.key }], [s.title]),
+  const out = [crumbs(HOME, ...suiteHome(s.key, c), [s.title]),
     element("h2", {}, s.title), brief(s.about, "lede"),
     element("h3", {}, "Instances answered within each time limit"), plotted(s, data.names)];
   const fams = familiesOf(s.key);
@@ -1613,12 +1624,12 @@ function familyView(route, view) {
   // the category and the family of its instances that hold the instance on show
   const at = data.place.get(`${s.key}/${route.instance}`);
   const c = at?.c ?? categoryFor(s.key);
-  lastCategory = c.key;
+  if (c) lastCategory = c.key;
   const f = familiesOf(s.key).find((x) => x.key === route.family);
   const short = shortNames(f.instances);
   const rows = new Map(s.instances.map((row) => [row[0], row]));
   const page = href(pageOf(route));
-  const out = [crumbs(HOME, inSection("types"), [c.title, { view: "category", category: c.key }],
+  const out = [crumbs(HOME, ...suiteHome(s.key, c),
     at ? [at.g.title, { view: "category", category: c.key, only: at.g.key }] : [s.title, { view: "suite", suite: s.key }], [f.title]),
     element("h2", {}, f.title),
     element("div", { class: "chips" }, element("span", { class: "chip" }, plural(f.instances.length, "instance")),
@@ -2169,7 +2180,7 @@ function rail(route) {
   const types = element("ul");
   if (front) types.append(element("li", {}, link({ view: "home" }, "Overview")));
   const at = route.view === "family" ? data.place.get(`${route.suite}/${route.instance}`) : undefined;
-  const current = route.view === "category" ? route.category : at ? at.c.key : route.suite ? categoryFor(route.suite).key : undefined;
+  const current = route.view === "category" ? route.category : at ? at.c.key : route.suite ? categoryFor(route.suite)?.key : undefined;
   const family = route.view === "category" ? route.only : at?.g.key;
   for (const c of data.categories) {
     const li = element("li", { class: "cat" }, link({ view: "category", category: c.key }, c.title, element("span", { class: "n" }, count(c.instances))));
