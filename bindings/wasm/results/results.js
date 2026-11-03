@@ -1740,7 +1740,7 @@ function playground(s, f, inst, name) {
 }
 
 // The systems that read a tab, each once: a form's label ("ProbLog -k sdd")
-// under its system's name, an arm of tddlog's ("tddlog (auto+onehot)") as it
+// under its system's name, an arm of tddlog's ("tddlog (auto+arm)") as it
 // is, and the reference apart.
 function readersOf(tab) {
   const names = Object.values(data.names);
