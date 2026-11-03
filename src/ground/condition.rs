@@ -5,8 +5,9 @@
 //! ([`super::exclusive`]) read as at most one true atom and each
 //! exhaustive one ([`super::cover`]) as exactly one: an atom whose rules
 //! are all dead is false, one with a rule whose body holds is true, a true
-//! atom with one live rule makes that body hold, and a false atom makes
-//! false the last open literal of each of its rules. Every world's model
+//! atom makes hold the literals that all its live rules share (the body of
+//! its one live rule, where one is left), and a false atom makes false the
+//! last open literal of each of its rules. Every world's model
 //! satisfies the completion, so what follows holds in every world where
 //! the evidence does.
 //!

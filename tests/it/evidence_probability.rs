@@ -297,10 +297,13 @@ fn what_conditioning_takes_out_comes_back() {
     // one of two units, 0.2672 by hand.
     // condition_cyclic, which conditioning leaves as it is, 0.68 by hand
     // and by ProbLog; alias_evidence, ProbLog 0.25; condition_settled,
-    // which unit propagation alone settles, 0.12 by hand in its comment.
+    // which unit propagation alone settles, 0.12 by hand in its comment;
+    // condition_shared, where it fixes a literal two rules share, 0.168 by
+    // hand in its comment.
     for (file, want, fixed) in [
         ("condition_bn.pl", 0.12, true),
         ("condition_settled.pl", 0.12, true),
+        ("condition_shared.pl", 0.168, true),
         ("condition_equal.pl", 0.26, true),
         ("condition_copies.pl", 0.33, true),
         ("condition_copies_units.pl", 0.2672, true),

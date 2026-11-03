@@ -1328,11 +1328,10 @@ fn refused(result: &Result<Run, Error>) -> bool {
 fn a_trial_refused_memory_is_retired_and_the_next_answers() {
     // As gnb30's `families:0` is refused memory in its query phase,
     // where `closed`, the next trial, answers. A byte budget of 6 KiB per
-    // operation does the same to examples/query_beside_evidence.pl: `families:0`
-    // needs 7 KiB and `closed` 5 KiB (tididi's soft budget, counted in
-    // reservations, which a level array the engine recycles does not
-    // make).
-    let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
+    // operation does the same to `beside_evidence`: `families:0` needs
+    // more, `closed` less (tididi's soft budget, counted in reservations,
+    // which a level array the engine recycles does not make).
+    let gp = beside_evidence();
     let laid = Kind::Families { search: false };
     let trials = vec![laid, Kind::Closed];
     let run = run_in_memory(gp.clone(), trials.clone(), 6 << 10).unwrap();
@@ -1344,10 +1343,10 @@ fn a_trial_refused_memory_is_retired_and_the_next_answers() {
         run.vtree_notes
     );
     assert_eq!(run.kind, Kind::Closed);
-    // ProbLog's answers (tests/it/examples.rs).
     let answers = run.results.unwrap();
     assert!(
-        (answers[0].probability - 0.0).abs() < 1e-9 && (answers[1].probability - 0.29).abs() < 1e-9,
+        (answers[0].probability - BESIDE_W).abs() < 1e-9
+            && (answers[1].probability - 0.29).abs() < 1e-9,
         "{answers:?}"
     );
     // Where every trial is refused, the run fails with the refusal
@@ -1382,7 +1381,7 @@ fn a_trial_refused_memory_takes_what_the_others_hold() {
     // retired, and `families:0` resumes at its next turn and answers
     // (geni_router_24, where `families` was refused at its last step while
     // four stopped trials held their formulas).
-    let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
+    let gp = beside_evidence();
     let trials = vec![Kind::Closed, Kind::Families { search: false }];
     let run = run_within(
         Programs {
@@ -1395,7 +1394,7 @@ fn a_trial_refused_memory_takes_what_the_others_hold() {
         Projection::default(),
         Watch {
             first_pairs: 1,
-            memory_bytes: Some(6 << 10),
+            memory_bytes: Some(8 << 10),
             ..Watch::default()
         },
         None,
@@ -1412,10 +1411,26 @@ fn a_trial_refused_memory_takes_what_the_others_hold() {
     assert_eq!(run.kind, Kind::Families { search: false });
     let answers = run.results.unwrap();
     assert!(
-        (answers[0].probability - 0.0).abs() < 1e-9 && (answers[1].probability - 0.29).abs() < 1e-9,
+        (answers[0].probability - BESIDE_W).abs() < 1e-9
+            && (answers[1].probability - 0.29).abs() < 1e-9,
         "{answers:?}"
     );
 }
+
+/// examples/query_beside_evidence.pl with `e(on) :- c(z).` for its second
+/// rule: as written, both rules of `e(on)` read `b(f)`, which the evidence
+/// then makes hold, and `w` is false before any compile. By hand, `e(on)`
+/// holds with probability `0.5 0.6 0.6 + 0.5 0.4 0.5 = 0.28`, and `w`
+/// beside it only under `b(t)`, where `c(z)` holds: `P(w | e) = 0.18 (1 -
+/// 0.82^4) / 0.28` ([`BESIDE_W`]); `d`, which reads neither, `0.29`.
+fn beside_evidence() -> GroundProgram {
+    let source = include_str!("../../examples/query_beside_evidence.pl");
+    let rule = "e(on) :- c(z), b(f).";
+    assert!(source.contains(rule));
+    regress(&source.replace(rule, "e(on) :- c(z)."))
+}
+
+const BESIDE_W: f64 = 0.18 * (1.0 - 0.452_121_76) / 0.28;
 
 fn run_query_beside_evidence(budget: u64) -> (bool, Vec<String>) {
     let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
