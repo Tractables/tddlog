@@ -14,9 +14,9 @@
 // For the Dice program and the car network (its file and the program it is
 // read as) they are computed by hand: Dice's own answers for the walk
 // (tests/it/examples.rs), and the network's marginals by a sum over its
-// worlds, which ProbLog's agree with (tests/it/networks.rs). Alea.jl's
-// circuit holds them by hand too, from the two dice it was built from
-// (tests/it/examples.rs).
+// worlds, which ProbLog's agree with (tests/it/networks.rs). Alea.jl's and
+// Roulette's circuits hold them by hand too, from the programs they were
+// built from (tests/it/examples.rs).
 //
 // The examples marked `larger` take a few seconds each, and ProbLog does not
 // answer them within five minutes. Their `problog` holds exact answers,
@@ -109,6 +109,13 @@ const tddlogExamples = [
     evidence: 1,
   },
   {
+    key: "tpch",
+    name: "A TPC-H query over a database",
+    file: "examples/tpch_q2.pl",
+    problog: [["q2", 0.0177512033449]],
+    evidence: 1,
+  },
+  {
     key: "digits",
     name: "Sum of two digits",
     file: "tests/lit/mnist_sum.pl",
@@ -138,6 +145,13 @@ const tddlogExamples = [
     file: "examples/alea_dice.pl",
     problog: [["q1", 0.166666666667], ["q2", 0.666666666667]],
     evidence: 0.5,
+  },
+  {
+    key: "roulette",
+    name: "Roulette's circuit: a faulty gate",
+    file: "tests/roulette/lib/diagnosis.pl",
+    problog: [["q1(1)", 1], ["q2(1)", 0.307692307692], ["q3(1)", 0.692307692308], ["q4(1)", 0]],
+    evidence: 0.26,
   },
   {
     key: "car-net",

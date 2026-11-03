@@ -561,6 +561,22 @@ const WALKS = [
     },
   },
   {
+    key: "tpch", what: "A database query: grounding evaluates its joins and selections, and its lineage is compiled.",
+    file: "examples/tpch_q2.pl", example: "tpch", evidence: false,
+    command: "tddlog --trace tpch.json examples/tpch_q2.pl",
+    lede: "TPC-H's query 2 as a Boolean query: is a brass part of size 15 supplied from Europe? Five relations of 334 tuples, each an independent probabilistic fact.",
+    captions: {
+      read: "A ProbLog file is its own program: each relation's tuples as probabilistic facts, then the query.",
+      parse: "335 clauses: the 334 tuples of `region`, `nation`, `supplier`, `part` and `partsupp`, and the rule of `q2`; one query.",
+      ground: "Grounding evaluates the joins and selections as a database does: one part is brass of size 15, and two of its four suppliers are in Europe. Left: the lineage, 2 rules over 8 tuples.",
+      rewrite: "No recursion to write out and no indicators: the two rules compile as ground.",
+      layout: "`auto`'s `td` trial finished in its first attempt: a vtree over the 8 tuples, from a tree decomposition of width 5.",
+      compile: "`q2`, the disjunction of its two rules' conjunctions, by TDD operations: one component of 30 pairs, stored as its negation (the dual).",
+      evidence: "No evidence: `q2` was counted during the compile, once nothing read its formula.",
+      answers: "0.017751203, the product formula in the program's header, each tuple read once, and ProbLog 2.3.0's answer (tests/it/examples.rs).",
+    },
+  },
+  {
     key: "network", what: "A network file read as a program: its tables, its families and the evidence.",
     file: "examples/car.net", example: "car", evidence: true,
     command: "tddlog --trace network.json --evidence-probability --evidence examples/car.inst --query fuel,plugs,starter examples/car.net",
@@ -624,6 +640,22 @@ const WALKS = [
       answers: "1/6 and 2/3, the answers the two dice give by hand (tests/it/examples.rs).",
     },
   },
+  {
+    key: "roulette", what: "Roulette+tddlog: Roulette builds a circuit of the program, and tddlog does the inference.",
+    file: "tests/roulette/lib/diagnosis.pl", example: "roulette", evidence: true,
+    command: "tddlog --trace roulette.json --evidence-probability tests/roulette/lib/diagnosis.pl",
+    lede: "A fault diagnosis in Roulette (tests/roulette/lib/diagnosis.rkt): an and gate fails with probability 0.1, an or gate with 0.2, and the output is observed wrong. Which gate failed?",
+    captions: {
+      read: "Roulette+tddlog: Roulette runs the program symbolically into a circuit, which scripts/roulette2problog.rkt writes as this program: a flip per random choice, a rule per gate.",
+      parse: "20 clauses: 4 flips (the inputs, of probability 1 and 0, and the faults `f3` and `f4`), 15 rules and a fact; the output `g9` observed, and 4 queries.",
+      ground: "The inputs are constants, so the gates fold away: 16 rules over 17 atoms become 6 over 7, the output the exclusive or of the faults. The observation makes `q4(1)` false.",
+      rewrite: "No recursion to write out and no indicators: the program compiles as ground.",
+      layout: "`auto`'s `td` trial finished in its first attempt: a vtree of two leaves, the faults.",
+      compile: "5 components of one atom each, in dependency order; the largest, `g9`, has 2 pairs.",
+      evidence: "The observations, `g9` true and `q4(1)` false, are conjoined into 2 pairs: P(e) = 0.26, the probability that exactly one gate fails.",
+      answers: "The and gate failed with probability 0.08 / 0.26, the or gate with 0.18 / 0.26, never both: the answers computed by hand in the program (tests/it/examples.rs).",
+    },
+  },
 ];
 
 for (const w of WALKS) {
@@ -648,6 +680,17 @@ const caption = (text, cls) => element("p", cls ? { class: cls } : {},
 
 const playgroundHref = (w) => `playground/?example=${w.example}${w.evidence ? "&evidence=1" : ""}&trace=1`;
 
+// A strip that scrolls sideways (on a phone) scrolled to show its marked
+// item, once it is laid out.
+function showMarked(strip) {
+  requestAnimationFrame(() => {
+    const on = strip.querySelector("[aria-current]");
+    if (!on || strip.scrollWidth <= strip.clientWidth) return;
+    const [a, b] = [on.getBoundingClientRect(), strip.getBoundingClientRect()];
+    if (a.left < b.left || a.right > b.right) strip.scrollLeft += a.left - b.left - 24;
+  });
+}
+
 // How it works: the walkthroughs, the one on show (the first where the
 // address names none) at its step, the strip of the stages above it.
 function howView(route) {
@@ -658,6 +701,7 @@ function howView(route) {
       element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"), " describes each stage."),
     element("nav", { class: "walks", "aria-label": "Walkthroughs" }, ...WALKS.map((x) =>
       element("a", { href: `#/how/${x.key}`, title: x.what, "aria-current": x === w ? "page" : null }, x.title)))];
+  showMarked(out[out.length - 1]);
   const walk = element("div", { class: "walk" }, note("Loading the trace…"));
   out.push(walk, counted());
   walkTrace(w.key).then((trace) => {
@@ -677,7 +721,9 @@ function howView(route) {
     body.append(drawn);
     const nav = element("p", { class: "step-nav" }, i > 0 ? element("a", { href: `#/how/${w.key}/${i}` }, "← Back") : "",
       i < steps.length - 1 ? element("a", { href: `#/how/${w.key}/${i + 2}` }, "Next →") : "");
-    walk.replaceChildren(stepper(w, steps, i), head, body, nav);
+    const strip = stepper(w, steps, i);
+    walk.replaceChildren(strip, head, body, nav);
+    showMarked(strip);
   }, (e) => walk.replaceChildren(note(`The trace did not load: ${e.message}.`)));
   return out;
 }

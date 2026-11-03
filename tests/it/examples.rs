@@ -2041,6 +2041,14 @@ mod lit {
         );
     }
 
+    /// examples/tpch_q2.pl: q2 alone over the five relations it reads of
+    /// tpch.pl, whose answer it keeps, a formula of eight tuples that the
+    /// example's header computes by hand.
+    #[test]
+    fn tpch_q2() {
+        check("tpch_q2.pl", &[("q2", 0.017751203)]);
+    }
+
     /// The same queries written through views ([`gen_tpch.py --views`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_tpch.py)): a
     /// selection, a join or a subquery as an intermediate predicate. The
     /// answers are the flat program's, and the grounder inlines the views

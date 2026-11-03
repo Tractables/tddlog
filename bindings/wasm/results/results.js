@@ -63,9 +63,9 @@ const inSection = (key) => [sectionName(key), { view: "section", key }];
 
 // The walkthroughs of How it works (the front page's next.js draws them), by
 // their keys, in the menu's order.
-const WALK_TITLES = [["reach", "Reachability in a graph with cycles"], ["gears", "Negation through a loop"],
-  ["network", "A Bayesian network with evidence"], ["markov", "A Markov network's partition function"],
-  ["dice", "A Dice program"], ["circuit", "A bit-blasted circuit"]];
+const WALK_TITLES = [["reach", "Reachability with cycles"], ["gears", "Negation through a loop"], ["tpch", "A TPC-H query"],
+  ["network", "A Bayesian network"], ["markov", "A Markov network"], ["dice", "A Dice program"], ["circuit", "An Alea.jl circuit"],
+  ["roulette", "A Roulette program"]];
 
 // The integrations, tddlog's own and its pipelines (categories.json's
 // integrations: tddlog alone, Alea.jl+tddlog, Roulette+tddlog), in the
