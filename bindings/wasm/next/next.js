@@ -431,7 +431,7 @@ function typesView() {
       element("th", { scope: "col" }, "type"), element("th", { scope: "col", class: "num" }, "instances"),
       element("th", { scope: "col", class: "num", title: "by each instance's subject: tddlog, or the pipeline that ran it" }, "tddlog answers"),
       element("th", { scope: "col" }, "native systems"),
-      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "head-to-head"),
+      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "head\u2011to\u2011head"),
       element("th", { scope: "col", class: "num", title: "the systems compared through a translation on some instance" }, "translated"))),
     body)), "whole"),
     element("div", { class: "fig-head" }, element("h3", {}, "Each type against the systems native to it"),
@@ -739,9 +739,8 @@ function counted() {
   const items = [["answers", "Over all of a type's instances: a run out of time or memory, wrong, refused or not given counts as unanswered."],
     ["total", `Over the instances a system is given and either answers: an unanswered run counts as ${twice(par)} its time limit `
       + `(PAR-${par}), a time under ${floor} s as ${floor} s.`],
-    ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s), with those only the other `
-      + "answers, tddlog at its limit, and those only tddlog answers, the other at its limit where that bound is at least the "
-      + `measured ratio; none with fewer than ${common} in common.`],
+    ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s), with tddlog's unanswered `
+      + `runs at its limit and the other's where that bound is at least the ratio; none under ${common} in common.`],
     ["X+tddlog", "X's own code, then tddlog's inference; its time includes X's after its warm-up, so that against X it differs only in the inference."]];
   return element("section", { class: "counted" }, element("h3", {}, "How the results are counted"),
     element("dl", { class: "classes" }, ...items.flatMap(([k, text]) => [element("dt", {}, k), element("dd", {}, text)])));
