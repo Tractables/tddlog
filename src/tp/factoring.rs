@@ -4,7 +4,7 @@
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::borrow::Cow;
 
-use tididi::Tdd;
+use super::backend::Diagram;
 use tididi::vtree::VarId;
 
 use super::backend::Part;
@@ -307,11 +307,11 @@ impl Exclusive {
 /// What the watch makes of a formula: `Ok` where it lets the formula
 /// through, `Err` with the formula, reduced in full, and its pairs where it
 /// refuses it.
-pub(super) type Checked<T> = Result<T, (Tdd, usize)>;
+pub(super) type Checked<T> = Result<T, (Diagram, usize)>;
 
 /// Negates a formula, owned or lent, counted under the given source.
 pub(super) type Negate<'a> =
-    dyn for<'f> Fn(NegationSource, Cow<'f, Tdd>) -> Result<Tdd, CompileError> + 'a;
+    dyn for<'f> Fn(NegationSource, Cow<'f, Diagram>) -> Result<Diagram, CompileError> + 'a;
 
 /// Builds `⋀_r ¬body_r` over a set of rule bodies by factoring out shared
 /// literals: `⋀_r ¬body_r = ¬(L ∧ ¬⋀_{r∋L} ¬body_r\\L) ∧ ⋀_{r∌L} ¬body_r`,
@@ -350,11 +350,11 @@ pub(super) struct Factoring<'a> {
     pub(super) head: AtomId,
     pub(super) scratch: &'a std::cell::RefCell<Scratch>,
     pub(super) memo: &'a std::cell::RefCell<ClauseMemo>,
-    pub(super) watched: &'a dyn Fn(Tdd, AtomId) -> Result<Tdd, CompileError>,
+    pub(super) watched: &'a dyn Fn(Diagram, AtomId) -> Result<Diagram, CompileError>,
     /// `watched` that hands back the formula the watch refused, reduced in
     /// full, with its pairs, for the [`ClauseMemo`] to keep for the next
     /// run (`clauses::Held`).
-    pub(super) checked: &'a dyn Fn(Tdd) -> Result<Checked<Tdd>, CompileError>,
+    pub(super) checked: &'a dyn Fn(Diagram) -> Result<Checked<Diagram>, CompileError>,
     /// The pairs `watched` lets through.
     pub(super) watch: Option<usize>,
     /// Counts that many operations of the given kind.
@@ -388,7 +388,11 @@ pub(super) fn placed_count(count: usize, own: &VtreeScope, on: &VtreeScope) -> u
 
 impl Factoring<'_> {
     /// `f` on `on`, which holds its scope.
-    pub(super) fn placed(&self, f: impl Into<Part>, on: &VtreeScope) -> Result<Tdd, CompileError> {
+    pub(super) fn placed(
+        &self,
+        f: impl Into<Part>,
+        on: &VtreeScope,
+    ) -> Result<Diagram, CompileError> {
         let Part(f, own) = f.into();
         self.backend.embed_read(f, &own, on)
     }
@@ -415,8 +419,8 @@ impl Factoring<'_> {
         mut bodies: Vec<Vec<GLit>>,
         mut pairs: Vec<Pairs<'_>>,
         scope: &VtreeScope,
-        start: Option<Tdd>,
-    ) -> Result<Tdd, CompileError> {
+        start: Option<Diagram>,
+    ) -> Result<Diagram, CompileError> {
         // A body with complementary fact literals is false and contributes
         // ¬false = true. Checked once here: the factoring below only strips
         // literals from bodies, which cannot make a pair, rather than at
@@ -500,8 +504,8 @@ impl Factoring<'_> {
         bodies: Vec<Vec<GLit>>,
         pairs: &[Pairs<'_>],
         scope: &VtreeScope,
-        start: Option<Tdd>,
-    ) -> Result<Tdd, CompileError> {
+        start: Option<Diagram>,
+    ) -> Result<Diagram, CompileError> {
         let terms = self.negated_terms(bodies, pairs, scope, start)?;
         self.conjoin_all(terms, scope)
     }
@@ -516,7 +520,7 @@ impl Factoring<'_> {
         &mut self,
         bodies: Vec<Vec<GLit>>,
         scope: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let mu = self.negated_bodies_on(bodies, &[], scope, None)?;
         (self.negate)(NegationSource::Disjunction, mu.into())
     }
@@ -596,11 +600,11 @@ impl Factoring<'_> {
         mut bodies: Vec<Vec<GLit>>,
         pairs: &[Pairs<'_>],
         scope: &VtreeScope,
-        mut start: Option<Tdd>,
+        mut start: Option<Diagram>,
     ) -> Result<Vec<Formula>, CompileError> {
         // An empty body is true and makes the conjunction false.
         if bodies.iter().any(|body| body.is_empty()) {
-            return Ok(vec![(self.backend.zero(scope), scope.clone())]);
+            return Ok(vec![(self.backend.zero(scope)?, scope.clone())]);
         }
         // Bodies of facts alone, a network's rows under indicators among
         // them, are conjoined one at a time as clauses and negate nothing,
@@ -744,7 +748,7 @@ impl Factoring<'_> {
         &mut self,
         terms: Vec<Formula>,
         scope: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         // One term is the branch's result as its negation left it, pruned but
         // not contracted; the operations above it run on what it carries.
         // Under closed on bn_link, whose terms are large, leaving it so cost
@@ -774,7 +778,7 @@ impl Factoring<'_> {
         }
         match acc {
             Some(a) => self.placed(a, scope),
-            None => Ok(self.backend.one(scope)),
+            None => self.backend.one(scope),
         }
     }
 

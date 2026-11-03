@@ -49,6 +49,11 @@ pub struct Options {
     /// pairs of each formula an update made, in [`Run::trace`]. Off, the
     /// compile records nothing.
     pub trace: bool,
+    /// Whether the formulas are kept in skip form (`--skip-levels`):
+    /// canonical diagrams whose pairs may skip levels of the vtree, built
+    /// by the library's skip operations. With one layout run once and its
+    /// queries answered: `program`, `program:fanin` and `decision`.
+    pub skip_levels: bool,
 }
 
 impl Default for Options {
@@ -66,6 +71,7 @@ impl Default for Options {
             projection: None,
             dynamic_first_pairs: None,
             trace: false,
+            skip_levels: false,
         }
     }
 }
@@ -92,12 +98,13 @@ impl Options {
     /// compile under it, and the live pairs at which a dynamic layout
     /// searches first, failing where the strategy is not dynamic; failing
     /// too where neither the queries nor `P(e)` are asked for.
-    fn checked(&self) -> Result<(Projection, usize), Error> {
+    fn checked(&self) -> Result<(Projection, usize, tp::Form), Error> {
         if !self.queries && !self.evidence_probability {
             return Err(Error::Options(
                 "the queries are left out and P(e) is not asked for: nothing to answer".into(),
             ));
         }
+        let form = self.form()?;
         let dynamic = matches!(self.strategy, Strategy::Trial(kind) if kind.is_dynamic());
         if self.dynamic_first_pairs.is_some() && !dynamic {
             return Err(Error::Options(format!(
@@ -114,7 +121,41 @@ impl Options {
         Ok((
             self.projection.unwrap_or_default(),
             self.dynamic_first_pairs.unwrap_or(tp::DYNAMIC_FIRST_PAIRS),
+            form,
         ))
+    }
+
+    /// The form of the formulas, failing where skip form is asked under a
+    /// strategy or for a run that does not compile in it: `auto`'s trials
+    /// all keep the stored form, a dynamic layout's vtree search and the
+    /// tables of `td`, `families` and `closed` read stored levels, and so
+    /// does the sum-out walk of a run without queries.
+    fn form(&self) -> Result<tp::Form, Error> {
+        if !self.skip_levels {
+            return Ok(tp::Form::Stored);
+        }
+        let refused = match self.strategy {
+            Strategy::Auto => Some("auto's trials keep the stored form"),
+            Strategy::Trial(Kind::Dynamic) => Some("its vtree search reads stored levels"),
+            Strategy::Trial(Kind::Td | Kind::Families { .. } | Kind::Closed) => {
+                Some("its tables are built in the stored form")
+            }
+            Strategy::Trial(Kind::Program { .. } | Kind::Decision) => None,
+        };
+        if let Some(why) = refused {
+            return Err(Error::Options(format!(
+                "skip levels are for `program`, `program:fanin` and `decision`, not `{}`: {why}",
+                self.strategy
+            )));
+        }
+        if !self.queries {
+            return Err(Error::Options(
+                "skip levels need the queries: without them the evidence is summed out as it \
+                 is walked, which reads stored levels"
+                    .into(),
+            ));
+        }
+        Ok(tp::Form::Skip)
     }
 }
 
@@ -185,7 +226,7 @@ fn solve_split(
     bounds: &SplitBounds,
     progress: &mut dyn FnMut(Progress<'_>),
 ) -> Result<Solution, Error> {
-    let (projection, first_pairs) = options.checked()?;
+    let (projection, first_pairs, form) = options.checked()?;
     let start = Instant::now();
     let program = parsed(source, options)?;
     progress(Progress::Parsed {
@@ -258,7 +299,12 @@ fn solve_split(
             Strategy::Trial(kind) => {
                 let prepared = kind.prepare(part)?;
                 progress(Progress::Compiling(&prepared.ground));
-                run_prepared(prepared, kind, (projection, first_pairs), options.trace)?
+                run_prepared(
+                    prepared,
+                    kind,
+                    (projection, first_pairs, form),
+                    options.trace,
+                )?
             }
         };
         if i == 0 {
@@ -308,7 +354,11 @@ fn solve_split(
 /// factor the conditioning takes out, which the program printed does not
 /// carry.
 pub fn rewritten(source: &str, options: &Options) -> Result<GroundProgram, Error> {
-    options.checked()?;
+    if options.checked()?.2 == tp::Form::Skip {
+        return Err(Error::Options(
+            "the ground program comes before the compile, so skip levels would do nothing".into(),
+        ));
+    }
     let opts = GroundOptions {
         observe_query: false,
         ..options.ground_options()
@@ -368,26 +418,26 @@ fn parsed(source: &str, options: &Options) -> Result<Program, Error> {
 /// the program again. Any other strategy is one layout of its rewrite of
 /// the program (`Kind::prepare`), compiled without bounds.
 pub fn solve_ground(ground: GroundProgram, options: &Options) -> Result<Run, Error> {
-    let (projection, first_pairs) = options.checked()?;
+    let (projection, first_pairs, form) = options.checked()?;
     match options.strategy {
         Strategy::Auto => auto::run(ground, projection, auto::Ready::default(), options.trace),
         Strategy::Trial(kind) => run_prepared(
             kind.prepare(ground)?,
             kind,
-            (projection, first_pairs),
+            (projection, first_pairs, form),
             options.trace,
         ),
     }
 }
 
 /// The run of `kind`'s program and layout, `prepared`, compiled without
-/// bounds under `projection`; a dynamic layout searches first at
-/// `first_pairs` live pairs. The compile records its components for a
-/// trace where `traced`.
+/// bounds under `projection`, its formulas in `form`; a dynamic layout
+/// searches first at `first_pairs` live pairs. The compile records its
+/// components for a trace where `traced`.
 pub(crate) fn run_prepared(
     prepared: Prepared,
     kind: Kind,
-    (projection, first_pairs): (Projection, usize),
+    (projection, first_pairs, form): (Projection, usize, tp::Form),
     traced: bool,
 ) -> Result<Run, Error> {
     let Prepared {
@@ -399,7 +449,7 @@ pub(crate) fn run_prepared(
     } = prepared;
     let mut evaluation = Evaluation::new(traced);
     let ((results, query_sizes), vtree) = layout.vtree.context().run(|engine| {
-        let backend = tp::TddBackend::new(engine, layout.vtree.clone());
+        let backend = tp::TddBackend::in_form(engine, layout.vtree.clone(), form);
         let answers = evaluation.run(
             (&ground, &deps, &layout.order),
             &backend,
@@ -516,7 +566,7 @@ pub(crate) fn run_as_given(
     run_prepared(
         Prepared::lay_out(std::sync::Arc::new(ground), None, kind, 0.0)?,
         kind,
-        (projection, first_pairs),
+        (projection, first_pairs, tp::Form::Stored),
         false,
     )
 }

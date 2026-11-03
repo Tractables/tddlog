@@ -40,7 +40,7 @@ impl Lit {
 }
 
 /// A gate: rules whose bodies are literals.
-struct Circuit {
+pub(crate) struct Circuit {
     probabilities: Vec<f64>,
     gates: Vec<Vec<Vec<Lit>>>,
     evidence: usize,
@@ -48,7 +48,7 @@ struct Circuit {
 }
 
 impl Circuit {
-    fn random(seed: u64) -> Self {
+    pub(crate) fn random(seed: u64) -> Self {
         Self::sized(seed, FACTS, GATES, 6)
     }
 
@@ -107,7 +107,7 @@ impl Circuit {
         gates
     }
 
-    fn source(&self) -> String {
+    pub(crate) fn source(&self) -> String {
         let mut s = String::new();
         for (i, p) in self.probabilities.iter().enumerate() {
             s += &format!("{p}::f{i}.\n");
@@ -128,7 +128,7 @@ impl Circuit {
     }
 
     /// Each query's probability given the evidence, by enumeration.
-    fn answers(&self) -> Vec<(String, f64)> {
+    pub(crate) fn answers(&self) -> Vec<(String, f64)> {
         let mut z = 0.0;
         let mut joint = vec![0.0; self.queries.len()];
         for w in 0..1usize << self.probabilities.len() {

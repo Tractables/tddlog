@@ -60,6 +60,7 @@ pub struct Trace {
     part: usize,
     strategy: Strategy,
     evidence_probability: bool,
+    skip_levels: bool,
 }
 
 impl Trace {
@@ -98,6 +99,7 @@ impl Trace {
             part: 0,
             strategy: options.strategy,
             evidence_probability: options.evidence_probability,
+            skip_levels: options.skip_levels,
         })
     }
 
@@ -233,15 +235,16 @@ impl Trace {
 }
 
 /// The trace as JSON: `{"trace": VERSION, "tddlog": version, "strategy",
-/// "evidenceProbability", "stages": [...]}`.
+/// "evidenceProbability", "skipLevels", "stages": [...]}`.
 impl fmt::Display for Trace {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{{\"trace\":{VERSION},\"tddlog\":{},\"strategy\":{},\"evidenceProbability\":{},\"stages\":[",
+            "{{\"trace\":{VERSION},\"tddlog\":{},\"strategy\":{},\"evidenceProbability\":{},\"skipLevels\":{},\"stages\":[",
             string(env!("CARGO_PKG_VERSION")),
             string(&self.strategy.to_string()),
-            self.evidence_probability
+            self.evidence_probability,
+            self.skip_levels
         )?;
         for (i, stage) in self.stages.iter().enumerate() {
             if i > 0 {

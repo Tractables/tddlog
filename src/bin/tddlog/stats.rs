@@ -43,6 +43,7 @@ pub(super) fn print_stats(args: &Args, run: &tddlog::Run, ground_secs: f64) {
 fn print_compile_stats(args: &Args, run: &tddlog::Run) {
     let s = &run.stats;
     let strategy = match args.strategy {
+        Strategy::Trial(_) if args.skip_levels => format!("{} in skip form", run.kind),
         Strategy::Trial(_) => run.kind.to_string(),
         Strategy::Auto => format!(
             "{} (from {}: {} attempts, {:.3}s discarded)",

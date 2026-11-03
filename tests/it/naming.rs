@@ -36,9 +36,9 @@ const STRATEGIES: [Strategy; 3] = [
 /// the atoms are propositional, as GeNI's are: the grounder numbers the
 /// atoms of one predicate together, and `program` lays the facts out in
 /// that order.
-struct Weather {
-    factories: usize,
-    days: usize,
+pub(crate) struct Weather {
+    pub(crate) factories: usize,
+    pub(crate) days: usize,
 }
 
 /// The probabilities: the weather stays fine 0.7 and turns fine 0.2; a
@@ -53,7 +53,7 @@ const NEW_FINE: f64 = 0.3;
 const NEW_OTHER: f64 = 0.1;
 
 impl Weather {
-    fn program(&self, extra: &str) -> String {
+    pub(crate) fn program(&self, extra: &str) -> String {
         let n = self.factories;
         let mut src = format!("{FINE}::w_0.\n");
         for i in 0..n {
@@ -94,7 +94,7 @@ impl Weather {
     /// `(P(done_last ∧ w_observed = fine), P(w_observed = fine))` by a
     /// forward pass over the weather, the strikes and `done`; with
     /// `observed` `None`, `(P(done_last), 1)`.
-    fn exact(&self, observed: Option<(usize, bool)>) -> (f64, f64) {
+    pub(crate) fn exact(&self, observed: Option<(usize, bool)>) -> (f64, f64) {
         let n = self.factories;
         let states = 1usize << (n + 2);
         // A state: bit 0 the weather, bits 1..=n the strikes, bit n+1 done.
@@ -172,7 +172,7 @@ impl Weather {
 /// is reached when its left, upper or upper-left neighbour is and the link
 /// from it, working with probability 0.5, works. The routers are stated
 /// row by row, each with its links before its rules.
-fn grid(side: usize, extra: &str) -> String {
+pub(crate) fn grid(side: usize, extra: &str) -> String {
     let mut src = String::from("c_0_0.\n");
     for i in 0..side {
         for j in 0..side {
@@ -193,7 +193,7 @@ fn grid(side: usize, extra: &str) -> String {
 /// P(the bottom-right router is reached) by a pass over the rows, the
 /// reached routers of the row before its state, and every assignment of
 /// a row's links.
-fn grid_exact(side: usize) -> f64 {
+pub(crate) fn grid_exact(side: usize) -> f64 {
     let mut dist = vec![0.0; 1 << side];
     for links in 0..1usize << side {
         // Row 0: each router after the first reached from its left one.
@@ -235,7 +235,7 @@ fn grid_exact(side: usize) -> f64 {
 /// is one of four types, each with probability 0.25; `g_i_t` holds once
 /// type `i` was drawn by draw `t`, and `all` once every type was by the
 /// last draw. Each draw states its choice before its rules.
-fn coupon(draws: usize, extra: &str) -> String {
+pub(crate) fn coupon(draws: usize, extra: &str) -> String {
     let mut src = String::new();
     for t in 0..draws {
         src += &(0..4)
@@ -263,7 +263,7 @@ fn coupon(draws: usize, extra: &str) -> String {
 
 /// `(P(all ∧ g_0_observed), P(g_0_observed))` by a forward pass over the
 /// set of types drawn; with `observed` `None`, `(P(all), 1)`.
-fn coupon_exact(draws: usize, observed: Option<usize>) -> (f64, f64) {
+pub(crate) fn coupon_exact(draws: usize, observed: Option<usize>) -> (f64, f64) {
     let mut dist = [0.0; 16];
     dist[0] = 1.0;
     for t in 0..draws {

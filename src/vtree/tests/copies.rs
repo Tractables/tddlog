@@ -167,7 +167,11 @@ fn answers(program: &Program, under: Under) -> ((f64, f64, f64), usize) {
             crate::solve::run_prepared(
                 prepared,
                 Kind::Td,
-                (crate::Projection::default(), crate::tp::DYNAMIC_FIRST_PAIRS),
+                (
+                    crate::Projection::default(),
+                    crate::tp::DYNAMIC_FIRST_PAIRS,
+                    crate::tp::Form::Stored,
+                ),
                 false,
             )
             .expect("answers")

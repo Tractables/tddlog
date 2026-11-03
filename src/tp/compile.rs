@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::sync::Arc;
 use std::time::Instant;
 
-use tididi::Tdd;
+use super::backend::Diagram;
 use tididi::restructure::search::PoolRestarts;
 use tididi::vtree::VarId;
 
@@ -68,9 +68,9 @@ pub(crate) struct Formulas {
     /// none yet.
     at: Vec<u32>,
     /// The entries, in the order the atoms were first given one.
-    held: Vec<Option<Arc<Tdd>>>,
+    held: Vec<Option<Arc<Diagram>>>,
     /// What an atom without an entry reads.
-    none: Option<Arc<Tdd>>,
+    none: Option<Arc<Diagram>>,
 }
 
 impl Formulas {
@@ -85,7 +85,7 @@ impl Formulas {
     }
 
     /// Each atom's formula or none, in the atoms' order.
-    pub(crate) fn iter(&self) -> impl Iterator<Item = &Option<Arc<Tdd>>> {
+    pub(crate) fn iter(&self) -> impl Iterator<Item = &Option<Arc<Diagram>>> {
         self.at.iter().map(|&i| {
             if i == 0 {
                 &self.none
@@ -96,8 +96,8 @@ impl Formulas {
     }
 
     /// The atoms' formulas, in the atoms' order.
-    fn formulas_mut(&mut self) -> Vec<&mut Tdd> {
-        let mut held: Vec<Option<&mut Tdd>> = self
+    fn formulas_mut(&mut self) -> Vec<&mut Diagram> {
+        let mut held: Vec<Option<&mut Diagram>> = self
             .held
             .iter_mut()
             .map(|f| {
@@ -115,7 +115,7 @@ impl Formulas {
     /// Take `a`'s formula, leaving none, without giving `a` an entry. A
     /// read of it in the atom update under way may still hold it
     /// ([`Read::taken`]).
-    pub(crate) fn take(&mut self, a: usize) -> Option<Arc<Tdd>> {
+    pub(crate) fn take(&mut self, a: usize) -> Option<Arc<Diagram>> {
         match self.at[a] {
             0 => None,
             i => self.held[i as usize - 1].take(),
@@ -129,9 +129,9 @@ impl Formulas {
 }
 
 impl std::ops::Index<usize> for Formulas {
-    type Output = Option<Arc<Tdd>>;
+    type Output = Option<Arc<Diagram>>;
 
-    fn index(&self, a: usize) -> &Option<Arc<Tdd>> {
+    fn index(&self, a: usize) -> &Option<Arc<Diagram>> {
         match self.at[a] {
             0 => &self.none,
             i => &self.held[i as usize - 1],
@@ -141,7 +141,7 @@ impl std::ops::Index<usize> for Formulas {
 
 /// A write gives the atom an entry if it has none.
 impl std::ops::IndexMut<usize> for Formulas {
-    fn index_mut(&mut self, a: usize) -> &mut Option<Arc<Tdd>> {
+    fn index_mut(&mut self, a: usize) -> &mut Option<Arc<Diagram>> {
         if self.at[a] == 0 {
             self.held.push(None);
             self.at[a] = self.held.len() as u32;
@@ -178,7 +178,7 @@ impl Compiled {
         a: AtomId,
         positive: bool,
         (negations, source): (&mut Negations, NegationSource),
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         match &self.formulas[a as usize] {
             Some(f) => {
                 if self.stored_positive(a) == positive {
@@ -216,10 +216,10 @@ impl Compiled {
         backend: &TddBackend,
         scope: &VtreeScope,
         a: AtomId,
-        f: Tdd,
+        f: Diagram,
         positive: bool,
         (negations, source): (&mut Negations, NegationSource),
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         // Negate on the atom's own scope, which is the smaller one, and
         // embed the result: a function that does not depend on the free
         // variables has a complement that does not either.
@@ -697,7 +697,7 @@ pub(crate) struct Compilation {
     /// The rotation search of a dynamic vtree, `None` on a static one.
     dynamic: Option<Dynamic>,
     /// The formula the guard refused in the round it put back ([`GUARD`]).
-    refused: std::cell::RefCell<Option<Tdd>>,
+    refused: std::cell::RefCell<Option<Diagram>>,
     dying: Dying,
     /// Whether a run without a watch failed: it may have taken formulas
     /// that the components it did not finish read, and cannot go on.
@@ -1214,7 +1214,7 @@ impl Compilation {
                 let positive = self.fixpoint.positive.borrow()[a as usize];
                 let mut both =
                     |w: &Probabilities, recounts: &mut usize| -> Result<(f64, f64), CompileError> {
-                        let m = crate::eval::mass(backend.engine, f, w, recounts)?.to_f64();
+                        let m = backend.mass(f, w, recounts)?.to_f64();
                         let c = crate::eval::complement(m, || -> Result<f64, CompileError> {
                             if negated.is_none() {
                                 negated = Some(self.negations.borrow_mut().negate(
@@ -1223,13 +1223,9 @@ impl Compilation {
                                     &**f,
                                 )?);
                             }
-                            Ok(crate::eval::mass(
-                                backend.engine,
-                                negated.as_ref().unwrap(),
-                                w,
-                                recounts,
-                            )?
-                            .to_f64())
+                            Ok(backend
+                                .mass(negated.as_ref().unwrap(), w, recounts)?
+                                .to_f64())
                         })?;
                         Ok(if positive { (m, c) } else { (c, m) })
                     };
@@ -1278,7 +1274,7 @@ impl Compilation {
         for &a in scc {
             if let Some(f) = &formulas[a as usize] {
                 held = true;
-                for v in backend.engine.support(f)? {
+                for v in backend.support(f)? {
                     vars.push(scope.vars().map_or(v, |vars| vars[v.0 as usize - 1]));
                 }
             }
@@ -1402,23 +1398,24 @@ impl Compilation {
         // without counting it: nothing else reads that count.
         let (taken, untaken) = (&self.dying.taken, self.dying.taken.get());
         let limit = || watch.or(guard.filter(|_| taken.get() == untaken));
-        let check = |mut f: Tdd, pairs: usize| -> Result<Checked<(Tdd, usize)>, CompileError> {
-            match limit() {
-                Some(w) if pairs > w => {
-                    backend.minimize(&mut f, Reduce::Settled)?;
-                    let pairs = backend.size(&f);
-                    Ok(if pairs <= w {
-                        Ok((f, pairs))
-                    } else {
-                        Err((f, pairs))
-                    })
+        let check =
+            |mut f: Diagram, pairs: usize| -> Result<Checked<(Diagram, usize)>, CompileError> {
+                match limit() {
+                    Some(w) if pairs > w => {
+                        backend.minimize(&mut f, Reduce::Settled)?;
+                        let pairs = backend.size(&f);
+                        Ok(if pairs <= w {
+                            Ok((f, pairs))
+                        } else {
+                            Err((f, pairs))
+                        })
+                    }
+                    _ => Ok(Ok((f, pairs))),
                 }
-                _ => Ok(Ok((f, pairs))),
-            }
-        };
+            };
         let refused = self.dynamic.is_some().then_some(&self.refused);
         let watched_sized =
-            |f: Tdd, pairs: usize, a: AtomId| -> Result<(Tdd, usize), CompileError> {
+            |f: Diagram, pairs: usize, a: AtomId| -> Result<(Diagram, usize), CompileError> {
                 check(f, pairs)?.map_err(|(f, pairs)| {
                     if let Some(refused) = refused {
                         refused.replace(Some(f));
@@ -1426,14 +1423,14 @@ impl Compilation {
                     CompileError::Oversize { atom: a, pairs }
                 })
             };
-        let checked = |f: Tdd| -> Result<Checked<Tdd>, CompileError> {
+        let checked = |f: Diagram| -> Result<Checked<Diagram>, CompileError> {
             if limit().is_none() {
                 return Ok(Ok(f));
             }
             let pairs = backend.size(&f);
             Ok(check(f, pairs)?.map(|(f, _)| f))
         };
-        let watched = |f: Tdd, a: AtomId| -> Result<Tdd, CompileError> {
+        let watched = |f: Diagram, a: AtomId| -> Result<Diagram, CompileError> {
             if limit().is_none() {
                 return Ok(f);
             }
@@ -1457,11 +1454,12 @@ impl Compilation {
         let counts = &self.counts;
         let count = |op: Op, n: usize| counts.borrow_mut()[op as usize] += n;
         let negations = &self.negations;
-        let negate = |source: NegationSource, f: Cow<'_, Tdd>| -> Result<Tdd, CompileError> {
-            let r = negations.borrow_mut().negate(backend, source, f)?;
-            count(Op::Negate, 1);
-            Ok(r)
-        };
+        let negate =
+            |source: NegationSource, f: Cow<'_, Diagram>| -> Result<Diagram, CompileError> {
+                let r = negations.borrow_mut().negate(backend, source, f)?;
+                count(Op::Negate, 1);
+                Ok(r)
+            };
         let links = &self.encoded.links;
         let lambda_cache = &self.fixpoint.lambda_cache;
         let positive = &self.fixpoint.positive;
@@ -1520,23 +1518,23 @@ impl Compilation {
                 };
                 let own = scope_of(l.atom());
                 let stored_positive = positive.borrow()[b];
-                let stored = |formulas: &mut Formulas| -> Read {
+                let stored = |formulas: &mut Formulas| -> Result<Read, CompileError> {
                     let f = if last {
                         formulas.take(b)
                     } else {
                         formulas[b].clone()
                     };
                     match f {
-                        Some(f) => Read::taken(f),
-                        None if stored_positive => Read::from(backend.zero(own)),
-                        None => Read::from(backend.one(own)),
+                        Some(f) => Ok(Read::taken(f)),
+                        None if stored_positive => Ok(Read::from(backend.zero(own)?)),
+                        None => Ok(Read::from(backend.one(own)?)),
                     }
                 };
                 if stored_positive == l.is_positive() {
                     if last {
                         lambda_cache.borrow_mut().take(b);
                     }
-                    return Ok(stored(formulas));
+                    return stored(formulas);
                 }
                 match formulation {
                     Formulation::Dual => {
@@ -1556,7 +1554,7 @@ impl Compilation {
                         } else {
                             NegationSource::Lambda
                         };
-                        let f = stored(formulas).with_cow(|f| negate(source, f))?;
+                        let f = stored(formulas)?.with_cow(|f| negate(source, f))?;
                         if last {
                             return Ok(Read::from(f));
                         }
@@ -1565,7 +1563,7 @@ impl Compilation {
                         Ok(Read::shared(f))
                     }
                     Formulation::Primal => Ok(Read::from(
-                        stored(formulas).with_cow(|f| negate(NegationSource::Primal, f))?,
+                        stored(formulas)?.with_cow(|f| negate(NegationSource::Primal, f))?,
                     )),
                 }
             };
@@ -1581,7 +1579,7 @@ impl Compilation {
                      formulas: &mut Formulas,
                      incremental: bool,
                      conjoin: bool|
-         -> Result<(Tdd, Option<Tdd>), CompileError> {
+         -> Result<(Diagram, Option<Diagram>), CompileError> {
             let mut bodies: Vec<Vec<GLit>> = Vec::new();
             let mut pairs: Vec<Pairs> = Vec::new();
             for &ri in &by_head[a as usize] {
@@ -1731,17 +1729,17 @@ impl Compilation {
         let (sizes, live) = (&mut self.fixpoint.sizes, &mut self.fixpoint.live);
         // Store `f`, of `size` pairs, as `a`'s formula, keeping the live
         // pairs.
-        let mut store = |a: AtomId, f: Tdd, size: usize, formulas: &mut Formulas| {
+        let mut store = |a: AtomId, f: Diagram, size: usize, formulas: &mut Formulas| {
             *live = *live - sizes[a as usize] + size;
             sizes[a as usize] = size;
             formulas[a as usize] = Some(Arc::new(f));
         };
         if deps::has_internal_negation(gp, by_head, scc) {
             stats.cyclic_components += 1;
-            let mut lambda_lookup = |b: AtomId| -> Result<Tdd, CompileError> {
+            let mut lambda_lookup = |b: AtomId| -> Result<Diagram, CompileError> {
                 backend.embed_read(derived(GLit::Pos(b), 0, formulas)?, scope_of(b), scope)
             };
-            let wf_negate = |f: Tdd| negate(NegationSource::WellFounded, f.into());
+            let wf_negate = |f: Diagram| negate(NegationSource::WellFounded, f.into());
             let (result, updates) = aft::compile_component(
                 gp,
                 by_head,
@@ -1817,7 +1815,7 @@ impl Compilation {
                 t.cyclic(false, 0);
             }
             for &a in scc {
-                let f = bottom();
+                let f = bottom()?;
                 let size = backend.size(&f);
                 store(a, f, size, formulas);
             }
@@ -1918,7 +1916,7 @@ impl Compilation {
     fn search(
         &mut self,
         backend: &TddBackend,
-        mut refused: Option<Tdd>,
+        mut refused: Option<Diagram>,
     ) -> Result<Option<usize>, CompileError> {
         let Some(dynamic) = self.dynamic.as_mut() else {
             return Ok(None);
@@ -1995,7 +1993,7 @@ impl Compilation {
         backend: &TddBackend,
         (equivalents, formulas): (&mut FxHashMap<AtomId, (AtomId, AtomId)>, &mut Formulas),
         derived: &dyn Fn(GLit, u32, &mut Formulas) -> Result<Read, CompileError>,
-    ) -> Result<Option<Tdd>, CompileError> {
+    ) -> Result<Option<Diagram>, CompileError> {
         let Some((v, k)) = equivalence(gp, comp_rules) else {
             return Ok(None);
         };

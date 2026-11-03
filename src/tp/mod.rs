@@ -45,7 +45,7 @@ mod primal_update_tests;
 mod projection_tests;
 
 pub(crate) use backend::TddBackend;
-pub(crate) use backend::{Formula, KeptProjector, Reduce};
+pub(crate) use backend::{Diagram, Form, Formula, KeptProjector, Reduce};
 #[cfg(test)]
 pub(crate) use compile::compile;
 pub(crate) use compile::{Compilation, DYNAMIC_FIRST_PAIRS, Horizon};
@@ -101,6 +101,10 @@ pub enum CompileError {
     EmptyScope,
     /// Copying a formula onto a larger vtree failed.
     Embed(tididi::restructure::EmbedError),
+    /// A step that reads or builds stored levels met a formula in skip
+    /// form (`--skip-levels`), which has none: the step named, which
+    /// needs the stored form.
+    SkipForm(&'static str),
 }
 
 impl fmt::Display for CompileError {
@@ -133,6 +137,10 @@ impl fmt::Display for CompileError {
             CompileError::Embed(e) => {
                 write!(f, "embedding a formula on a larger vtree failed: {e}")
             }
+            CompileError::SkipForm(what) => write!(
+                f,
+                "--skip-levels keeps formulas in skip form, and {what} needs the stored form"
+            ),
         }
     }
 }

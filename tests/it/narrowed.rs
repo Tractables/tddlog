@@ -33,7 +33,7 @@ fn p(i: usize) -> f64 {
     0.001 * (1 + i % 7) as f64
 }
 
-fn program(evidence: Option<bool>) -> String {
+pub(crate) fn program(evidence: Option<bool>) -> String {
     let mut src = String::new();
     for (x, q) in SMALL {
         src += &format!("{q}::{x}.\n");
@@ -60,7 +60,7 @@ fn program(evidence: Option<bool>) -> String {
 
 /// P(z), P(w), P(u) and P(big), given `w` = `evidence` where there is one,
 /// by enumeration of the six facts of `SMALL`; `big` cancels out of `z`.
-fn exact(evidence: Option<bool>) -> Vec<(String, f64)> {
+pub(crate) fn exact(evidence: Option<bool>) -> Vec<(String, f64)> {
     let big = 1.0 - (0..WIDE).map(|i| 1.0 - p(i)).product::<f64>();
     let (mut total, mut sums) = (0.0, [0.0; 3]);
     for world in 0..1usize << SMALL.len() {

@@ -20,8 +20,8 @@ use tididi::vtree::{VarId, VtreeIdx};
 use crate::eval::{Count, Counted, Counts, Probabilities, Value};
 use crate::ground::{AtomId, GroundProgram};
 use crate::tp::{
-    CompileError, Compiled, Formula, NegationSource, Negations, ScopeTable, TddBackend, Template,
-    VtreeScope,
+    CompileError, Compiled, Diagram, Form, Formula, NegationSource, Negations, ScopeTable,
+    TddBackend, Template, VtreeScope,
 };
 use walk::EvidenceWalk;
 
@@ -201,9 +201,10 @@ impl QueryEvaluation {
             (weights.pos[i], weights.neg[i], weights.one[i]) = (0.5, 0.5, 1.0);
         }
         // Where no query reads the evidence formula, only its count is
-        // wanted, and the walk sums out what no later join reads.
+        // wanted, and the walk sums out what no later join reads; not in
+        // skip form, whose evaluation counts the formula built whole.
         let mut walk = EvidenceWalk::new(observed, &backend.vtree());
-        if gp.queries.iter().all(|(_, id, _)| id.is_none()) {
+        if gp.queries.iter().all(|(_, id, _)| id.is_none()) && backend.form() == Form::Stored {
             walk.sum_out(&backend.vtree(), &weights);
         }
         let settled = &compiled.for_queries.settled;
@@ -474,7 +475,7 @@ impl Scopes<'_> {
 
 /// The evidence formula on its scope, with its weights there and its mass.
 struct Evidence<'a> {
-    e: &'a Tdd,
+    e: &'a Diagram,
     scope: &'a VtreeScope,
     weights: Probabilities,
     mass: Count,
@@ -485,15 +486,21 @@ struct Evidence<'a> {
 /// under powers of two keep a count in floats that the engine's
 /// evaluation, one range for the whole diagram, would take again in
 /// `Count`s. The count is kept in `counted`, as the queries read its pass
-/// down too, which is taken when one reads it.
+/// down too, which is taken when one reads it. A skip-form formula's levels
+/// are the engine's, and its mass is the engine's evaluation
+/// ([`TddBackend::mass`]).
 fn evidence_mass(
     backend: &TddBackend,
-    e: &Tdd,
+    e: &Diagram,
     scope: &VtreeScope,
     w: &Probabilities,
     counted: &mut Option<CountedEvidence>,
     sizes: &mut QuerySizes,
 ) -> Result<Count, CompileError> {
+    let e = match e {
+        Diagram::Stored(e) => e,
+        Diagram::Skip(_) => return backend.mass(e, w, &mut sizes.recounts),
+    };
     if e.has_marginal_level() {
         // The walk summed the evidence out as it built it: its value is the
         // mass, a scaled float.
@@ -607,21 +614,41 @@ impl Answers<'_> {
             None => Some(v.0 as usize),
             Some(vars) => vars.iter().position(|&w| w == v).map(|i| i + 1),
         };
-        let (Some(x), Some(c)) = (local, self.counted.as_mut()) else {
+        let Some(x) = local else {
+            return Ok(None);
+        };
+        let e = match ev.e {
+            Diagram::Stored(e) => e,
+            // The evidence and the literal conjoined and counted: the skip
+            // form has no pass down.
+            Diagram::Skip(_) => {
+                let with = self.backend.and_clause(
+                    ev.scope,
+                    self.backend.copy(ev.e)?,
+                    &[tididi::Literal::new(v, positive)],
+                )?;
+                self.sizes.record(self.backend.size(&with), self.watch)?;
+                let with = self
+                    .backend
+                    .mass(&with, &ev.weights, &mut self.sizes.recounts)?;
+                return Ok(Some(with.ratio(ev.mass)));
+            }
+        };
+        let Some(c) = self.counted.as_mut() else {
             return Ok(None);
         };
         let var = VarId(x as u32);
-        let leaf =
-            ev.e.vtree()
-                .leaf_of(var)
-                .expect("a scope's variables are its leaves");
+        let leaf = e
+            .vtree()
+            .leaf_of(var)
+            .expect("a scope's variables are its leaves");
         loop {
             let p = match &c.counted {
                 Counts::Plain(plain) => {
-                    literal_ratio(plain, ev.e, leaf, var, positive, &ev.weights, ev.mass)?
+                    literal_ratio(plain, e, leaf, var, positive, &ev.weights, ev.mass)?
                 }
                 Counts::Wide(wide) => {
-                    literal_ratio(wide, ev.e, leaf, var, positive, &ev.weights, ev.mass)?
+                    literal_ratio(wide, e, leaf, var, positive, &ev.weights, ev.mass)?
                 }
             };
             match p {
@@ -677,7 +704,7 @@ impl Answers<'_> {
         );
         let w = self.weights_on(scope, template);
         self.sizes.record(self.backend.size(f), self.watch)?;
-        Ok(crate::eval::mass(self.backend.engine, f, &w, &mut self.sizes.recounts)?.to_f64())
+        Ok(self.backend.mass(f, &w, &mut self.sizes.recounts)?.to_f64())
     }
 
     /// `P(l | e)`: the formula of `l` counted where it was built, walked
@@ -692,13 +719,17 @@ impl Answers<'_> {
         self.sizes.products += 1;
         let built = self.formula(a, polarity)?;
         let (q, q_scope) = unpack(self.compiled, &built, a);
-        let q_w = self.weights_on(q_scope, template);
         let ev = self.evidence.as_ref().unwrap();
+        let (e, q) = match (ev.e, q) {
+            (Diagram::Stored(e), Diagram::Stored(q)) => (e, q),
+            _ => return self.skip_joint_ratio(q, q_scope, template),
+        };
+        let q_w = self.weights_on(q_scope, template);
         let c = self
             .counted
             .as_mut()
             .expect("the evidence is counted where a query reads it");
-        let e_vtree = ev.e.vtree();
+        let e_vtree = e.vtree();
         let leaf_in_e = |v: VarId| {
             let global = q_scope.vars().map_or(v, |vars| vars[v.0 as usize - 1]);
             let local = ev.scope.local_of(global)?;
@@ -716,7 +747,7 @@ impl Answers<'_> {
         loop {
             let p = match &c.counted {
                 Counts::Plain(plain) => joint_ratio(
-                    (ev.e, plain),
+                    (e, plain),
                     &c.spans,
                     (q, &q_w),
                     &leaf_in_e,
@@ -725,7 +756,7 @@ impl Answers<'_> {
                     &host,
                 )?,
                 Counts::Wide(wide) => joint_ratio(
-                    (ev.e, wide),
+                    (e, wide),
                     &c.spans,
                     (q, &q_w),
                     &leaf_in_e,
@@ -739,6 +770,41 @@ impl Answers<'_> {
                 None => c.widen(&mut self.sizes.recounts)?,
             }
         }
+    }
+
+    /// [`Self::count_against`] in skip form, which has no pass down to walk
+    /// a query against: `q`, the formula of the literal on `q_scope`,
+    /// conjoined with the evidence on the scope over both, and the product
+    /// counted, the query's variables under the probabilities `template`
+    /// gives where it answers the query.
+    fn skip_joint_ratio(
+        &mut self,
+        q: &Diagram,
+        q_scope: &VtreeScope,
+        template: Option<&Template>,
+    ) -> Result<f64, CompileError> {
+        let ev = self.evidence.as_ref().unwrap();
+        let scope = match (ev.scope.vars(), q_scope.vars()) {
+            (Some(e), Some(q)) => {
+                let mut vars = [e, q].concat();
+                vars.sort_unstable();
+                vars.dedup();
+                self.scopes.over(&vars)?
+            }
+            _ => self.backend.global(),
+        };
+        let (e, e_scope, mass) = (self.backend.copy(ev.e)?, ev.scope.clone(), ev.mass);
+        let joint = self.backend.and_on(
+            (e, e_scope),
+            (self.backend.copy(q)?, q_scope.clone()),
+            &scope,
+        )?;
+        self.sizes.record(self.backend.size(&joint), self.watch)?;
+        let w = self.weights_on(&scope, template);
+        Ok(self
+            .backend
+            .mass(&joint, &w, &mut self.sizes.recounts)?
+            .ratio(mass))
     }
 
     /// The formula of the literal of polarity `polarity` on `a`, and its
@@ -778,7 +844,7 @@ fn unpack<'a>(
     compiled: &'a Compiled,
     built: &'a Option<Formula>,
     a: AtomId,
-) -> (&'a Tdd, &'a VtreeScope) {
+) -> (&'a Diagram, &'a VtreeScope) {
     match built {
         Some((f, scope)) => (f, scope),
         None => {

@@ -39,10 +39,27 @@ use tididi::{OperationError, Tdd};
 use super::Formula;
 use crate::eval::Probabilities;
 use crate::tp::backend::Part;
-use crate::tp::{CompileError, TddBackend, VtreeScope};
+use crate::tp::{CompileError, Diagram, TddBackend, VtreeScope};
 
 /// A join refused: the error, and both operands.
 type Refused = Box<(CompileError, Part, Part)>;
+
+/// What sums out reads and builds stored levels, which the skip form does
+/// not have; a skip run's walk does not sum out.
+const SUM_OUT: &str = "the evidence walk's sum-out";
+
+/// `a` and `b`, placed on `scope`, as the stored diagrams the sum-out reads;
+/// a skip-form operand is refused with both on `scope`.
+fn stored_pair(a: Diagram, b: Diagram, scope: &VtreeScope) -> Result<(Tdd, Tdd), Refused> {
+    match (a, b) {
+        (Diagram::Stored(a), Diagram::Stored(b)) => Ok((a, b)),
+        (a, b) => Err(Box::new((
+            CompileError::SkipForm(SUM_OUT),
+            (a, scope.clone()).into(),
+            (b, scope.clone()).into(),
+        ))),
+    }
+}
 
 /// The finished subtrees of the walk's joins, and the facts' weights to
 /// sum them out under (see the module documentation).
@@ -326,7 +343,7 @@ impl SumOut {
         (fb, second): (Formula, Option<&[VarId]>),
         scope: &VtreeScope,
         store: &WeightStore,
-    ) -> Result<(Tdd, Tdd), Refused> {
+    ) -> Result<(Diagram, Diagram), Refused> {
         // The weighted operand first: a copy refused moves nothing.
         let swapped = fa.0.weights().is_none() && fb.0.weights().is_some();
         let (fa, fb, first, second) = if swapped {
@@ -356,13 +373,17 @@ impl SumOut {
                         Err(e) => return Err(Box::new((e, (t, own)))),
                     },
                 };
+                let stored = match t.stored(SUM_OUT) {
+                    Ok(stored) => stored,
+                    Err(e) => return Err(Box::new((e, (t, own)))),
+                };
                 match backend.engine.embed_over(
-                    &t,
+                    stored,
                     scope.vtree(),
                     |v| map[v.0 as usize - 1],
                     Some(store.empty_like()),
                 ) {
-                    Ok((g, _)) => Ok((g, scope.clone())),
+                    Ok((g, _)) => Ok((Diagram::Stored(g), scope.clone())),
                     Err(e) => Err(Box::new((e.into(), (t, own)))),
                 }
             };
@@ -396,18 +417,23 @@ impl SumOut {
         (fa, first): (Formula, Option<&[VarId]>),
         (fb, second): (Formula, Option<&[VarId]>),
         scope: &VtreeScope,
-    ) -> Result<Tdd, Refused> {
+    ) -> Result<Diagram, Refused> {
         self.weighted += 1;
         let store = self.store_for(scope);
         let (a, b) = self.place_both(backend, (fa, first), (fb, second), scope, &store)?;
-        backend.engine.and_restoring(a, b).map_err(|refused| {
-            let (f, g) = (refused.f.into_owned(), refused.g.into_owned());
-            Box::new((
-                refused.error.into(),
-                (f, scope.clone()).into(),
-                (g, scope.clone()).into(),
-            ))
-        })
+        let (a, b) = stored_pair(a, b, scope)?;
+        backend
+            .engine
+            .and_restoring(a, b)
+            .map(Diagram::Stored)
+            .map_err(|refused| {
+                let (f, g) = (refused.f.into_owned(), refused.g.into_owned());
+                Box::new((
+                    refused.error.into(),
+                    (Diagram::Stored(f), scope.clone()).into(),
+                    (Diagram::Stored(g), scope.clone()).into(),
+                ))
+            })
     }
 
     /// The conjunction on `scope` with `targets` summed out as it is built
@@ -420,9 +446,10 @@ impl SumOut {
         (fb, second): (Formula, Option<&[VarId]>),
         scope: &VtreeScope,
         targets: &[VtreeIdx],
-    ) -> Result<Tdd, Refused> {
+    ) -> Result<Diagram, Refused> {
         let store = self.store_for(scope);
-        let (mut a, b) = self.place_both(backend, (fa, first), (fb, second), scope, &store)?;
+        let (a, b) = self.place_both(backend, (fa, first), (fb, second), scope, &store)?;
+        let (mut a, b) = stored_pair(a, b, scope)?;
         self.summing += 1;
         if a.weights().is_none()
             && b.weights().is_none()
@@ -430,8 +457,8 @@ impl SumOut {
         {
             return Err(Box::new((
                 CompileError::Tdd(OperationError::from(e)),
-                (a, scope.clone()).into(),
-                (b, scope.clone()).into(),
+                (Diagram::Stored(a), scope.clone()).into(),
+                (Diagram::Stored(b), scope.clone()).into(),
             )));
         }
         let targets: Vec<VtreeIdx> = targets
@@ -444,11 +471,12 @@ impl SumOut {
         backend
             .engine
             .and_marginalizing(&a, &b, &targets)
+            .map(Diagram::Stored)
             .map_err(|e| {
                 Box::new((
                     e.into(),
-                    (a, scope.clone()).into(),
-                    (b, scope.clone()).into(),
+                    (Diagram::Stored(a), scope.clone()).into(),
+                    (Diagram::Stored(b), scope.clone()).into(),
                 ))
             })
     }

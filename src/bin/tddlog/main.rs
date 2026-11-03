@@ -55,6 +55,9 @@ options:
                                         queries and evidence, interleaved over them
       decision                          the tree of the decisions the grounder read facts as
                                         guards in; fails for a program with none
+  --skip-levels                         keep the formulas in skip form, whose pairs may skip
+                                        levels of the vtree (on a right-linear vtree, reduced
+                                        OBDDs); with --vtree program, program:fanin or decision
   --ground                              print the relevant ground program and exit; under a
                                         strategy other than auto, as that strategy compiles it;
                                         with --evidence-probability, the program P(e) is
@@ -120,6 +123,7 @@ struct Args {
     strategy: Strategy,
     ground_only: bool,
     stats: bool,
+    skip_levels: bool,
     evidence_probability: bool,
     no_queries: bool,
     precision: usize,
@@ -145,7 +149,7 @@ fn parse_args() -> Result<Request, String> {
     let (mut ground_only, mut stats, mut evidence_probability, mut no_queries) =
         (None, None, None, None);
     let (mut queries, mut evidence, mut rescale, mut program_only) = (None, None, None, None);
-    let (mut cnf_only, mut trace) = (None, None);
+    let (mut cnf_only, mut trace, mut skip_levels) = (None, None, None);
     while let Some(a) = args.next() {
         match a.as_str() {
             "-h" | "--help" => return Ok(Request::Help),
@@ -156,6 +160,7 @@ fn parse_args() -> Result<Request, String> {
             }
             option @ "--ground" => once(&mut ground_only, (), option)?,
             option @ "--stats" => once(&mut stats, (), option)?,
+            option @ "--skip-levels" => once(&mut skip_levels, (), option)?,
             option @ "--evidence-probability" => once(&mut evidence_probability, (), option)?,
             option @ "--no-queries" => once(&mut no_queries, (), option)?,
             option @ "--precision" => {
@@ -194,9 +199,11 @@ fn parse_args() -> Result<Request, String> {
     let file = file.ok_or_else(|| USAGE.to_string())?;
     let ground_only = ground_only.is_some();
     let stats = stats.is_some();
+    let skip_levels = skip_levels.is_some();
     if ground_only {
         for (given, option) in [
             (stats, "--stats"),
+            (skip_levels, "--skip-levels"),
             (precision.is_some(), "--precision"),
             (trace.is_some(), "--trace"),
         ] {
@@ -237,6 +244,7 @@ fn parse_args() -> Result<Request, String> {
             (stats, "--stats"),
             (precision.is_some(), "--precision"),
             (strategy.is_some(), "--vtree"),
+            (skip_levels, "--skip-levels"),
             (evidence_probability.is_some(), "--evidence-probability"),
             (trace.is_some(), "--trace"),
         ] {
@@ -256,6 +264,7 @@ fn parse_args() -> Result<Request, String> {
             (stats, "--stats"),
             (precision.is_some(), "--precision"),
             (strategy.is_some(), "--vtree"),
+            (skip_levels, "--skip-levels"),
             (trace.is_some(), "--trace"),
         ] {
             if given {
@@ -278,6 +287,7 @@ fn parse_args() -> Result<Request, String> {
         strategy,
         ground_only,
         stats,
+        skip_levels,
         evidence_probability: evidence_probability.is_some(),
         no_queries: no_queries.is_some(),
         precision,
@@ -471,6 +481,7 @@ fn run(
         evidence_probability: args.evidence_probability,
         queries: !args.no_queries,
         trace: trace_file.is_some(),
+        skip_levels: args.skip_levels,
         ..Options::default()
     };
     if args.ground_only {
