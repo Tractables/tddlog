@@ -1141,7 +1141,9 @@ mod dice {
     /// suite's reference, ProbLog's d-DNNF (eight significant digits, so to
     /// 5e-8 of the answer) or else Alea.jl's (to 1e-9), none on the
     /// programs neither answers. A scaled version read with its count as
-    /// the program's argument, `$1`, is the same program. Skipped without
+    /// the program's argument, `$1`, is the same program. The Dice paper's
+    /// diamond and ladder are their ProbLog ports (data/dice/diamond.pl
+    /// and ladder.pl), each read with its count as `$1`. Skipped without
     /// data/dice.
     #[test]
     fn the_loops() {
@@ -1155,23 +1157,43 @@ mod dice {
             panic!("loops.json holds an object");
         };
         for (name, case) in &cases {
-            let file = data.join(format!("{}.dice", case.get("program").str()));
-            let mut source = std::fs::read_to_string(&file).unwrap();
-            if let Json::Number(k) = case.get("steps") {
-                // The count as the program's argument, `$1`: the same
-                // program as the count written in.
-                let k = (*k as u64).to_string();
-                let options = tddlog::network::ReadOptions {
-                    arguments: vec![k.clone()],
-                    ..Default::default()
-                };
-                let placed = scaled(&source, "$1");
-                let input = tddlog::read(placed.as_bytes(), tddlog::Format::Dice, &options)
-                    .unwrap_or_else(|e| panic!("{name} with $1: {e}"));
-                source = scaled(&source, &k);
-                assert_eq!(*input.program, read(&source, name), "{name} with $1");
-            }
-            let program = read(&source, name);
+            let program = match case.get("program").str().strip_suffix(".pl") {
+                // A loop of the Dice paper ported to ProbLog (diamond and
+                // ladder), its count the program's argument, `$1`.
+                Some(stem) => {
+                    let Json::Number(k) = case.get("steps") else {
+                        panic!("{name}: a ProbLog port takes its count as $1");
+                    };
+                    let source = std::fs::read_to_string(data.join(format!("{stem}.pl"))).unwrap();
+                    let options = tddlog::network::ReadOptions {
+                        arguments: vec![(*k as u64).to_string()],
+                        ..Default::default()
+                    };
+                    tddlog::read(source.as_bytes(), tddlog::Format::Problog, &options)
+                        .unwrap_or_else(|e| panic!("{name} with $1: {e}"))
+                        .program
+                        .into_owned()
+                }
+                None => {
+                    let file = data.join(format!("{}.dice", case.get("program").str()));
+                    let mut source = std::fs::read_to_string(&file).unwrap();
+                    if let Json::Number(k) = case.get("steps") {
+                        // The count as the program's argument, `$1`: the
+                        // same program as the count written in.
+                        let k = (*k as u64).to_string();
+                        let options = tddlog::network::ReadOptions {
+                            arguments: vec![k.clone()],
+                            ..Default::default()
+                        };
+                        let placed = scaled(&source, "$1");
+                        let input = tddlog::read(placed.as_bytes(), tddlog::Format::Dice, &options)
+                            .unwrap_or_else(|e| panic!("{name} with $1: {e}"));
+                        source = scaled(&source, &k);
+                        assert_eq!(*input.program, read(&source, name), "{name} with $1");
+                    }
+                    read(&source, name)
+                }
+            };
             let run = common::run(&program, &Options::default())
                 .unwrap_or_else(|e| panic!("{name}: {e}"));
             let results = run.results.expect("evidence is consistent");
