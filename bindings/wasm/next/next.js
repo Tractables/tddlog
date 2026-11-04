@@ -565,9 +565,10 @@ function coverageView() {
     const v = draft.views.systems[s.key];
     if (!v) continue;
     const [refused, missing] = sums(v);
+    // a count opens the system's coverage, which lists those instances
+    const cell = (n) => element("td", { class: "num" }, n ? link({ view: "baseline", system: s.key, at: "coverage" }, count(n)) : count(n));
     body.append(element("tr", {}, element("th", { scope: "row" }, systemLink(s.key)),
-      element("td", { class: "num" }, count(v.beyond.length)), ...(refusals ? [element("td", { class: "num" }, count(refused))] : []),
-      element("td", { class: "num" }, count(missing))));
+      cell(v.beyond.length), ...(refusals ? [cell(refused)] : []), cell(missing)));
   }
   out.push(element("h3", {}, "In the release run"), note(`Over the ${inWords(data.types.length)} types: what a system answers that tddlog does not, `
     + "and what tddlog answers that the system cannot express or was not given."),

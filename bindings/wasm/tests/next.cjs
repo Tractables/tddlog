@@ -154,7 +154,16 @@ function drawn(page) {
         assert.equal(to, `#/baselines/${x}`, `${c.key}: ${x}'s name opens its page`);
       }
     }]),
-    ["#/coverage", "coverage", async () => assert.ok(await page.locator(".census").count() >= views.census.sources.length)],
+    ["#/coverage", "coverage", async () => {
+      assert.ok(await page.locator(".census").count() >= views.census.sources.length);
+      // each count above 0 opens its system's coverage
+      const cells = await page.$$eval("table.board:not(.census-t) tbody tr", (trs) => trs.map((tr) => [tr.querySelector("th a").getAttribute("href"),
+        ...[...tr.querySelectorAll("td")].map((td) => [td.textContent, td.querySelector("a")?.getAttribute("href") ?? null])]));
+      assert.ok(cells.length, "coverage: a row a system");
+      for (const [to, ...counts] of cells) {
+        for (const [n, a] of counts) assert.equal(a, n === "0" ? null : `${to}/coverage`, `coverage: ${to}'s count ${n}`);
+      }
+    }],
     // how it works: the first walkthrough, its strip of stages its steps, each a link to its step
     ["#/how", "how", async () => {
       await page.waitForSelector(".walk-trace p.trace-api");
