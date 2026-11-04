@@ -934,7 +934,8 @@ function benchmarksOf(root) {
       "the menu: the integrations");
     assert.deepEqual(menu[2].slice(1), ["#/", ...categories.map((c) => `#/category/${c.key}`), "../#/coverage"],
       "the menu: the overview, the categories and the programs tddlog does not run");
-    assert.ok(menu[3].length > 1 && menu[3].slice(1).every((h) => h.startsWith("../#/how/")), "the menu: the walkthroughs");
+    const walks = fs.readdirSync(path.join(site, "next", "walk")).filter((f) => f.endsWith(".json")).map((f) => `../#/how/${f.slice(0, -5)}`);
+    assert.deepEqual([...menu[3].slice(1)].sort(), walks.sort(), "the menu: every walkthrough");
     for (const c of categories) {
       const what = `the category ${c.key}`;
       await visit(`#/category/${c.key}`, "figure.plot svg.cactus path.line");
