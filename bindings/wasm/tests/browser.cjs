@@ -1156,6 +1156,14 @@ function benchmarksOf(root) {
         : Math.max(v, 0.2) <= fastest ? "best" : "slow"));
       assert.deepEqual(cells[row[0]], want, `${first}/${row[0]}: each time against the instance's fastest`);
     }
+    // the key says what each failure in the grid is, its whole meaning on hover
+    const seen = [...new Set(bySuite.get(first).instances.flatMap((row) => row.slice(1).filter((v) => typeof v === "string")))];
+    const key = await page.$$eval("#view details.instances p.key span", (ss) => ss.map((s) => s.textContent));
+    const failures = await page.evaluate(([kinds, limit]) => Object.keys(FAILURES).filter((k) => kinds.includes(k))
+      .map((k) => `${FAILURES[k][0](limit)}: ${FAILURES[k][1].split(":")[0]}`), [seen, bySuite.get(first).limit]);
+    for (const k of failures) assert.ok(key.includes(k), `${first}: the failures' key has ${k}`);
+    assert.deepEqual(await page.evaluate(() => ["memout", "skipped", "wrong"].map((k) => FAILURES[k][1].split(":")[0])),
+      ["over the memory limit", "after a smaller size failed", "off the reference"], "the failures' short meanings");
     console.log(`ok ${first}: each time against its instance's fastest`);
     const many = [...bySuite.values()].find((s) => s.systems.length > 5);
     if (many) {

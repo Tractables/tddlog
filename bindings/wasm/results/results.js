@@ -90,11 +90,11 @@ const FLOOR = 0.2;
 // form before the colon, the whole in a cell's title.
 const FAILURES = {
   timeout: [(limit) => `>${limit}`, "the time limit ran out"],
-  memout: [() => "memory", "out of memory: the address space a run gets, or the Java heap"],
+  memout: [() => "memory", "over the memory limit: the memory each run may take (its resident memory, or in the earlier runs its address space; Methods gives them), or the Java heap"],
   error: [() => "error", "the system stopped with an error"],
   unsupported: [() => "n/a", "the system cannot express the program: a translator refuses what its target language lacks (lists, division and recursion in a Dice program's translation; negation through recursion, or more than two million conjunctions, in a ground program's network), as aspmc's harness refuses an observation with a body"],
-  skipped: [() => "skipped", "not run: the system had run out of time or memory on a smaller size of the same program"],
-  wrong: [() => "wrong", "a wrong answer: off the reference by more than 1e-9 and either by more than 1e-6 or by more than 1e-3 of it, beyond the last digit either of the two prints"],
+  skipped: [() => "skipped", "after a smaller size failed: not run, since the system had run out of time or memory on a smaller size of the same program in the same run"],
+  wrong: [() => "wrong", "off the reference: an answer off it by more than 1e-9 and either by more than 1e-6 or by more than 1e-3 of it, beyond the last digit either of the two prints"],
   zero: [() => "zero", "every answer 0: printed as 0 where the reference's are positive"],
   underflow: [() => "underflow", "every answer 0, underflowing: printed as 0 where the probability of the evidence is below the smallest double"],
   unread: [() => "not read", "not read by tddlog: only another system's front end reads the program, so tddlog counts as unanswered"],
