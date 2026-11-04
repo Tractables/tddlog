@@ -805,20 +805,22 @@ impl Pruner {
         *self.slot(a) = i;
     }
 
-    /// The literal of atom `x` read in a body: its own, false where
-    /// `absent` says it can have none (a complete atom never derived), a
-    /// new input otherwise.
-    fn read(&mut self, x: AtomId, absent: &impl Fn(AtomId) -> bool) -> Lit {
+    /// The literal of atom `x` read in a body: its own, its value where
+    /// `known` gives one (true for an atom true in every world, false for a
+    /// complete atom never derived), a new input otherwise.
+    fn read(&mut self, x: AtomId, known: &impl Fn(AtomId) -> Option<bool>) -> Lit {
         let l = *self.slot(x);
         if l != NO {
             return l;
         }
-        let l = if absent(x) {
-            FALSE
-        } else {
-            let i = self.g.input();
-            self.sweep.add(&self.g, node(i));
-            i
+        let l = match known(x) {
+            Some(true) => TRUE,
+            Some(false) => FALSE,
+            None => {
+                let i = self.g.input();
+                self.sweep.add(&self.g, node(i));
+                i
+            }
         };
         *self.slot(x) = l;
         l
@@ -830,14 +832,14 @@ impl Pruner {
         &mut self,
         a: AtomId,
         bodies: &[&[GLit]],
-        absent: &impl Fn(AtomId) -> bool,
+        known: &impl Fn(AtomId) -> Option<bool>,
     ) -> Option<bool> {
         let mut terms = Vec::with_capacity(bodies.len());
         let mut literals = 0u64;
         for body in bodies {
             let mut lits: Vec<Lit> = Vec::with_capacity(body.len());
             for l in body.iter() {
-                let x = self.read(l.atom(), absent);
+                let x = self.read(l.atom(), known);
                 lits.push(x ^ Lit::from(!l.is_positive()));
             }
             literals += body.len() as u64;

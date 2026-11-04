@@ -660,8 +660,12 @@ tddlog --program examples/car.net &gt; car.pl</pre>
   read as: an integer of w bits becomes w atoms, each <code>flip</code> a
   probabilistic fact, and the integer operations rules over the bits, as
   in the adder above; <code>iterate</code> becomes recursion over a step
-  index, and a recursive function is inlined up to Dice's limit of ten
-  calls. A list is held as Dice holds one, its length and ten
+  index, its count a fact (<code>steps(10).</code>), and a recursive
+  function is inlined up to Dice's limit of ten calls. The count may be
+  the program's argument: <code>iterate(step, x, $1)</code>, read by
+  <code>tddlog program.dice 10</code>, is written
+  <code>steps($1).</code>, one program of every count. A list is held as
+  Dice holds one, its length and ten
   elements. The program's result is queried. <code>/</code>,
   <code>%</code> and <code>sample</code> are refused.
   <a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a> on the baselines branch holds the Dice paper's programs.

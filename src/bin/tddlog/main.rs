@@ -18,19 +18,22 @@ use tddlog::{Format, Input, Options, Progress, Strategy};
 use stats::{ground_line, print_stats};
 
 const USAGE: &str = "\
-usage: tddlog [options] <program.pl | program.dice | network> [argument ...]
+usage: tddlog [options] <program.pl | program.dice | netlist.cql | network> [argument ...]
 
 Prints one `atom:<tab>probability` line per query, like ProbLog. A network
 file, BIF (.bif), Hugin (.net, .hugin), GeNIe (.xdsl) or UAI (.uai), is
 read as a program of one annotated disjunction per row of its tables, a
-Dice program (.dice) as the program its symbolic evaluation writes, and a
-program that holds `:- begin_lpad.` as an LPAD written for cplint.
+Dice program (.dice) as the program its symbolic evaluation writes, a
+Circulette netlist (.cql) as its gates' rules with a fault on each logic
+gate, and a program that holds `:- begin_lpad.` as an LPAD written for
+cplint.
 
 The arguments after a ProbLog program or an LPAD take the places $1, $2,
 ... in its text, outside comments and quoted atoms, each read as a term:
 `tddlog walk.pl 100 0.3` reads `between(1, $1, I)` as `between(1, 100, I)`
 and `$2::step.` as `0.3::step.`. Each argument must have its place, and
-each place its argument.
+each place its argument. In a Dice program a place stands for the count
+of an iterate, `iterate(step, x, $1)`, and its argument is a count.
 
 options:
   --vtree <strategy>                    vtree over the probabilistic facts (default: auto)
@@ -76,9 +79,9 @@ options:
   --rescale                             for a network: divide every row of every table by its
                                         sum, for a file that writes its tables in percent or as
                                         weights
-  --program                             print the program a network, a Dice program or an LPAD
-                                        is read as, or a program with its arguments or consulted
-                                        files in place, and exit
+  --program                             print the program a network, a Dice program, a netlist
+                                        or an LPAD is read as, or a program with its arguments
+                                        or consulted files in place, and exit
   --cnf                                 print the ground program, without its linear recursion,
                                         as a weighted CNF (DIMACS with `c p weight` lines) and
                                         exit: its weighted count is P(e) (with
@@ -394,8 +397,9 @@ fn answer(args: &Args, trace_file: &mut Option<std::fs::File>) -> ExitCode {
     }
     front.text_secs = started.elapsed().as_secs_f64();
     // An LPAD's example queries that its program leaves out are named, and
-    // `--program` prints the program a network, a Dice program, an LPAD, a
-    // program given arguments or a program that consults files is read as.
+    // `--program` prints the program a network, a Dice program, a netlist,
+    // an LPAD, a program given arguments or a program that consults files is
+    // read as.
     for note in &input.left_out {
         eprintln!("{}: {note}", args.file);
     }
@@ -403,8 +407,9 @@ fn answer(args: &Args, trace_file: &mut Option<std::fs::File>) -> ExitCode {
         let Cow::Owned(program) = &input.program else {
             eprintln!(
                 "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai), a Dice \
-                 program (.dice), an LPAD (a program that holds `:- begin_lpad.`), a program \
-                 given arguments or a program that consults files, and {} is none of them",
+                 program (.dice), a Circulette netlist (.cql), an LPAD (a program that holds \
+                 `:- begin_lpad.`), a program given arguments or a program that consults files, \
+                 and {} is none of them",
                 args.file
             );
             return ExitCode::from(2);
@@ -444,8 +449,9 @@ fn read_files(args: &Args) -> Result<(Vec<u8>, Option<Vec<u8>>), String> {
 }
 
 /// What reading the input took: the file's bytes and the seconds to read
-/// it and to make the program text of it (a network's, a Dice program's or
-/// an LPAD's program; a program's own text is checked as UTF-8).
+/// it and to make the program text of it (a network's, a Dice program's, a
+/// netlist's or an LPAD's program; a program's own text is checked as
+/// UTF-8).
 struct Front {
     bytes: usize,
     read_secs: f64,

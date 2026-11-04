@@ -28,10 +28,12 @@ unchanged; `iterate(f, init, k)` applies f k times:
 - `caesar-recur.dice`, `recursion.dice` (`resources/`): loops written as
   recursion.
 
-Written for tddlog from the generators of the Dice paper's network
-verification benchmarks (`bench/dicebench.ml`, `gen_diamond` and
-`gen_ladder`), their repeated calls as `iterate`, 100 steps:
-`diamond.dice`, `ladder.dice`.
+Ports to ProbLog of the Dice paper's network verification benchmarks
+(`bench/dicebench.ml`, `gen_diamond` and `gen_ladder`), each one program
+whose argument `$1` is the number of diamonds or rungs, a recursion over
+them: `diamond.pl`, `ladder.pl`. They are the ProbLog program of the
+roulette suite's rl_diamond and rl_ladder, whose Dice program is the text
+gen_diamond and gen_ladder build (`scripts/gen_roulette.py`, DICE_PAPER).
 
 Written for tddlog to exercise each construct: `arith.dice` (+, -, *,
 shifts, uniform), `compare.dice` (comparisons, ^, <=>), `walk.dice` (a

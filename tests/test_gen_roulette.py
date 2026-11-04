@@ -85,6 +85,22 @@ def reference(family, n):
     return {a: math.exp(x.l) for a, x in gen_roulette.reference(family, n).items() if a != 'P(e)'}
 
 
+def dice_program(family, n):
+    """A family's Dice program at size n: the Dice paper's text for diamond
+    and ladder (DICE_PAPER), what program() writes for the others."""
+    if family in gen_roulette.DICE_PAPER:
+        return gen_roulette.dice_paper(family, n)
+    return '\n'.join(gen_roulette.program(family, n)[1])
+
+
+def problog_program(family, n):
+    """A family's ProbLog program at size n, as lines: for diamond and
+    ladder their port (data/dice/FAMILY.pl) with n in its place."""
+    if family in gen_roulette.DICE_PAPER:
+        return (Path(gen_roulette.PORTS) / f'{family}.pl').read_text().replace('$1', str(n)).splitlines()
+    return gen_roulette.program(family, n)[0]
+
+
 def run(*args):
     return subprocess.run([sys.executable, str(scripts / 'gen_roulette.py'), *args], capture_output=True,
                           text=True)
@@ -97,7 +113,7 @@ class GenRouletteTests(unittest.TestCase):
     def test_references_agree_with_the_dice_programs(self):
         for family, n in SIZES:
             ref = reference(family, n)
-            dice = dice_answers(family, n, exact('\n'.join(gen_roulette.program(family, n)[1])))
+            dice = dice_answers(family, n, exact(dice_program(family, n)))
             self.assertEqual(set(dice), set(ref), (family, n))
             for atom, p in dice.items():
                 self.close(f'{family} {n} {atom}', p, ref[atom])
@@ -116,7 +132,7 @@ class GenRouletteTests(unittest.TestCase):
     def test_the_queries_are_the_reference_atoms_in_order(self):
         for family in gen_roulette.FAMILIES:
             n = 4
-            pl, _ = gen_roulette.program(family, n)
+            pl = problog_program(family, n)
             queries = [line[len('query('):-2] for line in pl if line.startswith('query(')]
             self.assertEqual(queries, [a for a in gen_roulette.reference(family, n) if a != 'P(e)'], family)
 
@@ -129,9 +145,13 @@ class GenRouletteTests(unittest.TestCase):
         for f in files:
             _, _, family, size = f.read_text().split('\n', 1)[0].split()
             self.assertEqual(f.name, f'{family}-{size}.pl')
-            out = run(family, size)
-            self.assertEqual(out.returncode, 0, out.stderr)
-            self.assertEqual(out.stdout, f.read_text(), f.name)
+            # diamond's and ladder's are the unrolled programs this script wrote before their
+            # ProbLog program became the port of the Dice paper's (data/dice/FAMILY.pl), kept as
+            # tddlog's tests: their answers are still the reference's
+            if family not in gen_roulette.DICE_PAPER:
+                out = run(family, size)
+                self.assertEqual(out.returncode, 0, out.stderr)
+                self.assertEqual(out.stdout, f.read_text(), f.name)
             ref = run('--reference-of', str(f))
             self.assertEqual(ref.stdout, run(family, size, '--reference').stdout, f.name)
 
@@ -155,10 +175,29 @@ class GenRouletteTests(unittest.TestCase):
             self.assertTrue(f.readline().startswith(gen_roulette.HEADER))
         for args in (['diamond', '3', '--reference', '--dice', 'x.dice'], ['diamond', '0'], ['diamond'],
                      ['--reference-of', str(programs / 'diamond-3.pl'), 'diamond', '3'],
-                     ['--reference-of', str(SOURCE / 'tests' / 'dice' / 'diamond.pl')]):
+                     ['--reference-of', str(SOURCE / 'tests' / 'dice' / 'diamond.pl')],
+                     # diamond's ProbLog program is its port and an argument, its Dice program apart
+                     ['diamond', '3'], ['diamond', '3', '--template'], ['diamond', '3', '--arguments', '--dice', 'x.dice'],
+                     ['caesar', '3', '--arguments'], ['caesar', '--template']):
             out = run(*args)
             self.assertNotEqual(out.returncode, 0, args)
             self.assertFalse(Path('x.dice').exists())
+
+    def test_the_dice_papers_networks_are_one_program_and_their_size(self):
+        # bench.py's FOLD: the port as the template, the size as the argument, and
+        # the Dice paper's text at the size, which noDice's copies are at one more
+        # (noDice's diamond-100-p is the text at 101)
+        for family in gen_roulette.DICE_PAPER:
+            out = run(family, '--template')
+            self.assertEqual(out.stdout, (Path(gen_roulette.PORTS) / f'{family}.pl').read_text(), family)
+            self.assertIn('$1', out.stdout)
+            self.assertEqual(run(family, '7', '--arguments').stdout, '7\n')
+            text = gen_roulette.dice_paper(family, 7)
+            self.assertEqual(text.count(gen_roulette.DICE_PAPER[family][1]), 7)
+        nodice = root / 'data' / 'nodice'
+        for family, size in (('diamond', 100), ('ladder', 10)):
+            self.assertEqual(gen_roulette.dice_paper(family, size + 1),
+                             (nodice / f'{family}-{size}-p.dice').read_text(), family)
 
 
 if __name__ == '__main__':

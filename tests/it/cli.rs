@@ -384,11 +384,15 @@ fn bad_and_inert_options_exit_with_status_two() {
         ),
         (
             &["tests/dice/walk.dice", "3"],
-            "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is dice",
+            "argument 1, `3`, is given, and the program has no `$1`",
+        ),
+        (
+            &["tests/dice/steps.dice", "0.5"],
+            "argument 1, `0.5`, is not a count, which is all a Dice program's places hold",
         ),
         (
             &["tests/networks/asia.net", "3"],
-            "arguments ($1, $2, ...) are for a ProbLog program or an LPAD, and the input is hugin",
+            "arguments ($1, $2, ...) are for a ProbLog program, an LPAD or a Dice program, and the input is hugin",
         ),
         (
             &["--vtree", "closed", "--vtree", "td", "examples/alarm.pl"],
@@ -504,6 +508,32 @@ a('$1').
         all.extend(args);
         assert_exit(&all, 1, "line 2: `$2` has no argument");
     }
+}
+
+/// A Dice program's count as its argument: tests/dice/steps.dice is the
+/// walk of walk.dice with `$1` for its count, and its one program
+/// (steps.pl) holds the place in the count's fact and in the reads of the
+/// state after the loop. With the argument 10
+/// it is the program walk.dice is read as, and answers as walk.dice does.
+#[test]
+fn a_dice_programs_count_takes_its_argument() {
+    let file = |name: &str| std::fs::read_to_string(format!("tests/dice/{name}")).unwrap();
+    assert_eq!(
+        stdout(&tddlog(&["--program", "tests/dice/steps.dice"])),
+        file("steps.pl")
+    );
+    assert_eq!(
+        stdout(&tddlog(&["--program", "tests/dice/steps.dice", "10"])),
+        file("walk.pl")
+    );
+    let out = tddlog(&["tests/dice/steps.dice", "10"]);
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(out.stdout, tddlog(&["tests/dice/walk.dice"]).stdout);
+    assert_exit(&["tests/dice/steps.dice"], 1, "`$1` has no argument");
 }
 
 #[test]

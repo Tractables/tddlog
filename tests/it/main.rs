@@ -10,6 +10,7 @@ mod layouts;
 mod ad_tails;
 mod binary;
 mod binary_parent;
+mod circulette;
 mod cli;
 mod cnf;
 mod contexts;

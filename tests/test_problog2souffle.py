@@ -158,6 +158,18 @@ class TranslateTests(unittest.TestCase):
                                       'query(smokes(X)) :- person(X).\n')
         self.assertEqual(asked, ['smokes(a)', 'smokes(b)'])
 
+    def test_a_query_with_a_body_of_between(self):
+        # graph's program: the queried relation is output, each of its ground queries asked
+        dl, _, _, _, asked = translate('0.6::edge(1,2).\n0.5::edge(2,3).\npath(X,Y) :- edge(X,Y).\n'
+                                       'path(X,Y) :- edge(X,Z), path(Z,Y).\n'
+                                       'query(path(1,Y)) :- between(2,3,Y).\n')
+        self.assertEqual(asked, ['path(1,2)', 'path(1,3)'])
+        self.assertIn('query(', dl)
+        for text, reason in [('0.5::p(1).\nquery(p(X)) :- between(1,N,X).\n', 'integer bounds'),
+                             ('0.5::p(1).\nquery(p(X)) :- node(X).\n', 'no facts')]:
+            with self.subTest(text=text), self.assertRaisesRegex(Refused, reason):
+                translate(text)
+
     def test_quoted_atoms_are_symbols(self):
         _, rows, _, _, _ = translate("0.5::f('Hello world').\nquery(f(_)).\n")
         self.assertEqual(rows['f'], ['Hello world'])

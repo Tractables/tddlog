@@ -1196,10 +1196,15 @@ function benchmarksOf(root) {
       let nf = 0, nfiles = 0;
       let unseen = null, tried = null, kept = null, inline = null, multi = null;
       const observed = (name) => /\.(inst|evid)$/.test(name);
+      // (a copy of another suite's instance, categories.json's copies, may have no page of its own)
+      const copied = new Set(categories.flatMap((c) => Object.values(c.copies ?? {}).flat()));
       for (const [suite, fams] of Object.entries(index.suites)) {
         const s = bySuite.get(suite);
         assert.ok(s, `benchmarks/index.json: the suite ${suite} is in the results' data`);
-        assert.deepEqual(fams.flatMap((f) => f.instances).sort(), s.instances.map((row) => row[0]).sort(), `${suite}: its families hold its instances`);
+        const held = fams.flatMap((f) => f.instances);
+        const placed = new Set(held);
+        assert.deepEqual(held.sort(), s.instances.map((row) => row[0]).filter((i) => placed.has(i) || !copied.has(`${suite}/${i}`)).sort(),
+          `${suite}: its families hold its instances, but copies without a page`);
         for (const f of fams) {
           const fam = JSON.parse(fs.readFileSync(path.join(benchmarks, suite, `${f.key}.json`), "utf8"));
           assert.deepEqual(fam.instances.map((i) => i.name), f.instances, `${suite}/${f.key}: its instances`);

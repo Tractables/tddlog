@@ -310,7 +310,9 @@ class AnswerTests(unittest.TestCase):
         # an integer the queries of one predicate, value k the k-th.
         for name, expected in reference.DICE.items():
             with self.subTest(name=name):
-                dist = reference.exact((data / f'{name}.dice').read_text())
+                # diamond and ladder as iterate loops: the source tree's tests/dice copies alone
+                path = data / f'{name}.dice'
+                dist = reference.exact((path if path.exists() else SOURCE / 'tests' / 'dice' / path.name).read_text())
                 comps, times = bench.parse_alea(components(dist))
                 self.assertEqual(times, {'alea_seconds': 0.25, 'alea_compile_seconds': 0.01})
                 got = bench.alea_answers([q for q, _ in expected], comps)

@@ -397,7 +397,8 @@ def translate(text):
 def ground_queries(query_rules, facts, rules, ads):
     """The ground queries of each `query(A) :- B.`, where B is one atom of a
     relation of certain facts and no rules (smokers' `query(smokes(X)) :-
-    person(X).`), as ProbLog's grounding finds them."""
+    person(X).`) or `between(L, H, V)` of integer bounds (graph's
+    `query(path(1,Y)) :- between(2,N,Y).`), as ProbLog's grounding finds them."""
     derived = {(h[0], len(h[1])) for _, h, _ in rules} | {(h[0], len(h[1])) for alts, _ in ads for _, h in alts}
     out = []
     for atom, body in query_rules:
@@ -405,7 +406,17 @@ def ground_queries(query_rules, facts, rules, ads):
         if len(lits) != 1 or lits[0][0] != 'pos':
             raise Refused('a query whose body is not one atom')
         name, args = lits[0][1]
-        rows = facts.get((name, len(args)), {})
+        if (name, len(args)) == ('between', 3):
+            lo, hi, v = args
+            if lo[0] != 'int' or hi[0] != 'int' or v[0] != 'var':
+                raise Refused('a query whose body between/3 has no integer bounds and variable')
+            rows, args = {(('int', i),): 1.0 for i in range(lo[1], hi[1] + 1)}, [v]
+        else:
+            rows = facts.get((name, len(args)), {})
+            # a relation of no facts and no rules is a builtin or an undefined predicate, which
+            # would otherwise give no query at all
+            if not rows and (name, len(args)) not in derived:
+                raise Refused(f'a query whose body {name}/{len(args)} has no facts')
         if (name, len(args)) in derived or any(q != 1.0 for q in rows.values()):
             raise Refused(f'a query whose body {name}/{len(args)} is not a relation of certain facts')
         for row in rows:

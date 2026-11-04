@@ -54,13 +54,17 @@ the counters to hold N + 1:
 with (N, W) = (64, 7), (256, 9), (1024, 11), (4096, 13), (16384, 15).
 The file's comments, the artifact's, are kept as they are.
 
-diamond-N-p is N diamonds in a row, each routing its input one of two
-ways (`flip 0.5`), one of them lossy (`flip 0.0001`), a function called N
-times; it returns whether the signal arrives. ladder-N-p is a ladder of
-N rungs over two wires, a function called N times, and returns the pair
-of wires. They are the Dice paper's diamond and ladder networks, written
-as the artifact writes them; data/dice's loops and Roulette's generator
-(scripts/gen_roulette.py) write the same models otherwise.
+diamond-N-p is N + 1 diamonds in a row, each routing its input one of two
+ways (`flip 0.5`), one of them lossy (`flip 0.0001`), a function called
+N + 1 times; it returns whether the signal arrives. ladder-N-p is a
+ladder of N + 1 rungs over two wires, a function called N + 1 times, and
+returns the pair of wires. They are the Dice paper's diamond and ladder
+networks, byte for byte the text of its generators gen_diamond and
+gen_ladder at N + 1 (the paper's benchmark calls them at its length plus
+one). They are kept as the artifact's files and run as no instance of
+their own: the roulette suite's rl_diamond and rl_ladder are the model's
+one family each, whose Dice program gen_roulette.py writes as the
+generators do.
 
 The paper's other classes are left out: Runway, CouponNdet, Network,
 Rabin, the `-Ndet` networks and 3sat-25 to 3sat-100 choose

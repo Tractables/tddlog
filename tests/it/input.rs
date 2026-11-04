@@ -179,7 +179,15 @@ fn a_problog_program_is_its_own_text() {
 
 #[test]
 fn formats_by_name_and_by_extension() {
-    for name in ["problog", "dice", "bif", "hugin", "xdsl", "uai"] {
+    for name in [
+        "problog",
+        "dice",
+        "circulette",
+        "bif",
+        "hugin",
+        "xdsl",
+        "uai",
+    ] {
         assert_eq!(name.parse::<Format>().unwrap().to_string(), name);
     }
     assert!("net".parse::<Format>().is_err());
@@ -187,6 +195,7 @@ fn formats_by_name_and_by_extension() {
         ("a.pl", "problog"),
         ("a.cplint.pl", "problog"),
         ("a.dice", "dice"),
+        ("a.cql", "circulette"),
         ("a.bif", "bif"),
         ("a.net", "hugin"),
         ("a.hugin", "hugin"),

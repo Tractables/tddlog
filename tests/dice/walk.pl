@@ -1,7 +1,8 @@
+steps(10).
 step_b0(0).
 step_b1(0).
-step(0).
-step(T1) :- step(T), T < 9, T1 is T + 1.
+step(0) :- steps(N), N > 0.
+step(T1) :- step(T), steps(N), T1 is T + 1, T1 < N.
 x_c(T) :- step(T), \+step_b0(T), \+step_b1(T), \+step_b2(T).
 x_c_1(T) :- step_b0(T), step_b1(T), step_b2(T).
 x_c_2(T) :- x_c(T).

@@ -254,6 +254,11 @@
     "title": "coinBias"
    },
    {
+    "axes": [
+     "evidence",
+     "pieces",
+     "width"
+    ],
     "instances": [
      "bb_conjugate_ex3_w18",
      "bb_conjugate_ex3_w20",
@@ -261,13 +266,7 @@
      "bb_conjugate_ex3_w24",
      "bb_conjugate_ex3_w26",
      "bb_conjugate_ex3_w28",
-     "bb_conjugate_ex3_w30"
-    ],
-    "key": "conjugate_ex3",
-    "title": "conjugate_ex3"
-   },
-   {
-    "instances": [
+     "bb_conjugate_ex3_w30",
      "bb_conjugate_gaussians_w17",
      "bb_conjugate_gaussians_w19",
      "bb_conjugate_gaussians_w21",
@@ -276,8 +275,80 @@
      "bb_conjugate_gaussians_w27",
      "bb_conjugate_gaussians_w29"
     ],
-    "key": "conjugate_gaussians",
-    "title": "conjugate_gaussians"
+    "key": "conjugate",
+    "title": "conjugate",
+    "values": {
+     "bb_conjugate_ex3_w18": [
+      "8, 9",
+      "2048",
+      "18"
+     ],
+     "bb_conjugate_ex3_w20": [
+      "8, 9",
+      "2048",
+      "20"
+     ],
+     "bb_conjugate_ex3_w22": [
+      "8, 9",
+      "2048",
+      "22"
+     ],
+     "bb_conjugate_ex3_w24": [
+      "8, 9",
+      "2048",
+      "24"
+     ],
+     "bb_conjugate_ex3_w26": [
+      "8, 9",
+      "2048",
+      "26"
+     ],
+     "bb_conjugate_ex3_w28": [
+      "8, 9",
+      "2048",
+      "28"
+     ],
+     "bb_conjugate_ex3_w30": [
+      "8, 9",
+      "2048",
+      "30"
+     ],
+     "bb_conjugate_gaussians_w17": [
+      "1, 2",
+      "16",
+      "17"
+     ],
+     "bb_conjugate_gaussians_w19": [
+      "1, 2",
+      "16",
+      "19"
+     ],
+     "bb_conjugate_gaussians_w21": [
+      "1, 2",
+      "16",
+      "21"
+     ],
+     "bb_conjugate_gaussians_w23": [
+      "1, 2",
+      "16",
+      "23"
+     ],
+     "bb_conjugate_gaussians_w25": [
+      "1, 2",
+      "16",
+      "25"
+     ],
+     "bb_conjugate_gaussians_w27": [
+      "1, 2",
+      "16",
+      "27"
+     ],
+     "bb_conjugate_gaussians_w29": [
+      "1, 2",
+      "16",
+      "29"
+     ]
+    }
    },
    {
     "instances": [
@@ -332,7 +403,17 @@
     "title": "fair_dt44"
    },
    {
+    "axes": [
+     "genes",
+     "width"
+    ],
     "instances": [
+     "bb_genes5_w17",
+     "bb_genes5_w19",
+     "bb_genes5_w21",
+     "bb_genes5_w23",
+     "bb_genes5_w25",
+     "bb_genes5_w27",
      "bb_genes_t5",
      "bb_genes_t10",
      "bb_genes_t15",
@@ -346,19 +427,77 @@
      "bb_genes_t100"
     ],
     "key": "genes",
-    "title": "genes"
-   },
-   {
-    "instances": [
-     "bb_genes5_w17",
-     "bb_genes5_w19",
-     "bb_genes5_w21",
-     "bb_genes5_w23",
-     "bb_genes5_w25",
-     "bb_genes5_w27"
-    ],
-    "key": "genes5",
-    "title": "genes5"
+    "title": "genes",
+    "values": {
+     "bb_genes5_w17": [
+      "5",
+      "17"
+     ],
+     "bb_genes5_w19": [
+      "5",
+      "19"
+     ],
+     "bb_genes5_w21": [
+      "5",
+      "21"
+     ],
+     "bb_genes5_w23": [
+      "5",
+      "23"
+     ],
+     "bb_genes5_w25": [
+      "5",
+      "25"
+     ],
+     "bb_genes5_w27": [
+      "5",
+      "27"
+     ],
+     "bb_genes_t10": [
+      "10",
+      "29"
+     ],
+     "bb_genes_t100": [
+      "100",
+      "29"
+     ],
+     "bb_genes_t15": [
+      "15",
+      "29"
+     ],
+     "bb_genes_t20": [
+      "20",
+      "29"
+     ],
+     "bb_genes_t25": [
+      "25",
+      "29"
+     ],
+     "bb_genes_t30": [
+      "30",
+      "29"
+     ],
+     "bb_genes_t40": [
+      "40",
+      "29"
+     ],
+     "bb_genes_t5": [
+      "5",
+      "29"
+     ],
+     "bb_genes_t50": [
+      "50",
+      "29"
+     ],
+     "bb_genes_t60": [
+      "60",
+      "29"
+     ],
+     "bb_genes_t80": [
+      "80",
+      "29"
+     ]
+    }
    },
    {
     "instances": [
@@ -419,32 +558,77 @@
     "title": "multimodal"
    },
    {
+    "axes": [
+     "question",
+     "pieces",
+     "width"
+    ],
     "instances": [
      "bb_normal_mixture_mu1_w7",
      "bb_normal_mixture_mu1_w9",
      "bb_normal_mixture_mu1_w11",
      "bb_normal_mixture_mu1_w13",
-     "bb_normal_mixture_mu1_w15"
-    ],
-    "key": "normal_mixture_mu1",
-    "title": "normal_mixture_mu1"
-   },
-   {
-    "instances": [
+     "bb_normal_mixture_mu1_w15",
      "bb_normal_mixture_mu2_w7",
      "bb_normal_mixture_mu2_w9",
-     "bb_normal_mixture_mu2_w11"
-    ],
-    "key": "normal_mixture_mu2",
-    "title": "normal_mixture_mu2"
-   },
-   {
-    "instances": [
+     "bb_normal_mixture_mu2_w11",
      "bb_normal_mixture_theta_w9",
      "bb_normal_mixture_theta_w11"
     ],
-    "key": "normal_mixture_theta",
-    "title": "normal_mixture_theta"
+    "key": "normal_mixture",
+    "title": "normal_mixture",
+    "values": {
+     "bb_normal_mixture_mu1_w11": [
+      "E[\u03bc1]",
+      "16",
+      "11"
+     ],
+     "bb_normal_mixture_mu1_w13": [
+      "E[\u03bc1]",
+      "16",
+      "13"
+     ],
+     "bb_normal_mixture_mu1_w15": [
+      "E[\u03bc1]",
+      "16",
+      "15"
+     ],
+     "bb_normal_mixture_mu1_w7": [
+      "E[\u03bc1]",
+      "16",
+      "7"
+     ],
+     "bb_normal_mixture_mu1_w9": [
+      "E[\u03bc1]",
+      "16",
+      "9"
+     ],
+     "bb_normal_mixture_mu2_w11": [
+      "E[\u03bc2]",
+      "32",
+      "11"
+     ],
+     "bb_normal_mixture_mu2_w7": [
+      "E[\u03bc2]",
+      "32",
+      "7"
+     ],
+     "bb_normal_mixture_mu2_w9": [
+      "E[\u03bc2]",
+      "32",
+      "9"
+     ],
+     "bb_normal_mixture_theta_w11": [
+      "E[\u03b8]",
+      "64",
+      "11"
+     ],
+     "bb_normal_mixture_theta_w9": [
+      "E[\u03b8]",
+      "64",
+      "9"
+     ]
+    }
    },
    {
     "instances": [
@@ -585,6 +769,10 @@
     "title": "wmi_star"
    },
    {
+    "axes": [
+     "question",
+     "width"
+    ],
     "instances": [
      "bb_zeroone_w1_w10",
      "bb_zeroone_w1_w12",
@@ -596,13 +784,7 @@
      "bb_zeroone_w1_w26",
      "bb_zeroone_w1_w30",
      "bb_zeroone_w1_w34",
-     "bb_zeroone_w1_w38"
-    ],
-    "key": "zeroone_w1",
-    "title": "zeroone_w1"
-   },
-   {
-    "instances": [
+     "bb_zeroone_w1_w38",
      "bb_zeroone_w2_w13",
      "bb_zeroone_w2_w15",
      "bb_zeroone_w2_w17",
@@ -614,8 +796,94 @@
      "bb_zeroone_w2_w29",
      "bb_zeroone_w2_w31"
     ],
-    "key": "zeroone_w2",
-    "title": "zeroone_w2"
+    "key": "zeroone",
+    "title": "zeroone",
+    "values": {
+     "bb_zeroone_w1_w10": [
+      "E[w1]",
+      "10"
+     ],
+     "bb_zeroone_w1_w12": [
+      "E[w1]",
+      "12"
+     ],
+     "bb_zeroone_w1_w14": [
+      "E[w1]",
+      "14"
+     ],
+     "bb_zeroone_w1_w16": [
+      "E[w1]",
+      "16"
+     ],
+     "bb_zeroone_w1_w18": [
+      "E[w1]",
+      "18"
+     ],
+     "bb_zeroone_w1_w20": [
+      "E[w1]",
+      "20"
+     ],
+     "bb_zeroone_w1_w22": [
+      "E[w1]",
+      "22"
+     ],
+     "bb_zeroone_w1_w26": [
+      "E[w1]",
+      "26"
+     ],
+     "bb_zeroone_w1_w30": [
+      "E[w1]",
+      "30"
+     ],
+     "bb_zeroone_w1_w34": [
+      "E[w1]",
+      "34"
+     ],
+     "bb_zeroone_w1_w38": [
+      "E[w1]",
+      "38"
+     ],
+     "bb_zeroone_w2_w13": [
+      "E[w2]",
+      "13"
+     ],
+     "bb_zeroone_w2_w15": [
+      "E[w2]",
+      "15"
+     ],
+     "bb_zeroone_w2_w17": [
+      "E[w2]",
+      "17"
+     ],
+     "bb_zeroone_w2_w19": [
+      "E[w2]",
+      "19"
+     ],
+     "bb_zeroone_w2_w21": [
+      "E[w2]",
+      "21"
+     ],
+     "bb_zeroone_w2_w23": [
+      "E[w2]",
+      "23"
+     ],
+     "bb_zeroone_w2_w25": [
+      "E[w2]",
+      "25"
+     ],
+     "bb_zeroone_w2_w27": [
+      "E[w2]",
+      "27"
+     ],
+     "bb_zeroone_w2_w29": [
+      "E[w2]",
+      "29"
+     ],
+     "bb_zeroone_w2_w31": [
+      "E[w2]",
+      "31"
+     ]
+    }
    }
   ],
   "circulette": [
@@ -690,34 +958,6 @@
     ],
     "key": "caesar-iter",
     "title": "caesar-iter"
-   },
-   {
-    "instances": [
-     "dice_diamond_k100",
-     "dice_diamond_k400",
-     "dice_diamond_k1600",
-     "dice_diamond_k6400",
-     "dice_diamond_k25600",
-     "dice_diamond_k102400",
-     "dice_diamond_k409600",
-     "dice_diamond_k1638400"
-    ],
-    "key": "diamond",
-    "title": "diamond"
-   },
-   {
-    "instances": [
-     "dice_ladder_k100",
-     "dice_ladder_k400",
-     "dice_ladder_k1600",
-     "dice_ladder_k6400",
-     "dice_ladder_k25600",
-     "dice_ladder_k102400",
-     "dice_ladder_k409600",
-     "dice_ladder_k1638400"
-    ],
-    "key": "ladder",
-    "title": "ladder"
    },
    {
     "instances": [
@@ -837,6 +1077,10 @@
     "title": "router"
    },
    {
+    "axes": [
+     "factories",
+     "days"
+    ],
     "instances": [
      "geni_weather_h1",
      "geni_weather_h2",
@@ -859,13 +1103,7 @@
      "geni_weather_h1000",
      "geni_weather_h3000",
      "geni_weather_h10000",
-     "geni_weather_h30000"
-    ],
-    "key": "weather_h",
-    "title": "weather_h"
-   },
-   {
-    "instances": [
+     "geni_weather_h30000",
      "geni_weather_n2",
      "geni_weather_n7",
      "geni_weather_n8",
@@ -880,8 +1118,150 @@
      "geni_weather_n18",
      "geni_weather_n19"
     ],
-    "key": "weather_n",
-    "title": "weather_n"
+    "key": "weather",
+    "title": "weather",
+    "values": {
+     "geni_weather_h1": [
+      "10",
+      "1"
+     ],
+     "geni_weather_h100": [
+      "10",
+      "100"
+     ],
+     "geni_weather_h1000": [
+      "10",
+      "1000"
+     ],
+     "geni_weather_h10000": [
+      "10",
+      "10000"
+     ],
+     "geni_weather_h2": [
+      "10",
+      "2"
+     ],
+     "geni_weather_h200": [
+      "10",
+      "200"
+     ],
+     "geni_weather_h3": [
+      "10",
+      "3"
+     ],
+     "geni_weather_h300": [
+      "10",
+      "300"
+     ],
+     "geni_weather_h3000": [
+      "10",
+      "3000"
+     ],
+     "geni_weather_h30000": [
+      "10",
+      "30000"
+     ],
+     "geni_weather_h4": [
+      "10",
+      "4"
+     ],
+     "geni_weather_h400": [
+      "10",
+      "400"
+     ],
+     "geni_weather_h5": [
+      "10",
+      "5"
+     ],
+     "geni_weather_h500": [
+      "10",
+      "500"
+     ],
+     "geni_weather_h6": [
+      "10",
+      "6"
+     ],
+     "geni_weather_h600": [
+      "10",
+      "600"
+     ],
+     "geni_weather_h7": [
+      "10",
+      "7"
+     ],
+     "geni_weather_h700": [
+      "10",
+      "700"
+     ],
+     "geni_weather_h8": [
+      "10",
+      "8"
+     ],
+     "geni_weather_h800": [
+      "10",
+      "800"
+     ],
+     "geni_weather_h9": [
+      "10",
+      "9"
+     ],
+     "geni_weather_h900": [
+      "10",
+      "900"
+     ],
+     "geni_weather_n10": [
+      "10",
+      "10"
+     ],
+     "geni_weather_n11": [
+      "11",
+      "10"
+     ],
+     "geni_weather_n12": [
+      "12",
+      "10"
+     ],
+     "geni_weather_n13": [
+      "13",
+      "10"
+     ],
+     "geni_weather_n15": [
+      "15",
+      "10"
+     ],
+     "geni_weather_n16": [
+      "16",
+      "10"
+     ],
+     "geni_weather_n17": [
+      "17",
+      "10"
+     ],
+     "geni_weather_n18": [
+      "18",
+      "10"
+     ],
+     "geni_weather_n19": [
+      "19",
+      "10"
+     ],
+     "geni_weather_n2": [
+      "2",
+      "10"
+     ],
+     "geni_weather_n7": [
+      "7",
+      "10"
+     ],
+     "geni_weather_n8": [
+      "8",
+      "10"
+     ],
+     "geni_weather_n9": [
+      "9",
+      "10"
+     ]
+    }
    }
   ],
   "large": [
@@ -943,7 +1323,6 @@
      "cplint_swish_sneezing_simple",
      "cplint_swish_viraltab",
      "cplint_testdb",
-     "cplint_threesideddice",
      "cplint_trigger",
      "cplint_var_objdb",
      "cplint_viral"
@@ -1316,7 +1695,11 @@
     "title": "the ProbLog tutorial's programs"
    },
    {
+    "axes": [
+     "question"
+    ],
     "instances": [
+     "cplint_threesideddice",
      "threedie10",
      "threedie100",
      "threedie300",
@@ -1324,7 +1707,27 @@
      "threedie1500"
     ],
     "key": "threedie",
-    "title": "threedie"
+    "title": "threedie",
+    "values": {
+     "cplint_threesideddice": [
+      "on(0,1) to on(3,1)"
+     ],
+     "threedie10": [
+      "on(10,1)"
+     ],
+     "threedie100": [
+      "on(100,1)"
+     ],
+     "threedie1000": [
+      "on(1000,1)"
+     ],
+     "threedie1500": [
+      "on(1500,1)"
+     ],
+     "threedie300": [
+      "on(300,1)"
+     ]
+    }
    },
    {
     "instances": [
@@ -1417,27 +1820,6 @@
    },
    {
     "instances": [
-     "nodice_diamond-1-p",
-     "nodice_diamond-100-p",
-     "nodice_diamond-200-p",
-     "nodice_diamond-300-p",
-     "nodice_diamond-400-p",
-     "nodice_diamond-500-p",
-     "nodice_diamond-700-p",
-     "nodice_diamond-800-p",
-     "nodice_diamond-900-p",
-     "nodice_diamond-1000-p",
-     "nodice_diamond-2000-p",
-     "nodice_diamond-3000-p",
-     "nodice_diamond-4000-p",
-     "nodice_diamond-5000-p",
-     "nodice_diamond-10000-p"
-    ],
-    "key": "diamond",
-    "title": "diamond"
-   },
-   {
-    "instances": [
      "arith_disease_large",
      "arith_disease_medium",
      "arith_disease_small"
@@ -1462,23 +1844,6 @@
     ],
     "key": "gcd",
     "title": "gcd"
-   },
-   {
-    "instances": [
-     "nodice_ladder-1-p",
-     "nodice_ladder-10-p",
-     "nodice_ladder-20-p",
-     "nodice_ladder-30-p",
-     "nodice_ladder-40-p",
-     "nodice_ladder-50-p",
-     "nodice_ladder-60-p",
-     "nodice_ladder-70-p",
-     "nodice_ladder-80-p",
-     "nodice_ladder-90-p",
-     "nodice_ladder-100-p"
-    ],
-    "key": "ladder",
-    "title": "ladder"
    },
    {
     "instances": [
@@ -1583,6 +1948,11 @@
     "title": "diamond"
    },
    {
+    "axes": [
+     "bit width",
+     "n",
+     "fuel"
+    ],
     "instances": [
      "rl_hardware_10",
      "rl_hardware_30",
@@ -1594,13 +1964,7 @@
      "rl_hardware_30000",
      "rl_hardware_100000",
      "rl_hardware_300000",
-     "rl_hardware_1000000"
-    ],
-    "key": "hardware",
-    "title": "hardware"
-   },
-   {
-    "instances": [
+     "rl_hardware_1000000",
      "rl_hardware_bitwidth_5",
      "rl_hardware_bitwidth_10",
      "rl_hardware_bitwidth_20",
@@ -1618,10 +1982,151 @@
      "rl_hardware_bitwidth_10000000",
      "rl_hardware_bitwidth_100000000"
     ],
-    "key": "hardware_bitwidth",
-    "title": "hardware_bitwidth"
+    "key": "hardware",
+    "title": "hardware",
+    "values": {
+     "rl_hardware_10": [
+      "2",
+      "8",
+      "10"
+     ],
+     "rl_hardware_100": [
+      "2",
+      "98",
+      "100"
+     ],
+     "rl_hardware_1000": [
+      "2",
+      "998",
+      "1000"
+     ],
+     "rl_hardware_10000": [
+      "2",
+      "9998",
+      "10000"
+     ],
+     "rl_hardware_100000": [
+      "2",
+      "99998",
+      "100000"
+     ],
+     "rl_hardware_1000000": [
+      "2",
+      "999998",
+      "1000000"
+     ],
+     "rl_hardware_30": [
+      "2",
+      "28",
+      "30"
+     ],
+     "rl_hardware_300": [
+      "2",
+      "298",
+      "300"
+     ],
+     "rl_hardware_3000": [
+      "2",
+      "2998",
+      "3000"
+     ],
+     "rl_hardware_30000": [
+      "2",
+      "29998",
+      "30000"
+     ],
+     "rl_hardware_300000": [
+      "2",
+      "299998",
+      "300000"
+     ],
+     "rl_hardware_bitwidth_10": [
+      "10",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_100": [
+      "100",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_1000": [
+      "1000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_10000": [
+      "10000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_100000": [
+      "100000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_1000000": [
+      "1000000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_10000000": [
+      "10000000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_100000000": [
+      "100000000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_20": [
+      "20",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_300": [
+      "300",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_3000": [
+      "3000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_30000": [
+      "30000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_300000": [
+      "300000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_3000000": [
+      "3000000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_5": [
+      "5",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_50": [
+      "50",
+      "2",
+      "3"
+     ]
+    }
    },
    {
+    "axes": [
+     "question",
+     "steps"
+    ],
     "instances": [
      "rl_hmm_filtering_joint_100",
      "rl_hmm_filtering_joint_300",
@@ -1632,13 +2137,7 @@
      "rl_hmm_filtering_joint_100000",
      "rl_hmm_filtering_joint_300000",
      "rl_hmm_filtering_joint_1000000",
-     "rl_hmm_filtering_joint_3000000"
-    ],
-    "key": "hmm_filtering_joint",
-    "title": "hmm_filtering_joint"
-   },
-   {
-    "instances": [
+     "rl_hmm_filtering_joint_3000000",
      "rl_hmm_filtering_marginal_100",
      "rl_hmm_filtering_marginal_300",
      "rl_hmm_filtering_marginal_1000",
@@ -1648,23 +2147,11 @@
      "rl_hmm_filtering_marginal_100000",
      "rl_hmm_filtering_marginal_300000",
      "rl_hmm_filtering_marginal_1000000",
-     "rl_hmm_filtering_marginal_3000000"
-    ],
-    "key": "hmm_filtering_marginal",
-    "title": "hmm_filtering_marginal"
-   },
-   {
-    "instances": [
+     "rl_hmm_filtering_marginal_3000000",
      "rl_hmm_marginal_likelihood_100",
      "rl_hmm_marginal_likelihood_300",
      "rl_hmm_marginal_likelihood_600",
-     "rl_hmm_marginal_likelihood_900"
-    ],
-    "key": "hmm_marginal_likelihood",
-    "title": "hmm_marginal_likelihood"
-   },
-   {
-    "instances": [
+     "rl_hmm_marginal_likelihood_900",
      "rl_hmm_smoothing_joint_100",
      "rl_hmm_smoothing_joint_300",
      "rl_hmm_smoothing_joint_1000",
@@ -1674,13 +2161,7 @@
      "rl_hmm_smoothing_joint_100000",
      "rl_hmm_smoothing_joint_300000",
      "rl_hmm_smoothing_joint_1000000",
-     "rl_hmm_smoothing_joint_3000000"
-    ],
-    "key": "hmm_smoothing_joint",
-    "title": "hmm_smoothing_joint"
-   },
-   {
-    "instances": [
+     "rl_hmm_smoothing_joint_3000000",
      "rl_hmm_smoothing_marginal_100",
      "rl_hmm_smoothing_marginal_300",
      "rl_hmm_smoothing_marginal_1000",
@@ -1692,8 +2173,186 @@
      "rl_hmm_smoothing_marginal_1000000",
      "rl_hmm_smoothing_marginal_3000000"
     ],
-    "key": "hmm_smoothing_marginal",
-    "title": "hmm_smoothing_marginal"
+    "key": "hmm",
+    "title": "hmm",
+    "values": {
+     "rl_hmm_filtering_joint_100": [
+      "filtering joint",
+      "100"
+     ],
+     "rl_hmm_filtering_joint_1000": [
+      "filtering joint",
+      "1000"
+     ],
+     "rl_hmm_filtering_joint_10000": [
+      "filtering joint",
+      "10000"
+     ],
+     "rl_hmm_filtering_joint_100000": [
+      "filtering joint",
+      "100000"
+     ],
+     "rl_hmm_filtering_joint_1000000": [
+      "filtering joint",
+      "1000000"
+     ],
+     "rl_hmm_filtering_joint_300": [
+      "filtering joint",
+      "300"
+     ],
+     "rl_hmm_filtering_joint_3000": [
+      "filtering joint",
+      "3000"
+     ],
+     "rl_hmm_filtering_joint_30000": [
+      "filtering joint",
+      "30000"
+     ],
+     "rl_hmm_filtering_joint_300000": [
+      "filtering joint",
+      "300000"
+     ],
+     "rl_hmm_filtering_joint_3000000": [
+      "filtering joint",
+      "3000000"
+     ],
+     "rl_hmm_filtering_marginal_100": [
+      "filtering marginal",
+      "100"
+     ],
+     "rl_hmm_filtering_marginal_1000": [
+      "filtering marginal",
+      "1000"
+     ],
+     "rl_hmm_filtering_marginal_10000": [
+      "filtering marginal",
+      "10000"
+     ],
+     "rl_hmm_filtering_marginal_100000": [
+      "filtering marginal",
+      "100000"
+     ],
+     "rl_hmm_filtering_marginal_1000000": [
+      "filtering marginal",
+      "1000000"
+     ],
+     "rl_hmm_filtering_marginal_300": [
+      "filtering marginal",
+      "300"
+     ],
+     "rl_hmm_filtering_marginal_3000": [
+      "filtering marginal",
+      "3000"
+     ],
+     "rl_hmm_filtering_marginal_30000": [
+      "filtering marginal",
+      "30000"
+     ],
+     "rl_hmm_filtering_marginal_300000": [
+      "filtering marginal",
+      "300000"
+     ],
+     "rl_hmm_filtering_marginal_3000000": [
+      "filtering marginal",
+      "3000000"
+     ],
+     "rl_hmm_marginal_likelihood_100": [
+      "marginal likelihood",
+      "100"
+     ],
+     "rl_hmm_marginal_likelihood_300": [
+      "marginal likelihood",
+      "300"
+     ],
+     "rl_hmm_marginal_likelihood_600": [
+      "marginal likelihood",
+      "600"
+     ],
+     "rl_hmm_marginal_likelihood_900": [
+      "marginal likelihood",
+      "900"
+     ],
+     "rl_hmm_smoothing_joint_100": [
+      "smoothing joint",
+      "100"
+     ],
+     "rl_hmm_smoothing_joint_1000": [
+      "smoothing joint",
+      "1000"
+     ],
+     "rl_hmm_smoothing_joint_10000": [
+      "smoothing joint",
+      "10000"
+     ],
+     "rl_hmm_smoothing_joint_100000": [
+      "smoothing joint",
+      "100000"
+     ],
+     "rl_hmm_smoothing_joint_1000000": [
+      "smoothing joint",
+      "1000000"
+     ],
+     "rl_hmm_smoothing_joint_300": [
+      "smoothing joint",
+      "300"
+     ],
+     "rl_hmm_smoothing_joint_3000": [
+      "smoothing joint",
+      "3000"
+     ],
+     "rl_hmm_smoothing_joint_30000": [
+      "smoothing joint",
+      "30000"
+     ],
+     "rl_hmm_smoothing_joint_300000": [
+      "smoothing joint",
+      "300000"
+     ],
+     "rl_hmm_smoothing_joint_3000000": [
+      "smoothing joint",
+      "3000000"
+     ],
+     "rl_hmm_smoothing_marginal_100": [
+      "smoothing marginal",
+      "100"
+     ],
+     "rl_hmm_smoothing_marginal_1000": [
+      "smoothing marginal",
+      "1000"
+     ],
+     "rl_hmm_smoothing_marginal_10000": [
+      "smoothing marginal",
+      "10000"
+     ],
+     "rl_hmm_smoothing_marginal_100000": [
+      "smoothing marginal",
+      "100000"
+     ],
+     "rl_hmm_smoothing_marginal_1000000": [
+      "smoothing marginal",
+      "1000000"
+     ],
+     "rl_hmm_smoothing_marginal_300": [
+      "smoothing marginal",
+      "300"
+     ],
+     "rl_hmm_smoothing_marginal_3000": [
+      "smoothing marginal",
+      "3000"
+     ],
+     "rl_hmm_smoothing_marginal_30000": [
+      "smoothing marginal",
+      "30000"
+     ],
+     "rl_hmm_smoothing_marginal_300000": [
+      "smoothing marginal",
+      "300000"
+     ],
+     "rl_hmm_smoothing_marginal_3000000": [
+      "smoothing marginal",
+      "3000000"
+     ]
+    }
    },
    {
     "instances": [
@@ -1838,20 +2497,6 @@
     ],
     "key": "symsmokers",
     "title": "symmetric smokers"
-   },
-   {
-    "instances": [
-     "dice_alarm",
-     "dice_digitRecognition",
-     "dice_evidence1",
-     "dice_evidence2",
-     "dice_grass",
-     "dice_murderMystery",
-     "dice_noisyOr",
-     "dice_twocoins"
-    ],
-    "key": "dice",
-    "title": "the Dice paper's programs"
    },
    {
     "instances": [
@@ -2314,176 +2959,6 @@
    }
   ],
   "uai": [
-   {
-    "instances": [
-     "uai_csp_11",
-     "uai_csp_12",
-     "uai_csp_13"
-    ],
-    "key": "csp",
-    "title": "csp"
-   },
-   {
-    "instances": [
-     "uai_dbn_11",
-     "uai_dbn_12",
-     "uai_dbn_13",
-     "uai_dbn_14",
-     "uai_dbn_15",
-     "uai_dbn_16"
-    ],
-    "key": "dbn",
-    "title": "dbn"
-   },
-   {
-    "instances": [
-     "uai_grids_11",
-     "uai_grids_12",
-     "uai_grids_13",
-     "uai_grids_14",
-     "uai_grids_15",
-     "uai_grids_16",
-     "uai_grids_17",
-     "uai_grids_18"
-    ],
-    "key": "grids",
-    "title": "grids"
-   },
-   {
-    "instances": [
-     "uai_objectdetection_11",
-     "uai_objectdetection_12",
-     "uai_objectdetection_13",
-     "uai_objectdetection_14",
-     "uai_objectdetection_15",
-     "uai_objectdetection_16",
-     "uai_objectdetection_17",
-     "uai_objectdetection_18",
-     "uai_objectdetection_19",
-     "uai_objectdetection_20",
-     "uai_objectdetection_21",
-     "uai_objectdetection_22",
-     "uai_objectdetection_23",
-     "uai_objectdetection_24",
-     "uai_objectdetection_25",
-     "uai_objectdetection_26",
-     "uai_objectdetection_27",
-     "uai_objectdetection_28",
-     "uai_objectdetection_29",
-     "uai_objectdetection_30",
-     "uai_objectdetection_31",
-     "uai_objectdetection_32",
-     "uai_objectdetection_33",
-     "uai_objectdetection_34",
-     "uai_objectdetection_35",
-     "uai_objectdetection_36",
-     "uai_objectdetection_37",
-     "uai_objectdetection_38",
-     "uai_objectdetection_39",
-     "uai_objectdetection_40",
-     "uai_objectdetection_41",
-     "uai_objectdetection_42",
-     "uai_objectdetection_43",
-     "uai_objectdetection_44",
-     "uai_objectdetection_45",
-     "uai_objectdetection_46",
-     "uai_objectdetection_47",
-     "uai_objectdetection_48",
-     "uai_objectdetection_49",
-     "uai_objectdetection_50",
-     "uai_objectdetection_51",
-     "uai_objectdetection_52",
-     "uai_objectdetection_53",
-     "uai_objectdetection_54",
-     "uai_objectdetection_55",
-     "uai_objectdetection_56",
-     "uai_objectdetection_57",
-     "uai_objectdetection_58",
-     "uai_objectdetection_59",
-     "uai_objectdetection_60",
-     "uai_objectdetection_61",
-     "uai_objectdetection_62",
-     "uai_objectdetection_63",
-     "uai_objectdetection_64",
-     "uai_objectdetection_65",
-     "uai_objectdetection_66",
-     "uai_objectdetection_67",
-     "uai_objectdetection_68",
-     "uai_objectdetection_69",
-     "uai_objectdetection_70",
-     "uai_objectdetection_71",
-     "uai_objectdetection_72",
-     "uai_objectdetection_73",
-     "uai_objectdetection_74",
-     "uai_objectdetection_75"
-    ],
-    "key": "objectdetection",
-    "title": "objectdetection"
-   },
-   {
-    "instances": [
-     "uai_pedigree_11",
-     "uai_pedigree_12",
-     "uai_pedigree_13"
-    ],
-    "key": "pedigree",
-    "title": "pedigree"
-   },
-   {
-    "instances": [
-     "uai_promedus_11",
-     "uai_promedus_12",
-     "uai_promedus_13",
-     "uai_promedus_14",
-     "uai_promedus_15",
-     "uai_promedus_16",
-     "uai_promedus_17",
-     "uai_promedus_18",
-     "uai_promedus_19",
-     "uai_promedus_20",
-     "uai_promedus_21",
-     "uai_promedus_22",
-     "uai_promedus_23",
-     "uai_promedus_24",
-     "uai_promedus_25",
-     "uai_promedus_26",
-     "uai_promedus_27",
-     "uai_promedus_28",
-     "uai_promedus_29",
-     "uai_promedus_30",
-     "uai_promedus_31",
-     "uai_promedus_32",
-     "uai_promedus_33",
-     "uai_promedus_34",
-     "uai_promedus_35",
-     "uai_promedus_36",
-     "uai_promedus_37",
-     "uai_promedus_38"
-    ],
-    "key": "promedus",
-    "title": "promedus"
-   },
-   {
-    "instances": [
-     "uai_segmentation_11",
-     "uai_segmentation_12",
-     "uai_segmentation_13",
-     "uai_segmentation_14",
-     "uai_segmentation_15",
-     "uai_segmentation_16"
-    ],
-    "key": "segmentation",
-    "title": "segmentation"
-   },
-   {
-    "instances": [
-     "uai_alchemy_11"
-    ],
-    "key": "others",
-    "title": "other programs"
-   }
-  ],
-  "uai_pr": [
    {
     "instances": [
      "uai_csp_11",

@@ -13,6 +13,7 @@ const tddlogRuntime = {
   formats: [
     ["problog", "ProbLog", []],
     ["dice", "Dice", [".dice"]],
+    ["circulette", "Circulette netlist", [".cql"]],
     ["bif", "BIF network", [".bif"]],
     ["hugin", "Hugin network", [".net", ".hugin"]],
     ["xdsl", "GeNIe network", [".xdsl"]],
@@ -27,8 +28,9 @@ const tddlogRuntime = {
   },
 
   // The answers of `program`, text in `format` (a network's with `observed`
-  // the text of its evidence file, or null; a ProbLog program's or an
-  // LPAD's with `args` the strings that take its places $1, $2, ...), under
+  // the text of its evidence file, or null; a ProbLog program's, an
+  // LPAD's or a Dice program's with `args` the strings that take its
+  // places $1, $2, ...), under
   // `strategy`, with P(e) where `evidence` is true and the trace of the run
   // where `trace` is, as the object src/main.rs writes:
   //   answers   [{query, probability}] in the program's order, or null where

@@ -22,7 +22,7 @@ nodice = root / 'data' / 'nodice'
 def translated(k=2):
     """The programs the translation tests take: bench.NODICE but the sizes
     of a program (bench.series) past its k smallest. The larger sizes
-    (diamond-10000-p, brp16384-2) are the same text at other constants, and
+    (brp16384-2) are the same text at other constants, and
     their symbolic evaluation took the unit tests past 20 minutes; the
     suite's runs read all of them."""
     seen, names = {}, []
@@ -57,18 +57,20 @@ class NoDiceTests(unittest.TestCase):
 
     def test_the_programs_translate(self):
         # Each returns one Boolean (CouponProb, 3sat and the uf formulas,
-        # brp, diamond), a ladder's pair of Booleans, or one variable of
-        # its network, whose values are the queries.
+        # brp) or one variable of its network, whose values are the queries.
+        # The artifact's diamonds and ladders are kept and run as no instance
+        # of their own: they are the Dice paper's, the roulette suite's
+        # rl_diamond and rl_ladder (README.md).
         names = sorted(p.stem for p in nodice.glob('*.dice'))
         self.assertEqual(len(names), 69)
-        self.assertEqual(names, sorted(bench.NODICE))
+        paper = [n for n in names if n.startswith(('diamond-', 'ladder-'))]
+        self.assertEqual(len(paper), 26)
+        self.assertEqual(sorted(set(names) - set(paper)), sorted(bench.NODICE))
         for name in translated():
             with self.subTest(name=name):
                 qs = queries(dice2problog.translate((nodice / f'{name}.dice').read_text()))
-                if name.startswith(('coupon', '3sat', 'uf', 'brp', 'diamond')):
+                if name.startswith(('coupon', '3sat', 'uf', 'brp')):
                     self.assertEqual(len(qs), 1)
-                elif name.startswith('ladder'):
-                    self.assertEqual(len(qs), 2)
                 else:
                     self.assertGreater(len(qs), 1)
                     self.assertEqual(len({q.split('(')[0] for q in qs}), 1, qs)

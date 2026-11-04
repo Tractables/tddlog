@@ -130,7 +130,8 @@ impl Solution {
 ///
 /// ``format`` names what the text is, as the command line tells it by the
 /// file's extension: ``"problog"``, the default (an LPAD where it holds
-/// ``:- begin_lpad.``), ``"dice"``, or a network's: ``"bif"``,
+/// ``:- begin_lpad.``), ``"dice"``, ``"circulette"`` (a ``.cql``
+/// netlist), or a network's: ``"bif"``,
 /// ``"hugin"`` (``.net``), ``"xdsl"`` or ``"uai"``. A network's
 /// variables are each queried at every value, and ``evidence`` is the
 /// text of its evidence file, as the command line's ``--evidence`` reads
@@ -142,15 +143,16 @@ impl Solution {
 /// ``P(e)``, compiling the evidence no query depends on rather than dropping
 /// it. ``queries=False`` leaves out the program's queries, as
 /// ``--no-queries`` does, and needs ``evidence_probability=True``.
-/// ``arguments``, a list of strings, are a ProbLog program's or an LPAD's
-/// arguments, the values the command line takes after the program's
-/// file: each the text of a term that takes the places ``$1``, ``$2``,
-/// ... of the program, as in
-/// ``solve("$1::a. query(a).", arguments=["0.3"])``.
+/// ``arguments``, a list of strings, are a ProbLog program's, an LPAD's or
+/// a Dice program's arguments, the values the command line takes after
+/// the program's file: each the text of a term that takes the places
+/// ``$1``, ``$2``, ... of the program, as in
+/// ``solve("$1::a. query(a).", arguments=["0.3"])``; in a Dice program a
+/// place is the count of an ``iterate``, and its argument a count.
 ///
 /// An unknown ``format`` or ``vtree``, ``evidence`` for a program that is
-/// not a network, ``arguments`` for one that is not a ProbLog program or
-/// an LPAD, an argument that is not a term or that no place takes, or
+/// not a network, ``arguments`` for a network, an argument that is not a
+/// term (for a Dice program, not a count) or that no place takes, or
 /// options that ask for nothing raise ``ValueError``; a place without an
 /// argument raises ``tddlog.ParseError``; a
 /// program tddlog cannot answer raises a subclass of ``tddlog.Error``. The

@@ -37,7 +37,9 @@ PLUCK = os.environ.get('PLUCK', '')
 
 
 def program_text(name):
-    return (data / 'dice' / f'{name}.dice').read_text()
+    # diamond and ladder as iterate loops: the source tree's tests/dice copies alone
+    path = data / 'dice' / f'{name}.dice'
+    return (path if path.exists() else source_tree.SOURCE / 'tests' / 'dice' / f'{name}.dice').read_text()
 
 
 def run_pluck(code):

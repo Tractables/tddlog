@@ -1,6 +1,7 @@
 //! Every input tddlog reads, as the program it answers ([`read`]): a
 //! ProbLog program, or an LPAD written for cplint ([`syntax::lpad`]); a
-//! Dice program ([`syntax::dice`]); and a Bayesian or Markov network file
+//! Dice program ([`syntax::dice`]); a Circulette netlist
+//! ([`syntax::circulette`]); and a Bayesian or Markov network file
 //! ([`network`]) with its evidence file. The command line names an input's
 //! format by the file's extension ([`Format::of_path`]), and the bindings
 //! by its name ([`Format`]'s `FromStr`).
@@ -23,14 +24,17 @@ pub enum Format {
     Problog,
     /// A Dice program ([`syntax::dice`]).
     Dice,
+    /// A Circulette netlist ([`syntax::circulette`]).
+    Circulette,
     /// A network file ([`network`]).
     Network(network::Format),
 }
 
 /// Each format's name, as [`Format`]'s `FromStr` takes it.
-const NAMES: [(&str, Format); 6] = [
+const NAMES: [(&str, Format); 7] = [
     ("problog", Format::Problog),
     ("dice", Format::Dice),
+    ("circulette", Format::Circulette),
     ("bif", Format::Network(network::Format::Bif)),
     ("hugin", Format::Network(network::Format::Hugin)),
     ("xdsl", Format::Network(network::Format::Xdsl)),
@@ -39,11 +43,14 @@ const NAMES: [(&str, Format); 6] = [
 
 impl Format {
     /// The format of the file at `path`, by its extension: `.dice` a Dice
-    /// program, a network's ([`network::Format::of_path`]), and a ProbLog
-    /// program for any other.
+    /// program, `.cql` a Circulette netlist, a network's
+    /// ([`network::Format::of_path`]), and a ProbLog program for any other.
     pub fn of_path(path: &str) -> Format {
         if path.ends_with(".dice") {
             return Format::Dice;
+        }
+        if path.ends_with(".cql") {
+            return Format::Circulette;
         }
         network::Format::of_path(path).map_or(Format::Problog, Format::Network)
     }
@@ -63,14 +70,16 @@ impl Format {
 impl FromStr for Format {
     type Err = String;
 
-    /// `problog`, `dice`, or a network's format: `bif`, `hugin` (`.net`),
-    /// `xdsl` or `uai`.
+    /// `problog`, `dice`, `circulette`, or a network's format: `bif`,
+    /// `hugin` (`.net`), `xdsl` or `uai`.
     fn from_str(s: &str) -> Result<Format, String> {
         NAMES
             .iter()
             .find(|(name, _)| *name == s)
             .map(|&(_, format)| format)
-            .ok_or_else(|| format!("unknown format `{s}`: problog, dice, bif, hugin, xdsl or uai"))
+            .ok_or_else(|| {
+                format!("unknown format `{s}`: problog, dice, circulette, bif, hugin, xdsl or uai")
+            })
     }
 }
 
@@ -119,21 +128,23 @@ impl Input<'_> {
 ///
 /// A ProbLog program is its own text, which must be UTF-8, with its
 /// arguments in their places `$1`, `$2`, ... where it is given any; an
-/// LPAD, with its arguments in place, a Dice program and a network are
-/// read as the programs their modules write. `options` say how a network
-/// is read: its queries, its evidence and whether its rows are rescaled.
-/// For any other input they must be the defaults, but for the queries,
-/// which may be left out ([`Queries::None`]) as
+/// LPAD, with its arguments in place, a Dice program, a Circulette netlist
+/// and a network are read as the programs their modules write, a Dice
+/// program's with its arguments in the places its `iterate` counts hold
+/// there. `options` say how a network is read: its queries, its evidence
+/// and whether its rows are rescaled. For any other input they must be the
+/// defaults, but for the queries, which may be left out ([`Queries::None`])
+/// as
 /// [`crate::Options::queries`] leaves them out. The arguments
-/// ([`ReadOptions::arguments`]) are for a ProbLog program or an LPAD
-/// alone.
+/// ([`ReadOptions::arguments`]) are for a ProbLog program, an LPAD or a
+/// Dice program alone, a Dice program's each a count: digits.
 pub fn read<'a>(data: &'a [u8], format: Format, options: &ReadOptions) -> Result<Input<'a>, Error> {
     let input = |program, left_out| Input {
         program,
         log10_offset: None,
         left_out,
     };
-    if !options.arguments.is_empty() && format != Format::Problog {
+    if !options.arguments.is_empty() && !matches!(format, Format::Problog | Format::Dice) {
         return Err(Error::Options(format!(
             "{}, and the input is {format}",
             network::ARGUMENTS
@@ -141,7 +152,7 @@ pub fn read<'a>(data: &'a [u8], format: Format, options: &ReadOptions) -> Result
     }
     let network = match format {
         Format::Network(network) => network,
-        Format::Problog | Format::Dice => {
+        Format::Problog | Format::Dice | Format::Circulette => {
             let given = [
                 (options.evidence.is_some(), "an evidence file"),
                 (options.rescale, "rescaling the rows"),
@@ -156,8 +167,30 @@ pub fn read<'a>(data: &'a [u8], format: Format, options: &ReadOptions) -> Result
                 )));
             }
             let text = utf8(data)?;
-            if format == Format::Dice {
-                return Ok(input(Cow::Owned(syntax::dice::read(text)?), Vec::new()));
+            match format {
+                Format::Dice => {
+                    // A place of a Dice program is an iterate's count, which
+                    // its program holds in the count's fact.
+                    let count = |a: &str| !a.is_empty() && a.bytes().all(|c| c.is_ascii_digit());
+                    let arguments = options.arguments.iter().map(|a| a.trim());
+                    if let Some((k, a)) = arguments.enumerate().find(|(_, a)| !count(a)) {
+                        return Err(Error::Options(format!(
+                            "argument {}, `{a}`, is not a count, which is all a Dice program's \
+                             places hold",
+                            k + 1
+                        )));
+                    }
+                    let program = syntax::dice::read(text)?;
+                    let program = syntax::bind(&program, &options.arguments)?.into_owned();
+                    return Ok(input(Cow::Owned(program), Vec::new()));
+                }
+                Format::Circulette => {
+                    return Ok(input(
+                        Cow::Owned(syntax::circulette::read(text)?),
+                        Vec::new(),
+                    ));
+                }
+                _ => {}
             }
             let text = syntax::bind(text, &options.arguments)?;
             return Ok(match syntax::lpad::read(&text).transpose()? {

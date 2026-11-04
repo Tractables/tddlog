@@ -156,7 +156,8 @@ class PplTests(unittest.TestCase):
     def test_the_suite_names_programs_that_exist(self):
         spec = bench.instances(self.args())
         self.assertEqual({family for family, _ in spec.values()}, {'arith', 'pluck', 'nodice'})
-        self.assertEqual(len(spec), 101)
+        # noDice's diamonds and ladders are the roulette suite's rl_diamond and rl_ladder
+        self.assertEqual(len(spec), 75)
         for name, (family, gargs) in spec.items():
             self.assertTrue(Path(gargs[1]).is_file(), name)
             self.assertEqual(gargs[0], 'dice2problog.py' if family == 'nodice' else 'alea_bench.jl')
@@ -904,9 +905,9 @@ def fold_files(directory, names, suite='standard'):
     directory = Path(directory)
     for name in names:
         gargs = spec.get(name, (None, ['none']))[1]
-        if gargs[0] not in bench.FOLD:
+        if not bench.fold_of(gargs):
             continue
-        program, _, keys = bench.FOLD[gargs[0]](gargs[1:])
+        program, _, keys = bench.fold_of(gargs)
         for rel in [Path(bench.FOLD_DIR) / (program + '.pl'), *(Path(bench.DATA_DIR) / (k + '.pl') for k in keys),
                     Path(name + '.args')]:
             (directory / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -926,9 +927,7 @@ class SkipTests(unittest.TestCase):
         self.assertEqual(series('nodice', 'nodice_coupon2-12-obs'), 'nodice_coupon2')
         self.assertEqual(series('nodice', 'nodice_coupon2-2-obs'), 'nodice_coupon2')
         self.assertEqual(series('nodice', 'nodice_brp1024-2'), 'nodice_brp')
-        self.assertEqual(series('nodice', 'nodice_diamond-100-p'), 'nodice_diamond')
-        self.assertEqual(series('nodice', 'nodice_ladder-1-p'), 'nodice_ladder')
-        self.assertEqual(series('dice_scaled', 'dice_ladder_k400'), 'dice_ladder')
+        self.assertEqual(series('dice_scaled', 'dice_pmc1_k40'), 'dice_pmc1')
         for family, name in [('arith', 'arith_book'), ('nodice', 'nodice_alarm'), ('nodice', 'nodice_uf20-0990'),
                              ('nodice', 'nodice_3sat-0'),
                              ('dice', 'dice_alarm'), ('bn', 'bn_asia'), ('bnev', 'bn_asia_ev'), ('bn', 'rl_bn_alarm'),
@@ -1191,6 +1190,19 @@ class FoldTests(unittest.TestCase):
         self.assertEqual((mine['threedie100']['original'], mine['threedie100']['arguments']), ('threedie.pl', ['100']))
         self.assertEqual(mine['pgrid16_4']['arguments'], ['n_12_12'])
         self.assertTrue(all('original' not in r for r in recs if r['system'] != 'tddlog'))
+
+    def test_a_scaled_loop_is_read_as_its_program_and_its_count(self):
+        # a folded run's layout: D/programs/LOOP.dice and D/NAME.args beside D/NAME.dice
+        with scratch_dir('fold-') as d:
+            dice = os.path.join(d, 'dice_pmc1_k40.dice')
+            gargs = ['dice2problog.py', dice]
+            self.assertIsNone(bench.folded(None, 'dice_pmc1_k40', gargs, 'auto'))   # no count's file: the old form
+            (Path(d) / 'dice_pmc1_k40.args').write_text('40\n')
+            self.assertEqual(bench.folded(None, 'dice_pmc1_k40', gargs, 'auto'),
+                             (os.path.join(d, 'programs', 'pmc1.dice'), os.path.join(d, 'dice_pmc1_k40.args')))
+            self.assertIsNone(bench.folded(None, 'dice_alarm', ['dice2problog.py', os.path.join(d, 'dice_alarm.dice')],
+                                           'auto'))
+            self.assertEqual(bench.folded_data(None, gargs), [])
 
 
 class SuiteTests(unittest.TestCase):

@@ -156,12 +156,12 @@ the formulation and the projection besides its vtree. The modules, in
 | `bin/tddlog/` | the binary: `main.rs`, the command line, options and answers; `stats.rs`, the `--stats` lines; `budget.rs`, the address-space limit from the cgroups; `alloc.rs`, the allocator |
 | `lib.rs` | `Run`, `Error`, the public items |
 | `trace.rs` | `Trace`: a run's stages from `Progress`'s events, bounded, written as JSON (`tddlog --trace`, the browser build) |
-| `input.rs` | `Format` and `read`: every input (a ProbLog program or an LPAD, a Dice program, a network file with its evidence file) read as the program `solve` takes, the one route of the binary and the bindings |
+| `input.rs` | `Format` and `read`: every input (a ProbLog program or an LPAD, a Dice program, a Circulette netlist, a network file with its evidence file) read as the program `solve` takes, the one route of the binary and the bindings |
 | `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, what `auto` is handed ready, the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups |
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
-| `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes |
+| `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes; `circulette.rs`, a Circulette netlist read as its gates' rules with a fault on each logic gate |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
 | `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls; `topdown.rs`, top-down grounding; and `schedule.rs`, body order), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
@@ -275,11 +275,12 @@ The parser reads ProbLog without cut:
 There are no cut, if-then-else or strings.
 
 Every input reaches the parser through `read` (`input.rs`): a ProbLog
-program is its own text, and an LPAD, a Dice program and a network file
-are read by their modules as the program `tddlog --program` prints. The
-command line takes the format from the file's extension
-(`Format::of_path`), and the bindings take its name (`problog`, `dice`,
-`bif`, `hugin`, `xdsl`, `uai`), with a network's evidence file as its
+program is its own text, and an LPAD, a Dice program, a Circulette
+netlist and a network file are read by their modules as the program
+`tddlog --program` prints. The command line takes the format from the
+file's extension (`Format::of_path`), and the bindings take its name
+(`problog`, `dice`, `circulette`, `bif`, `hugin`, `xdsl`, `uai`), with a
+network's evidence file as its
 contents; a network's options given for another format are refused.
 
 A ProbLog program or an LPAD may take arguments, the values after its
@@ -295,12 +296,19 @@ argument is parsed as a term first, and one with an operator at its top
 takes its place in parentheses (`1/3` as `(1/3)`); a space keeps it
 apart from a neighbour it would run into (`5-$1` of `-3` as `5- -3`).
 A place without an argument, an argument without a place, an argument
-that is not a term, and arguments for a Dice program or a network are
-refused. `tddlog --program` prints the program with its arguments in
-place, which any system that reads ProbLog then reads. The files a
-program consults are read after its arguments took their places, and
-their own places take none. The example queries of an LPAD sit in a
-comment and take no arguments.
+that is not a term, and arguments for a network are refused. `tddlog
+--program` prints the program with its arguments in place, which any
+system that reads ProbLog then reads. The files a program consults are
+read after its arguments took their places, and their own places take
+none. The example queries of an LPAD sit in a comment and take no
+arguments. In a Dice program a place stands for the count of an
+`iterate` alone, `iterate(step, x, $1)`, and its argument is a count:
+the Dice reader writes the count as a fact, `steps($1).`, which the
+recursion over the steps reads, and reads the state after the loop at
+it, `s($1)` (`syntax/dice.rs`), and the arguments then take their places in that
+program, so that one Dice program serves every count and `tddlog
+--program` without arguments prints the one ProbLog program of them
+all.
 
 A source that holds the directive `:- begin_lpad.` (or cplint's other
 spelling, `:- begin_plp.`) is an LPAD written for cplint and PITA, and
@@ -382,8 +390,10 @@ constant takes only the values the guard allows. An `observe` within a
 branch holds where the branch is not taken. A function is inlined at each
 call, a recursive one up to Dice's limit of ten nested calls, the call
 past it an observation of false. `iterate(f, init, k)` is recursion over
-a step index that the grounder unrolls: f's body once, its atoms indexed
-by the step, the state before step `T + 1` the body's at step `T`. A
+a step index that the grounder unrolls: the count a fact `steps(k)`, f's
+body once, its atoms indexed by the step, the state before step `T + 1`
+the body's at step `T`, and the state after the loop read at the count,
+`s(k)`. A
 list (`[] : list(t)`, `[...]`, `::`, `head`, `tail`, `length`) is held as
 Dice holds one: a 4-bit length and ten elements as nested pairs, those
 past the length at their type's default, with `head` and `tail` of an
@@ -395,6 +405,38 @@ than 2^24 values. The reader writes the program that the
 Python script it replaced (`dice2problog.py`, now on the baselines
 branch) wrote, byte for byte (tests/dice holds Dice programs and the
 script's programs for them).
+
+A file with the extension `.cql` is a netlist of Circulette, a tool for
+the fault analysis of digital circuits on Roulette, and
+`syntax/circulette.rs` reads it as a ProbLog program. The netlist is
+Racket data: its inputs, outputs and registers with their widths, and a
+line for each wire with its expression, a logic gate (`w&`, `w||`, `w^`,
+`w~`), a multiplexer (`wx`), an assignment (`<w=`, and `<<=`, a register's
+next value) or wiring (selections `ws` of one bit, concatenations `wc`,
+constants `bv-const`). The circuit is evaluated for one cycle with its
+inputs and registers false, on the lines the outputs read, transitively,
+reading a register's next value where they read the register
+(Circulette's slice); each logic gate of the slice is faulty with
+probability `1 - p-clean`, which flips its output; the circuit fails
+where a bit of an output, or of the next value of a register in the
+slice, is one, as `expected-output`, all false, says. A multiplexer
+`(wx S A B)` is `B` where `S` is one, and it reads an input's bits as
+ones, through any wiring, where gates, outputs and registers read them
+as false; Circulette's runs answer so. The program states the netlist's
+slice as facts in the order of its lines, one rule for each kind of gate
+over its operands' bits (`bit(W, I)`), the fault as a probabilistic rule
+over the logic gates, the failure
+as the evidence, its probability `P(e)`, and as queries what Circulette
+asks: every gate's fault and every pair and triple of faults, each a
+query of its own (`faults(A, B)`, `faults(A, B, C)`), `1 + n + n(n-1)/2 +
+n(n-1)(n-2)/6` answers for `n` logic gates, counting `P(e)`. The format
+and its meaning were established from Circulette's documentation, its
+netlists' comments and the answers of its runs. Refused, on its line, is
+what the netlists do not show the meaning of: an expected value of true,
+a logic gate on a word, a selection of several bits, a gate inside an
+expression, `sketch-reroll` with loops, a combinational cycle, a wire read
+and not defined, a `p-faulty` other than `1 - p-clean`, and any other
+form.
 
 A predicate without clauses is not read as false: a query or an
 observation of one, and a call of one that is not a built-in above in a
@@ -878,7 +920,18 @@ are skipped. Several steps have a program in `examples/` that shows them.
    tuple shares (DeepProbLog's handwritten formulas, whose label is the
    same in every demand). A literal with bound arguments, the delta's included, takes
    its candidate tuples from a per-position index of its relation, each
-   position indexed when a join first binds it. A negative literal on an impossible
+   position indexed when a join first binds it. A literal followed by a
+   test `V is E` whose `E` reads only its variables, with `V` bound when
+   the walk reaches it, takes them also from an index of its relation by
+   the value of `E` (`IsKey`): the chain that the bound-end rewrite grounds
+   from a loop's end, `r(S, T) :- r(S, T1), step(T), T1 is T + 1`,
+   otherwise scanned every step for each new link. A semi-naive round
+   weighs that index too when it chooses to start from its new tuples: a
+   loop written from its end, `s(T) :- T > 0, J is T - 1, s(J), route(J)`,
+   reaches its demand from each new `s(J)` through `J is T - 1` alone,
+   where its own order walked every demand each round. `--stats` counts the
+   body literals the walks entered, over every grounding tried, kept or
+   given up. A negative literal on an impossible
    atom is dropped as true, and one on an atom true in every world fails
    the rule, a demand's rule too; one inside its own stratum (negation through
    recursion) is kept for the compiler's well-founded fixpoint

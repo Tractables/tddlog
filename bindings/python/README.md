@@ -75,7 +75,8 @@ options as keywords: `vtree` (`--vtree`), `evidence_probability`
 (`--evidence-probability`) and `queries` (`False` for `--no-queries`).
 `format` says what the text is, as the command line tells it by the
 file's extension: `"problog"`, the default (an LPAD where it holds
-`:- begin_lpad.`), `"dice"`, or a network's, `"bif"`, `"hugin"`
+`:- begin_lpad.`), `"dice"`, `"circulette"` (a `.cql` netlist), or a
+network's, `"bif"`, `"hugin"`
 (`.net`), `"xdsl"` or `"uai"`, with every variable queried. A network's
 `evidence` is the text of its evidence file, an Ace `.inst` file or, for
 a UAI network, a UAI `.evid` file:
@@ -86,11 +87,12 @@ observed = open("examples/car.inst").read()
 solution = tddlog.solve(network, format="hugin", evidence=observed)
 ```
 
-`arguments` are a ProbLog program's or an LPAD's arguments, the values
-the command line takes after the program's file: a list of strings, each
-the text of a term that takes the places `$1`, `$2`, ... of the program,
-as in `tddlog.solve(open("examples/chain.pl").read(), arguments=["10",
-"0.9", "4"])`.
+`arguments` are a ProbLog program's, an LPAD's or a Dice program's
+arguments, the values the command line takes after the program's file: a
+list of strings, each the text of a term that takes the places `$1`, `$2`,
+... of the program, as in `tddlog.solve(open("examples/chain.pl").read(),
+arguments=["10", "0.9", "4"])`; in a Dice program a place is the count of
+an `iterate`, and its argument a count.
 
 For a UAI `MARKOV` network, `evidence_probability` is the partition
 function given the evidence. A

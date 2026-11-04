@@ -1,6 +1,7 @@
+steps(100).
 ladder_1(0).
-step(0).
-step(T1) :- step(T), T < 99, T1 is T + 1.
+step(0) :- steps(N), N > 0.
+step(T1) :- step(T), steps(N), T1 is T + 1, T1 < N.
 0.001::result_then_c(T) :- step(T).
 0.5::f(T) :- step(T).
 result_then_1(T) :- f(T), \+result_then_c(T).

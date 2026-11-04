@@ -266,10 +266,11 @@ for n in [15, 30]:
     INDICATORS[f'grid{n}_ev'] = ('gridev', ['gen_grid.py', str(n), '--seed', '1', '--evidence'])
 INDICATORS['cora1000_ev'] = ('coraev', ['gen_cora.py', os.path.join(ROOT, 'data', 'cplint', 'cora_m1.pl'),
                                      '--queries', '1000', '--seed', '1', '--evidence', '20'])
-# Dice programs with loops (data/dice/README.md): the Caesar cipher, the
-# ladder and diamond networks of the Dice paper, and Dice's two model
-# checking examples, translated.
-for name in ['caesar-iter', 'simpleCaesar', 'ladder', 'diamond', 'pmc2', 'pmc1']:
+# Dice programs with loops (data/dice/README.md): the Caesar cipher and
+# Dice's two model checking examples, translated. The Dice paper's diamond
+# and ladder networks are one family each in the roulette suite
+# (gen_roulette.py's DICE_PAPER).
+for name in ['caesar-iter', 'simpleCaesar', 'pmc2', 'pmc1']:
     INDICATORS[f'dice_{name}'] = ('dice', ['dice2problog.py', os.path.join(ROOT, 'data', 'dice', f'{name}.dice')])
 
 
@@ -291,8 +292,9 @@ for name in ['caesar-iter', 'simpleCaesar', 'ladder', 'diamond', 'pmc2', 'pmc1']
 #     its Table 1's (the coupon collector from 10 coupons, the networks,
 #     3sat-0) and the artifact's others (the coupon collector from 2,
 #     the bounded retransmission protocol, uniform 3-SAT of 20 and 50
-#     variables, diamonds and ladders), each program's sizes smallest
-#     first (data/nodice/README.md).
+#     variables), each program's sizes smallest first (data/nodice/README.md;
+#     its diamonds and ladders are the Dice paper's, the roulette suite's
+#     rl_diamond and rl_ladder).
 # An Alea.jl program's instance is the Boolean circuit Alea builds for it,
 # written by alea_bench.jl as a ProbLog program and as Dice programs
 # (`gen` runs it under `--alea`).
@@ -305,10 +307,7 @@ PLUCK = ['hmm', 'pcfg', 'string_editing', 'sorted_list']
 NODICE = ([f'coupon2-{n}-obs' for n in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 20]] +
           ['survey', 'hepar2', 'insurance', 'water', 'alarm', '3sat-0'] +
           [f'uf20-0{n}' for n in range(990, 1000)] + ['uf50-0999'] +
-          [f'brp{n}-2' for n in [4, 6, 8, 10, 16, 64, 256, 1024, 4096, 16384]] +
-          [f'diamond-{n}-p' for n in [1, 100, 200, 300, 400, 500, 700, 800, 900, 1000, 2000, 3000, 4000, 5000,
-                                      10000]] +
-          [f'ladder-{n}-p' for n in [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]])
+          [f'brp{n}-2' for n in [4, 6, 8, 10, 16, 64, 256, 1024, 4096, 16384]])
 PPL = {}
 for family, names in [('arith', ARITH), ('pluck', PLUCK)]:
     for name in names:
@@ -362,9 +361,24 @@ FOLD = {
     'gen_pedigree.py': lambda a: ('pedigree', a, [fold_key('pedigree', a)]),
     'gen_tpch.py': lambda a: (lambda f: (f[0], a, f[1]))(gen_tpch.family(a[:])),
     'gen_taint.py': lambda a: ('taint', a, ['taint_' + os.path.basename(a[0]).split('.')[0].replace('-', '_')]),
+    # of the roulette suite, the Dice paper's diamond and ladder (gen_roulette.py's DICE_PAPER) alone
+    'gen_roulette.py': lambda a: (a[0], a[:1], []) if a[0] in ('diamond', 'ladder') else None,
 }
 FOLD_DIR = 'programs'
+
+
+def fold_of(gargs):
+    """FOLD's entry of an instance, (program, template arguments, data
+    keys), None where its generator is not one of FOLD's or does not fold
+    this program (gen_roulette.py's families but diamond and ladder)."""
+    entry = FOLD.get(gargs[0])
+    return entry(gargs[1:]) if entry else None
+
+
 DATA_DIR = 'data'
+# A scaled Dice loop's name (dice_scale.py: the loop of data/dice/LOOP.dice run
+# K times), which `folded` reads as the loop's program and its count where NAME.args is beside it.
+SCALED_LOOP = re.compile(r'dice_(.+)_k\d+')
 # The generators of SOUFFLE_WRITERS write the benchmark's original Souffle
 # program and its input relations beside the ProbLog one (`--souffle`,
 # NAME.souffle/), which PSouffle reads instead of a translation.
@@ -474,8 +488,8 @@ for _name, (_dir, _prog, _const, _values, _label, _int, _fixed) in BB_PAPERS.ite
 # (data/roulette, `run_roulette`). The hmm marginal likelihood stops
 # at 900 steps: past about 915 it is below the smallest normal double.
 RL_LADDER = [1000, 3000, 10000, 30000, 100000, 300000, 1000000]
-RL_SIZES = {'motivating': RL_LADDER + [3000000, 9000000], 'diamond': RL_LADDER + [3000000, 6000000],
-            'ladder': RL_LADDER + [3000000],
+RL_SIZES = {'motivating': RL_LADDER + [3000000, 9000000], 'diamond': [100, 300] + RL_LADDER + [3000000, 6000000],
+            'ladder': [100, 300] + RL_LADDER + [3000000],
             'caesar': [25, 50, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000],
             'hmm-marginal-likelihood': [100, 300, 600, 900],
             **{f'hmm-{q}': [100, 300, 1000, 3000, 10000, 30000, 100000, 300000, 1000000, 3000000]
@@ -905,15 +919,15 @@ def instances(args):
 # The families of different programs, each with the pattern that matches the
 # sizes of a program among them (its group names the program; the sizes are
 # listed smallest first): Alea.jl's arithmetic programs, noDice's coupon
-# collector, bounded retransmission protocol, diamonds and ladders (its
-# networks and 3-SAT formulas are none a size of another), and
+# collector and bounded retransmission protocol (its networks and 3-SAT
+# formulas are none a size of another), and
 # bench_one.py's scaled Dice loops. The taint family's apps
 # are one analysis of fifteen programs, none a size of another, and so are
 # the side-channel family's cases, whose rules differ from case to case.
 COLLECTIONS = {'dice': None, 'cplint': None, 'pluck': None, 'taint': None, 'sidechannel': None,
                'circulette': None,
                'problogtut': None, 'problogex': None, 'cplintpita': None,
-               'arith': r'(arith_[a-z]+)_(?:small|medium|large|huge)', 'nodice': r'(nodice_(?:coupon2|brp|diamond|ladder))-?\d+-(?:obs|2|p)',
+               'arith': r'(arith_[a-z]+)_(?:small|medium|large|huge)', 'nodice': r'(nodice_(?:coupon2|brp))-?\d+-(?:obs|2)',
                'dice_scaled': r'(dice_.+)_k\d+'}
 
 
@@ -1120,17 +1134,26 @@ def folded(args, name, gargs, variant):
     """What tddlog reads of an instance of FOLD: its family's program and
     its arguments' file, (DIR/programs/PROGRAM.pl, DIR/NAME.args), so that
     reading the program, its data and binding its places is part of
-    tddlog's time. None for another instance."""
-    if gargs[0] not in FOLD:
+    tddlog's time. Of a scaled Dice loop, D/dice_LOOP_kK.dice (dice_scale.py)
+    beside its count's file D/NAME.args, likewise the loop's
+    program, whose iterate count is the place $1, (D/programs/LOOP.dice,
+    D/NAME.args). None for another instance."""
+    if gargs[0] == 'dice2problog.py':
+        d, m = os.path.dirname(gargs[1]), SCALED_LOOP.fullmatch(name)
+        given = os.path.join(d, name + '.args')
+        return (os.path.join(d, FOLD_DIR, m.group(1) + '.dice'), given) if m and os.path.exists(given) else None
+    fold = fold_of(gargs)
+    if fold is None:
         return None
-    program = FOLD[gargs[0]](gargs[1:])[0]
-    return os.path.join(args.dir, FOLD_DIR, program + '.pl'), os.path.join(args.dir, name + '.args')
+    return os.path.join(args.dir, FOLD_DIR, fold[0] + '.pl'), os.path.join(args.dir, name + '.args')
 
 
 def folded_data(args, gargs):
     """The data files of an instance of FOLD, DIR/data/KEY.pl for each key
-    of its family's entry, in the order of its places."""
-    return [os.path.join(args.dir, DATA_DIR, key + '.pl') for key in FOLD[gargs[0]](gargs[1:])[2]]
+    of its family's entry, in the order of its places (none for a scaled
+    Dice loop)."""
+    fold = fold_of(gargs)
+    return [os.path.join(args.dir, DATA_DIR, key + '.pl') for key in fold[2]] if fold else []
 
 
 def arguments_of(path):
@@ -1149,7 +1172,7 @@ def fold_run(gargs, *words):
 def fold_template(gargs):
     """The program of a FOLD instance, (its file's name, its text): its
     generator's --template."""
-    program, targs, _ = FOLD[gargs[0]](gargs[1:])
+    program, targs, _ = fold_of(gargs)
     return program + '.pl', fold_run(gargs, targs, '--template')
 
 
@@ -1163,7 +1186,7 @@ def fold_arguments(gargs):
     """The arguments of a FOLD instance, a line each: its data files,
     quoted atoms relative to the program's directory (consult adds the
     `.pl`), then its generator's --arguments."""
-    data = [f"'../{DATA_DIR}/{key}'" for key in FOLD[gargs[0]](gargs[1:])[2]]
+    data = [f"'../{DATA_DIR}/{key}'" for key in fold_of(gargs)[2]]
     return data + fold_run(gargs, gargs[1:], '--arguments').splitlines()
 
 
@@ -1177,7 +1200,7 @@ def folded_program(gargs, binary=None):
     with tempfile.TemporaryDirectory() as d:
         os.makedirs(os.path.join(d, FOLD_DIR))
         os.makedirs(os.path.join(d, DATA_DIR))
-        for key in FOLD[gargs[0]](gargs[1:])[2]:
+        for key in fold_of(gargs)[2]:
             with open(os.path.join(d, DATA_DIR, key + '.pl'), 'w') as f:
                 f.write(fold_data(gargs, key))
         path = os.path.join(d, FOLD_DIR, name)
@@ -1204,7 +1227,7 @@ def gen_folded(args, name, gargs, written):
     files (each once a gen, `written` the paths so far), its arguments
     (NAME.args) and the program with them in its places and its data
     consulted (NAME.pl, `write_program`)."""
-    program, _, keys = FOLD[gargs[0]](gargs[1:])
+    program, _, keys = fold_of(gargs)
     path = os.path.join(args.dir, FOLD_DIR, program + '.pl')
     if path not in written:
         write_once(path, fold_template(gargs)[1], written)
@@ -1381,7 +1404,7 @@ def gen(args):
                 raise SystemExit(f'{opt} writes the programs of Circulette\'s netlists, and none is selected')
     tddlog = getattr(args, 'tddlog', None) or str(source_tree.BINARY)
     os.environ['TDDLOG'] = tddlog   # the generators that convert an LPAD (--template of gen_uwcse.py, gen_pedigree.py)
-    if any(e[1][0] in PROGRAM_OF_TDDLOG or e[1][0] in FOLD for e in spec.values()) and not os.access(tddlog, os.X_OK):
+    if any(e[1][0] in PROGRAM_OF_TDDLOG or fold_of(e[1]) for e in spec.values()) and not os.access(tddlog, os.X_OK):
         raise SystemExit(f'--tddlog {tddlog}: not an executable, and gen writes the program of a network, a Dice '
                          'program, an LPAD or a program given arguments with `tddlog --program`')
     written = set()   # the FOLD programs this gen wrote
@@ -1404,8 +1427,11 @@ def gen(args):
         if gargs[0] == 'gen_circulette.py':
             gen_circulette(args, name, gargs)
             continue
-        if gargs[0] in FOLD:
+        if fold_of(gargs):
             gen_folded(args, name, gargs, written)
+            if gargs[0] in DICE_WRITERS:   # the Dice paper's diamond and ladder: its own Dice program
+                subprocess.run([sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:] +
+                               ['--dice', os.path.join(args.dir, name + '.dice')], check=True)
             continue
         cmd = [sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:]
         if gargs[0] in DICE_WRITERS:
@@ -5344,13 +5370,14 @@ def run_job(args, spec, systems, out, lock, names):
                         # the network itself, read as part of tddlog's run
                         target, inputs = network_args(args, name, spec[name][1],
                                                       'no-queries' in variant.split('+')[1:])
+                    elif folded(args, name, spec[name][1], variant):
+                        # the family's program and the instance's arguments (a scaled Dice loop's
+                        # program and its count), likewise
+                        inputs = list(folded(args, name, spec[name][1], variant)) + folded_data(args, spec[name][1])
+                        target = inputs[:1] + (arguments_of(inputs[1]) if os.path.exists(inputs[1]) else [])
                     elif original(spec[name][1], variant):
                         # the Dice program or the LPAD itself, likewise
                         target = inputs = [original(spec[name][1], variant)]
-                    elif folded(args, name, spec[name][1], variant):
-                        # the family's program and the instance's arguments, likewise
-                        inputs = list(folded(args, name, spec[name][1], variant)) + folded_data(args, spec[name][1])
-                        target = inputs[:1] + (arguments_of(inputs[1]) if os.path.exists(inputs[1]) else [])
                     cmd = [binary, '--stats', '--precision', '17'] + tddlog_flags(variant) + target
                     if args.suite == 'circulette' and '--evidence-probability' not in cmd:
                         # Circulette's question includes P(fail), the evidence's probability
@@ -5370,9 +5397,6 @@ def run_job(args, spec, systems, out, lock, names):
             if system == 'tddlog' and spec[name][1][0] == 'gen_bn.py':
                 # what tddlog read: the network, no converted program (rel/charge.py)
                 rec['network'] = os.path.basename(network_file(args, spec[name][1]))
-            elif system == 'tddlog' and original(spec[name][1], variant):
-                # the Dice program or the LPAD, no converted program (rel/charge.py)
-                rec['original'] = os.path.basename(original(spec[name][1], variant))
             elif system == 'tddlog' and folded(args, name, spec[name][1], variant):
                 # the family's program and the instance's arguments, no NAME.pl (rel/charge.py)
                 # (not `program`, the series whose sizes the skip rule follows)
@@ -5382,6 +5406,9 @@ def run_job(args, spec, systems, out, lock, names):
                     rec['arguments'] = arguments_of(given)
                 if folded_data(args, spec[name][1]):
                     rec['data'] = [os.path.basename(f) for f in folded_data(args, spec[name][1])]
+            elif system == 'tddlog' and original(spec[name][1], variant):
+                # the Dice program or the LPAD, no converted program (rel/charge.py)
+                rec['original'] = os.path.basename(original(spec[name][1], variant))
             if spec[name][1][0] == 'gen_circulette.py' and system != 'roulette':
                 # Circulette's run up to the hand-off and the program's writing, as gen's export timed them
                 rec['export'] = circulette_export(args, name)

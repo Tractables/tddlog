@@ -2627,9 +2627,9 @@ the same model) has the class of the program it is written from.
 | tddlog | lit | `cplint_` | native | cplint's example, an LPAD, read by tddlog's LPAD reader |
 | tddlog, problog, pita, aspmc | lit | `cplint_` | translated | cplint's LPAD translated by lpad2problog.py, or tddlog --program, the same program, in the runs since tddlog reads LPADs itself |
 | pita | std, lit, tpch, biomine | all | translated | the ProbLog program translated by problog2pita.py |
-| tddlog | std, dice | `dice_(?!(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder))` | native | the Dice paper's program, read by tddlog's Dice reader |
+| tddlog | std, dice | `dice_(?!(caesar-iter\|simpleCaesar\|pmc))` | native | the Dice paper's program, read by tddlog's Dice reader |
 | tddlog | ppl | `nodice_` | native | noDice's programs, which are Dice programs, read by tddlog's Dice reader |
-| tddlog | dice | `dice_(caesar-iter_k[13]0{4,}\|simpleCaesar_k(3000\|[13]0{4,})\|(diamond\|ladder)_k(25600\|102400\|409600\|1638400)\|pmc1_k(150\|300\|600)\|pmc2_k(200\|400\|800\|1600))$` | native | the Dice paper's loop programs at their growth sizes, read by tddlog's Dice reader |
+| tddlog | dice | `dice_(caesar-iter_k[13]0{4,}\|simpleCaesar_k(3000\|[13]0{4,})\|pmc1_k(150\|300\|600)\|pmc2_k(200\|400\|800\|1600))$` | native | the Dice paper's loop programs at their growth sizes, read by tddlog's Dice reader |
 | tddlog, problog, pita, aspmc | std | `dice_` | translated | the Dice paper's program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
 | provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
@@ -2644,7 +2644,7 @@ the same model) has the class of the program it is written from.
 | roulette-tddlog | circulette | all | native | the netlist, which circulette.rkt runs on Roulette's package roulette-lib up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine), and to each other system X of Roulette+X as that ProbLog program, a Soufflé program of it (problog2souffle.py), Scallop relations of its ground program (ground2scallop.py) or a network of its ground program (ground2net.py) |
 | roulette-tddlog | roulette | all | native | the Roulette paper's program, which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
 | roulette-tddlog | dice, ppl, geni | all | translated | a Dice program translated for Roulette (dice2roulette.py), which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
-| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
+| tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | roulette | all | translated | the paper's model written as a ProbLog program (gen_roulette.py) |
 | tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | translated | a loop-free Dice program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | storm, prism | geni | `geni_weather_` | native | Rubicon's PRISM model of the weather factory (CAV 2021) |

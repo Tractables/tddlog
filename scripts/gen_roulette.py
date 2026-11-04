@@ -30,6 +30,10 @@ Families (the artifact's file; its sizes; the size here):
   ladder       modular/ladder.rkt: a ladder of N rungs over two wires;
                the joint of the two last wires, (true, false), (false,
                true) or neither, queried as the two marginals.
+               Both are the Dice paper's networks (DICE_PAPER): one ProbLog
+               program, data/dice/FAMILY.pl, whose argument is N
+               (`--template`, `--arguments`; bench.py's FOLD), and the Dice
+               paper's own Dice program (`--dice PATH` alone).
   caesar       modular/caesar.rkt: a key uniform over 26 letters, N
                letters drawn from English letter frequencies, each seen
                as letter + key (no wrap around: the benchmark adds 32-bit
@@ -104,10 +108,12 @@ hmm.rkt's dice mode) write them, where it has one.
 
 Usage: gen_roulette.py FAMILY SIZE [--dice PATH] [--reference]
        gen_roulette.py --reference-of PROGRAM.pl
+       gen_roulette.py diamond|ladder --template | diamond|ladder SIZE --arguments | --dice PATH
 """
 import argparse
 import math
 import os
+import re
 import sys
 from fractions import Fraction
 
@@ -276,50 +282,30 @@ def motivating(n):
     return pl, dice
 
 
-def diamond(n):
-    pl = ['% Roulette diamond.rkt: s_k = (route_k and s_{k-1}) or (not route_k and s_{k-1} and not drop_k).']
-    for k in range(n, 0, -1):
-        pl += [f'0.0001::drop({k}).', f'0.5::route({k}).']
-    pl.append('s(0).')
-    for k in range(1, n + 1):
-        pl += [f's({k}) :- s({k - 1}), route({k}).', f's({k}) :- s({k - 1}), \\+route({k}), \\+drop({k}).']
-    pl.append(f'query(s({n})).')
-    # gen-diamond.rkt
-    dice = []
-    for k in range(n, 0, -1):
-        dice += [f'let drop{k} = flip 0.0001 in', f'let route{k} = flip 0.5 in']
-    dice.append('let s0 = true in')
-    for k in range(1, n + 1):
-        dice += [f'let t{k} = if route{k} then s{k - 1} else false in',
-                 f'let u{k} = if route{k} then false else s{k - 1} in',
-                 f'let s{k} = t{k} || (u{k} && !drop{k}) in']
-    dice.append(f's{n}')
-    return pl, dice
+# The Dice paper's diamond and ladder networks (Holtzen, Van den Broeck and
+# Millstein, OOPSLA 2020; SHoltzen/dice bench/dicebench.ml, gen_diamond and
+# gen_ladder), the model of Roulette's diamond.rkt and ladder.rkt: N
+# diamonds or rungs. Their Dice program is the text gen_diamond N and
+# gen_ladder N build, byte for byte (noDice's diamond-L-p and ladder-L-p are
+# it at N = L + 1); their ProbLog program is one program, the port
+# data/dice/FAMILY.pl, with N its argument (`--template`, `--arguments`).
+DICE_PAPER = {
+    'diamond': ('\nfun diamond(s1: bool) {\n//      if flip(0.5) then s1 else (flip(0.0001) && s1)\n'
+                '      let route = flip 0.5 in\n      let s2 = if route then s1 else false in\n'
+                '      let s3 = if route then false else s1 in\n      let drop = flip 0.0001 in\n'
+                '      s2 || (s3 && !drop)\n}\nlet s = true in', '\nlet s = diamond(s) in', '\ns'),
+    'ladder': ('\nfun ladder(s1: bool, s2: bool) {\n      if s1 then\n        if flip 0.001 then\n'
+               '          (false, false)\n        else\n           let f = flip 0.5 in (f, !f)\n'
+               '      else if s2 then\n           let f = flip 0.5 in (f, !f)\n      else (false, false)\n}\n'
+               '      let x = (true, false) in\n', '\nlet x = ladder(fst x, snd x) in', '\nx'),
+}
+PORTS = os.path.join(HERE, '..', 'data', 'dice')
 
 
-def ladder(n):
-    pl = ['% Roulette ladder.rkt: from (true, false), a rung gives (false, false) if s1 and a (flip 0.001),',
-          '% else (b, not b) with b ~ flip 0.5 if s1 or s2, else (false, false).']
-    for k in range(n, 0, -1):
-        pl += [f'0.001::a({k}).', f'0.5::b({k}).']
-    pl.append('o1(0).')
-    for k in range(1, n + 1):
-        j = k - 1
-        pl += [f'o1({k}) :- o1({j}), \\+a({k}), b({k}).', f'o1({k}) :- \\+o1({j}), o2({j}), b({k}).',
-               f'o2({k}) :- o1({j}), \\+a({k}), \\+b({k}).', f'o2({k}) :- \\+o1({j}), o2({j}), \\+b({k}).']
-    pl += [f'query(o1({n})).', f'query(o2({n})).']
-    # gen-ladder.rkt
-    dice = []
-    for k in range(n, 0, -1):
-        dice += [f'let a{k} = flip 0.001 in', f'let b{k} = flip 0.5 in']
-    dice += ['let p0 = true in', 'let q0 = false in']
-    for k in range(1, n + 1):
-        j = k - 1
-        dice += [f'let x{k} = (p{j} && a{k}) in', f'let y{k} = (p{j} || q{j}) in',
-                 f'let p{k} = (if x{k} then false else if y{k} then b{k} else false) in',
-                 f'let q{k} = (if x{k} then false else if y{k} then !b{k} else false) in']
-    dice.append(f'(p{n}, q{n})')
-    return pl, dice
+def dice_paper(family, n):
+    """The Dice program of the Dice paper's generator for `family` at n."""
+    head, call, tail = DICE_PAPER[family]
+    return head + call * n + tail
 
 
 def caesar(n):
@@ -573,8 +559,7 @@ def program(family, size):
     if family in HARDWARE:
         pl = hardware_first_order if family == 'hardware-bitwidth' else hardware_unrolled
         return pl(*HARDWARE[family](size)), hardware_dice(*HARDWARE[family](size))
-    return {'motivating': motivating, 'diamond': diamond, 'ladder': ladder, 'caesar': caesar,
-            'network': network}[family](size)
+    return {'motivating': motivating, 'caesar': caesar, 'network': network}[family](size)
 
 
 # --- reference answers -----------------------------------------------------
@@ -768,16 +753,30 @@ def main():
     ap.add_argument('--dice', help='also write the Dice program here')
     ap.add_argument('--reference', action='store_true', help='print the answers instead of the program')
     ap.add_argument('--reference-of', metavar='PROGRAM', help='print the answers of a program this script wrote')
+    ap.add_argument('--template', action='store_true',
+                    help='diamond and ladder: print the ProbLog program, its size the place $1')
+    ap.add_argument('--arguments', action='store_true', help="diamond and ladder: print the program's argument")
     a = ap.parse_args()
     if a.reference_of:
-        if a.family or a.size is not None or a.dice or a.reference:
+        if a.family or a.size is not None or a.dice or a.reference or a.template or a.arguments:
             raise SystemExit('--reference-of reads the family and size from the program and takes nothing else')
         with open(a.reference_of) as f:
             head = f.readline().split()
+        # a program of DICE_PAPER is its port with its size in its place, named by its instance
+        # (bench.py's rl_FAMILY_SIZE.pl), as tddlog --program writes it
+        named = re.fullmatch(r'rl_(diamond|ladder)_(\d+)\.pl', os.path.basename(a.reference_of))
+        if named:
+            head = HEADER.split() + list(named.groups())
         if head[:2] != HEADER.split() or len(head) != 4 or head[2] not in FAMILIES:
             raise SystemExit(f'{a.reference_of}: not a program of gen_roulette.py (its first line is not '
                              f'`{HEADER} FAMILY SIZE`)')
         a.family, a.size, a.reference = head[2], int(head[3]), True
+    if a.template:
+        if a.family not in DICE_PAPER or a.size is not None or a.dice or a.reference or a.arguments:
+            raise SystemExit('--template takes diamond or ladder and nothing else')
+        with open(os.path.join(PORTS, a.family + '.pl')) as f:
+            sys.stdout.write(f.read())
+        return
     if a.family is None or a.size is None:
         raise SystemExit('give FAMILY and SIZE, or --reference-of PROGRAM')
     if a.size < 1:
@@ -788,6 +787,19 @@ def main():
         for atom, x in reference(a.family, a.size).items():
             print(f'{atom}: {fmt(x)}')
         return
+    if a.family in DICE_PAPER:
+        # one ProbLog program and its argument (bench.py's FOLD), and the Dice paper's program
+        if a.arguments == bool(a.dice):
+            raise SystemExit(f'{a.family}: its ProbLog program is data/dice/{a.family}.pl and its size the argument '
+                             '(--template, --arguments); --dice PATH writes the Dice program alone')
+        if a.arguments:
+            print(a.size)
+        else:
+            with open(a.dice, 'w') as f:
+                f.write(dice_paper(a.family, a.size))
+        return
+    if a.arguments:
+        raise SystemExit('--arguments: only diamond and ladder are one program and an argument')
     pl, dice = program(a.family, a.size)
     sys.stdout.write('\n'.join([f'{HEADER} {a.family} {a.size}'] + pl) + '\n')
     if a.dice:

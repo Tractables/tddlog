@@ -26,9 +26,9 @@
 /**
  * The arguments broke a documented contract: a null pointer, a format or
  * vtree strategy that is not UTF-8 or is unknown, evidence for a program
- * that is not a network, program arguments for one that is not a ProbLog
- * program or an LPAD, a program argument that is not UTF-8, is not a term
- * or has no place, or options that ask for nothing.
+ * that is not a network, program arguments for a network, a program
+ * argument that is not UTF-8, is not a term (for a Dice program, not a
+ * count) or has no place, or options that ask for nothing.
  */
 #define TDDLOG_ERROR_INVALID_INPUT 1
 
@@ -87,7 +87,8 @@ typedef struct TddlogOptions {
   /**
    * What the program's text is, as the command line tells it by the
    * file's extension: `"problog"` (an LPAD where it holds
-   * `:- begin_lpad.`), `"dice"`, or a network's, `"bif"`, `"hugin"`
+   * `:- begin_lpad.`), `"dice"`, `"circulette"` (a `.cql` netlist), or a
+   * network's, `"bif"`, `"hugin"`
    * (`.net`), `"xdsl"` or `"uai"`, with every variable queried. Null is
    * `"problog"`.
    */
@@ -99,10 +100,11 @@ typedef struct TddlogOptions {
    */
   const char *evidence;
   /**
-   * The arguments of a ProbLog program or an LPAD, as the command line
-   * takes them after the program's file: `num_arguments` NUL-terminated
-   * strings, each the text of a term that takes the places `$1`, `$2`,
-   * ... of the program. Null for none.
+   * The arguments of a ProbLog program, an LPAD or a Dice program, as
+   * the command line takes them after the program's file:
+   * `num_arguments` NUL-terminated strings, each the text of a term that
+   * takes the places `$1`, `$2`, ... of the program (of a Dice program,
+   * a count of an `iterate`). Null for none.
    */
   const char *const *arguments;
   /**

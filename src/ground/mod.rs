@@ -210,8 +210,25 @@ pub fn ground(program: &Program, opts: &GroundOptions) -> Result<GroundProgram, 
 /// [`GroundOptions::views`] alone, as `auto`'s `decision` trial does
 /// (`auto::ready`), without grounding and simplifying the
 /// program again. Where the bound-end grounding is kept, the kept program
-/// is its own.
+/// is its own. Both count the body literals the walks of every grounding
+/// tried entered (`stats.walked`).
 pub(crate) fn ground_keeping(
+    program: &Program,
+    opts: &GroundOptions,
+    keep: usize,
+) -> Result<(GroundProgram, Option<Simplified>), GroundError> {
+    let before = engine::walked();
+    let (mut gp, mut kept) = ground_tried(program, opts, keep)?;
+    let walked = engine::walked() - before;
+    gp.stats.walked = walked;
+    if let Some(k) = &mut kept {
+        k.gp.stats.walked = walked;
+    }
+    Ok((gp, kept))
+}
+
+/// [`ground_keeping`] but for the count of its walks.
+fn ground_tried(
     program: &Program,
     opts: &GroundOptions,
     keep: usize,
@@ -769,6 +786,60 @@ mod tests {
         let source = include_str!("../../examples/linear_path.pl");
         let program = crate::syntax::parse_program(source).expect("parses");
         assert_eq!(ground(&program, &opts).expect("grounds").stats.levels, 0);
+    }
+
+    /// A loop's steps counted from a fact ground as its steps given as
+    /// facts do (tests/regress/levels_count.pl against levels.pl): an atom
+    /// true in every world, the count's fact or a step derived from it,
+    /// reads as true in the graph that proves a level's atoms constant,
+    /// and any(T), on(T) or not, is proved true in both.
+    #[test]
+    fn a_loops_count_read_as_a_fact_grounds_as_its_steps_given() {
+        let opts = GroundOptions::default();
+        let ground_of = |source: &str| {
+            let program = crate::syntax::parse_program(source).expect("parses");
+            ground(&program, &opts).expect("grounds")
+        };
+        let given = ground_of(include_str!("../../tests/regress/levels.pl"));
+        let counted = ground_of(include_str!("../../tests/regress/levels_count.pl"));
+        assert_eq!(counted.to_string(), given.to_string());
+        // any(3) proved true: on(4)'s rules, grounded after level 3, do
+        // not read it
+        let text = counted.to_string();
+        assert!(
+            text.lines()
+                .all(|l| l.starts_with("any(3)") || !l.contains("any(3)")),
+            "{text}"
+        );
+    }
+
+    /// A loop of n steps grounds in walks that grow with n, written over its
+    /// steps or from its end ([`engine`]'s `IsKey`). Over its steps, the
+    /// bound-end grounding tried after the one level by level reaches each
+    /// new link's step through `T1 is T + 1`; from its end, each new `s(J)`
+    /// reaches its demand through `J is T - 1`. Trying every step for each
+    /// link, 3 000 steps walked 27 million body literals over the steps and
+    /// 54 million from the end.
+    #[test]
+    fn a_loop_grounds_in_walks_linear_in_its_length() {
+        let n: u64 = 3000;
+        let steps = include_str!("../../tests/regress/bound_end_chain.pl")
+            .replace("(12)", &format!("({n})"));
+        let from_end = format!(
+            "s(0).\n\
+             s(T) :- T > 0, J is T - 1, s(J), route(J).\n\
+             s(T) :- T > 0, J is T - 1, s(J), \\+route(J), \\+drop(J).\n\
+             0.5::route(T).\n0.0001::drop(T).\nquery(s({n})).\n"
+        );
+        for (writing, source) in [("steps", steps), ("from_end", from_end)] {
+            let program = crate::syntax::parse_program(&source).expect("parses");
+            let gp = ground(&program, &GroundOptions::default()).expect("grounds");
+            assert!(
+                gp.stats.walked <= 100 * n,
+                "{writing}: {} body literals walked",
+                gp.stats.walked
+            );
+        }
     }
 
     /// Under a demand, the atoms of facts are numbered as the demand reaches

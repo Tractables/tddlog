@@ -22,6 +22,7 @@
 //! as the command line takes the values after the program's file.
 
 mod arguments;
+pub mod circulette;
 pub mod dice;
 mod lexer;
 pub mod lpad;
