@@ -3,7 +3,7 @@
 
 use std::borrow::Cow;
 
-use tididi::Tdd;
+use super::backend::Diagram;
 
 use super::{CompileError, TddBackend};
 
@@ -24,6 +24,8 @@ pub struct CompileStats {
     /// Largest formula (in pairs) seen for any atom, intermediate iterates
     /// included.
     pub max_pairs: usize,
+    /// Whether the formulas were kept in skip form (`--skip-levels`).
+    pub skip_form: bool,
     /// Largest final formula (in pairs) of any atom the compile kept to the
     /// end: the evidence, and the queries of a program with evidence.
     pub final_max_pairs: usize,
@@ -195,8 +197,8 @@ impl Negations {
         &mut self,
         backend: &TddBackend,
         source: NegationSource,
-        f: impl Into<Cow<'f, Tdd>>,
-    ) -> Result<Tdd, CompileError> {
+        f: impl Into<Cow<'f, Diagram>>,
+    ) -> Result<Diagram, CompileError> {
         let f = f.into();
         let pairs = backend.size(&f);
         let work = backend.work_units();

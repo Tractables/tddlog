@@ -5,6 +5,7 @@ use std::borrow::Cow;
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
+use tididi::diagram::WeightStore;
 use tididi::diagram::{
     ChildPair, EncodedChildRef, NEG_LEAF_IDX, NodeIdx, ONE_LEAF_IDX, POS_LEAF_IDX, TddNodeId,
 };
@@ -13,26 +14,141 @@ use tididi::reduce::ReductionPlan;
 use tididi::restructure::EmbedError;
 use tididi::restructure::search::{PoolRestarts, PoolSearchConfig, PoolSearchStats};
 use tididi::vtree::{VarId, VtreeIdx};
-use tididi::{Engine, Literal, OperationError, Tdd, Vtree};
+use tididi::{Engine, Literal, OperationError, SkipTdd, Tdd, Vtree};
 
 use super::CompileError;
 use super::projector::Projector;
 use super::scope::VtreeScope;
+use crate::eval::{Count, Probabilities, Weighing};
+
+/// The form a backend keeps its diagrams in, fixed when it is made.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum Form {
+    /// tididi's stored form, a node at every level a function's paths
+    /// cross.
+    #[default]
+    Stored,
+    /// The skip form (`--skip-levels`), whose pairs skip a level where
+    /// its other child is a single variable the function ignores: on a
+    /// right-linear vtree the reduced ordered BDD, where the stored form
+    /// is the quasi-reduced one. Always canonical, so it takes no
+    /// reduction.
+    Skip,
+}
+
+/// A diagram in its backend's [`Form`]. Every formula a backend keeps is
+/// in its form, so the operands of an operation share it; a diagram a
+/// builder makes is stored, and the backend converts it at birth
+/// ([`TddBackend::born`]).
+#[derive(Clone, Debug)]
+pub(crate) enum Diagram {
+    Stored(Tdd),
+    Skip(SkipTdd),
+}
+
+impl Diagram {
+    /// The vtree the diagram is decomposed along.
+    pub(crate) fn vtree(&self) -> &Arc<Vtree> {
+        match self {
+            Diagram::Stored(f) => f.vtree(),
+            Diagram::Skip(f) => f.vtree(),
+        }
+    }
+
+    pub(crate) fn is_zero(&self) -> bool {
+        match self {
+            Diagram::Stored(f) => f.is_zero(),
+            Diagram::Skip(f) => f.is_zero(),
+        }
+    }
+
+    /// The pairs held over all levels.
+    pub(crate) fn pair_count(&self) -> usize {
+        match self {
+            Diagram::Stored(f) => f.pair_count(),
+            Diagram::Skip(f) => f.pair_count(),
+        }
+    }
+
+    /// The nodes held over all levels.
+    pub(crate) fn node_count(&self) -> usize {
+        match self {
+            Diagram::Stored(f) => f.node_count(),
+            Diagram::Skip(f) => f.node_count(),
+        }
+    }
+
+    /// The attached weights.
+    pub(crate) fn weights(&self) -> Option<&WeightStore> {
+        match self {
+            Diagram::Stored(f) => f.weights(),
+            Diagram::Skip(f) => f.weights(),
+        }
+    }
+
+    /// The stored diagram, for `what`, which reads stored levels: refused
+    /// in skip form.
+    pub(crate) fn stored(&self, what: &'static str) -> Result<&Tdd, CompileError> {
+        match self {
+            Diagram::Stored(f) => Ok(f),
+            Diagram::Skip(_) => Err(CompileError::SkipForm(what)),
+        }
+    }
+
+    /// [`Diagram::stored`], mutably.
+    pub(crate) fn stored_mut(&mut self, what: &'static str) -> Result<&mut Tdd, CompileError> {
+        match self {
+            Diagram::Stored(f) => Ok(f),
+            Diagram::Skip(_) => Err(CompileError::SkipForm(what)),
+        }
+    }
+
+    /// The skip-form diagram of a skip backend's operation.
+    fn skip(&self) -> &SkipTdd {
+        match self {
+            Diagram::Skip(f) => f,
+            Diagram::Stored(_) => unreachable!("a skip backend's formulas are in skip form"),
+        }
+    }
+}
+
+impl From<Diagram> for Cow<'_, Diagram> {
+    fn from(f: Diagram) -> Self {
+        Cow::Owned(f)
+    }
+}
+
+impl<'a> From<&'a Diagram> for Cow<'a, Diagram> {
+    fn from(f: &'a Diagram) -> Self {
+        Cow::Borrowed(f)
+    }
+}
+
+/// A stored backend's operand, lent as tididi's stored operations take it.
+fn stored_cow(f: Cow<'_, Diagram>) -> Cow<'_, Tdd> {
+    match f {
+        Cow::Owned(Diagram::Stored(f)) => Cow::Owned(f),
+        Cow::Borrowed(Diagram::Stored(f)) => Cow::Borrowed(f),
+        Cow::Owned(Diagram::Skip(_)) | Cow::Borrowed(Diagram::Skip(_)) => {
+            unreachable!("a stored backend's formulas are stored")
+        }
+    }
+}
 
 /// A formula and the scope it lives on.
-pub(crate) type Formula = (Tdd, VtreeScope);
+pub(crate) type Formula = (Diagram, VtreeScope);
 
 /// A formula an operation reads: its own, which it consumes, or one a
 /// store keeps ([`super::compile::Formulas`]), which a conjunction reads in
 /// place, copying only the levels its result would take, and any other
 /// operation copies.
 pub(crate) struct Read {
-    owned: Option<Tdd>,
-    shared: Option<Arc<Tdd>>,
+    owned: Option<Diagram>,
+    shared: Option<Arc<Diagram>>,
 }
 
-impl From<Tdd> for Read {
-    fn from(f: Tdd) -> Self {
+impl From<Diagram> for Read {
+    fn from(f: Diagram) -> Self {
         Read {
             owned: Some(f),
             shared: None,
@@ -41,9 +157,9 @@ impl From<Tdd> for Read {
 }
 
 impl std::ops::Deref for Read {
-    type Target = Tdd;
+    type Target = Diagram;
 
-    fn deref(&self) -> &Tdd {
+    fn deref(&self) -> &Diagram {
         match (&self.owned, &self.shared) {
             (Some(f), _) => f,
             (None, Some(f)) => f,
@@ -54,7 +170,7 @@ impl std::ops::Deref for Read {
 
 impl Read {
     /// A shared read of `f`.
-    pub(crate) fn shared(f: Arc<Tdd>) -> Self {
+    pub(crate) fn shared(f: Arc<Diagram>) -> Self {
         Read {
             owned: None,
             shared: Some(f),
@@ -63,13 +179,13 @@ impl Read {
 
     /// A stored formula taken from its store: owned where no read of it
     /// is outstanding.
-    pub(crate) fn taken(f: Arc<Tdd>) -> Self {
+    pub(crate) fn taken(f: Arc<Diagram>) -> Self {
         Arc::try_unwrap(f).map_or_else(Read::shared, Read::from)
     }
 
     /// The formula for an operation to consume: itself, or a copy of a
     /// shared one ([`TddBackend::copy`]).
-    pub(crate) fn owned(self, backend: &TddBackend) -> Result<Tdd, CompileError> {
+    pub(crate) fn owned(self, backend: &TddBackend) -> Result<Diagram, CompileError> {
         match (self.owned, self.shared) {
             (Some(f), _) => Ok(f),
             (None, Some(f)) => Arc::try_unwrap(f).or_else(|f| backend.copy(&f)),
@@ -79,7 +195,7 @@ impl Read {
 
     /// Run `op` on the formula, owned where no other read holds it and
     /// borrowed otherwise, where [`owned`](Self::owned) would copy it.
-    pub(crate) fn with_cow<R>(self, op: impl FnOnce(Cow<'_, Tdd>) -> R) -> R {
+    pub(crate) fn with_cow<R>(self, op: impl FnOnce(Cow<'_, Diagram>) -> R) -> R {
         match (self.owned, self.shared) {
             (Some(f), _) => op(Cow::Owned(f)),
             (None, Some(f)) => match Arc::try_unwrap(f) {
@@ -92,14 +208,14 @@ impl Read {
 
     /// The formula as a conjunction takes it, with the store's hold on a
     /// shared one, which the borrow reads through ([`lend`]).
-    fn split(self) -> (Option<Tdd>, Option<Arc<Tdd>>) {
+    fn split(self) -> (Option<Diagram>, Option<Arc<Diagram>>) {
         (self.owned, self.shared)
     }
 }
 
 /// An operand of a conjunction split from a [`Read`]: the owned formula,
 /// or a borrow of the shared one.
-fn lend(owned: Option<Tdd>, shared: &Option<Arc<Tdd>>) -> Cow<'_, Tdd> {
+fn lend(owned: Option<Diagram>, shared: &Option<Arc<Diagram>>) -> Cow<'_, Diagram> {
     match (owned, shared) {
         (Some(f), _) => Cow::Owned(f),
         (None, Some(f)) => Cow::Borrowed(f),
@@ -109,9 +225,9 @@ fn lend(owned: Option<Tdd>, shared: &Option<Arc<Tdd>>) -> Cow<'_, Tdd> {
 
 /// The [`Read`] a refused conjunction hands back of an operand [`lend`]
 /// made.
-fn unlend(back: Cow<'_, Tdd>, shared: &Option<Arc<Tdd>>) -> Read {
+fn unlend(back: Cow<'_, Tdd>, shared: &Option<Arc<Diagram>>) -> Read {
     match back {
-        Cow::Owned(f) => Read::from(f),
+        Cow::Owned(f) => Read::from(Diagram::Stored(f)),
         Cow::Borrowed(_) => Read::shared(Arc::clone(
             shared.as_ref().expect("a borrow of a shared read"),
         )),
@@ -163,6 +279,8 @@ pub(crate) enum Reduce {
 /// operations should reuse the same scratch).
 pub(crate) struct TddBackend<'a> {
     pub(crate) engine: &'a Engine,
+    /// The form of every formula the backend keeps.
+    form: Form,
     vtree: RefCell<Arc<Vtree>>,
     prune: Cell<FullSchedule>,
     /// Reused global-to-local renaming for scope projection. Only the
@@ -176,7 +294,146 @@ pub(crate) struct TddBackend<'a> {
     /// The work clock at which `auto`'s turn ends ([`TddBackend::pause`]),
     /// `None` outside a turn.
     turn_end: Cell<Option<u64>>,
+    /// `auto`'s probe of the trial's form ([`TddBackend::probe`]), and
+    /// the trial's clock: the work clock at the run's start, and what the
+    /// trial had spent before the run.
+    probe: Cell<Probe>,
+    spent: Cell<(u64, u64)>,
 }
+
+/// `auto`'s probe of a trial's form: a stored trial's first large formula,
+/// and where that keeps few pairs in skip form, the work of either form over
+/// the same stretch of the compile, which decides whether the trial goes on
+/// in skip form ([`TddBackend::probe`], [`TddBackend::fork`],
+/// [`TddBackend::at_step`]).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(crate) enum Probe {
+    /// No probe.
+    #[default]
+    Off,
+    /// The first formula of `from` pairs or more is measured, and where it
+    /// keeps under `below` of its pairs in skip form, the stored compile
+    /// goes on over a stretch ([`Probe::Stretch`]).
+    Armed { from: usize, below: f64 },
+    /// The formula measured, which keeps most of its pairs in skip form:
+    /// its pairs, stored and in skip form.
+    Measured { pairs: usize, skip: usize },
+    /// The formula measured kept few pairs, and the compile's copy in skip
+    /// form did not fit the memory budget: the trial stays stored
+    /// ([`TddBackend::fork`]).
+    Refused,
+    /// The formula measured kept few pairs in skip form: at its next step
+    /// that holds only finished components the compile makes a copy of
+    /// itself in skip form, for `converted` work ([`TddBackend::fork`]),
+    /// and goes on stored from there, `start`, where it had finished that
+    /// many components and the trial had spent that work, until the
+    /// trial's work has doubled; then it stops with
+    /// [`CompileError::Skips`].
+    Stretch {
+        pairs: usize,
+        skip: usize,
+        start: Option<(usize, u64)>,
+        converted: u64,
+    },
+    /// The trial gone on with the copy in skip form, from the step with
+    /// `from` components finished: its work from there, `at`, to the
+    /// first step with `to`, and the copy's `converted`, is weighed against
+    /// the stored compile's `stored` over the same components. Where the
+    /// skip form spends as much, the compile stops with
+    /// [`CompileError::Stored`].
+    Duel {
+        from: usize,
+        to: usize,
+        stored: u64,
+        converted: u64,
+        at: Option<u64>,
+    },
+    /// The skip form spent `skip` over the stretch, its conversion
+    /// included, under the stored form's `stored`, and the trial goes on
+    /// in it from where its clock read `at`.
+    Weighed { skip: u64, stored: u64, at: u64 },
+}
+
+impl Probe {
+    /// The probe at a step of the compile with `done` components finished,
+    /// where the trial has spent `work`, and the stop of the compile there,
+    /// if any. A stretch begins where the compile makes its copy in skip
+    /// form ([`TddBackend::fork`]).
+    pub(crate) fn at_step(self, done: usize, work: u64) -> (Probe, Option<CompileError>) {
+        match self {
+            Probe::Stretch {
+                pairs,
+                skip,
+                start: Some((from, at)),
+                converted,
+            } if done > from && work >= at.saturating_mul(2) => (
+                self,
+                Some(CompileError::Skips {
+                    pairs,
+                    skip,
+                    from,
+                    to: done,
+                    stored: work - at,
+                    converted,
+                }),
+            ),
+            Probe::Duel {
+                from,
+                to,
+                stored,
+                converted,
+                at: None,
+            } if done >= from => (
+                Probe::Duel {
+                    from,
+                    to,
+                    stored,
+                    converted,
+                    at: Some(work),
+                },
+                None,
+            ),
+            // The skip form loses as soon as it has spent what the stored
+            // form spent over the whole stretch, its conversion included.
+            Probe::Duel {
+                to,
+                stored,
+                converted,
+                at: Some(at),
+                ..
+            } if done >= to || work.saturating_sub(at).saturating_add(converted) >= stored => {
+                debug_assert!(work >= at, "the trial's clock runs back");
+                let skip = work.saturating_sub(at).saturating_add(converted);
+                if skip < stored {
+                    (
+                        Probe::Weighed {
+                            skip,
+                            stored,
+                            at: work,
+                        },
+                        None,
+                    )
+                } else {
+                    (self, Some(CompileError::Stored { skip, stored }))
+                }
+            }
+            p => (p, None),
+        }
+    }
+}
+
+/// The units of the work clock a skip operation is charged for each unit
+/// the skip engine charges itself ([`TddBackend::skip_op`]), so that the
+/// clock runs in the stored engine's units in either form. On the
+/// circuits, the ratio of the two engines' rates in units a second is 10
+/// at the median of `program`'s compiles of 49 circuits, 7 and 12.5 at the
+/// quartiles, and 17 at the median of `program:fanin`'s of 24, where the
+/// skip form keeps the fewest pairs. The larger is taken, so that a turn in
+/// skip form takes no more time than one in the stored form, where
+/// `auto`'s trials race by work, and so that the work of the two forms
+/// weighed over a stretch ([`Probe`]) compares their times where the skip
+/// form keeps few pairs.
+const SKIP_WORK_SCALE: u64 = 16;
 
 /// When a minimization between operations runs tididi's full plan, and
 /// when a partial one. `Reduce::Between` keeps one per backend; the evidence
@@ -266,15 +523,24 @@ impl Drop for Later<'_> {
 
 impl<'a> TddBackend<'a> {
     pub(crate) fn new(engine: &'a Engine, vtree: Arc<Vtree>) -> Self {
-        Self::resume(engine, vtree, None)
+        Self::resume(engine, vtree, None, Form::Stored)
     }
 
-    /// A backend over `vtree`, with the projector of `kept` where that is
-    /// over the same vtree.
+    /// A backend over `vtree` whose formulas are in `form`.
+    pub(crate) fn in_form(engine: &'a Engine, vtree: Arc<Vtree>, form: Form) -> Self {
+        TddBackend {
+            form,
+            ..Self::new(engine, vtree)
+        }
+    }
+
+    /// A backend over `vtree` whose formulas are in `form`, with the
+    /// projector of `kept` where that is over the same vtree.
     pub(crate) fn resume(
         engine: &'a Engine,
         vtree: Arc<Vtree>,
         kept: Option<KeptProjector>,
+        form: Form,
     ) -> Self {
         let projector = match kept {
             Some(kept) if Arc::ptr_eq(&kept.vtree, &vtree) => kept.projector,
@@ -282,12 +548,15 @@ impl<'a> TddBackend<'a> {
         };
         TddBackend {
             engine,
+            form,
             vtree: RefCell::new(vtree),
             prune: Cell::new(FullSchedule::default()),
             projector: RefCell::new(projector),
             none_of: RefCell::default(),
             kept_at: Cell::new(engine.limits().work_units()),
             turn_end: Cell::new(None),
+            probe: Cell::new(Probe::Off),
+            spent: Cell::new((0, 0)),
         }
     }
 
@@ -304,6 +573,144 @@ impl<'a> TddBackend<'a> {
     #[must_use]
     pub(crate) fn vtree(&self) -> Arc<Vtree> {
         Arc::clone(&self.vtree.borrow())
+    }
+
+    /// The form of the backend's formulas.
+    pub(crate) fn form(&self) -> Form {
+        self.form
+    }
+
+    /// Arms `probe` ([`Self::probe`], [`Self::at_step`]), for a trial
+    /// that had spent `spent` where the run's work clock read `start`. The
+    /// engine's work clock starts again with each run, so the probe's
+    /// clock is `spent` and the work since `start`, which runs on across
+    /// the trial's turns.
+    pub(crate) fn with_probe(self, probe: Probe, start: u64, spent: u64) -> Self {
+        debug_assert!(match probe {
+            Probe::Armed { .. } | Probe::Stretch { .. } => self.form == Form::Stored,
+            Probe::Duel { .. } => self.form == Form::Skip,
+            _ => true,
+        });
+        self.probe.set(probe);
+        self.spent.set((start, spent));
+        self
+    }
+
+    /// The probe as it stands.
+    pub(crate) fn probed(&self) -> Probe {
+        self.probe.get()
+    }
+
+    /// Measures `f`, an atom's settled formula of `pairs` pairs, where it
+    /// is the first that reaches the armed probe: its pairs in skip form,
+    /// by one conversion. Where they are under the probe's share of
+    /// `pairs`, the compile goes on over a stretch ([`Probe::Stretch`]).
+    pub(crate) fn probe(&self, f: &Diagram, pairs: usize) -> Result<(), CompileError> {
+        let Probe::Armed { from, below } = self.probe.get() else {
+            return Ok(());
+        };
+        if pairs < from {
+            return Ok(());
+        }
+        let stored = f.stored("the skip probe")?;
+        let skip = self.skip_op(|e| e.to_skip(stored))?.pair_count();
+        self.probe.set(if (skip as f64) < below * pairs as f64 {
+            Probe::Stretch {
+                pairs,
+                skip,
+                start: None,
+                converted: 0,
+            }
+        } else {
+            Probe::Measured { pairs, skip }
+        });
+        Ok(())
+    }
+
+    /// The work the trial has spent: what it had spent before the run, and
+    /// the work since ([`Self::with_probe`]).
+    fn trial_work(&self) -> u64 {
+        let (start, spent) = self.spent.get();
+        spent + self.work_units().saturating_sub(start)
+    }
+
+    /// The compile's copy of itself in skip form, made by `copy` at a step
+    /// with `done` components finished, where the probe's stretch is yet to
+    /// begin ([`Probe::Stretch`]); `None` elsewhere. `copy` gives the copy
+    /// and the pairs its conversion read ([`Self::skip_form_reads`]). The
+    /// stretch begins after the copy, whose work, those pairs and what the
+    /// clock counted, is set apart as the skip form's in the weighing. A
+    /// copy that does not fit the memory budget leaves the trial stored
+    /// ([`Probe::Refused`]).
+    pub(crate) fn fork<T>(
+        &self,
+        done: usize,
+        copy: impl FnOnce() -> Result<(T, u64), CompileError>,
+    ) -> Result<Option<T>, CompileError> {
+        let Probe::Stretch {
+            pairs,
+            skip,
+            start: None,
+            ..
+        } = self.probe.get()
+        else {
+            return Ok(None);
+        };
+        let before = self.work_units();
+        let (copy, read) = match copy() {
+            Ok(copy) => copy,
+            Err(CompileError::Tdd(
+                tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow,
+            )) => {
+                self.probe.set(Probe::Refused);
+                return Ok(None);
+            }
+            Err(e) => return Err(e),
+        };
+        self.probe.set(Probe::Stretch {
+            pairs,
+            skip,
+            start: Some((done, self.trial_work())),
+            converted: (self.work_units() - before).saturating_add(read),
+        });
+        Ok(Some(copy))
+    }
+
+    /// The compile at a step it has kept ([`Self::kept`]), with `done` of
+    /// its components finished: the probe's stretch ends and its duel
+    /// begins and ends at steps, and a stop there goes on later as from the
+    /// end of a turn ([`Probe::at_step`]).
+    pub(crate) fn at_step(&self, done: usize) -> Result<(), CompileError> {
+        let (probe, stop) = self.probe.get().at_step(done, self.trial_work());
+        self.probe.set(probe);
+        stop.map_or(Ok(()), Err)
+    }
+
+    /// The skip engine's operation `op`, the work clock charged
+    /// [`SKIP_WORK_SCALE`] times what it charged itself. The run's stop in
+    /// work units, where it lies ahead, stops `op` once its own units, so
+    /// scaled, reach it: `auto`'s guard cuts a skip operation where it cuts
+    /// a stored one. A stop the charge reaches after `op` succeeded is the
+    /// next operation's: `op`'s result is kept.
+    fn skip_op<T, E>(&self, op: impl FnOnce(&Engine) -> Result<T, E>) -> Result<T, E> {
+        let limits = self.engine.limits();
+        let at = limits.mark();
+        let now = limits.work_units();
+        let rules = limits.armed().stop_rules();
+        let scope = match rules.unconditional {
+            Some(StopAt::WorkUnits(u)) if u > now => {
+                let sooner = now + (u - now).div_ceil(SKIP_WORK_SCALE);
+                Some(limits.edit(|c| {
+                    c.with_stop_rules(rules.with_unconditional(Some(StopAt::WorkUnits(sooner))))
+                }))
+            }
+            _ => None,
+        };
+        let result = op(self.engine);
+        drop(scope);
+        let more = limits.work_since(at).saturating_mul(SKIP_WORK_SCALE - 1);
+        let _ = limits.poll_host_work(more);
+        result
     }
 }
 
@@ -374,8 +781,46 @@ impl TddBackend<'_> {
     /// A copy of `f`, for an operation to consume while the original is
     /// kept. A copy the allocator cannot serve is refused, as an operation
     /// is (`OverBudget`), where `Clone` would abort the process.
-    pub(crate) fn copy(&self, f: &Tdd) -> Result<Tdd, CompileError> {
-        Ok(self.engine.try_clone(f)?)
+    pub(crate) fn copy(&self, f: &Diagram) -> Result<Diagram, CompileError> {
+        Ok(match f {
+            Diagram::Stored(f) => Diagram::Stored(self.engine.try_clone(f)?),
+            // Its levels are shared until written.
+            Diagram::Skip(f) => Diagram::Skip(f.clone()),
+        })
+    }
+
+    /// `f`, which a builder made, in the backend's form: converted at
+    /// birth in skip form. A level held as its description (rule 9 of the
+    /// stored form) is refused there, since the skip form has no
+    /// description and each birth would write out its pairs.
+    pub(crate) fn born(&self, f: Tdd) -> Result<Diagram, CompileError> {
+        match self.form {
+            Form::Stored => Ok(Diagram::Stored(f)),
+            Form::Skip if implicit_pairs(&f) > 0 => Err(CompileError::SkipForm(
+                "a built diagram with a level held as its description",
+            )),
+            Form::Skip => self.in_skip_form(&Diagram::Stored(f)),
+        }
+    }
+
+    /// The pairs converting `f` into skip form reads: one pass over a
+    /// stored diagram's pairs, those of a level held as its description
+    /// among them (`tididi::Engine::to_skip`), which the engine's work
+    /// clock does not count, and none for one in skip form.
+    pub(crate) fn skip_form_reads(&self, f: &Diagram) -> u64 {
+        match f {
+            Diagram::Stored(f) => f.pair_count() as u64,
+            Diagram::Skip(_) => 0,
+        }
+    }
+
+    /// `f` in skip form, converted where it is stored
+    /// ([`Self::skip_form_reads`]).
+    pub(crate) fn in_skip_form(&self, f: &Diagram) -> Result<Diagram, CompileError> {
+        match f {
+            Diagram::Stored(f) => Ok(Diagram::Skip(self.skip_op(|e| e.to_skip(f))?)),
+            Diagram::Skip(f) => Ok(Diagram::Skip(f.clone())),
+        }
     }
 
     /// Embed a stored formula without first copying its source tree. The
@@ -383,18 +828,19 @@ impl TddBackend<'_> {
     /// unchanged scope needs a copy to produce an owned operand.
     pub(crate) fn embed_ref(
         &self,
-        f: &Tdd,
+        f: &Diagram,
         from: &VtreeScope,
         into: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         if from.same(into) {
             return self.copy(f);
         }
         let map = Self::scope_map(from, into)?;
-        let (embedded, _) = self
-            .engine
-            .embed(f, into.vtree(), |v| map[v.0 as usize - 1])?;
-        Ok(embedded)
+        let at = |v: VarId| map[v.0 as usize - 1];
+        Ok(match f {
+            Diagram::Stored(f) => Diagram::Stored(self.engine.embed(f, into.vtree(), at)?.0),
+            Diagram::Skip(f) => Diagram::Skip(self.skip_op(|e| e.skip_embed(f, into.vtree(), at))?),
+        })
     }
 
     /// `f` copied onto `into` with each variable of its vtree read as its
@@ -402,18 +848,31 @@ impl TddBackend<'_> {
     /// that renaming, or up to mirrors where `mirrored` says so.
     fn embed_mapped(
         &self,
-        f: &Tdd,
+        f: &Diagram,
         into: &VtreeScope,
         map: impl Fn(VarId) -> VarId,
         mirrored: bool,
-    ) -> Result<Option<Tdd>, CompileError> {
-        let embedded = if mirrored {
-            self.engine.embed_mirrored(f, into.vtree(), map)
-        } else {
-            self.engine.embed(f, into.vtree(), map)
+    ) -> Result<Option<Diagram>, CompileError> {
+        let embedded = match (f, mirrored) {
+            (Diagram::Stored(f), true) => self
+                .engine
+                .embed_mirrored(f, into.vtree(), map)
+                .map(|(f, _)| Diagram::Stored(f)),
+            (Diagram::Stored(f), false) => self
+                .engine
+                .embed(f, into.vtree(), map)
+                .map(|(f, _)| Diagram::Stored(f)),
+            (Diagram::Skip(f), true) => self
+                .engine
+                .skip_embed_mirrored(f, into.vtree(), map)
+                .map(Diagram::Skip),
+            (Diagram::Skip(f), false) => self
+                .engine
+                .skip_embed(f, into.vtree(), map)
+                .map(Diagram::Skip),
         };
         match embedded {
-            Ok((embedded, _)) => Ok(Some(embedded)),
+            Ok(embedded) => Ok(Some(embedded)),
             Err(EmbedError::NotIsomorphic { .. } | EmbedError::Vtree(_)) => Ok(None),
             Err(e) => Err(e.into()),
         }
@@ -429,11 +888,11 @@ impl TddBackend<'_> {
     /// evidence walk has it from the merge that made `into`'s variables.
     pub(crate) fn embed_moving(
         &self,
-        f: Tdd,
+        f: Diagram,
         from: &VtreeScope,
         into: &VtreeScope,
         map: Option<&[VarId]>,
-    ) -> Result<Tdd, Box<(CompileError, Tdd)>> {
+    ) -> Result<Diagram, Box<(CompileError, Diagram)>> {
         if from.same(into) {
             return Ok(f);
         }
@@ -455,13 +914,40 @@ impl TddBackend<'_> {
                 Err(e) => return Err(Box::new((e, f))),
             },
         };
-        match self
-            .engine
-            .embed_moving(f, into.vtree(), |v| map[v.0 as usize - 1])
-        {
-            Ok((embedded, _)) => Ok(embedded),
-            Err(refused) => Err(Box::new((refused.error.into(), refused.tdd))),
+        let at = |v: VarId| map[v.0 as usize - 1];
+        match f {
+            Diagram::Stored(f) => match self.engine.embed_moving(f, into.vtree(), at) {
+                Ok((embedded, _)) => Ok(Diagram::Stored(embedded)),
+                Err(refused) => Err(Box::new((
+                    refused.error.into(),
+                    Diagram::Stored(refused.tdd),
+                ))),
+            },
+            // A copy: the skip form has no move in place.
+            Diagram::Skip(f) => match self.skip_op(|e| e.skip_embed(&f, into.vtree(), at)) {
+                Ok(embedded) => Ok(Diagram::Skip(embedded)),
+                Err(e) => Err(Box::new((e.into(), Diagram::Skip(f)))),
+            },
         }
+    }
+
+    /// A skip backend's operand `part` on `scope`: borrowed where it is
+    /// on it, else copied onto it, its variable `v` going to
+    /// `map[v - 1]` ([`TddBackend::scope_map`]).
+    fn skip_placed<'p>(
+        &self,
+        part: &'p Part,
+        map: &[VarId],
+        scope: &VtreeScope,
+    ) -> Result<Cow<'p, SkipTdd>, CompileError> {
+        let f = part.0.skip();
+        if part.1.same(scope) {
+            return Ok(Cow::Borrowed(f));
+        }
+        let at = |v: VarId| map[v.0 as usize - 1];
+        Ok(Cow::Owned(
+            self.skip_op(|e| e.skip_embed(f, scope.vtree(), at))?,
+        ))
     }
 
     /// The conjunction of `fa` and `fb` on `scope`, each moved there as
@@ -483,7 +969,7 @@ impl TddBackend<'_> {
         fb: impl Into<Part>,
         second: Option<&'m [VarId]>,
         scope: &VtreeScope,
-    ) -> Result<Tdd, Box<(CompileError, Part, Part)>> {
+    ) -> Result<Diagram, Box<(CompileError, Part, Part)>> {
         let (fa, fb) = (fa.into(), fb.into());
         let renaming = |own: &VtreeScope, map: Option<&'m [VarId]>| match (own.same(scope), map) {
             (true, _) => Ok(Cow::Borrowed(&[][..])),
@@ -494,16 +980,27 @@ impl TddBackend<'_> {
             (Ok(a), Ok(b)) => (a, b),
             (Err(e), _) | (_, Err(e)) => return Err(Box::new((e, fa, fb))),
         };
+        if self.form == Form::Skip {
+            // Each operand copied onto `scope` and the copies conjoined:
+            // the operands are borrowed, and a refused one comes back as
+            // it was, on its own scope.
+            let joined = self.skip_placed(&fa, &map_a, scope).and_then(|a| {
+                let b = self.skip_placed(&fb, &map_b, scope)?;
+                Ok(self.skip_op(|e| e.skip_and(&a, &b))?)
+            });
+            return joined.map(Diagram::Skip).map_err(|e| Box::new((e, fa, fb)));
+        }
         let (Part(a, own_a), Part(b, own_b)) = (fa, fb);
         let ((a, shared_a), (b, shared_b)) = (a.split(), b.split());
         self.engine
             .and_onto(
-                lend(a, &shared_a),
+                stored_cow(lend(a, &shared_a)),
                 |v| map_a[v.0 as usize - 1],
-                lend(b, &shared_b),
+                stored_cow(lend(b, &shared_b)),
                 |v| map_b[v.0 as usize - 1],
                 scope.vtree(),
             )
+            .map(Diagram::Stored)
             .map_err(|refused| {
                 let left_on = |f: Read, own: VtreeScope| match Arc::ptr_eq(f.vtree(), scope.vtree())
                 {
@@ -529,7 +1026,7 @@ impl TddBackend<'_> {
         fa: impl Into<Part>,
         fb: impl Into<Part>,
         scope: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let (fa, fb) = (fa.into(), fb.into());
         if fa.1.same(scope) && fb.1.same(scope) {
             let ((a, shared_a), (b, shared_b)) = (fa.0.split(), fb.0.split());
@@ -594,10 +1091,10 @@ impl TddBackend<'_> {
     /// depends on. Nothing is applied: the levels are copied.
     pub(crate) fn embed(
         &self,
-        f: Tdd,
+        f: Diagram,
         from: &VtreeScope,
         into: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         self.embed_moving(f, from, into, None)
             .map_err(|refused| refused.0)
     }
@@ -611,7 +1108,7 @@ impl TddBackend<'_> {
         f: Read,
         from: &VtreeScope,
         into: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         self.embed(f.owned(self)?, from, into)
     }
 
@@ -622,16 +1119,22 @@ impl TddBackend<'_> {
     /// the dropped variables left out.
     pub(crate) fn restrict(
         &self,
-        f: &Tdd,
+        f: &Diagram,
         from: &VtreeScope,
         vars: &[VarId],
         into: Option<&VtreeScope>,
-    ) -> Result<(Tdd, VtreeScope), CompileError> {
+    ) -> Result<(Diagram, VtreeScope), CompileError> {
         let local = |v: VarId| {
             let v = from.vars().map_or(v, |held| held[v.0 as usize - 1]);
             vars.binary_search(&v).ok().map(|i| VarId(i as u32 + 1))
         };
-        let restricted = self.engine.project_to_vars(f, local, vars.len() as u32)?;
+        let n = vars.len() as u32;
+        let restricted = match f {
+            Diagram::Stored(f) => Diagram::Stored(self.engine.project_to_vars(f, local, n)?),
+            Diagram::Skip(f) => {
+                Diagram::Skip(self.skip_op(|e| e.skip_project_to_vars(f, local, n))?)
+            }
+        };
         let own = VtreeScope {
             vtree: Arc::clone(restricted.vtree()),
             vars: Some(vars.into()),
@@ -648,11 +1151,11 @@ impl TddBackend<'_> {
     /// levels are copied.
     pub(crate) fn embed_renamed(
         &self,
-        f: &Tdd,
+        f: &Diagram,
         from: &VtreeScope,
         into: &VtreeScope,
         (old, new): (VarId, VarId),
-    ) -> Result<Option<Tdd>, CompileError> {
+    ) -> Result<Option<Diagram>, CompileError> {
         let Some(vars) = from.vars() else {
             return Ok(None);
         };
@@ -677,11 +1180,11 @@ impl TddBackend<'_> {
     /// is or mirrored.
     pub(crate) fn transport(
         &self,
-        f: &Tdd,
+        f: &Diagram,
         from: &VtreeScope,
         to: &VtreeScope,
         map: &[VarId],
-    ) -> Result<Option<Tdd>, CompileError> {
+    ) -> Result<Option<Diagram>, CompileError> {
         if from.vars().is_none() || to.vars().is_none() || from.len() != to.len() {
             return Ok(None);
         }
@@ -693,26 +1196,35 @@ impl TddBackend<'_> {
         self.embed_mapped(f, to, |v| map[v.0 as usize - 1], true)
     }
 
-    pub(crate) fn zero(&self, scope: &VtreeScope) -> Tdd {
-        self.engine.zero(scope.vtree())
+    pub(crate) fn zero(&self, scope: &VtreeScope) -> Result<Diagram, CompileError> {
+        self.born(self.engine.zero(scope.vtree()))
     }
-    pub(crate) fn one(&self, scope: &VtreeScope) -> Tdd {
-        self.engine.one(scope.vtree())
+    pub(crate) fn one(&self, scope: &VtreeScope) -> Result<Diagram, CompileError> {
+        self.born(self.engine.one(scope.vtree()))
     }
     /// `lit` names a variable of the program; the backend renames it into
     /// `scope`.
-    pub(crate) fn literal(&self, scope: &VtreeScope, lit: Literal) -> Result<Tdd, CompileError> {
-        Ok(self
-            .engine
-            .literal(scope.vtree(), Self::renamed(scope, lit)?)?)
+    pub(crate) fn literal(
+        &self,
+        scope: &VtreeScope,
+        lit: Literal,
+    ) -> Result<Diagram, CompileError> {
+        self.born(
+            self.engine
+                .literal(scope.vtree(), Self::renamed(scope, lit)?)?,
+        )
     }
     /// Conjunction of literals (`one` for none), built in one pass.
-    pub(crate) fn cube(&self, scope: &VtreeScope, lits: &[Literal]) -> Result<Tdd, CompileError> {
+    pub(crate) fn cube(
+        &self,
+        scope: &VtreeScope,
+        lits: &[Literal],
+    ) -> Result<Diagram, CompileError> {
         let mut renamed = Vec::with_capacity(lits.len());
         for &l in lits {
             renamed.push(Self::renamed(scope, l)?);
         }
-        Ok(self.engine.cube(scope.vtree(), renamed)?)
+        self.born(self.engine.cube(scope.vtree(), renamed)?)
     }
     /// That exactly one of `lits` holds, or at most one, on `scope`, whose
     /// variables are those of `lits`, each once.
@@ -730,13 +1242,13 @@ impl TddBackend<'_> {
         scope: &VtreeScope,
         lits: &[Literal],
         exactly: bool,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let vtree = scope.vtree();
         if let [l] = *lits {
             return if exactly {
                 self.literal(scope, l)
             } else {
-                Ok(self.one(scope))
+                self.one(scope)
             };
         }
         let mut sign: Vec<Option<bool>> = vec![None; vtree.num_nodes()];
@@ -787,7 +1299,8 @@ impl TddBackend<'_> {
             vtree: root,
             local: one[root.idx()],
         };
-        let mut f = b.finish(output).map_err(OperationError::from)?;
+        let f = b.finish(output).map_err(OperationError::from)?;
+        let mut f = self.born(f)?;
         self.minimize(&mut f, Reduce::Between)?;
         Ok(f)
     }
@@ -810,20 +1323,20 @@ impl TddBackend<'_> {
         cubes: &[Vec<Literal>],
         groups: &[(Vec<VarId>, bool)],
         max_work: u64,
-    ) -> Result<Option<Tdd>, CompileError> {
+    ) -> Result<Option<Diagram>, CompileError> {
         if vars.is_empty() {
             return Ok(Some(if cubes.is_empty() {
-                self.one(scope)
+                self.one(scope)?
             } else {
-                self.zero(scope)
+                self.zero(scope)?
             }));
         }
         if let [v] = *vars {
             return Ok(Some(match super::none_of::one_variable(cubes, groups) {
-                (true, true) => self.one(scope),
+                (true, true) => self.one(scope)?,
                 (true, false) => self.literal(scope, Literal::pos(v))?,
                 (false, true) => self.literal(scope, Literal::neg(v))?,
-                (false, false) => self.zero(scope),
+                (false, false) => self.zero(scope)?,
             }));
         }
         let own = self.scope_of(scope, vars)?;
@@ -840,7 +1353,7 @@ impl TddBackend<'_> {
         // and mean the same, which is rare; what the reduction frees is the
         // classes no pair above uses.
         self.engine.reduce(&mut f, ReductionPlan::Prune)?;
-        Ok(Some(self.embed(f, &own, scope)?))
+        Ok(Some(self.embed(self.born(f)?, &own, scope)?))
     }
     /// The diagram whose models are `models` on `scope`, which holds
     /// `vars`, ascending and distinct: each model is `vars.len().div_ceil(64)`
@@ -852,11 +1365,11 @@ impl TddBackend<'_> {
         scope: &VtreeScope,
         vars: &[VarId],
         models: &[u64],
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let own = self.scope_of(scope, vars)?;
         let local: Vec<VarId> = (1..=vars.len() as u32).map(VarId).collect();
         let f = self.engine.from_models(own.vtree(), &local, models)?;
-        self.embed(f, &own, scope)
+        self.embed(self.born(f)?, &own, scope)
     }
     /// The scope of `vars` within `scope`, ascending and distinct: `scope`
     /// itself where they are all its variables, whose local numbering is
@@ -889,13 +1402,19 @@ impl TddBackend<'_> {
     /// reaches: each node of `y` but its level's last is the next of `x`'s
     /// it reaches, so few nodes are looked up by their pairs hashed, which
     /// would hash every node of both. A node's pairs are written sorted.
+    ///
+    /// The build reads stored levels, so in skip form the selection does
+    /// not apply.
     pub(crate) fn select_at_root(
         &self,
         scope: &VtreeScope,
         v: VarId,
-        x: &Tdd,
-        y: &Tdd,
-    ) -> Result<Option<Tdd>, CompileError> {
+        x: &Diagram,
+        y: &Diagram,
+    ) -> Result<Option<Diagram>, CompileError> {
+        let (Diagram::Stored(x), Diagram::Stored(y)) = (x, y) else {
+            return Ok(None);
+        };
         let Some((c, v_left, xc, yc)) = root_selection(scope, v, x, y)? else {
             return Ok(None);
         };
@@ -967,22 +1486,26 @@ impl TddBackend<'_> {
         }
         let yc = to[c.idx()].get(yc as usize).copied().unwrap_or(yc);
         let node = b.push(self.engine, root, &root_selection_pairs(v_left, xc, yc))?;
-        Ok(Some(
+        Ok(Some(Diagram::Stored(
             b.finish(TddNodeId {
                 vtree: root,
                 local: node,
             })
             .map_err(OperationError::from)?,
-        ))
+        )))
     }
     /// `a ∧ b`, each operand owned or borrowed: a borrowed one is read in
     /// place.
     pub(crate) fn and<'a, 'b>(
         &self,
-        a: impl Into<Cow<'a, Tdd>>,
-        b: impl Into<Cow<'b, Tdd>>,
-    ) -> Result<Tdd, CompileError> {
-        Ok(self.engine.and(a, b)?)
+        a: impl Into<Cow<'a, Diagram>>,
+        b: impl Into<Cow<'b, Diagram>>,
+    ) -> Result<Diagram, CompileError> {
+        let (a, b) = (a.into(), b.into());
+        Ok(match self.form {
+            Form::Stored => Diagram::Stored(self.engine.and(stored_cow(a), stored_cow(b))?),
+            Form::Skip => Diagram::Skip(self.skip_op(|e| e.skip_and(a.skip(), b.skip()))?),
+        })
     }
     /// `a ∧ b` on `scope` ([`TddBackend::and_on`]), or both operands back,
     /// each on the scope it was left on, once it has spent `work` units
@@ -993,7 +1516,7 @@ impl TddBackend<'_> {
         b: Part,
         scope: &VtreeScope,
         work: u64,
-    ) -> Result<Result<Tdd, (Part, Part)>, CompileError> {
+    ) -> Result<Result<Diagram, (Part, Part)>, CompileError> {
         let Some((_scope, at)) = self.stop_after(work) else {
             return Ok(Ok(self.and_on(a, b, scope)?));
         };
@@ -1064,36 +1587,56 @@ impl TddBackend<'_> {
             work,
         }
     }
-    pub(crate) fn or(&self, a: Tdd, b: Tdd) -> Result<Tdd, CompileError> {
-        Ok(self.engine.or(a, b)?)
+    pub(crate) fn or(&self, a: Diagram, b: Diagram) -> Result<Diagram, CompileError> {
+        Ok(match (a, b) {
+            (Diagram::Stored(a), Diagram::Stored(b)) => Diagram::Stored(self.engine.or(a, b)?),
+            (a, b) => Diagram::Skip(self.skip_op(|e| e.skip_or(a.skip(), b.skip()))?),
+        })
     }
     /// `a ∧ (l_1 ∨ ... ∨ l_k)`, with `a` on `scope`.
     pub(crate) fn and_clause(
         &self,
         scope: &VtreeScope,
-        a: Tdd,
+        a: Diagram,
         clause: &[Literal],
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let mut renamed = Vec::with_capacity(clause.len());
         for &l in clause {
             renamed.push(Self::renamed(scope, l)?);
         }
-        Ok(self.engine.and_clause(a, &renamed)?)
+        Ok(match a {
+            Diagram::Stored(a) => Diagram::Stored(self.engine.and_clause(a, &renamed)?),
+            Diagram::Skip(a) => Diagram::Skip(self.skip_op(|e| e.skip_and_clause(&a, &renamed))?),
+        })
     }
-    pub(crate) fn negate<'f>(&self, a: impl Into<Cow<'f, Tdd>>) -> Result<Tdd, CompileError> {
+    pub(crate) fn negate<'f>(
+        &self,
+        a: impl Into<Cow<'f, Diagram>>,
+    ) -> Result<Diagram, CompileError> {
+        let a = a.into();
+        if self.form == Form::Skip {
+            return Ok(Diagram::Skip(self.skip_op(|e| e.skip_negate(a.skip()))?));
+        }
         // The compiler minimizes every result it keeps, so the full reduction
         // `negate` ends with by default is paid twice. Pruning is the part
         // negation cannot skip: it removes the operand's dead cone, the nodes
         // the root complement orphans. Contraction is what the compiler
         // repeats, and tididi does not split `One` on the way in, so there
         // are next to no twins left for it to merge anyway.
-        Ok(self.engine.negate_with(a, ReductionPlan::Prune)?)
+        Ok(Diagram::Stored(
+            self.engine
+                .negate_with(stored_cow(a), ReductionPlan::Prune)?,
+        ))
     }
     /// Reduce `f`. Between operations a backend may reduce less than fully,
     /// so the result is not necessarily the canonical form `equivalent`
     /// compares; `equivalent` reduces what it compares itself. A formula the
-    /// compiler settles on is always reduced in full.
-    pub(crate) fn minimize(&self, f: &mut Tdd, how: Reduce) -> Result<(), CompileError> {
+    /// compiler settles on is always reduced in full. A skip-form formula
+    /// is always canonical and takes no reduction.
+    pub(crate) fn minimize(&self, f: &mut Diagram, how: Reduce) -> Result<(), CompileError> {
+        let Diagram::Stored(f) = f else {
+            return Ok(());
+        };
         // A settled formula is reduced in full and tells the schedule
         // nothing. It runs on a diagram that was reduced a moment ago, so it
         // almost always frees little, and letting it say so would widen the
@@ -1123,30 +1666,78 @@ impl TddBackend<'_> {
         self.prune.set(schedule);
         Ok(())
     }
-    pub(crate) fn equivalent(&self, a: &Tdd, b: &Tdd) -> Result<bool, CompileError> {
-        Ok(self.engine.equivalent(a, b)?)
+    pub(crate) fn equivalent(&self, a: &Diagram, b: &Diagram) -> Result<bool, CompileError> {
+        Ok(match (a, b) {
+            (Diagram::Stored(a), Diagram::Stored(b)) => self.engine.equivalent(a, b)?,
+            (a, b) => self.engine.skip_equivalent(a.skip(), b.skip())?,
+        })
     }
-    pub(crate) fn is_zero(&self, f: &Tdd) -> bool {
+    pub(crate) fn is_zero(&self, f: &Diagram) -> bool {
         f.is_zero()
     }
     /// The size the backend pays for `f`.
-    pub(crate) fn size(&self, f: &Tdd) -> usize {
+    pub(crate) fn size(&self, f: &Diagram) -> usize {
         f.pair_count()
     }
     /// The pairs of `f` its levels hold as their description rather than
-    /// written ([`tididi::diagram::TddLevel::implicit`]).
-    pub(crate) fn implicit_size(&self, f: &Tdd) -> usize {
-        f.vtree()
-            .internal_bottomup()
-            .filter_map(|(t, _, _)| f.level(t).implicit())
-            .map(|d| d.pairs())
-            .sum()
+    /// written ([`tididi::diagram::TddLevel::implicit`]); the skip form
+    /// holds none.
+    pub(crate) fn implicit_size(&self, f: &Diagram) -> usize {
+        match f {
+            Diagram::Stored(f) => implicit_pairs(f),
+            Diagram::Skip(_) => 0,
+        }
     }
     /// The nodes of `f`, read in one step per level rather than per node:
     /// a proxy for [`TddBackend::size`] cheap enough to read after every
     /// clause.
-    pub(crate) fn nodes(&self, f: &Tdd) -> usize {
+    pub(crate) fn nodes(&self, f: &Diagram) -> usize {
         f.node_count()
+    }
+    /// The variables `f` depends on, local to its vtree, ascending.
+    pub(crate) fn support(&self, f: &Diagram) -> Result<Vec<VarId>, CompileError> {
+        Ok(match f {
+            Diagram::Stored(f) => self.engine.support(f)?,
+            Diagram::Skip(f) => self.engine.skip_support(f)?,
+        })
+    }
+    /// `∃ vars. f ∧ g`, `vars` local to their vtree.
+    pub(crate) fn and_exists(
+        &self,
+        f: Diagram,
+        g: Diagram,
+        vars: &[VarId],
+    ) -> Result<Diagram, CompileError> {
+        Ok(match (f, g) {
+            (Diagram::Stored(f), Diagram::Stored(g)) => {
+                Diagram::Stored(self.engine.and_exists(f, g, vars)?)
+            }
+            (f, g) => Diagram::Skip(self.skip_op(|e| e.skip_and_exists(f.skip(), g.skip(), vars))?),
+        })
+    }
+    /// The weighted count of `f` under `w`, by the engine's evaluation in
+    /// floats, which the engine's work clock is charged for; where that is
+    /// not exact, in [`Count`]s, which a stored diagram takes by
+    /// [`crate::eval::count`]'s pass up and a skip-form one by the
+    /// engine's evaluation, and `recounts` counts it
+    /// ([`crate::eval::mass`]).
+    pub(crate) fn mass(
+        &self,
+        f: &Diagram,
+        w: &Probabilities,
+        recounts: &mut usize,
+    ) -> Result<Count, CompileError> {
+        let f = match f {
+            Diagram::Stored(f) => return Ok(crate::eval::mass(self.engine, f, w, recounts)?),
+            Diagram::Skip(f) => f,
+        };
+        let plain = Weighing::<f64>::new(w);
+        let m = self.engine.skip_evaluate(f, &plain)?;
+        if plain.exact() {
+            return Ok(Count::new(m));
+        }
+        *recounts += 1;
+        Ok(self.engine.skip_evaluate(f, &Weighing::<Count>::new(w))?)
     }
 
     /// The work clock the backend's operations advance, in its own units.
@@ -1215,9 +1806,14 @@ impl TddBackend<'_> {
     /// the scope they live on.
     pub(crate) fn restructure(
         &self,
-        members: &mut [&mut Tdd],
+        members: &mut [&mut Diagram],
         restarts: PoolRestarts,
     ) -> Result<PoolSearchStats, CompileError> {
+        let mut stored = Vec::with_capacity(members.len());
+        for m in members.iter_mut() {
+            stored.push(m.stored_mut("a vtree search")?);
+        }
+        let members = &mut stored[..];
         let pairs: usize = members.iter().map(|m| m.pair_count()).sum();
         // No sweep or work limit: the library's default of four sweeps stops
         // the searches of the random graphs while they still gain, and the
@@ -1237,6 +1833,15 @@ impl TddBackend<'_> {
         }
         Ok(found?)
     }
+}
+
+/// The pairs of `f` its levels hold as their description.
+fn implicit_pairs(f: &Tdd) -> usize {
+    f.vtree()
+        .internal_bottomup()
+        .filter_map(|(t, _, _)| f.level(t).implicit())
+        .map(|d| d.pairs())
+        .sum()
 }
 
 /// Where `scope`'s root has `v`'s leaf as a child and neither `x` nor `y`
@@ -1302,6 +1907,11 @@ mod tests {
     use super::*;
     use crate::tp::scope::scope_shape;
     use tididi::vtree::VtreeNode;
+
+    /// A stored backend's diagram as tididi's.
+    fn st(f: &Diagram) -> &Tdd {
+        f.stored("a test of stored diagrams").unwrap()
+    }
 
     /// Xorshift draws from `rng`: each call a number below its argument.
     fn draws(mut rng: u64) -> impl FnMut(u64) -> u64 {
@@ -1464,7 +2074,7 @@ mod tests {
                     // embedded, as the compiler hands them over.
                     let vars: Vec<VarId> = (1..n).map(VarId).collect();
                     let own = backend.scope(&vars).unwrap();
-                    let mut x = backend.zero(&own);
+                    let mut x = backend.zero(&own).unwrap();
                     for cube in &cubes {
                         x = backend.or(x, backend.cube(&own, cube).unwrap()).unwrap();
                     }
@@ -1475,7 +2085,7 @@ mod tests {
                         backend.embed(y, &own, &scope).unwrap(),
                     );
                     // The negation with its nodes in another order than `x`'s.
-                    let other = reversed(engine, &y);
+                    let other = Diagram::Stored(reversed(engine, st(&y)));
                     if x.is_zero() || y.is_zero() {
                         assert!(backend.select_at_root(&scope, v, &x, &y).unwrap().is_none());
                         return;
@@ -1484,20 +2094,20 @@ mod tests {
                         .select_at_root(&scope, v, &x, &y)
                         .unwrap()
                         .expect("v is a child of the root");
-                    let interned = select_by_interning(&backend, &scope, v, &x, &y)
+                    let interned = select_by_interning(&backend, &scope, v, st(&x), st(&y))
                         .expect("v is a child of the root");
                     assert!(
-                        same_levels(&built, &interned),
+                        same_levels(st(&built), &interned),
                         "seed {seed}: not the interned diagram"
                     );
                     let built = backend
                         .select_at_root(&scope, v, &x, &other)
                         .unwrap()
                         .expect("v is a child of the root");
-                    let interned = select_by_interning(&backend, &scope, v, &x, &other)
+                    let interned = select_by_interning(&backend, &scope, v, st(&x), st(&other))
                         .expect("v is a child of the root");
                     assert!(
-                        same_levels(&built, &interned),
+                        same_levels(st(&built), &interned),
                         "seed {seed}: not the interned diagram of the other negation"
                     );
                     let yes = backend
@@ -1554,7 +2164,7 @@ mod tests {
             tree.context().run(|engine| {
                 let backend = TddBackend::new(engine, tree.clone());
                 let scope = backend.global();
-                let mut exactly = backend.zero(&scope);
+                let mut exactly = backend.zero(&scope).unwrap();
                 for i in 0..lits.len() {
                     let cube: Vec<Literal> = lits
                         .iter()
@@ -1594,8 +2204,8 @@ mod tests {
         scope: &VtreeScope,
         cubes: &[Vec<Literal>],
         groups: &[(Vec<VarId>, bool)],
-    ) -> Tdd {
-        let mut applied = backend.one(scope);
+    ) -> Diagram {
+        let mut applied = backend.one(scope).unwrap();
         for cube in cubes {
             let clause: Vec<Literal> = cube.iter().map(|l| l.negated()).collect();
             applied = backend.and_clause(scope, applied, &clause).unwrap();
@@ -1621,7 +2231,7 @@ mod tests {
         scope: &VtreeScope,
         cubes: &[Vec<Literal>],
         groups: &[(Vec<VarId>, bool)],
-    ) -> Tdd {
+    ) -> Diagram {
         let mut vars: Vec<VarId> = cubes
             .iter()
             .flatten()
@@ -1794,12 +2404,12 @@ mod tests {
                             .none_of(&scope, &[x], &cubes, &groups, u64::MAX)
                             .unwrap()
                             .expect("no bound");
-                        let mut applied = backend.one(&scope);
+                        let mut applied = backend.one(&scope).unwrap();
                         for signs in &picked {
                             let clause: Vec<Literal> =
                                 signs.iter().map(|&s| Literal::new(x, !s)).collect();
                             applied = if clause.is_empty() {
-                                backend.zero(&scope)
+                                backend.zero(&scope).unwrap()
                             } else {
                                 backend.and_clause(&scope, applied, &clause).unwrap()
                             };
@@ -2127,7 +2737,12 @@ mod tests {
             .cube(from, (0..n as usize).map(|k| lit(k, VarId(k as u32 + 1))))
             .unwrap();
         let copied = backend
-            .transport(&f, &scope(from, 1), &scope(to, n + 1), &map)
+            .transport(
+                &Diagram::Stored(f),
+                &scope(from, 1),
+                &scope(to, n + 1),
+                &map,
+            )
             .unwrap();
         if let Some(copied) = &copied {
             let renamed = backend
@@ -2135,7 +2750,7 @@ mod tests {
                 .cube(to, (0..n as usize).map(|k| lit(k, map[k])))
                 .unwrap();
             assert!(
-                backend.engine.equivalent(copied, &renamed).unwrap(),
+                backend.engine.equivalent(st(copied), &renamed).unwrap(),
                 "the copy is the formula renamed"
             );
         }
@@ -2224,6 +2839,446 @@ mod tests {
         assert!(
             taken > 50 && refused > 50,
             "both kinds are tried: {taken} taken, {refused} refused"
+        );
+    }
+
+    /// An operation of [`every_skip_arm_is_the_stored_arm_in_skip_form`]:
+    /// each adds a formula on the global scope to the pool from earlier
+    /// ones, an index taken modulo the pool's length.
+    #[derive(Debug)]
+    enum Op {
+        Cube(Vec<Literal>),
+        /// Exactly one, or at most one, of the literals, built on the
+        /// scope of their variables and embedded.
+        OneOf(Vec<Literal>, bool),
+        NoneOf(Vec<Vec<Literal>>),
+        And(usize, usize),
+        Or(usize, usize),
+        Negate(usize),
+        Clause(usize, Vec<Literal>),
+        AndExists(usize, usize, Vec<VarId>),
+        /// A cube on the scope of its variables, conjoined with a pool
+        /// formula on the global scope, onto which it is moved.
+        Moved(Vec<Literal>, usize),
+        /// A pool formula restricted to its support and embedded back.
+        Narrowed(usize),
+    }
+
+    /// `op` on `backend`, over `pool`.
+    fn apply(backend: &TddBackend, pool: &[Diagram], op: &Op) -> Result<Diagram, CompileError> {
+        let scope = backend.global();
+        let at = |i: usize| &pool[i % pool.len()];
+        let vars_of = |lits: &mut dyn Iterator<Item = VarId>| {
+            let mut vars: Vec<VarId> = lits.collect();
+            vars.sort_unstable();
+            vars.dedup();
+            vars
+        };
+        Ok(match op {
+            Op::Cube(lits) => backend.cube(&scope, lits)?,
+            Op::OneOf(lits, exactly) => {
+                let own = backend.scope(&vars_of(&mut lits.iter().map(|l| l.var)))?;
+                let f = backend.one_of(&own, lits, *exactly)?;
+                backend.embed(f, &own, &scope)?
+            }
+            Op::NoneOf(cubes) => {
+                let vars = vars_of(&mut cubes.iter().flatten().map(|l| l.var));
+                let local = |v: VarId| VarId(vars.binary_search(&v).unwrap() as u32 + 1);
+                let cubes: Vec<Vec<Literal>> = cubes
+                    .iter()
+                    .map(|c| {
+                        c.iter()
+                            .map(|l| Literal::new(local(l.var), l.sign))
+                            .collect()
+                    })
+                    .collect();
+                backend
+                    .none_of(&scope, &vars, &cubes, &[], u64::MAX)?
+                    .expect("no bound")
+            }
+            Op::And(i, j) => backend.and(at(*i), at(*j))?,
+            Op::Or(i, j) => backend.or(at(*i).clone(), at(*j).clone())?,
+            Op::Negate(i) => backend.negate(at(*i))?,
+            Op::Clause(i, clause) => backend.and_clause(&scope, at(*i).clone(), clause)?,
+            Op::AndExists(i, j, vars) => {
+                backend.and_exists(at(*i).clone(), at(*j).clone(), vars)?
+            }
+            Op::Moved(lits, i) => {
+                let own = backend.scope(&vars_of(&mut lits.iter().map(|l| l.var)))?;
+                let f = backend.cube(&own, lits)?;
+                backend.and_on((f, own), (at(*i).clone(), scope.clone()), &scope)?
+            }
+            // A constant keeps no variable, and the compile does not narrow it.
+            Op::Narrowed(i) => match backend.support(at(*i))? {
+                support if support.is_empty() => at(*i).clone(),
+                support => backend.restrict(at(*i), &scope, &support, Some(&scope))?.0,
+            },
+        })
+    }
+
+    /// Random operations over `n` variables, from `next`.
+    fn random_ops(n: u32, next: &mut impl FnMut(u64) -> u64) -> Vec<Op> {
+        let lits = |next: &mut dyn FnMut(u64) -> u64, at_most: u64| -> Vec<Literal> {
+            let mut vars: Vec<u32> = (1..=n).collect();
+            let k = 1 + next(at_most.min(u64::from(n)));
+            (0..k)
+                .map(|_| {
+                    let v = vars.swap_remove(next(vars.len() as u64) as usize);
+                    Literal::new(VarId(v), next(2) == 0)
+                })
+                .collect()
+        };
+        (0..24)
+            .map(|_| {
+                let (i, j) = (next(64) as usize, next(64) as usize);
+                match next(10) {
+                    0 | 1 => Op::Cube(lits(next, 4)),
+                    2 => Op::OneOf(lits(next, 5), next(2) == 0),
+                    3 => Op::NoneOf((0..1 + next(4)).map(|_| lits(next, 3)).collect()),
+                    4 => Op::And(i, j),
+                    5 => Op::Or(i, j),
+                    6 => Op::Negate(i),
+                    7 => Op::Clause(i, lits(next, 3)),
+                    8 if next(2) == 0 => Op::AndExists(i, j, {
+                        let mut vars: Vec<VarId> =
+                            lits(next, 3).into_iter().map(|l| l.var).collect();
+                        vars.sort_unstable();
+                        vars
+                    }),
+                    8 => Op::Narrowed(i),
+                    _ => Op::Moved(lits(next, 4), i),
+                }
+            })
+            .collect()
+    }
+
+    /// Each skip arm of the backend gives the skip form of what the stored
+    /// arm gives: random operations on random and right-linear vtrees, run
+    /// alike on a stored backend and a skip one, each result equivalent to
+    /// `to_skip` of the stored one and as large as it or, where the
+    /// library holds the result as a negation, as its complement (both
+    /// forms are canonical), with the same support, the same weighted
+    /// count to 1e-12 and the same equivalences with the pool. A builder
+    /// whose stored diagram holds a level as its description is refused
+    /// in skip form, and only that.
+    #[test]
+    fn every_skip_arm_is_the_stored_arm_in_skip_form() {
+        let (mut checked, mut refused) = (0, 0);
+        for seed in 0..300u64 {
+            let mut next = draws(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1);
+            let n = 2 + next(9) as u32;
+            let tree = Arc::new(if seed % 3 == 0 {
+                Vtree::linear(n)
+            } else {
+                Vtree::random(n, seed)
+            });
+            let ops = random_ops(n, &mut next);
+            // Facts, and every fifth variable an indicator, which weighs
+            // two where a formula ignores it.
+            let mut w = Probabilities {
+                pos: vec![0.5; n as usize + 1],
+                neg: vec![0.5; n as usize + 1],
+                one: vec![1.0; n as usize + 1],
+            };
+            for v in 1..=n as usize {
+                if v % 5 == 0 {
+                    (w.pos[v], w.neg[v], w.one[v]) = (1.0, 1.0, 2.0);
+                } else {
+                    let p = (1 + next(999)) as f64 / 1000.0;
+                    (w.pos[v], w.neg[v]) = (p, 1.0 - p);
+                }
+            }
+            tree.context().run(|engine| {
+                let stored = TddBackend::new(engine, tree.clone());
+                let skip = TddBackend::in_form(engine, tree.clone(), Form::Skip);
+                let scope = stored.global();
+                let mut sp = vec![stored.one(&scope).unwrap()];
+                let mut kp = vec![skip.one(&scope).unwrap()];
+                for op in &ops {
+                    let s = apply(&stored, &sp, op).unwrap();
+                    let k = match apply(&skip, &kp, op) {
+                        Err(CompileError::SkipForm(_)) => {
+                            assert!(stored.implicit_size(&s) > 0, "seed {seed}: {op:?} refused");
+                            refused += 1;
+                            continue;
+                        }
+                        k => k.unwrap(),
+                    };
+                    let want = engine.to_skip(st(&s)).unwrap();
+                    assert!(
+                        engine.skip_equivalent(k.skip(), &want).unwrap(),
+                        "seed {seed}: {op:?}"
+                    );
+                    // The library may hold a result as the negation of the
+                    // diagram it stores, which is then the canonical form of
+                    // the complement.
+                    if k.pair_count() != want.pair_count() {
+                        let not = engine.to_skip(st(&stored.negate(&s).unwrap())).unwrap();
+                        assert_eq!(k.pair_count(), not.pair_count(), "seed {seed}: {op:?}");
+                    }
+                    assert_eq!(
+                        stored.support(&s).unwrap(),
+                        skip.support(&k).unwrap(),
+                        "seed {seed}: {op:?}"
+                    );
+                    let (ms, mk) = (
+                        stored.mass(&s, &w, &mut 0).unwrap(),
+                        skip.mass(&k, &w, &mut 0).unwrap(),
+                    );
+                    assert_eq!(ms.is_zero(), mk.is_zero(), "seed {seed}: {op:?}");
+                    if !ms.is_zero() {
+                        assert!((mk.ratio(ms) - 1.0).abs() < 1e-12, "seed {seed}: {op:?}");
+                    }
+                    for (a, b) in sp.iter().zip(&kp) {
+                        assert_eq!(
+                            stored.equivalent(&s, a).unwrap(),
+                            skip.equivalent(&k, b).unwrap(),
+                            "seed {seed}: {op:?}"
+                        );
+                    }
+                    checked += 1;
+                    sp.push(s);
+                    kp.push(k);
+                }
+            });
+        }
+        assert!(
+            checked > 3000,
+            "{checked} results checked, {refused} refused"
+        );
+    }
+
+    /// The compile's copy in skip form begins the probe's stretch where
+    /// none has begun: the stretch starts after it, with the pairs the
+    /// conversion read, which the engine's clock does not count, charged to
+    /// the copy. A copy over the memory budget leaves the trial stored, and
+    /// a probe in any other state makes none.
+    #[test]
+    fn the_compile_copies_itself_where_the_stretch_begins() {
+        let tree = Arc::new(Vtree::linear(4));
+        let stretch = Probe::Stretch {
+            pairs: 1000,
+            skip: 10,
+            start: None,
+            converted: 0,
+        };
+        tree.context().run(|engine| {
+            let start = engine.limits().work_units();
+            let stored = TddBackend::new(engine, tree.clone()).with_probe(stretch, start, 40);
+            let copy = stored.fork(5, || Ok(("copy", 7))).unwrap();
+            assert_eq!(copy, Some("copy"));
+            assert_eq!(
+                stored.probed(),
+                Probe::Stretch {
+                    pairs: 1000,
+                    skip: 10,
+                    start: Some((5, 40)),
+                    converted: 7,
+                }
+            );
+            // The stretch has begun: no second copy.
+            assert_eq!(stored.fork(6, || Ok(("again", 1))).unwrap(), None);
+            let stored = TddBackend::new(engine, tree.clone()).with_probe(stretch, start, 40);
+            let over = stored.fork::<&str>(5, || {
+                Err(CompileError::Tdd(tididi::OperationError::OverBudget))
+            });
+            assert_eq!(over.unwrap(), None);
+            assert_eq!(stored.probed(), Probe::Refused);
+            let stopped = TddBackend::new(engine, tree.clone()).with_probe(stretch, start, 40);
+            assert!(matches!(
+                stopped.fork::<&str>(5, || Err(CompileError::Tdd(
+                    tididi::OperationError::Stopped
+                ))),
+                Err(CompileError::Tdd(tididi::OperationError::Stopped))
+            ));
+            assert_eq!(
+                stopped.probed(),
+                stretch,
+                "a stop makes the copy again later"
+            );
+        });
+    }
+
+    #[test]
+    fn the_probe_weighs_the_skip_form_over_the_stored_forms_stretch() {
+        // The stretch begins where the compile makes its copy in skip form
+        // (`TddBackend::fork`), here at component 3 with the trial's work
+        // at 100 after a copy of 7 units, and ends at the first later step
+        // where the trial's work has doubled.
+        let stretch = Probe::Stretch {
+            pairs: 1000,
+            skip: 10,
+            start: None,
+            converted: 0,
+        };
+        let (p, stop) = stretch.at_step(3, 100);
+        assert_eq!((p, stop.is_none()), (stretch, true), "no copy yet");
+        let p = Probe::Stretch {
+            pairs: 1000,
+            skip: 10,
+            start: Some((3, 100)),
+            converted: 7,
+        };
+        let (p, stop) = p.at_step(3, 500);
+        assert!(stop.is_none(), "the stretch ends past its first step");
+        let (p, stop) = p.at_step(4, 150);
+        assert!(stop.is_none());
+        let (_, stop) = p.at_step(5, 200);
+        assert!(matches!(
+            stop,
+            Some(CompileError::Skips {
+                pairs: 1000,
+                skip: 10,
+                from: 3,
+                to: 5,
+                stored: 100,
+                converted: 7,
+            })
+        ));
+        // The skip form's work is read from the step with as many
+        // components finished, its copy's included, and wins where it
+        // spends less over them.
+        let duel = Probe::Duel {
+            from: 3,
+            to: 5,
+            stored: 100,
+            converted: 7,
+            at: None,
+        };
+        let (p, _) = duel.at_step(2, 1000);
+        assert_eq!(p, duel);
+        let (p, _) = p.at_step(3, 1050);
+        let (p, stop) = p.at_step(4, 1090);
+        assert!(stop.is_none());
+        let (won, stop) = p.at_step(5, 1142);
+        assert!(stop.is_none());
+        assert_eq!(
+            won,
+            Probe::Weighed {
+                skip: 99,
+                stored: 100,
+                at: 1142
+            }
+        );
+        // It loses once it has spent the stored form's work, at the end of
+        // the stretch or before.
+        let (_, stop) = p.at_step(4, 1143);
+        assert!(matches!(
+            stop,
+            Some(CompileError::Stored {
+                skip: 100,
+                stored: 100
+            })
+        ));
+        let (_, stop) = p.at_step(5, 1143);
+        assert!(matches!(stop, Some(CompileError::Stored { .. })));
+    }
+
+    /// The engine's work clock starts again with each run, and a trial's
+    /// turns are runs: the probe's clock is what the trial spent before the
+    /// run and the work since, so a duel begun in one turn is weighed in
+    /// the next over the work of both.
+    #[test]
+    fn the_probes_clock_runs_on_across_a_trials_turns() {
+        let n = 30u32;
+        let tree = Arc::new(Vtree::random(n, 11));
+        let work = |backend: &TddBackend, seed: u64| {
+            let mut next = draws(seed);
+            let scope = backend.global();
+            let mut f = backend.one(&scope).unwrap();
+            for _ in 0..12 {
+                let clause: Vec<Literal> = (0..3)
+                    .map(|_| Literal::new(VarId(1 + next(u64::from(n)) as u32), next(2) == 0))
+                    .collect();
+                f = backend.and_clause(&scope, f, &clause).unwrap();
+            }
+        };
+        let duel = Probe::Duel {
+            from: 1,
+            to: 3,
+            stored: u64::MAX,
+            converted: 0,
+            at: None,
+        };
+        // The first turn: the duel begins at component 1, after some work,
+        // and the turn ends with more.
+        let (probe, spent, at) = tree.context().run(|engine| {
+            let start = engine.limits().work_units();
+            let skip =
+                TddBackend::in_form(engine, tree.clone(), Form::Skip).with_probe(duel, start, 0);
+            work(&skip, 1);
+            let at = skip.work_units() - start;
+            skip.at_step(1).unwrap();
+            work(&skip, 2);
+            (skip.probed(), skip.work_units() - start, at)
+        });
+        assert!(at > 0 && spent > at);
+        assert!(
+            matches!(probe, Probe::Duel { at: Some(a), .. } if a == at),
+            "{probe:?}"
+        );
+        // The next turn reads the clock from what the first spent.
+        let (probe, more) = tree.context().run(|engine| {
+            let start = engine.limits().work_units();
+            assert!(start < at, "the engine's clock starts again");
+            let skip = TddBackend::in_form(engine, tree.clone(), Form::Skip)
+                .with_probe(probe, start, spent);
+            skip.at_step(2).unwrap();
+            work(&skip, 3);
+            skip.at_step(3).unwrap();
+            (skip.probed(), skip.work_units() - start)
+        });
+        let skip = spent + more - at;
+        assert!(
+            matches!(probe, Probe::Weighed { skip: s, at: a, .. } if s == skip && a == spent + more),
+            "{probe:?}, {skip} units"
+        );
+    }
+
+    /// The run's stop in work units cuts a skip operation once its own
+    /// units, scaled by `SKIP_WORK_SCALE`, reach the stop, as it cuts a
+    /// stored one: a conjunction of two random 3-CNFs in skip form, grown
+    /// until it takes at least 2^18 units of its own, stops when given half
+    /// the scaled work it takes, with the clock at or past that half. Its
+    /// own units alone would not have reached the stop.
+    #[test]
+    fn a_stop_in_work_units_cuts_a_skip_operation_at_its_scaled_work() {
+        let n = 40u32;
+        let tree = Arc::new(Vtree::random(n, 7));
+        let cnf = |backend: &TddBackend, seed: u64, clauses: usize| {
+            let mut next = draws(seed);
+            let scope = backend.global();
+            let mut f = backend.one(&scope).unwrap();
+            for _ in 0..clauses {
+                let clause: Vec<Literal> = (0..3)
+                    .map(|_| Literal::new(VarId(1 + next(u64::from(n)) as u32), next(2) == 0))
+                    .collect();
+                f = backend.and_clause(&scope, f, &clause).unwrap();
+            }
+            f
+        };
+        let run = |clauses: usize, work: Option<u64>| -> (bool, u64) {
+            tree.context().run(|engine| {
+                let skip = TddBackend::in_form(engine, tree.clone(), Form::Skip);
+                let f = cnf(&skip, 0x2545_F491, clauses);
+                let g = cnf(&skip, 0x9E37_79B9, clauses);
+                let start = skip.work_units();
+                let done = match work {
+                    None => skip.and(&f, &g).map(|_| true).unwrap(),
+                    Some(w) => skip.within(w, || skip.and(&f, &g)).unwrap().is_some(),
+                };
+                (done, skip.work_units() - start)
+            })
+        };
+        let (clauses, all) = (20..=60)
+            .step_by(4)
+            .map(|k| (k, run(k, None).1))
+            .find(|&(_, all)| all >= SKIP_WORK_SCALE << 18)
+            .expect("a conjunction large enough");
+        let (done, spent) = run(clauses, Some(all / 2));
+        assert!(
+            !done && spent >= all / 2,
+            "{clauses} clauses: {spent} of {all} units"
         );
     }
 }

@@ -59,6 +59,39 @@ pub(super) struct Trial {
     pub(super) behind: bool,
     /// Whether it has run again so ([`Self::behind`]), at most once a run.
     pub(super) revived: bool,
+    /// The form of its formulas.
+    pub(super) form: tp::Form,
+    /// The probe of its form (`super::run_within`): armed until a formula
+    /// reaches it or the compile finishes, then the formula measured, and
+    /// where that keeps few pairs in skip form, the work of either form
+    /// over the same stretch of the compile.
+    pub(super) probe: tp::Probe,
+    /// Its stored compile, while it weighs the skip form against it
+    /// ([`tp::Probe::Duel`]).
+    pub(super) aside: Option<Box<Aside>>,
+}
+
+/// What a trial's stored compile had built when the trial went on with
+/// its copy in skip form to weigh that form, and where the trial stood in
+/// the race then: the compile goes on from there where the stored form
+/// spends less over the stretch ([`Trial::set_aside`]), and the trial goes
+/// on from there in either form ([`Trial::rejoin`]). The compile and its
+/// copy are on the trial's vtree.
+pub(super) struct Aside {
+    evaluation: Evaluation,
+    kept: Option<tp::KeptProjector>,
+    lost: u64,
+    stood: Stood,
+}
+
+/// A trial's place in the race: its target, the work it has spent, and
+/// its progress at its targets.
+struct Stood {
+    target: u64,
+    spent: u64,
+    progress: Vec<(u64, f64)>,
+    querying: bool,
+    mark: Option<u64>,
 }
 
 impl Trial {
@@ -84,7 +117,18 @@ impl Trial {
             freed_for: false,
             behind: false,
             revived: false,
+            form: tp::Form::Stored,
+            probe: tp::Probe::Off,
+            aside: None,
         }
+    }
+
+    /// Whether its next attempt probes its form.
+    pub(super) fn probing(&self) -> bool {
+        matches!(
+            self.probe,
+            tp::Probe::Armed { .. } | tp::Probe::Stretch { .. } | tp::Probe::Duel { .. }
+        )
     }
 
     /// Whether its layout may have added copies to its rewrite: a `td`
@@ -276,7 +320,10 @@ impl Trial {
     /// Whether its attempts left anything built: the formulas of its phase,
     /// or the vtree its engine kept between attempts.
     pub(super) fn holds(&self) -> bool {
-        self.kept.is_some() || self.evaluation.is_compiled() || self.evaluation.progress().is_some()
+        self.kept.is_some()
+            || self.aside.is_some()
+            || self.evaluation.is_compiled()
+            || self.evaluation.progress().is_some()
     }
 
     /// Frees what its attempts built, and the scratch its engine kept: its
@@ -287,13 +334,102 @@ impl Trial {
     pub(super) fn release(&mut self) {
         self.evaluation = Evaluation::new(self.evaluation.traced());
         self.kept = None;
+        self.aside = None;
         self.progress.clear();
         self.querying = false;
         self.mark = None;
+        // A stretch or a duel under way is measured again on the compile
+        // begun again, which converts nothing.
+        self.probe = match self.probe {
+            tp::Probe::Stretch { pairs, skip, .. } => tp::Probe::Stretch {
+                pairs,
+                skip,
+                start: None,
+                converted: 0,
+            },
+            tp::Probe::Duel {
+                from, to, stored, ..
+            } => tp::Probe::Duel {
+                from,
+                to,
+                stored,
+                converted: 0,
+                at: None,
+            },
+            p => p,
+        };
         if let Some(layout) = self.built.as_mut() {
             layout.vtree =
                 Arc::new(tididi::Vtree::clone(&layout.vtree).with_context(Arc::default()));
         }
+    }
+
+    /// Sets its stored compile aside and goes on with `copy`, the
+    /// evaluation of the compile's copy in skip form
+    /// ([`Evaluation::take_fork`]), on the same vtree, whose engine's
+    /// scratch is freed. Where its compile cannot go on, a run without a
+    /// watch having stopped it, nothing is set aside.
+    pub(super) fn set_aside(&mut self, goes_on: bool, copy: Evaluation) {
+        let evaluation = std::mem::replace(&mut self.evaluation, copy);
+        let kept = self.kept.take();
+        let progress = std::mem::take(&mut self.progress);
+        let aside = goes_on.then(|| Aside {
+            evaluation,
+            kept,
+            lost: self.lost,
+            stood: Stood {
+                target: self.target,
+                spent: self.spent,
+                progress,
+                querying: self.querying,
+                mark: self.mark,
+            },
+        });
+        self.querying = false;
+        self.mark = None;
+        self.built.as_ref().unwrap().vtree.context().clear_scratch();
+        self.aside = aside.map(Box::new);
+    }
+
+    /// Goes on with its stored compile where it was set aside
+    /// ([`Self::set_aside`]), or begins it again where none was: whether
+    /// one was.
+    pub(super) fn restore(&mut self) -> bool {
+        let Some(a) = self.aside.take() else {
+            self.release();
+            return false;
+        };
+        self.evaluation = a.evaluation;
+        self.kept = a.kept;
+        self.lost = a.lost;
+        self.rejoin(a.stood, 0);
+        true
+    }
+
+    /// Goes on in skip form, its stored compile freed, from where it
+    /// stood when it set that compile aside, with `since`, what it spent
+    /// in skip form past the stretch.
+    pub(super) fn keep_skip_form(&mut self, since: u64) {
+        if let Some(a) = self.aside.take() {
+            self.rejoin(a.stood, since);
+        }
+    }
+
+    /// Stands in the race where it stood when it set its stored compile
+    /// aside, and `since` past it. The weighing's work, the copy in skip
+    /// form included, is not charged to the trial, as settling's is not
+    /// (`super::attempt`): either form has compiled as far as the stored
+    /// form had there, and charged, the skip form's work over the stretch,
+    /// set beside that of the stored form, would put the trial behind the
+    /// trials that did not weigh (addFun_max's `program:fanin`, behind
+    /// `program` then, which took twice to four times its work in its
+    /// place).
+    fn rejoin(&mut self, stood: Stood, since: u64) {
+        self.target = stood.target;
+        self.spent = stood.spent.saturating_add(since);
+        self.progress = stood.progress;
+        self.querying = stood.querying;
+        self.mark = stood.mark;
     }
 
     /// Ends the trial for the run, where an operation of its attempt was

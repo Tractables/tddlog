@@ -42,10 +42,11 @@ pub(super) fn print_stats(args: &Args, run: &tddlog::Run, ground_secs: f64) {
 
 fn print_compile_stats(args: &Args, run: &tddlog::Run) {
     let s = &run.stats;
+    let form = if s.skip_form { " in skip form" } else { "" };
     let strategy = match args.strategy {
-        Strategy::Trial(_) => run.kind.to_string(),
+        Strategy::Trial(_) => format!("{}{form}", run.kind),
         Strategy::Auto => format!(
-            "{} (from {}: {} attempts, {:.3}s discarded)",
+            "{}{form} (from {}: {} attempts, {:.3}s discarded)",
             run.kind, args.strategy, run.attempts, run.wasted_seconds
         ),
     };

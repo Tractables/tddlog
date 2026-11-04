@@ -4,7 +4,7 @@
 use rustc_hash::FxHashMap;
 use std::sync::Arc;
 
-use tididi::Tdd;
+use super::backend::Diagram;
 use tididi::vtree::VarId;
 
 use super::backend::{Part, Read};
@@ -157,7 +157,7 @@ struct Held {
 /// Where a [`Held`] loop stopped.
 enum Stopped {
     /// Built whole, and refused by the watch.
-    Refused(Tdd),
+    Refused(Diagram),
     /// At the end of its turn, before a body.
     Paused(Loop),
 }
@@ -180,7 +180,7 @@ struct Loop {
 /// local variable of the scope ([`ClauseKey`]), and the scope's shape
 /// ([`scope_shape`]).
 struct Kept {
-    f: Tdd,
+    f: Diagram,
     scope: VtreeScope,
     slots: Vec<u32>,
     shape: u64,
@@ -193,7 +193,7 @@ impl ClauseMemo {
     fn keep(
         &mut self,
         (key, scope): (ClauseKey, &VtreeScope),
-        f: &Tdd,
+        f: &Diagram,
         slots: Vec<u32>,
         shape: impl FnOnce(&[u32]) -> u64,
         backend: &TddBackend,
@@ -271,9 +271,42 @@ impl ClauseMemo {
         self.held = None;
     }
 
+    /// The formulas of the loops it keeps, without the held loop.
+    pub(super) fn diagrams(&self) -> impl Iterator<Item = &Diagram> {
+        self.entries.values().flatten().map(|k| &k.f)
+    }
+
+    /// The memo with each loop it keeps in skip form
+    /// ([`TddBackend::in_skip_form`]), for the compile's copy in that form,
+    /// without the held loop ([`Held`]).
+    pub(super) fn in_skip_form(&self, backend: &TddBackend) -> Result<Self, CompileError> {
+        let mut entries = FxHashMap::default();
+        let mut pairs = 0;
+        for (key, loops) in &self.entries {
+            let mut skip = Vec::with_capacity(loops.len());
+            for k in loops {
+                let f = backend.in_skip_form(&k.f)?;
+                pairs += backend.size(&f);
+                skip.push(Kept {
+                    f,
+                    scope: k.scope.clone(),
+                    slots: k.slots.clone(),
+                    shape: k.shape,
+                });
+            }
+            entries.insert(key.clone(), skip);
+        }
+        Ok(ClauseMemo {
+            entries,
+            pairs,
+            held: None,
+            stats: self.stats,
+        })
+    }
+
     /// The formula of the loop the watch refused, taken out; a loop held
     /// otherwise is dropped.
-    pub(super) fn take_refused(&mut self) -> Option<Tdd> {
+    pub(super) fn take_refused(&mut self) -> Option<Diagram> {
         match self.held.take()?.at {
             Stopped::Refused(f) => Some(f),
             Stopped::Paused(_) => None,
@@ -290,7 +323,7 @@ impl ClauseMemo {
 /// among the scope's variables but the head's own copies, which come last
 /// in the order the bodies first read them: the copies a reader's link
 /// ties to a clause table ([`crate::indicators`]), `link_of` the head.
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct ClauseKey {
     vars: usize,
     lits: Vec<u32>,
@@ -315,7 +348,7 @@ impl Factoring<'_> {
         bodies: Vec<Vec<GLit>>,
         pairs: &[Pairs<'_>],
         scope: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let clauses = bodies.len() + pairs.iter().map(|p| p.rule.clauses()).sum::<usize>();
         let key = if clauses >= MEMO_MIN_BODIES {
             self.clause_key(&bodies, pairs, scope)
@@ -383,11 +416,11 @@ impl Factoring<'_> {
     /// run ([`Held`]).
     fn kept_if_refused(
         &self,
-        f: Tdd,
+        f: Diagram,
         scope: &VtreeScope,
         groups: &[AtMostOne],
         bodies: &[Vec<GLit>],
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         match (self.checked)(f)? {
             Ok(f) => Ok(f),
             Err((f, pairs)) => {
@@ -581,7 +614,7 @@ impl Factoring<'_> {
         &mut self,
         body: &[GLit],
         scope: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let mut pending: Vec<(Part, u32)> = Vec::new();
         let mut facts = Vec::new();
         for &l in body {
@@ -591,7 +624,7 @@ impl Factoring<'_> {
             }
             let f = (self.part)(l, 1, scope)?;
             if self.backend.is_zero(&f.0) {
-                return Ok(self.backend.zero(scope));
+                return self.backend.zero(scope);
             }
             self.push_product(&mut pending, f, scope)?;
         }
@@ -600,7 +633,7 @@ impl Factoring<'_> {
             facts.sort_unstable_by_key(|f| (f.var, f.sign));
             facts.dedup();
             if facts.windows(2).any(|w| w[0].var == w[1].var) {
-                return Ok(self.backend.zero(scope));
+                return self.backend.zero(scope);
             }
             return self.backend.cube(scope, &facts);
         }
@@ -614,7 +647,7 @@ impl Factoring<'_> {
         part: Part,
         facts: &[tididi::Literal],
         scope: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let mut c = self.placed(part, scope)?;
         for &f in facts {
             c = self.backend.and_clause(scope, c, &[f])?;
@@ -670,7 +703,7 @@ impl Factoring<'_> {
         b: Part,
         scope: &VtreeScope,
     ) -> Result<Result<Formula, (Part, Part)>, CompileError> {
-        let size = |f: &Tdd, own: &VtreeScope| placed_count(self.backend.size(f), own, scope);
+        let size = |f: &Diagram, own: &VtreeScope| placed_count(self.backend.size(f), own, scope);
         let (s_acc, s_a, s_b) = (size(&acc.0, &acc.1), size(&a.0, &a.1), size(&b.0, &b.1));
         if s_acc.saturating_mul(OR_ROUTE_SHARE) <= s_a.min(s_b) {
             return Ok(Err((a, b)));
@@ -703,7 +736,7 @@ impl Factoring<'_> {
         a: Part,
         b: Part,
         facts: &[tididi::Literal],
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let size = |f: &Part| placed_count(self.backend.size(&f.0), &f.1, scope);
         let (a, b) = if size(&a) >= size(&b) { (a, b) } else { (b, a) };
         let b = if facts.is_empty() {
@@ -754,8 +787,8 @@ impl Factoring<'_> {
         groups: &[AtMostOne],
         exclusive: &Exclusive,
         scope: &VtreeScope,
-        acc: &mut Option<Tdd>,
-    ) -> Result<Option<Tdd>, CompileError> {
+        acc: &mut Option<Diagram>,
+    ) -> Result<Option<Diagram>, CompileError> {
         let mut taken = exclusive.clone();
         let mut left_out = 0;
         let cubes: Vec<Vec<tididi::Literal>> = bodies
@@ -854,8 +887,8 @@ impl Factoring<'_> {
         bodies: Vec<Vec<GLit>>,
         pairs: &[Pairs<'_>],
         scope: &VtreeScope,
-        start: Option<Tdd>,
-    ) -> Result<Tdd, CompileError> {
+        start: Option<Diagram>,
+    ) -> Result<Diagram, CompileError> {
         let (mut groups, bodies) = self.at_most_one(bodies, pairs);
         if self.seeds {
             let siblings = self.sibling_groups(&bodies, &groups);
@@ -896,7 +929,10 @@ impl Factoring<'_> {
         // product it would avoid.
         for (lits, exactly) in &groups {
             let group = self.one_of(scope, &mut lits.clone(), *exactly)?;
-            let f = acc.unwrap_or_else(|| self.backend.one(scope));
+            let f = match acc {
+                Some(f) => f,
+                None => self.backend.one(scope)?,
+            };
             let f = self.backend.and_on((f, scope.clone()), group, scope)?;
             (self.count)(Op::And, 1);
             acc = Some((self.watched)(f, self.head)?);
@@ -938,7 +974,7 @@ impl Factoring<'_> {
         started: bool,
         scope: &VtreeScope,
         mut at: Loop,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         // The clauses conjoined since they were last counted: a run is
         // counted at the next contraction, the next body with a derived
         // literal, or the end.
@@ -1041,7 +1077,7 @@ impl Factoring<'_> {
                 (_, Some((a, b))) => {
                     (self.count)(Op::And, std::mem::take(&mut run));
                     // A split is made only against a formula other than true.
-                    let formula = self.formula(formula, scope);
+                    let formula = self.formula(formula, scope)?;
                     let mut acc = (
                         self.or_route(scope, formula, a, b, &fact_lits)?,
                         scope.clone(),
@@ -1059,7 +1095,7 @@ impl Factoring<'_> {
                         Some(f) if f.1.same(scope) => f,
                         Some(f) => (self.placed(f, scope)?, scope.clone()),
                         None => {
-                            let one = self.backend.one(scope);
+                            let one = self.backend.one(scope)?;
                             at.settled_nodes = self.backend.nodes(&one);
                             (one, scope.clone())
                         }
@@ -1132,12 +1168,15 @@ impl Factoring<'_> {
             }
         }
         (self.count)(Op::And, run);
-        let acc = self.formula(at.acc, scope);
+        let acc = self.formula(at.acc, scope)?;
         self.placed(acc, scope)
     }
 
     /// The formula `acc`, `one` on `scope` where it is true (`None`).
-    fn formula(&self, acc: Option<Formula>, scope: &VtreeScope) -> Formula {
-        acc.unwrap_or_else(|| (self.backend.one(scope), scope.clone()))
+    fn formula(&self, acc: Option<Formula>, scope: &VtreeScope) -> Result<Formula, CompileError> {
+        match acc {
+            Some(f) => Ok(f),
+            None => Ok((self.backend.one(scope)?, scope.clone())),
+        }
     }
 }

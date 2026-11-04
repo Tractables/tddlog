@@ -101,7 +101,7 @@ use std::sync::Arc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use tididi::Tdd;
+use super::backend::Diagram;
 use tididi::vtree::VarId;
 
 use super::{
@@ -151,7 +151,7 @@ type Reader = (AtomId, Vec<VarId>);
 
 /// The conjunction of a group of links ([`groups`]), and the variables of
 /// the copies they tie.
-type Group = (Tdd, Vec<VarId>);
+type Group = (Diagram, Vec<VarId>);
 
 /// A cut whose names can be expanded: its links, each once with the value
 /// the evidence observes it at, and its copies' variables, each with the
@@ -483,7 +483,7 @@ fn expand(compiled: &mut Compiled, cut: &Cut) {
 /// where it comes before them.
 struct Links<'a> {
     cut: &'a Cut,
-    held: Vec<Tdd>,
+    held: Vec<Diagram>,
     of: FxHashMap<VarId, usize>,
     reads: Vec<Vec<usize>>,
     rank: Vec<usize>,
@@ -524,7 +524,7 @@ impl<'a> Links<'a> {
                 let vars = match compiled.scope_of(l).vars() {
                     Some(vars) => vars,
                     None => {
-                        support = link.support()?;
+                        support = backend.support(link)?;
                         &support[..]
                     }
                 };
@@ -557,7 +557,7 @@ impl<'a> Links<'a> {
         compiled: &Compiled,
         i: usize,
         scope: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         backend.embed_ref(&self.held[i], compiled.scope_of(self.cut.links[i].0), scope)
     }
 
@@ -736,7 +736,6 @@ fn reading(
             Entry::Vacant(new) => {
                 let scope = compiled.scope_of(r);
                 let mut vars: Vec<VarId> = backend
-                    .engine
                     .support(f)?
                     .into_iter()
                     .map(|local| match scope.vars() {
@@ -790,7 +789,7 @@ fn joint(
     bound: usize,
 ) -> Result<Option<usize>, CompileError> {
     let scope = over(backend, compiled, links.cut.links.iter().map(|&(l, _)| l))?;
-    let mut acc: Option<Tdd> = None;
+    let mut acc: Option<Diagram> = None;
     for i in 0..links.held.len() {
         let link = links.on(backend, compiled, i, &scope)?;
         let next = match acc {
@@ -839,7 +838,7 @@ fn groups(
         compiled,
         tying.iter().map(|&i| links.cut.links[i].0),
     )?;
-    let mut out: Vec<(Tdd, usize, Vec<usize>)> = Vec::new();
+    let mut out: Vec<(Diagram, usize, Vec<usize>)> = Vec::new();
     for &i in tying {
         let link = links.on(backend, compiled, i, &scope)?;
         let pairs = backend.size(&link);
@@ -914,7 +913,7 @@ fn composed_under(
             let conj = backend.embed_ref(conj, from, &scope)?;
             let mut copies: Vec<VarId> = vars.iter().filter_map(|&v| scope.local_of(v)).collect();
             copies.sort_unstable();
-            acc = backend.engine.and_exists(acc, conj, &copies)?;
+            acc = backend.and_exists(acc, conj, &copies)?;
             if (made + backend.size(&acc)).saturating_sub(held) > bound {
                 return Ok(None);
             }

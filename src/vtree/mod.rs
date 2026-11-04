@@ -162,6 +162,12 @@ impl Kind {
     pub fn is_dynamic(self) -> bool {
         matches!(self, Kind::Dynamic)
     }
+
+    /// Whether the layout compiles in skip form (`--skip-levels`): its
+    /// vtree fixed, and no table built in the stored form.
+    pub fn takes_skip_form(self) -> bool {
+        matches!(self, Kind::Program { .. } | Kind::Decision)
+    }
 }
 
 impl FromStr for Kind {

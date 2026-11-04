@@ -11,7 +11,7 @@
 //! sound ProbLog program (two-valued well-founded model in every world) the
 //! two bounds coincide and give the atom's formula.
 
-use tididi::Tdd;
+use super::backend::Diagram;
 use tididi::vtree::VarId;
 
 use super::{CompileError, Reduce, TddBackend, VtreeScope};
@@ -30,17 +30,17 @@ pub(crate) fn compile_component(
     by_head: &RulesByHead,
     var_of: &[Option<VarId>],
     (scc, scope): (&[AtomId], &VtreeScope),
-    lambda_of: &mut dyn FnMut(AtomId) -> Result<Tdd, CompileError>,
-    negate: &dyn Fn(Tdd) -> Result<Tdd, CompileError>,
+    lambda_of: &mut dyn FnMut(AtomId) -> Result<Diagram, CompileError>,
+    negate: &dyn Fn(Diagram) -> Result<Diagram, CompileError>,
     backend: &TddBackend,
-) -> Result<(Vec<Tdd>, usize), CompileError> {
+) -> Result<(Vec<Diagram>, usize), CompileError> {
     let n = gp.num_atoms();
     let mut index = vec![usize::MAX; n];
     for (i, &a) in scc.iter().enumerate() {
         index[a as usize] = i;
     }
     // Formulas of literals over atoms outside the component are fixed.
-    let mut outside: Vec<Option<Tdd>> = (0..n).map(|_| None).collect();
+    let mut outside: Vec<Option<Diagram>> = (0..n).map(|_| None).collect();
     for &a in scc {
         for &ri in &by_head[a as usize] {
             for l in &gp.rules[ri].body {
@@ -54,7 +54,10 @@ pub(crate) fn compile_component(
             }
         }
     }
-    let lit_pair = |l: GLit, lower: &[Tdd], upper: &[Tdd]| -> Result<(Tdd, Tdd), CompileError> {
+    let lit_pair = |l: GLit,
+                    lower: &[Diagram],
+                    upper: &[Diagram]|
+     -> Result<(Diagram, Diagram), CompileError> {
         let b = l.atom() as usize;
         let (t, p) = match gp.kinds[b] {
             AtomKind::Fact(_) => {
@@ -80,15 +83,18 @@ pub(crate) fn compile_component(
         }
     };
     // One application of the operator to atom `a`, both components.
-    let apply = |a: AtomId, lower: &[Tdd], upper: &[Tdd]| -> Result<(Tdd, Tdd), CompileError> {
-        let mut t_acc = backend.zero(scope);
-        let mut p_acc = backend.zero(scope);
+    let apply = |a: AtomId,
+                 lower: &[Diagram],
+                 upper: &[Diagram]|
+     -> Result<(Diagram, Diagram), CompileError> {
+        let mut t_acc = backend.zero(scope)?;
+        let mut p_acc = backend.zero(scope)?;
         for body in by_head[a as usize]
             .iter()
             .flat_map(|&ri| gp.rules[ri].bodies())
         {
-            let mut bt = backend.one(scope);
-            let mut bp = backend.one(scope);
+            let mut bt = backend.one(scope)?;
+            let mut bp = backend.one(scope)?;
             for &l in body.iter() {
                 let (vt, vp) = lit_pair(l, lower, upper)?;
                 bt = backend.and(bt, vt)?;
@@ -107,8 +113,12 @@ pub(crate) fn compile_component(
 
     let k = scc.len();
     let mut updates = 0;
-    let mut lower: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
-    let mut upper: Vec<Tdd> = (0..k).map(|_| backend.one(scope)).collect();
+    let mut lower: Vec<Diagram> = (0..k)
+        .map(|_| backend.zero(scope))
+        .collect::<Result<_, _>>()?;
+    let mut upper: Vec<Diagram> = (0..k)
+        .map(|_| backend.one(scope))
+        .collect::<Result<_, _>>()?;
     loop {
         // Application refinements, one atom at a time, until stable.
         loop {
@@ -131,7 +141,9 @@ pub(crate) fn compile_component(
         }
         // Unfoundedness refinement: least fixpoint of the upper component
         // from ⊥ with the lower component frozen.
-        let mut u: Vec<Tdd> = (0..k).map(|_| backend.zero(scope)).collect();
+        let mut u: Vec<Diagram> = (0..k)
+            .map(|_| backend.zero(scope))
+            .collect::<Result<_, _>>()?;
         loop {
             let mut changed = false;
             for (i, &a) in scc.iter().enumerate() {

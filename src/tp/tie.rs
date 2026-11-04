@@ -39,7 +39,7 @@
 
 use rustc_hash::FxHashMap;
 
-use tididi::Tdd;
+use super::backend::Diagram;
 use tididi::vtree::{VarId, VtreeIdx};
 
 use super::{CompileError, Projection, TddBackend, VtreeScope};
@@ -49,6 +49,7 @@ use crate::ground::{AtomId, GroundProgram, RulesByHead};
 const TIE_FROM: usize = 64;
 
 /// A reader's link replaced by equalities to another reader's copies.
+#[derive(Clone)]
 pub(crate) struct Tie {
     /// The other reader's link, which the tie stands on.
     pub(crate) reference: AtomId,
@@ -78,7 +79,7 @@ impl Tie {
         &self,
         backend: &TddBackend,
         scope: &VtreeScope,
-    ) -> Result<Tdd, CompileError> {
+    ) -> Result<Diagram, CompileError> {
         let vars = self.vars();
         let local = |v: VarId| VarId(vars.binary_search(&v).expect("a tie's variable") as u32 + 1);
         let cubes: Vec<Vec<tididi::Literal>> = self

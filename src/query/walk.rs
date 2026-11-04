@@ -173,9 +173,11 @@ use std::sync::Arc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
+use tididi::OperationError;
 use tididi::limits::{StopAt, StopRules};
 use tididi::vtree::{VarId, VtreeIdx};
-use tididi::{OperationError, Tdd};
+
+use crate::tp::Diagram;
 
 use super::sum_out::SumOut;
 use super::{Formula, QuerySizes, Scopes};
@@ -397,7 +399,7 @@ pub(super) struct EvidenceWalk {
     /// The stored formulas of observed atoms taken from the compile, by
     /// the place in `observed` of the read that consumes each
     /// ([`EvidenceWalk::take_last_reads`]).
-    taken: FxHashMap<usize, Tdd>,
+    taken: FxHashMap<usize, Diagram>,
     at: Vec<Vec<usize>>,
     built: Vec<Option<Built>>,
     nodes: Vec<VtreeIdx>,

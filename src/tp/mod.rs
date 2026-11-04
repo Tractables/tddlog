@@ -45,7 +45,7 @@ mod primal_update_tests;
 mod projection_tests;
 
 pub(crate) use backend::TddBackend;
-pub(crate) use backend::{Formula, KeptProjector, Reduce};
+pub(crate) use backend::{Diagram, Form, Formula, KeptProjector, Probe, Reduce};
 #[cfg(test)]
 pub(crate) use compile::compile;
 pub(crate) use compile::{Compilation, DYNAMIC_FIRST_PAIRS, Horizon};
@@ -101,6 +101,32 @@ pub enum CompileError {
     EmptyScope,
     /// Copying a formula onto a larger vtree failed.
     Embed(tididi::restructure::EmbedError),
+    /// A step that reads or builds stored levels met a formula in skip
+    /// form (`--skip-levels`), which has none: the step named, which
+    /// needs the stored form.
+    SkipForm(&'static str),
+    /// `auto`'s probe of a stored trial: its first large formula, of
+    /// `pairs` pairs, kept `skip` of them in skip form, few enough that the
+    /// trial goes on with the compile's copy in skip form, made for
+    /// `converted` at the step with `from` components finished, to weigh
+    /// it; the stored compile spent `stored` from there to the first step
+    /// with `to` (`Probe::Stretch`).
+    Skips {
+        pairs: usize,
+        skip: usize,
+        from: usize,
+        to: usize,
+        stored: u64,
+        converted: u64,
+    },
+    /// `auto`'s probe of a trial gone on with its compile's copy in skip
+    /// form: over the stretch, the skip form spent `skip`, its conversion
+    /// included, no less than the stored form's `stored`, and the trial
+    /// goes on stored (`Probe::Duel`).
+    Stored {
+        skip: u64,
+        stored: u64,
+    },
 }
 
 impl fmt::Display for CompileError {
@@ -133,6 +159,27 @@ impl fmt::Display for CompileError {
             CompileError::Embed(e) => {
                 write!(f, "embedding a formula on a larger vtree failed: {e}")
             }
+            CompileError::SkipForm(what) => write!(
+                f,
+                "--skip-levels keeps formulas in skip form, and {what} needs the stored form"
+            ),
+            CompileError::Skips {
+                pairs,
+                skip,
+                from,
+                to,
+                stored,
+                converted,
+            } => write!(
+                f,
+                "a formula of {pairs} pairs keeps {skip} in skip form, the copy in skip form took \
+                 {converted} units, and the stored form spent {stored} units from component {from} \
+                 to {to}"
+            ),
+            CompileError::Stored { skip, stored } => write!(
+                f,
+                "the skip form spent {skip} units where the stored form spent {stored}"
+            ),
         }
     }
 }

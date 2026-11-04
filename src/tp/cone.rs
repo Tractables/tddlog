@@ -68,6 +68,7 @@ pub(super) fn component_of(n: usize, sccs: &[Vec<AtomId>]) -> Vec<u32> {
 /// variables as the bitset has words, and a component it depends on
 /// through several atoms is read once. A cone at the limit or over it is
 /// held as that alone: every cone that reads it is over the limit too.
+#[derive(Clone)]
 pub(crate) struct Cones {
     blocks: usize,
     /// The union of the component being worked out, and the words of it
@@ -79,6 +80,7 @@ pub(crate) struct Cones {
     read_into: Vec<usize>,
 }
 
+#[derive(Clone)]
 enum Held {
     Released,
     Sparse(Vec<VarId>),

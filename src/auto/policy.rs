@@ -24,6 +24,35 @@ pub(super) const WORK_PER_PAIR: u64 = 256;
 /// more ends its turn and goes on in its next, with twice the target.
 pub(super) const WORK_PER_HELD_PAIR: u64 = 16;
 
+/// The pairs from which a trial that may go on in skip form measures a
+/// formula of its compile in that form ([`SKIP_SHARE`]): its first large
+/// formula, past what a fast compile ever holds, early in the compiles
+/// that hold more.
+pub(super) const PROBE_PAIRS: usize = 1 << 16;
+
+/// The share of its pairs under which a trial's first large formula
+/// ([`PROBE_PAIRS`]) has the trial weigh the skip form (`--skip-levels`):
+/// a trial of `program`, `program:fanin` or `decision` copies its compile
+/// into skip form, goes on stored until its work has doubled, sets that
+/// compile aside, and goes on with the copy from where it was made, which
+/// it keeps where it spends less work than the stored form over the same
+/// components, its conversion included, and leaves for the compile set
+/// aside where it spends as much (`tp::Probe`). Every other trial, and
+/// every trial whose formula keeps more, stays stored.
+///
+/// The share alone does not decide, since a skip pair's cost varies too
+/// much: in `program`'s compiles of 49 circuits in either form, a pair in
+/// skip form took 0.5 to 250 times the time of a stored one, 5.5 at the
+/// median, and more the fewer pairs the skip form keeps; in
+/// `program:fanin`'s of 24 it took 35 to 56 times between the quartiles.
+/// addFun_max's trials keep 2.5% to 3.7% of their pairs, where fair_dt's
+/// keep 0.7% to 1.3%, and at its cost of about 40 the skip form spent 1.2
+/// to 1.5 times the stored form's work past its first large formula, where
+/// fair_dt's spent 0.4 to 0.8 times. The bound is that cost's 90th
+/// percentile in `program`'s compiles, 22: the trials whose formula keeps
+/// more seldom pay for the stretch weighed.
+pub(super) const SKIP_SHARE: f64 = 1.0 / 22.0;
+
 /// The doublings past its target within which a trial's projected finish
 /// ([`Trial::projected`]) moves it ahead in the turns ([`Trial::key`]); a
 /// projection further out, or none, counts this many. A trial projected

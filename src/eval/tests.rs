@@ -276,6 +276,45 @@ fn grids_fall_back_to_scalar_loops_without_avx2() {
     }
 }
 
+/// A diagram with a level held as its description, which a builder's
+/// birth in skip form refuses, goes into the compile's copy in skip form
+/// all the same (`TddBackend::in_skip_form`): the conversion reads its
+/// pairs, the described ones among them, and the copy has the stored
+/// diagram's support and weighted count.
+#[test]
+fn the_copy_in_skip_form_converts_a_level_held_as_its_description() {
+    use crate::eval::Probabilities;
+    use crate::tp::{CompileError, Diagram, Form, TddBackend};
+    let eng = Engine::new();
+    let (f, t) = table(&eng, Flaw::None);
+    assert!(f.level(t).implicit().is_some());
+    let tree = Arc::clone(f.vtree());
+    let stored = TddBackend::new(&eng, tree.clone());
+    let skip = TddBackend::in_form(&eng, tree.clone(), Form::Skip);
+    assert!(matches!(
+        skip.born(f.clone()),
+        Err(CompileError::SkipForm(_))
+    ));
+    let s = Diagram::Stored(f);
+    assert!(stored.implicit_size(&s) > 0);
+    assert_eq!(stored.skip_form_reads(&s), s.pair_count() as u64);
+    let k = stored.in_skip_form(&s).unwrap();
+    assert!(matches!(k, Diagram::Skip(_)));
+    let n = 10;
+    let w = Probabilities {
+        pos: (0..=n).map(|v| 0.1 + 0.07 * v as f64).collect(),
+        neg: (0..=n).map(|v| 0.9 - 0.07 * v as f64).collect(),
+        one: vec![1.0; n + 1],
+    };
+    let (ms, mk) = (
+        stored.mass(&s, &w, &mut 0).unwrap(),
+        skip.mass(&k, &w, &mut 0).unwrap(),
+    );
+    assert!(!ms.is_zero());
+    assert!((mk.ratio(ms) - 1.0).abs() < 1e-12);
+    assert_eq!(stored.support(&s).unwrap(), skip.support(&k).unwrap());
+}
+
 /// A level one of whose pairs is off the grid, or one of whose nodes
 /// has fewer pairs, is read pair by pair. The library holds an affine
 /// level as its description, which the fit leaves to

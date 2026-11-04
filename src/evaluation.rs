@@ -243,6 +243,20 @@ impl Evaluation {
         true
     }
 
+    /// An evaluation that goes on from the compile's copy in skip form,
+    /// where the compile made one for `auto`'s probe
+    /// ([`tp::Compilation::take_fork`]), which is taken out, and the time
+    /// the copy took.
+    pub(crate) fn take_fork(&mut self) -> Option<(Evaluation, std::time::Duration)> {
+        let (copy, took) = self.compilation.as_mut()?.take_fork()?;
+        let evaluation = Evaluation {
+            compilation: Some(copy),
+            traced: self.traced,
+            ..Evaluation::default()
+        };
+        Some((evaluation, took))
+    }
+
     /// The finished compile's statistics.
     pub(crate) fn into_stats(self) -> CompileStats {
         self.compiled.expect("the compile finished").stats
