@@ -312,12 +312,13 @@ function holdBack(bytes, native) {
   return why.length === 0 ? "" : `${why.join(" ")} Press Run to try it here.`;
 }
 
-// tddlog's record of an instance in the release run: its seconds, why it
-// has none, or undefined where `records` (the results' suites) lack it.
+// tddlog's record of an instance in the release run (its column `tddlog`,
+// else a pipeline's, `*-tddlog`): its seconds, why it has none, or
+// undefined where `records` (the results' suites) lack it.
 function nativeRun(records, suite, instance) {
   const s = records.flatMap((r) => r.families.flatMap((f) => f.suites)).find((x) => x.key === suite);
   const row = s?.instances.find(([name]) => name === instance);
-  const own = s === undefined ? [] : tddlogColumns(s);
+  const own = s === undefined ? [] : s.systems.flatMap((x, i) => (x === "tddlog" || x.endsWith("-tddlog") ? [i] : []));
   return row === undefined || !own.length ? undefined : own.map((i) => row[i + 1]).find((v) => v !== null) ?? null;
 }
 

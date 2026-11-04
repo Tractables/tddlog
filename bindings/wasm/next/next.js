@@ -434,7 +434,7 @@ function integrationPlot(i, rows, key) {
 
 // The pipeline's answered time split into the export's (the exporter's run up
 // to what it hands tddlog) and tddlog's inference's, in cells; and, in an
-// integration with `others` (Alea.jl+tddlog's), each other system on a
+// integration that is `ported` (Alea.jl+tddlog's), each other system on a
 // program of its own of the model: its answers and total against the
 // pipeline's.
 function othersOf(i) {
