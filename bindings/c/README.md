@@ -107,7 +107,8 @@ against the probabilities worked out by hand.
   `evidence_probability`). Null options are the defaults.
 - `format` in the options says what the text is, as the command line
   tells it by the file's extension: `"problog"` or null (an LPAD where it
-  holds `:- begin_lpad.`), `"dice"`, or a network's, `"bif"`, `"hugin"`
+  holds `:- begin_lpad.`), `"dice"`, `"circulette"` (a `.cql` netlist),
+  or a network's, `"bif"`, `"hugin"`
   (`.net`), `"xdsl"` or `"uai"`, with every variable queried. A network's
   `evidence` is the text of its evidence file, an Ace `.inst` file or,
   for a UAI network, a UAI `.evid` file. For a UAI `MARKOV` network,

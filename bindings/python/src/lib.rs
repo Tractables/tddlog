@@ -130,7 +130,8 @@ impl Solution {
 ///
 /// ``format`` names what the text is, as the command line tells it by the
 /// file's extension: ``"problog"``, the default (an LPAD where it holds
-/// ``:- begin_lpad.``), ``"dice"``, or a network's: ``"bif"``,
+/// ``:- begin_lpad.``), ``"dice"``, ``"circulette"`` (a ``.cql``
+/// netlist), or a network's: ``"bif"``,
 /// ``"hugin"`` (``.net``), ``"xdsl"`` or ``"uai"``. A network's
 /// variables are each queried at every value, and ``evidence`` is the
 /// text of its evidence file, as the command line's ``--evidence`` reads

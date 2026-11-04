@@ -150,7 +150,7 @@ pub struct ReadOptions<'a> {
     /// term that takes the places `$1`, `$2`, ... of the program
     /// ([`crate::syntax`]), as the values after the program's file do on
     /// the command line; of a Dice program, the counts of its `iterate`s
-    /// that it writes as places. Refused for a network.
+    /// that it writes as places. Refused for a network or a netlist.
     pub arguments: Vec<String>,
     /// Write every variable's rows, as `--program` prints a network for
     /// the systems that read its program, and not only those of the

@@ -156,12 +156,12 @@ the formulation and the projection besides its vtree. The modules, in
 | `bin/tddlog/` | the binary: `main.rs`, the command line, options and answers; `stats.rs`, the `--stats` lines; `budget.rs`, the address-space limit from the cgroups; `alloc.rs`, the allocator |
 | `lib.rs` | `Run`, `Error`, the public items |
 | `trace.rs` | `Trace`: a run's stages from `Progress`'s events, bounded, written as JSON (`tddlog --trace`, the browser build) |
-| `input.rs` | `Format` and `read`: every input (a ProbLog program or an LPAD, a Dice program, a network file with its evidence file) read as the program `solve` takes, the one route of the binary and the bindings |
+| `input.rs` | `Format` and `read`: every input (a ProbLog program or an LPAD, a Dice program, a Circulette netlist, a network file with its evidence file) read as the program `solve` takes, the one route of the binary and the bindings |
 | `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, what `auto` is handed ready, the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups |
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
-| `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes |
+| `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes; `circulette.rs`, a Circulette netlist read as its gates' rules with a fault on each logic gate |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
 | `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls; `topdown.rs`, top-down grounding; and `schedule.rs`, body order), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
@@ -275,11 +275,12 @@ The parser reads ProbLog without cut:
 There are no cut, if-then-else or strings.
 
 Every input reaches the parser through `read` (`input.rs`): a ProbLog
-program is its own text, and an LPAD, a Dice program and a network file
-are read by their modules as the program `tddlog --program` prints. The
-command line takes the format from the file's extension
-(`Format::of_path`), and the bindings take its name (`problog`, `dice`,
-`bif`, `hugin`, `xdsl`, `uai`), with a network's evidence file as its
+program is its own text, and an LPAD, a Dice program, a Circulette
+netlist and a network file are read by their modules as the program
+`tddlog --program` prints. The command line takes the format from the
+file's extension (`Format::of_path`), and the bindings take its name
+(`problog`, `dice`, `circulette`, `bif`, `hugin`, `xdsl`, `uai`), with a
+network's evidence file as its
 contents; a network's options given for another format are refused.
 
 A ProbLog program or an LPAD may take arguments, the values after its
@@ -404,6 +405,38 @@ than 2^24 values. The reader writes the program that the
 Python script it replaced (`dice2problog.py`, now on the baselines
 branch) wrote, byte for byte (tests/dice holds Dice programs and the
 script's programs for them).
+
+A file with the extension `.cql` is a netlist of Circulette, a tool for
+the fault analysis of digital circuits on Roulette, and
+`syntax/circulette.rs` reads it as a ProbLog program. The netlist is
+Racket data: its inputs, outputs and registers with their widths, and a
+line for each wire with its expression, a logic gate (`w&`, `w||`, `w^`,
+`w~`), a multiplexer (`wx`), an assignment (`<w=`, and `<<=`, a register's
+next value) or wiring (selections `ws` of one bit, concatenations `wc`,
+constants `bv-const`). The circuit is evaluated for one cycle with its
+inputs and registers false, on the lines the outputs read, transitively,
+reading a register's next value where they read the register
+(Circulette's slice); each logic gate of the slice is faulty with
+probability `1 - p-clean`, which flips its output; the circuit fails
+where a bit of an output, or of the next value of a register in the
+slice, is one, as `expected-output`, all false, says. A multiplexer
+`(wx S A B)` is `B` where `S` is one, and it reads an input's bits as
+ones, through any wiring, where gates, outputs and registers read them
+as false; Circulette's runs answer so. The program states the netlist's
+slice as facts in the order of its lines, one rule for each kind of gate
+over its operands' bits (`bit(W, I)`), the fault as a probabilistic rule
+over the logic gates, the failure
+as the evidence, its probability `P(e)`, and as queries what Circulette
+asks: every gate's fault and every pair and triple of faults, each a
+query of its own (`faults(A, B)`, `faults(A, B, C)`), `1 + n + n(n-1)/2 +
+n(n-1)(n-2)/6` answers for `n` logic gates, counting `P(e)`. The format
+and its meaning were established from Circulette's documentation, its
+netlists' comments and the answers of its runs. Refused, on its line, is
+what the netlists do not show the meaning of: an expected value of true,
+a logic gate on a word, a selection of several bits, a gate inside an
+expression, `sketch-reroll` with loops, a combinational cycle, a wire read
+and not defined, a `p-faulty` other than `1 - p-clean`, and any other
+form.
 
 A predicate without clauses is not read as false: a query or an
 observation of one, and a call of one that is not a built-in above in a
