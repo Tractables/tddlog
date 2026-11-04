@@ -304,7 +304,7 @@ static void check_arguments(void) {
       {broken, 2, NULL, TDDLOG_ERROR_INVALID_INPUT, "is not a term"},
       {null, 2, NULL, TDDLOG_ERROR_INVALID_INPUT, "options->arguments[1] must not be null"},
       {NULL, 2, NULL, TDDLOG_ERROR_INVALID_INPUT, "options->arguments must not be null"},
-      {arguments, 2, "bif", TDDLOG_ERROR_INVALID_INPUT, "for a ProbLog program or an LPAD"},
+      {arguments, 2, "bif", TDDLOG_ERROR_INVALID_INPUT, "for a ProbLog program, an LPAD or a Dice program"},
   };
   for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
     options.arguments = cases[i].arguments;

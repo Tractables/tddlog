@@ -30,7 +30,8 @@ The arguments after a ProbLog program or an LPAD take the places $1, $2,
 ... in its text, outside comments and quoted atoms, each read as a term:
 `tddlog walk.pl 100 0.3` reads `between(1, $1, I)` as `between(1, 100, I)`
 and `$2::step.` as `0.3::step.`. Each argument must have its place, and
-each place its argument.
+each place its argument. In a Dice program a place stands for the count
+of an iterate, `iterate(step, x, $1)`, and its argument is a count.
 
 options:
   --vtree <strategy>                    vtree over the probabilistic facts (default: auto)

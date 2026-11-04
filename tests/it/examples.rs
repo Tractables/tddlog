@@ -857,8 +857,10 @@ fn dice_translations() {
 /// [`data/dice`](https://github.com/Tractables/tddlog/tree/baselines/data/dice) on the baselines branch),
 /// read by tddlog's Dice reader (`tddlog::syntax::dice`) as the program
 /// the Python script dice2problog.py wrote for each before the reader
-/// replaced it (tests/dice/NAME.pl); Dice's answers, which the baselines
-/// branch also checks against an exact evaluation of the Dice program.
+/// replaced it (tests/dice/NAME.pl), but for a loop's count, which the
+/// reader writes as a fact that the recursion reads; steps.dice takes its
+/// count as an argument. Dice's answers, which the baselines branch also
+/// checks against an exact evaluation of the Dice program.
 mod dice {
     use super::*;
     use tddlog::Options;
@@ -868,7 +870,7 @@ mod dice {
     }
 
     #[test]
-    fn each_program_is_read_as_the_program_dice2problog_wrote() {
+    fn each_program_is_read_as_its_problog_file() {
         let mut read = 0;
         for entry in std::fs::read_dir("tests/dice").unwrap() {
             let path = entry.unwrap().path();
@@ -881,7 +883,42 @@ mod dice {
             assert_eq!(program, written, "{name}");
             read += 1;
         }
-        assert_eq!(read, 10);
+        assert_eq!(read, 11);
+    }
+
+    /// A count as the program's argument (tests/dice/steps.dice, the walk
+    /// of walk.dice with `$1` for its count): read with the argument k, it
+    /// is its one program, steps.pl, with k in the count's place, and its
+    /// answers are by hand. From 3, each step goes up with probability 0.4
+    /// and down otherwise: after no step x is 3; after one, 4 (0.4) or 2
+    /// (0.6); after two, 5 (0.16), 3 (0.48) or 1 (0.36); after three, 6
+    /// (0.064), 4 (0.288), 2 (0.432) or 0 (0.216), which the observation
+    /// x != 0 rules out, the others over 0.784.
+    #[test]
+    fn a_count_takes_its_argument() {
+        let source = std::fs::read("tests/dice/steps.dice").unwrap();
+        let template = std::fs::read_to_string("tests/dice/steps.pl").unwrap();
+        let e = 0.784;
+        for (k, answers) in [
+            ("0", [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]),
+            ("1", [0.0, 0.0, 0.6, 0.0, 0.4, 0.0, 0.0, 0.0]),
+            ("2", [0.0, 0.36, 0.0, 0.48, 0.0, 0.16, 0.0, 0.0]),
+            (
+                "3",
+                [0.0, 0.0, 0.432 / e, 0.0, 0.288 / e, 0.0, 0.064 / e, 0.0],
+            ),
+        ] {
+            let options = tddlog::network::ReadOptions {
+                arguments: vec![k.to_string()],
+                ..Default::default()
+            };
+            let input = tddlog::read(&source, tddlog::Format::Dice, &options).unwrap();
+            assert_eq!(&*input.program, template.replace("$1", k), "{k}");
+            let queries: Vec<String> = (0..8).map(|v| format!("x({v})")).collect();
+            let expected: Vec<(&str, f64)> =
+                queries.iter().map(String::as_str).zip(answers).collect();
+            check_text(&format!("steps.dice {k}"), &input.program, &expected);
+        }
     }
 
     /// An observation of false makes the evidence impossible, and Dice
@@ -1103,7 +1140,9 @@ mod dice {
     /// it gave when Dice's loops were unrolled, to 1e-9, and against the
     /// suite's reference, ProbLog's d-DNNF (eight significant digits, so to
     /// 5e-8 of the answer) or else Alea.jl's (to 1e-9), none on the
-    /// programs neither answers. Skipped without data/dice.
+    /// programs neither answers. A scaled version read with its count as
+    /// the program's argument, `$1`, is the same program. Skipped without
+    /// data/dice.
     #[test]
     fn the_loops() {
         let data = std::path::Path::new("data/dice");
@@ -1119,7 +1158,18 @@ mod dice {
             let file = data.join(format!("{}.dice", case.get("program").str()));
             let mut source = std::fs::read_to_string(&file).unwrap();
             if let Json::Number(k) = case.get("steps") {
-                source = scaled(&source, *k as u64);
+                // The count as the program's argument, `$1`: the same
+                // program as the count written in.
+                let k = (*k as u64).to_string();
+                let options = tddlog::network::ReadOptions {
+                    arguments: vec![k.clone()],
+                    ..Default::default()
+                };
+                let placed = scaled(&source, "$1");
+                let input = tddlog::read(placed.as_bytes(), tddlog::Format::Dice, &options)
+                    .unwrap_or_else(|e| panic!("{name} with $1: {e}"));
+                source = scaled(&source, &k);
+                assert_eq!(*input.program, read(&source, name), "{name} with $1");
             }
             let program = read(&source, name);
             let run = common::run(&program, &Options::default())
@@ -1155,8 +1205,9 @@ mod dice {
     }
 
     /// The Dice program `source` with the count of its first `iterate`
-    /// call, the one the program's result reads, set to `k`.
-    fn scaled(source: &str, k: u64) -> String {
+    /// call, the one the program's result reads, set to `k`: a number or a
+    /// place.
+    fn scaled(source: &str, k: &str) -> String {
         let i = source.find("iterate(").expect("an iterate call");
         let mut depth = 0;
         let mut j = i;

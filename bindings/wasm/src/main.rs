@@ -21,12 +21,13 @@ fn main() {}
 /// `uai`), a network's with `evidence` the text of its evidence file (null
 /// for none), under the vtree strategy named `strategy` (as `--vtree`
 /// takes it; `auto` is the default), with `P(e)` where
-/// `evidence_probability` is 1, a ProbLog program's or an LPAD's
-/// arguments the `num_arguments` strings at `arguments` (null for none;
-/// each the text of a term that takes the places `$1`, `$2`, ... of the
-/// program, as the command line takes the values after the program's
-/// file), with the trace of the run ([`tddlog::trace::Trace`]) where
-/// `trace` is 1, and return the JSON text of the result (`runtime.js`
+/// `evidence_probability` is 1, a ProbLog program's, an LPAD's or a
+/// Dice program's arguments the `num_arguments` strings at `arguments`
+/// (null for none; each the text of a term that takes the places `$1`,
+/// `$2`, ... of the program, a Dice program's a count of an `iterate`,
+/// as the command line takes the values after the program's file), with
+/// the trace of the run ([`tddlog::trace::Trace`]) where `trace` is 1, and
+/// return the JSON text of the result (`runtime.js`
 /// documents its fields), or of `{"error": ...}` where the program or the
 /// options are refused or the run fails. The caller releases the string
 /// with [`tddlog_string_free`].
@@ -514,7 +515,7 @@ mod tests {
 
     /// examples/chain.pl, given a chain of 10 links of 0.9 and node 4,
     /// reaches it with probability 0.9^4; a place without an argument is
-    /// an error.
+    /// an error; and a Dice program's count takes its argument.
     #[test]
     fn arguments_take_their_places() {
         let chain = file("examples/chain.pl");
@@ -525,6 +526,20 @@ mod tests {
         );
         let out = solve_with(&chain, "problog", None, "auto", 0, &["10", "0.9"]);
         assert!(out.contains("`$3` has no argument"), "{out}");
+        // A Dice program's count: tests/dice/steps.dice is the walk of
+        // walk.dice with `$1` for its count of 10.
+        let walk = solve_with(&file("tests/dice/walk.dice"), "dice", None, "auto", 0, &[]);
+        let steps = file("tests/dice/steps.dice");
+        assert!(
+            walk.starts_with("{\"answers\":[{\"query\":\"x(0)\""),
+            "{walk}"
+        );
+        // the answers alike; the rest of the output carries the run's times
+        let answers = |out: &str| out[..out.find(",\"evidence\"").expect("evidence")].to_string();
+        assert_eq!(
+            answers(&solve_with(&steps, "dice", None, "auto", 0, &["10"])),
+            answers(&walk)
+        );
     }
 
     #[test]

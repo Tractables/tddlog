@@ -222,8 +222,15 @@ def test_arguments_take_their_places():
         tddlog.solve(chain, arguments=["10", "0.9", "4", "5"])
     with pytest.raises(ValueError, match="is not a term"):
         tddlog.solve(chain, arguments=["10", "0.9", "f("])
-    with pytest.raises(ValueError, match="for a ProbLog program or an LPAD"):
+    with pytest.raises(ValueError, match="the program has no `\\$1`"):
         tddlog.solve("let x = flip 0.5 in x", format="dice", arguments=["1"])
+    with pytest.raises(ValueError, match="is not a count"):
+        tddlog.solve("iterate(f, true, $1)", format="dice", arguments=["0.5"])
+    # A Dice program's count as its argument: three steps that each flip x
+    # with probability 0.5 leave it true with probability 0.5.
+    walk = "fun f(x: bool) { if flip 0.5 then !x else x }\niterate(f, true, $1)"
+    answers = tddlog.solve(walk, format="dice", arguments=["3"]).answers
+    assert list(answers.values()) == [pytest.approx(0.5, abs=1e-12)]
 
 
 def test_threads_solve_concurrently():

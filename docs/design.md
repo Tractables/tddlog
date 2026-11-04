@@ -295,12 +295,19 @@ argument is parsed as a term first, and one with an operator at its top
 takes its place in parentheses (`1/3` as `(1/3)`); a space keeps it
 apart from a neighbour it would run into (`5-$1` of `-3` as `5- -3`).
 A place without an argument, an argument without a place, an argument
-that is not a term, and arguments for a Dice program or a network are
-refused. `tddlog --program` prints the program with its arguments in
-place, which any system that reads ProbLog then reads. The files a
-program consults are read after its arguments took their places, and
-their own places take none. The example queries of an LPAD sit in a
-comment and take no arguments.
+that is not a term, and arguments for a network are refused. `tddlog
+--program` prints the program with its arguments in place, which any
+system that reads ProbLog then reads. The files a program consults are
+read after its arguments took their places, and their own places take
+none. The example queries of an LPAD sit in a comment and take no
+arguments. In a Dice program a place stands for the count of an
+`iterate` alone, `iterate(step, x, $1)`, and its argument is a count:
+the Dice reader writes the count as a fact, `steps($1).`, which the
+recursion over the steps reads, and reads the state after the loop at
+it, `s($1)` (`syntax/dice.rs`), and the arguments then take their places in that
+program, so that one Dice program serves every count and `tddlog
+--program` without arguments prints the one ProbLog program of them
+all.
 
 A source that holds the directive `:- begin_lpad.` (or cplint's other
 spelling, `:- begin_plp.`) is an LPAD written for cplint and PITA, and
@@ -382,8 +389,10 @@ constant takes only the values the guard allows. An `observe` within a
 branch holds where the branch is not taken. A function is inlined at each
 call, a recursive one up to Dice's limit of ten nested calls, the call
 past it an observation of false. `iterate(f, init, k)` is recursion over
-a step index that the grounder unrolls: f's body once, its atoms indexed
-by the step, the state before step `T + 1` the body's at step `T`. A
+a step index that the grounder unrolls: the count a fact `steps(k)`, f's
+body once, its atoms indexed by the step, the state before step `T + 1`
+the body's at step `T`, and the state after the loop read at the count,
+`s(k)`. A
 list (`[] : list(t)`, `[...]`, `::`, `head`, `tail`, `length`) is held as
 Dice holds one: a 4-bit length and ten elements as nested pairs, those
 past the length at their type's default, with `head` and `tail` of an

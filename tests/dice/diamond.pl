@@ -1,6 +1,7 @@
+steps(100).
 diamond(0).
-step(0).
-step(T1) :- step(T), T < 99, T1 is T + 1.
+step(0) :- steps(N), N > 0.
+step(T1) :- step(T), steps(N), T1 is T + 1, T1 < N.
 0.5::route(T) :- step(T).
 s2(T) :- route(T), diamond(T).
 s3(T) :- diamond(T), \+route(T).

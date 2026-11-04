@@ -704,9 +704,9 @@ const WALKS = [
     command: "tddlog --trace dice.json --evidence-probability tests/dice/walk.dice",
     lede: "A random walk on 0..7 in Dice: ten steps of plus or minus one from 3, absorbed at either end, observed not to end at 0. tddlog reads Dice itself, an integer as bits.",
     captions: {
-      read: "The Dice front end evaluates the program symbolically into Datalog: `x` three bits per step, each step's flip `0.4::x_c_3(T)`, and a query `x(V)` per value.",
-      parse: "44 clauses: the flip as a probabilistic rule, the start as facts, and 40 rules; eight queries and the observation `obs`.",
-      ground: "The steps are ground level by level, constants proved as each completes, and equal gates merged (`swept`: proved equal by a SAT solver): 215 atoms become 90.",
+      read: "The Dice front end evaluates the program symbolically into Datalog: the count a fact `steps(10)`, `x` three bits per step, each step's flip `0.4::x_c_3(T)`, and a query `x(V)` per value.",
+      parse: "45 clauses: the flip as a probabilistic rule, the count and the start as facts, and 41 rules; eight queries and the observation `obs`.",
+      ground: "The steps are ground level by level, constants proved as each completes, and equal gates merged (`swept`: proved equal by a SAT solver): 216 atoms become 90.",
       rewrite: "No recursion is left once the steps are ground, and `closed` reads no indicators: the program compiles as ground.",
       layout: "`closed` is `auto`'s first trial for few facts with many derived atoms per fact (here 10 and 80): new facts on a right-linear spine, over the ten flips a chain.",
       compile: "Each of the 80 gates is a component, compiled in dependency order a step after the other; the formulas grow with the steps, up to 59 pairs.",

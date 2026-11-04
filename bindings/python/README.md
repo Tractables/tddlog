@@ -86,11 +86,12 @@ observed = open("examples/car.inst").read()
 solution = tddlog.solve(network, format="hugin", evidence=observed)
 ```
 
-`arguments` are a ProbLog program's or an LPAD's arguments, the values
-the command line takes after the program's file: a list of strings, each
-the text of a term that takes the places `$1`, `$2`, ... of the program,
-as in `tddlog.solve(open("examples/chain.pl").read(), arguments=["10",
-"0.9", "4"])`.
+`arguments` are a ProbLog program's, an LPAD's or a Dice program's
+arguments, the values the command line takes after the program's file: a
+list of strings, each the text of a term that takes the places `$1`, `$2`,
+... of the program, as in `tddlog.solve(open("examples/chain.pl").read(),
+arguments=["10", "0.9", "4"])`; in a Dice program a place is the count of
+an `iterate`, and its argument a count.
 
 For a UAI `MARKOV` network, `evidence_probability` is the partition
 function given the evidence. A

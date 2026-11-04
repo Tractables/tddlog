@@ -28,13 +28,19 @@
 //! operands are made once. Functions are inlined at each call.
 //!
 //! A loop `iterate(f, init, k)` is written as a ProbLog user writes one,
-//! recursion over a step index that the grounder unrolls: f's body once,
-//! its atoms indexed by the step `T` (`step(T)`, 0 to k - 1), each flip a
-//! probabilistic fact of its step, and the state before step `T` the atoms
-//! `s(T)` of the state's Booleans and bits, `s(0)` the initial state's and
-//! `s(T + 1)` the body's at step `T`; the body's observations hold at
-//! every step, `failed` where one does not, and the evidence is that it is
-//! false (`Translator::iterate`). A function that calls itself is
+//! recursion over a step index that the grounder unrolls: the count a
+//! fact `steps(k)`, f's body once, its atoms indexed by the step `T`
+//! (`step(T)`, 0 to k - 1), each flip a probabilistic fact of its step,
+//! and the state before step `T` the atoms `s(T)` of the state's Booleans
+//! and bits, `s(0)` the initial state's and `s(T + 1)` the body's at step
+//! `T`; the state after the loop is read at the count, `s(k)`; the
+//! body's observations hold at every step, `failed` where one does not,
+//! and the evidence is that it is false (`Translator::iterate`). The
+//! count may be a place `$1`, `$2`, ..., which the program's arguments
+//! fill as they fill a ProbLog program's: the program written holds the
+//! place in its fact `steps($1)` and where it reads the state after the
+//! loop, `s($1)`, so that one program serves every count. A place
+//! stands for nothing else in a Dice program. A function that calls itself is
 //! inlined up to Dice's recursion limit, 10: a call past it is
 //! unreachable, an observation of false on its path, and returns its
 //! declared type's default. The program's return value is queried: every
@@ -60,7 +66,9 @@
 //! more than 63 bits, and a `uniform` over more than 2^24 values.
 //!
 //! The program is the one the Python script `dice2problog.py` (on the
-//! baselines branch) wrote before this reader replaced it, byte for byte: its atoms are named in the same
+//! baselines branch) wrote before this reader replaced it, byte for byte,
+//! but for a loop's count, which the script wrote as the bounds of the
+//! recursion and of the reads after it: its atoms are named in the same
 //! order from the same hints, and its probabilities are written as
 //! Python's `repr` writes a float.
 
@@ -124,6 +132,8 @@ enum Tk {
     Id,
     Num,
     Op,
+    /// A place `$N`, which an argument fills: the count of an `iterate`.
+    Place,
     Eof,
 }
 
@@ -142,8 +152,8 @@ const LONG_OPS: [&str; 11] = [
 const SHORT_OPS: &str = "-+*/%<>^(){}[],=!:";
 
 /// The tokens of `text`: identifiers `[A-Za-z_][A-Za-z0-9_']*`, numbers,
-/// operators; `//` comments to the end of the line and `(* *)` comments
-/// (not nested) are skipped.
+/// operators, places `$N`; `//` comments to the end of the line and
+/// `(* *)` comments (not nested) are skipped.
 fn tokenize(text: &str) -> Res<Vec<Token<'_>>> {
     let b = text.as_bytes();
     let mut out = Vec::new();
@@ -195,6 +205,8 @@ fn tokenize(text: &str) -> Res<Vec<Token<'_>>> {
                 }
             }
             i - pos
+        } else if b[pos] == b'$' && digits(pos + 1) > 0 {
+            1 + digits(pos + 1)
         } else if let Some(op) = LONG_OPS.iter().find(|op| rest.starts_with(**op)) {
             op.len()
         } else if SHORT_OPS.as_bytes().contains(&b[pos]) {
@@ -206,6 +218,8 @@ fn tokenize(text: &str) -> Res<Vec<Token<'_>>> {
             Tk::Id
         } else if b[pos].is_ascii_digit() || b[pos] == b'.' {
             Tk::Num
+        } else if b[pos] == b'$' {
+            Tk::Place
         } else {
             Tk::Op
         };
@@ -222,6 +236,17 @@ fn tokenize(text: &str) -> Res<Vec<Token<'_>>> {
 fn cannot(text: &str, pos: usize, line: usize) -> ParseError {
     let at: String = text[pos..].chars().take(30).collect();
     fail(line, format!("cannot read a Dice token at `{at}`"))
+}
+
+/// A place where the program takes none: a place is an `iterate`'s count.
+fn misplaced(t: Token<'_>) -> ParseError {
+    fail(
+        t.line,
+        format!(
+            "a place `{}` stands only for the count of an iterate",
+            t.text
+        ),
+    )
 }
 
 // ---------------------------------------------------------------------
@@ -249,7 +274,7 @@ enum Kind<'a> {
     Int(u64, u64),
     /// `uniform(width, lo, hi)`.
     Uniform(u64, u64, u64),
-    Iterate(&'a str, Box<Expr<'a>>, u64),
+    Iterate(&'a str, Box<Expr<'a>>, Count<'a>),
     Fst(Box<Expr<'a>>),
     Snd(Box<Expr<'a>>),
     /// `binomial(width, n, p)`.
@@ -268,6 +293,23 @@ enum Kind<'a> {
     Call(&'a str, Vec<Expr<'a>>),
     Var(&'a str),
     Tuple(Box<Expr<'a>>, Box<Expr<'a>>),
+}
+
+/// The count of an `iterate`: a number, or a place `$N` that an argument
+/// fills, written as it stands in the program.
+#[derive(Clone, Copy)]
+enum Count<'a> {
+    Number(u64),
+    Place(&'a str),
+}
+
+impl std::fmt::Display for Count<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Count::Number(k) => write!(f, "{k}"),
+            Count::Place(p) => f.write_str(p),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -319,7 +361,7 @@ const UNSUPPORTED: [&str; 1] = ["sample"];
 ///       | 'observe' expr | '!' expr | expr binop expr | atom
 /// atom := 'flip' num | 'flip' '(' num ')' | 'discrete' '(' nums ')'
 ///       | 'int' '(' num ',' num ')' | 'uniform' '(' num ',' num ',' num ')'
-///       | 'iterate' '(' id ',' expr ',' num ')'
+///       | 'iterate' '(' id ',' expr ',' (num | place) ')'
 ///       | 'binomial' '(' num ',' num ',' num ')'
 ///       | 'nth_bit' '(' 'int' '(' num ',' num ')' ',' expr ')'
 ///       | 'fst' atom | 'snd' atom | ('head' | 'tail' | 'length') expr7
@@ -363,6 +405,9 @@ impl<'a> Parser<'a> {
 
     fn expect(&mut self, kind: Tk, text: Option<&str>) -> Res<Token<'a>> {
         let t = self.peek();
+        if t.kind == Tk::Place {
+            return Err(misplaced(t));
+        }
         if t.kind != kind || text.is_some_and(|s| s != t.text) {
             let want = match (text, kind) {
                 (Some(s), _) => format!("`{s}`"),
@@ -586,9 +631,18 @@ impl<'a> Parser<'a> {
                 self.op("]")?;
                 Kind::List(items)
             }
+            (Tk::Place, _) => return Err(misplaced(t)),
             _ => return Err(fail(line, format!("unexpected `{}`", t.text))),
         };
         Ok(Expr { line, kind })
+    }
+
+    /// An `iterate`'s count: a number or a place.
+    fn count(&mut self) -> Res<Count<'a>> {
+        if self.peek().kind == Tk::Place {
+            return Ok(Count::Place(self.take().text));
+        }
+        Ok(Count::Number(self.integer()?))
     }
 
     fn int_pair(&mut self) -> Res<(u64, u64)> {
@@ -642,7 +696,7 @@ impl<'a> Parser<'a> {
                 self.op(",")?;
                 let init = self.expr(0)?;
                 self.op(",")?;
-                let k = self.integer()?;
+                let k = self.count()?;
                 self.op(")")?;
                 Kind::Iterate(f, Box::new(init), k)
             }
@@ -1938,7 +1992,7 @@ impl<'a> Translator<'a> {
             }
             Kind::Iterate(f, init, k) => {
                 let init = self.eval(init, env, path, name)?;
-                self.iterate(f, init, *k, path, name, line)
+                self.iterate(f, init, k, path, name, line)
             }
         }
     }
@@ -2133,13 +2187,14 @@ impl<'a> Translator<'a> {
     }
 
     /// `iterate(fname, init, k)` as recursion over a step index, which the
-    /// grounder unrolls: fname's body once, under `step(T)` for T from 0
-    /// to k - 1, its flips probabilistic facts of the step and its atoms
-    /// of the step where they read one (`name(T)`). Each literal of the
-    /// state (a Boolean, a bit of an integer) is an atom s of its own,
-    /// `s(0)` the initial state's literal and `s(T1)`, T1 = T + 1, the
-    /// body's at step T, and the value is the state at k; a literal the
-    /// step keeps (the body returns the initial state's literal where the
+    /// grounder unrolls: the count k a fact `steps(k)` (k a number or a
+    /// place, which an argument fills), fname's body once, under `step(T)`
+    /// for T from 0 to k - 1, its flips probabilistic facts of the step
+    /// and its atoms of the step where they read one (`name(T)`). Each
+    /// literal of the state (a Boolean, a bit of an integer) is an atom s
+    /// of its own, `s(0)` the initial state's literal and `s(T1)`, with
+    /// `T1 is T + 1`, the body's at step T, and the value is the state at
+    /// k, `s(k)`; a literal the step keeps (the body returns the initial state's literal where the
     /// state holds it, as the key of the Caesar cipher) is no atom but
     /// itself. Which literals are kept, and the values the state's
     /// integers take (for the comparisons and the conditions that they
@@ -2158,14 +2213,11 @@ impl<'a> Translator<'a> {
         &mut self,
         fname: &'a str,
         init: Value,
-        k: u64,
+        k: &Count<'_>,
         path: &[Lit],
         name: &str,
         line: usize,
     ) -> Res<Value> {
-        if k == 0 {
-            return Ok(init);
-        }
         if self.in_loop.is_some() {
             return Err(fail(line, "iterate inside a loop is not supported"));
         }
@@ -2238,6 +2290,9 @@ impl<'a> Translator<'a> {
             }
         }
         let l = step.expect("a step predicate");
+        // The count, a fact the recursion over the steps reads.
+        let count = self.fresh("steps");
+        self.lines.push(format!("{count}({k})."));
         for (i, start) in state.start.iter().enumerate() {
             for (j, b) in start.bits().into_iter().enumerate() {
                 if !state.kept[i][j] {
@@ -2246,11 +2301,11 @@ impl<'a> Translator<'a> {
                 }
             }
         }
-        self.lines.push(format!("{l}(0)."));
-        if k > 1 {
-            self.lines
-                .push(format!("{l}(T1) :- {l}(T), T < {}, T1 is T + 1.", k - 1));
-        }
+        // Steps 0 to the count less one: none for a count of 0.
+        self.lines.push(format!("{l}(0) :- {count}(N), N > 0."));
+        self.lines.push(format!(
+            "{l}(T1) :- {l}(T), {count}(N), T1 is T + 1, T1 < N."
+        ));
         let at = self.state(&state, &init, STEP);
         let ends = self.body(fname, at, path, name, &l, line)?;
         for (i, q) in ends.iter().enumerate() {
@@ -2273,6 +2328,9 @@ impl<'a> Translator<'a> {
             }
             self.evidence.push(neg(&failed));
         }
+        // The state after the loop, read at the count itself (a rule that
+        // read it after `steps(N)` kept the grounder from folding its
+        // copies of the last steps' atoms).
         Ok(self.state(&state, &init, &format!("({k})")))
     }
 
@@ -2885,6 +2943,32 @@ mod tests {
         );
         assert_eq!(toks[6].line, 2);
         assert!(tokenize("a # b").is_err());
+        let toks = tokenize("iterate(f, x, $12)").unwrap();
+        assert!(toks[6].kind == Tk::Place && toks[6].text == "$12");
+    }
+
+    /// A loop's count is a fact that the recursion over the steps reads,
+    /// and the state after them is read at it, so that a place for it,
+    /// `steps($1)` and `s($1)`, makes one program of every count.
+    #[test]
+    fn a_count_is_a_fact() {
+        let program =
+            read("fun f(x: bool) { if flip 0.5 then !x else x }\niterate(f, true, $1)").unwrap();
+        for line in [
+            "steps($1).",
+            "step(0) :- steps(N), N > 0.",
+            "step(T1) :- step(T), steps(N), T1 is T + 1, T1 < N.",
+        ] {
+            assert!(program.lines().any(|l| l == line), "{line}: {program}");
+        }
+        // The result, the state after the loop, read at the count.
+        assert!(
+            program
+                .lines()
+                .any(|l| l.starts_with("result") && l.ends_with(" :- f($1).")),
+            "{program}"
+        );
+        assert_eq!(program.matches('$').count(), 2, "{program}");
     }
 
     /// Dice accepts a list within 1e-4 of one and normalizes it (each bit
@@ -3000,6 +3084,10 @@ mod tests {
             ),
             ("uniform(2, 3, 3)", "empty or out of range"),
             ("flip 0.5 + int(2, 1)", "an integer is expected"),
+            ("flip $1", "stands only for the count of an iterate"),
+            ("int(3, $1)", "stands only for the count of an iterate"),
+            ("let x = $1 in x", "stands only for the count of an iterate"),
+            ("let x = flip 0.5 in $x", "cannot read a Dice token at `$x"),
         ] {
             let e = read(program).expect_err(program);
             assert!(e.msg.contains(error), "{program}: {e}");

@@ -1,0 +1,9 @@
+// The random walk of walk.dice, its number of steps the program's
+// argument: with the argument 10 it is read as walk.dice is.
+fun step(x: int(3)) {
+  if x == int(3, 0) || x == int(3, 7) then x
+  else if flip 0.4 then x + int(3, 1) else x - int(3, 1)
+}
+let x = iterate(step, int(3, 3), $1) in
+let tmp = observe x != int(3, 0) in
+x

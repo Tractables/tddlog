@@ -149,7 +149,8 @@ pub struct ReadOptions<'a> {
     /// The arguments of a ProbLog program or an LPAD, each the text of a
     /// term that takes the places `$1`, `$2`, ... of the program
     /// ([`crate::syntax`]), as the values after the program's file do on
-    /// the command line. Refused for a network or a Dice program.
+    /// the command line; of a Dice program, the counts of its `iterate`s
+    /// that it writes as places. Refused for a network.
     pub arguments: Vec<String>,
     /// Write every variable's rows, as `--program` prints a network for
     /// the systems that read its program, and not only those of the
@@ -183,9 +184,10 @@ pub struct NetworkProgram {
     pub log10_offset: Option<f64>,
 }
 
-/// Why arguments are refused for an input that is not a ProbLog program
-/// or an LPAD ([`ReadOptions::arguments`]).
-pub(crate) const ARGUMENTS: &str = "arguments ($1, $2, ...) are for a ProbLog program or an LPAD";
+/// Why arguments are refused for an input that is not a ProbLog program,
+/// an LPAD or a Dice program ([`ReadOptions::arguments`]).
+pub(crate) const ARGUMENTS: &str =
+    "arguments ($1, $2, ...) are for a ProbLog program, an LPAD or a Dice program";
 
 /// The program of the network file whose contents are `data`, in
 /// `format`, read under `options`.

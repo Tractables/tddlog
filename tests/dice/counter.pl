@@ -1,5 +1,6 @@
-step(0).
-step(T1) :- step(T), T < 5, T1 is T + 1.
+steps(6).
+step(0) :- steps(N), N > 0.
+step(T1) :- step(T), steps(N), T1 is T + 1, T1 < N.
 0.3::h(T) :- step(T).
 n2_then_b(T) :- step_1_b0(T), \+step_1_b1(T).
 n2_then_b(T) :- step_1_b1(T), \+step_1_b0(T).
