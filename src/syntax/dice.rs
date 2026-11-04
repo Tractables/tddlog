@@ -433,18 +433,16 @@ const UNSUPPORTED: [&str; 1] = ["sample"];
 ///       | 'iterate' '(' id ',' expr ',' (num | place) ')'
 ///       | 'binomial' '(' num ',' num ',' num ')'
 ///       | 'nth_bit' '(' 'int' '(' num ',' num ')' ',' expr ')'
-///       | 'fst' atom | 'snd' atom | ('head' | 'tail' | 'length') expr7
+///       | ('fst' | 'snd' | 'head' | 'tail' | 'length') expr
 ///       | 'true' | 'false' | id ['(' args ')']
 ///       | '(' expr [',' expr] ')' | '[' expr {',' expr} ']' | '[' ']' ':' type
 /// ```
 ///
-/// `let`, `if` and `observe` extend as far right as they can, as Dice's
-/// parser resolves those conflicts by shifting. Dice's `fst e` and `snd e`
-/// also take the longest `e`, which a well-typed program never uses (no
-/// binary operator returns a tuple), so here they take an atom. `head e`,
-/// `tail e` and `length e` take the longest `e` too, of which a well-typed
-/// program uses `::` alone (`tail xs :: ys` is `tail (xs :: ys)`), so here
-/// they take the operators from `::` up (`expr7`). A chain of
+/// `let`, `if`, `observe`, `fst`, `snd`, `head`, `tail` and `length`
+/// extend as far right as they can, as Dice's parser resolves those
+/// conflicts by shifting: `fst s == x` is `fst (s == x)` and `snd s << 1`
+/// is `snd (s << 1)`, each a type error, as Dice reads them, and
+/// `tail xs :: ys` is `tail (xs :: ys)`. A chain of
 /// `let`s and a chain of `else if`s are read in a loop and held as one
 /// node: programs have thousands.
 struct Parser<'a> {
@@ -788,11 +786,11 @@ impl<'a> Parser<'a> {
                 self.op(")")?;
                 Kind::NthBit(w, i, Box::new(x))
             }
-            "fst" => Kind::Fst(Box::new(self.atom()?)),
-            "snd" => Kind::Snd(Box::new(self.atom()?)),
-            op @ ("head" | "tail" | "length") => {
-                let x = Box::new(self.expr(precedence("::").expect("a level"))?);
+            op @ ("fst" | "snd" | "head" | "tail" | "length") => {
+                let x = Box::new(self.expr(0)?);
                 match op {
+                    "fst" => Kind::Fst(x),
+                    "snd" => Kind::Snd(x),
                     "head" => Kind::Head(x),
                     "tail" => Kind::Tail(x),
                     _ => Kind::Length(x),
@@ -3252,6 +3250,34 @@ mod tests {
         ] {
             let e = read(program).expect_err(program);
             assert!(e.msg.contains(error), "{program}: {e}");
+        }
+    }
+
+    #[test]
+    fn projections_take_the_longest_expression_as_dices_do() {
+        // Dice's parser shifts after `fst`, `snd`, `head`, `tail` and
+        // `length`: `fst s == x` is `fst (s == x)` and `snd s << 1` is
+        // `snd (s << 1)`, which Dice refuses as type errors, as here.
+        for (program, error) in [
+            (
+                "let s = (int(2, 1), int(2, 1)) in fst s == int(2, 1)",
+                "== on a tuple",
+            ),
+            (
+                "let s = (int(2, 1), int(2, 1)) in snd s << 1",
+                "an integer is expected",
+            ),
+        ] {
+            let e = read(program).expect_err(program);
+            assert!(e.msg.contains(error), "{program}: {e}");
+        }
+        for program in [
+            "let s = (int(2, 1), int(2, 1)) in (fst s) == int(2, 1)",
+            "let s = (int(2, 1), int(2, 1)) in (snd s) << 1",
+            "let s = (flip 0.5, int(2, 1)) in (fst s, snd s)",
+            "let s = (int(2, 1), (true, int(2, 3))) in if fst (snd s) then snd (snd s) else fst s",
+        ] {
+            read(program).expect(program);
         }
     }
 }
