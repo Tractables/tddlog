@@ -130,14 +130,13 @@ impl Input<'_> {
 /// arguments in their places `$1`, `$2`, ... where it is given any; an
 /// LPAD, with its arguments in place, a Dice program, a Circulette netlist
 /// and a network are read as the programs their modules write, a Dice
-/// program's with its arguments in the places its `iterate` counts hold
-/// there. `options` say how a network is read: its queries, its evidence
-/// and whether its rows are rescaled. For any other input they must be the
+/// program with its arguments in its places ([`syntax::dice::read_with`]).
+/// `options` say how a network is read: its queries, its evidence and
+/// whether its rows are rescaled. For any other input they must be the
 /// defaults, but for the queries, which may be left out ([`Queries::None`])
-/// as
-/// [`crate::Options::queries`] leaves them out. The arguments
+/// as [`crate::Options::queries`] leaves them out. The arguments
 /// ([`ReadOptions::arguments`]) are for a ProbLog program, an LPAD or a
-/// Dice program alone, a Dice program's each a count: digits.
+/// Dice program alone, a Dice program's each a natural number: digits.
 pub fn read<'a>(data: &'a [u8], format: Format, options: &ReadOptions) -> Result<Input<'a>, Error> {
     let input = |program, left_out| Input {
         program,
@@ -169,19 +168,7 @@ pub fn read<'a>(data: &'a [u8], format: Format, options: &ReadOptions) -> Result
             let text = utf8(data)?;
             match format {
                 Format::Dice => {
-                    // A place of a Dice program is an iterate's count, which
-                    // its program holds in the count's fact.
-                    let count = |a: &str| !a.is_empty() && a.bytes().all(|c| c.is_ascii_digit());
-                    let arguments = options.arguments.iter().map(|a| a.trim());
-                    if let Some((k, a)) = arguments.enumerate().find(|(_, a)| !count(a)) {
-                        return Err(Error::Options(format!(
-                            "argument {}, `{a}`, is not a count, which is all a Dice program's \
-                             places hold",
-                            k + 1
-                        )));
-                    }
-                    let program = syntax::dice::read(text)?;
-                    let program = syntax::bind(&program, &options.arguments)?.into_owned();
+                    let program = syntax::dice::read_with(text, &options.arguments)?;
                     return Ok(input(Cow::Owned(program), Vec::new()));
                 }
                 Format::Circulette => {

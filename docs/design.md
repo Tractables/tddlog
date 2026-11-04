@@ -301,14 +301,14 @@ that is not a term, and arguments for a network are refused. `tddlog
 system that reads ProbLog then reads. The files a program consults are
 read after its arguments took their places, and their own places take
 none. The example queries of an LPAD sit in a comment and take no
-arguments. In a Dice program a place stands for the count of an
-`iterate` alone, `iterate(step, x, $1)`, and its argument is a count:
-the Dice reader writes the count as a fact, `steps($1).`, which the
-recursion over the steps reads, and reads the state after the loop at
-it, `s($1)` (`syntax/dice.rs`), and the arguments then take their places in that
-program, so that one Dice program serves every count and `tddlog
---program` without arguments prints the one ProbLog program of them
-all.
+arguments. In a Dice program a place stands for an integer, `int($1)`,
+`uniform($1, 0, $2)` or `iterate(step, x, $3)`, and its argument is a
+natural number, which takes its place before the program is read
+(`syntax/dice.rs`). Without arguments a place may stand only for an
+`iterate`'s count: the Dice reader writes the count as a fact,
+`steps($1).`, which the recursion over the steps reads, and reads the
+state after the loop at it, `s($1)`, so that `tddlog --program` prints
+the one ProbLog program of every count.
 
 A source that holds the directive `:- begin_lpad.` (or cplint's other
 spelling, `:- begin_plp.`) is an LPAD written for cplint and PITA, and

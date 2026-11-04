@@ -26,7 +26,7 @@ pub const TDDLOG_OK: i32 = 0;
 /// vtree strategy that is not UTF-8 or is unknown, evidence for a program
 /// that is not a network, program arguments for a network, a program
 /// argument that is not UTF-8, is not a term (for a Dice program, not a
-/// count) or has no place, or options that ask for nothing.
+/// natural number) or has no place, or options that ask for nothing.
 pub const TDDLOG_ERROR_INVALID_INPUT: i32 = 1;
 /// The program is not in the language or the format it is said to be in.
 pub const TDDLOG_ERROR_PARSE: i32 = 2;
@@ -71,7 +71,7 @@ pub struct TddlogOptions {
     /// the command line takes them after the program's file:
     /// `num_arguments` NUL-terminated strings, each the text of a term that
     /// takes the places `$1`, `$2`, ... of the program (of a Dice program,
-    /// a count of an `iterate`). Null for none.
+    /// a natural number). Null for none.
     pub arguments: *const *const c_char,
     /// The number of strings `arguments` points to.
     pub num_arguments: usize,

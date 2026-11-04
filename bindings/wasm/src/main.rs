@@ -24,7 +24,7 @@ fn main() {}
 /// `evidence_probability` is 1, a ProbLog program's, an LPAD's or a
 /// Dice program's arguments the `num_arguments` strings at `arguments`
 /// (null for none; each the text of a term that takes the places `$1`,
-/// `$2`, ... of the program, a Dice program's a count of an `iterate`,
+/// `$2`, ... of the program, a Dice program's a natural number,
 /// as the command line takes the values after the program's file), with
 /// the trace of the run ([`tddlog::trace::Trace`]) where `trace` is 1, and
 /// return the JSON text of the result (`runtime.js`

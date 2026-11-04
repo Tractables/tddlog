@@ -28,7 +28,7 @@
  * vtree strategy that is not UTF-8 or is unknown, evidence for a program
  * that is not a network, program arguments for a network, a program
  * argument that is not UTF-8, is not a term (for a Dice program, not a
- * count) or has no place, or options that ask for nothing.
+ * natural number) or has no place, or options that ask for nothing.
  */
 #define TDDLOG_ERROR_INVALID_INPUT 1
 
@@ -104,7 +104,7 @@ typedef struct TddlogOptions {
    * the command line takes them after the program's file:
    * `num_arguments` NUL-terminated strings, each the text of a term that
    * takes the places `$1`, `$2`, ... of the program (of a Dice program,
-   * a count of an `iterate`). Null for none.
+   * a natural number). Null for none.
    */
   const char *const *arguments;
   /**
