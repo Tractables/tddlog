@@ -1984,9 +1984,15 @@ fn a_query_phase_is_projected_from_where_it_began() {
 /// [`run_within`] over `trials` of the diamond loop of `steps` steps, from
 /// a first watch of 2^15 pairs, with `probe` ([`Watch`]).
 fn run_probed(steps: usize, trials: Vec<Kind>, probe: tp::Probe) -> Run {
+    run_probed_on(diamond_loop(steps), trials, probe)
+}
+
+/// [`run_within`] over `trials` of `gp`, from a first watch of 2^15 pairs,
+/// with `probe` ([`Watch`]).
+fn run_probed_on(gp: GroundProgram, trials: Vec<Kind>, probe: tp::Probe) -> Run {
     run_within(
         Programs {
-            ground: Arc::new(diamond_loop(steps)),
+            ground: Arc::new(gp),
             written: None,
             conditioned: None,
             decision: false,
@@ -2014,9 +2020,10 @@ fn assert_diamond(run: &Run, steps: usize) {
 #[test]
 fn a_trial_whose_first_large_formula_keeps_few_pairs_weighs_the_skip_form() {
     // Every formula keeps at most its pairs in skip form, so a probe of
-    // the first formula under a share of 2 has `program` go on stored over
-    // a stretch, then begin again in skip form, with the work it has
-    // spent, to weigh the two forms over the stretch, once. It goes on in
+    // the first formula under a share of 2 has `program` copy its compile
+    // into skip form, go on stored over a stretch, then go on with the
+    // copy from where it was made, with the work it has spent, to weigh
+    // the two forms over the stretch, once. It goes on in
     // the form that spent less there, and answers: alone, where it lost,
     // its stored compile begins again, since a run without a watch cannot
     // go on; beside `closed`, which keeps the stored form, it goes on from
@@ -2053,7 +2060,11 @@ fn a_trial_whose_first_large_formula_keeps_few_pairs_weighs_the_skip_form() {
     let run = run_probed(steps, vec![program], always);
     let notes = &run.vtree_notes;
     weighed(notes);
-    assert_eq!(forms(notes, " begins again in skip form "), 1, "{notes:#?}");
+    assert_eq!(
+        forms(notes, " weighs its copy in skip form "),
+        1,
+        "{notes:#?}"
+    );
     let skip = forms(notes, " goes on in skip form ");
     assert_eq!(
         skip + forms(notes, " begins again stored "),
@@ -2079,7 +2090,7 @@ fn a_trial_whose_first_large_formula_keeps_few_pairs_weighs_the_skip_form() {
             .find(|n| n.starts_with("form: program indicators=") && n.contains(how))?;
         n.split(['(', ' ']).find_map(|w| w.parse().ok())
     };
-    let began = units(" begins again in skip form (").unwrap();
+    let began = units(" weighs its copy in skip form (").unwrap();
     match units(" goes on stored (") {
         Some(back) => assert_eq!(back, began, "{notes:#?}"),
         None => assert!(units(" goes on in skip form (").unwrap() >= began),
@@ -2128,4 +2139,56 @@ fn a_trial_whose_first_large_formula_keeps_most_pairs_stays_stored() {
     assert_eq!(probed.kind, plain.kind);
     assert_diamond(&probed, steps);
     assert_diamond(&plain, steps);
+}
+
+#[test]
+fn a_trial_weighs_its_copy_in_skip_form_from_where_its_stretch_began() {
+    // Query i holds where facts 1 to i all do, so its formula grows with
+    // i, and the first that reaches the probe comes several components
+    // in. `program` copies its compile into skip form at the step after
+    // it, goes on stored over the stretch, and weighs the copy from that
+    // component on: the components before it are not compiled again.
+    let n = 60;
+    let mut source = String::new();
+    for i in 1..=n {
+        source += &format!("0.9::f{i}.\n");
+    }
+    for i in 1..=n {
+        let body: Vec<String> = (1..=i).map(|j| format!("f{j}")).collect();
+        source += &format!("q{i} :- {}.\nquery(q{i}).\n", body.join(", "));
+    }
+    let probe = tp::Probe::Armed {
+        from: 16,
+        below: 2.0,
+    };
+    let program = Kind::Program { fan_in: false };
+    let run = run_probed_on(regress(&source), vec![program, Kind::Closed], probe);
+    let notes = &run.vtree_notes;
+    let weighs: Vec<&String> = notes
+        .iter()
+        .filter(|n| n.starts_with("form: program indicators=") && n.contains(" weighs its copy "))
+        .collect();
+    let [weighs] = weighs[..] else {
+        panic!("one weighing: {notes:#?}")
+    };
+    let made: usize = weighs
+        .split("made at component ")
+        .nth(1)
+        .and_then(|r| r.split(' ').next())
+        .and_then(|k| k.parse().ok())
+        .expect("the component the copy was made at");
+    assert!(made >= 5, "{weighs}");
+    let results = run.results.as_ref().unwrap();
+    assert_eq!(results.len(), n);
+    for r in results {
+        let i: i32 = r
+            .to_string()
+            .split(['q', ':'])
+            .nth(1)
+            .unwrap()
+            .parse()
+            .unwrap();
+        let want = 0.9f64.powi(i);
+        assert!((r.probability - want).abs() < 1e-12, "{r} against {want}");
+    }
 }

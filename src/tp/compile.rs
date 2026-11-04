@@ -126,6 +126,25 @@ impl Formulas {
     fn clear(&mut self) {
         self.held.iter_mut().for_each(|f| *f = None);
     }
+
+    /// The diagrams held, each once.
+    fn diagrams(&self) -> impl Iterator<Item = &Diagram> {
+        self.held.iter().chain([&self.none]).flatten().map(|f| &**f)
+    }
+
+    /// The formulas, each in skip form ([`TddBackend::in_skip_form`]).
+    fn in_skip_form(&self, backend: &TddBackend) -> Result<Self, CompileError> {
+        let skip = |f: &Option<Arc<Diagram>>| {
+            f.as_deref()
+                .map(|f| backend.in_skip_form(f).map(Arc::new))
+                .transpose()
+        };
+        Ok(Formulas {
+            at: self.at.clone(),
+            held: self.held.iter().map(skip).collect::<Result<_, _>>()?,
+            none: skip(&self.none)?,
+        })
+    }
 }
 
 impl std::ops::Index<usize> for Formulas {
@@ -397,6 +416,7 @@ fn last_reads(
 /// The formulas the compile drops once nothing reads them ([`dying_atoms`]),
 /// the reads that take them rather than copy them ([`last_reads`]), and the
 /// queries counted before they are dropped.
+#[derive(Clone)]
 struct Dying {
     /// The atoms that die after each component: those after component `i`
     /// are `atoms[start[i]..start[i + 1]]`.
@@ -492,6 +512,7 @@ impl Dying {
 /// bit-blasted circuit of 82 K gates held 12.9 M variables over 15.9 K
 /// vtrees, nearly all of the run's 1.4 GB, and the next size up four times
 /// the pieces did not fit in 16 GB.
+#[derive(Clone)]
 struct Projected {
     /// At this many facts and above a component keeps the global vtree.
     /// Cones grow along dependencies, so the components that keep it are
@@ -711,6 +732,10 @@ pub(crate) struct Compilation {
     /// The record for a trace, where one was asked for
     /// ([`Compilation::traced`]).
     trace: Option<Box<CompileTrace>>,
+    /// The compile's copy in skip form, where `auto`'s probe weighs that
+    /// form from the step it was made at, and the time the copy took
+    /// ([`TddBackend::fork`], [`Compilation::take_fork`]).
+    forked: Option<(Box<Compilation>, std::time::Duration)>,
 }
 
 /// The formula of each atom and the fixpoint's bookkeeping.
@@ -754,6 +779,7 @@ impl Fixpoint {
 
 /// The program's [`Encoding`](crate::ground::Encoding) as the clause loops
 /// read it ([`Factoring`]).
+#[derive(Clone)]
 struct Encoded {
     /// Per variable, the link of the indicator it is the copy of,
     /// `AtomId::MAX` for none.
@@ -805,7 +831,7 @@ impl Encoded {
 
 /// What the query phase takes over from the compile beside the formulas:
 /// the queries it counted, and the atoms whose formulas it did not build.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(crate) struct ForQueries {
     /// The probabilities of each query atom and of its negation, the one of
     /// them its stored formula's model count and the other its complement
@@ -934,6 +960,7 @@ impl Compilation {
             counts: std::cell::RefCell::new([0usize; 5]),
             negations: std::cell::RefCell::new(Negations::default()),
             trace: None,
+            forked: None,
         })
     }
 
@@ -943,6 +970,86 @@ impl Compilation {
     pub(crate) fn traced(mut self) -> Self {
         self.trace = Some(Box::new(CompileTrace::new(&self.var_of)));
         self
+    }
+
+    /// A copy of the compile with its formulas in skip form, at a step
+    /// where it holds only finished components: its formulas, the other
+    /// polarities it caches and the clause loops it keeps, converted
+    /// ([`TddBackend::in_skip_form`]), the rest as it stands, but for a
+    /// loop held for the next run, which the copy builds again. Skip form
+    /// is canonical, so the copy holds the diagrams a compile in skip form
+    /// holds at that step, and goes on from it as that compile would. Gives
+    /// the pairs the conversion read ([`TddBackend::skip_form_reads`]),
+    /// which the engine's clock does not count.
+    fn in_skip_form(&self, backend: &TddBackend) -> Result<(Compilation, u64), CompileError> {
+        debug_assert!(
+            self.fixpoint.worklist.is_none(),
+            "a step between components"
+        );
+        debug_assert!(self.dynamic.is_none(), "a static vtree");
+        debug_assert!(self.refused.borrow().is_none());
+        let fixpoint = &self.fixpoint;
+        let read = fixpoint
+            .formulas
+            .diagrams()
+            .chain(fixpoint.lambda_cache.borrow().diagrams())
+            .chain(self.memo.borrow().diagrams())
+            .map(|f| backend.skip_form_reads(f))
+            .sum();
+        let formulas = fixpoint.formulas.in_skip_form(backend)?;
+        let lambda_cache = fixpoint.lambda_cache.borrow().in_skip_form(backend)?;
+        let memo = self.memo.borrow().in_skip_form(backend)?;
+        let sizes: Vec<usize> = formulas
+            .iter()
+            .map(|f| f.as_ref().map_or(0, |f| backend.size(f)))
+            .collect();
+        let live = sizes.iter().sum();
+        let copy = Compilation {
+            horizon: self.horizon,
+            reach: self.reach,
+            marked: self.marked,
+            marking: self.marking,
+            var_of: self.var_of.clone(),
+            formulation: self.formulation,
+            by_head: self.by_head.clone(),
+            sccs: self.sccs.clone(),
+            comp_of: self.comp_of.clone(),
+            encoded: self.encoded.clone(),
+            projection: self.projection,
+            scopes: self.scopes.clone(),
+            projected: self.projected.clone(),
+            next: self.next,
+            fixpoint: Fixpoint {
+                formulas,
+                lambda_cache: std::cell::RefCell::new(lambda_cache),
+                positive: fixpoint.positive.clone(),
+                version: fixpoint.version.clone(),
+                seen: fixpoint.seen.clone(),
+                worklist: None,
+                sizes,
+                live,
+            },
+            scratch: self.scratch.clone(),
+            memo: std::cell::RefCell::new(memo),
+            equivalents: self.equivalents.clone(),
+            dynamic: None,
+            refused: std::cell::RefCell::new(None),
+            dying: self.dying.clone(),
+            spent: self.spent,
+            for_queries: self.for_queries.clone(),
+            stats: self.stats.clone(),
+            counts: self.counts.clone(),
+            negations: self.negations.clone(),
+            trace: self.trace.clone(),
+            forked: None,
+        };
+        Ok((copy, read))
+    }
+
+    /// The compile's copy in skip form, where it made one for `auto`'s
+    /// probe ([`TddBackend::fork`]), taken out, and the time it took.
+    pub(crate) fn take_fork(&mut self) -> Option<(Compilation, std::time::Duration)> {
+        self.forked.take().map(|(c, took)| (*c, took))
     }
 
     /// Search for a smaller global vtree between the steps of the compile:
@@ -1060,6 +1167,20 @@ impl Compilation {
                 backend.kept();
                 backend.at_step(self.next)?;
                 backend.pause()?;
+                // Where `auto`'s probe weighs the skip form, the compile
+                // makes a copy of itself in that form at its first step
+                // between components, which the trial goes on with from
+                // there ([`TddBackend::fork`]).
+                if self.fixpoint.worklist.is_none()
+                    && let Some(copy) = backend.fork(self.next, || {
+                        let started = Instant::now();
+                        let (copy, read) = self.in_skip_form(backend)?;
+                        Ok(((copy, started.elapsed()), read))
+                    })?
+                {
+                    self.forked = Some((Box::new(copy.0), copy.1));
+                    backend.kept();
+                }
                 if let Some(p) = self.projected.as_mut()
                     && p.started == self.next
                     && let Some(scope) = p.start(

@@ -271,6 +271,39 @@ impl ClauseMemo {
         self.held = None;
     }
 
+    /// The formulas of the loops it keeps, without the held loop.
+    pub(super) fn diagrams(&self) -> impl Iterator<Item = &Diagram> {
+        self.entries.values().flatten().map(|k| &k.f)
+    }
+
+    /// The memo with each loop it keeps in skip form
+    /// ([`TddBackend::in_skip_form`]), for the compile's copy in that form,
+    /// without the held loop ([`Held`]).
+    pub(super) fn in_skip_form(&self, backend: &TddBackend) -> Result<Self, CompileError> {
+        let mut entries = FxHashMap::default();
+        let mut pairs = 0;
+        for (key, loops) in &self.entries {
+            let mut skip = Vec::with_capacity(loops.len());
+            for k in loops {
+                let f = backend.in_skip_form(&k.f)?;
+                pairs += backend.size(&f);
+                skip.push(Kept {
+                    f,
+                    scope: k.scope.clone(),
+                    slots: k.slots.clone(),
+                    shape: k.shape,
+                });
+            }
+            entries.insert(key.clone(), skip);
+        }
+        Ok(ClauseMemo {
+            entries,
+            pairs,
+            held: None,
+            stats: self.stats,
+        })
+    }
+
     /// The formula of the loop the watch refused, taken out; a loop held
     /// otherwise is dropped.
     pub(super) fn take_refused(&mut self) -> Option<Diagram> {
@@ -290,7 +323,7 @@ impl ClauseMemo {
 /// among the scope's variables but the head's own copies, which come last
 /// in the order the bodies first read them: the copies a reader's link
 /// ties to a clause table ([`crate::indicators`]), `link_of` the head.
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 struct ClauseKey {
     vars: usize,
     lits: Vec<u32>,

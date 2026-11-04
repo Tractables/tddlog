@@ -32,12 +32,13 @@ pub(super) const PROBE_PAIRS: usize = 1 << 16;
 
 /// The share of its pairs under which a trial's first large formula
 /// ([`PROBE_PAIRS`]) has the trial weigh the skip form (`--skip-levels`):
-/// a trial of `program`, `program:fanin` or `decision` goes on stored until
-/// its work has doubled, sets that compile aside, and begins again in skip
-/// form, which it keeps where it spends less work than the stored form
-/// over the same components, and leaves for the compile set aside where
-/// it spends as much (`tp::Probe`). Every other trial, and every trial
-/// whose formula keeps more, stays stored.
+/// a trial of `program`, `program:fanin` or `decision` copies its compile
+/// into skip form, goes on stored until its work has doubled, sets that
+/// compile aside, and goes on with the copy from where it was made, which
+/// it keeps where it spends less work than the stored form over the same
+/// components, its conversion included, and leaves for the compile set
+/// aside where it spends as much (`tp::Probe`). Every other trial, and
+/// every trial whose formula keeps more, stays stored.
 ///
 /// The share alone does not decide, since a skip pair's cost varies too
 /// much: in `program`'s compiles of 49 circuits in either form, a pair in

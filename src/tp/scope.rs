@@ -84,7 +84,7 @@ impl VtreeScope {
 /// to the end of its compile, filled its memory, and the evidence walk makes
 /// a scope for nearly every join, which the next join over its result
 /// replaces.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(crate) struct ScopeTable {
     by_vars: FxHashMap<Arc<[VarId]>, Weak<Vtree>>,
     /// The number of entries at which those whose scope has gone are

@@ -304,7 +304,8 @@ pub(crate) struct TddBackend<'a> {
 /// `auto`'s probe of a trial's form: a stored trial's first large formula,
 /// and where that keeps few pairs in skip form, the work of either form over
 /// the same stretch of the compile, which decides whether the trial goes on
-/// in skip form ([`TddBackend::probe`], [`TddBackend::at_step`]).
+/// in skip form ([`TddBackend::probe`], [`TddBackend::fork`],
+/// [`TddBackend::at_step`]).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub(crate) enum Probe {
     /// No probe.
@@ -317,54 +318,54 @@ pub(crate) enum Probe {
     /// The formula measured, which keeps most of its pairs in skip form:
     /// its pairs, stored and in skip form.
     Measured { pairs: usize, skip: usize },
-    /// The formula measured kept few pairs in skip form: the stored compile
-    /// goes on from its next step, `start`, where it had finished that many
-    /// components and the trial had spent that work, until the trial's
-    /// work has doubled; then it stops with [`CompileError::Skips`].
+    /// The formula measured kept few pairs, and the compile's copy in skip
+    /// form did not fit the memory budget: the trial stays stored
+    /// ([`TddBackend::fork`]).
+    Refused,
+    /// The formula measured kept few pairs in skip form: at its next step
+    /// that holds only finished components the compile makes a copy of
+    /// itself in skip form, for `converted` work ([`TddBackend::fork`]),
+    /// and goes on stored from there, `start`, where it had finished that
+    /// many components and the trial had spent that work, until the
+    /// trial's work has doubled; then it stops with
+    /// [`CompileError::Skips`].
     Stretch {
         pairs: usize,
         skip: usize,
         start: Option<(usize, u64)>,
+        converted: u64,
     },
-    /// The trial begun again in skip form: its work from the first step
-    /// with `from` components finished, `at`, to the first with `to`, is
-    /// weighed against the stored compile's `stored` over the same
-    /// components. Where the skip form spends as much, the compile stops
-    /// with [`CompileError::Stored`].
+    /// The trial gone on with the copy in skip form, from the step with
+    /// `from` components finished: its work from there, `at`, to the
+    /// first step with `to`, and the copy's `converted`, is weighed against
+    /// the stored compile's `stored` over the same components. Where the
+    /// skip form spends as much, the compile stops with
+    /// [`CompileError::Stored`].
     Duel {
         from: usize,
         to: usize,
         stored: u64,
+        converted: u64,
         at: Option<u64>,
     },
-    /// The skip form spent `skip` over the stretch, under the stored
-    /// form's `stored`, and the trial goes on in it from where its clock
-    /// read `at`.
+    /// The skip form spent `skip` over the stretch, its conversion
+    /// included, under the stored form's `stored`, and the trial goes on
+    /// in it from where its clock read `at`.
     Weighed { skip: u64, stored: u64, at: u64 },
 }
 
 impl Probe {
     /// The probe at a step of the compile with `done` components finished,
     /// where the trial has spent `work`, and the stop of the compile there,
-    /// if any.
+    /// if any. A stretch begins where the compile makes its copy in skip
+    /// form ([`TddBackend::fork`]).
     pub(crate) fn at_step(self, done: usize, work: u64) -> (Probe, Option<CompileError>) {
         match self {
             Probe::Stretch {
                 pairs,
                 skip,
-                start: None,
-            } => (
-                Probe::Stretch {
-                    pairs,
-                    skip,
-                    start: Some((done, work)),
-                },
-                None,
-            ),
-            Probe::Stretch {
-                pairs,
-                skip,
                 start: Some((from, at)),
+                converted,
             } if done > from && work >= at.saturating_mul(2) => (
                 self,
                 Some(CompileError::Skips {
@@ -373,32 +374,36 @@ impl Probe {
                     from,
                     to: done,
                     stored: work - at,
+                    converted,
                 }),
             ),
             Probe::Duel {
                 from,
                 to,
                 stored,
+                converted,
                 at: None,
             } if done >= from => (
                 Probe::Duel {
                     from,
                     to,
                     stored,
+                    converted,
                     at: Some(work),
                 },
                 None,
             ),
             // The skip form loses as soon as it has spent what the stored
-            // form spent over the whole stretch.
+            // form spent over the whole stretch, its conversion included.
             Probe::Duel {
                 to,
                 stored,
+                converted,
                 at: Some(at),
                 ..
-            } if done >= to || work.saturating_sub(at) >= stored => {
+            } if done >= to || work.saturating_sub(at).saturating_add(converted) >= stored => {
                 debug_assert!(work >= at, "the trial's clock runs back");
-                let skip = work.saturating_sub(at);
+                let skip = work.saturating_sub(at).saturating_add(converted);
                 if skip < stored {
                     (
                         Probe::Weighed {
@@ -614,6 +619,7 @@ impl<'a> TddBackend<'a> {
                 pairs,
                 skip,
                 start: None,
+                converted: 0,
             }
         } else {
             Probe::Measured { pairs, skip }
@@ -621,14 +627,61 @@ impl<'a> TddBackend<'a> {
         Ok(())
     }
 
-    /// The compile at a step it has kept ([`Self::kept`]), with `done` of
-    /// its components finished: the probe's stretch begins and ends at
-    /// steps, and a stop there goes on later as from the end of a turn
-    /// ([`Probe::at_step`]).
-    pub(crate) fn at_step(&self, done: usize) -> Result<(), CompileError> {
+    /// The work the trial has spent: what it had spent before the run, and
+    /// the work since ([`Self::with_probe`]).
+    fn trial_work(&self) -> u64 {
         let (start, spent) = self.spent.get();
-        let work = spent + self.work_units().saturating_sub(start);
-        let (probe, stop) = self.probe.get().at_step(done, work);
+        spent + self.work_units().saturating_sub(start)
+    }
+
+    /// The compile's copy of itself in skip form, made by `copy` at a step
+    /// with `done` components finished, where the probe's stretch is yet to
+    /// begin ([`Probe::Stretch`]); `None` elsewhere. `copy` gives the copy
+    /// and the pairs its conversion read ([`Self::skip_form_reads`]). The
+    /// stretch begins after the copy, whose work, those pairs and what the
+    /// clock counted, is set apart as the skip form's in the weighing. A
+    /// copy that does not fit the memory budget leaves the trial stored
+    /// ([`Probe::Refused`]).
+    pub(crate) fn fork<T>(
+        &self,
+        done: usize,
+        copy: impl FnOnce() -> Result<(T, u64), CompileError>,
+    ) -> Result<Option<T>, CompileError> {
+        let Probe::Stretch {
+            pairs,
+            skip,
+            start: None,
+            ..
+        } = self.probe.get()
+        else {
+            return Ok(None);
+        };
+        let before = self.work_units();
+        let (copy, read) = match copy() {
+            Ok(copy) => copy,
+            Err(CompileError::Tdd(
+                tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow,
+            )) => {
+                self.probe.set(Probe::Refused);
+                return Ok(None);
+            }
+            Err(e) => return Err(e),
+        };
+        self.probe.set(Probe::Stretch {
+            pairs,
+            skip,
+            start: Some((done, self.trial_work())),
+            converted: (self.work_units() - before).saturating_add(read),
+        });
+        Ok(Some(copy))
+    }
+
+    /// The compile at a step it has kept ([`Self::kept`]), with `done` of
+    /// its components finished: the probe's stretch ends and its duel
+    /// begins and ends at steps, and a stop there goes on later as from the
+    /// end of a turn ([`Probe::at_step`]).
+    pub(crate) fn at_step(&self, done: usize) -> Result<(), CompileError> {
+        let (probe, stop) = self.probe.get().at_step(done, self.trial_work());
         self.probe.set(probe);
         stop.map_or(Ok(()), Err)
     }
@@ -739,14 +792,34 @@ impl TddBackend<'_> {
     /// `f`, which a builder made, in the backend's form: converted at
     /// birth in skip form. A level held as its description (rule 9 of the
     /// stored form) is refused there, since the skip form has no
-    /// description and the conversion would write out its pairs.
+    /// description and each birth would write out its pairs.
     pub(crate) fn born(&self, f: Tdd) -> Result<Diagram, CompileError> {
         match self.form {
             Form::Stored => Ok(Diagram::Stored(f)),
             Form::Skip if implicit_pairs(&f) > 0 => Err(CompileError::SkipForm(
                 "a built diagram with a level held as its description",
             )),
-            Form::Skip => Ok(Diagram::Skip(self.skip_op(|e| e.to_skip(&f))?)),
+            Form::Skip => self.in_skip_form(&Diagram::Stored(f)),
+        }
+    }
+
+    /// The pairs converting `f` into skip form reads: one pass over a
+    /// stored diagram's pairs, those of a level held as its description
+    /// among them (`tididi::Engine::to_skip`), which the engine's work
+    /// clock does not count, and none for one in skip form.
+    pub(crate) fn skip_form_reads(&self, f: &Diagram) -> u64 {
+        match f {
+            Diagram::Stored(f) => f.pair_count() as u64,
+            Diagram::Skip(_) => 0,
+        }
+    }
+
+    /// `f` in skip form, converted where it is stored
+    /// ([`Self::skip_form_reads`]).
+    pub(crate) fn in_skip_form(&self, f: &Diagram) -> Result<Diagram, CompileError> {
+        match f {
+            Diagram::Stored(f) => Ok(Diagram::Skip(self.skip_op(|e| e.to_skip(f))?)),
+            Diagram::Skip(f) => Ok(Diagram::Skip(f.clone())),
         }
     }
 
@@ -2968,23 +3041,77 @@ mod tests {
         );
     }
 
-    /// The run's stop in work units cuts a skip operation once its own
-    /// units, scaled by `SKIP_WORK_SCALE`, reach the stop, as it cuts a
-    /// stored one: a conjunction of two random 3-CNFs in skip form, grown
-    /// until it takes at least 2^18 units of its own, stops when given half
-    /// the scaled work it takes, with the clock at or past that half. Its
-    /// own units alone would not have reached the stop.
+    /// The compile's copy in skip form begins the probe's stretch where
+    /// none has begun: the stretch starts after it, with the pairs the
+    /// conversion read, which the engine's clock does not count, charged to
+    /// the copy. A copy over the memory budget leaves the trial stored, and
+    /// a probe in any other state makes none.
     #[test]
-    fn the_probe_weighs_the_skip_form_over_the_stored_forms_stretch() {
-        // The stretch begins at the step after the formula measured and
-        // ends at the first later step where the trial's work has doubled.
+    fn the_compile_copies_itself_where_the_stretch_begins() {
+        let tree = Arc::new(Vtree::linear(4));
         let stretch = Probe::Stretch {
             pairs: 1000,
             skip: 10,
             start: None,
+            converted: 0,
+        };
+        tree.context().run(|engine| {
+            let start = engine.limits().work_units();
+            let stored = TddBackend::new(engine, tree.clone()).with_probe(stretch, start, 40);
+            let copy = stored.fork(5, || Ok(("copy", 7))).unwrap();
+            assert_eq!(copy, Some("copy"));
+            assert_eq!(
+                stored.probed(),
+                Probe::Stretch {
+                    pairs: 1000,
+                    skip: 10,
+                    start: Some((5, 40)),
+                    converted: 7,
+                }
+            );
+            // The stretch has begun: no second copy.
+            assert_eq!(stored.fork(6, || Ok(("again", 1))).unwrap(), None);
+            let stored = TddBackend::new(engine, tree.clone()).with_probe(stretch, start, 40);
+            let over = stored.fork::<&str>(5, || {
+                Err(CompileError::Tdd(tididi::OperationError::OverBudget))
+            });
+            assert_eq!(over.unwrap(), None);
+            assert_eq!(stored.probed(), Probe::Refused);
+            let stopped = TddBackend::new(engine, tree.clone()).with_probe(stretch, start, 40);
+            assert!(matches!(
+                stopped.fork::<&str>(5, || Err(CompileError::Tdd(
+                    tididi::OperationError::Stopped
+                ))),
+                Err(CompileError::Tdd(tididi::OperationError::Stopped))
+            ));
+            assert_eq!(
+                stopped.probed(),
+                stretch,
+                "a stop makes the copy again later"
+            );
+        });
+    }
+
+    #[test]
+    fn the_probe_weighs_the_skip_form_over_the_stored_forms_stretch() {
+        // The stretch begins where the compile makes its copy in skip form
+        // (`TddBackend::fork`), here at component 3 with the trial's work
+        // at 100 after a copy of 7 units, and ends at the first later step
+        // where the trial's work has doubled.
+        let stretch = Probe::Stretch {
+            pairs: 1000,
+            skip: 10,
+            start: None,
+            converted: 0,
         };
         let (p, stop) = stretch.at_step(3, 100);
-        assert!(stop.is_none());
+        assert_eq!((p, stop.is_none()), (stretch, true), "no copy yet");
+        let p = Probe::Stretch {
+            pairs: 1000,
+            skip: 10,
+            start: Some((3, 100)),
+            converted: 7,
+        };
         let (p, stop) = p.at_step(3, 500);
         assert!(stop.is_none(), "the stretch ends past its first step");
         let (p, stop) = p.at_step(4, 150);
@@ -2998,34 +3125,37 @@ mod tests {
                 from: 3,
                 to: 5,
                 stored: 100,
+                converted: 7,
             })
         ));
         // The skip form's work is read from the step with as many
-        // components finished, and wins where it spends less over them.
+        // components finished, its copy's included, and wins where it
+        // spends less over them.
         let duel = Probe::Duel {
             from: 3,
             to: 5,
             stored: 100,
+            converted: 7,
             at: None,
         };
         let (p, _) = duel.at_step(2, 1000);
         assert_eq!(p, duel);
         let (p, _) = p.at_step(3, 1050);
-        let (p, stop) = p.at_step(4, 1100);
+        let (p, stop) = p.at_step(4, 1090);
         assert!(stop.is_none());
-        let (won, stop) = p.at_step(5, 1149);
+        let (won, stop) = p.at_step(5, 1142);
         assert!(stop.is_none());
         assert_eq!(
             won,
             Probe::Weighed {
                 skip: 99,
                 stored: 100,
-                at: 1149
+                at: 1142
             }
         );
         // It loses once it has spent the stored form's work, at the end of
         // the stretch or before.
-        let (_, stop) = p.at_step(4, 1150);
+        let (_, stop) = p.at_step(4, 1143);
         assert!(matches!(
             stop,
             Some(CompileError::Stored {
@@ -3033,7 +3163,7 @@ mod tests {
                 stored: 100
             })
         ));
-        let (_, stop) = p.at_step(5, 1150);
+        let (_, stop) = p.at_step(5, 1143);
         assert!(matches!(stop, Some(CompileError::Stored { .. })));
     }
 
@@ -3060,6 +3190,7 @@ mod tests {
             from: 1,
             to: 3,
             stored: u64::MAX,
+            converted: 0,
             at: None,
         };
         // The first turn: the duel begins at component 1, after some work,
@@ -3097,6 +3228,12 @@ mod tests {
         );
     }
 
+    /// The run's stop in work units cuts a skip operation once its own
+    /// units, scaled by `SKIP_WORK_SCALE`, reach the stop, as it cuts a
+    /// stored one: a conjunction of two random 3-CNFs in skip form, grown
+    /// until it takes at least 2^18 units of its own, stops when given half
+    /// the scaled work it takes, with the clock at or past that half. Its
+    /// own units alone would not have reached the stop.
     #[test]
     fn a_stop_in_work_units_cuts_a_skip_operation_at_its_scaled_work() {
         let n = 40u32;

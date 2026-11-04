@@ -49,6 +49,7 @@ use crate::ground::{AtomId, GroundProgram, RulesByHead};
 const TIE_FROM: usize = 64;
 
 /// A reader's link replaced by equalities to another reader's copies.
+#[derive(Clone)]
 pub(crate) struct Tie {
     /// The other reader's link, which the tie stands on.
     pub(crate) reference: AtomId,

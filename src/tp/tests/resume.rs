@@ -404,3 +404,139 @@ fn a_loop_at_the_end_of_its_turn_goes_on_in_the_next_run() {
         "{work_paused} units in turns against {work_once} in one run"
     );
 }
+
+/// The diamond loop of `steps` steps: each step's result reads the last
+/// one's through one of two routes, one of which may drop it, so that the
+/// last result holds with probability `(1 - 0.5e-4)^steps`.
+fn diamond(steps: usize) -> GroundProgram {
+    let mut source = String::from(
+        "0.5::route.\n0.0001::drop.\nresult :- \\+route, \\+drop.\nresult_1 :- route.\nresult_1 :- result.\n",
+    );
+    for i in 1..steps {
+        let (prev, mid, next) = (2 * i - 1, 2 * i, 2 * i + 1);
+        source += &format!(
+            "0.5::route_{i}.\ns2_{i} :- route_{i}, result_{prev}.\ns3_{i} :- \\+route_{i}, result_{prev}.\n0.0001::drop_{i}.\n\
+             result_{mid} :- s3_{i}, \\+drop_{i}.\nresult_{next} :- s2_{i}.\nresult_{next} :- result_{mid}.\n"
+        );
+    }
+    source += &format!("query(result_{}).\n", 2 * steps - 1);
+    ground(
+        &parse_program(&source).expect("parses"),
+        &GroundOptions::default(),
+    )
+    .expect("grounds")
+}
+
+/// A stored compile stopped part way, between components, makes its copy
+/// in skip form where `auto`'s probe begins its stretch
+/// (`TddBackend::fork`), at the first step of its next run. The copy goes
+/// on from that component and ends with the diagrams of a compile in skip
+/// form from the start, atom for atom, and both forms answer as the loop
+/// says.
+#[test]
+fn a_compile_copied_into_skip_form_part_way_goes_on_as_the_skip_form_does() {
+    let steps = 40;
+    let gp = diamond(steps);
+    let want = (1.0 - 0.5e-4f64).powi(steps as i32);
+    let deps = Deps::of(&gp);
+    let kind = Kind::Closed;
+    let (vtree::Layout { vtree, order, .. }, _) = vtree::build(&gp, &deps, kind).expect("builds");
+    let var_of = fact_variables(&gp, &order);
+    let new = |backend: &TddBackend| {
+        Compilation::new(
+            &gp,
+            &deps,
+            var_of.clone(),
+            kind.formulation(),
+            backend,
+            Projection::default(),
+        )
+        .expect("maps every fact")
+    };
+    // The answer, and the pairs of each atom's formula, of a finished
+    // compile.
+    let finish = |c: &mut Compilation, backend: &TddBackend| {
+        let compiled = c.finish(backend).expect("finishes");
+        let pairs: Vec<usize> = compiled
+            .formulas
+            .iter()
+            .map(|f| f.as_ref().map_or(0, |f| f.pair_count()))
+            .collect();
+        let (results, _) = query_probabilities(&gp, backend, &compiled).expect("answers");
+        (results.expect("no evidence")[0].probability, pairs)
+    };
+    vtree.context().run(|engine| {
+        let skip = TddBackend::in_form(engine, vtree.clone(), crate::tp::Form::Skip);
+        let mut from_start = new(&skip);
+        from_start.run(&gp, &skip, None).expect("compiles");
+        let (p_skip, pairs_skip) = finish(&mut from_start, &skip);
+        assert!((p_skip - want).abs() < 1e-12, "{p_skip} against {want}");
+        // The stored compile's work, and a run of it stopped at half that.
+        let stored = TddBackend::new(engine, vtree.clone());
+        let start = stored.work_units();
+        let mut whole = new(&stored);
+        whole.run(&gp, &stored, None).expect("compiles");
+        let work = stored.work_units() - start;
+        let mut compilation = new(&stored);
+        stored.end_turn_at(stored.work_units() + work / 2);
+        match compilation.run(&gp, &stored, Some(usize::MAX)) {
+            Err(CompileError::Tdd(tididi::OperationError::Stopped)) => {}
+            other => panic!("the turn ends part way: {other:?}"),
+        }
+        let (done, all) = compilation.progress();
+        assert!(3 <= done && done < all, "stopped at {done} of {all}");
+        assert!(compilation.take_fork().is_none());
+        // The pairs of the formulas the copy converts, which the engine's
+        // clock does not count, are charged to it.
+        let held: u64 = compilation
+            .fixpoint
+            .formulas
+            .diagrams()
+            .map(|f| f.pair_count() as u64)
+            .sum();
+        // The next run copies the compile at its first step, then goes on
+        // stored until the stretch ends, or to the end.
+        let stretch = crate::tp::Probe::Stretch {
+            pairs: 1,
+            skip: 0,
+            start: None,
+            converted: 0,
+        };
+        let probing = TddBackend::new(engine, vtree.clone()).with_probe(
+            stretch,
+            engine.limits().work_units(),
+            work / 2,
+        );
+        match compilation.run(&gp, &probing, Some(usize::MAX)) {
+            Ok(()) => {}
+            Err(CompileError::Skips { from, .. }) => assert_eq!(from, done),
+            Err(e) => panic!("{e}"),
+        }
+        let converted = match probing.probed() {
+            crate::tp::Probe::Stretch {
+                start: Some((from, _)),
+                converted,
+                ..
+            } => {
+                assert_eq!(from, done);
+                converted
+            }
+            p => panic!("the stretch began: {p:?}"),
+        };
+        assert!(
+            held > 0 && converted >= held,
+            "the copy's conversion is charged: {converted} units for {held} pairs"
+        );
+        let (mut copy, _) = compilation.take_fork().expect("a copy in skip form");
+        assert_eq!(copy.progress(), (done, all));
+        copy.run(&gp, &skip, None).expect("the copy compiles");
+        let (p_copy, pairs_copy) = finish(&mut copy, &skip);
+        assert_eq!(pairs_copy, pairs_skip, "the copy's diagrams");
+        assert!((p_copy - p_skip).abs() < 1e-15, "{p_copy} against {p_skip}");
+        // The stored compile goes on where the stretch stopped it.
+        let plain = TddBackend::new(engine, vtree.clone());
+        compilation.run(&gp, &plain, None).expect("compiles");
+        let (p_stored, _) = finish(&mut compilation, &plain);
+        assert!((p_stored - want).abs() < 1e-12, "{p_stored} against {want}");
+    });
+}

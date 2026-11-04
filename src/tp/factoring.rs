@@ -27,6 +27,7 @@ const NARROW_TENTHS: usize = 9;
 /// repeats each variable and literal once per row; counting them in place
 /// replaces a sort of every occurrence per branch (`scope_over`) and three
 /// hash maps per shared literal (`negated_terms`).
+#[derive(Clone)]
 pub(super) struct Scratch {
     /// `var_mark[v] == stamp`: `v` is already among the variables collected.
     pub(super) var_mark: Vec<u32>,

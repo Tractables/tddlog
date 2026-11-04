@@ -107,19 +107,22 @@ pub enum CompileError {
     SkipForm(&'static str),
     /// `auto`'s probe of a stored trial: its first large formula, of
     /// `pairs` pairs, kept `skip` of them in skip form, few enough that the
-    /// trial begins again in skip form to weigh it, and the stored compile
-    /// spent `stored` from the first step with `from` components finished
-    /// to the first with `to` (`Probe::Stretch`).
+    /// trial goes on with the compile's copy in skip form, made for
+    /// `converted` at the step with `from` components finished, to weigh
+    /// it; the stored compile spent `stored` from there to the first step
+    /// with `to` (`Probe::Stretch`).
     Skips {
         pairs: usize,
         skip: usize,
         from: usize,
         to: usize,
         stored: u64,
+        converted: u64,
     },
-    /// `auto`'s probe of a trial begun again in skip form: over the
-    /// stretch, the skip form spent `skip`, no less than the stored form's
-    /// `stored`, and the trial goes on stored (`Probe::Duel`).
+    /// `auto`'s probe of a trial gone on with its compile's copy in skip
+    /// form: over the stretch, the skip form spent `skip`, its conversion
+    /// included, no less than the stored form's `stored`, and the trial
+    /// goes on stored (`Probe::Duel`).
     Stored {
         skip: u64,
         stored: u64,
@@ -166,10 +169,12 @@ impl fmt::Display for CompileError {
                 from,
                 to,
                 stored,
+                converted,
             } => write!(
                 f,
-                "a formula of {pairs} pairs keeps {skip} in skip form, and the stored form spent \
-                 {stored} units from component {from} to {to}"
+                "a formula of {pairs} pairs keeps {skip} in skip form, the copy in skip form took \
+                 {converted} units, and the stored form spent {stored} units from component {from} \
+                 to {to}"
             ),
             CompileError::Stored { skip, stored } => write!(
                 f,

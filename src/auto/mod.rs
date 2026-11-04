@@ -61,12 +61,14 @@
 //! form ([`Kind::takes_skip_form`]) measures its compile's first formula of
 //! [`policy::PROBE_PAIRS`] pairs or more in that form, once ([`tp::Probe`]).
 //! Where the formula keeps under [`policy::SKIP_SHARE`] of its pairs there,
-//! the trial goes on stored until its work doubles, sets that compile
-//! aside and begins again in skip form, to weigh the two forms' work over
-//! the same stretch of the compile. It goes on in the form that spent less
-//! there, from where it set its stored compile aside: the weighing's work
-//! is charged to no trial's turns. Otherwise it keeps the stored form, as
-//! does every other trial. A skip operation charges the work clock in the
+//! the compile makes a copy of itself in skip form at its next step, and
+//! goes on stored until the trial's work doubles; the trial then sets that
+//! compile aside and goes on with the copy from the step it was made at,
+//! to weigh the two forms' work over the same components, the copy's
+//! conversion on the skip form's side. It goes on in the form that spent
+//! less there, from where it set its stored compile aside: the weighing's
+//! work is charged to no trial's turns. Otherwise it keeps the stored
+//! form, as does every other trial. A skip operation charges the work clock in the
 //! stored engine's units, and the run's stop cuts it where its own units,
 //! so scaled, reach the stop (`tp::TddBackend::skip_op`): the turns, the
 //! guard and the watch are the same in either form. A trial in skip form
@@ -719,9 +721,10 @@ fn run_within(
             Err(error) => error,
         };
         // The probe's stretch ended: the trial sets its stored compile
-        // aside and begins again in skip form, with the target and the
-        // work it has spent, to weigh the two forms over the stretch. The
-        // skip form spent as much as the stored form there, or a step of it
+        // aside and goes on with its copy in skip form from where the
+        // stretch began, with the target and the work it has spent but for
+        // the copy's, to weigh the two forms over the stretch. The skip
+        // form spent as much as the stored form there, or a step of it
         // needs the stored form: the trial goes on with its stored compile,
         // or begins it again where none was set aside.
         let to_stored = |t: &mut Trial| {
@@ -740,20 +743,29 @@ fn run_within(
                 from,
                 to,
                 stored,
+                converted,
             } => {
-                t.set_aside(!alone);
+                let (copy, took) = t
+                    .evaluation
+                    .take_fork()
+                    .expect("a stretch begins where the compile makes its copy");
+                t.spent = t.spent.saturating_sub(converted);
+                t.set_aside(!alone, copy);
                 t.form = tp::Form::Skip;
                 t.probe = tp::Probe::Duel {
                     from,
                     to,
                     stored,
+                    converted,
                     at: None,
                 };
                 Some((
-                    "begins again in skip form",
+                    "weighs its copy in skip form",
                     format!(
-                        "keeps {skip} of {pairs} pairs in skip form, and the stored form spent \
-                         {stored} units from component {from} to {to}"
+                        "keeps {skip} of {pairs} pairs in skip form, the copy made at component \
+                         {from} took {converted} units in {:.3}s, and the stored form spent \
+                         {stored} units from component {from} to {to}",
+                        took.as_secs_f64()
                     ),
                 ))
             }
@@ -1133,6 +1145,9 @@ fn attempt(
             if armed =>
         {
             format!(" probed: {skip} of {pairs} pairs in skip form")
+        }
+        (_, tp::Probe::Refused) if probing => {
+            " probed: its copy in skip form over the memory budget".to_string()
         }
         _ => String::new(),
     };
