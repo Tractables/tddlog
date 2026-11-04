@@ -356,6 +356,10 @@ function head2(...items) {
   return element("thead", {}, top, below);
 }
 
+// A speed-up's name in a header or a cell's label, a link to the methods
+// table that defines it (rule 20) on the front page.
+const speedName = (label) => element("a", { href: `${front}#/methods`, class: "defined" }, label);
+
 // A <details> whose body is built when it is first opened.
 function lazy(attributes, summary, build) {
   const box = element("details", attributes, element("summary", {}, summary));
@@ -734,7 +738,7 @@ function headline(c, rows, tal, only) {
   const box = cells([`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(rows.length)}`],
     ...headMembers(c, rows, tal).map(([x, label]) => [label, `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`]),
     ...(v ? [[`best ${which}: ${data.names[best]}`, count(tal[best].answers), `the ${which} system with the most answers`],
-      ["speed-up over it", speedup(v), `${subject(v.me)}'s speed-up over ${data.names[best]}`]] : []));
+      [speedName("speed-up over it"), speedup(v), `${subject(v.me)}'s speed-up over ${data.names[best]}`]] : []));
   box.classList.add("headline");
   return box;
 }
@@ -826,7 +830,10 @@ function drawOverview(box) {
     for (const y of clear ? [top - 12, height - 10] : [height - 10]) plot.append(svg("text", { class: "tick", x: lx(t), y, "text-anchor": "middle" }, label));
   }
   plot.append(svg("text", { class: "col", x: answersRight, y: top - 12, "text-anchor": "end" }, "answers"));
-  plot.append(svg("text", { class: "col", x: ratio, y: top - 25 }, "tddlog"), svg("text", { class: "col", x: ratio, y: top - 12 }, "faster"));
+  // the speed-up's header, a link to the methods table that defines it (speedName)
+  const faster = svg("a", { href: `${front}#/methods`, class: "defined" });
+  faster.append(svg("text", { class: "col", x: ratio, y: top - 25 }, "tddlog"), svg("text", { class: "col", x: ratio, y: top - 12 }, "faster"));
+  plot.append(faster);
   let y = top;
   // A row: its name and answers, its marks, and the whole row a link.
   const line = (to, label, cls, name, answers, ...marks) => {
@@ -1267,7 +1274,7 @@ function ownTable(list = data.own, head = "Each system on its own benchmarks") {
   return [element("h3", { class: "own-head" }, head), scroller(stacked(element("table", { class: "board own" },
     head2(["system"], ["its benchmarks"], ["instances", null, "num"],
       { group: "the system", cols: [["answers", null, "num"], ["total", par, "num"]] },
-      { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], ["faster", "tddlog's speed-up", "num"]] }), body)), "whole")];
+      { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), "tddlog's speed-up", "num"]] }), body)), "whole")];
 }
 
 // A category's systems by their answers, then tddlog's speed-up over them,
@@ -1442,7 +1449,7 @@ function solverParts(x) {
   const num = (text) => element("td", { class: "num" }, text);
   const par = `over the instances it is given and either answers (PAR-${data.measure.par})`;
   const sides = (me) => [{ group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
-    { group: subject(me), cols: [["answers", null, "num"], ["total", par, "num"], ["faster", `${subject(me)}'s speed-up`, "num"]] }];
+    { group: subject(me), cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${subject(me)}'s speed-up`, "num"]] }];
   const languages = sets.length ? [scroller(stacked(element("table", { class: "board languages" },
     head2(["programs"], ["instances", null, "num"], ["its own", "from its own papers, benchmarks or distribution", "num"], ...sides(ms)),
     element("tbody", {}, ...sets.map((w) => element("tr", {}, element("th", { scope: "row" }, w.label), num(count(w.rows.length)),
@@ -2238,15 +2245,18 @@ async function runs(route) {
 // choice the viewer keeps; By integration, tddlog alone and its pipelines;
 // By program type, the types and all programs, the one on show (or that
 // holds the family or instance on show) with its families, then the
-// programs tddlog does not run; How it works, its walkthroughs. The
-// results page's own overview is under By program type; the logo above is
-// the front page.
+// programs tddlog does not run; How it works, its walkthroughs and the
+// methods table. The results page's own overview is under By program
+// type; the logo above is the front page.
 const MENU_TOP = 10;
 // The page of the programs tddlog does not run, the last entry under By program type.
 const COVERAGE = "Programs tddlog does not run";
+// The methods table (next.js's), the last entry under How it works; every
+// speed-up's header links to it (speedName).
+const METHODS = "Methods";
 // The section each view is in, which the bar marks.
 const SECTION_OF = { baselines: "baselines", baseline: "baselines", coverage: "types", integrations: "integrations",
-  integration: "integrations", types: "types", category: "types", suite: "types", family: "types", how: "how" };
+  integration: "integrations", types: "types", category: "types", suite: "types", family: "types", how: "how", methods: "how" };
 const MENU_KEY = "tddlog-baselines";
 function rail(route) {
   const tree = element("ul", { class: "tree" });
@@ -2314,7 +2324,7 @@ function rail(route) {
   types.append(entry("#/coverage", COVERAGE));
   tree.append(group("types", types));
   // how it works
-  tree.append(group("how", element("ul", {}, ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)))));
+  tree.append(group("how", element("ul", {}, ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)), entry("#/methods", METHODS))));
   // on the front page, the bar's section the view is in, and the menu's entry on show: its view, else the entry it is in
   if (!front) {
     for (const a of document.querySelectorAll(".site-nav a[data-section]")) {

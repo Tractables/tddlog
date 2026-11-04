@@ -917,10 +917,15 @@ function benchmarksOf(root) {
     assert.deepEqual(sections, categories.map((c) => [`#/category/${c.key}`, [...c.mine, ...ranked(c, c.drawn)].join(" "),
       ...sides(rowsOf(c), c.drawn.filter((x) => !isMine(x))), 0]), "the overview: each category's cactus plot and its scatter plot");
     assert.equal((await page.$$("#view table.board.own tbody tr")).length, cats.own.length, "the overview: each system on its own benchmarks");
+    // every speed-up's header a link to the methods table (rule 20): the overview's, and the tables' and cells' on this page
+    assert.equal(await page.locator('#view svg a.defined[href="../#/methods"]').count(), 1, "the overview: its speed-up's header links to the methods");
+    assert.deepEqual(await page.$$eval("#view thead th, #view .cell > span", (hs) => hs.filter((h) => /\b(faster|speed-up)\b/.test(h.textContent)
+      && !h.querySelector('a[href="../#/methods"]')).map((h) => h.textContent)), [], "the overview: every speed-up's header links to the methods");
     console.log(`ok the overview: ${overviewRows.length} native systems' speed-ups, each category's plots and the own benchmarks`);
     // The menu, the site's: its sections, each a heading with its entries:
     // every other system by its answers; the integrations; the overview, the
-    // categories and the programs tddlog does not run; the walkthroughs.
+    // categories and the programs tddlog does not run; the walkthroughs and the
+    // methods table.
     // by integration where the data has the integrations
     const sectionNames = (await page.evaluate(() => SECTIONS)).map(([, name]) => name);
     const menuNames = (await page.evaluate(() => SECTIONS)).filter(([key]) => key !== "integrations" || cats.integrations).map(([, name]) => name);
@@ -935,7 +940,8 @@ function benchmarksOf(root) {
     assert.deepEqual(menu[2].slice(1), ["#/", ...categories.map((c) => `#/category/${c.key}`), "../#/coverage"],
       "the menu: the overview, the categories and the programs tddlog does not run");
     const walks = fs.readdirSync(path.join(site, "next", "walk")).filter((f) => f.endsWith(".json")).map((f) => `../#/how/${f.slice(0, -5)}`);
-    assert.deepEqual([...menu[3].slice(1)].sort(), walks.sort(), "the menu: every walkthrough");
+    assert.deepEqual(menu[3].slice(-1), ["../#/methods"], "the menu: the methods table, last");
+    assert.deepEqual(menu[3].slice(1, -1).sort(), walks.sort(), "the menu: every walkthrough");
     assert.deepEqual(await page.$$eval("#tree li.legend", (ls) => ls.map((l) => l.textContent)), ["instances answered", "instances"],
       "the menu: what its counts count");
     for (const c of categories) {

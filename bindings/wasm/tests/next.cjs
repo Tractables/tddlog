@@ -1,13 +1,14 @@
 // The site's front page in headless Chromium: each of its views (the home
 // page, by baseline and a baseline's page, by integration and each
 // integration's page, by program type and a type's page with its
-// head-to-head and translated parts, the coverage, how it works, its strip
-// of stages a trace's steps, each a link to its step, and each step of its
-// walkthroughs, each a trace drawn with a caption over every step, the step
-// on show marked) draws without an error, its views.json written from the
-// same results as categories.json, with a member of tddlog's (tddlog or a
-// pipeline) for each row a system was given, named where a baseline's page
-// compares with it; a link to a section of a baseline's page scrolls to it;
+// head-to-head and translated parts, the coverage, the methods table, how
+// it works, its strip of stages a trace's steps, each a link to its step,
+// and each step of its walkthroughs, each a trace drawn with a caption
+// over every step, the step on show marked) draws without an error, its
+// views.json written from the same results as categories.json, with a
+// member of tddlog's (tddlog or a pipeline) for each row a system was
+// given, named where a baseline's page compares with it; a link to a
+// section of a baseline's page scrolls to it;
 // a benchmark's page has its playground link; an address of nothing is not
 // found; the addresses these pages once had (#/tools, #/system, next/) open
 // the same views; every page's bar names the sections as the menu does, in
@@ -180,6 +181,16 @@ function drawn(page) {
         steps.map((t, k) => [`${k + 1}. ${t.title}`, `#/how/${key}/${k + 1}`]), "the strip is the first walkthrough's steps");
       assert.equal(await page.locator("nav.walks a").count(), WALKS.length);
       assert.equal(await page.textContent("ol.pipeline a[aria-current]"), `1. ${steps[0].title}`);
+      assert.equal(await page.locator('#view a[href="#/methods"]').count(), 1, "how it works: a link to the methods");
+    }],
+    // the methods table: the facts of the runs, each type's time limits after the memory's, how the results are counted, the data's stamp
+    ["#/methods", "methods", async () => {
+      const rows = await page.$$eval("table.methods tbody tr:not(.group)", (trs) => trs.map((tr) => [tr.querySelector("th").textContent, tr.querySelector("td").textContent]));
+      assert.deepEqual(rows.map(([what]) => what), [...cats.methods.flatMap(([what]) => (what === "memory" ? [what, "time limits"] : [what])),
+        "answers", `total (PAR-${cats.measure.par})`, "speed-up", "X+tddlog", "data"], "methods: its rows");
+      const limits = rows.find(([what]) => what === "time limits")[1];
+      for (const c of cats.categories.filter((c) => c.key !== "all-programs")) assert.ok(limits.includes(`${c.title} `), `methods: ${c.key}'s time limits`);
+      assert.ok(cats.methods.every(([, fact]) => !fact.includes("{version}")), "methods: tddlog's version in place");
     }],
     // each step of each walkthrough: its trace drawn, under its caption
     ...WALKS.flatMap(([key, example, steps]) => steps.map((step, i) => [`#/how/${key}/${i + 1}`, "how", async () => {
@@ -217,6 +228,9 @@ function drawn(page) {
     await page.goto(base + hash);
     await drawn(page);
     await check();
+    // every speed-up's header a link to the methods table (rule 20)
+    assert.deepEqual(await page.$$eval("#view thead th, #view .cell > span", (hs) => hs.filter((h) => /\b(faster|speed-up)\b/.test(h.textContent)
+      && !h.querySelector('a[href="#/methods"]')).map((h) => h.textContent)), [], `${hash}: every speed-up's header links to the methods`);
     assert.deepEqual(await page.$$eval("#tree ul.baselines li.solver a", (as) => as.map((a) => a.getAttribute("href"))), baselines,
       `${hash}: the baselines in the menu`);
     // by integration where the data has the integrations, and the bar's link to it with it

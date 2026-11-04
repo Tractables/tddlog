@@ -1043,6 +1043,9 @@ table.board thead th { position: sticky; top: 0; background: var(--card); white-
 table.board thead tr + tr th { position: static; }
 table.board thead th.group { color: var(--ink); font-weight: 600; text-align: center; border-bottom: 1px solid var(--line); }
 table.h2h td.ratio { font-weight: 600; }
+/* A speed-up's name, a link to the methods table that defines it (speedName). */
+a.defined { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
+svg a.defined text { text-decoration: underline dotted; }
 table.h2h tr.words td { white-space: normal; background: var(--bg); font-size: 14px; }
 table.h2h tr.words p { max-width: 80ch; }
 .finding-text { max-width: 80ch; font-size: 14px; }

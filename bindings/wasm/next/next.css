@@ -61,8 +61,11 @@ details.reasons { margin: 0.5rem 0 0.8rem; font-size: 14px; }
 details.reasons summary { cursor: pointer; }
 details.reasons summary .cls { margin-left: 0.3rem; }
 details.reasons dl { margin-top: 0.5rem; }
-section.counted { margin-top: 2rem; padding-top: 0.6rem; border-top: 1px solid var(--line); }
-section.counted dt { font-weight: 600; }
+/* The methods table: a fact a row, under the group it is in; its facts wrap. */
+table.board.methods { max-width: 100ch; }
+table.board.methods tbody th { vertical-align: top; font-weight: 600; }
+table.board.methods td { white-space: normal; }
+table.board.methods tr.group th { padding-top: 0.9rem; color: var(--muted); font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--line); }
 .cls { display: inline-block; padding: 0.05rem 0.45rem; border-radius: 999px; font-size: 12px; white-space: nowrap; background: var(--code); border: 1px solid var(--line); }
 .cls-not-yet { background: var(--accent-fill); border-color: var(--accent); }
 .cls-impossible { background: var(--amber-fill); border-color: var(--amber); }
