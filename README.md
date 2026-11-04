@@ -346,7 +346,8 @@ the coupon collector, 3-SAT, the bounded retransmission protocol,
 Circulette's netlists and the Dice paper's small programs. tddlog counts
 as unanswered on the programs only another system's front end reads:
 Alea.jl's on Cao et al.'s integer programs and Pluck's sequence models,
-whose integration Alea.jl+tddlog is [below](#integrations).
+whose integration Alea.jl+tddlog is [below](#integrations) and whose
+circuits are [below](#circuits) too.
 
 <!-- results:functional-programs-table -->
 <!-- /results:functional-programs-table -->
@@ -374,6 +375,25 @@ it is given, natively or through a translation.
   48 routers), which tddlog does not, by
   value iteration over decision diagrams in double precision; their
   exact engines time out from 18 to 20 routers.
+
+### Circuits
+
+<p align="center">
+  <img src="docs/images/results-circuits.svg"
+       alt="Circuits answered within each time limit, and tddlog's time against the fastest other system's">
+</p>
+
+<!-- results:circuits -->
+<!-- /results:circuits -->
+
+The circuits are an evaluation of their own, apart from the five types:
+each circuit Alea.jl exports of its programs, the bit-blasted arithmetic
+and the integer programs and sequence models among the functional
+programs. Every system reads the circuit, as it is or translated into
+its language, and no one pays for its export.
+
+<!-- results:circuits-table -->
+<!-- /results:circuits-table -->
 
 ### Integrations
 

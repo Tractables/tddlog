@@ -163,6 +163,12 @@ function drawn(page) {
         assert.equal(to, `#/baselines/${x}`, `${c.key}: ${x}'s name opens its page`);
       }
     }]),
+    // the circuits, where the data has them: every system on them, a row a family
+    ...(cats.circuits ? [["#/circuits", "category", async () => {
+      await page.waitForSelector("#view figure.plot svg.cactus path.line");
+      assert.equal(await page.locator("section.split").count(), 0, "the circuits: no head-to-head and translated split");
+      assert.equal(await page.locator("#tree a[aria-current]").getAttribute("href"), "#/circuits", "the circuits: marked in the menu");
+    }]] : []),
     ["#/coverage", "coverage", async () => {
       assert.ok(await page.locator(".census").count() >= views.census.sources.length);
       // each count above 0 opens its system's coverage
@@ -187,7 +193,7 @@ function drawn(page) {
     ["#/methods", "methods", async () => {
       const rows = await page.$$eval("table.methods tbody tr:not(.group)", (trs) => trs.map((tr) => [tr.querySelector("th").textContent, tr.querySelector("td").textContent]));
       assert.deepEqual(rows.map(([what]) => what), [...cats.methods.flatMap(([what]) => (what === "memory" ? [what, "time limits"] : [what])),
-        "answers", `total (PAR-${cats.measure.par})`, "speed-up", "X+tddlog", "data"], "methods: its rows");
+        "answers", `total (PAR-${cats.measure.par})`, "speed-up", "X+tddlog", "circuits", "data"], "methods: its rows");
       const limits = rows.find(([what]) => what === "time limits")[1];
       for (const c of cats.categories.filter((c) => c.key !== "all-programs")) assert.ok(limits.includes(`${c.title} `), `methods: ${c.key}'s time limits`);
       assert.ok(cats.methods.every(([, fact]) => !fact.includes("{version}")), "methods: tddlog's version in place");
@@ -235,9 +241,11 @@ function drawn(page) {
       `${hash}: the baselines in the menu`);
     // by integration where the data has the integrations, and the bar's link to it with it
     assert.deepEqual(await page.$$eval("#tree .tree > li.group > a", (as) => as.map((a) => a.textContent)),
-      sections.filter(([key]) => key !== "integrations" || cats.integrations).map(([, name]) => name), `${hash}: the menu's sections`);
+      sections.filter(([key]) => (key !== "integrations" || cats.integrations) && (key !== "circuits" || cats.circuits)).map(([, name]) => name),
+      `${hash}: the menu's sections`);
     assert.equal(await page.isVisible('.site-nav a[href="#/integrations"]'), Boolean(cats.integrations),
       `${hash}: the bar's link to the integrations`);
+    assert.equal(await page.isVisible('.site-nav a[href="#/circuits"]'), Boolean(cats.circuits), `${hash}: the bar's link to the circuits`);
     const marked = await page.$$eval("#tree a[aria-current]", (as) => as.map((a) => a.getAttribute("href")));
     // nothing on the home page, an address of nothing, and the integrations' page where the menu has no such section
     const none = view === "missing" || view === "draft-home" || (view === "integrations" && !cats.integrations);

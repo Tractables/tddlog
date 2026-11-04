@@ -55,7 +55,7 @@ const extend = { parse: () => null, href: () => null, draw: () => null, title: (
 // The site's sections, in the order of the bar at the top of every page and
 // of the menu, by their front page's address: their names are these, here
 // only (the pages' bars, which tests/next.cjs holds to them, name them too).
-const SECTIONS = [["baselines", "By baseline"], ["integrations", "By integration"], ["types", "By program type"], ["how", "How it works"]];
+const SECTIONS = [["baselines", "By baseline"], ["integrations", "By integration"], ["types", "By program type"], ["circuits", "Circuits"], ["how", "How it works"]];
 const sectionName = (key) => SECTIONS.find(([k]) => k === key)[1];
 // The first crumbs of a view: the front page, and the section the view is in.
 const HOME = ["Home", { view: "section", key: "" }];
@@ -72,16 +72,9 @@ const WALK_TITLES = [["reach", "Reachability with cycles"], ["gears", "Negation 
 // menu's order, and the integration a member of tddlog's is.
 const INTEGRATIONS = ["tddlog", "alea", "roulette"];
 const integrationsOf = () => INTEGRATIONS.filter((k) => data.integrations?.[k]);
-const integrationOf = (x) => (x === "tddlog" ? "tddlog" : viaOf(x)?.[0] ?? x.replace(/-tddlog$/, ""));
-// A system on another system's export (Roulette+ProbLog: ProbLog on what
-// Roulette's code exported, categories.json's `via`): [the exporter, the
-// system]; null for any other key. Its line and swatch take the system's
-// colour, dotted (`tint`), and its address is its integration's.
-const viaOf = (x) => data.via?.[x.replace(/-process$/, "")] ?? null;
-const tint = (key) => {
-  const v = isMine(key) ? null : viaOf(key);
-  return v ? `s-${v[1]} via` : `s-${base(key)}`;
-};
+const integrationOf = (x) => (x === "tddlog" ? "tddlog" : x.replace(/-tddlog$/, ""));
+// A system's colour, its line's and its swatch's.
+const tint = (key) => `s-${base(key)}`;
 
 // The time axis starts at 0.2 s: runs under 0.2 s are not told apart.
 const FLOOR = 0.2;
@@ -104,6 +97,12 @@ const failureKey = (v, limit) => element("span", { title: FAILURES[v][1] }, `${F
 // All programs: the union of the types of program, every system on every
 // program it is given (categories.json's last category).
 const ALL = "all-programs";
+// The circuits: every circuit Alea.jl exports, which every system reads under
+// its plain name (categories.json's `circuits`, a category's entry), a
+// section of its own apart from the types.
+const APART = "circuits";
+// A category's entry by its key: a type's, all programs', or the circuits'.
+const categoryOf = (key) => data.categories.find((c) => c.key === key) ?? (data.circuits?.key === key ? data.circuits : undefined);
 
 // A time in a table is shaded by how many times slower it is than its
 // instance's fastest, up to this many.
@@ -252,13 +251,6 @@ const isMine = (key) => key === "tddlog" || key.endsWith("-tddlog");
 // and its time there.
 const myKey = (r) => Object.keys(r.v).find((x) => isMine(x) && r.v[x] !== null);
 const myTime = (r) => r.t[myKey(r)] ?? null;
-// The one of them system x is compared with on a row on x's own page: the row's
-// subject, never X+tddlog, whose record is not tddlog's; for a system Y+x on
-// Y's export, Y+tddlog (which differs from it only in the inference) where it ran.
-const pairKey = (x) => {
-  const v = viaOf(x), p = v ? `${v[0]}-tddlog` : null;
-  return (r) => (p && p !== x && (r.v[p] ?? null) !== null ? p : myKey(r));
-};
 // The subjects of rows (tddlog first), and how many of the rows they answer.
 const subjectsOf = (rows, key = myKey) => [...new Set(rows.map(key))].filter(Boolean)
   .sort((a, b) => (b === "tddlog") - (a === "tddlog") || a.localeCompare(b));
@@ -1033,7 +1025,7 @@ const data = {
   suiteVs: {},      // a suite's key: tddlog against each other system of the suite (categories.json's `suites`)
   systems: [],      // each solver, by the instances it answers: what it is, its totals, how it was given the instances
   integrations: null,  // tddlog alone, and X+tddlog against X on X's programs (categories.json's `integrations`)
-  via: {},          // a system on another system's export (Roulette+ProbLog): [the exporter, the system]
+  circuits: null,   // the circuits' entry, as a category's (categories.json's `circuits`), with `suites` and `perSuite`
   splits: {},       // a suite's key: each system's answered time on its export, {answers, seconds, export}
   suites: new Map(),   // a suite's key: the suite, with `home`, the data's family that holds it, and `file`
   bench: null,      // benchmarks/index.json: every suite's families, where the site has them
@@ -1093,11 +1085,11 @@ function against(suite) {
 // The kinds of problems of the page before this one, and the category each
 // one's address opens now; and the categories the pages once had, with where
 // their addresses go now, where the data no longer has them: the
-// bit-blasted circuits are Alea.jl+tddlog's integration's.
+// bit-blasted circuits are the circuits'.
 const OLD_KINDS = { programs: "logic-programs", networks: "bayesian-networks", ppl: "functional-programs",
   circuits: "bit-blasted", databases: "database-queries" };
-const GONE = { "bit-blasted": { view: "system", system: "alea-tddlog" } };
-const gone = (key) => (data.categories.some((c) => c.key === key) ? undefined : GONE[key]);
+const GONE = { "bit-blasted": { view: "category", category: APART } };
+const gone = (key) => (categoryOf(key) ? undefined : GONE[key]);
 
 // The view an address names, or what it names that the data does not have.
 function parse(hash) {
@@ -1126,8 +1118,9 @@ function parse(hash) {
     if (!c || parts.length > 3) return missing;
     return { view: "category", category: c.key, vs: c.systems.includes(parts[2]) && !isMine(parts[2]) ? parts[2] : undefined };
   }
+  if (parts[0] === APART && parts.length === 1 && data.circuits) return { view: "category", category: APART };
   if (parts[0] === "category") {
-    const c = data.categories.find((x) => x.key === parts[1]);
+    const c = categoryOf(parts[1]);
     if (!c) return missing;
     const route = { view: "category", category: c.key };
     for (let i = 2; i < parts.length; i += 2) {
@@ -1167,9 +1160,11 @@ function parse(hash) {
 
 function href(route) {
   switch (route.view) {
-    case "category": return `#/category/${route.category}${route.only ? `/in/${encodeURIComponent(route.only)}` : ""}`
+    // the circuits at the address of their section, a family of theirs as a category's
+    case "category": return route.category === APART && !route.only && !route.vs ? `#/${APART}`
+      : `#/category/${route.category}${route.only ? `/in/${encodeURIComponent(route.only)}` : ""}`
       + `${route.vs ? `/vs/${encodeURIComponent(route.vs)}` : ""}`;
-    case "system": return `${front}#/${isMine(route.system) || viaOf(route.system) ? `integrations/${integrationOf(route.system)}` : `baselines/${encodeURIComponent(route.system)}`}`
+    case "system": return `${front}#/${isMine(route.system) ? `integrations/${integrationOf(route.system)}` : `baselines/${encodeURIComponent(route.system)}`}`
       + `${route.at ? `/${route.at}` : ""}`;
     case "suite": return `#/${route.suite}`;
     case "family": {
@@ -1325,7 +1320,7 @@ function cannot(suite) {
 }
 
 function categoryView(route) {
-  const c = data.categories.find((x) => x.key === route.category);
+  const c = categoryOf(route.category);
   lastCategory = c.key;
   const only = route.only;
   const g = groupOf(c, only);
@@ -1333,7 +1328,7 @@ function categoryView(route) {
   const tal = tally(c, rows, only);
   const drawn = drawnOf(c, rows, only);
   const whole = catSuite(c, rows, drawn, tal, only);
-  const out = [crumbs(HOME, inSection("types"), g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
+  const out = [crumbs(HOME, inSection(c.key === APART ? APART : "types"), g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
     element("h2", {}, g ? g.title : c.title)];
   // a family: what it is and where it comes from
   if (g && !g.source) out.push(prose("p", g.about, { class: "lede" }), note("The type on its own, against the systems native to it: ",
@@ -1437,9 +1432,9 @@ function solverParts(x) {
     return { c, rows, tal: tally(c, rows) };
   });
   // the members of tddlog and its pipelines it is compared with over these
-  // categories (pairKey)
+  // categories: each row's subject
   const all = parts.flatMap((p) => p.rows);
-  const ms = subjectsOf(all, pairKey(x));
+  const ms = subjectsOf(all);
   // in its own language and translated for it
   const sets = [["on", "in its own language", s.native], ["t", "translated for it", s.translated]].map(([letters, label, v]) => {
     const rows = parts.flatMap(({ c, rows: rs }) => rs.filter((r) => letters.includes(r.cls[c.systems.indexOf(x)])));
@@ -1459,7 +1454,7 @@ function solverParts(x) {
     plotted({ key: `${x}-${w.letters}`, title: `${name} and ${subject(w.v.me)}, ${w.label}`, noun: "instances", systems: [...w.v.me, x],
       instances: w.rows.map((r) => [r.name, ...w.v.me.map((m) => r.v[m]), r.v[x]]), limit: Math.max(...w.rows.map((r) => r.limit)),
       faster: { [x]: w.v.speedup === null ? "too few in common" : `${subject(w.v.me)} ${speedup(w.v, true)}` } }, data.names, { all: true }),
-    scatter(w.rows, [...w.v.me, x], x, false, pairKey(x)))))] : [];
+    scatter(w.rows, [...w.v.me, x], x, false))))] : [];
   // each category's numbers, then its plot among the others, x's line and tddlog's coloured
   const body = element("tbody");
   for (const { c, rows, tal } of parts) {
@@ -1787,10 +1782,11 @@ const mineReader = (inst) => (inst.runs ?? []).map(runName).find((n) => n === "t
 
 // The systems that ran an instance but read none of its files on show, nor
 // translated any: their files were not captured. A run whose grounding
-// failed (`ungrounded`) was handed no file.
+// failed (`ungrounded`), that was never handed a program (`unhanded`: every
+// repetition skipped or refused) or that was skipped was handed no file.
 function uncaptured(inst) {
   const readers = (inst.tabs ?? []).flatMap((t) => [...t.readers, ...(t.translations ?? []).map(([who]) => who)]);
-  return [...new Set((inst.runs ?? []).filter((r) => !r.ungrounded).map(runName))]
+  return [...new Set((inst.runs ?? []).filter((r) => !r.ungrounded && !r.unhanded && !r.skipped).map(runName))]
     .filter((name) => !readers.some(readsAs(name)));
 }
 
@@ -2171,7 +2167,7 @@ async function runs(route) {
         opener = document.querySelector("#programs select.version");
         go({ ...now, runs: undefined, file: fileRoute(inst, ti, fi) });
       } }, file.name.split("/").pop(), element("small", {}, t.lang)))));
-  } else if (mine.some((r) => !r.ungrounded)) {
+  } else if (mine.some((r) => !r.ungrounded && !r.unhanded && !r.skipped)) {
     parts.push(note(`The command and the files ${name0} was given were not captured.`));
   }
   const tryIt = rec === "tddlog" && inst ? playground(s, f, inst, name0) : null;
@@ -2257,6 +2253,7 @@ const METHODS = "Methods";
 // The section each view is in, which the bar marks.
 const SECTION_OF = { baselines: "baselines", baseline: "baselines", coverage: "types", integrations: "integrations",
   integration: "integrations", types: "types", category: "types", suite: "types", family: "types", how: "how", methods: "how" };
+const sectionOf = (route) => (route.view === "category" && route.category === APART ? APART : SECTION_OF[route.view]);
 const MENU_KEY = "tddlog-baselines";
 function rail(route) {
   const tree = element("ul", { class: "tree" });
@@ -2323,12 +2320,23 @@ function rail(route) {
   }
   types.append(entry("#/coverage", COVERAGE));
   tree.append(group("types", types));
+  // the circuits, where the data has them (and the bar's link to them with it): their families
+  if (data.circuits) {
+    const c = data.circuits;
+    const here = route.view === "category" && route.category === APART;
+    tree.append(group(APART, element("ul", {}, legend("instances"), ...c.groups.map((g) => {
+      const li = element("li", {}, link({ view: "category", category: APART, only: g.key }, g.title, element("span", { class: "n" }, count(g.rows.length))));
+      if (here && route.only === g.key) li.firstChild.setAttribute("aria-current", "page");
+      return li;
+    }))));
+  }
+  for (const a of document.querySelectorAll(`.site-nav a[href$="#/${APART}"]`)) a.hidden = !data.circuits;
   // how it works
   tree.append(group("how", element("ul", {}, ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)), entry("#/methods", METHODS))));
   // on the front page, the bar's section the view is in, and the menu's entry on show: its view, else the entry it is in
   if (!front) {
     for (const a of document.querySelectorAll(".site-nav a[data-section]")) {
-      if (a.dataset.section === `#/${SECTION_OF[route.view]}`) a.setAttribute("aria-current", "page");
+      if (a.dataset.section === `#/${sectionOf(route)}`) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     }
   }
@@ -2440,7 +2448,7 @@ function remember(change) {
 
 function title(route) {
   switch (route.view) {
-    case "category": return data.categories.find((c) => c.key === route.category).title;
+    case "category": return categoryOf(route.category).title;
     case "suite": return data.suites.get(route.suite).title;
     case "family": return `${route.instance} · ${route.suite}/${route.family}`;
     case "missing": return "Not found";
@@ -2535,14 +2543,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     data.suiteVs = cats.suites;
     data.systems = cats.systems;
     data.integrations = cats.integrations ?? null;
-    data.via = cats.via ?? {};
     data.splits = cats.splits ?? {};
     for (const s of data.systems) if (!data.names[s.key]) throw new Error(`the solver ${s.key} has no name`);
     data.categories = [...cats.categories].sort((a, b) => a.order - b.order);
     data.types = data.categories.filter((c) => c.key !== ALL);
+    data.circuits = cats.circuits ?? null;
     // Each category's suites, its rows' and then its copies', with how many
-    // of its instances each holds.
-    for (const c of data.categories) {
+    // of its instances each holds; the circuits' too, whose instances are in
+    // their types (data.place) where they are of one
+    for (const c of [...data.categories, ...(data.circuits ? [data.circuits] : [])]) {
       c.perSuite = new Map();
       const add = (key) => c.perSuite.set(key, (c.perSuite.get(key) ?? 0) + 1);
       for (const row of c.rows) add(row[0]);
@@ -2554,7 +2563,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       c.suites = [...c.perSuite.keys()];
       for (const key of c.suites) if (!data.suites.has(key)) throw new Error(`the category ${c.key} has no suite ${key}`);
-      if (c.key === ALL) continue;
+      if (c.key === ALL || c.key === APART) continue;
       for (const g of c.groups) {
         for (const i of g.rows) {
           const key = `${c.rows[i][0]}/${c.rows[i][1]}`;

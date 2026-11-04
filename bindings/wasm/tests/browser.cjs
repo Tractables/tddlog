@@ -708,15 +708,10 @@ function benchmarksOf(root) {
     // first of them with a record in the systems' order: tddlog in a type,
     // its record "unread" (unanswered and not given) where only another
     // system's front end reads the program; on system x's own page too, never
-    // X+tddlog, and Y+tddlog for Y+x where it ran (results.js's and panels.py's). A system on another system's export
-    // (Roulette+ProbLog, categories.json's via) opens its exporter's
-    // integration page.
+    // X+tddlog (results.js's and panels.py's).
     const isMine = (x) => x === "tddlog" || x.endsWith("-tddlog");
-    const viaOf = (x) => cats.via?.[x.replace(/-process$/, "")] ?? null;
     const given = (r, x) => r.v[x] !== null && r.v[x] !== "unread";
     const myKey = (r) => Object.keys(r.v).find((x) => isMine(x) && r.v[x] !== null);
-    const pipelineOf = (x) => { const v = viaOf(x), p = v ? `${v[0]}-tddlog` : null; return p !== x ? p : null; };
-    const pairKey = (x) => (r) => { const p = pipelineOf(x); return p && (r.v[p] ?? null) !== null ? p : myKey(r); };
     const subjectsOf = (rows) => [...new Set(rows.map(myKey))].filter(Boolean)
       .sort((a, b) => (b === "tddlog") - (a === "tddlog") || a.localeCompare(b));
     const answeredBy = (rows) => rows.filter((r) => number(r.v[myKey(r)])).length;
@@ -807,14 +802,24 @@ function benchmarksOf(root) {
     };
     // Each row's subject (key) against x over rows, those that give x a run.
     const versus = (rows, x, key = myKey) => compare(rows.filter((r) => r.v[x] !== null).map((r) => [r.limit, r.v[key(r)], r.v[x]]));
-    // A suite's runs of x: [limit, its subject's record, x's record] where x
-    // and tddlog (Y+tddlog for Y+x, pipelineOf) were given the row. The suite's other systems are those with such a run.
+    // The circuits' places (the instances whose circuit an exporter's code
+    // exports) and, on each, the systems that read the circuit
+    // (categories.json's circuits).
+    const circuitRows = cats.circuits ? rowsOf(cats.circuits) : [];
+    const places = new Set(circuitRows.map((r) => `${r.suite}/${r.name}`));
+    const onCircuit = new Set(circuitRows.flatMap((r) => cats.circuits.systems.filter((x, j) => r.cls[j] !== "-")
+      .map((x) => `${r.suite}/${r.name}/${x}`)));
+    // x's mate on an instance of suite s (panels.py's mate): tddlog where x
+    // reads the circuit, the exporter's pipeline elsewhere on a place, and
+    // tddlog off the places.
+    const mate = (s, name, x) => (onCircuit.has(`${s.key}/${name}/${x}`) || !places.has(`${s.key}/${name}`) ? "tddlog" : cats.circuits.pipeline);
+    // A suite's runs of x: [limit, its mate's record, x's record] where x
+    // and its mate were given the row. The suite's other systems are those with such a run.
     const suiteRuns = (s, x) => {
       const j = s.systems.indexOf(x) + 1;
-      const mine = [pipelineOf(x) ?? "tddlog"].map((m) => s.systems.indexOf(m) + 1).filter((i) => i > 0);
       return s.instances.flatMap((row) => {
-        const m = mine.find((i) => row[i] !== null);
-        return m !== undefined && row[j] !== null ? [[s.limit, row[m], row[j]]] : [];
+        const m = s.systems.indexOf(mate(s, row[0], x)) + 1;
+        return m > 0 && row[m] !== null && row[j] !== null ? [[s.limit, row[m], row[j]]] : [];
       });
     };
     const suiteOthers = (s) => s.systems.filter((x) => !isMine(x) && suiteRuns(s, x).length);
@@ -928,10 +933,13 @@ function benchmarksOf(root) {
     // methods table.
     // by integration where the data has the integrations
     const sectionNames = (await page.evaluate(() => SECTIONS)).map(([, name]) => name);
-    const menuNames = (await page.evaluate(() => SECTIONS)).filter(([key]) => key !== "integrations" || cats.integrations).map(([, name]) => name);
+    // and the circuits where it has them
+    const menuNames = (await page.evaluate(() => SECTIONS)).filter(([key]) => (key !== "integrations" || cats.integrations)
+      && (key !== "circuits" || cats.circuits)).map(([, name]) => name);
     const groups = await page.$$eval("#tree .tree > li.group", (lis) => lis.map((li) => [li.querySelector(":scope > a").textContent,
       ...[...li.querySelectorAll(":scope > ul > li > a")].map((a) => a.getAttribute("href"))]));
-    const menu = cats.integrations ? groups : [groups[0], [""], ...groups.slice(1)];
+    const withInt = cats.integrations ? groups : [groups[0], [""], ...groups.slice(1)];
+    const menu = cats.circuits ? withInt : [...withInt.slice(0, 3), [""], ...withInt.slice(3)];
     const baselines = cats.systems.filter((s) => !isMine(s.key)).sort((a, b) => b.answers - a.answers).map((s) => `../#/baselines/${s.key}`);
     assert.deepEqual(groups.map(([name]) => name), menuNames, "the menu: the bar's sections");
     assert.deepEqual(menu[0].slice(1), baselines, "the menu: the baselines");
@@ -939,11 +947,13 @@ function benchmarksOf(root) {
       "the menu: the integrations");
     assert.deepEqual(menu[2].slice(1), ["#/", ...categories.map((c) => `#/category/${c.key}`), "../#/coverage"],
       "the menu: the overview, the categories and the programs tddlog does not run");
+    assert.deepEqual(menu[3].slice(1), (cats.circuits?.groups ?? []).map((g) => `#/category/circuits/in/${encodeURIComponent(g.key)}`),
+      "the menu: the circuits' families");
     const walks = fs.readdirSync(path.join(site, "next", "walk")).filter((f) => f.endsWith(".json")).map((f) => `../#/how/${f.slice(0, -5)}`);
-    assert.deepEqual(menu[3].slice(-1), ["../#/methods"], "the menu: the methods table, last");
-    assert.deepEqual(menu[3].slice(1, -1).sort(), walks.sort(), "the menu: every walkthrough");
-    assert.deepEqual(await page.$$eval("#tree li.legend", (ls) => ls.map((l) => l.textContent)), ["instances answered", "instances"],
-      "the menu: what its counts count");
+    assert.deepEqual(menu[4].slice(-1), ["../#/methods"], "the menu: the methods table, last");
+    assert.deepEqual(menu[4].slice(1, -1).sort(), walks.sort(), "the menu: every walkthrough");
+    assert.deepEqual(await page.$$eval("#tree li.legend", (ls) => ls.map((l) => l.textContent)),
+      ["instances answered", "instances", ...(cats.circuits ? ["instances"] : [])], "the menu: what its counts count");
     for (const c of categories) {
       const what = `the category ${c.key}`;
       await visit(`#/category/${c.key}`, "figure.plot svg.cactus path.line");
@@ -962,7 +972,7 @@ function benchmarksOf(root) {
       const board = await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => [r.cells[0].textContent.trim(),
         r.cells[1].textContent.trim().replace(/,/g, "")]));
       assert.deepEqual(board, [...c.mine, ...c.native].map((x) => [names[x], String(c.answers[x])]), `${what}: its board`);
-      const pageOf = (x) => (isMine(x) ? `../#/integrations/${x === "tddlog" ? x : x.replace(/-tddlog$/, "")}` : viaOf(x) ? `../#/integrations/${viaOf(x)[0]}` : `../#/baselines/${x}`);
+      const pageOf = (x) => (isMine(x) ? `../#/integrations/${x === "tddlog" ? x : x.replace(/-tddlog$/, "")}` : `../#/baselines/${x}`);
       assert.deepEqual(await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[0].querySelector("a").getAttribute("href"))),
         [...c.mine, ...c.native].map(pageOf), `${what}: each system's name opens its page`);
       const missing = order.filter((x) => rows.some((r) => r.v[x] === null)).length;
@@ -1075,7 +1085,7 @@ function benchmarksOf(root) {
       assert.equal(ways.reduce((n, w) => n + w.rows.length, 0), s.given, `${what}: each instance it was given in its own language or translated`);
       for (const { key, rows: w } of ways) {
         if (me || !w.length) assert.equal(s[key], null, `${what}: no comparison of its ${key} instances`);
-        else same(s[key], versus(w, s.key, pairKey(s.key)), `${what}: against tddlog on its ${key} instances`);
+        else same(s[key], versus(w, s.key), `${what}: against tddlog on its ${key} instances`);
       }
       if (me) continue;
       const hash = `#/baselines/${s.key}`;
@@ -1095,7 +1105,7 @@ function benchmarksOf(root) {
         })], `${what}: its plots`);
       for (const fig of await plots()) linear(fig, what);
       assert.deepEqual(await page.$$eval("#view details.lang-figs figure.scatter", (fs) => fs.map((f) => [f.dataset.faster, f.dataset.slower])),
-        given.map((w) => sides(w.rows, [s.key], pairKey(s.key))), `${what}: tddlog against it`);
+        given.map((w) => sides(w.rows, [s.key])), `${what}: tddlog against it`);
       assert.equal(await page.$$eval("#view section#types > div table.board tbody tr", (trs) => trs.length), cs.length, `${what}: a row for each category`);
       assert.equal(await page.getAttribute("#view p.lede a", "href"), s.link, `${what}: its link`);
       if (s.cite) assert.ok((await page.textContent("#view div.facts")).includes(s.cite.title), `${what}: its paper`);
@@ -1516,13 +1526,9 @@ function benchmarksOf(root) {
           await shot.goto(`${base}results/${hash}`);
           await shot.waitForSelector(`#view[data-route="${hash || "#/"}"] ${ready}`);
           if (name === "results") {
-            // (a pipeline of tddlog's is drawn in tddlog's colour, its line dashed; a
-            // system on another system's export, EXPORTER-SYSTEM, in that system's
-            // colour, dotted, the names naming it whether or not it has records)
-            const exporters = new Set(Object.values(cats.via ?? {}).map(([y]) => y));
-            const onExport = (key) => exporters.has(key.split("-")[0]) && key.includes("-");
+            // (a pipeline of tddlog's is drawn in tddlog's colour, its line dashed)
             const keys = [...new Set(Object.keys(names).map((key) => key.replace(/-process$/, "")))]
-              .filter((key) => key === "tddlog" || (!isMine(key) && !onExport(key)));
+              .filter((key) => key === "tddlog" || !isMine(key));
             const colours = await shot.evaluate((keys) => {
               const style = getComputedStyle(document.documentElement);
               const get = (name) => style.getPropertyValue(name).trim();

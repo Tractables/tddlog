@@ -800,9 +800,7 @@ footer {
 .s-storm { --s: var(--s-storm); }
 .s-prism { --s: var(--s-prism); --d: 6 3; --sws: dashed; }
 .s-provsql { --s: var(--s-provsql); }
-/* a system on another system's export (Roulette+ProbLog): its colour, dotted, or dashed where its own line is dotted */
-.via { --d: 1.5 2.5; --sws: dotted; }
-.s-sppl.via, .s-geni.via { --d: 6 3; --sws: dashed; }
+
 
 /* The results page: a rail to browse its categories, suites and families beside
    one view, and a system's runs of an instance in a drawer at the right.
