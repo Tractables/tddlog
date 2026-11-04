@@ -2072,7 +2072,7 @@ function answers(a) {
     const body = element("tbody", {}, ...a.rows.map(([q, ...cells]) => element("tr", {}, element("th", { scope: "row" }, q),
       ...cells.map((c) => element("td", { class: "num" }, c)))));
     const notes = [];
-    if (a.ref) notes.push(`The reference is ${a.ref}. Each system's answers of its first repetition that answered.`);
+    if (a.ref) notes.push(`${a.ref_note} Each system's answers of its first repetition that answered.`);
     if (a.queries > a.rows.length) notes.push(`The first ${a.rows.length} of ${count(a.queries)} queries; the largest difference over all of them is in each run's "from the reference".`);
     return [scroller(element("table", { class: "times" }, element("thead", {}, head), body)), notes.length ? note(notes.join(" ")) : null];
   });
