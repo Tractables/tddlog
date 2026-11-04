@@ -292,7 +292,8 @@ fn variables(order: &[AtomId]) -> Vec<VarId> {
 /// program order. `deps` are `gp`'s ([`Deps::of`]). `Err` where the layout
 /// cannot be built, or cannot help: `decision` on a program the grounder
 /// read no fact of as a guard, `td` where no elimination of the graph
-/// finishes within its budget ([`td_forest`]).
+/// finishes within its budget ([`td_forest`]), and a layout whose lists
+/// the allocator refuses ([`refused`]).
 ///
 /// Every layout is of the program's model, without its queried cubes
 /// ([`QueriedCubes`]), and a program a layout builds gets the cubes back.
@@ -329,7 +330,7 @@ fn build_model(
             // reading xn first. Where the order has narrow cuts, the vtree
             // is over the program with the atoms crossing them named
             // ([`naming`]).
-            let laid = naming::lay_out(gp, deps, fan_in);
+            let laid = naming::lay_out(gp, deps, fan_in)?;
             let (program, note) = laid.named.unzip();
             let order = laid.facts.into_iter().rev().collect();
             Some((Layout::right_linear(order, note), program))
@@ -337,6 +338,16 @@ fn build_model(
         Kind::Decision => decision_layout(gp, deps)?,
     };
     Ok(laid.unwrap_or_else(|| (Layout::balanced(facts_in_order(gp)), None)))
+}
+
+/// A layout's `Err` where the allocator refuses room for one of its lists
+/// that grow with the program: the families' cones, which overlap, and
+/// the rules of a program the layout names atoms in. A push that grew
+/// them past what the allocator would give aborted the run
+/// (bb_altermu2_p1024 and bb_wmi_star_n65536 under 14 GB), where a
+/// layout given up disables its trial.
+fn refused(_: std::collections::TryReserveError) -> String {
+    tididi::OperationError::OverBudget.to_string()
 }
 
 /// `dynamic`'s first vtree. Where every rule reads facts alone, it starts
@@ -569,7 +580,7 @@ mod tests {
         ] {
             // Each kind lays out the program it compiles, `families` its
             // rewrite through indicators.
-            let [model, asked] = [&model, &asked].map(|gp| kind.rewrite(gp.clone()));
+            let [model, asked] = [&model, &asked].map(|gp| kind.rewrite(gp.clone()).expect("room"));
             let [m, a] = [&model, &asked].map(|gp| build(gp, &Deps::of(gp), kind));
             let ((m, m_named), (a, a_named)) = match (m, a) {
                 (Ok(m), Ok(a)) => (m, a),

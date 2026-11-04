@@ -1,6 +1,7 @@
 //! The `families` layout, for a program that reads atoms through
 //! indicators.
 
+use std::collections::TryReserveError;
 use std::time::Duration;
 
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -96,7 +97,8 @@ pub(super) fn families_forest(
     if gp.facts().next().is_none() {
         return Ok(None);
     }
-    lay_out(gp, Groups::of(gp, deps), search).map(Some)
+    let groups = Groups::of(gp, deps).map_err(super::refused)?;
+    lay_out(gp, groups, search).map(Some)
 }
 
 /// What [`row_body`] makes of each rule: a row of its group's table, none,
@@ -285,12 +287,14 @@ struct Groups {
 
 impl Groups {
     /// The atoms' kinds, the clause links, the families' cones, the groups,
-    /// the facts' contexts, and each group's inputs and parents.
-    fn of(gp: &GroundProgram, deps: &Deps) -> Self {
+    /// the facts' contexts, and each group's inputs and parents; `Err`
+    /// where the allocator refuses the cones or the groups' lists
+    /// ([`Cones::of`], [`Members::of`]).
+    fn of(gp: &GroundProgram, deps: &Deps) -> Result<Self, TryReserveError> {
         let by_head = &deps.by_head;
         let roles = Roles::of(gp, by_head);
         let roots = roots(gp, &roles.is_link);
-        let cones = Cones::of(gp, by_head, &roles, &roots);
+        let cones = Cones::of(gp, by_head, &roles, &roots)?;
         let mut hubs = Hubs::of(gp, &roles);
         let grouping = Grouping::of(gp, &roles, &roots, &cones, &mut hubs);
         let Members {
@@ -298,7 +302,7 @@ impl Groups {
             group_rules,
             hub_group,
             hub_readers,
-        } = Members::of(gp, &roles, &cones, &mut hubs, &grouping);
+        } = Members::of(gp, &roles, &cones, &mut hubs, &grouping)?;
         order_facts(gp, deps, &roles, &mut groups);
         let Grouping {
             group_of,
@@ -339,7 +343,7 @@ impl Groups {
             row_kind,
             ..
         } = roles;
-        Groups {
+        Ok(Groups {
             families: roots.len(),
             groups,
             group_rules,
@@ -356,7 +360,7 @@ impl Groups {
             link_of,
             row_kind,
             kind,
-        }
+        })
     }
 }
 
@@ -599,7 +603,14 @@ struct Cones {
 impl Cones {
     /// The cones of the families of `roots`: a walk down the derived atoms,
     /// stamped with the family so that no atom is visited twice for one.
-    fn of(gp: &GroundProgram, by_head: &RulesByHead, roles: &Roles, roots: &[AtomId]) -> Cones {
+    /// `Err` where the allocator refuses the lists room: the cones overlap,
+    /// and bb_altermu2_p1024's list of rules grew past 2 GB.
+    fn of(
+        gp: &GroundProgram,
+        by_head: &RulesByHead,
+        roles: &Roles,
+        roots: &[AtomId],
+    ) -> Result<Cones, TryReserveError> {
         let Roles {
             is_link,
             copied,
@@ -670,6 +681,7 @@ impl Cones {
                     continue;
                 }
                 for &ri in &by_head[a as usize] {
+                    rules.try_reserve(1)?;
                     rules.push(ri);
                     for l in &gp.rules[ri].body {
                         let b = l.atom();
@@ -678,6 +690,7 @@ impl Cones {
                         }
                         stamp[b as usize] = i as u32;
                         if roles.kind[b as usize] != DERIVED {
+                            atoms.try_reserve(1)?;
                             atoms.push(b);
                         } else {
                             stack.push(b);
@@ -699,14 +712,14 @@ impl Cones {
             rule_ends.push(rules.len());
             reached.push(links);
         }
-        Cones {
+        Ok(Cones {
             atoms,
             atom_ends,
             rules,
             rule_ends,
             reached,
             walk,
-        }
+        })
     }
 
     /// The facts and indicators of family `i`'s cone.
@@ -947,14 +960,16 @@ struct Members {
 impl Members {
     /// The facts, indicators and rules of each group's families' cones, and
     /// the hubs' groups, which follow the others in the order they are
-    /// first read, each with the groups that read it.
+    /// first read, each with the groups that read it. `Err` where the
+    /// allocator refuses the lists room, as [`Cones::of`]: the hubs' groups
+    /// of bb_wmi_star_n65536 grew past 200 MB.
     fn of(
         gp: &GroundProgram,
         roles: &Roles,
         cones: &Cones,
         hubs: &mut Hubs,
         grouping: &Grouping,
-    ) -> Members {
+    ) -> Result<Members, TryReserveError> {
         let num_atoms = gp.num_atoms();
         let Grouping {
             group_of,
@@ -985,27 +1000,34 @@ impl Members {
                     let c = hubs.class_of(f);
                     if class_group[c] == usize::MAX {
                         class_group[c] = groups.len();
+                        hub_readers.try_reserve(1)?;
                         hub_readers.push(Vec::new());
+                        groups.try_reserve(1)?;
                         groups.push((Vec::new(), Vec::new()));
                     }
                     let h = class_group[c];
                     if hub_group[f as usize] == usize::MAX {
                         hub_group[f as usize] = h;
+                        groups[h].1.try_reserve(1)?;
                         groups[h].1.push(f);
                     }
+                    hub_readers[h - count].try_reserve(1)?;
                     hub_readers[h - count].push(g);
                     continue;
                 }
                 let (vars, facts) = &mut groups[g];
-                if roles.kind[f as usize] == INDICATOR {
-                    vars.push(f)
+                let list = if roles.kind[f as usize] == INDICATOR {
+                    vars
                 } else {
-                    facts.push(f)
-                }
+                    facts
+                };
+                list.try_reserve(1)?;
+                list.push(f);
             }
+            let rules = cones.rules_of(cones.walk[i]);
+            rule_groups.try_reserve(rules.len())?;
             rule_groups.extend(
-                cones
-                    .rules_of(cones.walk[i])
+                rules
                     .iter()
                     .copied()
                     .filter(|&ri| std::mem::replace(&mut last_group_of_rule[ri], g) != g)
@@ -1023,12 +1045,12 @@ impl Members {
             facts.sort_unstable();
             facts.dedup();
         }
-        Members {
+        Ok(Members {
             groups,
             group_rules,
             hub_group,
             hub_readers,
-        }
+        })
     }
 }
 

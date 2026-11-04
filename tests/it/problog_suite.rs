@@ -90,7 +90,7 @@ fn check_with(
         .and_then(|program| Ok(tddlog::ground::ground(&program, &options)?))
         .map(|ground| {
             if indicators {
-                tddlog::indicators::introduce(&ground)
+                tddlog::indicators::introduce(&ground).unwrap()
             } else {
                 ground
             }

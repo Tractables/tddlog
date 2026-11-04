@@ -101,11 +101,11 @@ struct Ledger {
 /// builds it ([`prepare`]): the program without its linear recursion read
 /// through every indicator, its rules by head and components and its
 /// layout, which `run` takes as that trial's own; `None` where the rewrite
-/// introduces no indicator, or the layout fails.
+/// introduces no indicator, or it or the layout fails.
 pub(crate) fn families(gp: &GroundProgram, search: bool) -> Option<Prepared> {
     let kind = Kind::Families { search };
     let start = Instant::now();
-    let ground = kind.rewrite(gp.clone());
+    let ground = kind.rewrite(gp.clone()).ok()?;
     if ground.encoding.is_empty() {
         return None;
     }
@@ -383,7 +383,7 @@ fn same_rewrite(a: &Trial, b: &Trial, programs: &Programs) -> bool {
 /// without its linear recursion ([`Kind::rewrite_eliminated`]), taken from
 /// an earlier trial of the same rewrite that compiles it as it is where
 /// there is one. False where the trial is disabled, having nothing an
-/// earlier trial lacks.
+/// earlier trial lacks or a rewrite the allocator refuses room.
 fn rewrite(trials: &mut [Trial], i: usize, programs: &Programs, ledger: &mut Ledger) -> bool {
     if trials[i].disabled {
         return false;
@@ -411,6 +411,17 @@ fn rewrite(trials: &mut [Trial], i: usize, programs: &Programs, ledger: &mut Led
         let start = Instant::now();
         let gp = trials[i].kind.rewrite_eliminated(Arc::clone(program));
         ledger.rewrite_seconds += start.elapsed().as_secs_f64();
+        let Ok(gp) = gp else {
+            let t = &mut trials[i];
+            ledger.notes.push(format!(
+                "rewrite: {} indicators={} disabled: {}",
+                t.kind,
+                t.kind.indicators_name(),
+                tididi::OperationError::OverBudget
+            ));
+            t.disabled = true;
+            return false;
+        };
         // No eligible boundary: the rewrite is the program as grounded.
         if trials[i].kind.indicators() && gp.encoding.is_empty() {
             trials[i].disabled = true;

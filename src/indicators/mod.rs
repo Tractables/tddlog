@@ -89,6 +89,7 @@
 mod splits;
 mod tables;
 
+use std::collections::TryReserveError;
 use std::fmt::Write as _;
 
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -173,9 +174,11 @@ fn tie_copy(
 /// The rewrite's rules are written anew, each body from the rule's in
 /// `original`, so a caller that keeps `original` (`auto`, which rewrites
 /// the program as grounded for each of its trials) pays no copy.
-pub fn introduce(original: &GroundProgram) -> GroundProgram {
+///
+/// `Err` where the allocator refuses the rewrite's rules room.
+pub fn introduce(original: &GroundProgram) -> Result<GroundProgram, TryReserveError> {
     let structure = original.structure();
-    name(original, units(&structure.base_of, &structure.sets)).0
+    Ok(name(original, units(&structure.base_of, &structure.sets))?.0)
 }
 
 /// `original` with every derived atom that a rule of another unit reads
@@ -185,8 +188,12 @@ pub fn introduce(original: &GroundProgram) -> GroundProgram {
 /// (`usize::MAX` for a fact), and holds the atoms of a cyclic component in
 /// one unit. The `program` layouts name the atoms that cross a narrow cut
 /// of their order with the segments between the cuts for units
-/// ([`crate::vtree`]'s naming).
-pub(crate) fn name(original: &GroundProgram, unit_of: Vec<usize>) -> (GroundProgram, Vec<usize>) {
+/// ([`crate::vtree`]'s naming). `Err` where the allocator refuses the
+/// rewrite's rules room ([`push`]).
+pub(crate) fn name(
+    original: &GroundProgram,
+    unit_of: Vec<usize>,
+) -> Result<(GroundProgram, Vec<usize>), TryReserveError> {
     assert!(
         original.encoding.is_empty(),
         "the program already reads atoms through indicators"
@@ -203,37 +210,51 @@ pub(crate) fn name(original: &GroundProgram, unit_of: Vec<usize>) -> (GroundProg
         bit_rows,
         sibling,
     } = Bodies::write(&reads, &copies);
-    gp.rules = original
-        .rules
-        .iter()
-        .zip(rows)
-        .map(|(r, body)| GroundRule::new(r.head, body))
-        .collect();
+    gp.rules.try_reserve_exact(original.rules.len())?;
+    gp.rules.extend(
+        original
+            .rules
+            .iter()
+            .zip(rows)
+            .map(|(r, body)| GroundRule::new(r.head, body)),
+    );
     if !reads.bits.sets.is_empty() {
-        add_bit_rules(&mut gp, &reads, &copies, &bit_rows);
+        add_bit_rules(&mut gp, &reads, &copies, &bit_rows)?;
     }
     gp.encoding.siblings = siblings(&copies.set_lists, &sibling);
     let tables = Tables::of(&gp, &reads, &copies);
+    // A link's atom for each copy at most ([`add_links`]).
+    gp.atoms.try_reserve(copies.keys.len())?;
+    gp.kinds.try_reserve(copies.keys.len())?;
+    gp.encoding.indicators.try_reserve(copies.keys.len())?;
     let reader_link = add_links(&mut gp, &copies, &tables);
-    let read_by_link = rows_as_clauses(&mut gp, &reads, &copies, &tables, &reader_link);
-    tie_links(&mut gp, &reads, &copies, &tables);
+    let read_by_link = rows_as_clauses(&mut gp, &reads, &copies, &tables, &reader_link)?;
+    tie_links(&mut gp, &reads, &copies, &tables)?;
     // What else reads a table's atoms, its queries and its evidence, reads
     // the first reader's copy, which the clauses make equal to the atom.
     for table in &tables.list {
         for (j, &k) in reads.exclusive[table.set].iter().enumerate() {
             if !read_by_link[k as usize] {
-                gp.rules.push(GroundRule::new(
-                    k,
-                    vec![GLit::Pos(gp.encoding.indicators[table.readers[0][j]].var)],
-                ));
+                let var = gp.encoding.indicators[table.readers[0][j]].var;
+                push(&mut gp.rules, GroundRule::new(k, vec![GLit::Pos(var)]))?;
             }
         }
     }
     if !reads.bits.sets.is_empty() {
-        drop_unread_values(&mut gp, &reads, &copies);
+        drop_unread_values(&mut gp, &reads, &copies)?;
     }
     let units = copies.keys.iter().map(|&(_, u, _)| u).collect();
-    (gp, units)
+    Ok((gp, units))
+}
+
+/// Pushes `rule` onto the rewrite's `rules`, or `Err` where the allocator
+/// refuses them room. They grow with the program, and a push past what the
+/// allocator would give aborted the run (bb_wmi_star_n65536 under 14 GB),
+/// where a rewrite given up disables its trial.
+fn push(rules: &mut Vec<GroundRule>, rule: GroundRule) -> Result<(), TryReserveError> {
+    rules.try_reserve(1)?;
+    rules.push(rule);
+    Ok(())
 }
 
 /// The names of the program's atoms as constants, which the bits, copies
@@ -791,7 +812,12 @@ impl Bodies {
 /// two rows of a table's last two values, whose switch chains differ in the
 /// sign of the last switch alone, would lose it, and the families layout
 /// reads the rows: bn_mildew's compile then costs more.
-fn add_bit_rules(gp: &mut GroundProgram, reads: &Reads, copies: &Copies, bit_rows: &[Vec<GLit>]) {
+fn add_bit_rules(
+    gp: &mut GroundProgram,
+    reads: &Reads,
+    copies: &Copies,
+    bit_rows: &[Vec<GLit>],
+) -> Result<(), TryReserveError> {
     let first_bit = reads.first_bit;
     let mut rows_of_bit: Vec<Vec<usize>> = vec![Vec::new(); copies.first - first_bit];
     for (ri, r) in reads.original.rules.iter().enumerate() {
@@ -818,14 +844,16 @@ fn add_bit_rules(gp: &mut GroundProgram, reads: &Reads, copies: &Copies, bit_row
             let i = b as usize - first_bit;
             let k = next[i];
             next[i] += 1;
-            match &mut merged[i] {
-                None => gp.rules.push(GroundRule::new(b, bit_body.clone())),
-                Some(at) => gp
-                    .rules
-                    .extend(at[k].take().map(|body| GroundRule::new(b, body))),
+            let body = match &mut merged[i] {
+                None => Some(bit_body.clone()),
+                Some(at) => at[k].take(),
+            };
+            if let Some(body) = body {
+                push(&mut gp.rules, GroundRule::new(b, body))?;
             }
         }
     }
+    Ok(())
 }
 
 /// The groups of siblings ([`crate::ground::Encoding::siblings`]): the
@@ -960,7 +988,7 @@ fn rows_as_clauses(
     copies: &Copies,
     tables: &Tables,
     reader_link: &[Vec<Option<AtomId>>],
-) -> Vec<bool> {
+) -> Result<Vec<bool>, TryReserveError> {
     let Tables {
         list,
         table,
@@ -1015,7 +1043,7 @@ fn rows_as_clauses(
     for (ri, rule) in rules.into_iter().enumerate() {
         let t = table_of[rule.head as usize];
         if t == usize::MAX {
-            gp.rules.push(rule);
+            push(&mut gp.rules, rule)?;
             continue;
         }
         if !fires[ri] {
@@ -1029,11 +1057,11 @@ fn rows_as_clauses(
                     .iter()
                     .map(|&c| gp.encoding.indicators[c].var)
                     .collect();
-                not_one(&mut gp.rules, head, &own, true);
+                not_one(&mut gp.rules, head, &own, true)?;
                 for &(s, u, p) in &inputs[t] {
                     if copies.in_binary(&bit_atoms[s], u, p) {
                         let own = copies.of_bits(&bit_atoms[s], u, p);
-                        outside_codes(&mut gp.rules, head, &own, exclusive[s].len(), !table[s]);
+                        outside_codes(&mut gp.rules, head, &own, exclusive[s].len(), !table[s])?;
                         continue;
                     }
                     // The unit and part's copies of the set's atoms, in the
@@ -1044,7 +1072,7 @@ fn rows_as_clauses(
                         .copied()
                         .collect();
                     let exhaustive = members.len() == exclusive[s].len() && table[s];
-                    not_one(&mut gp.rules, head, &members, exhaustive);
+                    not_one(&mut gp.rules, head, &members, exhaustive)?;
                 }
             }
         }
@@ -1079,13 +1107,13 @@ fn rows_as_clauses(
             let mut body = Vec::with_capacity(row.len() + 1);
             body.extend_from_slice(&row);
             body.push(GLit::Neg(var));
-            gp.rules.push(GroundRule::new(link, body));
+            push(&mut gp.rules, GroundRule::new(link, body))?;
         }
         if read_by_link[rule.head as usize] {
-            gp.rules.push(rule);
+            push(&mut gp.rules, rule)?;
         }
     }
-    read_by_link
+    Ok(read_by_link)
 }
 
 /// Per copy of a set's value that a table's row reads, numbered by its
@@ -1152,7 +1180,14 @@ fn held_copies(
 /// equalities alone, conjoined across the parts before the table is,
 /// leave each value's copies free of the others', a class for every
 /// subset of the values at every part.
-fn tie_links(gp: &mut GroundProgram, reads: &Reads, copies: &Copies, tables: &Tables) {
+fn tie_links(
+    gp: &mut GroundProgram,
+    reads: &Reads,
+    copies: &Copies,
+    tables: &Tables,
+) -> Result<(), TryReserveError> {
+    // Two rules per copy at most ([`tie_copy`]).
+    gp.rules.try_reserve(2 * copies.tie.len())?;
     for (i, &tied) in copies.tie.iter().enumerate() {
         let Indicator { atom, var, link } = gp.encoding.indicators[i];
         if let Some(&(_, _, j)) = tables.clause_copy.get(&i) {
@@ -1178,6 +1213,7 @@ fn tie_links(gp: &mut GroundProgram, reads: &Reads, copies: &Copies, tables: &Ta
             .map(|&w| GLit::Neg(w));
         tie_copy(gp, link, var, tied, negated);
     }
+    Ok(())
 }
 
 /// `gp` without the rules of the values of a set read in binary that no
@@ -1188,7 +1224,11 @@ fn tie_links(gp: &mut GroundProgram, reads: &Reads, copies: &Copies, tables: &Ta
 /// bits, which the links make equal to the bits: kept, its rules would read
 /// its parents' copies (bn_mildew with all of dm_4's values queried ran out
 /// of memory so).
-fn drop_unread_values(gp: &mut GroundProgram, reads: &Reads, copies: &Copies) {
+fn drop_unread_values(
+    gp: &mut GroundProgram,
+    reads: &Reads,
+    copies: &Copies,
+) -> Result<(), TryReserveError> {
     let (exclusive, set_of, bit_atoms) = (reads.exclusive, &reads.set_of, &reads.bit_atoms);
     let mut read = vec![false; gp.atoms.len()];
     for l in gp.rules.iter().flat_map(|r| &r.body) {
@@ -1229,10 +1269,11 @@ fn drop_unread_values(gp: &mut GroundProgram, reads: &Reads, copies: &Copies) {
         for (i, &k) in exclusive[s].iter().enumerate() {
             if named[k as usize] && !read[k as usize] {
                 let body = code_lits(vars, i + 1).collect();
-                gp.rules.push(GroundRule::new(k, body));
+                push(&mut gp.rules, GroundRule::new(k, body))?;
             }
         }
     }
+    Ok(())
 }
 
 fn code_lits(vars: &[AtomId], code: usize) -> impl Iterator<Item = GLit> + '_ {

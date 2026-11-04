@@ -50,7 +50,7 @@ fn ground_with(source: &str, options: GroundOptions, indicators: bool) -> Ground
     let program = tddlog::syntax::parse_program(source).unwrap();
     let gp = tddlog::ground::ground(&program, &options).unwrap();
     if indicators {
-        tddlog::indicators::introduce(&gp)
+        tddlog::indicators::introduce(&gp).unwrap()
     } else {
         gp
     }

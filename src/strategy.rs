@@ -4,6 +4,7 @@
 //! the formulation and the projection, and [`Kind::prepare`] builds its
 //! program and layout.
 
+use std::collections::TryReserveError;
 use std::fmt;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -11,7 +12,7 @@ use std::time::Instant;
 
 use crate::ground::deps::Deps;
 use crate::ground::{self, GroundOptions, GroundProgram};
-use crate::tp::{Formulation, Projection};
+use crate::tp::{CompileError, Formulation, Projection};
 use crate::vtree::{self, Kind};
 use crate::{Error, indicators};
 
@@ -132,9 +133,11 @@ impl Kind {
     /// layouts can matter, eliminates once for all of them, and rewrites
     /// each trial's program from that. `td`'s layout may add separator
     /// copies to the rewrite, and those of `program` and `decision` their
-    /// names (`Prepared::lay_out`).
-    pub fn rewrite(self, gp: GroundProgram) -> GroundProgram {
-        Arc::unwrap_or_clone(self.rewrite_eliminated(Arc::new(Kind::eliminated(gp))))
+    /// names (`Prepared::lay_out`). `Err` where the allocator refuses the
+    /// rewrite room ([`indicators::introduce`]).
+    pub fn rewrite(self, gp: GroundProgram) -> Result<GroundProgram, TryReserveError> {
+        self.rewrite_eliminated(Arc::new(Kind::eliminated(gp)))
+            .map(Arc::unwrap_or_clone)
     }
 
     /// The first step of every layout's rewrite: `gp` written without its
@@ -162,28 +165,35 @@ impl Kind {
     /// program that already reads atoms through indicators is returned as
     /// it is ([`Kind::eliminated`]), and a layout that rewrites nothing
     /// shares `gp`: `auto`'s trials are each given the program of a large
-    /// circuit, and copied it each.
-    pub(crate) fn rewrite_eliminated(self, gp: Arc<GroundProgram>) -> Arc<GroundProgram> {
+    /// circuit, and copied it each. `Err` where the allocator refuses the
+    /// indicators' rewrite room.
+    pub(crate) fn rewrite_eliminated(
+        self,
+        gp: Arc<GroundProgram>,
+    ) -> Result<Arc<GroundProgram>, TryReserveError> {
         if !gp.encoding.is_empty() {
-            return gp;
+            return Ok(gp);
         }
         let gp = if self == Kind::Decision {
             Arc::new(ground::guarded(Arc::unwrap_or_clone(gp)))
         } else {
             gp
         };
-        if self.indicators() {
-            Arc::new(indicators::introduce(&gp))
+        Ok(if self.indicators() {
+            Arc::new(indicators::introduce(&gp)?)
         } else {
             gp
-        }
+        })
     }
 
     /// This layout's program ([`Kind::rewrite`]) of `gp`, as grounded, and
-    /// its layout ([`Prepared::lay_out`]).
+    /// its layout ([`Prepared::lay_out`]); the allocator's refusal of the
+    /// rewrite is the engine's (`OverBudget`).
     pub(crate) fn prepare(self, gp: GroundProgram) -> Result<Prepared, Error> {
         let start = Instant::now();
-        let ground = self.rewrite(gp);
+        let ground = self
+            .rewrite(gp)
+            .map_err(|_| Error::Compile(CompileError::Tdd(tididi::OperationError::OverBudget)))?;
         Prepared::lay_out(Arc::new(ground), None, self, start.elapsed().as_secs_f64())
     }
 }

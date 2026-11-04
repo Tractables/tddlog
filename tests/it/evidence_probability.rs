@@ -105,7 +105,7 @@ fn evidence_probabilities_with(
         let ground = tddlog::ground::ground(program, &options).unwrap();
         assert_eq!(ground.stats.detached, 0, "{what}: nothing detached");
         let ground = if indicators {
-            tddlog::indicators::introduce(&ground)
+            tddlog::indicators::introduce(&ground).unwrap()
         } else {
             ground
         };

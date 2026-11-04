@@ -1056,7 +1056,7 @@ mod tests {
             query(h0). query(h2). query(h4). query(h6). query(q). query(\\+q).";
         for indicators in [false, true] {
             let gp = if indicators {
-                crate::indicators::introduce(&ground(source))
+                crate::indicators::introduce(&ground(source)).unwrap()
             } else {
                 ground(source)
             };
@@ -1339,7 +1339,7 @@ mod tests {
         {
             for indicators in [false, true] {
                 let gp = if indicators {
-                    crate::indicators::introduce(&ground(source))
+                    crate::indicators::introduce(&ground(source)).unwrap()
                 } else {
                     ground(source)
                 };
@@ -1430,7 +1430,7 @@ mod tests {
     }
 
     #[test]
-    fn grouped_batches_given_up_keep_the_answers() {
+    fn grouped_batches_given_up_or_refused_room_keep_the_answers() {
         // Two naive Bayes models, a and b, each with half its features
         // observed: on a right-linear vtree each observation is at a node of
         // its own, one above the other, and the factors put off along the
@@ -1468,10 +1468,10 @@ mod tests {
             .cycle()
             .take(k)
             .collect();
-        let (mut grouped, mut unbatched, mut ended_steps) = (0, 0, 0);
+        let (mut grouped, mut unbatched, mut ended_steps, mut refused) = (0, 0, 0, 0);
         for indicators in [false, true] {
             let gp = if indicators {
-                crate::indicators::introduce(&ground(&bayes))
+                crate::indicators::introduce(&ground(&bayes)).unwrap()
             } else {
                 ground(&bayes)
             };
@@ -1498,37 +1498,47 @@ mod tests {
                     .unwrap()
                 });
                 // Every batch given up at its first join, and then as the
-                // walk caps them.
-                for capped in [true, false] {
+                // walk caps them; each also with every third room the walk
+                // asks for refused, as the allocator refuses it, and the
+                // walk resumed after each refusal.
+                for (capped, refuse) in [(true, false), (false, false), (true, true), (false, true)]
+                {
                     let mut state = tree.context().run(|engine| {
                         QueryEvaluation::new(&gp, &TddBackend::new(engine, tree.clone()), &compiled)
                     });
-                    if capped {
-                        state.walk.give_up_batches = true;
-                    }
-                    let (answers, _) = tree
-                        .context()
-                        .run(|engine| {
+                    state.walk.give_up_batches = capped;
+                    state.walk.refuse_rooms = refuse;
+                    let (answers, _) = loop {
+                        let result = tree.context().run(|engine| {
                             state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
-                        })
-                        .unwrap();
+                        });
+                        match result {
+                            Err(CompileError::Tdd(OperationError::OverBudget)) if refuse => {
+                                assert!(state.walk.rooms < 1 << 20, "a refused walk goes on");
+                            }
+                            result => break result.unwrap(),
+                        }
+                    };
                     let answers = answers.unwrap();
                     assert_eq!(answers.len(), bayes_answers.len());
                     for (answer, expected) in answers.iter().zip(&bayes_answers) {
                         assert!(
                             (answer.probability - expected).abs() < 1e-9,
-                            "{answer:?} {expected} indicators {indicators} {strategy:?} {capped}"
+                            "{answer:?} {expected} indicators {indicators} {strategy:?} \
+                             {capped} {refuse}"
                         );
                     }
                     grouped += state.walk.grouped;
                     unbatched += state.walk.unbatched;
                     ended_steps += state.walk.ended_steps;
+                    refused += state.walk.refused_unbatches;
                 }
             }
         }
         assert!(grouped > 0, "no batch of several groups");
         assert!(unbatched > 0, "no batch given up");
         assert!(ended_steps > 0, "no batch given up ended a node's step");
+        assert!(refused > 0, "no batch given up was refused room");
     }
 
     /// Data points x_j = m + e_j mod 2^n, a ripple-carry adder for each
