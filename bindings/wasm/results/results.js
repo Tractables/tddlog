@@ -2117,7 +2117,10 @@ async function runs(route) {
   const about = [];
   if (dashed(key)) about.push("The whole process's time, with the language's start and compilation; the other time of the same system leaves them out, as its paper times it.");
   if (inst?.reps > 1) about.push("A time is the median of the repetitions, a failed one counted as infinite.");
-  if (new Set(mine.map((r) => r.label)).size > 1) about.push("A system run in several forms has the time of its fastest form.");
+  if (new Set(mine.map((r) => r.label)).size > 1) {
+    about.push(isMine(key) ? `The table has ${data.names[key]}'s default, auto; its other forms are diagnostics, in no total.`
+      : "A system run in several forms has the time of its fastest form.");
+  }
   if (inst?.notes?.[rec]) about.push(inst.notes[rec]);
   if (about.length) parts.push(note(about.join(" ")));
   const name0 = isMine(key) ? data.names[key] : data.names[rec] ?? data.names[key];
@@ -2158,6 +2161,7 @@ async function runs(route) {
   if (answered(v)) {
     let gap = Infinity;
     for (const e of shown) {
+      if (e.r.label.endsWith(", diagnostic)")) continue;   // a form of tddlog no table counts
       const m = med(e.r);
       if (m !== null && Math.abs(m - v) < gap) [gap, inTable] = [Math.abs(m - v), e];
     }
