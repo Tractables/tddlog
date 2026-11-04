@@ -56,6 +56,18 @@
 //! projections set the two apart. The bounds are in diagram pairs and engine
 //! work, so the winner does not depend on the machine. Vtree construction
 //! and application-side walks are not preempted by the engine work clock.
+//!
+//! With skip trials (`--skip-levels`), a trial whose layout takes the skip
+//! form ([`Kind::takes_skip_form`]) measures its compile's first formula of
+//! [`policy::PROBE_PAIRS`] pairs or more in that form, once ([`tp::Probe`]).
+//! Where the formula keeps under [`policy::SKIP_SHARE`] of its pairs there,
+//! the trial begins again in skip form, with the target and the work it
+//! has spent; otherwise it keeps the stored form, as does every other
+//! trial. A skip operation charges the work clock in the stored engine's
+//! units, and the run's stop cuts it where its own units, so scaled, reach
+//! the stop (`tp::TddBackend::skip_op`): the turns, the guard and the watch
+//! are the same in either form. A trial in skip form that meets a step
+//! only the stored form takes begins again stored.
 
 mod policy;
 #[cfg(test)]
@@ -74,9 +86,9 @@ use crate::{
 use tididi::limits::{LimitConfig, StopAt, StopRules};
 
 use policy::{
-    FAMILIES_WEIGHT, FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR,
-    candidates, families_weighted, overspent_estimate, projected_from, search_due, search_rent,
-    weight,
+    FAMILIES_WEIGHT, FIRST_PAIRS, LEAD_SHARE, PROBE_PAIRS, PROJECTED_DOUBLINGS, SEARCHED_GAP,
+    SKIP_SHARE, WORK_PER_PAIR, candidates, families_weighted, overspent_estimate, projected_from,
+    search_due, search_rent, weight,
 };
 use trial::Trial;
 
@@ -132,7 +144,7 @@ pub(crate) fn lays_families_first(gp: &GroundProgram) -> bool {
 /// [`decides`], `decision` is the first trial.
 pub(crate) fn run(
     original: GroundProgram,
-    projection: Projection,
+    (projection, form): (Projection, tp::Form),
     ready: Ready,
     traced: bool,
 ) -> Result<Run, Error> {
@@ -155,7 +167,17 @@ pub(crate) fn run(
         },
         trials,
         projection,
-        Watch::default(),
+        Watch {
+            probe: if form == tp::Form::Skip {
+                tp::Probe::Armed {
+                    from: PROBE_PAIRS,
+                    below: SKIP_SHARE,
+                }
+            } else {
+                tp::Probe::Off
+            },
+            ..Watch::default()
+        },
         laid,
         traced,
     )
@@ -331,15 +353,17 @@ impl Programs {
 
 /// What a run of trials starts from: the first watch's pairs, from which
 /// the first targets follow, the live pairs at which a dynamic trial
-/// searches first, and tididi's soft byte budget for every operation,
+/// searches first, tididi's soft byte budget for every operation,
 /// which refuses an operation as the allocator does when the host's
-/// memory runs out. A run starts from the default; the tests start from
-/// smaller ones, to make a small program take several turns or have its
-/// operations refused.
+/// memory runs out, and the probe that puts a trial whose layout takes
+/// the skip form in it, off where none may go on in it. A run starts from
+/// the default; the tests start from smaller ones, to make a small program
+/// take several turns or have its operations refused.
 struct Watch {
     first_pairs: usize,
     dynamic_first_pairs: usize,
     memory_bytes: Option<u64>,
+    probe: tp::Probe,
 }
 
 impl Default for Watch {
@@ -348,6 +372,7 @@ impl Default for Watch {
             first_pairs: FIRST_PAIRS,
             dynamic_first_pairs: tp::DYNAMIC_FIRST_PAIRS,
             memory_bytes: None,
+            probe: tp::Probe::Off,
         }
     }
 }
@@ -525,6 +550,7 @@ fn run_within(
         first_pairs,
         dynamic_first_pairs,
         memory_bytes,
+        probe,
     } = watch;
     // The trials' rewrites start from the program written without its
     // linear recursion.
@@ -539,6 +565,11 @@ fn run_within(
         .into_iter()
         .map(|kind| Trial {
             evaluation: crate::evaluation::Evaluation::new(traced),
+            probe: if kind.takes_skip_form() {
+                probe
+            } else {
+                tp::Probe::Off
+            },
             ..Trial::new(kind)
         })
         .collect();
@@ -683,6 +714,40 @@ fn run_within(
             }
             Err(error) => error,
         };
+        // The probe put the trial in skip form, or a step of it in skip
+        // form needs the stored form: it begins again in the other form,
+        // with the target and the work it has spent.
+        let switched = match error {
+            tp::CompileError::Skips { pairs, skip } => {
+                t.form = tp::Form::Skip;
+                Some(format!("keeps {skip} of {pairs} pairs in skip form"))
+            }
+            tp::CompileError::SkipForm(what) if t.form == tp::Form::Skip => {
+                t.form = tp::Form::Stored;
+                Some(format!("{what} needs the stored form"))
+            }
+            _ => None,
+        };
+        if let Some(why) = switched {
+            t.release();
+            ledger.notes.push(format!(
+                "form: {} indicators={} begins again {} ({} units): {why}",
+                t.kind,
+                t.kind.indicators_name(),
+                if t.form == tp::Form::Skip {
+                    "in skip form"
+                } else {
+                    "stored"
+                },
+                t.spent
+            ));
+            continue;
+        }
+        // A compile finished below the probe leaves the trial stored for
+        // the run, as does a formula it measured (`attempt`).
+        if t.probing() && t.evaluation.is_compiled() {
+            t.probe = tp::Probe::Off;
+        }
         t.record_progress();
         let Some(stop) = Stop::of(bounds, t.last_work, &error) else {
             if let tp::CompileError::Tdd(
@@ -915,6 +980,8 @@ fn attempt(
     // which its next attempt builds on.
     let mut reached = None;
     let kept = t.kept.take();
+    let probing = t.probing();
+    let (form, probe) = (t.form, if probing { t.probe } else { tp::Probe::Off });
     let settled = t.evaluation.settled_work();
     let started = Instant::now();
     ledger.attempts += 1;
@@ -944,7 +1011,7 @@ fn attempt(
             limit: b.horizon,
             mark: t.target / 2,
         });
-        let backend = tp::TddBackend::resume(engine, tree.clone(), kept);
+        let backend = tp::TddBackend::resume(engine, tree.clone(), kept, form).with_probe(probe);
         if let Some(b) = bounds {
             backend.end_turn_at(start_work.saturating_add(b.work));
         }
@@ -963,6 +1030,9 @@ fn attempt(
         t.spent = t.spent.saturating_add(charged);
         t.last_work = charged;
         t.lost = backend.lost();
+        if probing {
+            t.probe = backend.probed();
+        }
         reached = Some(backend.vtree());
         t.kept = Some(backend.keep());
         evaluated
@@ -976,6 +1046,7 @@ fn attempt(
         Ok(_) => "finished",
         Err(tp::CompileError::QueryOversize { .. } | tp::CompileError::Oversize { .. }) => "size",
         Err(tp::CompileError::Projected { .. }) => "projected",
+        Err(tp::CompileError::Skips { .. }) => "to skip form",
         Err(_) => "stopped",
     };
     // The farthest finish the compile's horizon projected in the attempt.
@@ -1007,7 +1078,14 @@ fn attempt(
             None => format!(", steps {done}/{all}"),
         });
     let watch = bounds.map_or("none".to_string(), |b| b.pairs.to_string());
-    ledger.notes.push(format!("trial: {} indicators={}, watch={watch}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
+    let form = match (t.form, t.probe) {
+        (tp::Form::Skip, _) => " in skip form".to_string(),
+        (_, tp::Probe::Measured { pairs, skip }) if probing => {
+            format!(" probed: {skip} of {pairs} pairs in skip form")
+        }
+        _ => String::new(),
+    };
+    ledger.notes.push(format!("trial: {} indicators={}{form}, watch={watch}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
         t.kind, t.kind.indicators_name(), progress.unwrap_or_default()));
     result
 }

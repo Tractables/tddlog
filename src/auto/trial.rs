@@ -59,6 +59,12 @@ pub(super) struct Trial {
     pub(super) behind: bool,
     /// Whether it has run again so ([`Self::behind`]), at most once a run.
     pub(super) revived: bool,
+    /// The form of its formulas.
+    pub(super) form: tp::Form,
+    /// The probe of its first large formula, which decides its form
+    /// (`super::run_within`): armed until a formula reaches it or the
+    /// compile finishes, then the formula measured, if any.
+    pub(super) probe: tp::Probe,
 }
 
 impl Trial {
@@ -84,7 +90,14 @@ impl Trial {
             freed_for: false,
             behind: false,
             revived: false,
+            form: tp::Form::Stored,
+            probe: tp::Probe::Off,
         }
+    }
+
+    /// Whether its next attempt probes its first large formula.
+    pub(super) fn probing(&self) -> bool {
+        matches!(self.probe, tp::Probe::Armed { .. })
     }
 
     /// Whether its layout may have added copies to its rewrite: a `td`

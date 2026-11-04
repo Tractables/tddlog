@@ -125,27 +125,27 @@ impl Options {
         ))
     }
 
-    /// The form of the formulas, failing where skip form is asked under a
-    /// strategy or for a run that does not compile in it: `auto`'s trials
-    /// all keep the stored form, a dynamic layout's vtree search and the
-    /// tables of `td`, `families` and `closed` read stored levels, and so
-    /// does the sum-out walk of a run without queries.
+    /// The form of the formulas, failing where skip form is asked for a
+    /// run that does not compile in it: a dynamic layout's vtree search and
+    /// the tables of `td`, `families` and `closed` read stored levels, and
+    /// so does the sum-out walk of a run without queries. Under `auto` it
+    /// is the form of the trials whose layouts take it, where their first
+    /// large formula keeps few of its pairs in it (`auto`'s module doc).
     fn form(&self) -> Result<tp::Form, Error> {
         if !self.skip_levels {
             return Ok(tp::Form::Stored);
         }
-        let refused = match self.strategy {
-            Strategy::Auto => Some("auto's trials keep the stored form"),
-            Strategy::Trial(Kind::Dynamic) => Some("its vtree search reads stored levels"),
-            Strategy::Trial(Kind::Td | Kind::Families { .. } | Kind::Closed) => {
-                Some("its tables are built in the stored form")
-            }
-            Strategy::Trial(Kind::Program { .. } | Kind::Decision) => None,
-        };
-        if let Some(why) = refused {
+        if let Strategy::Trial(kind) = self.strategy
+            && !kind.takes_skip_form()
+        {
+            let why = if kind.is_dynamic() {
+                "its vtree search reads stored levels"
+            } else {
+                "its tables are built in the stored form"
+            };
             return Err(Error::Options(format!(
-                "skip levels are for `program`, `program:fanin` and `decision`, not `{}`: {why}",
-                self.strategy
+                "skip levels are for `auto`, `program`, `program:fanin` and `decision`, not \
+                 `{kind}`: {why}"
             )));
         }
         if !self.queries {
@@ -294,7 +294,12 @@ fn solve_split(
         let mut run = match options.strategy {
             Strategy::Auto => {
                 progress(Progress::Compiling(&part));
-                auto::run(part, projection, std::mem::take(&mut ready), options.trace)?
+                auto::run(
+                    part,
+                    (projection, form),
+                    std::mem::take(&mut ready),
+                    options.trace,
+                )?
             }
             Strategy::Trial(kind) => {
                 let prepared = kind.prepare(part)?;
@@ -420,7 +425,12 @@ fn parsed(source: &str, options: &Options) -> Result<Program, Error> {
 pub fn solve_ground(ground: GroundProgram, options: &Options) -> Result<Run, Error> {
     let (projection, first_pairs, form) = options.checked()?;
     match options.strategy {
-        Strategy::Auto => auto::run(ground, projection, auto::Ready::default(), options.trace),
+        Strategy::Auto => auto::run(
+            ground,
+            (projection, form),
+            auto::Ready::default(),
+            options.trace,
+        ),
         Strategy::Trial(kind) => run_prepared(
             kind.prepare(ground)?,
             kind,

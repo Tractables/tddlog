@@ -57,7 +57,9 @@ options:
                                         guards in; fails for a program with none
   --skip-levels                         keep the formulas in skip form, whose pairs may skip
                                         levels of the vtree (on a right-linear vtree, reduced
-                                        OBDDs); with --vtree program, program:fanin or decision
+                                        OBDDs); with --vtree program, program:fanin or decision;
+                                        under auto, those trials go on in skip form where their
+                                        first large formula keeps few of its pairs there
   --ground                              print the relevant ground program and exit; under a
                                         strategy other than auto, as that strategy compiles it;
                                         with --evidence-probability, the program P(e) is

@@ -1039,6 +1039,7 @@ impl Compilation {
         );
         let start = Instant::now();
         let work = backend.work_units();
+        self.stats.skip_form = backend.form() == super::Form::Skip;
         let holds = self.memo.get_mut().holds();
         if let Some(dynamic) = self.dynamic.as_mut() {
             dynamic.resumed = dynamic.since.is_some();
@@ -1757,6 +1758,7 @@ impl Compilation {
                 backend.minimize(&mut lambda, Reduce::Settled)?;
                 let pairs = backend.size(&lambda);
                 stats.max_pairs = stats.max_pairs.max(pairs);
+                backend.probe(&lambda, pairs)?;
                 if let Some(t) = trace.as_mut() {
                     t.update(a, Some(pairs), 0);
                 }
@@ -1801,6 +1803,7 @@ impl Compilation {
             stats.atom_updates += 1;
             let pairs = backend.size(&f);
             stats.max_pairs = stats.max_pairs.max(pairs);
+            backend.probe(&f, pairs)?;
             if let Some(t) = trace.as_mut() {
                 t.update(a, Some(pairs), 0);
             }
@@ -1882,6 +1885,7 @@ impl Compilation {
             }
             if !same {
                 stats.max_pairs = stats.max_pairs.max(pairs);
+                backend.probe(&f, pairs).map_err(unfold)?;
                 let (f, pairs) = watched_sized(f, pairs, a).map_err(unfold)?;
                 store(a, f, pairs, formulas);
                 version.borrow_mut()[a as usize] += 1;

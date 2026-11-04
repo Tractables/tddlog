@@ -45,7 +45,7 @@ mod primal_update_tests;
 mod projection_tests;
 
 pub(crate) use backend::TddBackend;
-pub(crate) use backend::{Diagram, Form, Formula, KeptProjector, Reduce};
+pub(crate) use backend::{Diagram, Form, Formula, KeptProjector, Probe, Reduce};
 #[cfg(test)]
 pub(crate) use compile::compile;
 pub(crate) use compile::{Compilation, DYNAMIC_FIRST_PAIRS, Horizon};
@@ -105,6 +105,13 @@ pub enum CompileError {
     /// form (`--skip-levels`), which has none: the step named, which
     /// needs the stored form.
     SkipForm(&'static str),
+    /// `auto`'s probe of a stored trial: its first large formula, of
+    /// `pairs` pairs, keeps `skip` of them in skip form, few enough that
+    /// the trial goes on in skip form (`TddBackend::probe`).
+    Skips {
+        pairs: usize,
+        skip: usize,
+    },
 }
 
 impl fmt::Display for CompileError {
@@ -140,6 +147,10 @@ impl fmt::Display for CompileError {
             CompileError::SkipForm(what) => write!(
                 f,
                 "--skip-levels keeps formulas in skip form, and {what} needs the stored form"
+            ),
+            CompileError::Skips { pairs, skip } => write!(
+                f,
+                "a formula of {pairs} pairs keeps {skip} in skip form, and the trial goes on in it"
             ),
         }
     }

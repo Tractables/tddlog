@@ -27,7 +27,7 @@ fn run_with_watch(
         Watch {
             first_pairs,
             dynamic_first_pairs,
-            memory_bytes: None,
+            ..Watch::default()
         },
         None,
         false,
@@ -1779,7 +1779,13 @@ fn auto_compiles_an_already_rewritten_program_as_it_is() {
         crate::ground::ground(&crate::syntax::parse_program(source).unwrap(), &options).unwrap();
     let gp = crate::indicators::introduce(&gp).unwrap();
     assert!(!gp.encoding.is_empty());
-    let run = run(gp, Projection::default(), Ready::default(), false).unwrap();
+    let run = run(
+        gp,
+        (Projection::default(), tp::Form::Stored),
+        Ready::default(),
+        false,
+    )
+    .unwrap();
     assert!(!run.ground.encoding.is_empty());
     let answers = run.results.unwrap();
     assert!(
@@ -1973,4 +1979,113 @@ fn a_query_phase_is_projected_from_where_it_began() {
     t.record(true, Some((1, 4)), None);
     t.evaluation.query_work = 1 << 19;
     assert!(close(t.projected(), 23.0), "{:?}", t.projected());
+}
+
+/// [`run_within`] over `trials` of the diamond loop of `steps` steps, from
+/// a first watch of 2^15 pairs, with `probe` ([`Watch`]).
+fn run_probed(steps: usize, trials: Vec<Kind>, probe: tp::Probe) -> Run {
+    run_within(
+        Programs {
+            ground: Arc::new(diamond_loop(steps)),
+            written: None,
+            conditioned: None,
+            decision: false,
+        },
+        trials,
+        Projection::default(),
+        Watch {
+            first_pairs: 1 << 15,
+            probe,
+            ..Watch::default()
+        },
+        None,
+        false,
+    )
+    .unwrap()
+}
+
+/// The diamond loop's answer at `steps` steps ([`diamond_loop`]).
+fn assert_diamond(run: &Run, steps: usize) {
+    let p = run.results.as_ref().unwrap()[0].probability;
+    let want = (1.0 - 0.5e-4f64).powi(steps as i32);
+    assert!((p - want).abs() < 1e-12, "{p} against {want}");
+}
+
+#[test]
+fn a_trial_whose_first_large_formula_keeps_few_pairs_goes_on_in_skip_form() {
+    // Every formula keeps at most its pairs in skip form, so a probe of
+    // the first formula under a share of 2 puts `program` in skip form:
+    // its first attempt stops there, and it begins again in skip form,
+    // with the work it has spent, and answers. `closed` keeps the stored
+    // form, whichever finishes first.
+    let steps = 60;
+    let program = Kind::Program { fan_in: false };
+    let always = tp::Probe::Armed {
+        from: 1,
+        below: 2.0,
+    };
+    let run = run_probed(steps, vec![program], always);
+    let notes = &run.vtree_notes;
+    assert!(run.stats.skip_form, "{notes:#?}");
+    assert_eq!(
+        notes
+            .iter()
+            .filter(|n| n.starts_with("form: program indicators=")
+                && n.contains("begins again in skip form"))
+            .count(),
+        1,
+        "{notes:#?}"
+    );
+    assert!(
+        notes
+            .iter()
+            .any(|n| n.starts_with("trial: program indicators=") && n.contains(" in skip form, ")),
+        "{notes:#?}"
+    );
+    assert_diamond(&run, steps);
+    let run = run_probed(steps, vec![program, Kind::Closed], always);
+    let notes = &run.vtree_notes;
+    assert!(
+        notes
+            .iter()
+            .filter(|n| n.starts_with("trial: closed"))
+            .all(|n| !n.contains("skip form")),
+        "{notes:#?}"
+    );
+    assert_eq!(run.stats.skip_form, run.kind == program, "{notes:#?}");
+    assert_diamond(&run, steps);
+}
+
+#[test]
+fn a_trial_whose_first_large_formula_keeps_most_pairs_stays_stored() {
+    // Under a share of 0 the probe measures the first formula, once, and
+    // leaves the trial stored: the answers are those of a run without the
+    // probe, which takes the same turns.
+    let steps = 60;
+    let trials = vec![Kind::Program { fan_in: false }, Kind::Closed];
+    let never = tp::Probe::Armed {
+        from: 1,
+        below: 0.0,
+    };
+    let probed = run_probed(steps, trials.clone(), never);
+    let plain = run_probed(steps, trials, tp::Probe::Off);
+    let notes = &probed.vtree_notes;
+    assert!(!probed.stats.skip_form, "{notes:#?}");
+    assert!(!notes.iter().any(|n| n.starts_with("form: ")), "{notes:#?}");
+    let measured: Vec<_> = notes.iter().filter(|n| n.contains(" probed: ")).collect();
+    assert_eq!(measured.len(), 1, "{notes:#?}");
+    assert!(
+        measured[0].starts_with("trial: program indicators="),
+        "{notes:#?}"
+    );
+    let turns = |run: &Run| -> Vec<String> {
+        attempts(&run.vtree_notes)
+            .into_iter()
+            .map(|(_, t)| t.split(" probed: ").next().unwrap().to_string())
+            .collect()
+    };
+    assert_eq!(turns(&probed), turns(&plain), "{notes:#?}");
+    assert_eq!(probed.kind, plain.kind);
+    assert_diamond(&probed, steps);
+    assert_diamond(&plain, steps);
 }

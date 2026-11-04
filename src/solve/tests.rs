@@ -8,7 +8,7 @@ use super::{Answering, Options, Progress, Strategy, solve_ground, solve_split, s
 use crate::eval::Count;
 use crate::ground::{GroundOptions, GroundProgram};
 use crate::query::assert_answers;
-use crate::{Kind, Projection, QueryResult, auto};
+use crate::{Kind, Projection, QueryResult, auto, tp};
 
 /// A network by hand: a, b given a, c given b (observed), d given a, e
 /// given b and d, f given d. e and f head groups, a and b go with the first
@@ -355,7 +355,13 @@ fn the_check_under_auto_splits_as_under_a_layout_and_runs_as_solve_ground() {
                     laid: Some(laid),
                     ..auto::Ready::default()
                 };
-                let with = auto::run(ground.clone(), Projection::default(), ready, false).unwrap();
+                let with = auto::run(
+                    ground.clone(),
+                    (Projection::default(), tp::Form::Stored),
+                    ready,
+                    false,
+                )
+                .unwrap();
                 let without = solve_ground(ground.clone(), &Options::default()).unwrap();
                 assert_eq!(with.results, without.results, "{bounds:?}");
                 assert_eq!(

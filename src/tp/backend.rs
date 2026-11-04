@@ -294,7 +294,33 @@ pub(crate) struct TddBackend<'a> {
     /// The work clock at which `auto`'s turn ends ([`TddBackend::pause`]),
     /// `None` outside a turn.
     turn_end: Cell<Option<u64>>,
+    /// `auto`'s probe of the first large formula ([`TddBackend::probe`]).
+    probe: Cell<Probe>,
 }
+
+/// `auto`'s probe of a stored trial's first large formula, which decides
+/// whether the trial goes on in skip form ([`TddBackend::probe`]).
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(crate) enum Probe {
+    /// No probe.
+    #[default]
+    Off,
+    /// The first formula of `from` pairs or more is measured, and stops
+    /// the compile where it keeps under `below` of its pairs in skip form.
+    Armed { from: usize, below: f64 },
+    /// The formula measured: its pairs, stored and in skip form.
+    Measured { pairs: usize, skip: usize },
+}
+
+/// The units of the work clock a skip operation is charged for each unit
+/// the skip engine charges itself ([`TddBackend::skip_op`]), so that the
+/// clock runs in the stored engine's units in either form. On the
+/// circuits, `program`'s compile in skip form charges 8 to 26 M units a
+/// second where the stored form charges 60 to 530 M; the ratio of the two
+/// rates is 13 at the median of 49 circuits, 11 and 17 at the quartiles.
+/// The larger is taken, so that a turn in skip form takes no more time
+/// than one in the stored form, where `auto`'s trials race by work.
+const SKIP_WORK_SCALE: u64 = 16;
 
 /// When a minimization between operations runs tididi's full plan, and
 /// when a partial one. `Reduce::Between` keeps one per backend; the evidence
@@ -384,7 +410,7 @@ impl Drop for Later<'_> {
 
 impl<'a> TddBackend<'a> {
     pub(crate) fn new(engine: &'a Engine, vtree: Arc<Vtree>) -> Self {
-        Self::resume(engine, vtree, None)
+        Self::resume(engine, vtree, None, Form::Stored)
     }
 
     /// A backend over `vtree` whose formulas are in `form`.
@@ -395,12 +421,13 @@ impl<'a> TddBackend<'a> {
         }
     }
 
-    /// A backend over `vtree`, with the projector of `kept` where that is
-    /// over the same vtree.
+    /// A backend over `vtree` whose formulas are in `form`, with the
+    /// projector of `kept` where that is over the same vtree.
     pub(crate) fn resume(
         engine: &'a Engine,
         vtree: Arc<Vtree>,
         kept: Option<KeptProjector>,
+        form: Form,
     ) -> Self {
         let projector = match kept {
             Some(kept) if Arc::ptr_eq(&kept.vtree, &vtree) => kept.projector,
@@ -408,13 +435,14 @@ impl<'a> TddBackend<'a> {
         };
         TddBackend {
             engine,
-            form: Form::Stored,
+            form,
             vtree: RefCell::new(vtree),
             prune: Cell::new(FullSchedule::default()),
             projector: RefCell::new(projector),
             none_of: RefCell::default(),
             kept_at: Cell::new(engine.limits().work_units()),
             turn_end: Cell::new(None),
+            probe: Cell::new(Probe::Off),
         }
     }
 
@@ -436,6 +464,66 @@ impl<'a> TddBackend<'a> {
     /// The form of the backend's formulas.
     pub(crate) fn form(&self) -> Form {
         self.form
+    }
+
+    /// Arms `probe` on a stored backend ([`Self::probe`]).
+    pub(crate) fn with_probe(self, probe: Probe) -> Self {
+        debug_assert!(self.form == Form::Stored || probe == Probe::Off);
+        self.probe.set(probe);
+        self
+    }
+
+    /// The probe as it stands: measured where a formula reached it.
+    pub(crate) fn probed(&self) -> Probe {
+        self.probe.get()
+    }
+
+    /// Measures `f`, an atom's settled formula of `pairs` pairs, where it
+    /// is the first that reaches the armed probe: its pairs in skip form,
+    /// by one conversion. Fails with [`CompileError::Skips`] where they are
+    /// under the probe's share of `pairs`, so that `auto` goes on with the
+    /// trial in skip form.
+    pub(crate) fn probe(&self, f: &Diagram, pairs: usize) -> Result<(), CompileError> {
+        let Probe::Armed { from, below } = self.probe.get() else {
+            return Ok(());
+        };
+        if pairs < from {
+            return Ok(());
+        }
+        let stored = f.stored("the skip probe")?;
+        let skip = self.skip_op(|e| e.to_skip(stored))?.pair_count();
+        self.probe.set(Probe::Measured { pairs, skip });
+        if (skip as f64) < below * pairs as f64 {
+            return Err(CompileError::Skips { pairs, skip });
+        }
+        Ok(())
+    }
+
+    /// The skip engine's operation `op`, the work clock charged
+    /// [`SKIP_WORK_SCALE`] times what it charged itself. The run's stop in
+    /// work units, where it lies ahead, stops `op` once its own units, so
+    /// scaled, reach it: `auto`'s guard cuts a skip operation where it cuts
+    /// a stored one. A stop the charge reaches after `op` succeeded is the
+    /// next operation's: `op`'s result is kept.
+    fn skip_op<T, E>(&self, op: impl FnOnce(&Engine) -> Result<T, E>) -> Result<T, E> {
+        let limits = self.engine.limits();
+        let at = limits.mark();
+        let now = limits.work_units();
+        let rules = limits.armed().stop_rules();
+        let scope = match rules.unconditional {
+            Some(StopAt::WorkUnits(u)) if u > now => {
+                let sooner = now + (u - now).div_ceil(SKIP_WORK_SCALE);
+                Some(limits.edit(|c| {
+                    c.with_stop_rules(rules.with_unconditional(Some(StopAt::WorkUnits(sooner))))
+                }))
+            }
+            _ => None,
+        };
+        let result = op(self.engine);
+        drop(scope);
+        let more = limits.work_since(at).saturating_mul(SKIP_WORK_SCALE - 1);
+        let _ = limits.poll_host_work(more);
+        result
     }
 }
 
@@ -524,7 +612,7 @@ impl TddBackend<'_> {
             Form::Skip if implicit_pairs(&f) > 0 => Err(CompileError::SkipForm(
                 "a built diagram with a level held as its description",
             )),
-            Form::Skip => Ok(Diagram::Skip(self.engine.to_skip(&f)?)),
+            Form::Skip => Ok(Diagram::Skip(self.skip_op(|e| e.to_skip(&f))?)),
         }
     }
 
@@ -544,7 +632,7 @@ impl TddBackend<'_> {
         let at = |v: VarId| map[v.0 as usize - 1];
         Ok(match f {
             Diagram::Stored(f) => Diagram::Stored(self.engine.embed(f, into.vtree(), at)?.0),
-            Diagram::Skip(f) => Diagram::Skip(self.engine.skip_embed(f, into.vtree(), at)?),
+            Diagram::Skip(f) => Diagram::Skip(self.skip_op(|e| e.skip_embed(f, into.vtree(), at))?),
         })
     }
 
@@ -629,7 +717,7 @@ impl TddBackend<'_> {
                 ))),
             },
             // A copy: the skip form has no move in place.
-            Diagram::Skip(f) => match self.engine.skip_embed(&f, into.vtree(), at) {
+            Diagram::Skip(f) => match self.skip_op(|e| e.skip_embed(&f, into.vtree(), at)) {
                 Ok(embedded) => Ok(Diagram::Skip(embedded)),
                 Err(e) => Err(Box::new((e.into(), Diagram::Skip(f)))),
             },
@@ -650,7 +738,9 @@ impl TddBackend<'_> {
             return Ok(Cow::Borrowed(f));
         }
         let at = |v: VarId| map[v.0 as usize - 1];
-        Ok(Cow::Owned(self.engine.skip_embed(f, scope.vtree(), at)?))
+        Ok(Cow::Owned(
+            self.skip_op(|e| e.skip_embed(f, scope.vtree(), at))?,
+        ))
     }
 
     /// The conjunction of `fa` and `fb` on `scope`, each moved there as
@@ -689,7 +779,7 @@ impl TddBackend<'_> {
             // it was, on its own scope.
             let joined = self.skip_placed(&fa, &map_a, scope).and_then(|a| {
                 let b = self.skip_placed(&fb, &map_b, scope)?;
-                Ok(self.engine.skip_and(&a, &b)?)
+                Ok(self.skip_op(|e| e.skip_and(&a, &b))?)
             });
             return joined.map(Diagram::Skip).map_err(|e| Box::new((e, fa, fb)));
         }
@@ -834,7 +924,9 @@ impl TddBackend<'_> {
         let n = vars.len() as u32;
         let restricted = match f {
             Diagram::Stored(f) => Diagram::Stored(self.engine.project_to_vars(f, local, n)?),
-            Diagram::Skip(f) => Diagram::Skip(self.engine.skip_project_to_vars(f, local, n)?),
+            Diagram::Skip(f) => {
+                Diagram::Skip(self.skip_op(|e| e.skip_project_to_vars(f, local, n))?)
+            }
         };
         let own = VtreeScope {
             vtree: Arc::clone(restricted.vtree()),
@@ -1205,7 +1297,7 @@ impl TddBackend<'_> {
         let (a, b) = (a.into(), b.into());
         Ok(match self.form {
             Form::Stored => Diagram::Stored(self.engine.and(stored_cow(a), stored_cow(b))?),
-            Form::Skip => Diagram::Skip(self.engine.skip_and(a.skip(), b.skip())?),
+            Form::Skip => Diagram::Skip(self.skip_op(|e| e.skip_and(a.skip(), b.skip()))?),
         })
     }
     /// `a ∧ b` on `scope` ([`TddBackend::and_on`]), or both operands back,
@@ -1291,7 +1383,7 @@ impl TddBackend<'_> {
     pub(crate) fn or(&self, a: Diagram, b: Diagram) -> Result<Diagram, CompileError> {
         Ok(match (a, b) {
             (Diagram::Stored(a), Diagram::Stored(b)) => Diagram::Stored(self.engine.or(a, b)?),
-            (a, b) => Diagram::Skip(self.engine.skip_or(a.skip(), b.skip())?),
+            (a, b) => Diagram::Skip(self.skip_op(|e| e.skip_or(a.skip(), b.skip()))?),
         })
     }
     /// `a ∧ (l_1 ∨ ... ∨ l_k)`, with `a` on `scope`.
@@ -1307,7 +1399,7 @@ impl TddBackend<'_> {
         }
         Ok(match a {
             Diagram::Stored(a) => Diagram::Stored(self.engine.and_clause(a, &renamed)?),
-            Diagram::Skip(a) => Diagram::Skip(self.engine.skip_and_clause(&a, &renamed)?),
+            Diagram::Skip(a) => Diagram::Skip(self.skip_op(|e| e.skip_and_clause(&a, &renamed))?),
         })
     }
     pub(crate) fn negate<'f>(
@@ -1316,7 +1408,7 @@ impl TddBackend<'_> {
     ) -> Result<Diagram, CompileError> {
         let a = a.into();
         if self.form == Form::Skip {
-            return Ok(Diagram::Skip(self.engine.skip_negate(a.skip())?));
+            return Ok(Diagram::Skip(self.skip_op(|e| e.skip_negate(a.skip()))?));
         }
         // The compiler minimizes every result it keeps, so the full reduction
         // `negate` ends with by default is paid twice. Pruning is the part
@@ -1413,7 +1505,7 @@ impl TddBackend<'_> {
             (Diagram::Stored(f), Diagram::Stored(g)) => {
                 Diagram::Stored(self.engine.and_exists(f, g, vars)?)
             }
-            (f, g) => Diagram::Skip(self.engine.skip_and_exists(f.skip(), g.skip(), vars)?),
+            (f, g) => Diagram::Skip(self.skip_op(|e| e.skip_and_exists(f.skip(), g.skip(), vars))?),
         })
     }
     /// The weighted count of `f` under `w`, by the engine's evaluation in
@@ -2739,6 +2831,53 @@ mod tests {
         assert!(
             checked > 3000,
             "{checked} results checked, {refused} refused"
+        );
+    }
+
+    /// The run's stop in work units cuts a skip operation once its own
+    /// units, scaled by `SKIP_WORK_SCALE`, reach the stop, as it cuts a
+    /// stored one: a conjunction of two random 3-CNFs in skip form, grown
+    /// until it takes at least 2^18 units of its own, stops when given half
+    /// the scaled work it takes, with the clock at or past that half. Its
+    /// own units alone would not have reached the stop.
+    #[test]
+    fn a_stop_in_work_units_cuts_a_skip_operation_at_its_scaled_work() {
+        let n = 40u32;
+        let tree = Arc::new(Vtree::random(n, 7));
+        let cnf = |backend: &TddBackend, seed: u64, clauses: usize| {
+            let mut next = draws(seed);
+            let scope = backend.global();
+            let mut f = backend.one(&scope).unwrap();
+            for _ in 0..clauses {
+                let clause: Vec<Literal> = (0..3)
+                    .map(|_| Literal::new(VarId(1 + next(u64::from(n)) as u32), next(2) == 0))
+                    .collect();
+                f = backend.and_clause(&scope, f, &clause).unwrap();
+            }
+            f
+        };
+        let run = |clauses: usize, work: Option<u64>| -> (bool, u64) {
+            tree.context().run(|engine| {
+                let skip = TddBackend::in_form(engine, tree.clone(), Form::Skip);
+                let f = cnf(&skip, 0x2545_F491, clauses);
+                let g = cnf(&skip, 0x9E37_79B9, clauses);
+                let start = skip.work_units();
+                let done = match work {
+                    None => skip.and(&f, &g).map(|_| true).unwrap(),
+                    Some(w) => skip.within(w, || skip.and(&f, &g)).unwrap().is_some(),
+                };
+                (done, skip.work_units() - start)
+            })
+        };
+        let (clauses, all) = (20..=60)
+            .step_by(4)
+            .map(|k| (k, run(k, None).1))
+            .find(|&(_, all)| all >= SKIP_WORK_SCALE << 18)
+            .expect("a conjunction large enough");
+        let (done, spent) = run(clauses, Some(all / 2));
+        assert!(
+            !done && spent >= all / 2,
+            "{clauses} clauses: {spent} of {all} units"
         );
     }
 }

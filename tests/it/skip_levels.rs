@@ -6,8 +6,10 @@
 //! narrowed to its support (tests/it/narrowed.rs) and of
 //! examples/adder.pl, alea_dice.pl and equal_gates.pl (hand-computed and
 //! ProbLog's answers) are the references' and the stored form's to 1e-12.
-//! Every other strategy, a run without queries, and the options that stop
-//! before the compile refuse skip form.
+//! Under `auto`, whose trials go on in skip form only where their first
+//! large formula keeps few pairs there, the answers are those of `auto`
+//! without it. Every other strategy, a run without queries, and the
+//! options that stop before the compile refuse skip form.
 
 use std::process::Command;
 
@@ -371,9 +373,46 @@ fn queries_read_the_counted_evidence_in_skip_form() {
     assert!(ran.layouts >= 4, "{} layouts ran", ran.layouts);
 }
 
-/// Skip form is refused, naming the conflict, under `auto`, a dynamic
-/// layout, `td`, `families` and `closed`, without the queries, and for the
-/// ground program, which comes before the compile.
+/// Under `auto`, the random circuits and the examples answer as `auto`
+/// does without skip trials; none of them holds a formula large enough to
+/// be probed, so each run is the stored one.
+#[test]
+fn auto_with_skip_trials_keeps_its_answers() {
+    let auto = |skip: bool| Options {
+        evidence_probability: true,
+        skip_levels: skip,
+        ..common::options(Strategy::Auto, Projection::default())
+    };
+    let mut sources: Vec<(String, String)> = (0..8)
+        .map(|seed| (format!("seed {seed}"), Circuit::random(seed).source()))
+        .collect();
+    for file in ["adder.pl", "alea_dice.pl", "equal_gates.pl"] {
+        let data = std::fs::read(format!("examples/{file}")).unwrap();
+        let input = tddlog::read(&data, tddlog::Format::of_path(file), &Default::default());
+        sources.push((file.to_string(), input.unwrap().program.into_owned()));
+    }
+    for (what, source) in &sources {
+        let stored = common::run(source, &auto(false)).unwrap();
+        let skip = common::run(source, &auto(true)).unwrap();
+        assert!(!skip.stats.skip_form, "{what}");
+        assert_eq!(stored.kind, skip.kind, "{what}");
+        let (a, b) = (stored.results.unwrap(), skip.results.unwrap());
+        assert_eq!(a.len(), b.len(), "{what}");
+        for (a, b) in a.iter().zip(&b) {
+            assert_eq!(a.to_string(), b.to_string(), "{what}");
+            assert_eq!(a.probability, b.probability, "{what}: {a}");
+        }
+        let (ea, eb) = (
+            stored.evidence_probability.expect("P(e)"),
+            skip.evidence_probability.expect("P(e)"),
+        );
+        assert_eq!(ea.to_f64(), eb.to_f64(), "{what}: P(e)");
+    }
+}
+
+/// Skip form is refused, naming the conflict, under a dynamic layout,
+/// `td`, `families` and `closed`, without the queries, and for the ground
+/// program, which comes before the compile.
 #[test]
 fn skip_form_is_refused_where_it_does_not_run() {
     let source = Circuit::random(1).source();
@@ -385,7 +424,6 @@ fn skip_form_is_refused_where_it_does_not_run() {
         skip_levels: true,
         ..Options::with(strategy)
     };
-    refused(&skip(Strategy::Auto), "auto's trials keep the stored form");
     refused(
         &skip(Strategy::Trial(Kind::Dynamic)),
         "its vtree search reads stored levels",
@@ -407,6 +445,12 @@ fn skip_form_is_refused_where_it_does_not_run() {
         ..skip(Strategy::Trial(Kind::Program { fan_in: false }))
     };
     refused(&without_queries, "skip levels need the queries");
+    let auto_without_queries = Options {
+        queries: false,
+        evidence_probability: true,
+        ..skip(Strategy::Auto)
+    };
+    refused(&auto_without_queries, "skip levels need the queries");
     match tddlog::rewritten(&source, &skip(Strategy::Trial(Kind::Decision))) {
         Err(Error::Options(e)) => assert!(e.contains("skip levels would do nothing"), "{e}"),
         other => panic!("the ground program in skip form: {:?}", other.map(|_| ())),
@@ -414,9 +458,9 @@ fn skip_form_is_refused_where_it_does_not_run() {
 }
 
 /// The command line: `--skip-levels` answers as the stored form does,
-/// says so in `--stats`, and is refused as an options error (exit code 2)
-/// under `auto`, without the queries and with the options that stop before
-/// the compile.
+/// says so in `--stats`, answers under `auto` as `auto` does, and is
+/// refused as an options error (exit code 2) under `closed`, without the
+/// queries and with the options that stop before the compile.
 #[test]
 fn the_command_line_takes_skip_levels_under_its_layouts() {
     let tddlog = |args: &[&str]| {
@@ -436,10 +480,17 @@ fn the_command_line_takes_skip_levels_under_its_layouts() {
     assert_eq!(stored.stdout, skip.stdout);
     let stats = String::from_utf8_lossy(&skip.stderr);
     assert!(stats.contains("vtree program in skip form over"), "{stats}");
+    let auto = tddlog(&["examples/adder.pl"]);
+    let auto_skip = tddlog(&["--skip-levels", "examples/adder.pl"]);
+    assert!(
+        auto_skip.status.success(),
+        "{}",
+        String::from_utf8_lossy(&auto_skip.stderr)
+    );
+    assert_eq!(auto.stdout, auto_skip.stdout);
     for (args, message) in [
-        (&["--skip-levels", "examples/adder.pl"][..], "not `auto`"),
         (
-            &["--skip-levels", "--vtree", "closed", "examples/adder.pl"],
+            &["--skip-levels", "--vtree", "closed", "examples/adder.pl"][..],
             "not `closed`",
         ),
         (

@@ -24,6 +24,28 @@ pub(super) const WORK_PER_PAIR: u64 = 256;
 /// more ends its turn and goes on in its next, with twice the target.
 pub(super) const WORK_PER_HELD_PAIR: u64 = 16;
 
+/// The pairs from which a trial that may go on in skip form measures a
+/// formula of its compile in that form ([`SKIP_SHARE`]): its first large
+/// formula, past what a fast compile ever holds, early in the compiles
+/// that hold more.
+pub(super) const PROBE_PAIRS: usize = 1 << 16;
+
+/// The share of its pairs under which a trial's first large formula
+/// ([`PROBE_PAIRS`]) puts the trial in skip form (`--skip-levels`): a
+/// trial of `program`, `program:fanin` or `decision` begins again in skip
+/// form where the formula keeps fewer of its pairs there, and every other
+/// trial keeps the stored form. The bound is the per-pair cost: in
+/// `program`'s compiles of the circuits in either form, a pair in skip
+/// form took 2 to 23 times the time of a stored one, 8 at the median, so
+/// the skip form is faster where it keeps under one over that ratio, and
+/// the bound takes the ratio near its upper end. On the 173 bit-blasted
+/// circuits under `auto` it put 33 circuits' trials in skip form: fair_dt4
+/// and fair_dt14 at every size, weekend_p256 and population_s2 ran 1.1 to
+/// 3.3 times faster, altermu2_p64 and laplace_w15 were answered where no
+/// stored trial answered them, and addFun_max, whose trials kept 2.5% to
+/// 3.7% of their pairs, ran up to 2.3 times slower.
+pub(super) const SKIP_SHARE: f64 = 1.0 / 22.0;
+
 /// The doublings past its target within which a trial's projected finish
 /// ([`Trial::projected`]) moves it ahead in the turns ([`Trial::key`]); a
 /// projection further out, or none, counts this many. A trial projected
