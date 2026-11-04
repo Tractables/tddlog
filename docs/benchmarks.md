@@ -117,7 +117,7 @@ timed.
 | suite | instances | tddlog finishes (total s) | faster than ProbLog, PITA, aspmc and Ace | Merlin faster | faster than pyAgrum, pgmpy, libDAI and TensorInference.jl (ProvSQL on TPC-H) | finished where no exact system did |
 |---|---:|---:|---:|---:|---:|---:|
 | standard | 105 | 100 (181.1) | 70 of 70 (24 under 0.2 s) | 2 of 8 (26 under 0.2 s) | 4 of 6 (28 under 0.2 s) | 4 |
-| literature | 328 | 303 (1659.6) | 91 of 94 (160 under 0.2 s) |  |  | 35 |
+| literature | 320 | 295 (1634.8) | 83 of 86 (160 under 0.2 s) |  |  | 35 |
 | Ace's networks | 46 | 46 (15.6) | 46 of 46 | 3 of 17 (13 under 0.2 s) | 13 of 16 (12 under 0.2 s) | 0 |
 | large networks | 14 | 14 (15.2) | 14 of 14 | 10 of 14 | 4 of 14 | 0 |
 | TPC-H | 295 | 289 (2221.8) | 195 of 195 |  | 0 of 259 | 28 |
@@ -145,18 +145,18 @@ faster on 6, among them bn_link_ev (0.31 s against 29.1) and bn_munin_ev
 (0.79 s against 2.20), and takes 5.0 s over the 34 against Merlin's
 64.5.
 
-**Literature suite.** tddlog finishes 303 of 328, 35 of them where no
+**Literature suite.** tddlog finishes 295 of 320, 35 of them where no
 exact baseline finishes (dnahmm16, eventcalc4_2000, eventcalc4_4000,
 hmmpos3, hwf7, mnist_sum96 to mnist_sum768, noisyor240_360,
 noisyor300_450, pdb320, pedigree5_10, pedigree6_8 to pedigree7_13,
 pedigree10_6 to pedigree32_6, pgrid16_8 to pgrid18_17, rgraph20,
 sickness45_40 to sickness240_40, taint_app_ca7, taint_savage_knife,
 taint_yaaic and threedie1500). Against the fastest of ProbLog, PITA and
-aspmc on each instance, in total time: Of the 328 instances both are
-given, tddlog answers 303 and ProbLog, PITA or aspmc 254. Over the 304
+aspmc on each instance, in total time: Of the 320 instances both are
+given, tddlog answers 295 and ProbLog, PITA or aspmc 246. Over the 296
 that either answers, a run that does not answer counted at the 300 s
-limit, tddlog takes 1 960 s in all and the fastest of them 17 073 s;
-over the 253 both answer, 200.1 s against 2 072. tddlog is slower on
+limit, tddlog takes 1 935 s in all and the fastest of them 17 030 s;
+over the 245 both answer, 175.3 s against 2 029. tddlog is slower on
 mastermind32_5_8 (9.92 s against ProbLog's 5.36) and mastermind16_5_8
 (4.15 s against ProbLog's 3.00). tddlog alone answers mnist_sum16,
 pedigree4_6, mnist_sum32, mnist_sum64, mnist_sum96 and 45 more. Only
@@ -268,12 +268,13 @@ beyond the last digit either of the two prints, counts as a failure
 (`wrong`): PSouffle on biomine1, biomine2, biomine4, biomine8, biomine12
 and 15 more; Dice on dice_digitRecognition; Geni on ace_alarm,
 ace_water, bn_alarm_ev, bn_child_ev, bn_hailfinder_ev and 31 more; PITA
-on ace_fs_07, ace_mastermind_03_08_03, pcfgcount32, plcg4,
-problogtut_basic_03_dice_8 and 49 more; ProbLog on uai_promedus_24;
-aspmc on uai_bn_30, uai_bn_31, uai_bn_32, uai_bn_34, uai_bn_36 and 34
-more; noDice on uai_blockmap_10_03_0010, uai_grid10x10_f10,
-uai_grids_12, uai_mastermind_03_08_04_0001, uai_mastermind_03_08_04_0002
-and 32 more; PRISM on uai_grids_17 and uai_grids_18; Ace on uai_bn_26,
+on ace_fs_07, ace_mastermind_03_08_03, plcg4,
+problogtut_basic_03_dice_8, problogtut_basic_08_rule_probs_9 and 48
+more; ProbLog on uai_promedus_24; aspmc on uai_bn_30, uai_bn_31,
+uai_bn_32, uai_bn_34, uai_bn_36 and 34 more; noDice on
+uai_blockmap_10_03_0010, uai_grid10x10_f10, uai_grids_12,
+uai_mastermind_03_08_04_0001, uai_mastermind_03_08_04_0002 and 32 more;
+PRISM on uai_grids_17 and uai_grids_18; Ace on uai_bn_26,
 uai_diagnose_a, uai_mastermind_03_08_05_0012 and
 uai_mastermind_04_08_04_0012; pgmpy on uai_bn_20, uai_bn_21, uai_bn_26,
 uai_bn_27, uai_diagnose_a and 1 more; libDAI on uai_diagnose_a and
@@ -282,7 +283,7 @@ pyAgrum on uai_diagnose_a and uai_diagnose_b.
 
 **Validation.** Every answer is compared with a reference (Setup). The
 largest absolute differences: 3.6e-7 over 64 843 answers on 97 standard
-instances (ProbLog prints eight digits), 5.0e-9 on the 293 literature
+instances (ProbLog prints eight digits), 5.0e-9 on the 285 literature
 instances (taint_app_ca7, taint_savage_knife, pedigree7_12,
 pedigree14_10, pedigree7_13, sickness45_40, sickness180_40,
 sickness240_40, noisyor120_180 and noisyor240_360 have no reference this
@@ -418,7 +419,7 @@ out of time or memory on a smaller size of the same program.
 | bn_munin_ev | 0.79 | 0.89 (agrum:jtree) | 1.1 | 2.20 | 0.89 | >300 | 3.33 | - | - |
 | bn_munin | 0.79 | 0.90 (agrum:jtree) | 1.1 | 2.19 | 0.90 | err | 3.35 | - | - |
 
-### Literature suite (328 instances, 300 s)
+### Literature suite (320 instances, 300 s)
 
 | instance | tddlog 0.1.0 | fastest exact baseline | ratio |
 |---|---:|---|---:|
@@ -539,14 +540,6 @@ out of time or memory on a smaller size of the same program.
 | problogtut_basic_03_dice_4 | 0.01 | 0.11 (problog:fsdd) | 0.6 |
 | problogtut_basic_09_higherorderfunctions_4 | 0.01 | 0.28 (problog:sdd) | 1.4 |
 | problogtut_basic_08_rule_probs_7 | 0.01 | 0.12 (problog:sdd) | 0.6 |
-| pcfgcount8 | 0.01 | 0.31 (problog:fsdd) | 1.6 |
-| pcfgcount16 | 0.02 | 0.57 (pita:bdd) | 2.8 |
-| pcfgcount24 | 0.04 | 0.71 (pita:bdd) | 3.6 |
-| pcfgcount32 | 0.10 | 3.03 (aspmc:sharpsat-td) | 15.1 |
-| pcfgcount48 | 0.41 | 3.27 (aspmc:sharpsat-td) | 8.0 |
-| pcfgcount64 | 1.02 | 3.84 (aspmc:sharpsat-td) | 3.8 |
-| pcfgcount96 | 6.04 | 9.16 (aspmc:sharpsat-td) | 1.5 |
-| pcfgcount128 | 17.14 | 21.88 (aspmc:sharpsat-td) | 1.3 |
 | problogtut_various_08_bayesian_dataflow_2 | 0.01 | 0.10 (problog:sdd) | 0.5 |
 | problogex_9_packing_problem | 0.01 | 0.12 (problog:fsdd) | 0.6 |
 | problogtut_various_06_pcfg_4 | 0.02 | 0.27 (problog:sdd) | 1.4 |
@@ -943,9 +936,9 @@ each instance; its two orders follow.
 
 | baseline | given | baseline answers | tddlog answers | baseline s | tddlog s | both answer | baseline s, both | tddlog s, both | tddlog slower |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| ProbLog | 328 | 232 | 303 | 22 943 | 1 960 | 231 | 1 342 | 54.2 | 2 |
-| PITA | 328 | 191 | 303 | 35 387 | 1 660 | 191 | 1 787 | 29.3 | 0 |
-| aspmc | 328 | 206 | 303 | 30 600 | 1 660 | 206 | 1 500 | 143.9 | 0 |
+| ProbLog | 320 | 227 | 295 | 21 892 | 1 935 | 226 | 1 192 | 53.6 | 2 |
+| PITA | 320 | 188 | 295 | 33 885 | 1 635 | 188 | 1 785 | 29.2 | 0 |
+| aspmc | 320 | 198 | 295 | 30 550 | 1 635 | 198 | 1 450 | 119.2 | 0 |
 | Ace | 98 | 38 | 86 | 15 369 | 1 152 | 38 | 969.2 | 18.9 | 0 |
 | Merlin | 98 | 23 | 86 | 19 528 | 1 452 | 22 | 264.6 | 1.9 | 0 |
 | pyAgrum | 98 | 22 | 86 | 19 911 | 1 452 | 21 | 142.2 | 2.0 | 0 |
@@ -1578,13 +1571,11 @@ network as one program that returns all its queried variables.
 
 ### Results: tddlog 0.1.0, Dice and Alea.jl
 
-tddlog 0.1.0 `auto` as of 2026-10-22 (tididi c7c0c5d6, goatd e592d1e),
+tddlog 0.1.0 `auto` as of 2026-10-27 (tididi 7eb08230, goatd e592d1e),
 linked statically, Dice 1.0 with an unlimited stack and Alea.jl at
 revision cf5e5b8 (Julia 1.11.9, CUDD 3.0.0) in one job on a lab machine
 (16 physical cores, 125 GB) on 2026-10-22, in 8 lanes, each process
-limited to 15 GB of address space. The runs on Dice programs and LPADs
-ran a build of 2026-10-27 that reads Dice programs and LPADs itself
-(tididi 7eb08230, goatd e592d1e). The runs beside Roulette on its
+limited to 15 GB of address space. The runs beside Roulette on its
 upstream main and Roulette+tddlog's ran a build of 2026-11-01 (tididi
 c5642b97, goatd e592d1e). The release's main contains every solver
 change those builds have. The three systems run on a program back to
@@ -1710,16 +1701,15 @@ evaluation), reachability on SNAP networks with random probabilities.
 ## The programs of the Dice and Alea.jl papers
 
 `bench.py --suite ppl` (baselines.md, section 5, "Benchmark programs of
-the Dice and Alea.jl papers") holds the programs of four papers: Cao et
-al.'s integer arithmetic programs (`arith`, 28), the bit-blasting
-paper's Table 2 (`hybit`, 19), Pluck's Dice.jl sequence models (`pluck`,
-4), all Alea.jl programs, and noDice's purely probabilistic Dice
-programs (`nodice`, 69). Alea runs an Alea.jl program itself; tddlog,
-ProbLog and Dice run the Boolean circuit Alea builds for it, which
-`alea_bench.jl` writes (a ProbLog program, and a Dice program per
-Boolean answer or per bit of an expectation, the seconds summed). The
-`nodice` programs are Dice programs, translated by `dice2problog.py` for
-tddlog and ProbLog and by `dice2alea.py` for Alea.
+the Dice and Alea.jl papers") holds the programs of three papers: Cao et
+al.'s integer arithmetic programs (`arith`, 28), Pluck's Dice.jl
+sequence models (`pluck`, 4), all Alea.jl programs, and noDice's purely
+probabilistic Dice programs (`nodice`, 69). Alea runs an Alea.jl program
+itself; tddlog, ProbLog and Dice run the Boolean circuit Alea builds for
+it, which `alea_bench.jl` writes (a ProbLog program, and a Dice program
+per Boolean answer or per bit of an expectation, the seconds summed).
+The `nodice` programs are Dice programs, translated by `dice2problog.py`
+for tddlog and ProbLog and by `dice2alea.py` for Alea.
 
 ### Results: tddlog 0.1.0, Dice and Alea.jl
 
@@ -1788,33 +1778,6 @@ The arithmetic programs of Cao et al.:
 | luhn_medium | 4.58 | 0.15 | 4.20 | 66.59 | 56.08 | 55.98 | 0.04 | >300 | 8e-16 / 5e-15 | 4e-13 / 2e-12 |
 | plankton |  | 0.33 | oom | 47.92 | 36.79 | 36.66 | 0.14 | >300 | 1e-16 / 4e-14 |  |
 
-The programs of the bit-blasting paper's Table 2, at its precision
-(conjugate_gaussians on the artifact file's observations 8 and 9;
-`data/alea/hybit/conjugate_gaussians.jl` now observes Table 2's 1 and
-2):
-
-| instance | tddlog | Dice | Alea | in-proc | JIT | warm | ProbLog | tddlog Δ | Dice Δ |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| pi | 0.94 | >600 | 167.89 | 112.17 | 90.36 | 22.17 | >300 | 6e-17 / 1e-16 |  |
-| weekend | 20.96 | 480.42 | 93.14 | 56.16 | 43.96 | 12.42 | stack | 8e-16 / 2e-15 | zero |
-| spacex | oom | >600 | 299.81 | 152.22 | 31.37 | 136.72 | >300 |  |  |
-| GPA | 29.07 | 43.56 | 514.77 | 503.97 | 491.13 |  | stack | 1e-16 / 2e-16 | 9e-14 / 2e-13 |
-| tug_of_war | 0.42 | >600 | >600 | >600 | >600 | >600 | >300 | unchecked |  |
-| altermu2 | oom | >600 | oom | oom | oom | oom | >300 |  |  |
-| conjugate_gaussians | 0.92 | >600 | 219.37 | 208.27 | 34.85 |  | >300 | 3e-15 / 6e-15 |  |
-| normal_mixture_theta | 19.80 | >600 | oom | oom | oom | oom | >300 | unchecked |  |
-| normal_mixture_mu1 | 179.41 | >600 | 410.77 | 398.69 | 55.55 |  | >300 | 1e-14 / 1e-13 |  |
-| normal_mixture_mu2 | 114.41 | >600 | oom | oom | oom | oom | >300 | 2e-14 / 2e-14 |  |
-| zeroone_w1 | 0.96 | >600 | 91.91 | 79.17 | 78.09 | 0.98 | >300 | 4e-15 / 8e-15 |  |
-| zeroone_w2 | 2.24 | >600 | 117.52 | 87.77 | 75.61 | 12.62 | >300 | 1e-13 / 2e-13 |  |
-| coinBias | >600 | >600 | 311.51 | 299.54 | 47.47 |  | stack |  |  |
-| addFun_sum | 0.64 | >600 | 520.92 | 508.59 | 53.60 |  | >300 | 7e-16 / 1e-15 |  |
-| clickGraph | 0.29 | >600 | oom | oom | oom | oom | 8.30 | 5e-9 / 9e-9 (P) |  |
-| trueskill | 34.33 | >600 | 275.79 | 108.74 | 32.57 | 78.11 | >300 | 2e-16 / 3e-16 |  |
-| clinicalTrial1 | 1.80 | >600 | 254.34 | 243.24 | 39.69 |  | 23.71 | 4e-16 / 3e-15 |  |
-| clinicalTrial2 | 0.03 | >600 | 302.99 | 291.39 | 39.95 |  | 30.94 | 4e-15 / 7e-15 |  |
-| addFun_max | 16.30 | >600 | oom | oom | oom | oom | >300 | unchecked |  |
-
 Pluck's sequence models:
 
 | instance | paper | tddlog | Dice | Alea | in-proc | JIT | warm | ProbLog | tddlog Δ | Dice Δ |
@@ -1843,70 +1806,64 @@ noDice's programs:
 | alarm | 160 | 0.05 | 0.18 | 10.04 | 1.12 | 0.76 | 2.18 | 8e-17 / 4e-16 | 3e-13 / 8e-13 |
 | 3sat-0 | 19.5 | 0.40 | 9.49 | 9.63 | 1.39 | 0.34 | >300 | 1e-22 / 1e-15 | 1e-19 / 1e-12 |
 
-Answers. Of the 65 instances tddlog answers 59, Dice 31, Alea 53 and
-ProbLog's d-DNNF 19. tddlog answers eight where Alea fails (arith
-disease_medium, hybit tug_of_war, hybit normal_mixture_theta, hybit
-normal_mixture_mu2, hybit clickGraph, hybit addFun_max, nodice
-coupon2-16-obs and nodice coupon2-18-obs). Alea answers two that tddlog
-does not (hybit spacex and hybit coinBias). tddlog answers every
-instance Dice answers.
+Answers. Of the 46 instances tddlog answers 43, Dice 29, Alea 40 and
+ProbLog's d-DNNF 16. tddlog answers three where Alea fails (arith
+disease_medium, nodice coupon2-16-obs and nodice coupon2-18-obs). tddlog
+answers every instance Dice answers.
 
 tddlog agrees with the reference on every instance both answer, to a
-relative 3.1e-12 at most (on arith caesar_huge, absolute 3.5e-69). Where
-Alea fails, ProbLog agrees with tddlog to its eight printed digits on
-hybit clickGraph (5e-9). tddlog alone answers arith disease_medium,
-hybit tug_of_war, hybit normal_mixture_theta, hybit addFun_max, nodice
-coupon2-16-obs and nodice coupon2-18-obs (unchecked). Dice agrees to a
-relative 2.7e-12 or less wherever it prints nonzero answers, but for
-nodice insurance. Dice prints 0 for every answer on arith caesar_small,
-arith caesar_medium, arith caesar_large, arith caesar_huge and hybit
-weekend. Their evidence has probability 4.6e-15 (small), 2.3e-69
-(medium), 4.5e-132 (large), 1.1e-323 (huge) and 1.1e-7 (weekend), from
-tddlog's `--evidence-probability`; Dice prints zeros wherever the
+relative 3.1e-12 at most (on arith caesar_huge, absolute 3.5e-69).
+tddlog alone answers arith disease_medium, nodice coupon2-16-obs and
+nodice coupon2-18-obs (unchecked). Dice agrees to a relative 2.7e-12 or
+less wherever it prints nonzero answers, but for nodice insurance. Dice
+prints 0 for every answer on arith caesar_small, arith caesar_medium,
+arith caesar_large and arith caesar_huge. Their evidence has probability
+4.6e-15 (small), 2.3e-69 (medium), 4.5e-132 (large) and 1.1e-323 (huge),
+from tddlog's `--evidence-probability`; Dice prints zeros wherever the
 evidence has probability below 1e-6 (baselines.md, section 4), so they
 are marked `zero` where a double holds the evidence and `underflow`
 where it is below the smallest normal double. On insurance Dice is off
 by 7.4e-6 (relative 4.4e-4): its `discrete` drops the network's table
 entries below 1e-4.
 
-Failures. Of the 585 timed runs 36 ended on a failed allocation: 9 of
-tddlog's, 10 of Dice's and 17 of Alea's.
+Failures. Of the 414 timed runs 16 ended on a failed allocation: 3 of
+tddlog's, 10 of Dice's and 3 of Alea's.
 
-Times. Against Dice (its zero answers counted as answers), over the 59
+Times. Against Dice (its zero answers counted as answers), over the 43
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, tddlog takes 1087 s in all and Dice 19201 s;
-over the 31 both answer, 65 s against 2401 s. tddlog is faster on 26 of
-the 31 both answer and Dice on 0, both under 0.2 s or level on the other
-5. tddlog alone answers 28, Dice alone 0. Against Alea's wall time, over
-the 61 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, tddlog takes 2287 s in all and Alea
-10770 s; over the 51 both answer, 558 s against 5359 s; against its
-first time in the process, over the 61 instances given to both that
-either answers, a run that does not answer counted at the 600 s limit,
-tddlog takes 2287 s in all and Alea 9353 s; over the 51 both answer, 558
-s against 4101 s. Without Julia's compilation (the warm time, or the
-first time in the process less its JIT where there was no warm run),
-over the 61 instances given to both that either answers, a run that does
-not answer counted at the 600 s limit, tddlog takes 2287 s in all and
-Alea 7034 s; over the 51 both answer, 558 s against 1845 s. tddlog is
-faster on 21 of the 51 both answer and Alea on 14, both under 0.2 s or
-level on the other 16. tddlog alone answers 8, Alea alone 2. Alea's
-largest leads are on pluck pcfg (9.31 s against 105), arith gcd_medium
-(84.5 s against 108), hybit GPA (12.5 s against 29.1), hybit weekend
-(12.4 s against 21) and arith book (1.18 s against 9.4).
+counted at the 600 s limit, tddlog takes 664 s in all and Dice 10277 s;
+over the 29 both answer, 15 s against 1877 s. tddlog is faster on 24 of
+the 29 both answer and Dice on 0, both under 0.2 s or level on the other
+5. tddlog alone answers 14, Dice alone 0. Against Alea's wall time, over
+the 43 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, tddlog takes 664 s in all and Alea
+4190 s; over the 40 both answer, 286 s against 2390 s; against its first
+time in the process, over the 43 instances given to both that either
+answers, a run that does not answer counted at the 600 s limit, tddlog
+takes 664 s in all and Alea 3303 s; over the 40 both answer, 286 s
+against 1503 s. Without Julia's compilation (the warm time, or the first
+time in the process less its JIT where there was no warm run), over the
+43 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, tddlog takes 664 s in all and Alea
+2079 s; over the 40 both answer, 286 s against 279 s. tddlog is faster
+on 12 of the 40 both answer and Alea on 12, both under 0.2 s or level on
+the other 16. tddlog alone answers 3, Alea alone 0. Alea's largest leads
+are on pluck pcfg (9.31 s against 105), arith gcd_medium (84.5 s against
+108), arith book (1.18 s against 9.4), arith triangle_large (12.6 s
+against 18.9) and arith gcd_small (2.35 s against 8.6).
 
-Of the 22 instances where tddlog takes 1 s or more, `auto`'s attempts
+Of the 13 instances where tddlog takes 1 s or more, `auto`'s attempts
 before the one that answers (vtrees it tries and drops, and attempts
-stopped at a smaller work limit) take half the time or more on 5: on
+stopped at a smaller work limit) take half the time or more on 3: on
 Alea's largest leads they take 16.6 of 105 s on pluck pcfg, 16.5 of 108
-s on arith gcd_medium, 0 of 29.1 s on hybit GPA, 0 of 21 s on hybit
-weekend and 1.04 of 9.4 s on arith book, and without them tddlog would
-take 88.7 s on pluck pcfg, 91.3 s on arith gcd_medium, 29.1 s on hybit
-GPA, 21 s on hybit weekend and 8.37 s on arith book against Alea's 9.31,
-84.5, 12.5, 12.4 and 1.18.
+s on arith gcd_medium, 1.04 of 9.4 s on arith book, 5.98 of 18.9 s on
+arith triangle_large and 2.47 of 8.6 s on arith gcd_small, and without
+them tddlog would take 88.7 s on pluck pcfg, 91.3 s on arith gcd_medium,
+8.37 s on arith book, 13 s on arith triangle_large and 6.13 s on arith
+gcd_small against Alea's 9.31, 84.5, 1.18, 12.6 and 2.35.
 
 Alea's first run is mostly Julia compiling Alea's methods for the
-program's types: 491 of 504 s on hybit GPA, 29 to 84.3 s on the
+program's types: 84.3 of 84.9 s on arith fw_medium, 29 to 84.3 s on the
 arithmetic programs but the gcd ones. Its times without compilation on
 the arithmetic programs run from 0.0079 of Cao et al.'s Dice.jl times
 (arith luhn_medium 0.036 s against 4.58) to 6.8 times them (arith
@@ -3446,10 +3403,10 @@ largest absolute and relative difference from the reference named in
 
 | family | instances | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Ace log space | Merlin | pyAgrum | pgmpy | libDAI | TensorInference.jl greedy | TensorInference.jl treesa | Roulette |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| caesar-iter | 7 | 7 | 0 of 7 | 2 of 3 | 0 of 7 | 2 of 7 | 1 of 2 | 2 of 4 | 0 of 2 | 1 of 3 | 2 of 7 | 6 of 7 | 2 of 6 | 2 of 6 | 2 of 6 | 1 of 4 | 1 of 4 | 3 of 4 | 2 of 3 | 2 of 3 | 2 of 3 | 1 of 2 | 1 of 2 | 1 of 2 | 2 of 4 |
+| caesar-iter | 7 | 7 | 0 of 7 | 2 of 3 | 0 of 7 | 2 of 7 | 1 of 2 | 2 of 4 | 0 of 2 | 2 of 4 | 2 of 7 | 6 of 7 | 2 of 6 | 2 of 6 | 2 of 6 | 1 of 4 | 1 of 4 | 3 of 4 | 2 of 3 | 2 of 3 | 2 of 3 | 1 of 2 | 1 of 2 | 1 of 2 | 2 of 4 |
 | diamond | 8 | 8 | 1 of 8 | 3 of 4 | 0 of 8 | 3 of 8 | 3 of 4 | 3 of 5 | 2 of 3 | 4 of 5 | 8 of 8 | 5 of 6 | 5 of 6 | 5 of 6 | 5 of 6 | 5 of 7 | 2 of 7 |  | 3 of 4 | 3 of 4 | 4 of 5 | 4 of 5 | 2 of 3 | 2 of 3 | 3 of 4 |
 | ladder | 8 | 7 | 3 of 7 | 0 of 4 | 0 of 8 | 2 of 8 | 3 of 4 | 2 of 4 | 1 of 2 | 3 of 5 | 8 of 8 | 5 of 6 | 3 of 4 | 4 of 5 | 4 of 5 | 2 of 8 | 2 of 8 |  | 2 of 3 | 3 of 4 | 3 of 4 | 3 of 4 | 2 of 3 | 1 of 2 | 3 of 4 |
-| pmc1 | 7 | 7 | 3 of 4 | 0 of 4 | 0 of 7 | 0 of 1 | 0 of 1 | 7 of 7 | 7 of 7 | 4 of 5 | 2 of 3 | 2 of 3 | 7 of 7 | 6 of 7 | 6 of 7 | 4 of 5 | 4 of 5 |  | 3 of 4 | 3 of 4 | 3 of 4 | 3 of 4 | 3 of 7 | 3 of 5 | 7 of 7 |
+| pmc1 | 7 | 7 | 3 of 4 | 0 of 4 | 0 of 7 | 0 of 1 | 0 of 1 | 7 of 7 | 7 of 7 | 3 of 5 | 2 of 3 | 2 of 3 | 7 of 7 | 6 of 7 | 6 of 7 | 4 of 5 | 4 of 5 |  | 3 of 4 | 3 of 4 | 3 of 4 | 3 of 4 | 3 of 7 | 3 of 5 | 7 of 7 |
 | pmc2 | 7 | 7 | 2 of 3 | 0 of 3 | 0 of 7 | 0 of 1 | 0 of 1 | 7 of 7 | 7 of 7 | 3 of 5 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 |  | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 |
 | simpleCaesar | 7 | 6 | 0 of 4 | 1 of 3 | 0 of 7 | 1 of 2 | 0 of 1 | 1 of 3 | 0 of 1 | 1 of 3 | 1 of 7 | 5 of 6 | 1 of 7 | 1 of 7 | 1 of 7 | 1 of 5 | 1 of 5 | 4 of 5 | 1 of 2 | 1 of 4 | 1 of 2 | 1 of 2 | 1 of 4 | 0 of 1 | 1 of 4 |
 
@@ -3521,14 +3478,14 @@ over the 17 both answer, 473 s against tddlog's 325. PITA is faster on 3
 pmc1_k600 36.3 s against 184). tddlog alone answers caesar-iter_k100,
 caesar-iter_k1000, diamond_k1600, ladder_k400 and simpleCaesar_k100.
 
-**aspmc.** aspmc ran 26 instances and answered 16 (1 run out of memory,
-9 time out). Its answers differ from the reference's by at most 5.2e-12
-relative (2.7e-42 absolute, simpleCaesar_k100) over 16 instances. Over
-the 26 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, aspmc takes 6415 s in all and tddlog
-64.3 s; over the 16 both answer, 415 s against tddlog's 3.29. tddlog
-alone answers caesar-iter_k1000, caesar-iter_k10000, diamond_k25600,
-ladder_k25600, ladder_k6400 and 5 more.
+**aspmc.** aspmc ran 27 instances and answered 16 (1 run out of memory,
+10 time out). Its answers differ from the reference's by at most 1.0e+00
+relative (9.3e-302 absolute, caesar-iter_k1000) over 16 instances. Over
+the 27 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, aspmc takes 7550 s in all and tddlog
+65.2 s; over the 16 both answer, 950 s against tddlog's 3.01. tddlog
+alone answers caesar-iter_k10000, caesar-iter_k3000, diamond_k25600,
+ladder_k25600, ladder_k6400 and 6 more.
 
 **Storm sparse.** Storm sparse ran 40 instances and answered 28 (11
 fail, 1 time out). Its answers differ from the reference's by at most
@@ -3590,8 +3547,8 @@ caesar-iter_k30000, diamond_k102400 and 7 more.
 answers differ from the reference's by at most 5.2e-12 relative (2.7e-42
 absolute, simpleCaesar_k100) over 19 instances. Over the 35 instances
 given to both that either answers, a run that does not answer counted at
-the 600 s limit, Ace takes 9140 s in all and tddlog 320 s; over the 20
-both answer, 140 s against tddlog's 32. Ace is faster on 2 (pmc2_k800
+the 600 s limit, Ace takes 9139 s in all and tddlog 320 s; over the 20
+both answer, 139 s against tddlog's 32. Ace is faster on 2 (pmc2_k800
 6.44 s against 7.01 and pmc2_k1600 11.9 s against 15.2). tddlog alone
 answers caesar-iter_k1000, caesar-iter_k10000, caesar-iter_k3000,
 diamond_k102400, diamond_k409600 and 10 more.
@@ -3612,8 +3569,8 @@ caesar-iter_k3000, diamond_k102400, diamond_k1600 and 13 more.
 out). Its answers differ from the reference's by at most 2.8e-10
 relative (1.5e-302 absolute, simpleCaesar_k1000) over 6 instances. Over
 the 9 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, Ace log space takes 1506 s in all and
-tddlog 81.2 s; over the 7 both answer, 306 s against tddlog's 31.4.
+answer counted at the 600 s limit, Ace log space takes 1504 s in all and
+tddlog 81.2 s; over the 7 both answer, 304 s against tddlog's 31.4.
 tddlog alone answers caesar-iter_k10000 and simpleCaesar_k10000.
 
 **Merlin.** Merlin ran 23 instances and answered 18 (4 run out of
@@ -3699,46 +3656,46 @@ more.
 
 | instance | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Ace log space | Merlin | pyAgrum | pgmpy | libDAI | TI greedy | TI treesa | Roulette | Roulette process | ProbLog | ref | tddlog diff | Geni diff | noDice diff | Psi diff | Genfer diff | SPPL diff | Pluck diff | PITA diff | aspmc diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Ace diff | Ace c2d diff | Ace log space diff | Merlin diff | pyAgrum diff | pgmpy diff | libDAI diff | TI greedy diff | TI treesa diff | Roulette diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| dice_caesar-iter_k100 | 0.028 | err | 0.172 | err | 0.04 | 14.9 | 6.04 | wrong | 14.3 | 0.147 | 0.151 | 1.14 | 1.27 | 1.28 | 3.38 | 3.5 | 3.14 | 0.833 | 0.869 | 5.75 | 3.31 | 65.3 | 342 | 0.078 | 0.784 | 0.688 | alea | 5.6e-44 / 2.5e-13 |  | 7.9e-31 / 1.0e+00 |  | 6.9e-44 / 2.6e-13 | 2.2e-16 / 2.7e-13 | 6.9e-44 / 2.6e-13 | 1.0e+00 / 1.6e+60 | 6.3e-44 / 2.5e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.8e-44 / 2.6e-13 | 5.6e-44 / 2.5e-13 | 1.1e-43 / 1.4e-13 | 7.9e-31 / 1.0e+00 | 5.7e-44 / 7.6e-14 | 5.7e-44 / 7.6e-14 | 5.7e-44 / 7.6e-14 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 |
-| dice_caesar-iter_k1000 | 0.41 | err | 18.4 | err | 0.399 | >600 | 43.9 | >600 | >600 | 0.172 | 0.214 | 6.04 | 1.68 | 1.65 | err | err | 15.6 | 355 | 98.9 | 339 | >600 | >600 | >600 | 3.95 | 4.76 | 7.3 | alea | 4.3e-312 / 4.6e-11 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 |  |  | 9.3e-302 / 1.0e+00 | 4.3e-312 / 4.6e-11 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 |  |  | 5.5e-312 / 5.9e-11 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 |  |  |  | 9.3e-302 / 1.0e+00 |
-| dice_caesar-iter_k3000 | 0.928 | err | oom | err | err | - | err | - | - | err | 0.366 | err | err | err | err | err | 51.1 | >600 | >600 | >600 | - | - | - | underflow | underflow | 30.2 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| dice_caesar-iter_k100 | 0.028 | err | 0.172 | err | 0.04 | 14.9 | 6.04 | wrong | 3.95 | 0.147 | 0.151 | 1.14 | 1.27 | 1.28 | 3.31 | 3.5 | 3.14 | 0.833 | 0.869 | 5.75 | 3.31 | 65.3 | 342 | 0.078 | 0.784 | 1.44 | alea | 5.6e-44 / 2.5e-13 |  | 7.9e-31 / 1.0e+00 |  | 6.9e-44 / 2.6e-13 | 2.2e-16 / 2.7e-13 | 6.9e-44 / 2.6e-13 | 1.0e+00 / 1.6e+60 | 6.4e-44 / 2.5e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.8e-44 / 2.6e-13 | 5.6e-44 / 2.5e-13 | 1.1e-43 / 1.4e-13 | 7.9e-31 / 1.0e+00 | 5.7e-44 / 7.6e-14 | 5.7e-44 / 7.6e-14 | 5.7e-44 / 7.6e-14 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 |
+| dice_caesar-iter_k1000 | 0.41 | err | 18.4 | err | 0.399 | >600 | 43.9 | >600 | 437 | 0.172 | 0.214 | 6.04 | 1.68 | 1.65 | err | err | 15.4 | 355 | 98.9 | 339 | >600 | >600 | >600 | 3.95 | 4.76 | oom | alea | 4.3e-312 / 4.6e-11 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 4.3e-312 / 4.6e-11 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 |  |  | 5.5e-312 / 5.9e-11 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 |  |  |  | 9.3e-302 / 1.0e+00 |
+| dice_caesar-iter_k3000 | 0.928 | err | oom | err | err | - | err | - | >600 | err | 0.366 | err | err | err | err | err | 50.5 | >600 | >600 | >600 | - | - | - | underflow | underflow | >600 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
 | dice_caesar-iter_k10000 | 2.6 | err | - | err | err | - | err | - | >600 | err | 1.47 | err | err | err | >600 | >600 | >600 | - | - | - | - | - | - | oom | oom | >600 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_caesar-iter_k30000 | 8.88 | err | - | err | err | - | - | - | - | err | 7 | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_caesar-iter_k100000 | 27.7 | err | - | err | err | - | - | - | - | err | 56.9 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_caesar-iter_k300000 | 90.6 | oom | - | err | err | - | - | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_diamond_k100 | 0.01 | 0.019 | 0.043 | err | 0.008 | 3 | 5.05 | 0.809 | 2.69 | 0.148 | 0.152 | 0.721 | 1.28 | 1.28 | 2.14 | 2.31 |  | 0.127 | 0.337 | 2.1 | 0.153 | 45 | 132 | 0.046 | 0.743 | 0.419 | alea | 4.2e-15 / 4.2e-15 | 7.5e-07 / 7.6e-07 | 6.5e-07 / 6.5e-07 |  | 4.0e-15 / 4.0e-15 | 4.2e-15 / 4.2e-15 | 4.4e-15 / 4.5e-15 | 4.3e-15 / 4.4e-15 | 4.2e-15 / 4.2e-15 | 1.5e-14 / 1.5e-14 | 4.8e-15 / 4.8e-15 | 4.4e-15 / 4.5e-15 | 4.4e-15 / 4.5e-15 | 4.4e-15 / 4.5e-15 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 |  | 3.5e-07 / 3.6e-07 | 1.1e-14 / 1.1e-14 | 1.1e-14 / 1.1e-14 | 1.1e-14 / 1.1e-14 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 |
-| dice_diamond_k400 | 0.027 | wrong | 0.234 | err | 0.025 | 13.7 | 6.13 | 120 | 3.48 | 0.154 | 0.166 | 2.62 | 1.28 | 1.27 | 3.51 | 4.16 |  | 0.555 | 1.45 | 3.27 | 1.1 | 81.1 | 520 | 0.463 | 1.17 | 4.49 | alea | 1.8e-14 / 1.8e-14 | 3.0e-06 / 3.0e-06 | 1.8e-07 / 1.9e-07 |  | 1.3e-14 / 1.3e-14 | 1.7e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.9e-14 / 1.9e-14 | 1.8e-14 / 1.8e-14 | 6.0e-14 / 6.1e-14 | 1.9e-14 / 1.9e-14 | 1.6e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.8e-14 / 1.8e-14 | 1.9e-14 / 2.0e-14 |  | 1.8e-07 / 1.9e-07 | 2.2e-13 / 2.3e-13 | 2.2e-13 / 2.3e-13 | 2.2e-13 / 2.3e-13 | 1.8e-14 / 1.9e-14 | 1.8e-14 / 1.9e-14 | 1.9e-14 / 1.9e-14 |
-| dice_diamond_k1600 | 0.135 | wrong | 3.6 | err | 0.101 | 145 | 31.8 | >600 | 10.2 | 0.166 | 0.346 | 8.24 | 1.52 | 1.53 | 8.27 | wrong |  | 4.83 | 25 | 16.7 | 15.6 | >600 | >600 | 8.27 | 9.17 | 154 | alea | 6.4e-14 / 7.0e-14 | 1.2e-05 / 1.3e-05 | 5.0e-07 / 5.4e-07 |  | 5.2e-14 / 5.6e-14 | 6.7e-14 / 7.3e-14 | 6.3e-14 / 6.8e-14 |  | 6.4e-14 / 7.0e-14 | 2.3e-13 / 2.5e-13 | 7.1e-14 / 7.7e-14 | 6.3e-14 / 6.8e-14 | 6.3e-14 / 6.8e-14 | 6.3e-14 / 6.8e-14 | 6.9e-14 / 7.5e-14 | inf / inf |  | 5.0e-07 / 5.4e-07 | 3.2e-13 / 3.4e-13 | 3.2e-13 / 3.4e-13 | 3.2e-13 / 3.4e-13 |  |  | 7.2e-14 / 7.8e-14 |
-| dice_diamond_k6400 | 0.353 | wrong | oom | err | err | >600 | err | - | 92.1 | 0.209 | 4.86 | 21.2 | 7.75 | 8.55 | 22.2 | wrong |  | oom | >600 | 277 | 258 | - | - | oom | oom | oom | alea | 1.8e-13 / 2.5e-13 | 4.0e-05 / 5.5e-05 |  |  |  |  |  |  | 1.8e-13 / 2.5e-13 | 7.4e-13 / 1.0e-12 | 2.0e-13 / 2.8e-13 | 1.8e-13 / 2.4e-13 | 1.8e-13 / 2.4e-13 | 1.8e-13 / 2.4e-13 | 2.0e-13 / 2.8e-13 | inf / inf |  |  |  | 1.9e-13 / 2.6e-13 | 1.9e-13 / 2.6e-13 |  |  |  |
+| dice_diamond_k100 | 0.01 | 0.019 | 0.043 | err | 0.008 | 3 | 5.05 | 0.809 | 2.6 | 0.148 | 0.152 | 0.721 | 1.28 | 1.28 | 2.08 | 2.31 |  | 0.127 | 0.337 | 2.1 | 0.153 | 45 | 132 | 0.046 | 0.743 | 1.18 | alea | 4.2e-15 / 4.2e-15 | 7.5e-07 / 7.6e-07 | 6.5e-07 / 6.5e-07 |  | 4.0e-15 / 4.0e-15 | 4.2e-15 / 4.2e-15 | 4.4e-15 / 4.5e-15 | 4.3e-15 / 4.4e-15 | 4.2e-15 / 4.2e-15 | 1.5e-14 / 1.5e-14 | 4.8e-15 / 4.8e-15 | 4.4e-15 / 4.5e-15 | 4.4e-15 / 4.5e-15 | 4.4e-15 / 4.5e-15 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 |  | 3.5e-07 / 3.6e-07 | 1.1e-14 / 1.1e-14 | 1.1e-14 / 1.1e-14 | 1.1e-14 / 1.1e-14 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 |
+| dice_diamond_k400 | 0.027 | wrong | 0.234 | err | 0.025 | 13.7 | 6.13 | 120 | 3.35 | 0.154 | 0.166 | 2.62 | 1.28 | 1.27 | 3.43 | 4.16 |  | 0.555 | 1.45 | 3.27 | 1.1 | 81.1 | 520 | 0.463 | 1.17 | 16.4 | alea | 1.8e-14 / 1.8e-14 | 3.0e-06 / 3.0e-06 | 1.8e-07 / 1.9e-07 |  | 1.3e-14 / 1.3e-14 | 1.7e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.9e-14 / 1.9e-14 | 1.8e-14 / 1.8e-14 | 6.0e-14 / 6.1e-14 | 1.9e-14 / 1.9e-14 | 1.6e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.8e-14 / 1.8e-14 | 1.9e-14 / 2.0e-14 |  | 1.8e-07 / 1.9e-07 | 2.2e-13 / 2.3e-13 | 2.2e-13 / 2.3e-13 | 2.2e-13 / 2.3e-13 | 1.8e-14 / 1.9e-14 | 1.8e-14 / 1.9e-14 | 1.9e-14 / 1.9e-14 |
+| dice_diamond_k1600 | 0.135 | wrong | 3.6 | err | 0.101 | 145 | 31.8 | >600 | 10.4 | 0.166 | 0.346 | 8.24 | 1.52 | 1.53 | 8.14 | wrong |  | 4.83 | 25 | 16.7 | 15.6 | >600 | >600 | 8.27 | 9.17 | 352 | alea | 6.4e-14 / 7.0e-14 | 1.2e-05 / 1.3e-05 | 5.0e-07 / 5.4e-07 |  | 5.2e-14 / 5.6e-14 | 6.7e-14 / 7.3e-14 | 6.3e-14 / 6.8e-14 |  | 6.4e-14 / 7.0e-14 | 2.3e-13 / 2.5e-13 | 7.1e-14 / 7.7e-14 | 6.3e-14 / 6.8e-14 | 6.3e-14 / 6.8e-14 | 6.3e-14 / 6.8e-14 | 6.9e-14 / 7.5e-14 | inf / inf |  | 5.0e-07 / 5.4e-07 | 3.2e-13 / 3.4e-13 | 3.2e-13 / 3.4e-13 | 3.2e-13 / 3.4e-13 |  |  | 7.2e-14 / 7.8e-14 |
+| dice_diamond_k6400 | 0.353 | wrong | oom | err | err | >600 | err | - | 98.5 | 0.209 | 4.86 | 21.2 | 7.75 | 8.55 | 21.8 | wrong |  | oom | >600 | 277 | 258 | - | - | oom | oom | >600 | alea | 1.8e-13 / 2.5e-13 | 4.0e-05 / 5.5e-05 |  |  |  |  |  |  | 1.8e-13 / 2.5e-13 | 7.4e-13 / 1.0e-12 | 2.0e-13 / 2.8e-13 | 1.8e-13 / 2.4e-13 | 1.8e-13 / 2.4e-13 | 1.8e-13 / 2.4e-13 | 2.0e-13 / 2.8e-13 | inf / inf |  |  |  | 1.9e-13 / 2.6e-13 | 1.9e-13 / 2.6e-13 |  |  |  |
 | dice_diamond_k25600 | 2.26 | wrong | - | err | err | - | err | - | >600 | 0.459 | 147 | 274 | 171 | 160 | 47.5 | wrong |  | - | - | >600 | >600 | - | - | - | - | >600 | ace-auto | 4.6e-14 / 1.7e-13 | 6.3e-05 / 2.3e-04 |  |  |  |  |  |  |  | 9.1e-13 / 3.3e-12 | 8.0e-15 / 2.9e-14 | 4.4e-14 / 1.6e-13 | 4.4e-14 / 1.6e-13 | 4.4e-14 / 1.6e-13 |  | inf / inf |  |  |  |  |  |  |  |  |
 | dice_diamond_k102400 | 7.5 | wrong | - | err | err | - | - | - | - | 1.16 | >600 | >600 | >600 | >600 | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref | 9.7e-05 / 1.6e-02 |  |  |  |  |  |  |  | 8.3e-14 / 1.4e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_diamond_k409600 | 31.1 | wrong | - | err | err | - | - | - | - | 4.23 | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | - | - | - | tddlog | ref | 2.1e-03 / 1.6e+06 |  |  |  |  |  |  |  | 7.1e-20 / 5.6e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_diamond_k1638400 | 142 | oom | - | err | err | - | - | - | - | 16.9 | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  | 5.9e-46 / 2.2e-10 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_ladder_k100 | 0.057 | 0.06 | >600 | err | 0.075 | 4.13 | 5.63 | 9.66 | 3.04 | 0.302 | 0.305 | 6.89 | 2.55 | 2.54 | 2.67 | 3.07 |  | 0.268 | 0.601 | 2.76 | 0.396 | 47.1 | 228 | 0.083 | 0.786 | 0.766 | alea | 5.6e-16 / 1.2e-15 | 2.6e-07 / 5.4e-07 |  |  | 5.6e-16 / 1.2e-15 | 6.1e-16 / 1.3e-15 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 | 7.2e-16 / 1.5e-15 | 5.6e-16 / 1.2e-15 | 7.2e-16 / 1.5e-15 | 7.2e-16 / 1.5e-15 | 7.2e-16 / 1.5e-15 | 3.9e-16 / 8.2e-16 | 5.6e-16 / 1.2e-15 |  | 1.6e-07 / 3.3e-07 | 6.8e-14 / 1.4e-13 | 6.8e-14 / 1.4e-13 | 6.8e-14 / 1.4e-13 | 6.7e-16 / 1.4e-15 | 6.7e-16 / 1.4e-15 | 7.2e-16 / 1.5e-15 |
-| dice_ladder_k400 | 0.196 | 0.234 | >600 | err | 0.289 | 23.8 | 16 | >600 | 7.61 | 0.306 | 0.336 | 21.3 | 2.52 | 2.55 | 5.63 | 8.08 |  | 1.65 | 5.06 | 8.88 | 4.44 | 233 | >600 | 0.869 | 1.59 | oom | alea | 1.9e-15 / 4.6e-15 | 9.7e-07 / 2.4e-06 |  |  | 2.5e-15 / 6.1e-15 | 1.8e-15 / 4.3e-15 | 2.1e-15 / 5.2e-15 |  | 2.4e-15 / 6.0e-15 | 2.7e-15 / 6.5e-15 | 1.8e-15 / 4.5e-15 | 2.8e-15 / 6.9e-15 | 2.8e-15 / 6.9e-15 | 2.8e-15 / 6.9e-15 | 2.4e-15 / 5.8e-15 | 2.5e-15 / 6.1e-15 |  | 1.3e-07 / 3.1e-07 | 4.9e-13 / 1.2e-12 | 4.9e-13 / 1.2e-12 | 4.9e-13 / 1.2e-12 | 2.7e-15 / 6.5e-15 |  | 2.4e-15 / 5.8e-15 |
-| dice_ladder_k1600 | 0.462 | wrong | >600 | err | err | 246 | err | - | 109 | 0.327 | 0.807 | 84 | 3.29 | 3.23 | err | err |  | oom | 139 | 106 | 74.5 | >600 | - | 14.5 | 15.5 | - | alea | 3.9e-15 / 1.7e-14 | 1.9e-06 / 8.6e-06 |  |  |  | 3.2e-15 / 1.4e-14 |  |  | 4.7e-15 / 2.1e-14 | 4.5e-15 / 2.0e-14 | 4.1e-15 / 1.8e-14 | 4.7e-15 / 2.1e-14 | 4.7e-15 / 2.1e-14 | 4.7e-15 / 2.1e-14 |  |  |  |  | 3.7e-13 / 1.7e-12 | 3.7e-13 / 1.7e-12 | 3.7e-13 / 1.7e-12 |  |  | 4.4e-15 / 2.0e-14 |
+| dice_ladder_k100 | 0.057 | 0.06 | >600 | err | 0.075 | 4.13 | 5.63 | 9.66 | 2.98 | 0.302 | 0.305 | 6.89 | 2.55 | 2.54 | 2.6 | 3.07 |  | 0.268 | 0.601 | 2.76 | 0.396 | 47.1 | 228 | 0.083 | 0.786 | 2.24 | alea | 5.6e-16 / 1.2e-15 | 2.6e-07 / 5.4e-07 |  |  | 5.6e-16 / 1.2e-15 | 6.1e-16 / 1.3e-15 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 | 7.2e-16 / 1.5e-15 | 5.6e-16 / 1.2e-15 | 7.2e-16 / 1.5e-15 | 7.2e-16 / 1.5e-15 | 7.2e-16 / 1.5e-15 | 3.9e-16 / 8.2e-16 | 5.6e-16 / 1.2e-15 |  | 1.6e-07 / 3.3e-07 | 6.8e-14 / 1.4e-13 | 6.8e-14 / 1.4e-13 | 6.8e-14 / 1.4e-13 | 6.7e-16 / 1.4e-15 | 6.7e-16 / 1.4e-15 | 7.2e-16 / 1.5e-15 |
+| dice_ladder_k400 | 0.196 | 0.234 | >600 | err | 0.289 | 23.8 | 16 | >600 | 7.89 | 0.306 | 0.336 | 21.3 | 2.52 | 2.55 | 5.53 | 8.08 |  | 1.65 | 5.06 | 8.88 | 4.44 | 233 | >600 | 0.869 | 1.59 | oom | alea | 1.9e-15 / 4.6e-15 | 9.7e-07 / 2.4e-06 |  |  | 2.5e-15 / 6.1e-15 | 1.8e-15 / 4.3e-15 | 2.1e-15 / 5.2e-15 |  | 2.4e-15 / 6.0e-15 | 2.7e-15 / 6.5e-15 | 1.8e-15 / 4.5e-15 | 2.8e-15 / 6.9e-15 | 2.8e-15 / 6.9e-15 | 2.8e-15 / 6.9e-15 | 2.4e-15 / 5.8e-15 | 2.5e-15 / 6.1e-15 |  | 1.3e-07 / 3.1e-07 | 4.9e-13 / 1.2e-12 | 4.9e-13 / 1.2e-12 | 4.9e-13 / 1.2e-12 | 2.7e-15 / 6.5e-15 |  | 2.4e-15 / 5.8e-15 |
+| dice_ladder_k1600 | 0.462 | wrong | >600 | err | err | 246 | err | - | 103 | 0.327 | 0.807 | 84 | 3.29 | 3.23 | err | err |  | oom | 139 | 106 | 74.5 | >600 | - | 14.5 | 15.5 | - | alea | 3.9e-15 / 1.7e-14 | 1.9e-06 / 8.6e-06 |  |  |  | 3.2e-15 / 1.4e-14 |  |  | 4.7e-15 / 2.1e-14 | 4.5e-15 / 2.0e-14 | 4.1e-15 / 1.8e-14 | 4.7e-15 / 2.1e-14 | 4.7e-15 / 2.1e-14 | 4.7e-15 / 2.1e-14 |  |  |  |  | 3.7e-13 / 1.7e-12 | 3.7e-13 / 1.7e-12 | 3.7e-13 / 1.7e-12 |  |  | 4.4e-15 / 2.0e-14 |
 | dice_ladder_k6400 | 1.45 | 4.15 | oom | err | err | >600 | - | - | oom | 0.397 | 11.7 | >600 | 22.8 | 20.8 | err | err |  | - | >600 | >600 | >600 | - | - | oom | oom | - | tddlog | ref | 8.9e-07 / 4.4e-05 |  |  |  |  |  |  |  | 2.0e-16 / 1.0e-14 | 1.0e-16 / 5.1e-15 |  | 2.8e-16 / 1.4e-14 | 2.8e-16 / 1.4e-14 |  |  |  |  |  |  |  |  |  |  |
 | dice_ladder_k25600 | 7.16 | wrong | - | err | err | - | err | - | >600 | 0.922 | 392 | - | >600 | >600 | err | err |  | - | - | - | - | - | - | - | - | >600 | tddlog | ref | 2.8e-05 / 2.1e+01 |  |  |  |  |  |  |  | 3.7e-20 / 2.7e-14 | 2.3e-20 / 1.6e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_ladder_k102400 | 26.5 | wrong | - | err | err | - | - | - | - | 2.75 | >600 | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref | 3.0e-05 / 1.0e+18 |  |  |  |  |  |  |  | 3.5e-36 / 1.2e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_ladder_k409600 | 114 | oom | - | err | err | - | - | - | - | 9.48 | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  | 5.8e-103 / 1.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_ladder_k1638400 | oom | - | - | err | err | - | - | - | - | 37.9 | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_pmc1_k10 | 0.145 | 0.005 | >600 | err | >600 | >600 | 9.24 | 1.24 | 1.66 | 0.476 | 0.499 | 8.22 | 1.96 | 2 | 1.22 | 1.39 |  | 0.296 | 0.438 | 2.27 | 0.309 | 15.5 | 16.4 | 0.029 | 0.741 | 0.176 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc1_k20 | 0.257 | 0.005 | >600 | err | - | - | 9.91 | 1.32 | 1.6 | 107 | 134 | 7.7 | 2 | 1.97 | 1.24 | 1.42 |  | 0.316 | 0.455 | 2.32 | 0.32 | 15.7 | 16.4 | 0.042 | 0.761 | 0.197 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc1_k40 | 0.174 | 0.005 | >600 | err | - | - | 10.3 | 1.5 | 1.65 | >600 | >600 | 7.71 | 2.49 | 2.57 | 1.37 | 1.39 |  | 0.271 | 0.39 | 2.27 | 0.255 | 15.3 | 16.1 | 0.069 | 0.775 | 0.233 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc1_k75 | 0.694 | >600 | >600 | err | - | - | 13.9 | 2.28 | 37.3 | - | - | 10.2 | 145 | 156 | 4.1 | 3.7 |  | oom | oom | oom | oom | err | err | 11.8 | 12.6 | oom | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| dice_pmc1_k10 | 0.145 | 0.005 | >600 | err | >600 | >600 | 9.24 | 1.24 | 6.86 | 0.476 | 0.499 | 8.22 | 1.96 | 2 | 1.33 | 1.39 |  | 0.296 | 0.438 | 2.27 | 0.309 | 15.5 | 16.4 | 0.029 | 0.741 | 2.57 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc1_k20 | 0.257 | 0.005 | >600 | err | - | - | 9.91 | 1.32 | 25.8 | 107 | 134 | 7.7 | 2 | 1.97 | 1.33 | 1.42 |  | 0.316 | 0.455 | 2.32 | 0.32 | 15.7 | 16.4 | 0.042 | 0.761 | 9.37 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc1_k40 | 0.174 | 0.005 | >600 | err | - | - | 10.3 | 1.5 | 102 | >600 | >600 | 7.71 | 2.49 | 2.57 | 1.33 | 1.39 |  | 0.271 | 0.39 | 2.27 | 0.255 | 15.3 | 16.1 | 0.069 | 0.775 | 30.6 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc1_k75 | 0.694 | >600 | >600 | err | - | - | 13.9 | 2.28 | >600 | - | - | 10.2 | 145 | 156 | 3.67 | 3.7 |  | oom | oom | oom | oom | err | err | 11.8 | 12.6 | oom | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
 | dice_pmc1_k150 | 18.3 | - | - | err | - | - | 19.6 | 4.03 | >600 | - | - | 17.3 | 285 | 286 | >600 | >600 |  | - | - | - | - | err | >600 | 62.7 | 63.5 | oom | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
 | dice_pmc1_k300 | 94.2 | - | - | err | - | - | 26 | 11.2 | - | - | - | 22.1 | 395 | 413 | - | - |  | - | - | - | - | err | - | 151 | 152 | - | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
 | dice_pmc1_k600 | 184 | - | - | err | - | - | 54.5 | 36.3 | - | - | - | 29.9 | oom | oom | - | - |  | - | - | - | - | err | - | 329 | 330 | - | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k10 | 0.061 | 0.005 | >600 | err | >600 | >600 | 8 | 0.743 | 1.57 | 0.253 | 0.264 | 3.54 | 1.34 | 1.36 | 1.26 | 1.27 |  | 0.115 | 0.271 | 2.1 | 0.114 | 15.4 | 16.5 | 0.01 | 0.772 | 0.143 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k20 | 0.104 | 0.005 | >600 | err | - | - | 8.29 | 0.796 | 1.56 | 0.426 | 0.499 | 3.71 | 1.38 | 1.33 | 1.23 | 1.25 |  | 0.126 | 0.282 | 2.14 | 0.135 | 15.5 | 16.4 | 0.026 | 0.755 | 0.157 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k51 | 0.24 | >600 | >600 | err | - | - | 9.73 | 1.02 | 14 | 0.82 | 1.06 | 5.62 | 2.17 | 2.06 | 1.75 | 1.54 |  | 0.244 | 0.389 | 2.26 | 0.239 | 25.6 | 31.2 | 2.96 | 3.68 | 23.4 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc2_k10 | 0.061 | 0.005 | >600 | err | >600 | >600 | 8 | 0.743 | 3.96 | 0.253 | 0.264 | 3.54 | 1.34 | 1.36 | 1.23 | 1.27 |  | 0.115 | 0.271 | 2.1 | 0.114 | 15.4 | 16.5 | 0.01 | 0.772 | 1.8 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc2_k20 | 0.104 | 0.005 | >600 | err | - | - | 8.29 | 0.796 | 11.6 | 0.426 | 0.499 | 3.71 | 1.38 | 1.33 | 1.19 | 1.25 |  | 0.126 | 0.282 | 2.14 | 0.135 | 15.5 | 16.4 | 0.026 | 0.755 | 4.85 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc2_k51 | 0.24 | >600 | >600 | err | - | - | 9.73 | 1.02 | 96.9 | 0.82 | 1.06 | 5.62 | 2.17 | 2.06 | 1.5 | 1.54 |  | 0.244 | 0.389 | 2.26 | 0.239 | 25.6 | 31.2 | 2.96 | 3.68 | oom | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | dice_pmc2_k200 | 1.28 | - | - | err | - | - | 14.3 | 2.99 | >600 | 2.08 | 2.91 | 10.8 | 5.63 | 5.6 | 1.98 | 2.03 |  | 1.26 | 1.37 | 2.76 | 1.28 | 20.6 | 24.2 | 37.8 | 38.5 | oom | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | dice_pmc2_k400 | 3.33 | - | - | err | - | - | 30.2 | 17.7 | >600 | 7.53 | 10.9 | 15.9 | 11.8 | 13.2 | 3.92 | 3.99 |  | 2.71 | 2.93 | 4.65 | 2.68 | 2.67 | 6.62 | 73 | 73.8 | >600 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | dice_pmc2_k800 | 7.01 | - | - | err | - | - | 52.4 | 57.1 | - | 12.7 | 17.9 | 20.5 | 20.1 | 20 | 6.44 | 6.61 |  | 5.48 | 5.41 | 7.16 | 5.43 | 5.44 | 9.1 | 156 | 157 | - | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | dice_pmc2_k1600 | 15.2 | - | - | err | - | - | 103 | 204 | - | 23.5 | 33.3 | 32.8 | 32.1 | 33 | 11.9 | 11.6 |  | 10.4 | 10.9 | 12.5 | 10.4 | 10.9 | 14.1 | 350 | 351 | - | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_simpleCaesar_k100 | 0.352 | err | 5.01 | err | 382 | >600 | 57.2 | >600 | 114 | 0.198 | 0.315 | 4.27 | 1.56 | 1.51 | 8.7 | 8.83 | 8.38 | 7.28 | 8.71 | 211 | 77.7 | 419 | >600 | 0.865 | 1.62 | 61.1 | alea | 2.7e-42 / 5.2e-12 |  | 5.9e-30 / 1.0e+00 |  | 2.7e-42 / 5.2e-12 |  | 2.7e-42 / 5.2e-12 |  | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.3e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.3e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.2e-12 | 6.8e-43 / 5.5e-12 | 5.9e-30 / 1.0e+00 | 4.8e-42 / 4.9e-12 | 4.8e-42 / 4.9e-12 | 4.8e-42 / 4.9e-12 | 2.7e-42 / 5.2e-12 |  | 2.7e-42 / 5.2e-12 |
-| dice_simpleCaesar_k300 | 0.867 | err | wrong | err | >600 | - | err | - | >600 | err | 0.66 | err | err | err | err | err | 17.2 | oom | err | >600 | >600 | err | - | underflow | underflow | 186 | alea | 2.7e-99 / 1.3e-11 |  | 5.0e-01 / 2.4e+87 |  |  |  |  |  |  |  | 2.7e-99 / 1.3e-11 |  |  |  |  |  | 1.7e-99 / 8.1e-12 |  |  |  |  |  |  |  |
-| dice_simpleCaesar_k1000 | 3.9 | err | oom | err | - | - | - | - | - | err | 1.91 | err | err | err | err | err | 52.1 | - | >600 | - | - | >600 | - | underflow | underflow | >600 | alea | 1.0e-302 / 1.9e-10 |  |  |  |  |  |  |  |  |  | 1.0e-302 / 1.9e-10 |  |  |  |  |  | 1.5e-302 / 2.8e-10 |  |  |  |  |  |  |  |
+| dice_simpleCaesar_k100 | 0.352 | err | 5.01 | err | 382 | >600 | 57.2 | >600 | 33.2 | 0.198 | 0.315 | 4.27 | 1.56 | 1.51 | 8.56 | 8.83 | 8.38 | 7.28 | 8.71 | 211 | 77.7 | 419 | >600 | 0.865 | 1.62 | >600 | alea | 2.7e-42 / 5.2e-12 |  | 5.9e-30 / 1.0e+00 |  | 2.7e-42 / 5.2e-12 |  | 2.7e-42 / 5.2e-12 |  | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.3e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.3e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.2e-12 | 6.8e-43 / 5.5e-12 | 5.9e-30 / 1.0e+00 | 4.8e-42 / 4.9e-12 | 4.8e-42 / 4.9e-12 | 4.8e-42 / 4.9e-12 | 2.7e-42 / 5.2e-12 |  | 2.7e-42 / 5.2e-12 |
+| dice_simpleCaesar_k300 | 0.867 | err | wrong | err | >600 | - | err | - | >600 | err | 0.66 | err | err | err | err | err | 16.9 | oom | err | >600 | >600 | err | - | underflow | underflow | - | alea | 2.7e-99 / 1.3e-11 |  | 5.0e-01 / 2.4e+87 |  |  |  |  |  |  |  | 2.7e-99 / 1.3e-11 |  |  |  |  |  | 1.7e-99 / 8.1e-12 |  |  |  |  |  |  |  |
+| dice_simpleCaesar_k1000 | 3.9 | err | oom | err | - | - | - | - | - | err | 1.91 | err | err | err | err | err | 51.4 | - | >600 | - | - | >600 | - | underflow | underflow | - | alea | 1.0e-302 / 1.9e-10 |  |  |  |  |  |  |  |  |  | 1.0e-302 / 1.9e-10 |  |  |  |  |  | 1.5e-302 / 2.8e-10 |  |  |  |  |  |  |  |
 | dice_simpleCaesar_k3000 | 23.3 | >600 | - | err | - | - | err | - | >600 | err | 7.74 | err | err | err | err | err | 159 | - | >600 | - | - | >600 | - | oom | oom | >600 | ace-Xlog | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_simpleCaesar_k10000 | 47.2 | - | - | err | - | - | - | - | - | err | 30.1 | err | err | err | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_simpleCaesar_k30000 | 142 | - | - | err | - | - | - | - | - | err | err | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
@@ -3754,257 +3711,254 @@ largest absolute and relative difference from the reference named in
 | family | instances | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Scallop | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Merlin | pyAgrum | pgmpy | libDAI | TensorInference.jl greedy | TensorInference.jl treesa | Roulette |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | arith | 28 | 26 | 2 of 28 | 0 of 28 | 1 of 28 | 3 of 28 | 2 of 28 | 19 of 28 | 18 of 28 | 20 of 28 | 2 of 28 | 13 of 28 | 12 of 28 | 19 of 28 | 9 of 28 | 9 of 28 | 20 of 25 | 19 of 24 | 14 of 22 | 14 of 22 | 13 of 21 | 14 of 22 | 12 of 20 | 15 of 21 | 22 of 25 |
-| hybit | 19 | 16 | 0 of 19 | 0 of 19 | 0 of 19 | 0 of 19 | 0 of 19 | 2 of 19 | 6 of 19 | 4 of 19 | 0 of 19 | 0 of 19 | 0 of 19 | 1 of 19 | 2 of 19 | 2 of 19 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 5 of 19 |
 | nodice | 69 | 68 | 32 of 66 | 51 of 58 | 1 of 69 | 49 of 63 | 35 of 56 | 59 of 64 | 50 of 55 | 57 of 64 | 3 of 32 | 63 of 67 | 61 of 66 | 63 of 66 | 61 of 66 | 62 of 67 | 61 of 64 | 53 of 63 | 53 of 60 | 54 of 60 | 52 of 66 | 54 of 60 | 39 of 59 | 50 of 55 | 61 of 65 |
 | pluck | 4 | 4 | 0 of 4 | 0 of 4 | 0 of 4 | 0 of 4 | 0 of 4 | 1 of 4 | 3 of 4 | 3 of 4 | 0 of 4 | 0 of 4 | 0 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 0 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 2 of 4 | 3 of 4 |
 
-**Geni.** Geni ran 117 instances and answered 34 (1 fail, 10 run out of
-memory, 57 time out, 15 answer wrongly). Its answers differ from the
+**Geni.** Geni ran 98 instances and answered 34 (1 fail, 4 run out of
+memory, 44 time out, 15 answer wrongly). Its answers differ from the
 reference's by at most 3.2e-06 relative (8.0e-07 absolute,
 arith_linext_small) over 34 instances. Geni's answer is wrong, zero or
 underflowed on brp4096-2, brp64-2, diamond-1000-p, diamond-10000-p,
-diamond-200-p and 10 more. Over the 112 instances given to both that
+diamond-200-p and 10 more. Over the 96 instances given to both that
 either answers, a run that does not answer counted at the 600 s limit,
-Geni takes 46929 s in all and tddlog 1479 s; over the 34 both answer,
+Geni takes 37329 s in all and tddlog 1052 s; over the 34 both answer,
 129 s against tddlog's 9.78. Geni is faster on 3 (hepar2 0.15 s against
 0.76, brp256-2 0.31 s against 1.29 and brp1024-2 1.24 s against 6.39).
 tddlog alone answers arith_book, arith_caesar_huge, arith_caesar_large,
-arith_caesar_medium, arith_caesar_small and 73 more.
+arith_caesar_medium, arith_caesar_small and 57 more.
 
-**noDice.** noDice ran 109 instances and answered 51 (9 fail, 29 run out
-of memory, 18 time out, 2 print zeros). Its answers differ from the
+**noDice.** noDice ran 90 instances and answered 51 (9 fail, 16 run out
+of memory, 12 time out, 2 print zeros). Its answers differ from the
 reference's by at most 4.9e-02 relative (4.6e-07 absolute, uf20-0990)
 over 51 instances. noDice's answer is wrong, zero or underflowed on
-3sat-0 and string_editing. Over the 103 instances given to both that
+3sat-0 and string_editing. Over the 87 instances given to both that
 either answers, a run that does not answer counted at the 600 s limit,
-noDice takes 33085 s in all and tddlog 1124 s; over the 51 both answer,
+noDice takes 23485 s in all and tddlog 697 s; over the 51 both answer,
 1885 s against tddlog's 8.68. tddlog alone answers arith_book,
 arith_caesar_huge, arith_caesar_large, arith_caesar_medium,
-arith_caesar_small and 47 more.
+arith_caesar_small and 31 more.
 
-**Psi.** Psi ran 120 instances and answered 2 (53 fail, 28 run out of
-memory, 37 time out). Its answers differ from the reference's by at most
+**Psi.** Psi ran 101 instances and answered 2 (52 fail, 17 run out of
+memory, 30 time out). Its answers differ from the reference's by at most
 4.4e-16 relative (2.2e-16 absolute, arith_linext_small) over 2
-instances. Over the 114 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, Psi takes 67397 s
-in all and tddlog 1547 s; over the 2 both answer, 197 s against tddlog's
+instances. Over the 98 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Psi takes 57797 s
+in all and tddlog 1120 s; over the 2 both answer, 197 s against tddlog's
 0.01. tddlog alone answers arith_book, arith_caesar_huge,
-arith_caesar_large, arith_caesar_medium, arith_caesar_small and 107
-more.
+arith_caesar_large, arith_caesar_medium, arith_caesar_small and 91 more.
 
-**Genfer.** Genfer ran 114 instances and answered 52 (17 fail, 39 run
-out of memory, 6 time out). Its answers differ from the reference's by
-at most 7.0e-14 relative (6.3e-14 absolute, diamond-2000-p) over 52
-instances. Over the 109 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, Genfer takes 34755
-s in all and tddlog 1479 s; over the 52 both answer, 555 s against
+**Genfer.** Genfer ran 95 instances and answered 52 (14 fail, 28 run out
+of memory, 1 time out). Its answers differ from the reference's by at
+most 7.0e-14 relative (6.3e-14 absolute, diamond-2000-p) over 52
+instances. Over the 93 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Genfer takes 25155
+s in all and tddlog 1051 s; over the 52 both answer, 555 s against
 tddlog's 11.4. Genfer is faster on 5 (diamond-2000-p 0.24 s against
 0.35, brp64-2 0.081 s against 0.28, hepar2 0.27 s against 0.76 and
 brp256-2 0.31 s against 1.29, the largest differences). tddlog alone
 answers arith_book, arith_caesar_huge, arith_caesar_large,
-arith_caesar_medium, arith_caesar_small and 52 more.
+arith_caesar_medium, arith_caesar_small and 36 more.
 
-**SPPL.** SPPL ran 107 instances and answered 37 (7 fail, 1 run out of
-memory, 62 time out). Its answers differ from the reference's by at most
+**SPPL.** SPPL ran 88 instances and answered 37 (3 fail, 1 run out of
+memory, 47 time out). Its answers differ from the reference's by at most
 8.4e-14 relative (7.6e-14 absolute, diamond-2000-p) over 37 instances.
-Over the 102 instances given to both that either answers, a run that
-does not answer counted at the 600 s limit, SPPL takes 40569 s in all
-and tddlog 1060 s; over the 37 both answer, 1569 s against tddlog's
-4.58. tddlog alone answers arith_book, arith_caesar_huge,
-arith_caesar_large, arith_caesar_medium, arith_caesar_small and 60 more.
+Over the 86 instances given to both that either answers, a run that does
+not answer counted at the 600 s limit, SPPL takes 30969 s in all and
+tddlog 633 s; over the 37 both answer, 1569 s against tddlog's 4.58.
+tddlog alone answers arith_book, arith_caesar_huge, arith_caesar_large,
+arith_caesar_medium, arith_caesar_small and 44 more.
 
-**Pluck.** Pluck ran 115 instances and answered 81 (6 fail, 25 run out
-of memory, 1 time out, 2 answer wrongly). Its answers differ from the
-reference's by at most 3.4e-13 relative (9.1e-15 absolute,
-arith_caesar_medium) over 81 instances. Pluck's answer is wrong, zero or
-underflowed on pcfg and string_editing. Over the 110 instances given to
-both that either answers, a run that does not answer counted at the 600
-s limit, Pluck takes 19489 s in all and tddlog 1080 s; over the 81 both
-answer, 2089 s against tddlog's 40.1. tddlog alone answers arith_book,
-arith_caesar_huge, arith_caesar_large, arith_disease_medium,
-arith_disease_small and 24 more.
+**Pluck.** Pluck ran 96 instances and answered 79 (6 fail, 9 run out of
+memory, 2 answer wrongly). Its answers differ from the reference's by at
+most 3.4e-13 relative (9.1e-15 absolute, arith_caesar_medium) over 79
+instances. Pluck's answer is wrong, zero or underflowed on pcfg and
+string_editing. Over the 94 instances given to both that either answers,
+a run that does not answer counted at the 600 s limit, Pluck takes 10855
+s in all and tddlog 657 s; over the 79 both answer, 1855 s against
+tddlog's 38.7. tddlog alone answers arith_book, arith_caesar_huge,
+arith_caesar_large, arith_disease_medium, arith_disease_small and 10
+more.
 
-**PITA.** PITA ran 106 instances and answered 77 (28 time out, 1 answer
+**PITA.** PITA ran 87 instances and answered 71 (15 time out, 1 answer
 wrongly). Its answers differ from the reference's by at most 1.0e+00
-relative (1.3e-16 absolute, arith_plankton) over 77 instances. PITA's
-answer is wrong, zero or underflowed on arith_caesar_small. Over the 101
+relative (1.3e-16 absolute, arith_plankton) over 71 instances. PITA's
+answer is wrong, zero or underflowed on arith_caesar_small. Over the 85
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, PITA takes 17507 s in all and tddlog 1058 s;
-over the 77 both answer, 3107 s against tddlog's 59.3. PITA is faster on
+counted at the 600 s limit, PITA takes 10478 s in all and tddlog 630 s;
+over the 71 both answer, 2078 s against tddlog's 54.2. PITA is faster on
 1 (sorted_list 2.2 s against 5.82). tddlog alone answers
 arith_caesar_huge, arith_caesar_large, arith_caesar_medium,
-arith_caesar_small, arith_disease_medium and 19 more.
+arith_caesar_small, arith_disease_medium and 9 more.
 
-**aspmc.** aspmc ran 115 instances and answered 84 (2 run out of memory,
-29 time out). Its answers differ from the reference's by at most 9.2e-09
-relative (4.7e-09 absolute, hybit_clickGraph) over 84 instances. Over
-the 110 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, aspmc takes 19681 s in all and tddlog
-1063 s; over the 84 both answer, 4081 s against tddlog's 75.5. aspmc is
+**aspmc.** aspmc ran 96 instances and answered 80 (1 run out of memory,
+15 time out). Its answers differ from the reference's by at most 6.1e-13
+relative (8.5e-16 absolute, arith_disease_small) over 80 instances. Over
+the 94 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, aspmc takes 11702 s in all and tddlog
+636 s; over the 80 both answer, 3302 s against tddlog's 72.4. aspmc is
 faster on 2 (sorted_list 5.09 s against 5.82 and uf50-0999 3.09 s
 against 13.1). tddlog alone answers arith_caesar_huge,
 arith_caesar_large, arith_disease_medium, arith_fw_large,
-arith_gcd_medium and 21 more.
+arith_gcd_medium and 9 more.
 
-**Scallop.** Scallop ran 83 instances and answered 5 (47 run out of
-memory, 31 time out). Its answers differ from the reference's by at most
+**Scallop.** Scallop ran 64 instances and answered 5 (35 run out of
+memory, 24 time out). Its answers differ from the reference's by at most
 4.4e-16 relative (2.2e-16 absolute, arith_linext_small) over 5
-instances. Over the 77 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, Scallop takes 43200
-s in all and tddlog 1117 s; over the 5 both answer, 0.48 s against
+instances. Over the 61 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Scallop takes 33600
+s in all and tddlog 690 s; over the 5 both answer, 0.48 s against
 tddlog's 0.036. tddlog alone answers arith_book, arith_caesar_huge,
-arith_caesar_large, arith_caesar_medium, arith_caesar_small and 67 more.
+arith_caesar_large, arith_caesar_medium, arith_caesar_small and 51 more.
 
-**Storm sparse.** Storm sparse ran 118 instances and answered 76 (1
-fail, 2 run out of memory, 39 time out). Its answers differ from the
+**Storm sparse.** Storm sparse ran 99 instances and answered 76 (1 fail,
+2 run out of memory, 20 time out). Its answers differ from the
 reference's by at most 1.3e-12 relative (7.7e-13 absolute,
-diamond-10000-p) over 76 instances. Over the 113 instances given to both
+diamond-10000-p) over 76 instances. Over the 97 instances given to both
 that either answers, a run that does not answer counted at the 600 s
-limit, Storm sparse takes 24385 s in all and tddlog 1617 s; over the 76
+limit, Storm sparse takes 14785 s in all and tddlog 1190 s; over the 76
 both answer, 2185 s against tddlog's 77.2. Storm sparse is faster on 4
 (hepar2 0.18 s against 0.76, brp256-2 0.27 s against 1.28, brp1024-2
 0.29 s against 6.09 and brp4096-2 0.4 s against 45.1). tddlog alone
 answers arith_book, arith_caesar_huge, arith_caesar_large,
-arith_disease_medium, arith_disease_small and 32 more.
+arith_disease_medium, arith_disease_small and 16 more.
 
-**Storm exact.** Storm exact ran 117 instances and answered 73 (6 fail,
-5 run out of memory, 33 time out). Its answers differ from the
-reference's by at most 3.4e-13 relative (9.1e-15 absolute,
-arith_caesar_medium) over 73 instances. Over the 112 instances given to
-both that either answers, a run that does not answer counted at the 600
-s limit, Storm exact takes 25220 s in all and tddlog 1609 s; over the 73
-both answer, 1820 s against tddlog's 75.7. Storm exact is faster on 5
-(brp64-2 0.27 s against 0.27, brp4096-2 45 s against 45.1, hepar2 0.19 s
-against 0.76 and brp256-2 0.36 s against 1.28, the largest differences).
-tddlog alone answers arith_book, arith_caesar_huge, arith_caesar_large,
-arith_disease_medium, arith_disease_small and 34 more.
+**Storm exact.** Storm exact ran 98 instances and answered 73 (5 fail, 5
+run out of memory, 15 time out). Its answers differ from the reference's
+by at most 3.4e-13 relative (9.1e-15 absolute, arith_caesar_medium) over
+73 instances. Over the 96 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Storm exact takes
+15620 s in all and tddlog 1182 s; over the 73 both answer, 1820 s
+against tddlog's 75.7. Storm exact is faster on 5 (brp64-2 0.27 s
+against 0.27, brp4096-2 45 s against 45.1, hepar2 0.19 s against 0.76
+and brp256-2 0.36 s against 1.28, the largest differences). tddlog alone
+answers arith_book, arith_caesar_huge, arith_caesar_large,
+arith_disease_medium, arith_disease_small and 18 more.
 
-**Storm dd.** Storm dd ran 117 instances and answered 84 (7 fail, 1 run
-out of memory, 25 time out). Its answers differ from the reference's by
-at most 6.0e-13 relative (1.3e-29 absolute, arith_caesar_large) over 83
-instances. Over the 112 instances given to both that either answers, a
+**Storm dd.** Storm dd ran 98 instances and answered 83 (5 fail, 1 run
+out of memory, 9 time out). Its answers differ from the reference's by
+at most 6.0e-13 relative (1.3e-29 absolute, arith_caesar_large) over 82
+instances. Over the 96 instances given to both that either answers, a
 run that does not answer counted at the 600 s limit, Storm dd takes
-19832 s in all and tddlog 2267 s; over the 83 both answer, 3006 s
-against tddlog's 247. Storm dd is faster on 1 (coupon2-18-obs 18 s
+10801 s in all and tddlog 1840 s; over the 82 both answer, 2975 s
+against tddlog's 246. Storm dd is faster on 1 (coupon2-18-obs 18 s
 against 54.4). Only Storm dd answers coupon2-20-obs. tddlog alone
 answers arith_book, arith_caesar_huge, arith_disease_medium,
-arith_disease_small, arith_fw_large and 23 more.
+arith_disease_small, arith_fw_large and 8 more.
 
-**PRISM sparse.** PRISM sparse ran 117 instances and answered 73 (2
-fail, 6 run out of memory, 36 time out). Its answers differ from the
-reference's by at most 3.4e-02 relative (6.2e-15 absolute, hmm) over 73
-instances. Over the 112 instances given to both that either answers, a
+**PRISM sparse.** PRISM sparse ran 98 instances and answered 71 (1 fail,
+6 run out of memory, 20 time out). Its answers differ from the
+reference's by at most 3.4e-02 relative (6.2e-15 absolute, hmm) over 71
+instances. Over the 96 instances given to both that either answers, a
 run that does not answer counted at the 600 s limit, PRISM sparse takes
-25683 s in all and tddlog 1614 s; over the 73 both answer, 2283 s
-against tddlog's 62.7. PRISM sparse is faster on 2 (brp1024-2 4.16 s
+16588 s in all and tddlog 1187 s; over the 71 both answer, 1588 s
+against tddlog's 61.9. PRISM sparse is faster on 2 (brp1024-2 4.16 s
 against 6.09 and brp4096-2 25.1 s against 45.1). tddlog alone answers
 arith_book, arith_caesar_huge, arith_caesar_large, arith_caesar_medium,
-arith_disease_medium and 34 more.
+arith_disease_medium and 20 more.
 
-**PRISM hybrid.** PRISM hybrid ran 118 instances and answered 74 (2
-fail, 6 run out of memory, 36 time out). Its answers differ from the
-reference's by at most 3.4e-02 relative (6.2e-15 absolute, hmm) over 74
-instances. Over the 113 instances given to both that either answers, a
+**PRISM hybrid.** PRISM hybrid ran 99 instances and answered 72 (1 fail,
+6 run out of memory, 20 time out). Its answers differ from the
+reference's by at most 3.4e-02 relative (6.2e-15 absolute, hmm) over 72
+instances. Over the 97 instances given to both that either answers, a
 run that does not answer counted at the 600 s limit, PRISM hybrid takes
-26015 s in all and tddlog 1669 s; over the 74 both answer, 2615 s
-against tddlog's 70.3. PRISM hybrid is faster on 2 (brp1024-2 3.58 s
+16893 s in all and tddlog 1242 s; over the 72 both answer, 1893 s
+against tddlog's 69.6. PRISM hybrid is faster on 2 (brp1024-2 3.58 s
 against 6.09 and brp4096-2 29.1 s against 45.1). tddlog alone answers
 arith_book, arith_caesar_huge, arith_caesar_large, arith_caesar_medium,
-arith_disease_medium and 34 more.
+arith_disease_medium and 20 more.
 
-**Ace.** Ace ran 94 instances and answered 82 (1 fail, 11 time out). Its
+**Ace.** Ace ran 93 instances and answered 82 (1 fail, 10 time out). Its
 answers differ from the reference's by at most 6.0e-13 relative (3.3e-16
-absolute, arith_caesar_large) over 82 instances. Over the 94 instances
+absolute, arith_caesar_large) over 82 instances. Over the 93 instances
 given to both that either answers, a run that does not answer counted at
-the 600 s limit, Ace takes 8996 s in all and tddlog 822 s; over the 82
+the 600 s limit, Ace takes 8396 s in all and tddlog 821 s; over the 82
 both answer, 1796 s against tddlog's 525. Ace is faster on 1 (brp16384-2
 181 s against 446). tddlog alone answers arith_book, arith_caesar_huge,
-arith_disease_small, arith_gcd_medium, arith_triangle_large and 7 more.
+arith_disease_small, arith_gcd_medium, arith_triangle_large and 6 more.
 
-**Ace c2d.** Ace c2d ran 92 instances and answered 73 (2 fail, 12 time
+**Ace c2d.** Ace c2d ran 91 instances and answered 73 (1 fail, 12 time
 out, 5 answer wrongly). Its answers differ from the reference's by at
 most 6.0e-13 relative (1.1e-16 absolute, arith_caesar_large) over 73
 instances. Ace c2d's answer is wrong, zero or underflowed on
 diamond-10000-p, diamond-2000-p, diamond-3000-p, diamond-4000-p and
-diamond-5000-p. Over the 92 instances given to both that either answers,
+diamond-5000-p. Over the 91 instances given to both that either answers,
 a run that does not answer counted at the 600 s limit, Ace c2d takes
-12779 s in all and tddlog 713 s; over the 73 both answer, 1379 s against
+12179 s in all and tddlog 712 s; over the 73 both answer, 1379 s against
 tddlog's 64.9. tddlog alone answers arith_book, arith_caesar_huge,
-arith_disease_small, arith_gcd_small, arith_triangle_large and 14 more.
+arith_disease_small, arith_gcd_small, arith_triangle_large and 13 more.
 
-**Merlin.** Merlin ran 87 instances and answered 67 (5 fail, 12 run out
+**Merlin.** Merlin ran 86 instances and answered 67 (5 fail, 11 run out
 of memory, 2 time out, 1 print zeros). Its answers differ from the
 reference's by at most 1.0e+00 relative (4.7e-17 absolute,
 arith_caesar_large) over 67 instances. Merlin's answer is wrong, zero or
-underflowed on hmm. Over the 87 instances given to both that either
+underflowed on hmm. Over the 86 instances given to both that either
 answers, a run that does not answer counted at the 600 s limit, Merlin
-takes 12378 s in all and tddlog 237 s; over the 67 both answer, 378 s
+takes 11778 s in all and tddlog 236 s; over the 67 both answer, 378 s
 against tddlog's 17. Merlin is faster on 1 (hepar2 0.23 s against 0.76).
 tddlog alone answers arith_book, arith_caesar_huge, arith_disease_small,
-arith_fw_large, arith_gcd_small and 15 more.
+arith_fw_large, arith_gcd_small and 14 more.
 
-**pyAgrum.** pyAgrum ran 87 instances and answered 69 (2 fail, 11 run
+**pyAgrum.** pyAgrum ran 86 instances and answered 69 (2 fail, 10 run
 out of memory, 5 time out). Its answers differ from the reference's by
 at most 5.1e-12 relative (4.2e-29 absolute, arith_caesar_large) over 69
-instances. Over the 87 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, pyAgrum takes 12132
-s in all and tddlog 237 s; over the 69 both answer, 1332 s against
+instances. Over the 86 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, pyAgrum takes 11532
+s in all and tddlog 236 s; over the 69 both answer, 1332 s against
 tddlog's 17.3. pyAgrum is faster on 1 (hepar2 0.4 s against 0.76).
 tddlog alone answers arith_book, arith_caesar_huge, arith_disease_small,
-arith_fw_large, arith_gcd_small and 13 more.
+arith_fw_large, arith_gcd_small and 12 more.
 
-**pgmpy.** pgmpy ran 92 instances and answered 66 (1 fail, 4 run out of
-memory, 21 time out). Its answers differ from the reference's by at most
+**pgmpy.** pgmpy ran 91 instances and answered 66 (1 fail, 4 run out of
+memory, 20 time out). Its answers differ from the reference's by at most
 4.2e-12 relative (4.5e-13 absolute, insurance) over 66 instances. Over
-the 92 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, pgmpy takes 17808 s in all and tddlog
-246 s; over the 66 both answer, 2208 s against tddlog's 21.4. tddlog
+the 91 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, pgmpy takes 17208 s in all and tddlog
+245 s; over the 66 both answer, 2208 s against tddlog's 21.4. tddlog
 alone answers arith_book, arith_caesar_large, arith_disease_small,
-arith_fw_large, arith_gcd_small and 21 more.
+arith_fw_large, arith_gcd_small and 20 more.
 
-**libDAI.** libDAI ran 87 instances and answered 69 (4 fail, 10 run out
+**libDAI.** libDAI ran 86 instances and answered 69 (3 fail, 10 run out
 of memory, 4 time out). Its answers differ from the reference's by at
 most 5.1e-12 relative (4.2e-29 absolute, arith_caesar_large) over 69
-instances. Over the 87 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, libDAI takes 12486
-s in all and tddlog 237 s; over the 69 both answer, 1686 s against
+instances. Over the 86 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, libDAI takes 11886
+s in all and tddlog 236 s; over the 69 both answer, 1686 s against
 tddlog's 18.8. libDAI is faster on 1 (hepar2 0.35 s against 0.76).
 tddlog alone answers arith_book, arith_caesar_huge, arith_disease_small,
-arith_fw_large, arith_gcd_small and 13 more.
+arith_fw_large, arith_gcd_small and 12 more.
 
-**TensorInference.jl greedy.** TensorInference.jl greedy ran 84
-instances and answered 52 (17 fail, 9 run out of memory, 6 time out).
+**TensorInference.jl greedy.** TensorInference.jl greedy ran 83
+instances and answered 52 (17 fail, 8 run out of memory, 6 time out).
 Its answers differ from the reference's by at most 4.5e-14 relative
-(4.3e-14 absolute, diamond-1000-p) over 52 instances. Over the 84
+(4.3e-14 absolute, diamond-1000-p) over 52 instances. Over the 83
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, TensorInference.jl greedy takes 19670 s in
-all and tddlog 188 s; over the 52 both answer, 470 s against tddlog's
+counted at the 600 s limit, TensorInference.jl greedy takes 19070 s in
+all and tddlog 187 s; over the 52 both answer, 470 s against tddlog's
 4.74. TensorInference.jl greedy is faster on 1 (hepar2 0.28 s against
 0.76). tddlog alone answers arith_book, arith_caesar_medium,
-arith_disease_small, arith_fw_large, arith_gcd_small and 27 more.
+arith_disease_small, arith_fw_large, arith_gcd_small and 26 more.
 
-**TensorInference.jl treesa.** TensorInference.jl treesa ran 81
-instances and answered 67 (5 run out of memory, 9 time out). Its answers
+**TensorInference.jl treesa.** TensorInference.jl treesa ran 80
+instances and answered 67 (5 run out of memory, 8 time out). Its answers
 differ from the reference's by at most 4.3e-14 relative (1.2e-16
-absolute, arith_plankton) over 67 instances. Over the 81 instances given
+absolute, arith_plankton) over 67 instances. Over the 80 instances given
 to both that either answers, a run that does not answer counted at the
-600 s limit, TensorInference.jl treesa takes 16893 s in all and tddlog
-190 s; over the 67 both answer, 8493 s against tddlog's 19. tddlog alone
+600 s limit, TensorInference.jl treesa takes 16293 s in all and tddlog
+189 s; over the 67 both answer, 8493 s against tddlog's 19. tddlog alone
 answers arith_caesar_medium, arith_disease_small, arith_fw_large,
-arith_gcd_small, arith_triangle_medium and 9 more.
+arith_gcd_small, arith_triangle_medium and 8 more.
 
-**Roulette.** Roulette ran 113 instances and answered 91 (16 run out of
-memory, 6 time out). Its answers differ from the reference's by at most
-1.0e+00 relative (1.2e-57 absolute, arith_caesar_huge) over 91
-instances. Over the 110 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, Roulette takes
-13186 s in all and tddlog 1747 s; over the 91 both answer, 1786 s
-against tddlog's 417. Roulette is faster on 10 (arith_caesar_large 1.33
-s against 1.49, water 0.41 s against 0.61, arith_triangle_small 0.21 s
+**Roulette.** Roulette ran 94 instances and answered 86 (4 run out of
+memory, 4 time out). Its answers differ from the reference's by at most
+1.0e+00 relative (1.2e-57 absolute, arith_caesar_huge) over 86
+instances. Over the 94 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Roulette takes 6308
+s in all and tddlog 1110 s; over the 86 both answer, 1508 s against
+tddlog's 337. Roulette is faster on 10 (arith_caesar_large 1.33 s
+against 1.49, water 0.41 s against 0.61, arith_triangle_small 0.21 s
 against 0.52 and arith_caesar_medium 0.58 s against 1.92, the largest
 differences). tddlog alone answers arith_disease_small,
-arith_gcd_medium, arith_plankton, hybit_addFun_max, hybit_addFun_sum and
-14 more.
+arith_gcd_medium, arith_plankton, brp16384-2, coupon2-14-obs and 3 more.
 
 | instance | flips | gates | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Scallop | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Merlin | pyAgrum | pgmpy | libDAI | TI greedy | TI treesa | Roulette | Roulette process | ProbLog | ref | tddlog diff | Geni diff | noDice diff | Psi diff | Genfer diff | SPPL diff | Pluck diff | PITA diff | aspmc diff | Scallop diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Ace diff | Ace c2d diff | Merlin diff | pyAgrum diff | pgmpy diff | libDAI diff | TI greedy diff | TI treesa diff | Roulette diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -4036,25 +3990,6 @@ arith_gcd_medium, arith_plankton, hybit_addFun_max, hybit_addFun_sum and
 | arith_triangle_medium | 57 | 1298 | 0.472 | >600 | oom | >600 | oom | >600 | 7.58 | 5.46 | 158 | >600 | >600 | err | 184 | >600 | >600 | 112 | 79.9 | - | - | - | - | - | oom | 0.81 | 1.56 | >600 | alea | 1.8e-15 / 2.9e-14 |  |  |  |  |  | 1.1e-16 / 1.4e-15 | 5.7e-17 / 1.9e-13 | 1.1e-16 / 1.4e-15 |  |  |  | 2.2e-16 / 2.2e-15 |  |  | 4.1e-13 / 4.4e-13 | 3.1e-14 / 3.3e-14 |  |  |  |  |  |  | 1.1e-16 / 1.3e-15 |
 | arith_triangle_small | 48 | 1277 | 0.243 | >600 | oom | >600 | oom | >600 | 6.39 | 3.42 | 29.1 | >600 | 272 | 381 | 49.4 | >600 | >600 | 76.4 | 46.1 | oom | oom | oom | oom | err | 152 | 0.211 | 0.91 | >600 | alea | 2.8e-16 / 5.0e-15 |  |  |  |  |  | 1.4e-17 / 1.1e-15 | 3.1e-17 / 3.0e-13 | 6.9e-18 / 1.3e-15 |  | 4.4e-16 / 9.8e-16 | 6.9e-18 / 1.1e-15 | 5.4e-20 / 1.1e-15 |  |  | 1.4e-14 / 2.5e-14 | 4.0e-14 / 4.3e-14 |  |  |  |  |  | 8.7e-19 / 9.8e-16 | 1.4e-17 / 1.1e-15 |
 | arith_tugofwar | 44 | 1372 | 0.107 | >600 | >600 | >600 | oom | >600 | 7.99 | 1.96 | 194 | oom | >600 | >600 | 285 | >600 | >600 | 66.9 | 82.9 | oom | oom | oom | oom | oom | oom | 0.166 | 0.869 | >600 | alea | 7.8e-16 / 8.0e-16 |  |  |  |  |  | 2.2e-16 / 2.3e-16 | 2.2e-16 / 2.3e-16 | 4.4e-16 / 4.6e-16 |  |  |  | 3.3e-16 / 3.4e-16 |  |  | 3.3e-16 / 3.4e-16 | 4.4e-16 / 4.6e-16 |  |  |  |  |  |  | 3.3e-16 / 3.4e-16 |
-| hybit_GPA | 94168 | 516070 | 29.1 | oom | oom | >600 | >600 | err | oom | >600 | >600 | >600 | >600 | >600 | err | >600 | >600 | - | - | - | - | - | - | - | - | 39.1 | 42.7 | oom | alea | 1.1e-16 / 1.8e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-16 / 3.6e-16 |
-| hybit_addFun_max | 604 | 26275 | 16.3 | >600 | oom | oom | oom | >600 | oom | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | oom | oom | >600 | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_addFun_sum | 196 | 3820 | 0.637 | >600 | >600 | >600 | oom | >600 | oom | 142 | >600 | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | oom | oom | >600 | alea | 6.7e-16 / 1.3e-15 |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_altermu2 | 80350 | 457880 | oom | oom | oom | >600 | >600 | err | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | >600 | >600 | >600 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_clickGraph | 208 | 765 | 0.294 | >600 | >600 | >600 | oom | >600 | oom | 510 | 4.14 | oom | >600 | >600 | >600 | 279 | 298 | - | - | - | - | - | - | - | - | oom | oom | 8.3 | problog | 4.7e-09 / 9.2e-09 |  |  |  |  |  |  | 4.7e-09 / 9.2e-09 | 4.7e-09 / 9.2e-09 |  |  |  |  | 4.7e-09 / 9.2e-09 | 4.7e-09 / 9.2e-09 |  |  |  |  |  |  |  |  |  |
-| hybit_clinicalTrial1 | 2419 | 12800 | 1.8 | >600 | >600 | oom | oom | >600 | oom | >600 | 419 | oom | >600 | >600 | >600 | err | err | - | - | - | - | - | - | - | - | oom | oom | 23.7 | alea | 4.4e-16 / 2.6e-15 |  |  |  |  |  |  |  | 5.6e-16 / 3.3e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_clinicalTrial2 | 221 | 1150 | 0.034 | >600 | oom | err | oom | >600 | oom | 175 | 9.07 | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | oom | oom | 30.9 | alea | 3.6e-15 / 7.1e-15 |  |  |  |  |  |  | 1.0e-13 / 2.1e-13 | 4.4e-16 / 9.0e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_coinBias | 37026 | 226532 | >600 | oom | oom | oom | >600 | err | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | oom | oom | oom | alea |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_conjugate_gaussians | 249 | 4198 | 0.924 | >600 | oom | >600 | oom | >600 | oom | >600 | >600 | oom | >600 | >600 | err | >600 | >600 | - | - | - | - | - | - | - | - | oom | oom | >600 | alea | 2.7e-15 / 6.5e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_normal_mixture_mu1 | 5289 | 35812 | 179 | >600 | oom | oom | err | >600 | oom | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | oom | oom | >600 | alea | 1.3e-14 / 1.2e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_normal_mixture_mu2 | 7913 | 63750 | 114 | oom | oom | oom | err | >600 | oom | >600 | oom | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | oom | oom | >600 | alea | 1.9e-14 / 2.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_normal_mixture_theta | 10537 | 118560 | 19.8 | oom | oom | oom | >600 | >600 | oom | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | oom | oom | >600 | exact | 2.2e-16 / 5.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_pi | 24 | 12633 | 0.939 | >600 | oom | oom | oom | >600 | oom | 33.5 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | err | oom | oom | >600 | err | oom | >600 | 12.4 | 13.4 | >600 | alea | 5.6e-17 / 1.2e-16 |  |  |  |  |  |  | 5.6e-17 / 1.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 1.2e-16 |
-| hybit_spacex | 513 | 3195 | oom | >600 | >600 | oom | oom | >600 | oom | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | >600 | >600 | >600 | alea |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_trueskill | 376 | 5592 | 34.3 | >600 | >600 | >600 | oom | >600 | oom | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | oom | oom | >600 | alea | 1.7e-16 / 3.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hybit_tug_of_war | 550 | 2720 | 0.424 | >600 | >600 | oom | oom | >600 | 10 | >600 | >600 | oom | >600 | >600 | 31.4 | 416 | 424 | - | - | - | - | - | - | - | - | oom | oom | >600 | tddlog | ref |  |  |  |  |  | 5.0e-16 / 1.0e-15 |  |  |  |  |  | 5.6e-16 / 1.1e-15 | 4.4e-16 / 8.9e-16 | 4.4e-16 / 8.9e-16 |  |  |  |  |  |  |  |  |  |
-| hybit_weekend | 98303 | 516022 | 21 | oom | oom | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | err | >600 | >600 | >600 | - | - | - | - | - | - | - | - | 39.2 | 42.8 | oom | alea | 8.3e-16 / 2.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.8e-16 / 2.1e-15 |
-| hybit_zeroone_w1 | 44 | 8780 | 0.956 | >600 | oom | oom | oom | >600 | 223 | 17.7 | 347 | >600 | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | 15.2 | 24.8 | >600 | alea | 3.9e-15 / 7.7e-15 |  |  |  |  |  | 8.9e-16 / 1.8e-15 | 3.2e-13 / 6.5e-13 | 1.0e-15 / 2.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 8.9e-16 / 1.8e-15 |
-| hybit_zeroone_w2 | 50 | 13588 | 2.24 | >600 | oom | oom | err | >600 | oom | 151 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | 172 | 186 | >600 | alea | 1.1e-13 / 1.6e-13 |  |  |  |  |  |  | 5.8e-13 / 1.7e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.7e-16 / 1.3e-15 |
 | nodice_3sat-0 |  |  | 0.396 | >600 | zero | oom | oom | >600 | 22.6 | 16.6 | 2.74 | >600 | >600 | err | 21 | >600 | >600 | >600 | >600 | oom | oom | oom | oom | oom | oom | 3.92 | 4.75 | >600 | alea | 1.3e-22 / 1.1e-15 |  |  |  |  |  | 1.3e-22 / 1.1e-15 | 1.3e-22 / 1.1e-15 | 1.3e-22 / 1.1e-15 |  |  |  | 1.3e-22 / 1.1e-15 |  |  |  |  |  |  |  |  |  |  | 1.3e-22 / 1.1e-15 |
 | nodice_alarm |  |  | 0.047 | 0.769 | 465 | >600 | 1.48 | 6.04 | 9.41 | 29.2 | 8.56 | oom | 0.209 | 0.236 | 3.12 | 1.26 | 1.29 | 2.83 | 3.07 | 0.29 | 0.602 | 3.34 | 0.681 | 0.72 | 139 | 458 | 459 | 2.18 | alea | 8.3e-17 / 4.1e-16 | 5.1e-08 / 2.1e-07 | 2.4e-07 / 1.2e-06 |  | 2.2e-16 / 5.5e-16 | 2.2e-16 / 5.5e-16 | 5.6e-17 / 1.4e-16 | 3.9e-16 / 1.1e-15 | 2.2e-16 / 8.1e-16 |  | 1.7e-16 / 5.4e-16 | 1.1e-16 / 2.7e-16 | 2.2e-16 / 8.1e-16 | 5.6e-17 / 1.4e-16 | 5.6e-17 / 1.4e-16 | 5.6e-17 / 1.4e-16 | 1.7e-16 / 4.3e-16 | 2.4e-07 / 1.2e-06 | 3.1e-13 / 7.9e-13 | 3.1e-13 / 7.9e-13 | 3.1e-13 / 7.9e-13 | 2.2e-16 / 5.7e-16 | 2.2e-16 / 5.7e-16 | 1.1e-16 / 2.8e-16 |
 | nodice_brp10-2 |  |  | 0.077 | 0.017 | 102 | err | 0.017 | 2.44 | 8.28 | 0.641 | 3.62 | - | 0.264 | 0.266 | 0.736 | 2.2 | 2.17 | 2.12 | 2.22 | 0.133 | 0.361 | 7.77 | 0.138 | 0.921 | 44.4 | 0.047 | 0.747 | 1.11 | alea | 1.1e-16 / 1.1e-16 | 4.4e-09 / 4.4e-09 | 4.0e-07 / 4.0e-07 |  | 2.2e-16 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 0.0e+00 / 0.0e+00 |  | 7.8e-16 / 7.8e-16 | 0.0e+00 / 0.0e+00 | 4.4e-16 / 4.4e-16 | 3.3e-16 / 3.3e-16 | 3.3e-16 / 3.3e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 | 4.0e-07 / 4.0e-07 | 2.5e-13 / 2.5e-13 | 2.5e-13 / 2.5e-13 | 2.5e-13 / 2.5e-13 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 |

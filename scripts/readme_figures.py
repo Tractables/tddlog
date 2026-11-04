@@ -29,12 +29,15 @@ given at least 20 of its instances), and their legends' numbers are the
 data's, which the results page shows.
 
 tddlog above is a category's `mine` (rule 26): plain tddlog, where it read
-the program with its own front ends, and each pipeline where another
-system's code ran first and handed it the inference (Alea.jl+tddlog,
-tddlog on the circuit Alea.jl builds). Exactly one of them is given each
-instance; each is drawn as a curve of its own in tddlog's colour (a
-pipeline dashed or dotted), and the texts, the scatter plot and the
-comparisons take each instance's (the data's vs[x]['me'] names them).
+the program with its own front ends, unanswered (unread) on a type's
+instances that only another system's front end reads, and each pipeline
+where another system's code ran first and handed it the inference
+(Alea.jl+tddlog, tddlog on the circuit Alea.jl builds), a system of its
+own. Each is drawn as a curve of its own in tddlog's colour (a pipeline
+dashed or dotted), and the texts, the scatter plot and the comparisons
+take each row's subject, plain tddlog in a type (the data's vs[x]['me']
+names them). An integration on another system's export (Roulette+ProbLog)
+is drawn in its system's colour, dotted.
 
 Writes, as SVG:
   overview          for each type, tddlog's answers and, for each of its
@@ -117,12 +120,18 @@ def load(path):
     return data
 
 
-def colours(categories):
-    """{system: (colour, line style)}; a system of the data without a colour
-    stops the figures."""
-    missing = sorted({s for c in categories for s in c['systems']} - set(COLOURS))
+def colours(categories, via=None):
+    """{system: (colour, line style)}, an integration on an export (via:
+    {key: [exporter, system]}, Roulette+ProbLog) its system's colour, dotted
+    (dashed where the system's is dotted); a system of the data without a
+    colour stops the figures."""
+    out = dict(COLOURS)
+    for k, (_, x) in (via or {}).items():
+        if k not in out and x in COLOURS:
+            out[k] = (COLOURS[x][0], DASH if COLOURS[x][1] == DOT else DOT)
+    missing = sorted({s for c in categories for s in c['systems']} - set(out))
     assert not missing, f'systems without a colour (COLOURS): {missing}'
-    return COLOURS
+    return out
 
 
 def answered(v):
@@ -146,9 +155,9 @@ def is_mine(s):
 
 def my_keys(cat):
     """The row's subject, row by row: the first of the category's `mine`
-    given the instance (panels.subject: tddlog where it ran, else the
-    pipeline it was given to; a pipeline run beside tddlog is a curve of
-    its own, not a subject)."""
+    given the instance (panels.subject: tddlog in a type, unread where
+    only another system's front end read the program; a pipeline is a
+    curve of its own, not a subject)."""
     js = [(m, 4 + cat['systems'].index(m)) for m in cat['mine']]
     return [next((m for m, j in js if r[j] is not None), None) for r in cat['rows']]
 
@@ -650,7 +659,7 @@ def main():
     data = load(path)
     global FLOOR
     FLOOR = data['measure']['floor']  # the data's, as its numbers were computed with it
-    names, col = data["names"], colours(data["categories"])
+    names, col = data["names"], colours(data["categories"], data.get("via"))
     numbers = {}
     for cat in data['categories']:
         assert cat['drawn'][:len(cat['mine'])] == cat['mine'], f"{cat['key']}: tddlog not drawn"

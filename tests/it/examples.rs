@@ -154,8 +154,17 @@ fn one(
     projection: Projection,
 ) {
     let what = format!("{file} ({strategy:?}, {projection})");
-    let run = common::run(source, &common::options(strategy, projection))
-        .unwrap_or_else(|e| panic!("{what}: {e}"));
+    // A program whose observed query leaves no atom another component
+    // reads, `families` refuses, as `indicated` has it.
+    let run = match common::run(source, &common::options(strategy, projection)) {
+        Err(tddlog::Error::Vtree(e))
+            if matches!(strategy, Strategy::Trial(Kind::Families { .. }))
+                && e.contains("reads no atom through one") =>
+        {
+            return;
+        }
+        run => run.unwrap_or_else(|e| panic!("{what}: {e}")),
+    };
     assert_answers(
         &what,
         &run.results.expect("evidence is consistent"),

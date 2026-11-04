@@ -2516,8 +2516,15 @@ programs and the networks natively, and the Dice programs and cplint's
 LPADs in the runs since it reads them itself, which were given to it
 before as `dice2problog.py`'s and `lpad2problog.py`'s translations; it is
 given translations of the Roulette and Geni programs (`gen_roulette.py`,
-`gen_geni.py`) and of the bit-blasted and integer programs (the circuit
-Alea.jl builds). Each system's page on the results page
+`gen_geni.py`). It reads no file of the programs that exist only as
+Alea.jl source (the bit-blasted and integer programs, and Pluck's
+sequence models as ported to Alea.jl) or of Circulette's netlists: the
+runs there are Alea.jl+tddlog's and Roulette+tddlog's, each a system of
+its own, and tddlog counts as unanswered on them in their type (class
+`u`, not read). On those instances every other system reads the
+exporter's export too and is named after both, Alea.jl+ProbLog or
+Roulette+Ace, classified by the exporter's tddlog row: the same front end
+read the same program, and only the inference differs. Each system's page on the results page
 evaluates it separately on the instances native to it, its own among
 them, and on those translated for it.
 
@@ -2612,7 +2619,7 @@ the same model) has the class of the program it is written from.
 | merlin, agrum, pgmpy, libdai, tensorinference | uai, uai_pr, uaipr, uaitpr, uaiihler | all | native | a UAI network, the tool's own input |
 | merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large | all | native | the network converted to a UAI file (gen_bn.py --uai), the same variables and tables |
 | merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | native | the Dice and Roulette papers' Bayesian networks converted to UAI files (gen_bn.py --uai), the same variables and tables |
-| ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni, circulette | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
 | problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | tddlog, problog, pita, aspmc | dice | `bn_` | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a Dice program of nested conditionals over discretes written from the network, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
@@ -2626,21 +2633,19 @@ the same model) has the class of the program it is written from.
 | tddlog, problog, pita, aspmc | std | `dice_` | translated | the Dice paper's program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
 | provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
-| psouffle | std, lit, tpch, biomine, circulette | all | translated | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
-| scallop | std, lit, tpch, biomine, std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler, dice, ppl, bitblast, roulette, geni, circulette | all | translated | the ground program tddlog --ground prints of the ProbLog program (under --pr, of its P(e) program), as Scallop relations and rules (ground2scallop.py) |
+| psouffle | std, lit, tpch, biomine | all | translated | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
+| scallop | std, lit, tpch, biomine, std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler, dice, ppl, bitblast, roulette, geni | all | translated | the ground program tddlog --ground prints of the ProbLog program (under --pr, of its P(e) program), as Scallop relations and rules (ground2scallop.py) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std, lit, tpch, biomine | all | translated | Dice programs of the ground program (ground2net.py) |
 | dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
 | nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
 | alea | ppl | `pluck_` | translated | the Dice.jl versions of Pluck's sequence models in the paper's artifact, ported to Alea.jl (Pluck's own programs are the models) |
-| alea-tddlog | ppl | `pluck_` | translated | the Alea.jl port of Pluck's sequence model (Pluck's own programs are the models), whose circuit Alea.jl hands to tddlog |
-| alea-tddlog | ppl, bitblast | `(bb\|arith\|pluck)_` | native | the Alea.jl program, which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog as ProbLog (Alea.jl's tddlog backend) |
-| roulette-tddlog | circulette | all | native | the netlist, which circulette.rkt runs on Roulette's package roulette-lib up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
+| alea-tddlog | ppl | `pluck_` | translated | the Alea.jl port of Pluck's sequence model (Pluck's own programs are the models), whose circuit Alea.jl hands to tddlog, and to each other system X of Alea.jl+X as Alea.jl+tddlog's circuit row says |
+| alea-tddlog | ppl, bitblast | `(bb\|arith\|pluck)_` | native | the Alea.jl program, which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog as ProbLog (Alea.jl's tddlog backend), and to each other system X of Alea.jl+X as that ProbLog program, its ground program's network (ground2net.py) or the Dice programs of its gates, translated into X's language where X reads another (dice2roulette.py and the like) |
+| roulette-tddlog | circulette | all | native | the netlist, which circulette.rkt runs on Roulette's package roulette-lib up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine), and to each other system X of Roulette+X as that ProbLog program, a Soufflé program of it (problog2souffle.py), Scallop relations of its ground program (ground2scallop.py) or a network of its ground program (ground2net.py) |
 | roulette-tddlog | roulette | all | native | the Roulette paper's program, which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
 | roulette-tddlog | dice, ppl, geni | all | translated | a Dice program translated for Roulette (dice2roulette.py), which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
-| problog, pita, aspmc, alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl, bitblast | `(bb\|arith\|pluck)_` | translated | the Boolean circuit Alea.jl builds for a program that exists only as Alea.jl source, as ProbLog (Alea.jl's tddlog backend) or as Dice programs of its gates |
 | tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc\|diamond\|ladder)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | roulette | all | translated | the paper's model written as a ProbLog program (gen_roulette.py) |
-| tddlog, problog, pita, aspmc | circulette | all | translated | the ProbLog program Roulette's tddlog engine writes from circulette.rkt's run on the netlist (tddlog's records are Roulette+tddlog's) |
 | tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | translated | a loop-free Dice program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | storm, prism | geni | `geni_weather_` | native | Rubicon's PRISM model of the weather factory (CAV 2021) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | dice, ppl, bitblast, roulette, geni | all | translated | a Dice program, translated into the system's language where it reads another (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |

@@ -163,6 +163,15 @@ pub struct GroundOptions {
     /// by default; off where the program's tables are wanted as the
     /// conditioning's rewrite leaves them.
     pub renormalize: bool,
+    /// Condition on the program's one query where it observes nothing, and
+    /// answer the query by the probability of that evidence where the
+    /// conditioning fixes or merges a fact
+    /// (`GroundProgram::observed_query`). Off by default, the program
+    /// ground as it asks; on in a run's options (`Options::default`), and
+    /// off again where the program is printed for another reader
+    /// (`--ground`, `--cnf`), which would need the factor the conditioning
+    /// takes out to answer the query.
+    pub observe_query: bool,
     /// Write the variables held as bits as tables over their values
     /// ([`values`]). Always on; off only in the tests of the passes after
     /// it, whose programs it would write over their values.
@@ -181,6 +190,7 @@ impl Default for GroundOptions {
             defined: true,
             contexts: true,
             renormalize: true,
+            observe_query: false,
             #[cfg(test)]
             values: true,
         }
@@ -604,8 +614,13 @@ pub(crate) fn restricted(gp: &GroundProgram, queries: &[usize]) -> GroundProgram
 }
 
 /// The observations no query depends on dropped where they can hold
-/// ([`detach`]), and the rules only they read.
+/// ([`detach`]), and the rules only they read; none where the evidence
+/// answers the query ([`GroundProgram::observed_query`]), its probability
+/// the answer and not a factor that cancels.
 fn drop_detached(gp: &mut GroundProgram) {
+    if gp.observed_query.is_some() {
+        return;
+    }
     let detached = detach::drop_detached(gp);
     if detached > 0 {
         gp.structure = OnceLock::new();

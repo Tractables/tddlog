@@ -105,6 +105,12 @@ pub(in crate::ground) struct Propagation<'a> {
     fired: Vec<u32>,
     /// Body literals visited, for a search's budget.
     pub(in crate::ground) work: u64,
+    /// Per node (`2 atom + positive`), in how many of a true atom's live
+    /// rules, counted in turn, its literal is, and the literals still in
+    /// every one so far ([`shared_literals_hold`](Self::shared_literals_hold));
+    /// zero and empty between calls.
+    in_rules: Vec<u32>,
+    shared: Vec<GLit>,
 }
 
 impl<'a> Propagation<'a> {
@@ -151,6 +157,8 @@ impl<'a> Propagation<'a> {
             head: 0,
             fired: Vec::new(),
             work: 0,
+            in_rules: vec![0; 2 * n],
+            shared: Vec::new(),
         }
     }
 
@@ -190,19 +198,55 @@ impl<'a> Propagation<'a> {
     // value is set before: where the one rule, literal or atom a counter
     // leaves is already decided, the trail settles it.
 
-    /// The body of `h`'s one live rule holds.
-    fn last_rule_holds(&mut self, h: AtomId) -> Result<(), Contradiction> {
-        let ri = *self.by_head[h as usize]
+    /// The open literals that every live rule of `h`, which holds, shares
+    /// hold: one of those rules' bodies holds. With one live rule, its
+    /// body; `x :- y, a. x :- y, b.` makes `y` hold where `x` does, as a
+    /// chain of conjunctions with its disjunctions inlined writes it. The
+    /// shared literals are counted per node (`2 atom + positive`), rule by
+    /// rule, and the count stops at the first rule that keeps none.
+    fn shared_literals_hold(&mut self, h: AtomId) -> Result<(), Contradiction> {
+        let gp = self.gp;
+        let node = |l: GLit| (2 * l.atom() + u32::from(l.is_positive())) as usize;
+        let mut live = self.by_head[h as usize]
             .iter()
-            .find(|&&ri| self.killer[ri] == u32::MAX)
-            .expect("one live rule");
-        for k in 0..self.gp.rules[ri].body.len() {
-            let l = self.gp.rules[ri].body[k];
-            if self.holds(l).is_none() {
-                self.assign_literal(l, true)?;
+            .copied()
+            .filter(|&ri| self.killer[ri] == u32::MAX);
+        let first = live.next().expect("a live rule");
+        let mut shared = std::mem::take(&mut self.shared);
+        shared.clear();
+        for &l in &gp.rules[first].body {
+            if self.holds(l).is_none() && self.in_rules[node(l)] == 0 {
+                self.in_rules[node(l)] = 1;
+                shared.push(l);
             }
         }
-        Ok(())
+        // The rules counted before `ri`, the first among them.
+        for (before, ri) in (1..).zip(live) {
+            if shared.is_empty() {
+                break;
+            }
+            for &l in &gp.rules[ri].body {
+                if self.in_rules[node(l)] == before {
+                    self.in_rules[node(l)] = before + 1;
+                }
+            }
+            shared.retain(|&l| {
+                let kept = self.in_rules[node(l)] == before + 1;
+                if !kept {
+                    self.in_rules[node(l)] = 0;
+                }
+                kept
+            });
+        }
+        let mut result = Ok(());
+        for &l in &shared {
+            self.in_rules[node(l)] = 0;
+            if result.is_ok() {
+                result = self.assign_literal(l, true);
+            }
+        }
+        self.shared = shared;
+        result
     }
 
     /// The one open literal of rule `ri`, whose head is false, does not hold.
@@ -283,7 +327,7 @@ impl<'a> Propagation<'a> {
                 } else {
                     match (self.live[h as usize], self.val[h as usize]) {
                         (0, _) => self.assign(h, false)?,
-                        (1, Val::True) => self.last_rule_holds(h)?,
+                        (_, Val::True) => self.shared_literals_hold(h)?,
                         _ => {}
                     }
                 }
@@ -292,11 +336,10 @@ impl<'a> Propagation<'a> {
                 continue;
             }
             if holds {
-                match self.live[a as usize] {
-                    0 => return Err(Contradiction),
-                    1 => self.last_rule_holds(a)?,
-                    _ => {}
+                if self.live[a as usize] == 0 {
+                    return Err(Contradiction);
                 }
+                self.shared_literals_hold(a)?;
                 if set != usize::MAX {
                     for i in 0..self.sets[set].len() {
                         let b = self.sets[set][i];
@@ -1039,5 +1082,36 @@ mod tests {
             &[Neg(3), Pos(2), Pos(1)],
         ];
         assert_eq!(unread_of(&[0.3, 0.6, 0.5, 0.5], cyclic, &[]), []);
+    }
+
+    #[test]
+    fn a_true_atom_makes_the_literals_its_live_rules_share_hold() {
+        // `4 :- 0, 1. 4 :- 0, \+2. 4 :- 3.` with 4 true and 3 false: of
+        // the two rules left, one holds, and both read 0.
+        let rules: [(AtomId, &[GLit]); 3] = [
+            (4, &[Pos(0), Pos(1)]),
+            (4, &[Pos(0), Neg(2)]),
+            (4, &[Pos(3)]),
+        ];
+        let gp = test_program(&[0.3, 0.4, 0.5, 0.2], 1, &rules, &[(4, true), (3, false)]);
+        let (p, _, _) = propagated(&gp);
+        assert_eq!(p.value(0), Some(true));
+        assert_eq!((p.value(1), p.value(2)), (None, None));
+        // With 1 false as well, the one rule left holds: 2 is false.
+        let gp = test_program(
+            &[0.3, 0.4, 0.5, 0.2],
+            1,
+            &rules,
+            &[(4, true), (3, false), (1, false)],
+        );
+        let (p, _, _) = propagated(&gp);
+        assert_eq!((p.value(0), p.value(2)), (Some(true), Some(false)));
+        // With 3 open, nothing is shared by all three.
+        let gp = test_program(&[0.3, 0.4, 0.5, 0.2], 1, &rules, &[(4, true)]);
+        let (p, _, _) = propagated(&gp);
+        assert_eq!(
+            (p.value(0), p.value(1), p.value(2), p.value(3)),
+            (None, None, None, None)
+        );
     }
 }

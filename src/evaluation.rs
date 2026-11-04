@@ -95,8 +95,21 @@ impl Evaluation {
     }
 
     /// `P(e)` of `gp`, whose query phase has answered
-    /// ([`crate::Run::evidence_probability`]).
+    /// ([`crate::Run::evidence_probability`]): one where the evidence is
+    /// the query the program asked ([`GroundProgram::observed_query`]),
+    /// since the program observed nothing.
     pub(crate) fn evidence_probability(&self, gp: &GroundProgram) -> Option<eval::Count> {
+        if gp.observed_query.is_some() {
+            return Some(eval::Count::ONE);
+        }
+        self.observed_probability(gp)
+    }
+
+    /// The probability of `gp`'s evidence, whose query phase has answered:
+    /// the count of its formula times what the grounder took out
+    /// ([`GroundProgram::weight`]); `None` where the grounder dropped
+    /// observations ([`GroundOptions::detach`](crate::GroundOptions)).
+    fn observed_probability(&self, gp: &GroundProgram) -> Option<eval::Count> {
         let mass = self
             .query
             .as_ref()
@@ -165,6 +178,21 @@ impl Evaluation {
         if watch.is_none() {
             sizes.work_units = backend.work_units() - work;
         }
+        // The query the evidence asks is answered by its probability, zero
+        // where the evidence is inconsistent.
+        let results = match &gp.observed_query {
+            None => results,
+            Some((atom, positive)) => {
+                let p = self
+                    .observed_probability(gp)
+                    .expect("an observed query's evidence is not dropped");
+                Some(vec![QueryResult {
+                    atom: atom.clone(),
+                    positive: *positive,
+                    probability: p.to_f64().clamp(0.0, 1.0),
+                }])
+            }
+        };
         Ok((results, sizes))
     }
 

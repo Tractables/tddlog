@@ -1158,17 +1158,35 @@ are skipped. Several steps have a program in `examples/` that shows them.
    `propagation.rs`). Unit propagation over the completion, seeded by the
    evidence and the certain atoms, with each exclusive set read as at most
    one true atom and each exhaustive one (from the cover) as exactly one.
-   A fact it fixes becomes certain, its weight a factor of `P(q, e)` and
-   `P(e)` alike, which `GroundProgram::weight` keeps for
-   `--evidence-probability`. A derived atom it fixes is observed and read
-   as its value by every rule, which keeps each world's model where no
-   derived atom depends on itself; a cyclic program is left alone. A
-   derived atom it makes false whose rule has two open literals on facts
-   (directly, or through an atom with one live rule) is a clause, and the
-   facts of a strongly connected component of the clauses' implications
-   become copies `g :- f` or `g :- \+f` of one, whose weight takes theirs
-   (`Propagation::equal_facts`). This is what Ace gets from compiling with
-   its evidence and c2d's unit resolution.
+   A true atom makes hold the literals all its live rules share, the body
+   of its one live rule where one is left: `x :- y, a. x :- y, b.` makes
+   `y` hold, as a chain of conjunctions with its disjunctions inlined (a
+   Dice program's `x = x && (a || b)`) writes it. A fact it fixes becomes
+   certain, its weight a factor of `P(q, e)` and `P(e)` alike, which
+   `GroundProgram::weight` keeps for `--evidence-probability`. A derived
+   atom it fixes is observed and read as its value by every rule, which
+   keeps each world's model where no derived atom depends on itself; a
+   cyclic program is left alone. A derived atom it makes false whose rule
+   has two open literals on facts (directly, or through an atom with one
+   live rule) is a clause, and the facts of a strongly connected component
+   of the clauses' implications become copies `g :- f` or `g :- \+f` of
+   one, whose weight takes theirs (`Propagation::equal_facts`). This is
+   what Ace gets from compiling with its evidence and c2d's unit
+   resolution.
+
+   A program that asks one query and observes nothing has its query
+   observed instead (`condition::observe_lone_query`), and the probability
+   of that evidence answers it: `P(q) = P(e)` for the evidence `e` that
+   observes `q`, so the conditioning reads the query's value too. A rare
+   query fixes much of what it reads: Pluck's sorted list asks one of
+   probability `2^-37`, and observed it fixes 37 facts and leaves no
+   derived atom to compile. The observation stays only where it fixes or
+   merges a fact; where it fixes none, the worlds are counted as before,
+   and the evidence walk counts the query's formula as an observation at
+   more cost than the query's product (Roulette's motivating chain of
+   10 000 steps: 2.9 G work units observed, 7.7 M asked). `--ground` and
+   `--cnf` keep the query a query, since the factor the conditioning takes
+   out would be the answer.
 
    Before the copies, a **SAT search** (`backbone.rs`, on the CDCL solver
    of `sat.rs`) reads the clauses the propagation leaves over facts, one

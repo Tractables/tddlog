@@ -429,11 +429,16 @@ fn floats_count_unless_a_level_spans_more_than_a_float() {
     // complement, 1 - m, needs no count of its own (`eval::complement`).
     // Stored as its negation, the mass 1 - 2^-1101 was counted twice,
     // and big's own formula then once more. ProbLog: 0.
+    // The query asked, not observed (`GroundOptions::observe_query`):
+    // observed, its probability would be the evidence's, without a count
+    // of its own.
+    let mut asked = common::options(strategy, Projection::default());
+    asked.ground.observe_query = false;
     for (what, source, recounts) in [
         ("with evidence", &too_small, 0),
         ("without evidence", &without_evidence, 1),
     ] {
-        let run = common::run(source, &common::options(strategy, Projection::default())).unwrap();
+        let run = common::run(source, &asked).unwrap();
         assert_eq!(
             run.query_sizes.recounts, recounts,
             "big {what}, {strategy:?}"
