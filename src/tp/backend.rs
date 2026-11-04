@@ -2955,11 +2955,12 @@ mod tests {
     /// Each skip arm of the backend gives the skip form of what the stored
     /// arm gives: random operations on random and right-linear vtrees, run
     /// alike on a stored backend and a skip one, each result equivalent to
-    /// `to_skip` of the stored one and as large (both forms are
-    /// canonical), with the same support, the same weighted count to
-    /// 1e-12 and the same equivalences with the pool. A builder whose
-    /// stored diagram holds a level as its description is refused in skip
-    /// form, and only that.
+    /// `to_skip` of the stored one and as large as it or, where the
+    /// library holds the result as a negation, as its complement (both
+    /// forms are canonical), with the same support, the same weighted
+    /// count to 1e-12 and the same equivalences with the pool. A builder
+    /// whose stored diagram holds a level as its description is refused
+    /// in skip form, and only that.
     #[test]
     fn every_skip_arm_is_the_stored_arm_in_skip_form() {
         let (mut checked, mut refused) = (0, 0);
@@ -3008,7 +3009,13 @@ mod tests {
                         engine.skip_equivalent(k.skip(), &want).unwrap(),
                         "seed {seed}: {op:?}"
                     );
-                    assert_eq!(k.pair_count(), want.pair_count(), "seed {seed}: {op:?}");
+                    // The library may hold a result as the negation of the
+                    // diagram it stores, which is then the canonical form of
+                    // the complement.
+                    if k.pair_count() != want.pair_count() {
+                        let not = engine.to_skip(st(&stored.negate(&s).unwrap())).unwrap();
+                        assert_eq!(k.pair_count(), not.pair_count(), "seed {seed}: {op:?}");
+                    }
                     assert_eq!(
                         stored.support(&s).unwrap(),
                         skip.support(&k).unwrap(),
