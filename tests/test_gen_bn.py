@@ -239,18 +239,17 @@ XDSL = b'''<?xml version="1.0" encoding="ISO-8859-1"?>
 
 
 class BifFormatTests(unittest.TestCase):
-    """`to_bif`: the BIF file and queries of the Roulette artifact's own
-    network driver (benchmark/bayes.rkt under data/roulette/bif.rkt)."""
+    """`to_bif` and `bif_programs`: the BIF file Roulette's BN language
+    reads (roulette/example/bn) and what data/roulette/bn.rkt asks of it."""
 
     def test_a_network_written_as_bif_reads_back_as_its_tables(self):
         """asia's BIF file reads back as asia's normalized tables under the
-        names x<i> and s<k>, with a line for each leaf: the leaf, then it
-        and its ancestors in program_order."""
+        names x<i> and s<k>."""
         network = gen_bn.parse(str(SOURCE / 'tests' / 'networks' / 'asia.net'))
         order, variables, tables = network
-        text, lines, names = gen_bn.to_bif(network, 'leaves')
+        text, word = gen_bn.to_bif(network)
+        self.assertEqual(word, {v: f'x{i}' for i, v in enumerate(order)})
         back_order, back_variables, back_tables = gen_bn.parse_bif(text)
-        word = {v: f'x{i}' for i, v in enumerate(order)}
         self.assertEqual(back_order, [word[v] for v in order])
         for v in order:
             self.assertEqual(back_variables[word[v]], [f's{k}' for k in range(len(variables[v]))])
@@ -259,32 +258,59 @@ class BifFormatTests(unittest.TestCase):
             for key, row in rows.items():
                 back = back_tables[word[v]][1][tuple(f's{variables[p].index(u)}' for p, u in zip(parents, key))]
                 self.assertEqual([float(p) for p in back], gen_bn.normalized(row, v))
+
+    def test_the_asks_are_the_network_tools_questions(self):
+        """bif_programs asks the order of the lets of the Dice program of the
+        observed and queried variables (program_order), each observation by
+        its value's place, and each queried variable left unobserved; under
+        pe the observations are the holds lines of P(e), and nothing is
+        queried."""
+        asia = str(SOURCE / 'tests' / 'networks' / 'asia.net')
+        network = gen_bn.parse(asia)
+        order, variables, tables = network
+        word = {v: f'x{i}' for i, v in enumerate(order)}
+        text, asks, names = gen_bn.bif_programs([asia, '--query', 'leaves'])
+        self.assertEqual(text, gen_bn.to_bif(network)[0])
         leaves = gen_bn.queried_variables(order, variables, tables, 'leaves')
-        self.assertEqual(lines.splitlines(),
-                         [' '.join([word[q]] + [word[v] for v in gen_bn.program_order(order, tables, [], [q])])
-                          for q in leaves])
-        self.assertEqual(names, {word[q]: (gen_bn.ident(q), [gen_bn.ident(u) for u in variables[q]]) for q in leaves})
+        self.assertEqual(asks.splitlines(),
+                         ['order ' + ' '.join(word[v] for v in gen_bn.program_order(order, tables, [], leaves))]
+                         + [f'query {word[q]}' for q in leaves])
+        self.assertEqual(names, {word[q]: (gen_bn.ident(q), [f's{k}' for k in range(len(variables[q]))],
+                                           [gen_bn.ident(u) for u in variables[q]]) for q in leaves})
+        argv = [asia, '--query', 'leaves', '--evidence', '1']
+        evidence = gen_bn.sampled_evidence(network, 1, 1)
+        (v, u), = evidence
+        observed = f'{word[v]} {variables[v].index(u)}'
+        rest = [q for q in leaves if q != v]
+        _, asks, names = gen_bn.bif_programs(argv)
+        self.assertEqual(asks.splitlines(),
+                         ['order ' + ' '.join(word[x] for x in gen_bn.program_order(order, tables, [v], rest)),
+                          f'observe {observed}'] + [f'query {word[q]}' for q in rest])
+        self.assertEqual(list(names), [word[q] for q in rest])
+        _, asks, names = gen_bn.bif_programs(argv, pe=True)
+        self.assertEqual(asks.splitlines(),
+                         ['order ' + ' '.join(word[x] for x in gen_bn.program_order(order, tables, [v], [])),
+                          f'holds {observed}'])
+        self.assertEqual(names, {})
 
     def test_numbers_are_positional(self):
-        """The artifact's lexer reads `1e-06` as a word: a small number is
+        """The BN language's lexer reads `1e-06` as a word: a small number is
         written in positional notation, and reads back as itself."""
         variables = {'a': ['x', 'y'], 'b': ['f', 't']}
         tables = {'a': ([], {(): [0.999999, 0.000001]}),
                   'b': (['a'], {('x',): [1.0, 0.0], ('y',): [1e-07, 1 - 1e-07]})}
-        text, _, _ = gen_bn.to_bif((['a', 'b'], variables, tables), 'b')
+        text, _ = gen_bn.to_bif((['a', 'b'], variables, tables))
         self.assertNotRegex(text, r'[0-9][eE]')
         self.assertIn('table 0.999999, 0.000001;', text)
         self.assertIn('(s1) 0.0000001, 0.9999999;', text)
         self.assertEqual(gen_bn.bif_number(1e-300), '0.' + '0' * 299 + '1')
 
-    def test_observations_and_factors_have_no_bif_file(self):
-        """BIF holds no observations and no factors: bif_programs is None for
-        a network with evidence and for a Markov network."""
-        asia = str(SOURCE / 'tests' / 'networks' / 'asia.net')
-        self.assertIsNotNone(gen_bn.bif_programs([asia, '--query', 'leaves']))
-        self.assertIsNone(gen_bn.bif_programs([asia, '--query', 'leaves', '--evidence', '1']))
+    def test_factors_have_no_bif_file(self):
+        """BIF holds no factors: bif_programs is None for a Markov network."""
         regress = SOURCE / 'tests' / 'regress'
         self.assertIsNone(gen_bn.bif_programs([str(regress / 'markov.uai'), '--query', 'all']))
+        self.assertFalse(gen_bn.is_bayesian([str(regress / 'markov.uai'), '--query', 'none']))
+        self.assertTrue(gen_bn.is_bayesian([str(SOURCE / 'tests' / 'networks' / 'asia.net'), '--query', 'none']))
 
 
 class DiceFormatTests(unittest.TestCase):

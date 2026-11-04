@@ -116,7 +116,7 @@
     "roulette": {
       "about": "A discrete probabilistic language embedded in Racket, compiled into BDDs through Rosette's symbolic evaluation.",
       "version": "neuppl/roulette's main (revision 60f77cb) on Racket 9.3",
-      "settings": "Its PLDI 2025 artifact's programs in its current language (only the #lang line and the query forms change), and Dice programs through dice2roulette.py. Two forms, its query (rsdd) and, on a network that observes nothing, the network built by the artifact's bayes.rkt from a BIF file (bayes); each instance counts the fastest. Its time is its program's run once Racket and the program's modules are loaded.",
+      "settings": "Its PLDI 2025 artifact's programs in its current language (only the #lang line and the query forms change); every Bayesian network in its own BN language (roulette/example/bn) from a BIF file, asked the network tools' questions; other Dice programs through dice2roulette.py. Its time is its program's run once Racket and the program's modules are loaded.",
       "notgiven": "",
       "cite": {"authors": "Cameron Moy, Jack Czenszak, John M. Li, Brianna Marshall and Steven Holtzen", "title": "Roulette: A language for expressive, exact, and efficient discrete probabilistic programming", "venue": "PLDI", "year": 2025, "doi": "10.1145/3729334"},
       "link": "https://doi.org/10.5281/zenodo.15253254"

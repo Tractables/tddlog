@@ -56,20 +56,25 @@ definition (`print.rkt`'s `statement`).
   and dynamic programming implementations run other systems), queried as
   `(query e)` where the artifact wrote `(with-observe (query e #f))`, its
   answer printed as `roulette_q q P #t`.
-- `bayes.rkt NAME`: the network NAME of the artifact's `benchmark/main.rkt`,
-  as the package holds it (`roulette/test/bn/NAME.rkt`, read by
-  `blocks.rkt` with `#lang roulette/example/bn`'s reader), with main.rkt's
-  queried variable and variable order (`networks.rktd`), under the
-  package's `make-run` (the artifact's `benchmark/bayes.rkt`), its
-  distribution printed as `roulette_v VALUE P`.
-- `bif.rkt BIF QUERIES`: a network of another suite as the artifact runs
-  its own (bench.py's Roulette variant `bayes`): `make-run` on the BIF file
-  `scripts/gen_bn.py` writes of it (`bif_programs`), once for each queried
-  variable, with the variable and its ancestors evaluated in the order of
-  the lets of its Dice program; its distributions printed as
-  `roulette_b VARIABLE VALUE P`.
-- `print.rkt`: `emit` and `statement`. `blocks.rkt`: a BIF file's blocks
-  as `#lang roulette/example/bn` reads them.
+- `bn.rkt NETWORK ASKS`: a Bayesian network in Roulette's own BN
+  language, the package's `roulette/example/bn` (its reader and its
+  `make-run`, the artifact's `benchmark/bayes.rkt`), on a BIF file, asked
+  what the file ASKS asks: the variable order, the observations and the
+  queried variables, or under the PR task the observations whose
+  conjunction's probability is P(e). The network is evaluated once at the
+  module's level, the observations observed there, and each query asked
+  as the language asks a module-level expression (`display-pmf`), its
+  distribution printed in full, `roulette_b VARIABLE VALUE P` (P(e) as
+  `roulette_e P`). bench.py runs it on every Bayesian network
+  (`roulette_bif`): on one of the artifact's nine, the artifact's own BIF
+  file (`benchmark/bayesian-networks/NAME.bif`) with main.rkt's queried
+  variable and variable order (`networks.rktd`); on another, the BIF file
+  `scripts/gen_bn.py` writes of the network (`bif_programs`: the same
+  variables and tables, renamed as words of the BN language's lexer) with
+  the instance's observations and queries, the variables in the order of
+  the lets of its Dice program. A Markov network, whose factors BIF does
+  not hold, runs the Dice program `dice2roulette.py` translates.
+- `print.rkt`: `emit` and `statement`.
 - `caesar_obs.rkt N` prints the first N observations of the caesar
   program, `(random 0 26 rng)` from a generator seeded with `(random-seed
   0)`, as the benchmark draws them; `caesar_obs.txt` holds the first

@@ -1463,9 +1463,8 @@ language changing only the `#lang` line and the `query` forms
 (data/roulette/README.md), and of the networks' BIF files: its
 `benchmark/` directory (`--roulette-benchmarks`, kept under
 `$HOME/local/roulette`), from which gen_bn.py writes the other systems'
-programs. Roulette reads the same networks as its package holds them
-(`roulette/test/bn/NAME.rkt`, the artifact's BIF files without their
-header). The runs before 2026-10-31 ran the artifact; every instance and
+programs. Roulette reads those BIF files themselves, in its own BN
+language (below). The runs before 2026-10-31 ran the artifact; every instance and
 repetition that had a Roulette record is run again on upstream, and only
 those records of Roulette are kept.
 
@@ -1550,9 +1549,46 @@ of its own, and the patch has no upstream form either. Upstream's
 (`(log (apply + (map exp args)))`), so a sum below a double's range is 0
 there too. bench.py refuses both variants, and their records went with
 the artifact's, which is why the tables have no `nocomplement` or `extexp`
-row.
-`--roulette-variants rsdd,bayes` runs a network of another suite as the
-artifact runs its own (`roulette:bayes`, data/roulette/bif.rkt).
+row. The variant `bayes`, the artifact's `benchmark/bayes.rkt` on a
+network of another suite that observes nothing, went too: every Bayesian
+network now runs in Roulette's BN language, under rsdd, the one variant.
+
+### Bayesian networks
+
+Roulette reads a Bayesian network in BIF through its own language,
+`roulette/example/bn` (the package's reader and `make-run`, with its
+tests on bnlearn's networks), so that every Bayesian network of the
+tables is native to Roulette and to Roulette+tddlog, as a BIF, Hugin,
+XMLBIF or UAI file is to the network tools (the owner, 2026-11-03: "Why
+don't we think of Roulette as a native [Bayesian] network solver?").
+data/roulette/bn.rkt runs the language on a BIF file and a file of asks
+(`roulette_bif`): the variable order, the instance's observations and its
+queried variables, the network tools' questions. It evaluates the
+network once at the module's level, observes the evidence there and asks
+each query as the language asks a module-level expression, its
+distribution printed in full; under `--pr` it asks the probability of
+the observations' conjunction. On the artifact's nine networks
+(`rl_bn_`) the file is the artifact's own BIF, with main.rkt's queried
+variable and variable order. On the other suites' networks (`--suite
+standard` family bn and its Dice copies, `--suite large`, `--suite ace`
+and the UAI sets' Bayesian networks) it is the BIF file gen_bn.py writes
+of the network (`bif_programs`): the same variables and tables, renamed
+to words of the language's lexer, which reads a word of digits as a
+number, and the variables in the order of the lets of the network's
+Dice program, each parent before its child, as `make-run` needs. A
+format conversion that keeps the variables and tables, it is not
+charged. A Markov network has no BIF file and runs its Dice program as
+below; so does uai_bn_31, a Bayesian network by its structure whose
+rows sum to 1 within the rounding of their entries but not within
+gen_bn.py's 1e-9, so that gen_bn.py reads it as a Markov network.
+Roulette+tddlog runs the same driver under the tddlog engine, which
+records two calls of `infer` for each query, its value and its
+observations: the K-th query's distribution is the (2K-1)-th call's.
+bn.rkt's checks are statements, which the language does not ask, and a
+circuit of another number of calls is an error: with the checks as
+expressions at the module's level, three queries of their own (a smoke
+of 2026-11-03), Roulette+tddlog read the first check's value as the
+first query.
 
 `extexp` on the artifact, checked on 2026-10-30, untimed, confirmed the
 references where rsdd underflows: caesar-iter at 3000 answers key 2 with
@@ -1585,9 +1621,10 @@ counts are scaled, so an observation below a double's range leaves the
 conditional in range (Roulette answers 0 for every value on those
 programs, and Roulette+tddlog the reference); the failed value answers 0.
 The circuit is otherwise the one Roulette builds. It runs wherever
-Roulette runs on its own programs (`--suite roulette`) or on a Dice
-program that dice2roulette.py translates (the Dice paper's, noDice's and
-Geni's), not on a circuit's or a network's Dice programs, whose
+Roulette runs on its own programs (`--suite roulette`), on a Bayesian
+network in Roulette's BN language (above), or on a Dice program that
+dice2roulette.py translates (the Dice paper's, noDice's and Geni's), not
+on a circuit's or a Markov network's Dice programs, whose
 Roulette+tddlog would be Alea.jl's route or the network reader with more
 steps between. The exporter runs from its source: compiled by `raco
 make`, its re-exports of Roulette's bindings resolve to its own
@@ -1660,9 +1697,9 @@ programs with them (tests/it/examples.rs, `mod roulette`).
 ### Other suites' programs
 
 `--roulette` also runs on the Dice programs of the other suites (the
-Dice paper's programs and the standard networks, `--suite standard`
-families dice and bn; the loops, `--suite indicators`; noDice's, `--suite
-ppl`; GeNI's, `--suite geni`): scripts/dice2roulette.py translates the
+Dice paper's programs, `--suite standard` family dice, and the Markov
+networks; the loops, `--suite indicators`; noDice's, `--suite ppl`;
+GeNI's, `--suite geni`): scripts/dice2roulette.py translates the
 instance's Dice program into Roulette's language, which `raco make`
 compiles, both untimed, before the program runs. The translation holds
 an int(w) as a list of w Booleans, least significant bit first, draws
@@ -2622,6 +2659,10 @@ the same model) has the class of the program it is written from.
 | ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
 | problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | tddlog, problog, pita, aspmc | dice | `bn_` | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
+| roulette | uai, uai_pr, uaipr, uaitpr | `uai_bn_31$` | translated | a Bayesian network by its structure, whose tables sum to one within the rounding of their entries (data/uai_types.tsv) but not within 1e-9, so gen_bn.py wrote it as a Markov network: a Dice program of its factors (gen_bn.py), translated for Roulette (dice2roulette.py) |
+| roulette, roulette-tddlog | std_bn, ace, large | all | native | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine |
+| roulette, roulette-tddlog | dice | `bn_` | native | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine |
+| roulette, roulette-tddlog | uai, uai_pr, uaipr, uaitpr | bayesian (`data/uai_types.tsv`) | native | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a Dice program of nested conditionals over discretes written from the network, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
 | tddlog, problog, pita, aspmc | std | `bloodtype$` | translated | cplint's LPAD translated by lpad2problog.py, or tddlog --program, the same program, in the runs since tddlog reads LPADs itself |
 | tddlog | lit | `cplint_` | native | cplint's example, an LPAD, read by tddlog's LPAD reader |

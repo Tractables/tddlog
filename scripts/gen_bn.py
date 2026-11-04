@@ -20,8 +20,9 @@ tests/it/networks.rs and tests/test_gen_bn.py check that the two write
 the same text. This script writes the files only the other systems
 read: Ace's observations (--inst), the network in the UAI format for
 Merlin (--uai), its weighted CNF (--cnf, uai_wcnf.py), its Dice
-programs (--format dice) and the BIF file the Roulette artifact's own
-network driver reads (`bif_programs`, which bench.py writes).
+programs (--format dice) and the BIF file Roulette's BN language reads
+with what data/roulette/bn.rkt asks of it (`bif_programs`, which bench.py
+writes).
 
 Usage: gen_bn.py network.{bif,net,hugin,xdsl,uai}[.gz] [--query all | --query VAR[,VAR...] | --query leaves
                                                           | --query none]
@@ -937,29 +938,37 @@ def to_dice(network, query, evidence=(), pe=False, joint=False):
 
 
 def bif_number(p):
-    """p in positional notation. The Roulette artifact's BIF lexer
-    (benchmark/private/bif-lex.rkt) counts `_`, `-` and digits as letters
-    and prefers a word to a number of the same length, so that `1e-06`
-    reads as a word and its row as no distribution: its own files write
-    every number positionally."""
+    """p in positional notation. The BIF lexer of Roulette's BN language
+    (roulette/example/bn) counts `_`, `-` and digits as letters and prefers
+    a word to a number of the same length, so that `1e-06` reads as a word
+    and its row as no distribution: the artifact's own files write every
+    number positionally."""
     return format(Decimal(repr(float(p))), 'f')
 
 
-def to_bif(network, query):
-    """The network as the BIF file the Roulette artifact's
-    benchmark/bayes.rkt reads, which compiles the distribution of one
-    variable from the variables of an order it is given, and the order for
-    each variable `query` asks (`queried_variables`): a line of the variable,
-    then it and its ancestors in `program_order`, the order of the lets of
-    its Dice program. Variable i (declaration order) is named x<i> and value
-    k s<k>, words of that lexer whatever the names of the format read, and
-    each row is its table's normalized row (`normalized`). Returned as (the
-    file, the lines, {x<i>: (the variable's name in the ProbLog format,
-    its values' names)} of the queried variables); None for a Markov
+def bayesian(network):
+    """Whether the network (`model`'s) is a Bayesian network, which a BIF file
+    holds: a Markov network's factors are variables of one value."""
+    order, variables, _ = network
+    return all(len(variables[v]) > 1 for v in order)
+
+
+def is_bayesian(argv):
+    """Whether gen_bn.py's arguments `argv` read a Bayesian network
+    (`bayesian`), whatever they ask of it."""
+    return bayesian(model(arguments().parse_args([*argv, '--format', 'dice']), pe=True)[0])
+
+
+def to_bif(network):
+    """The network as a BIF file of Roulette's BN language
+    (roulette/example/bn): variable i (declaration order) named x<i> and
+    value k s<k>, words of its lexer whatever the names of the format read,
+    and each row its table's normalized row (`normalized`), as the ProbLog
+    program's. Returned as (the file, {variable: x<i>}); None for a Markov
     network, whose factors BIF does not hold."""
-    order, variables, tables = network
-    if any(len(variables[v]) == 1 for v in order):
+    if not bayesian(network):
         return None
+    order, variables, tables = network
     word = {v: f'x{i}' for i, v in enumerate(order)}
     out = ['network unknown {', '}']
     for v in order:
@@ -977,19 +986,38 @@ def to_bif(network, query):
             probs = normalized(rows[vals], f'{v} {vals}')
             out.append(f'  ({", ".join(f"s{k}" for k in key)}) {", ".join(bif_number(p) for p in probs)};')
         out.append('}')
-    queried = queried_variables(order, variables, tables, query)
-    lines = [' '.join([word[q]] + [word[v] for v in program_order(order, tables, [], [q])]) for q in queried]
-    names = {word[q]: (ident(q), [ident(u) for u in variables[q]]) for q in queried}
-    return '\n'.join(out) + '\n', '\n'.join(lines) + '\n', names
+    return '\n'.join(out) + '\n', word
 
 
-def bif_programs(argv):
-    """`to_bif` of the network and question of gen_bn.py's arguments
-    `argv`; None where the network observes something, which BIF does not
-    hold (a Markov network's factors among the observations)."""
+def bif_programs(argv, pe=False):
+    """The BIF file of the network of gen_bn.py's arguments `argv` (`to_bif`)
+    and what data/roulette/bn.rkt asks of it, its lines `order`, `observe`
+    and `query` (`holds` under `pe`): the observed and the queried
+    variables and their ancestors in `program_order`, the order of the lets
+    of their Dice program (`to_dice`); each observation; and each variable
+    `--query` asks that is not observed, as the network tools are asked;
+    with `pe`, the observations as the conjunction whose probability is
+    P(e), observed nothing. Returned as (the file, the asks, {x<i>: (the
+    variable's name in the ProbLog format, its values in the BIF file, their
+    names in the ProbLog format)} of the queried variables); None for a
+    Markov network (`to_bif`)."""
     a = arguments().parse_args([*argv, '--format', 'dice'])
-    network, _, evidence, _ = model(a)
-    return None if evidence else to_bif(network, a.query)
+    network, _, evidence, _ = model(a, pe)
+    made = to_bif(network)
+    if made is None:
+        return None
+    text, word = made
+    order, variables, tables = network
+    observed = dict(evidence)
+    queried = [] if pe else [v for v in queried_variables(order, variables, tables, a.query) if v not in observed]
+    if not queried and not pe:
+        sys.exit(f'--query {a.query}: every queried variable is observed, nothing is left to query')
+    lines = [' '.join(['order'] + [word[v] for v in program_order(order, tables, list(observed), queried)])]
+    lines += [f'{"holds" if pe else "observe"} {word[v]} {variables[v].index(u)}' for v, u in evidence]
+    lines += [f'query {word[v]}' for v in queried]
+    names = {word[v]: (ident(v), [f's{k}' for k in range(len(variables[v]))], [ident(u) for u in variables[v]])
+             for v in queried}
+    return text, '\n'.join(lines) + '\n', names
 
 
 def arguments():

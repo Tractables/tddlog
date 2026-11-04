@@ -1,10 +1,13 @@
 """Benchmark statistics must include the work after atom compilation."""
 import importlib.util
 from contextlib import redirect_stdout
+import fcntl
 import io
 import os
 from pathlib import Path
 import re
+import shlex
+import subprocess
 import sys
 import tempfile
 import time
@@ -542,16 +545,21 @@ class RouletteTests(unittest.TestCase):
     def test_roulette_runs_the_artifacts_programs(self):
         args = self.args()
         data = bench.ROULETTE_DATA
-        self.assertEqual(bench.roulette_program(args, 'rl_caesar_25', 'rsdd'), (f'{data}/caesar.rkt', ['25']))
+        self.assertEqual(bench.roulette_program(args, 'rl_caesar_25'), (f'{data}/caesar.rkt', ['25']))
         self.assertEqual(bench.roulette_command('racket {file}', 'p.rkt'), ['racket', 'p.rkt'])
         self.assertEqual(bench.roulette_command('racket {file}', 'p.rkt', '-l-', 'raco', 'make'),
                          ['racket', '-l-', 'raco', 'make', 'p.rkt'])
-        self.assertEqual(bench.roulette_program(args, 'rl_hmm_smoothing_joint_100', 'rsdd'),
+        self.assertEqual(bench.roulette_program(args, 'rl_hmm_smoothing_joint_100'),
                          (f'{data}/hmm.rkt', ['smoothing-joint', '100']))
-        self.assertEqual(bench.roulette_program(args, 'rl_bn_alarm', 'rsdd'), (f'{data}/bayes.rkt', ['alarm']))
         for program in ['motivating', 'diamond', 'ladder', 'caesar', 'network', 'hardware', 'hardware-bitwidth',
-                        'hmm', 'bayes', 'bif', 'print', 'blocks', 'scaling/network', 'scaling/hardware']:
+                        'hmm', 'bn', 'print', 'scaling/network', 'scaling/hardware']:
             self.assertTrue(Path(data, f'{program}.rkt').exists(), program)
+        # every network of the artifact has its order, which names every variable once
+        orders = {e[0]: e for e in bench.rktd_lists(Path(data, 'networks.rktd').read_text())[0]}
+        for net, var in bench.RL_NETWORKS:
+            self.assertEqual(orders[net][1], var)
+            self.assertIn(var, orders[net][2])
+            self.assertEqual(len(set(orders[net][2])), len(orders[net][2]))
 
     def run_roulette(self, name, path, out):
         with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0, 'stdout': out,
@@ -574,46 +582,186 @@ class RouletteTests(unittest.TestCase):
         path = str(SOURCE / 'tests' / 'roulette' / 'hmm-smoothing-joint-4.pl')
         r, cmd = self.run_roulette('rl_hmm_smoothing_joint_100', path, 'roulette_q q 0.25 #t\n')
         self.assertEqual(r['answers'], {'q': 0.25})
-        # A network's values are named as gen_bn.py names them.
-        with tempfile.TemporaryDirectory() as d:
-            path = Path(d, 'rl_bn_water.pl')
-            path.write_text('query(cbodd_12_45(v_0_5)).\nquery(cbodd_12_45(v_1)).\n')
-            r, _ = self.run_roulette('rl_bn_water', str(path), 'roulette_v 0.5 0.75\nroulette_v 1 0.25\n')
-        self.assertEqual(r['answers'], {'cbodd_12_45(v_0_5)': 0.75, 'cbodd_12_45(v_1)': 0.25})
         r, _ = self.run_roulette('rl_hmm_smoothing_joint_100', str(SOURCE / 'tests' / 'roulette' /
                                                                     'hmm-smoothing-joint-4.pl'), 'error: x\n')
         self.assertEqual(r['status'], 'error')
 
-    def test_a_network_runs_as_the_artifact_runs_its_own(self):
-        """Variant bayes: a network of another suite that observes nothing
-        runs data/roulette/bif.rkt on the BIF file and queries gen_bn.py
-        writes, its answers keyed as the ProbLog program's queries (a value
-        left out answers 0) and its in-process times added; it does not
-        apply to a network with observations, under --pr, or on the roulette
-        suite, whose networks run bayes.rkt."""
+    # bnlearn's cancer network as a BIF file, in the form of the artifact's
+    # benchmark/bayesian-networks/cancer.bif.
+    CANCER = '''network unknown {
+}
+variable Pollution {
+  type discrete [ 2 ] { low, high };
+}
+variable Smoker {
+  type discrete [ 2 ] { True, False };
+}
+variable Cancer {
+  type discrete [ 2 ] { True, False };
+}
+variable Xray {
+  type discrete [ 2 ] { positive, negative };
+}
+variable Dyspnoea {
+  type discrete [ 2 ] { True, False };
+}
+probability ( Pollution ) {
+  table 0.9, 0.1;
+}
+probability ( Smoker ) {
+  table 0.3, 0.7;
+}
+probability ( Cancer | Pollution, Smoker ) {
+  (low, True) 0.03, 0.97;
+  (high, True) 0.05, 0.95;
+  (low, False) 0.001, 0.999;
+  (high, False) 0.02, 0.98;
+}
+probability ( Xray | Cancer ) {
+  (True) 0.9, 0.1;
+  (False) 0.2, 0.8;
+}
+probability ( Dyspnoea | Cancer ) {
+  (True) 0.65, 0.35;
+  (False) 0.3, 0.7;
+}
+'''
+
+    def test_an_artifacts_network_runs_in_the_bn_language(self):
+        """A network of the artifact runs data/roulette/bn.rkt on its own BIF
+        file, asked its queried variable in the artifact's order
+        (networks.rktd), its values named as gen_bn.py names them."""
         with tempfile.TemporaryDirectory() as d:
-            args = self.args(suite='standard', dir=d, roulette_variants=['bayes'])
-            prog, rest = bench.roulette_program(args, 'bn_asia', 'bayes')
-            self.assertEqual(prog, f'{bench.ROULETTE_DATA}/bif.rkt')
-            self.assertEqual(rest, [f'{d}/bn_asia.bif', f'{d}/bn_asia.bifq'])
-            self.assertEqual(Path(d, 'bn_asia.bifq').read_text().split()[0], 'x6')
-            self.assertIsNone(bench.roulette_program(args, 'bn_asia_ev', 'bayes'))
-            self.assertIsNone(bench.roulette_program(self.args(suite='standard', dir=d, pr=True), 'bn_cancer', 'bayes'))
-            self.assertIsNone(bench.roulette_program(self.args(), 'rl_bn_alarm', 'bayes'))
+            Path(d, 'bayesian-networks').mkdir()
+            Path(d, 'bayesian-networks', 'cancer.bif').write_text(self.CANCER)
+            args = self.args(dir=d, roulette_benchmarks=d)
+            prog, rest = bench.roulette_program(args, 'rl_bn_cancer')
+            self.assertEqual((prog, rest), (f'{bench.ROULETTE_DATA}/bn.rkt',
+                                            [f'{d}/bayesian-networks/cancer.bif', f'{d}/rl_bn_cancer.roulette.asks']))
+            self.assertEqual(Path(d, 'rl_bn_cancer.roulette.asks').read_text(),
+                             'order Pollution Smoker Cancer Dyspnoea Xray\nquery Xray\n')
+            path = Path(d, 'rl_bn_cancer.pl')
+            path.write_text('query(xray(positive)).\nquery(xray(negative)).\n')
+            with patch.object(bench, 'timed', return_value={
+                    'status': 'ok', 'seconds': 3.0, 'stdout': 'roulette_b Xray positive 0.208\n'
+                    'roulette_b Xray negative 0.792\n', 'stderr': 'roulette_timer: program 0.061 s\n'}):
+                r = bench.run_roulette(args, 'rl_bn_cancer', str(path), 'rsdd')
+        self.assertEqual(r['answers'], {'xray(positive)': 0.208, 'xray(negative)': 0.792})
+
+    def test_raco_make_runs_one_at_a_time(self):
+        """roulette_make holds a lock of its template's while raco make
+        runs, in the temporary directory, so that another lane's compile
+        under the same template waits; another template's does not."""
+        held = []
+
+        def probe(template):
+            key = bench.hashlib.sha256(template.encode()).hexdigest()[:16]
+            with open(os.path.join(tempfile.gettempdir(), f'raco-make-{key}.lock'), 'w') as f:
+                try:
+                    fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    return True
+                fcntl.flock(f, fcntl.LOCK_UN)
+                return False
+
+        def timed(cmd, timeout, **kw):
+            held.append((probe('racket {file}'), probe('other {file}')))
+            return {'status': 'error', 'seconds': 0.1, 'error': 'cannot open module file'}
+        with tempfile.TemporaryDirectory() as d, patch.dict(os.environ, {'TMPDIR': d}), \
+                patch.object(tempfile, 'tempdir', None), patch.object(bench, 'timed', side_effect=timed) as t:
+            err = bench.roulette_make(self.args(), 'racket {file}', '/p/bn.rkt', '/p/timer.rkt')
+            self.assertEqual(t.call_args[0][0], ['racket', '-l-', 'raco', 'make', '/p/bn.rkt', '/p/timer.rkt'])
+            self.assertFalse(probe('racket {file}'))
+        self.assertEqual(held, [(True, False)])
+        self.assertEqual(err, {'status': 'error', 'seconds': 0, 'error': 'raco make: error cannot open module file'})
+
+    @unittest.skipUnless(os.environ.get('ROULETTE_RACKET'), 'ROULETTE_RACKET is not set')
+    def test_bn_rkt_reads_values_that_print_between_bars(self):
+        """data/roulette/bn.rkt under Roulette: values that read as numbers,
+        which Racket writes between bars (|0|), in display-pmf's table (a)
+        and alone where one value holds all the mass (c), and values of
+        ordinary names (b), each distribution in full."""
+        bif = ('network unknown {\n}\n'
+               'variable a {\n  type discrete [ 3 ] { 0, 1, 2 };\n}\n'
+               'variable b {\n  type discrete [ 2 ] { yes, no };\n}\n'
+               'variable c {\n  type discrete [ 2 ] { 0, 1 };\n}\n'
+               'probability ( a ) {\n  table 0.25, 0.5, 0.25;\n}\n'
+               'probability ( b | a ) {\n  (0) 0.5, 0.5;\n  (1) 0.1, 0.9;\n  (2) 1.0, 0.0;\n}\n'
+               'probability ( c ) {\n  table 1.0, 0.0;\n}\n')
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, 'n.bif').write_text(bif)
+            Path(d, 'n.asks').write_text('order a b c\nquery a\nquery b\nquery c\n')
+            r = subprocess.run(shlex.split(os.environ['ROULETTE_RACKET']) +
+                               [f'{bench.ROULETTE_DATA}/bn.rkt', f'{d}/n.bif', f'{d}/n.asks'],
+                               capture_output=True, text=True, timeout=600)
+        self.assertEqual(r.returncode, 0, r.stderr[-2000:])
+        got = {}
+        for line in r.stdout.splitlines():
+            if line.startswith('roulette_b '):
+                _, v, x, p = line.split()
+                got[(v, x)] = float(p)
+        want = {('a', '|0|'): 0.25, ('a', '|1|'): 0.5, ('a', '|2|'): 0.25,
+                ('b', 'yes'): 0.425, ('b', 'no'): 0.575, ('c', '|0|'): 1.0}
+        self.assertEqual(sorted(got), sorted(want))
+        for k, p in want.items():
+            self.assertAlmostEqual(got[k], p, delta=1e-12, msg=k)
+
+    def test_a_network_runs_in_the_bn_language(self):
+        """A Bayesian network of another suite runs data/roulette/bn.rkt on
+        the BIF file gen_bn.py writes and what it asks of it: its order,
+        observations and queries, or under --pr the holds lines of P(e);
+        its answers are keyed as the ProbLog program's queries (a value left
+        out answers 0), its in-process time kept. A Markov network runs the
+        Dice program dice2roulette.py translates."""
+        with tempfile.TemporaryDirectory() as d:
+            args = self.args(suite='standard', dir=d)
+            prog, rest = bench.roulette_program(args, 'bn_asia')
+            self.assertEqual((prog, rest), (f'{bench.ROULETTE_DATA}/bn.rkt',
+                                            [f'{d}/bn_asia.roulette.bif', f'{d}/bn_asia.roulette.asks']))
+            asks = Path(d, 'bn_asia.roulette.asks').read_text().splitlines()
+            self.assertEqual(asks[0].split()[0], 'order')
+            self.assertEqual(asks[1:], ['query x6', 'query x7'])
+            bench.roulette_program(args, 'bn_asia_ev')
+            asks = Path(d, 'bn_asia_ev.roulette.asks').read_text().splitlines()
+            self.assertEqual([a.split()[0] for a in asks], ['order', 'observe', 'query'])
+            self.assertIsNone(bench.roulette_bif(args, 'dice_twocoins'))
             path = Path(d, 'bn_asia.pl')
             path.write_text('query(xray(yes)).\nquery(xray(no)).\nquery(dysp(yes)).\nquery(dysp(no)).\n')
-            out = ('cpu time: 10 real time: 12 gc time: 0\nroulette_b x6 s0 0.11\nroulette_b x6 s1 0.89\n'
-                   'cpu time: 20 real time: 21 gc time: 0\nroulette_b x7 s1 1.0\n')
+            out = 'roulette_b x6 s0 0.11\nroulette_b x6 s1 0.89\nroulette_b x7 s1 1.0\n'
             with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0, 'stdout': out,
                                                             'stderr': 'roulette_timer: program 0.033 s\n'}) as timed:
-                r = bench.run_roulette(args, 'bn_asia', str(path), 'bayes')
+                r = bench.run_roulette(args, 'bn_asia', str(path), 'rsdd')
             self.assertEqual(timed.call_args_list[0][0][0],
-                             ['racket', '-l-', 'raco', 'make', f'{bench.ROULETTE_DATA}/bif.rkt', bench.ROULETTE_TIMER])
+                             ['racket', '-l-', 'raco', 'make', f'{bench.ROULETTE_DATA}/bn.rkt', bench.ROULETTE_TIMER])
             self.assertEqual(timed.call_args_list[1][0][0],
-                             ['racket', bench.ROULETTE_TIMER, f'{bench.ROULETTE_DATA}/bif.rkt', f'{d}/bn_asia.bif',
-                              f'{d}/bn_asia.bifq'])
-        self.assertEqual(r['answers'], {'xray(yes)': 0.11, 'xray(no)': 0.89, 'dysp(yes)': 0.0, 'dysp(no)': 1.0})
-        self.assertAlmostEqual(r['stats']['inproc_seconds'], 0.033)
+                             ['racket', bench.ROULETTE_TIMER, f'{bench.ROULETTE_DATA}/bn.rkt',
+                              f'{d}/bn_asia.roulette.bif', f'{d}/bn_asia.roulette.asks'])
+            self.assertEqual(r['answers'], {'xray(yes)': 0.11, 'xray(no)': 0.89, 'dysp(yes)': 0.0, 'dysp(no)': 1.0})
+            self.assertAlmostEqual(r['stats']['inproc_seconds'], 0.033)
+            with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0,
+                                                            'stdout': 'roulette_b x6 s2 1.0\n',
+                                                            'stderr': 'roulette_timer: program 0.033 s\n'}):
+                r = bench.run_roulette(args, 'bn_asia', str(path), 'rsdd')
+            self.assertEqual(r['status'], 'error')
+            self.assertIn('x6 takes s2', r['error'])
+            # P(e): the observations as holds lines, the answer PE_QUERY's
+            pr = self.args(suite='standard', dir=os.path.join(d, 'pr'), pr=True)
+            os.makedirs(pr.dir)
+            bench.roulette_program(pr, 'bn_asia_ev')
+            asks = Path(pr.dir, 'bn_asia_ev.roulette.asks').read_text().splitlines()
+            self.assertEqual([a.split()[0] for a in asks], ['order', 'holds'])
+            path = Path(pr.dir, 'bn_asia_ev.pe.pl')
+            path.write_text(f'{bench.PE_QUERY} :- xray(yes).\nquery({bench.PE_QUERY}).\n')
+            with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0, 'stdout': 'roulette_e 0.11\n',
+                                                            'stderr': 'roulette_timer: program 0.033 s\n'}):
+                r = bench.run_roulette(pr, 'bn_asia_ev', str(path), 'rsdd')
+            self.assertEqual(r['answers'], {bench.PE_QUERY: 0.11})
+            # a Markov network has no BIF file
+            markov = self.args(suite='uai', dir=d, uai_benchmarks=str(SOURCE / 'tests' / 'regress'))
+            with patch.object(bench, 'instances', return_value={
+                    'uai_markov': ('uaimarkov', ['gen_bn.py', str(SOURCE / 'tests' / 'regress' / 'markov.uai')])}):
+                self.assertIsNone(bench.roulette_bif(markov, 'uai_markov'))
+                self.assertEqual(bench.roulette_program(markov, 'uai_markov'), (f'{d}/uai_markov.roulette.rkt', []))
 
     def test_roulette_options_fail_where_they_do_nothing(self):
         def run_args(**kw):
@@ -629,7 +777,7 @@ class RouletteTests(unittest.TestCase):
         for gone in ['nocomplement', 'extexp']:
             with self.assertRaisesRegex(SystemExit, f'--roulette-variants {gone} was a variant of the Roulette artifact'):
                 bench.run(run_args(roulette_variants=['rsdd', gone]))
-        with self.assertRaisesRegex(SystemExit, 'observe nothing, outside the roulette suite and --pr, and none'):
+        with self.assertRaisesRegex(SystemExit, "every Bayesian network now runs in Roulette's BN language"):
             bench.run(run_args(roulette_variants=['rsdd', 'bayes']))
 
         def parsed(cmd, **given):
@@ -690,7 +838,10 @@ class RouletteTddlogTests(unittest.TestCase):
         base.update(kw)
         return SimpleNamespace(**base)
 
-    def run_it(self, args, name, path, export_err, tddlog_out, export_out=None):
+    def run_it(self, args, name, path, export_err, tddlog_out, export_out=None, kept=()):
+        """The run's record and commands; the circuit is removed once
+        tddlog has read it, and the run leaves `kept` alone (a network's
+        BIF file and asks)."""
         cmds = []
 
         def timed(cmd, timeout, cwd=None):
@@ -703,7 +854,7 @@ class RouletteTddlogTests(unittest.TestCase):
             return {'status': 'ok', 'seconds': 2.0, 'stdout': export_out or self.CIRCUIT, 'stderr': export_err}
         with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', side_effect=timed):
             r = bench.run_roulette_tddlog(self.args(dir=d, **args), name, path)
-            self.assertEqual(os.listdir(d), [])
+            self.assertEqual(sorted(os.listdir(d)), sorted(kept))
         return r, cmds
 
     SUMMARY = 'tddlog-engine: 1 queries, 5 values, 2 flips, 3 gates, 1 observations; program 1.25 s, circuit 0.25 s\n'
@@ -735,12 +886,48 @@ class RouletteTddlogTests(unittest.TestCase):
     def test_a_networks_value_that_reads_as_a_number_loses_its_bars(self):
         # The circuit's note writes the symbol 0 as |0|, the ProbLog program's atom reads v_0.
         with tempfile.TemporaryDirectory() as d:
+            Path(d, 'bayesian-networks').mkdir()
+            Path(d, 'bayesian-networks', 'pigs.bif').write_text(
+                'network unknown {\n}\nvariable p392115290 {\n  type discrete [ 2 ] { 0, 1 };\n}\n'
+                'probability ( p392115290 ) {\n  table 0.25, 0.75;\n}\n')
             path = Path(d, 'p.pl')
             path.write_text('query(p392115290(v_0)).\nquery(p392115290(v_1)).\n')
-            r, _ = self.run_it({}, 'rl_bn_pigs', str(path), self.SUMMARY, 'q1(0): 0.25\nq1(1): 0.75\n',
-                               export_out='% q1(0): |0|\n% q1(1): |1|\n')
+            r, cmds = self.run_it({'roulette_benchmarks': d}, 'rl_bn_pigs', str(path), self.SUMMARY,
+                                  'q1(0): 0.25\nq1(1): 0.75\nq2(0): 1\n',
+                                  export_out='% infer was called 2 times\n% q1(0): |0|\n% q1(1): |1|\n% q2(0): #t\n',
+                                  kept=['rl_bn_pigs.roulette.asks'])
+        self.assertEqual(cmds[1][0][:4], ['racket', '-l-', 'roulette/engine/tddlog', f'{bench.ROULETTE_DATA}/bn.rkt'])
         self.assertEqual(r['answers'], {'p392115290(v_0)': 0.25, 'p392115290(v_1)': 0.75})
         self.assertNotIn('other', r['stats'])
+
+    def test_a_networks_queries_are_its_odd_calls(self):
+        """bn.rkt's K-th query is call 2K-1; under --pr P(e) is call 1's #t.
+        A circuit of another number of calls is an error: bn.rkt with an
+        expression at the module's level, which the language asks as a
+        query of its own (two calls), read #<void> as the first query."""
+        network = str(SOURCE / 'tests' / 'networks' / 'asia.net')
+        spec = {'bn_asia': ('bn', ['gen_bn.py', network, '--query', 'leaves'])}
+        circuit = '% infer was called 4 times\n' + ''.join(
+            f'% q{k}({i}): {v}\n' for k, i, v in [(1, 0, 's0'), (1, 1, 's1'), (2, 0, '#t'),
+                                                  (3, 0, 's0'), (3, 1, 's1'), (4, 0, '#t')])
+        out = 'q1(0): 0.25\nq1(1): 0.75\nq2(0): 1\nq3(0): 0.5\nq3(1): 0.5\nq4(0): 1\n'
+        with tempfile.TemporaryDirectory() as d, patch.object(bench, 'instances', return_value=spec):
+            path = Path(d, 'p.pl')
+            path.write_text('query(xray(yes)).\nquery(xray(no)).\nquery(dysp(yes)).\nquery(dysp(no)).\n')
+            r, _ = self.run_it({'suite': 'standard'}, 'bn_asia', str(path), self.SUMMARY, out, export_out=circuit,
+                               kept=['bn_asia.roulette.bif', 'bn_asia.roulette.asks'])
+            self.assertEqual(r['answers'], {'xray(yes)': 0.25, 'xray(no)': 0.75, 'dysp(yes)': 0.5, 'dysp(no)': 0.5})
+            r, _ = self.run_it({'suite': 'standard'}, 'bn_asia', str(path), self.SUMMARY, out,
+                               export_out=circuit.replace('called 4 times', 'called 10 times'),
+                               kept=['bn_asia.roulette.bif', 'bn_asia.roulette.asks'])
+            self.assertEqual(r['status'], 'error')
+            self.assertIn('bn.rkt called infer 10 times, not twice for each of its 2 queries', r['error'])
+            path.write_text(f'query({bench.PE_QUERY}).\n')
+            r, _ = self.run_it({'suite': 'standard', 'pr': True}, 'bn_asia', str(path), self.SUMMARY,
+                               'q1(0): 0.25\nq1(1): 0.75\nq2(0): 1\n',
+                               export_out='% infer was called 2 times\n% q1(0): #t\n% q1(1): #f\n% q2(0): #t\n',
+                               kept=['bn_asia.roulette.bif', 'bn_asia.roulette.asks'])
+            self.assertEqual(r['answers'], {bench.PE_QUERY: 0.25})
 
     def test_out_of_fuel_is_one_past_the_largest_total_of_positive_probability(self):
         # hardware-bitwidth.rkt under the exporter: every total the circuit can take (0 to 7),
@@ -776,13 +963,19 @@ class RouletteTddlogTests(unittest.TestCase):
         self.assertEqual(len(cmds), 2)
         self.assertEqual((r['status'], r['error']), ('error', "Roulette's tddlog engine wrote no program: oops"))
 
-    def test_it_runs_the_roulette_suite_and_the_dice_programs_roulette_translates(self):
+    def test_it_runs_the_roulette_suite_the_networks_and_the_dice_programs_roulette_translates(self):
         self.assertTrue(bench.roulette_tddlog_accepts(self.args(), 'rl_motivating_1000'))
-        args = self.args(suite='standard')
-        taken = [n for n in bench.instances(args) if bench.roulette_tddlog_accepts(args, n)]
-        self.assertTrue(taken)
-        for n in taken:
-            self.assertTrue(bench.instances(args)[n][1][1].startswith(str(scripts.parent / 'data' / 'dice')), n)
+        with tempfile.TemporaryDirectory() as d:
+            # the Dice paper's programs and the Bayesian networks, which Roulette reads in its BN language
+            args = self.args(suite='standard', dir=d, only=['bn_asia', 'bn_asia_ev', 'dice_twocoins', 'dice_grass',
+                                                            'grid4', 'g10_25'])
+            taken = [n for n in bench.instances(args) if bench.roulette_tddlog_accepts(args, n)]
+            self.assertEqual(set(taken), {'bn_asia', 'bn_asia_ev', 'dice_twocoins', 'dice_grass'})
+            self.assertEqual(os.listdir(d), [])   # deciding writes nothing (rt2_jobs.py plans with it)
+            # a Markov network's Dice program is not one
+            markov = {'uai_markov': ('uaimarkov', ['gen_bn.py', str(SOURCE / 'tests' / 'regress' / 'markov.uai')])}
+            with patch.object(bench, 'instances', return_value=markov):
+                self.assertFalse(bench.roulette_tddlog_accepts(self.args(suite='uai', dir=d), 'uai_markov'))
         # noDice's programs, not the circuits of Alea.jl's
         args = self.args(suite='ppl')
         taken = {n for n in bench.instances(args) if bench.roulette_tddlog_accepts(args, n)}
@@ -790,9 +983,6 @@ class RouletteTddlogTests(unittest.TestCase):
         self.assertTrue(taken)
         args = self.args(suite='geni')
         self.assertTrue(all(bench.roulette_tddlog_accepts(args, n) for n in bench.instances(args)))
-        # a network's Dice program is not one
-        args = self.args(suite='standard')
-        self.assertFalse(bench.roulette_tddlog_accepts(args, 'bn_asia'))
 
 
 class CirculetteTests(unittest.TestCase):
