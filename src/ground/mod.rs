@@ -166,7 +166,7 @@ pub struct GroundOptions {
     /// Condition on the program's one query where it observes nothing, and
     /// answer the query by the probability of that evidence where the
     /// conditioning fixes or merges a fact
-    /// ([`GroundProgram::observed_query`]). Off by default, the program
+    /// (`GroundProgram::observed_query`). Off by default, the program
     /// ground as it asks; on in a run's options (`Options::default`), and
     /// off again where the program is printed for another reader
     /// (`--ground`, `--cnf`), which would need the factor the conditioning

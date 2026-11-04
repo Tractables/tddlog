@@ -380,7 +380,7 @@ impl GroundProgram {
         self.atoms.len()
     }
     /// How many queries the program asks, a `query(\+a)` among them, and
-    /// the one its evidence asks ([`Self::observed_query`]).
+    /// the one its evidence asks (`observed_query`).
     pub fn num_queries(&self) -> usize {
         self.queries.len() + usize::from(self.observed_query.is_some())
     }
