@@ -153,11 +153,12 @@ function draftHome() {
   });
   return [
     element("section", { class: "intro" },
-      element("p", { class: "big" }, "tddlog computes exact probabilities for probabilistic logic programs, Bayesian and Markov networks, "
-        + "and probabilistic functional programs, by compiling them into tree decision diagrams."),
-      element("p", { class: "lede" }, `In its release run it answers ${count(all.answers.tddlog ?? 0)} of ${count(all.instances)} instances of `
-        + `${inWords(data.types.length)} types of program, against ${count(others)} baselines run on the same machines. `,
-        element("a", { href: "playground/" }, "The playground"), " runs it in the browser.")),
+      element("p", { class: "big" }, "tddlog computes exact probabilities for probabilistic logic programs, probabilistic databases, "
+        + "Bayesian and Markov networks, and probabilistic functional programs, by compiling them into tree decision diagrams."),
+      element("p", { class: "lede" }, `It answers ${count(all.answers.tddlog ?? 0)} of ${count(all.instances)} instances of `
+        + `${inWords(data.types.length)} types of program, against ${count(others)} baselines. `,
+        element("a", { href: "playground/" }, "The playground"), " runs it in the browser."),
+      stampLine()),
     element("h2", { class: "home-h" }, "Each type of program against its best baselines"),
     scroller(stacked(element("table", { class: "board home-t" }, element("thead", {}, element("tr", {},
       element("th", { scope: "col" }, "type of program"), element("th", { scope: "col", class: "num" }, "instances"),

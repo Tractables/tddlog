@@ -741,6 +741,15 @@ function headline(c, rows, tal, only) {
 // (rule 16), from the data's parameters of the measure (data.measure,
 // panels.py's); How it works holds the whole definition.
 const twice = (par) => (par === 2 ? "twice" : `${par} times`);
+// When and on which commit of the source tree the data were processed
+// (categories.json's stamp), the one data every headline is from: the
+// README's quote the same.
+function stampLine() {
+  const { date, source } = data.stamp;
+  return element("p", { class: "muted small stamp" }, `Results as of ${date}, public main `,
+    element("a", { href: `https://github.com/Tractables/tddlog/commit/${source}` }, element("code", {}, source)), ".");
+}
+
 function measureLine() {
   const { floor, par, common } = data.measure;
   return `An unanswered run counts as ${twice(par)} its time limit (PAR-${par}) and a time under ${floor} s as ${floor} s; `
@@ -848,13 +857,15 @@ function drawOverview(box) {
     if (others.systems.length) {
       const who = others.systems.map((x) => data.names[x]);
       const several = who.length > 1;
-      // their names where they fit (about 6.5 px a letter), on hover in any case
-      const tail = `${several ? "each more than " : ""}${atLeast(others.total)} in total`;
-      const text = [`${and(who)}: ${tail}`, tail, `${several ? "each over " : ""}${atLeast(others.total)}`].find((t) => t.length * 6.5 <= x1 - x0)
-        ?? `${several ? "each over " : ""}${atLeast(others.total)}`;
+      // their names where they fit (about 6.5 px a letter), on hover in any case; a bound on
+      // their totals only where each has an instance it or tddlog answers (a total above 0)
+      const bound = others.total ? atLeast(others.total) : null;
+      const tail = bound ? `${several ? "each more than " : ""}${bound} in total` : "";
+      const short = bound ? `${several ? "each over " : ""}${bound}` : "";
+      const text = [bound ? `${and(who)}: ${tail}` : and(who), tail, short].find((t) => t.length * 6.5 <= x1 - x0) ?? short;
       const r = others.speedup;
-      line(to, `${and(who)}: ${several ? "each " : ""}more than ${atLeast(others.total)} in total over the instances `
-        + `${several ? "each" : "it"} is given and either answers (PAR-${data.measure.par})`
+      line(to, `${and(who)}` + (bound ? `: ${several ? "each " : ""}more than ${bound} in total over the instances `
+        + `${several ? "each" : "it"} is given and either answers (PAR-${data.measure.par})` : "")
         + (r === null ? "" : `; ${subject(ms)}'s speed-up ${r >= 1 ? `at least ${times(r, 1, true)}` : `at most ${times(1, r)} slower`}`),
       "others", several ? `${who.length} others` : who[0], null,
       svg("text", { class: "both", x: x0, y: y + row / 2 + 4 }, text), mark(r, true));
@@ -1200,7 +1211,7 @@ function home() {
   const out = [element("div", { class: "fig-head" }, element("h2", {}, "Each type of program against the systems native to it"),
     element("span", { class: "dots" }, element("i", { class: "me" }), subject(subjectsOf(data.types.flatMap((c) => catRows(c)))),
       element("i", { class: "you" }), "a native system")),
-  overview()];
+  overview(), stampLine()];
   for (const c of data.categories) {
     const to = { view: "category", category: c.key };
     const rows = catRows(c);
@@ -1459,7 +1470,7 @@ function solverParts(x) {
   if (short.length || s.notgiven) {
     facts.append(element("dt", {}, "Not given"), prose("dd", `${short.length ? `${and(short)}. ` : ""}${s.notgiven}`.trim()));
   }
-  facts.append(element("dt", {}, "Compared"), element("dd", {}, `Against ${subject(ms)}, on the same machine in the same lanes.`));
+  facts.append(element("dt", {}, "Compared"), element("dd", {}, `Against ${subject(ms)}.`));
   if (s.cite) {
     const c = s.cite;
     facts.append(element("dt", {}, "Paper"), element("dd", {}, `${c.authors}. `,
@@ -2181,7 +2192,7 @@ async function runs(route) {
       note(r.later ? "A later run, in lanes of its own." : "The release run."));
     if (r.later && rec !== "tddlog") {
       const t = tddlogIn(r.later).map(med).filter((x) => x !== null);
-      if (t.length) block.append(note(`tddlog in the same lanes: ${seconds(t[0])} s.`));
+      if (t.length) block.append(note(`tddlog in the same job: ${seconds(t[0])} s.`));
     }
     if (r.skipped) block.append(note(r.queued ? "Not yet run: a rerun is queued." : `Not run in any repetition: ${FAILURES.skipped[1]}.`));
     else {

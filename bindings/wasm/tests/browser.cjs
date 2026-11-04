@@ -204,13 +204,17 @@ function benchmarksOf(root) {
     page.on("pageerror", (error) => errors.push(String(error)));
 
     if (!only) {
-    // The page opens on the first example and runs it, with the release
-    // run's results at a glance under it.
+    // The page opens on the first example and runs it, with the results at
+    // a glance under it: all programs as categories.json counts them, the
+    // numbers of the site's home and the README, with their stamp.
     await page.goto(play);
     await answered(page, tddlogExamples[0].problog[0][0]);
     await page.waitForSelector("#glance:not([hidden])");
     const glance = (await page.textContent("#glance-stats")).replace(/(\d),(?=\d)/g, "$1").replace(/\s+/g, " ");
-    assert.match(glance, /\d+ instances in the release run \d+ answered by tddlog \d+ answered by tddlog alone/, glance);
+    const cats = JSON.parse(fs.readFileSync(path.join(site, "results", "categories.json"), "utf8"));
+    const every = cats.categories.find((c) => c.key === "all-programs");
+    assert.match(glance, new RegExp(`${every.instances} instances ${every.answers.tddlog} answered by tddlog \\d+ answered by tddlog and no baseline`), glance);
+    assert.equal(await page.textContent("#glance-asof"), `Results as of ${cats.stamp.date}, public main ${cats.stamp.source}.`);
     assert.equal(await page.$("[aria-live]"), null, "only the status is announced");
 
     // Every example: tddlog's answers agree with ProbLog's to the digits
@@ -649,6 +653,13 @@ function benchmarksOf(root) {
       assert.ok(await page.$eval(".site-logo", (img) => img.complete && img.naturalWidth > 0),
         `${at || "the front page"}: the project logo loads`);
       await page.waitForSelector(at === "" ? "#view table.home-t" : at === "results/" ? "#view figure.overview svg" : "body");
+      if (at === "") {
+        // the home: the five types in its lede, its numbers those of the data's stamp
+        const home = JSON.parse(fs.readFileSync(path.join(site, "results", "categories.json"), "utf8"));
+        assert.match(await page.textContent("#view p.big"), /probabilistic logic programs, probabilistic databases, Bayesian and Markov networks/);
+        assert.equal((await page.textContent("#view p.stamp")).replace(/\s+/g, " "),
+          `Results as of ${home.stamp.date}, public main ${home.stamp.source}.`, "the home: the data's stamp");
+      }
       // an SVG link's href is an SVGAnimatedString
       const hrefs = await page.$$eval("a[href]", (anchors) => anchors.map((a) => (typeof a.href === "string" ? a.href : new URL(a.href.baseVal, location.href).href)));
       for (const href of hrefs) {
@@ -895,6 +906,11 @@ function benchmarksOf(root) {
       c.vs[x].speedup === null ? "too few in common" : speed(c.vs[x].speedup)])), "the overview: each named system's answers and tddlog's speed-up");
     assert.equal((await page.$$("#view svg.overview a.row.others")).length, types.filter((c) => c.others.systems.length).length,
       "the overview: a row of the others");
+    // no bound of 0 s on the others' row (a total of 0: no instance it or tddlog answers)
+    assert.equal((await page.$$eval("#view svg.overview a.row.others text.both", (ts) => ts.map((t) => t.textContent)))
+      .filter((t) => /\b0(\.0)? s\b/.test(t)).length, 0, "the overview: no others' bound of 0 s");
+    assert.equal((await page.textContent("#view p.stamp")).replace(/\s+/g, " "),
+      `Results as of ${cats.stamp.date}, public main ${cats.stamp.source}.`, "the overview: the data's stamp");
     const sections = await page.$$eval("#view section.kind-figs", (ss) => ss.map((s) => [s.querySelector("h3 a").getAttribute("href"),
       s.querySelector("figure.plot").dataset.systems, s.querySelector("figure.scatter").dataset.faster, s.querySelector("figure.scatter").dataset.slower,
       [...s.querySelectorAll('figure.plot .legend button[aria-pressed="false"]')].length]));

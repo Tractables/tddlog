@@ -38,6 +38,9 @@ command-line tool with Python, C and WebAssembly bindings, and it
        alt="Each type of program against the exact inference systems native to it: their answers, their total times and tddlog's, and tddlog's speed-up over each">
 </p>
 
+<!-- results:overview -->
+<!-- /results:overview -->
+
 On every type of program, tddlog answers more instances than each
 exact inference system native to it, in less total time
 ([Performance](#performance)).
@@ -223,10 +226,11 @@ given and either answers, and how many times faster tddlog is. The
 [results page](https://tractables.github.io/tddlog/results/) has every
 instance, time and program, and a page for each system.
 
-Runs are single-threaded, under each suite's time limit (300 to 1200
-seconds); a run that does not answer counts as twice its limit, and a
-time under 0.2 s as 0.2 s. The results page says how the speed-up is
-counted, and the [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
+<!-- results:setup -->
+<!-- /results:setup -->
+
+The results page says how the speed-up is counted, and the
+[`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
 how each system was run.
 
 ### Probabilistic logic programs
@@ -236,21 +240,18 @@ how each system was run.
        alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **342 of 365** ProbLog programs, of 25 families: paths
-in random graphs and grids, Biomine's paths, smokers, UW-CSE, Cora's
-citation matching, blood types and pedigrees, sickness, Mastermind,
-MNIST addition and handwritten formulas, Prob-EC's event calculus, taint
-analyses of Android apps, probabilistic grammars, hidden Markov models,
-and the programs of the ProbLog tutorial and of ProbLog's and cplint's
-examples.
+<!-- results:logic-programs -->
+<!-- /results:logic-programs -->
 
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| ProbLog | 260 | 15 h | 40 min | 48× |
-| PITA | 221 | 22 h | 30 min | 174× |
-| aspmc | 219 | 22 h | 30 min | 96× |
-| Scallop | 156 | 32 h | 30 min | too few in common |
-| PSouffle | 108 | 42 h | 30 min | 669× |
+The ProbLog programs: paths in random graphs and grids, Biomine's paths,
+smokers, UW-CSE, Cora's citation matching, blood types and pedigrees,
+sickness, Mastermind, MNIST addition and handwritten formulas, Prob-EC's
+event calculus, taint analyses of Android apps, probabilistic grammars,
+hidden Markov models, and the programs of the ProbLog tutorial and of
+ProbLog's and cplint's examples.
+
+<!-- results:logic-programs-table -->
+<!-- /results:logic-programs-table -->
 
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
   ProbLog 4.
@@ -265,18 +266,15 @@ examples.
        alt="Queries over probabilistic databases answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **308 of 320** Boolean queries over tuple-independent
-databases: 16 TPC-H queries, the queries h0 and h1, the safe queries QW
-and Q9, and paths of two edges in random graphs.
+<!-- results:database-queries -->
+<!-- /results:database-queries -->
 
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| ProvSQL | 268 | 16 h | 41 min | 22× |
-| ProbLog | 203 | 39 h | 41 min | 126× |
-| PSouffle | 189 | 41 h | 41 min | 117× |
-| PITA | 123 | 62 h | 41 min | 411× |
-| Scallop | 30 | 90 h | 41 min | too few in common |
-| aspmc | 22 | 95 h | 41 min | 520× |
+The queries are Boolean queries over tuple-independent databases: 16
+TPC-H queries, the queries h0 and h1, the safe queries QW and Q9, and
+paths of two edges in random graphs.
+
+<!-- results:database-queries-table -->
+<!-- /results:database-queries-table -->
 
 - Where others win: ProbLog on the paths of two edges in random graphs
   of 14 and 17 nodes, in 4.8 s and 39 s against tddlog's 18 s and 182 s.
@@ -288,28 +286,22 @@ and Q9, and paths of two edges in random graphs.
        alt="Bayesian networks answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **609 of 636** networks: bnlearn's, the large ones and
-the Roulette and noDice papers' versions among them, Ace's, the noisy-or
-networks, and the networks of the UAI 2022 competition and of Ihler's
-collection whose factors are conditional probability tables
-(diagnosis, pedigree, BN, blockmap, Mastermind and fs networks, and the
-classic networks).
+<!-- results:bayesian-networks -->
+<!-- /results:bayesian-networks -->
 
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| Ace | 416 | 34 h | 1.3 h | 23× |
-| TensorInference.jl | 323 | 56 h | 1.5 h | 34× |
-| Merlin | 293 | 57 h | 1.5 h | 34× |
-| libDAI | 291 | 58 h | 1.5 h | 33× |
-| pyAgrum | 263 | 63 h | 1.5 h | 37× |
-| 14 others: PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, ProbLog, Dice, Genfer, SPPL, noDice, Scallop, Psi, Geni | 43 to 238 | over 19 h each | 2 min to 1.5 h | at least 42× |
+The networks: bnlearn's, the large ones and the Roulette and noDice
+papers' versions among them, Ace's, the noisy-or networks, and the
+networks of the UAI 2022 competition and of Ihler's collection whose
+factors are conditional probability tables (diagnosis, pedigree, BN,
+blockmap, Mastermind and fs networks, and the classic networks).
+
+<!-- results:bayesian-networks-table -->
+<!-- /results:bayesian-networks-table -->
 
 - Where others win: the networks named BN of Ihler's collection. tddlog
   runs out of time on seven that pyAgrum or Merlin answers in 0.3 to 2.1 s,
   and on 20 more Merlin, pyAgrum or TensorInference.jl is at least twice
   as fast, up to 0.3 s against tddlog's 204 s.
-
-PSouffle was given 11 of the networks and answers 6.
 
 ### Markov networks
 
@@ -318,19 +310,17 @@ PSouffle was given 11 of the networks and answers 6.
        alt="Markov networks answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog answers **243 of 290** networks, those of the UAI 2022
-competition and of Ihler's collection whose factors are not conditional
-probability tables over an acyclic graph: object detection,
-segmentation, grid, DBN, CSP and Alchemy networks, protein side chains,
-the rus networks, weighted CSPs, and pedigree and diagnosis networks.
+<!-- results:markov-networks -->
+<!-- /results:markov-networks -->
 
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| TensorInference.jl | 198 | 9.3 h | 2.5 h | 2.6× |
-| libDAI | 180 | 13 h | 1.4 h | 16× |
-| Merlin | 171 | 13 h | 1.5 h | 11× |
-| pyAgrum | 170 | 13 h | 1.4 h | 13× |
-| pgmpy | 117 | 22 h | 1.4 h | 28× |
+The networks are those of the UAI 2022 competition and of Ihler's
+collection whose factors are not conditional probability tables over an
+acyclic graph: object detection, segmentation, grid, DBN, CSP and
+Alchemy networks, protein side chains, the rus networks, weighted CSPs,
+and pedigree and diagnosis networks.
+
+<!-- results:markov-networks-table -->
+<!-- /results:markov-networks-table -->
 
 - Where others win: six partition functions of the UAI 2022 final set,
   five of them protein networks, and Ihler's pedigree50 run out of time
@@ -341,48 +331,41 @@ the rus networks, weighted CSPs, and pedigree and diagnosis networks.
 
 <p align="center">
   <img src="docs/images/results-functional-programs.svg"
-       alt="Probabilistic functional programs answered within each time limit, and the time of tddlog or Alea.jl+tddlog against the fastest native system's">
+       alt="Probabilistic functional programs answered within each time limit, and tddlog's time against the fastest native system's">
 </p>
 
-tddlog and Alea.jl+tddlog answer **295 of 331** programs over discrete
-values with
-conditionals and loops, of 18 families: the Caesar cipher, diamond and
-ladder networks, Geni's router grids with failing links or routers and
-its weather factory, hidden Markov models and Pluck's sequence models, a
-Markov chain, a lossy network, contract signing, a perturbed-memory
-interpreter, Cao et al.'s integer programs, the coupon collector, 3-SAT,
-the bounded retransmission protocol and the Dice paper's small
-programs. On Cao et al.'s integer programs and Pluck's sequence models,
-Alea.jl builds the Boolean circuit that Alea.jl+tddlog answers.
+<!-- results:functional-programs -->
+<!-- /results:functional-programs -->
 
-| System | Answers | Its total time | tddlog or Alea.jl+tddlog's total time | tddlog or Alea.jl+tddlog faster |
-|---|--:|--:|--:|--:|
-| Alea.jl | 224 | 25 h | 1.2 h | 14× |
-| Roulette | 193 | 35 h | 1.2 h | 26× |
-| Dice | 173 | 43 h | 1.2 h | 42× |
-| Pluck | 140 | 52 h | 1.2 h | 46× |
-| Genfer | 99 | 66 h | 1.2 h | 405× |
-| 4 others: Geni, noDice, SPPL, Psi | 8 to 91 | over 68 h each | 1.2 h | at least 78× |
+The programs are over discrete values with conditionals and loops: the
+Caesar cipher, diamond and ladder networks, Geni's router grids with
+failing links or routers and its weather factory, hidden Markov models
+and Pluck's sequence models, a Markov chain, a lossy network, contract
+signing, a perturbed-memory interpreter, Cao et al.'s integer programs,
+the coupon collector, 3-SAT, the bounded retransmission protocol,
+Circulette's netlists and the Dice paper's small programs. tddlog counts
+as unanswered on the programs only another system's front end reads:
+Alea.jl's on Cao et al.'s integer programs and Pluck's sequence models,
+whose integration Alea.jl+tddlog is [below](#integrations).
+
+<!-- results:functional-programs-table -->
+<!-- /results:functional-programs-table -->
 
 ### All programs
 
 <p align="center">
   <img src="docs/images/results-all-programs.svg"
-       alt="All programs answered within each time limit, and the time of tddlog or Alea.jl+tddlog against the fastest other system's">
+       alt="All programs answered within each time limit, and tddlog's time against the fastest other system's">
 </p>
 
-tddlog and Alea.jl+tddlog answer **1797 of 1942**: the five types
-together, every system on every program it is given, natively or through
-a translation.
+<!-- results:all-programs -->
+<!-- /results:all-programs -->
 
-| System | Answers | Its total time | tddlog or Alea.jl+tddlog's total time | tddlog or Alea.jl+tddlog faster |
-|---|--:|--:|--:|--:|
-| Ace | 1008 | 128 h | 4.9 h | 29× |
-| libDAI | 891 | 164 h | 5.2 h | 37× |
-| TensorInference.jl | 872 | 179 h | 6.2 h | 30× |
-| pyAgrum | 836 | 173 h | 5.2 h | 37× |
-| Merlin | 829 | 179 h | 5.4 h | 33× |
-| 18 others: ProbLog, pgmpy, PITA, aspmc, Alea.jl, Roulette, Storm, Pluck, Dice, PRISM, PSouffle, ProvSQL, Scallop, noDice, Genfer, Geni, SPPL, Psi | 86 to 734 | over 16 h each | 41 min to 5.4 h | at least 22× |
+All programs are the five types together, every system on every program
+it is given, natively or through a translation.
+
+<!-- results:all-programs-table -->
+<!-- /results:all-programs-table -->
 
 - Where others win: pgmpy answers grid25, a logic program's path query
   across a 25 by 25 grid of probabilistic edges, in 144 s on the
@@ -405,10 +388,8 @@ Roulette+tddlog is Roulette's tddlog engine, on the branch [`tddlog` of
 Tractables/roulette](https://github.com/Tractables/roulette/tree/tddlog), a
 fork of neuppl/roulette.
 
-| Integration | Instances | Answers | Total time | Faster |
-|---|--:|--:|--:|--:|
-| Alea.jl+tddlog against Alea.jl | 289 | 254 (Alea.jl 168) | 3.5 h (Alea.jl 32 h) | 6.5× |
-| Roulette+tddlog against Roulette | 351 | 276 (Roulette 205) | 4.3 h (Roulette 27 h) | 4.6× |
+<!-- results:integrations -->
+<!-- /results:integrations -->
 
 ## Building and testing
 

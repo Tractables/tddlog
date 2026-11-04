@@ -379,24 +379,24 @@ function records() {
   return recordsLoaded;
 }
 
-// The release run's instances, those tddlog answers and those it alone
-// answers (tddlog alone or in a pipeline, Alea.jl+tddlog: its columns
-// `tddlog` and `*-tddlog`).
-const tddlogColumns = (suite) => suite.systems.flatMap((x, i) => (x === "tddlog" || x.endsWith("-tddlog") ? [i] : []));
+// The results at a glance, as the site's home and the README count them
+// (categories.json's all programs, of the one stamp): its instances, those
+// tddlog answers, and those it answers and no baseline does (its
+// integrations, Alea.jl+tddlog and Roulette+tddlog, not counted as
+// baselines).
 async function glance() {
-  let all = 0, answered = 0, alone = 0;
-  for (const suite of (await records()).flatMap((p) => p.families.flatMap((f) => f.suites))) {
-    const own = tddlogColumns(suite);
-    for (const [, ...times] of suite.instances) {
-      all += 1;
-      if (!own.some((i) => typeof times[i] === "number")) continue;
-      answered += 1;
-      if (times.every((t, i) => own.includes(i) || typeof t !== "number")) alone += 1;
-    }
-  }
-  if (all === 0) return;
-  document.getElementById("glance-stats").innerHTML = stat(count(all), "instances in the release run")
-    + stat(count(answered), "answered by tddlog") + stat(count(alone), "answered by tddlog alone");
+  const response = await fetch(`${root}results/categories.json${stamp}`).catch(() => null);
+  if (!response?.ok) return;
+  const data = await response.json();
+  const all = data.categories.find((c) => c.key === "all-programs");
+  if (!all || !data.stamp) return;
+  const at = (x) => 4 + all.systems.indexOf(x);
+  const mine = new Set(all.mine.map(at));
+  const alone = all.rows.filter((r) => typeof r[at("tddlog")] === "number"
+    && r.every((v, j) => j < 4 || mine.has(j) || typeof v !== "number")).length;
+  document.getElementById("glance-stats").innerHTML = stat(count(all.instances), "instances")
+    + stat(count(all.answers.tddlog ?? 0), "answered by tddlog") + stat(count(alone), "answered by tddlog and no baseline");
+  document.getElementById("glance-asof").textContent = `Results as of ${data.stamp.date}, public main ${data.stamp.source}.`;
   document.getElementById("glance").hidden = false;
 }
 
