@@ -390,7 +390,7 @@ function integrationView(route) {
   out.push(element("h2", { class: "solver", title: i.about ?? null }, swatch(me), `${i.title} against ${name}`),
     note(`${name}'s own code, then tddlog's inference; the time includes ${name}'s after its warm-up.`,
       ...(i.code ? [" The integration's code: ", element("a", { href: i.code }, i.code.replace("https://github.com/", ""))] : [])),
-    versusCells(v, name, i.instances), note(measureLine()), integrationPlot(i, rows, `int-${k}`));
+    versusCells(v, name, i.instances), note(measureLine()), integrationPlot(i, rows, `int-${k}`), ...whereWins(i, rows, x, me));
   if (alone) {
     out.push(note(`Plain tddlog read another program of each model than ${name} did, with its own front ends; `
       + `it counts as unanswered on the ${plural(i.classes.tddlog.unread, "instance")} it does not read.`));
@@ -410,6 +410,25 @@ function integrationView(route) {
       { group: "answers", cols: [[i.title, null, "num"], [name, null, "num"],
         ...(alone ? [["tddlog", "plain tddlog, on its own program of the model", "num"]] : [])] }), fams)), "whole"));
   return out;
+}
+
+// The families most named where an integration's system x is faster than
+// the pipeline me.
+const WINS_NAMED = 5;
+
+// Where an integration's system x is faster than the pipeline me, in one
+// line: its families by the instances x is faster on, as a scatter counts
+// them (results.js's scatter: x answers and me does not, or me answers
+// slower, an instance both answer in under FLOOR left out); [] where none.
+function whereWins(i, rows, x, me) {
+  const faster = (r) => r.t[x] !== null
+    && (r.t[me] === null || (Math.max(r.t[me], r.t[x]) >= FLOOR && Math.max(r.t[me], FLOOR) > Math.max(r.t[x], FLOOR)));
+  const by = i.groups.map((g) => [g, g.rows.filter((j) => faster(rows[j])).length]).filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].title.localeCompare(b[0].title));
+  if (!by.length) return [];
+  const named = by.slice(0, WINS_NAMED).map(([g, n]) => `${g.title} (${count(n)} of ${count(g.rows.length)})`);
+  const more = by.length - named.length;
+  return [note(`Where ${data.names[x]} is faster: ${and([...named, ...(more ? [`${more} more ${more === 1 ? "family" : "families"}`] : [])])}.`)];
 }
 
 // An integration's cactus plot and scatter: the pipeline against its

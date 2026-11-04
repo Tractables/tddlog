@@ -142,6 +142,14 @@ function drawn(page) {
         const line = await page.locator("#view .versus").first().textContent();
         assert.ok(line.includes(cats.names[i.pipeline]) && line.includes(cats.names[i.system]), `${k}: ${i.pipeline} against ${i.system}`);
         assert.equal(await page.locator("table.board tbody tr").count(), i.groups.length, `${k}: a row a family`);
+        // a line names the families where the system is faster, as the scatter counts it
+        const t = (row, y) => (typeof row[4 + i.systems.indexOf(y)] === "number" ? row[4 + i.systems.indexOf(y)] : null);
+        const faster = i.rows.filter((row) => {
+          const a = t(row, i.system), b = t(row, i.pipeline);
+          return a !== null && (b === null || (Math.max(a, b) >= 0.2 && Math.max(b, 0.2) > Math.max(a, 0.2)));
+        }).length;
+        const where = page.locator("#view .note", { hasText: `Where ${cats.names[i.system]} is faster:` });
+        assert.equal(await where.count(), faster ? 1 : 0, `${k}: where ${i.system} is faster`);
       }
     }]),
     ["#/types", "types", async () => assert.equal(await page.locator("table.types-t tbody tr").count(), cats.categories.length)],
