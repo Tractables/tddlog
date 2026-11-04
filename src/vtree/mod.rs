@@ -54,7 +54,7 @@ use tididi::Vtree;
 use tididi::vtree::VarId;
 
 use crate::ground::deps::Deps;
-use crate::ground::shape::reads_facts_alone;
+use crate::ground::shape::{QueriedCubes, reads_facts_alone};
 use crate::ground::{AtomId, GroundProgram};
 
 use closed::closed_forest;
@@ -293,7 +293,23 @@ fn variables(order: &[AtomId]) -> Vec<VarId> {
 /// cannot be built, or cannot help: `decision` on a program the grounder
 /// read no fact of as a guard, `td` where no elimination of the graph
 /// finishes within its budget ([`td_forest`]).
+///
+/// Every layout is of the program's model, without its queried cubes
+/// ([`QueriedCubes`]), and a program a layout builds gets the cubes back.
 pub(crate) fn build(
+    gp: &GroundProgram,
+    deps: &Deps,
+    kind: Kind,
+) -> Result<(Layout, Option<GroundProgram>), String> {
+    let Some((cubes, model, deps)) = QueriedCubes::split(gp) else {
+        return build_model(gp, deps, kind);
+    };
+    let (layout, program) = build_model(&model, &deps, kind)?;
+    Ok((layout, program.map(|p| cubes.put_back(p))))
+}
+
+/// [`build`] of a program without queried cubes.
+fn build_model(
     gp: &GroundProgram,
     deps: &Deps,
     kind: Kind,
@@ -491,6 +507,87 @@ mod tests {
                 vtree.num_vars() as usize,
                 order.len(),
                 "{strategy} variable space"
+            );
+        }
+    }
+
+    /// `layout`'s vtree as nested pairs, each leaf named by its fact in `gp`.
+    fn named_tree(gp: &GroundProgram, layout: &Layout) -> String {
+        fn walk(gp: &GroundProgram, layout: &Layout, i: tididi::vtree::VtreeIdx, out: &mut String) {
+            let v = &layout.vtree;
+            if v.node(i).is_leaf() {
+                let fact = layout.order[v.leaf_var(i).0 as usize - 1];
+                out.push_str(&gp.atoms[fact as usize].to_string());
+            } else {
+                let (l, r) = v.children(i);
+                out.push('(');
+                walk(gp, layout, l, out);
+                out.push(' ');
+                walk(gp, layout, r, out);
+                out.push(')');
+            }
+        }
+        let mut out = String::new();
+        walk(gp, layout, layout.vtree.root(), &mut out);
+        out
+    }
+
+    /// A query of a cube of facts shapes no layout: a circuit's layouts
+    /// with the pairs of its faults asked are its layouts without them, and
+    /// a program a layout builds keeps the cubes and their queries.
+    #[test]
+    fn a_queried_cube_shapes_no_layout() {
+        let mut model = String::from("0.3::x0.\n");
+        for i in 1..=6 {
+            let g = i - 1;
+            model += &format!(
+                "0.3::x{i}. 0.1::f{i}.\ng{i} :- g{g}, x{i}, \\+f{i}.\ng{i} :- f{i}, \\+x{i}.\n\
+                 query(f{i}).\n"
+            );
+        }
+        model = model.replace("g0", "x0") + "evidence(g6).\n";
+        let mut asked = model.clone();
+        for i in 1..=6 {
+            for j in i + 1..=6 {
+                asked += &format!("p{i}_{j} :- f{i}, f{j}.\nquery(p{i}_{j}).\n");
+            }
+        }
+        let [model, asked] = [model, asked].map(|source| {
+            let program = parse_program(&source).expect("parses");
+            ground(&program, &GroundOptions::default()).expect("grounds")
+        });
+        assert!(QueriedCubes::split(&model).is_none());
+        assert!(QueriedCubes::split(&asked).is_some());
+        for kind in [
+            Kind::Td,
+            Kind::Closed,
+            Kind::Dynamic,
+            Kind::Families { search: true },
+            Kind::Families { search: false },
+            Kind::Program { fan_in: false },
+            Kind::Program { fan_in: true },
+        ] {
+            // Each kind lays out the program it compiles, `families` its
+            // rewrite through indicators.
+            let [model, asked] = [&model, &asked].map(|gp| kind.rewrite(gp.clone()));
+            let [m, a] = [&model, &asked].map(|gp| build(gp, &Deps::of(gp), kind));
+            let ((m, m_named), (a, a_named)) = match (m, a) {
+                (Ok(m), Ok(a)) => (m, a),
+                // `families` on a program it reads no atom of through an
+                // indicator.
+                (m, a) => {
+                    assert_eq!(m.err(), a.err(), "{kind}");
+                    continue;
+                }
+            };
+            let m_gp = m_named.as_ref().unwrap_or(&model);
+            let a_gp = a_named.as_ref().unwrap_or(&asked);
+            assert_eq!(named_tree(m_gp, &m), named_tree(a_gp, &a), "{kind}");
+            assert_eq!(a_gp.queries, asked.queries, "{kind}");
+            assert_eq!(
+                a_gp.rules.len() - m_gp.rules.len(),
+                asked.rules.len() - model.rules.len(),
+                "{kind}"
             );
         }
     }

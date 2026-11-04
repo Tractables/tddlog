@@ -929,6 +929,7 @@ fn pre_order(order: &[u32], parent: &[u32]) -> Vec<AtomId> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ground::shape::QueriedCubes;
     use crate::vtree::tests::ground_smokers;
 
     #[test]
@@ -1417,6 +1418,38 @@ mod tests {
             edges.contains(&edge(f, d1)) && edges.contains(&edge(f, d2)),
             "{edges:?}"
         );
+    }
+
+    /// In the model the layouts read ([`QueriedCubes`]), a query of a cube of
+    /// facts that nothing else reads ties none of its facts to another,
+    /// however the cube is written: in one rule, through a helper atom, over
+    /// a negated fact or at another arity. Observed, or read by a rule that
+    /// is not such a cube, it keeps its clique.
+    #[test]
+    fn a_queried_cube_ties_no_fact_to_another() {
+        // The evidence reads x, y and z without tying them to each other.
+        let facts = "0.3::a. 0.4::b. 0.5::c. 0.6::d. 0.2::x. 0.7::y. 0.8::z. \
+                     e :- a, x. e :- b, y. e :- c, z. e :- d. evidence(e).";
+        let tied = |rules: &str| {
+            let gp = ground_source(&format!("{facts} {rules}"));
+            let gp = QueriedCubes::split(&gp).map_or(gp, |(_, model, _)| model);
+            let edges: FxHashSet<(u32, u32)> = interaction_edges(&gp).into_iter().collect();
+            let (x, y, z) = (atom(&gp, "x"), atom(&gp, "y"), atom(&gp, "z"));
+            [edge(x, y), edge(x, z), edge(y, z)].map(|e| edges.contains(&e))
+        };
+        for rules in [
+            "q :- x, y, z. query(q).",
+            "q :- h, z. h :- x, \\+y. query(q).",
+            "q(1, X) :- p(X), z. p(2) :- x, y. query(q(1, 2)).",
+        ] {
+            assert_eq!(tied(rules), [false; 3], "{rules}");
+        }
+        for rules in [
+            "q :- x, y. query(q). evidence(q, false).",
+            "q :- x, y. r :- q, z. r :- d. query(r).",
+        ] {
+            assert!(tied(rules)[0], "{rules}");
+        }
     }
 
     /// The elimination tree's parent of a vertex is the first of its

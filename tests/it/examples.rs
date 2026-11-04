@@ -301,7 +301,7 @@ mod regress {
     use super::*;
 
     #[test]
-    fn aliasing_keeps_queried_facts() {
+    fn aliasing_answers_the_queries_of_a_fact() {
         check(
             "../tests/regress/alias_query.pl",
             &[

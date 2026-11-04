@@ -653,10 +653,23 @@ impl fmt::Display for GroundProgram {
                 .unwrap_or_else(|| a.clone());
             writeln!(f, "evidence({a},{v}).")?;
         }
+        // A query whose fact another atom took the place of
+        // ([`super::simplify::alias_fact_atoms`]) asks that atom, under its
+        // own name.
+        let mut asked = rustc_hash::FxHashSet::default();
+        for (a, id, _) in &self.queries {
+            if let Some(i) = id
+                && self.atoms[*i as usize] != *a
+                && asked.insert(a)
+            {
+                writeln!(f, "{a} :- {}.", self.atoms[*i as usize])?;
+            }
+        }
         for (a, id, positive) in &self.queries {
-            let a = id
-                .map(|i| self.atoms[i as usize].clone())
-                .unwrap_or_else(|| a.clone());
+            let a = match id {
+                Some(i) if !asked.contains(a) => self.atoms[*i as usize].clone(),
+                _ => a.clone(),
+            };
             if *positive {
                 writeln!(f, "query({a}).")?;
             } else {

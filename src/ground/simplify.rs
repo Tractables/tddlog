@@ -7,6 +7,7 @@ use std::sync::OnceLock;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::program::mix;
+use super::shape::queried_cubes;
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, RulesByHead};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -404,9 +405,16 @@ pub(crate) fn restrict_to_relevant(gp: &mut GroundProgram) -> Vec<AtomId> {
 /// direction, over different atoms of the same function; read as one
 /// atom, the two directions have the same bodies and
 /// [`merge_equal_atoms`] keeps one. A fact also read otherwise (negated,
-/// with other literals, or named by a query or evidence) is left alone,
-/// so that a network variable read through `v(t) :- sw. v(f) :- \+sw.`
-/// keeps its values as atoms.
+/// with other literals, or observed) is left alone, so that a network
+/// variable read through `v(t) :- sw. v(f) :- \+sw.` keeps its values as
+/// atoms, queried or read by a queried cube too. A query of the fact and a
+/// queried cube's positive read of it ([`queried_cubes`]) are not reads of
+/// the model: they ask and read the atom that takes its place. A netlist that asks each gate's fault, and
+/// each pair and triple of faults, so grounds to the program it grounds
+/// to without its queries; 33 of fulladder16's gates read their faults
+/// through atoms of their own otherwise, and its evidence took ten to
+/// fifty times the pairs, more in one order of its output's bits than in
+/// the other.
 pub(crate) fn alias_fact_atoms(gp: &mut GroundProgram) {
     // A pass makes facts of the atoms that read a fact alone; an atom that
     // reads one of those alone, `conn(a,b) :- edge(a,b)` over `edge(a,b) :-
@@ -419,19 +427,6 @@ pub(crate) fn alias_fact_atoms(gp: &mut GroundProgram) {
 fn alias_pass(gp: &mut GroundProgram) -> bool {
     let n = gp.atoms.len();
     let by_head = gp.rules_by_head();
-    let mut uses = vec![0usize; n];
-    for r in &gp.rules {
-        for l in &r.body {
-            uses[l.atom() as usize] += 1;
-        }
-    }
-    // A query or evidence directive is a use too: the fact must keep its
-    // identity if anything outside the rules names it.
-    let mut named = vec![false; n];
-    for a in gp.named_atoms() {
-        uses[a as usize] += 1;
-        named[a as usize] = true;
-    }
     // The atoms whose only rule reads one fact, positively, by the fact,
     // each fact's in the order of their numbers.
     let mut aliases: FxHashMap<AtomId, Vec<(AtomId, usize)>> = FxHashMap::default();
@@ -446,8 +441,40 @@ fn alias_pass(gp: &mut GroundProgram) -> bool {
             aliases.entry(f).or_default().push((a as AtomId, ri));
         }
     }
+    // The uses of each atom in the model: the reads of the rules but the
+    // positive ones of the queried cubes, which with the queries are
+    // `asked`, and the evidence, which the fact keeps its identity for. A
+    // cube's negated read of a fact is a use: the fact is a variable whose
+    // other value the cube reads.
+    let cube = queried_cubes(gp);
+    let mut uses = vec![0usize; n];
+    let mut asked = vec![false; n];
+    for r in &gp.rules {
+        for l in &r.body {
+            if cube[r.head as usize] && l.is_positive() {
+                asked[l.atom() as usize] = true;
+            } else {
+                uses[l.atom() as usize] += 1;
+            }
+        }
+    }
+    let mut named = vec![false; n];
+    for &(_, id, _) in &gp.evidence {
+        if let Some(a) = id {
+            uses[a as usize] += 1;
+            named[a as usize] = true;
+        }
+    }
+    for &(_, id, _) in &gp.queries {
+        if let Some(a) = id {
+            asked[a as usize] = true;
+            named[a as usize] = true;
+        }
+    }
     let mut drop_rule = vec![false; gp.rules.len()];
     let mut into: Vec<AtomId> = (0..n as AtomId).collect();
+    // The facts asked whose place an atom took, and that atom.
+    let mut moved: FxHashMap<AtomId, AtomId> = FxHashMap::default();
     let (mut aliased, mut renamed) = (false, false);
     for (f, atoms) in aliases {
         if atoms.len() != uses[f as usize] {
@@ -461,6 +488,11 @@ fn alias_pass(gp: &mut GroundProgram) -> bool {
         gp.kinds[f as usize] = AtomKind::Derived; // now unreferenced
         drop_rule[ri] = true;
         aliased = true;
+        if asked[f as usize] {
+            into[f as usize] = first;
+            moved.insert(f, first);
+            renamed = true;
+        }
         for &(a, ri) in &atoms[1..] {
             if named[a as usize] {
                 // A query or evidence names it: it keeps a rule, `a :- first`.
@@ -488,6 +520,13 @@ fn alias_pass(gp: &mut GroundProgram) -> bool {
             }
         }
         gp.structure = OnceLock::new();
+    }
+    for (_, id, _) in &mut gp.queries {
+        if let Some(a) = id
+            && let Some(&first) = moved.get(a)
+        {
+            *a = first;
+        }
     }
     true
 }
@@ -675,7 +714,8 @@ mod tests {
     }
 
     /// A chain `conn :- edge :- sw` aliases in two passes, and an alias a
-    /// query names keeps a rule that reads the fact.
+    /// query names keeps a rule that reads the fact. Where only a queried
+    /// cube reads the two, a third pass makes a fact of the one named.
     #[test]
     fn aliases_chain_and_named_ones_keep_a_rule() {
         let rules: &[(AtomId, &[GLit])] = &[
@@ -685,10 +725,9 @@ mod tests {
             (4, &[Pos(2), Pos(3)]),
         ];
         let mut gp = program(&[0.5], 4, rules);
-        gp.queries = vec![
-            (Atom::default(), Some(3), true),
-            (Atom::default(), Some(4), true),
-        ];
+        gp.queries = vec![(Atom::default(), Some(3), true)];
+        let mut asked = gp.clone();
+        gp.evidence = vec![(Atom::default(), Some(4), true)];
         alias_fact_atoms(&mut gp);
         // 1 is the fact first, then 2 is, and 3 keeps `3 :- 2`.
         assert_eq!(
@@ -703,10 +742,62 @@ mod tests {
             rules_of(&gp),
             [(1, vec![Pos(0)]), (2, vec![Pos(0), Pos(0)])]
         );
+        assert_eq!((gp.queries[0].1, gp.evidence[0].1), (Some(1), Some(2)));
+        asked.queries.push((Atom::default(), Some(4), true));
+        alias_fact_atoms(&mut asked);
+        assert_eq!(
+            asked.kinds[..],
+            [AtomKind::Fact(Prob::new(0.5)), AtomKind::Derived]
+        );
+        assert_eq!(rules_of(&asked), [(1, vec![Pos(0), Pos(0)])]);
+        assert_eq!(
+            asked.queries.iter().map(|q| q.1).collect::<Vec<_>>(),
+            [Some(0), Some(1)]
+        );
+    }
+
+    /// A fact that a query asks and a queried cube reads is aliased all the
+    /// same: the query asks, and the cube reads, the atom that takes its
+    /// place. An observed fact keeps its identity.
+    #[test]
+    fn a_query_and_a_queried_cube_ask_the_alias_of_a_fact() {
+        // 2 :- 0 aliases fact 0, which query and cube 4 :- 0, 1 ask; 3 is
+        // observed.
+        let rules: &[(AtomId, &[GLit])] = &[
+            (2, &[Pos(0)]),
+            (3, &[Pos(2), Pos(1)]),
+            (4, &[Pos(0), Pos(1)]),
+        ];
+        let mut gp = program(&[0.5, 0.25], 3, rules);
+        gp.queries = vec![
+            (Atom::default(), Some(0), true),
+            (Atom::default(), Some(4), true),
+        ];
+        gp.evidence = vec![(Atom::default(), Some(3), true)];
+        let mut observed = gp.clone();
+        alias_fact_atoms(&mut gp);
+        // 0 goes, and 2 is the fact, as 1 and the rest renumbered.
+        assert_eq!(
+            gp.kinds[..],
+            [
+                AtomKind::Fact(Prob::new(0.25)),
+                AtomKind::Fact(Prob::new(0.5)),
+                AtomKind::Derived,
+                AtomKind::Derived
+            ]
+        );
+        assert_eq!(
+            rules_of(&gp),
+            [(2, vec![Pos(1), Pos(0)]), (3, vec![Pos(1), Pos(0)])]
+        );
         assert_eq!(
             gp.queries.iter().map(|q| q.1).collect::<Vec<_>>(),
-            [Some(1), Some(2)]
+            [Some(1), Some(3)]
         );
+        observed.evidence.push((Atom::default(), Some(0), true));
+        let rules = rules_of(&observed);
+        alias_fact_atoms(&mut observed);
+        assert_eq!(rules_of(&observed), rules);
     }
 
     /// A body that reads certain fact 0 twice, as an alias leaves

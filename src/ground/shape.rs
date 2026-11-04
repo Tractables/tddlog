@@ -1,9 +1,15 @@
 //! What shape a ground program has, which `auto` picks its trials by
 //! (`auto::candidates`) and the layouts and the preprocessing read: no
 //! component order to search ([`nothing_to_order`]), rules over facts alone
-//! ([`reads_facts_alone`]), a CNF over the facts ([`clauses_over_facts`]).
+//! ([`reads_facts_alone`]), a CNF over the facts ([`clauses_over_facts`]),
+//! and the queries of cubes of facts that no layout reads
+//! ([`QueriedCubes`]).
 
-use super::{AtomId, GroundProgram};
+use std::sync::OnceLock;
+
+use super::deps::Deps;
+use super::{AtomId, GroundProgram, GroundRule};
+use crate::syntax::Atom;
 
 /// Whether the program has one component, or one recursive component that
 /// reads at least half the facts, so that there is no component order for
@@ -119,4 +125,141 @@ pub(crate) fn observed_false_alone(gp: &GroundProgram) -> Vec<bool> {
         }
     }
     alone
+}
+
+/// The derived atoms that are cubes of facts only the queries read: each
+/// defined by one conjunction of fact literals, and a query or read by such
+/// atoms alone. An atom is one where its one rule, which stands for one
+/// body, reads two literals or more, fact literals and such atoms,
+/// positively, so that a cube written through helper atoms is one too. A
+/// rule of one literal is no cube: it names the literal, a fact the
+/// aliasing reads under that name or a variable's value (`v(f) :- \+sw`)
+/// that stays an atom of the model. An atom the evidence observes, or that
+/// any other rule reads, is not. The formula of such an atom holds
+/// a node per level of its cone on any vtree, and the query phase counts a
+/// query of one against the evidence without conjoining the two.
+pub(crate) fn queried_cubes(gp: &GroundProgram) -> Vec<bool> {
+    let n = gp.num_atoms();
+    let by_head = gp.rules_by_head();
+    let readers = gp.readers(|rule, _| rule);
+    let derived = |a: AtomId| !gp.is_fact(a);
+    // The candidates, by their own rule.
+    let mut cube: Vec<bool> = (0..n)
+        .map(|a| match &by_head[a] {
+            [ri] => {
+                let r = &gp.rules[*ri];
+                r.body.len() > 1
+                    && !r.pairs
+                    && r.body.iter().all(|l| !derived(l.atom()) || l.is_positive())
+            }
+            _ => false,
+        })
+        .collect();
+    let mut query = vec![false; n];
+    for &(_, id, _) in &gp.queries {
+        if let Some(a) = id {
+            query[a as usize] = true;
+        }
+    }
+    for &(_, id, _) in &gp.evidence {
+        if let Some(a) = id {
+            cube[a as usize] = false;
+        }
+    }
+    // A candidate stays where it is a query or read, every rule reading it
+    // has a cube's head and every derived atom its rule reads is a cube. An
+    // atom that leaves may take its readers' heads and its body's atoms
+    // with it.
+    let stays = |a: usize, cube: &[bool]| {
+        (query[a] || !readers[a].is_empty())
+            && readers[a]
+                .iter()
+                .all(|&ri| cube[gp.rules[ri as usize].head as usize])
+            && gp.rules[by_head[a][0]]
+                .body
+                .iter()
+                .all(|l| !derived(l.atom()) || cube[l.atom() as usize])
+    };
+    let mut left: Vec<usize> = (0..n).filter(|&a| cube[a] && !stays(a, &cube)).collect();
+    for &a in &left {
+        cube[a] = false;
+    }
+    while let Some(x) = left.pop() {
+        let heads = readers[x].iter().map(|&ri| gp.rules[ri as usize].head);
+        let body = gp.rules[by_head[x][0]].body.iter().map(|l| l.atom());
+        for y in heads.chain(body) {
+            let y = y as usize;
+            if cube[y] && !stays(y, &cube) {
+                cube[y] = false;
+                left.push(y);
+            }
+        }
+    }
+    cube
+}
+
+/// The rules of a program's queried cubes ([`queried_cubes`]), set apart
+/// from its model, the program without them, which the layouts read
+/// (`crate::vtree::build`). A query of a cube of facts shapes no layout: its
+/// formula is as small on any vtree, and no other formula reads it. Read as
+/// rules, the pairs and triples of faults a fault analysis asks about tie
+/// every two facts together, so that a decomposition holds them all in one
+/// bag and `closed` takes them as blocks, in the order the program happens
+/// to list its queries in. The grounder's aliasing reads no cube as a use
+/// of a fact either (`super::simplify::alias_fact_atoms`).
+pub(crate) struct QueriedCubes {
+    rules: Vec<GroundRule>,
+    /// The program's queries, those of the cubes in their places.
+    queries: Vec<Option<(Atom, Option<AtomId>, bool)>>,
+}
+
+impl QueriedCubes {
+    /// The queried cubes of `gp`, and its model with the model's rules by
+    /// head and components; `None` where `gp` has no queried cube. The
+    /// cubes' atoms stay in the model as atoms that nothing reads or names
+    /// and no rule defines, and are in none of its components.
+    pub(crate) fn split(gp: &GroundProgram) -> Option<(QueriedCubes, GroundProgram, Deps)> {
+        let cube = queried_cubes(gp);
+        if !cube.contains(&true) {
+            return None;
+        }
+        let (rules, kept) = gp
+            .rules
+            .iter()
+            .cloned()
+            .partition(|r| cube[r.head as usize]);
+        let asks = |id: Option<AtomId>| id.is_some_and(|a| cube[a as usize]);
+        let queries = (gp.queries.iter())
+            .map(|q| asks(q.1).then(|| q.clone()))
+            .collect();
+        let mut model = gp.without_rules();
+        model.rules = kept;
+        model.queries.retain(|q| !asks(q.1));
+        let Deps { by_head, sccs } = Deps::of(&model);
+        let sccs = (sccs.into_iter())
+            .filter(|scc| !scc.iter().all(|&a| cube[a as usize]))
+            .collect();
+        Some((
+            QueriedCubes { rules, queries },
+            model,
+            Deps { by_head, sccs },
+        ))
+    }
+
+    /// `p`, a program a layout built over the model, which numbers the
+    /// model's atoms as the model does (its copies of facts or its names
+    /// added), with the cubes' rules and queries.
+    pub(crate) fn put_back(&self, mut p: GroundProgram) -> GroundProgram {
+        let mut kept = std::mem::take(&mut p.queries).into_iter();
+        p.queries = (self.queries.iter())
+            .map(|q| match q {
+                Some(q) => q.clone(),
+                None => kept.next().expect("the model's queries"),
+            })
+            .collect();
+        debug_assert!(kept.next().is_none(), "a layout added a query");
+        p.rules.extend(self.rules.iter().cloned());
+        p.structure = OnceLock::new();
+        p
+    }
 }
