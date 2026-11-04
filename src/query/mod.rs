@@ -17,7 +17,7 @@ use tididi::Tdd;
 use tididi::limits::SparseRoute;
 use tididi::vtree::{VarId, VtreeIdx};
 
-use crate::eval::{Count, Counted, Counts, Probabilities, Value};
+use crate::eval::{Count, Counted, Counts, Probabilities, Value, Weighing};
 use crate::ground::{AtomId, GroundProgram};
 use crate::tp::{
     CompileError, Compiled, Diagram, Form, Formula, NegationSource, Negations, ScopeTable,
@@ -162,6 +162,8 @@ pub(crate) struct QueryEvaluation {
     mass: Option<Count>,
     /// The evidence formula counted, where a query reads it.
     counted: Option<CountedEvidence>,
+    /// The evidence formula in skip form counted by the engine.
+    skip_counted: Option<SkipEvidence>,
     out: Vec<QueryResult>,
     /// The queries to answer.
     queries: usize,
@@ -220,6 +222,7 @@ impl QueryEvaluation {
             evidence: None,
             mass: None,
             counted: None,
+            skip_counted: None,
             out: Vec::new(),
             queries: gp.queries.len(),
             pending_query: None,
@@ -338,6 +341,7 @@ impl QueryEvaluation {
             evidence,
             mass,
             counted,
+            skip_counted,
             out,
             pending_query,
             sizes,
@@ -371,7 +375,13 @@ impl QueryEvaluation {
                 sizes.record(sizes.evidence, None)?;
                 if mass.is_none() {
                     let t = Instant::now();
-                    *mass = Some(evidence_mass(backend, e, scope, &w, counted, sizes)?);
+                    *mass = Some(evidence_mass(
+                        backend,
+                        (e, scope),
+                        &w,
+                        (counted, skip_counted),
+                        sizes,
+                    )?);
                     sizes.count_seconds += t.elapsed().as_secs_f64();
                 }
                 let mass = mass.unwrap();
@@ -402,6 +412,7 @@ impl QueryEvaluation {
             watch,
             evidence,
             counted,
+            skip_counted,
             pending_query,
             sizes,
         };
@@ -487,19 +498,28 @@ struct Evidence<'a> {
 /// evaluation, one range for the whole diagram, would take again in
 /// `Count`s. The count is kept in `counted`, as the queries read its pass
 /// down too, which is taken when one reads it. A skip-form formula's levels
-/// are the engine's, and its mass is the engine's evaluation
-/// ([`TddBackend::mass`]).
+/// are the engine's, and its count is the engine's ([`SkipEvidence`]),
+/// kept in `skip_counted`.
 fn evidence_mass(
     backend: &TddBackend,
-    e: &Diagram,
-    scope: &VtreeScope,
+    (e, scope): (&Diagram, &VtreeScope),
     w: &Probabilities,
-    counted: &mut Option<CountedEvidence>,
+    (counted, skip_counted): (&mut Option<CountedEvidence>, &mut Option<SkipEvidence>),
     sizes: &mut QuerySizes,
 ) -> Result<Count, CompileError> {
     let e = match e {
         Diagram::Stored(e) => e,
-        Diagram::Skip(_) => return backend.mass(e, w, &mut sizes.recounts),
+        Diagram::Skip(e) => {
+            if skip_counted.is_none() {
+                *skip_counted = Some(SkipEvidence::new(
+                    backend.engine,
+                    e,
+                    w,
+                    &mut sizes.recounts,
+                )?);
+            }
+            return Ok(skip_counted.as_ref().unwrap().total());
+        }
     };
     if e.has_marginal_level() {
         // The walk summed the evidence out as it built it: its value is the
@@ -551,6 +571,7 @@ struct Answers<'a> {
     watch: Option<usize>,
     evidence: Option<Evidence<'a>>,
     counted: &'a mut Option<CountedEvidence>,
+    skip_counted: &'a mut Option<SkipEvidence>,
     pending_query: &'a mut Option<PendingQuery>,
     sizes: &'a mut QuerySizes,
 }
@@ -619,18 +640,19 @@ impl Answers<'_> {
         };
         let e = match ev.e {
             Diagram::Stored(e) => e,
-            // The evidence and the literal conjoined and counted: the skip
-            // form has no pass down.
+            // The engine's pass down, taken by the first query that reads
+            // it, read at the literal's variable.
             Diagram::Skip(_) => {
-                let with = self.backend.and_clause(
-                    ev.scope,
-                    self.backend.copy(ev.e)?,
-                    &[tididi::Literal::new(v, positive)],
-                )?;
-                self.sizes.record(self.backend.size(&with), self.watch)?;
                 let with = self
-                    .backend
-                    .mass(&with, &ev.weights, &mut self.sizes.recounts)?;
+                    .skip_counted
+                    .as_mut()
+                    .expect("the evidence is counted where a query reads it")
+                    .joint(
+                        self.backend.engine,
+                        &ev.weights,
+                        SkipJoint::Literal(tididi::Literal::new(VarId(x as u32), positive)),
+                        &mut self.sizes.recounts,
+                    )?;
                 return Ok(Some(with.ratio(ev.mass)));
             }
         };
@@ -722,7 +744,7 @@ impl Answers<'_> {
         let ev = self.evidence.as_ref().unwrap();
         let (e, q) = match (ev.e, q) {
             (Diagram::Stored(e), Diagram::Stored(q)) => (e, q),
-            _ => return self.skip_joint_ratio(q, q_scope, template),
+            _ => return self.skip_count_against(q, q_scope, template),
         };
         let q_w = self.weights_on(q_scope, template);
         let c = self
@@ -772,11 +794,49 @@ impl Answers<'_> {
         }
     }
 
-    /// [`Self::count_against`] in skip form, which has no pass down to walk
-    /// a query against: `q`, the formula of the literal on `q_scope`,
-    /// conjoined with the evidence on the scope over both, and the product
-    /// counted, the query's variables under the probabilities `template`
-    /// gives where it answers the query.
+    /// [`Self::count_against`] in skip form: `q`, the formula of the
+    /// literal on `q_scope`, copied onto the evidence's scope and counted
+    /// against the evidence's passes, the engine's walk of the two
+    /// (`Engine::skip_count_and`). A query whose variables the evidence's
+    /// scope does not all hold, or which a template answers, is counted by
+    /// its product with the evidence ([`Self::skip_joint_ratio`]).
+    fn skip_count_against(
+        &mut self,
+        q: &Diagram,
+        q_scope: &VtreeScope,
+        template: Option<&Template>,
+    ) -> Result<f64, CompileError> {
+        let ev = self.evidence.as_ref().unwrap();
+        if template.is_none() {
+            let g = match self.backend.embed_ref(q, q_scope, ev.scope) {
+                Ok(Diagram::Skip(g)) => g,
+                Ok(Diagram::Stored(_)) => {
+                    unreachable!("a formula in skip form embeds in skip form")
+                }
+                Err(CompileError::NotInScope(_)) => {
+                    return self.skip_joint_ratio(q, q_scope, template);
+                }
+                Err(e) => return Err(e),
+            };
+            let joint = self
+                .skip_counted
+                .as_mut()
+                .expect("the evidence is counted where a query reads it")
+                .joint(
+                    self.backend.engine,
+                    &ev.weights,
+                    SkipJoint::Formula(&g),
+                    &mut self.sizes.recounts,
+                )?;
+            return Ok(joint.ratio(ev.mass));
+        }
+        self.skip_joint_ratio(q, q_scope, template)
+    }
+
+    /// [`Self::skip_count_against`] where the evidence's passes do not
+    /// hold the query: `q` conjoined with the evidence on the scope over
+    /// both, and the product counted, the query's variables under the
+    /// probabilities `template` gives where it answers the query.
     fn skip_joint_ratio(
         &mut self,
         q: &Diagram,
@@ -899,6 +959,93 @@ impl CountedEvidence {
     /// The mass, exactly.
     fn total(&self, e: &Tdd) -> Count {
         self.counted.total(e)
+    }
+}
+
+/// The evidence formula in skip form counted by the engine
+/// (`Engine::skip_count`): its pass up, and once a query reads it its pass
+/// down, in floats while every value they and the queries computed is
+/// exact (`eval::Range`), and in [`Count`]s from the first one that was
+/// not.
+enum SkipEvidence {
+    Plain(tididi::SkipCount<f64>),
+    Wide(tididi::SkipCount<Count>),
+}
+
+/// What a query reads off the evidence's passes: the count of the
+/// evidence with a literal of its scope, or with a formula on its scope.
+enum SkipJoint<'a> {
+    Literal(tididi::Literal),
+    Formula(&'a tididi::SkipTdd),
+}
+
+impl SkipJoint<'_> {
+    fn read<V: Value>(
+        &self,
+        engine: &tididi::Engine,
+        c: &mut tididi::SkipCount<V>,
+        w: &Weighing<V>,
+    ) -> Result<V, tididi::OperationError> {
+        match *self {
+            SkipJoint::Literal(l) => engine.skip_count_literal(c, w, l),
+            SkipJoint::Formula(g) => engine.skip_count_and(c, w, g),
+        }
+    }
+}
+
+impl SkipEvidence {
+    /// The pass up of `e` under `w`, in floats where it is exact;
+    /// `recounts` counts a count taken again in `Count`s.
+    fn new(
+        engine: &tididi::Engine,
+        e: &tididi::SkipTdd,
+        w: &Probabilities,
+        recounts: &mut usize,
+    ) -> Result<Self, tididi::OperationError> {
+        let plain = Weighing::<f64>::new(w);
+        let c = engine.skip_count(e, &plain)?;
+        if plain.exact() {
+            return Ok(SkipEvidence::Plain(c));
+        }
+        *recounts += 1;
+        Ok(SkipEvidence::Wide(
+            engine.skip_count(e, &Weighing::<Count>::new(w))?,
+        ))
+    }
+
+    /// The mass, exactly.
+    fn total(&self) -> Count {
+        match self {
+            SkipEvidence::Plain(c) => Count::new(*c.total()),
+            SkipEvidence::Wide(c) => *c.total(),
+        }
+    }
+
+    /// The count of the evidence with what `q` names, exactly: in floats
+    /// where those of the passes and of the query's walk are, and
+    /// otherwise from a count taken again in `Count`s, which every later
+    /// query reads; `recounts` counts it.
+    fn joint(
+        &mut self,
+        engine: &tididi::Engine,
+        w: &Probabilities,
+        q: SkipJoint,
+        recounts: &mut usize,
+    ) -> Result<Count, tididi::OperationError> {
+        if let SkipEvidence::Plain(c) = self {
+            let plain = Weighing::<f64>::new(w);
+            let joint = q.read(engine, c, &plain)?;
+            if plain.exact() {
+                return Ok(Count::new(joint));
+            }
+            *recounts += 1;
+            let e = c.diagram().clone();
+            *self = SkipEvidence::Wide(engine.skip_count(&e, &Weighing::<Count>::new(w))?);
+        }
+        let SkipEvidence::Wide(c) = self else {
+            unreachable!("a count in floats that was not exact is taken again")
+        };
+        q.read(engine, c, &Weighing::<Count>::new(w))
     }
 }
 

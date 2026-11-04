@@ -280,6 +280,97 @@ fn examples_in_skip_form_keep_their_answers() {
     assert!(ran.layouts >= 6, "{} layouts ran", ran.layouts);
 }
 
+/// Queries against evidence, against the enumeration of the worlds: facts
+/// of the evidence's scope, each a literal the pass down reads; atoms whose
+/// formulas the evidence's scope holds, walked against the counted
+/// evidence; and atoms and facts it does not hold, each conjoined with the
+/// evidence. Then evidence whose mass is under the floats' range, counted
+/// again in `Count`s.
+#[test]
+fn queries_read_the_counted_evidence_in_skip_form() {
+    let mut ran = Ran::default();
+    let p = [0.3, 0.6, 0.45, 0.7, 0.2, 0.55];
+    let names = ["a", "b", "c", "d", "f", "g"];
+    let mut source: String = names
+        .iter()
+        .zip(p)
+        .map(|(n, p)| format!("{p}::{n}.\n"))
+        .collect();
+    source.push_str(
+        "x :- a, b.\nx :- \\+a, c.\ny :- x, d.\ny :- \\+x, \\+d, b.\n\
+         z :- f, g.\nz :- \\+f, a.\nevidence(y).\n",
+    );
+    let queries = ["a", "\\+b", "c", "d", "x", "\\+x", "y", "z", "f", "\\+g"];
+    for q in queries {
+        source.push_str(&format!("query({q}).\n"));
+    }
+    // Per world, the facts and the atoms derived, by name.
+    let world = |w: u32| -> Vec<(&str, bool)> {
+        let at = |i: usize| w >> i & 1 == 1;
+        let (a, b, c, d, f, g) = (at(0), at(1), at(2), at(3), at(4), at(5));
+        let x = (a && b) || (!a && c);
+        let y = (x && d) || (!x && !d && b);
+        let z = (f && g) || (!f && a);
+        vec![
+            ("a", a),
+            ("b", b),
+            ("c", c),
+            ("d", d),
+            ("f", f),
+            ("g", g),
+            ("x", x),
+            ("y", y),
+            ("z", z),
+        ]
+    };
+    let weight = |w: u32| -> f64 {
+        (0..6)
+            .map(|i| if w >> i & 1 == 1 { p[i] } else { 1.0 - p[i] })
+            .product()
+    };
+    let value = |w: u32, q: &str| -> bool {
+        let (name, positive) = match q.strip_prefix("\\+") {
+            Some(n) => (n, false),
+            None => (q, true),
+        };
+        world(w).iter().find(|(n, _)| *n == name).unwrap().1 == positive
+    };
+    let e: f64 = (0..64u32).filter(|&w| value(w, "y")).map(weight).sum();
+    let expected: Vec<(String, f64)> = queries
+        .iter()
+        .map(|q| {
+            let both: f64 = (0..64u32)
+                .filter(|&w| value(w, "y") && value(w, q))
+                .map(weight)
+                .sum();
+            (q.to_string(), both / e)
+        })
+        .collect();
+    check("evidence y", &source, &expected, Some(e), 1e-12, &mut ran);
+
+    // Forty facts of probability 1e-9 observed together: a mass of 1e-360.
+    let mut tiny = String::from("0.3::a.\n0.6::b.\nu :- a.\nu :- b.\nw :- a, b.\n");
+    for i in 1..=40 {
+        tiny.push_str(&format!("1e-9::h{i}.\n"));
+    }
+    let body: Vec<String> = (1..=40).map(|i| format!("h{i}")).collect();
+    tiny.push_str(&format!("e1 :- {}.\n", body.join(", ")));
+    tiny.push_str("evidence(e1).\nevidence(u).\n");
+    for q in ["a", "\\+b", "w", "h3", "\\+h7"] {
+        tiny.push_str(&format!("query({q}).\n"));
+    }
+    let u = 1.0 - 0.7 * 0.4;
+    let expected = [
+        ("a".to_string(), 0.3 / u),
+        ("\\+b".to_string(), 0.3 * 0.4 / u),
+        ("w".to_string(), 0.18 / u),
+        ("h3".to_string(), 1.0),
+        ("\\+h7".to_string(), 0.0),
+    ];
+    check("a mass of 1e-360", &tiny, &expected, None, 1e-12, &mut ran);
+    assert!(ran.layouts >= 4, "{} layouts ran", ran.layouts);
+}
+
 /// Skip form is refused, naming the conflict, under `auto`, a dynamic
 /// layout, `td`, `families` and `closed`, without the queries, and for the
 /// ground program, which comes before the compile.
