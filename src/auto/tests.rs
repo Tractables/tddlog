@@ -2012,30 +2012,52 @@ fn assert_diamond(run: &Run, steps: usize) {
 }
 
 #[test]
-fn a_trial_whose_first_large_formula_keeps_few_pairs_goes_on_in_skip_form() {
+fn a_trial_whose_first_large_formula_keeps_few_pairs_weighs_the_skip_form() {
     // Every formula keeps at most its pairs in skip form, so a probe of
-    // the first formula under a share of 2 puts `program` in skip form:
-    // its first attempt stops there, and it begins again in skip form,
-    // with the work it has spent, and answers. `closed` keeps the stored
-    // form, whichever finishes first.
+    // the first formula under a share of 2 has `program` go on stored over
+    // a stretch, then begin again in skip form, with the work it has
+    // spent, to weigh the two forms over the stretch, once. It goes on in
+    // the form that spent less there, and answers: alone, where it lost,
+    // its stored compile begins again, since a run without a watch cannot
+    // go on; beside `closed`, which keeps the stored form, it goes on from
+    // where it set its stored compile aside.
     let steps = 60;
     let program = Kind::Program { fan_in: false };
     let always = tp::Probe::Armed {
         from: 1,
         below: 2.0,
     };
-    let run = run_probed(steps, vec![program], always);
-    let notes = &run.vtree_notes;
-    assert!(run.stats.skip_form, "{notes:#?}");
-    assert_eq!(
+    let forms = |notes: &[String], how: &str| {
         notes
             .iter()
-            .filter(|n| n.starts_with("form: program indicators=")
-                && n.contains("begins again in skip form"))
-            .count(),
+            .filter(|n| n.starts_with("form: program indicators=") && n.contains(how))
+            .count()
+    };
+    // The two forms' work over the stretch is the trial's, on a clock that
+    // runs on across its turns: neither is more than the trial has spent.
+    let weighed = |notes: &[String]| {
+        for n in notes.iter().filter(|n| n.contains(" over the stretch, ")) {
+            let units: Vec<u64> = n
+                .split(|c: char| !c.is_ascii_digit())
+                .filter_map(|w| w.parse().ok())
+                .collect();
+            let [spent, skip, stored] = units[units.len() - 3..] else {
+                unreachable!()
+            };
+            assert!(skip <= spent && stored <= spent, "{n}");
+        }
+    };
+    let run = run_probed(steps, vec![program], always);
+    let notes = &run.vtree_notes;
+    weighed(notes);
+    assert_eq!(forms(notes, " begins again in skip form "), 1, "{notes:#?}");
+    let skip = forms(notes, " goes on in skip form ");
+    assert_eq!(
+        skip + forms(notes, " begins again stored "),
         1,
         "{notes:#?}"
     );
+    assert_eq!(run.stats.skip_form, skip == 1, "{notes:#?}");
     assert!(
         notes
             .iter()
@@ -2045,6 +2067,7 @@ fn a_trial_whose_first_large_formula_keeps_few_pairs_goes_on_in_skip_form() {
     assert_diamond(&run, steps);
     let run = run_probed(steps, vec![program, Kind::Closed], always);
     let notes = &run.vtree_notes;
+    weighed(notes);
     assert!(
         notes
             .iter()
@@ -2052,7 +2075,8 @@ fn a_trial_whose_first_large_formula_keeps_few_pairs_goes_on_in_skip_form() {
             .all(|n| !n.contains("skip form")),
         "{notes:#?}"
     );
-    assert_eq!(run.stats.skip_form, run.kind == program, "{notes:#?}");
+    assert!(!run.stats.skip_form || run.kind == program, "{notes:#?}");
+    assert_eq!(forms(notes, " begins again stored "), 0, "{notes:#?}");
     assert_diamond(&run, steps);
 }
 

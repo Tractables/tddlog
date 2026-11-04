@@ -294,32 +294,132 @@ pub(crate) struct TddBackend<'a> {
     /// The work clock at which `auto`'s turn ends ([`TddBackend::pause`]),
     /// `None` outside a turn.
     turn_end: Cell<Option<u64>>,
-    /// `auto`'s probe of the first large formula ([`TddBackend::probe`]).
+    /// `auto`'s probe of the trial's form ([`TddBackend::probe`]), and
+    /// the trial's clock: the work clock at the run's start, and what the
+    /// trial had spent before the run.
     probe: Cell<Probe>,
+    spent: Cell<(u64, u64)>,
 }
 
-/// `auto`'s probe of a stored trial's first large formula, which decides
-/// whether the trial goes on in skip form ([`TddBackend::probe`]).
+/// `auto`'s probe of a trial's form: a stored trial's first large formula,
+/// and where that keeps few pairs in skip form, the work of either form over
+/// the same stretch of the compile, which decides whether the trial goes on
+/// in skip form ([`TddBackend::probe`], [`TddBackend::at_step`]).
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub(crate) enum Probe {
     /// No probe.
     #[default]
     Off,
-    /// The first formula of `from` pairs or more is measured, and stops
-    /// the compile where it keeps under `below` of its pairs in skip form.
+    /// The first formula of `from` pairs or more is measured, and where it
+    /// keeps under `below` of its pairs in skip form, the stored compile
+    /// goes on over a stretch ([`Probe::Stretch`]).
     Armed { from: usize, below: f64 },
-    /// The formula measured: its pairs, stored and in skip form.
+    /// The formula measured, which keeps most of its pairs in skip form:
+    /// its pairs, stored and in skip form.
     Measured { pairs: usize, skip: usize },
+    /// The formula measured kept few pairs in skip form: the stored compile
+    /// goes on from its next step, `start`, where it had finished that many
+    /// components and the trial had spent that work, until the trial's
+    /// work has doubled; then it stops with [`CompileError::Skips`].
+    Stretch {
+        pairs: usize,
+        skip: usize,
+        start: Option<(usize, u64)>,
+    },
+    /// The trial begun again in skip form: its work from the first step
+    /// with `from` components finished, `at`, to the first with `to`, is
+    /// weighed against the stored compile's `stored` over the same
+    /// components. Where the skip form spends as much, the compile stops
+    /// with [`CompileError::Stored`].
+    Duel {
+        from: usize,
+        to: usize,
+        stored: u64,
+        at: Option<u64>,
+    },
+    /// The skip form spent `skip` over the stretch, under the stored
+    /// form's `stored`, and the trial goes on in it.
+    Weighed { skip: u64, stored: u64 },
+}
+
+impl Probe {
+    /// The probe at a step of the compile with `done` components finished,
+    /// where the trial has spent `work`, and the stop of the compile there,
+    /// if any.
+    pub(crate) fn at_step(self, done: usize, work: u64) -> (Probe, Option<CompileError>) {
+        match self {
+            Probe::Stretch {
+                pairs,
+                skip,
+                start: None,
+            } => (
+                Probe::Stretch {
+                    pairs,
+                    skip,
+                    start: Some((done, work)),
+                },
+                None,
+            ),
+            Probe::Stretch {
+                pairs,
+                skip,
+                start: Some((from, at)),
+            } if done > from && work >= at.saturating_mul(2) => (
+                self,
+                Some(CompileError::Skips {
+                    pairs,
+                    skip,
+                    from,
+                    to: done,
+                    stored: work - at,
+                }),
+            ),
+            Probe::Duel {
+                from,
+                to,
+                stored,
+                at: None,
+            } if done >= from => (
+                Probe::Duel {
+                    from,
+                    to,
+                    stored,
+                    at: Some(work),
+                },
+                None,
+            ),
+            // The skip form loses as soon as it has spent what the stored
+            // form spent over the whole stretch.
+            Probe::Duel {
+                to,
+                stored,
+                at: Some(at),
+                ..
+            } if done >= to || work.saturating_sub(at) >= stored => {
+                debug_assert!(work >= at, "the trial's clock runs back");
+                let skip = work.saturating_sub(at);
+                if skip < stored {
+                    (Probe::Weighed { skip, stored }, None)
+                } else {
+                    (self, Some(CompileError::Stored { skip, stored }))
+                }
+            }
+            p => (p, None),
+        }
+    }
 }
 
 /// The units of the work clock a skip operation is charged for each unit
 /// the skip engine charges itself ([`TddBackend::skip_op`]), so that the
 /// clock runs in the stored engine's units in either form. On the
-/// circuits, `program`'s compile in skip form charges 8 to 26 M units a
-/// second where the stored form charges 60 to 530 M; the ratio of the two
-/// rates is 13 at the median of 49 circuits, 11 and 17 at the quartiles.
-/// The larger is taken, so that a turn in skip form takes no more time
-/// than one in the stored form, where `auto`'s trials race by work.
+/// circuits, the ratio of the two engines' rates in units a second is 10
+/// at the median of `program`'s compiles of 49 circuits, 7 and 12.5 at the
+/// quartiles, and 17 at the median of `program:fanin`'s of 24, where the
+/// skip form keeps the fewest pairs. The larger is taken, so that a turn in
+/// skip form takes no more time than one in the stored form, where
+/// `auto`'s trials race by work, and so that the work of the two forms
+/// weighed over a stretch ([`Probe`]) compares their times where the skip
+/// form keeps few pairs.
 const SKIP_WORK_SCALE: u64 = 16;
 
 /// When a minimization between operations runs tididi's full plan, and
@@ -443,6 +543,7 @@ impl<'a> TddBackend<'a> {
             kept_at: Cell::new(engine.limits().work_units()),
             turn_end: Cell::new(None),
             probe: Cell::new(Probe::Off),
+            spent: Cell::new((0, 0)),
         }
     }
 
@@ -466,23 +567,31 @@ impl<'a> TddBackend<'a> {
         self.form
     }
 
-    /// Arms `probe` on a stored backend ([`Self::probe`]).
-    pub(crate) fn with_probe(self, probe: Probe) -> Self {
-        debug_assert!(self.form == Form::Stored || probe == Probe::Off);
+    /// Arms `probe` ([`Self::probe`], [`Self::at_step`]), for a trial
+    /// that had spent `spent` where the run's work clock read `start`. The
+    /// engine's work clock starts again with each run, so the probe's
+    /// clock is `spent` and the work since `start`, which runs on across
+    /// the trial's turns.
+    pub(crate) fn with_probe(self, probe: Probe, start: u64, spent: u64) -> Self {
+        debug_assert!(match probe {
+            Probe::Armed { .. } | Probe::Stretch { .. } => self.form == Form::Stored,
+            Probe::Duel { .. } => self.form == Form::Skip,
+            _ => true,
+        });
         self.probe.set(probe);
+        self.spent.set((start, spent));
         self
     }
 
-    /// The probe as it stands: measured where a formula reached it.
+    /// The probe as it stands.
     pub(crate) fn probed(&self) -> Probe {
         self.probe.get()
     }
 
     /// Measures `f`, an atom's settled formula of `pairs` pairs, where it
     /// is the first that reaches the armed probe: its pairs in skip form,
-    /// by one conversion. Fails with [`CompileError::Skips`] where they are
-    /// under the probe's share of `pairs`, so that `auto` goes on with the
-    /// trial in skip form.
+    /// by one conversion. Where they are under the probe's share of
+    /// `pairs`, the compile goes on over a stretch ([`Probe::Stretch`]).
     pub(crate) fn probe(&self, f: &Diagram, pairs: usize) -> Result<(), CompileError> {
         let Probe::Armed { from, below } = self.probe.get() else {
             return Ok(());
@@ -492,11 +601,28 @@ impl<'a> TddBackend<'a> {
         }
         let stored = f.stored("the skip probe")?;
         let skip = self.skip_op(|e| e.to_skip(stored))?.pair_count();
-        self.probe.set(Probe::Measured { pairs, skip });
-        if (skip as f64) < below * pairs as f64 {
-            return Err(CompileError::Skips { pairs, skip });
-        }
+        self.probe.set(if (skip as f64) < below * pairs as f64 {
+            Probe::Stretch {
+                pairs,
+                skip,
+                start: None,
+            }
+        } else {
+            Probe::Measured { pairs, skip }
+        });
         Ok(())
+    }
+
+    /// The compile at a step it has kept ([`Self::kept`]), with `done` of
+    /// its components finished: the probe's stretch begins and ends at
+    /// steps, and a stop there goes on later as from the end of a turn
+    /// ([`Probe::at_step`]).
+    pub(crate) fn at_step(&self, done: usize) -> Result<(), CompileError> {
+        let (start, spent) = self.spent.get();
+        let work = spent + self.work_units().saturating_sub(start);
+        let (probe, stop) = self.probe.get().at_step(done, work);
+        self.probe.set(probe);
+        stop.map_or(Ok(()), Err)
     }
 
     /// The skip engine's operation `op`, the work clock charged
@@ -2840,6 +2966,128 @@ mod tests {
     /// until it takes at least 2^18 units of its own, stops when given half
     /// the scaled work it takes, with the clock at or past that half. Its
     /// own units alone would not have reached the stop.
+    #[test]
+    fn the_probe_weighs_the_skip_form_over_the_stored_forms_stretch() {
+        // The stretch begins at the step after the formula measured and
+        // ends at the first later step where the trial's work has doubled.
+        let stretch = Probe::Stretch {
+            pairs: 1000,
+            skip: 10,
+            start: None,
+        };
+        let (p, stop) = stretch.at_step(3, 100);
+        assert!(stop.is_none());
+        let (p, stop) = p.at_step(3, 500);
+        assert!(stop.is_none(), "the stretch ends past its first step");
+        let (p, stop) = p.at_step(4, 150);
+        assert!(stop.is_none());
+        let (_, stop) = p.at_step(5, 200);
+        assert!(matches!(
+            stop,
+            Some(CompileError::Skips {
+                pairs: 1000,
+                skip: 10,
+                from: 3,
+                to: 5,
+                stored: 100,
+            })
+        ));
+        // The skip form's work is read from the step with as many
+        // components finished, and wins where it spends less over them.
+        let duel = Probe::Duel {
+            from: 3,
+            to: 5,
+            stored: 100,
+            at: None,
+        };
+        let (p, _) = duel.at_step(2, 1000);
+        assert_eq!(p, duel);
+        let (p, _) = p.at_step(3, 1050);
+        let (p, stop) = p.at_step(4, 1100);
+        assert!(stop.is_none());
+        let (won, stop) = p.at_step(5, 1149);
+        assert!(stop.is_none());
+        assert_eq!(
+            won,
+            Probe::Weighed {
+                skip: 99,
+                stored: 100
+            }
+        );
+        // It loses once it has spent the stored form's work, at the end of
+        // the stretch or before.
+        let (_, stop) = p.at_step(4, 1150);
+        assert!(matches!(
+            stop,
+            Some(CompileError::Stored {
+                skip: 100,
+                stored: 100
+            })
+        ));
+        let (_, stop) = p.at_step(5, 1150);
+        assert!(matches!(stop, Some(CompileError::Stored { .. })));
+    }
+
+    /// The engine's work clock starts again with each run, and a trial's
+    /// turns are runs: the probe's clock is what the trial spent before the
+    /// run and the work since, so a duel begun in one turn is weighed in
+    /// the next over the work of both.
+    #[test]
+    fn the_probes_clock_runs_on_across_a_trials_turns() {
+        let n = 30u32;
+        let tree = Arc::new(Vtree::random(n, 11));
+        let work = |backend: &TddBackend, seed: u64| {
+            let mut next = draws(seed);
+            let scope = backend.global();
+            let mut f = backend.one(&scope).unwrap();
+            for _ in 0..12 {
+                let clause: Vec<Literal> = (0..3)
+                    .map(|_| Literal::new(VarId(1 + next(u64::from(n)) as u32), next(2) == 0))
+                    .collect();
+                f = backend.and_clause(&scope, f, &clause).unwrap();
+            }
+        };
+        let duel = Probe::Duel {
+            from: 1,
+            to: 3,
+            stored: u64::MAX,
+            at: None,
+        };
+        // The first turn: the duel begins at component 1, after some work,
+        // and the turn ends with more.
+        let (probe, spent, at) = tree.context().run(|engine| {
+            let start = engine.limits().work_units();
+            let skip =
+                TddBackend::in_form(engine, tree.clone(), Form::Skip).with_probe(duel, start, 0);
+            work(&skip, 1);
+            let at = skip.work_units() - start;
+            skip.at_step(1).unwrap();
+            work(&skip, 2);
+            (skip.probed(), skip.work_units() - start, at)
+        });
+        assert!(at > 0 && spent > at);
+        assert!(
+            matches!(probe, Probe::Duel { at: Some(a), .. } if a == at),
+            "{probe:?}"
+        );
+        // The next turn reads the clock from what the first spent.
+        let (probe, more) = tree.context().run(|engine| {
+            let start = engine.limits().work_units();
+            assert!(start < at, "the engine's clock starts again");
+            let skip = TddBackend::in_form(engine, tree.clone(), Form::Skip)
+                .with_probe(probe, start, spent);
+            skip.at_step(2).unwrap();
+            work(&skip, 3);
+            skip.at_step(3).unwrap();
+            (skip.probed(), skip.work_units() - start)
+        });
+        let skip = spent + more - at;
+        assert!(
+            matches!(probe, Probe::Weighed { skip: s, .. } if s == skip),
+            "{probe:?}, {skip} units"
+        );
+    }
+
     #[test]
     fn a_stop_in_work_units_cuts_a_skip_operation_at_its_scaled_work() {
         let n = 40u32;

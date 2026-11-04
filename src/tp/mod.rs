@@ -106,11 +106,23 @@ pub enum CompileError {
     /// needs the stored form.
     SkipForm(&'static str),
     /// `auto`'s probe of a stored trial: its first large formula, of
-    /// `pairs` pairs, keeps `skip` of them in skip form, few enough that
-    /// the trial goes on in skip form (`TddBackend::probe`).
+    /// `pairs` pairs, kept `skip` of them in skip form, few enough that the
+    /// trial begins again in skip form to weigh it, and the stored compile
+    /// spent `stored` from the first step with `from` components finished
+    /// to the first with `to` (`Probe::Stretch`).
     Skips {
         pairs: usize,
         skip: usize,
+        from: usize,
+        to: usize,
+        stored: u64,
+    },
+    /// `auto`'s probe of a trial begun again in skip form: over the
+    /// stretch, the skip form spent `skip`, no less than the stored form's
+    /// `stored`, and the trial goes on stored (`Probe::Duel`).
+    Stored {
+        skip: u64,
+        stored: u64,
     },
 }
 
@@ -148,9 +160,20 @@ impl fmt::Display for CompileError {
                 f,
                 "--skip-levels keeps formulas in skip form, and {what} needs the stored form"
             ),
-            CompileError::Skips { pairs, skip } => write!(
+            CompileError::Skips {
+                pairs,
+                skip,
+                from,
+                to,
+                stored,
+            } => write!(
                 f,
-                "a formula of {pairs} pairs keeps {skip} in skip form, and the trial goes on in it"
+                "a formula of {pairs} pairs keeps {skip} in skip form, and the stored form spent \
+                 {stored} units from component {from} to {to}"
+            ),
+            CompileError::Stored { skip, stored } => write!(
+                f,
+                "the skip form spent {skip} units where the stored form spent {stored}"
             ),
         }
     }

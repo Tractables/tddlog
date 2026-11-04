@@ -1058,6 +1058,7 @@ impl Compilation {
             let mut factor = GUARD;
             while self.next < self.sccs.len() {
                 backend.kept();
+                backend.at_step(self.next)?;
                 backend.pause()?;
                 if let Some(p) = self.projected.as_mut()
                     && p.started == self.next

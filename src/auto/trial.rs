@@ -61,10 +61,26 @@ pub(super) struct Trial {
     pub(super) revived: bool,
     /// The form of its formulas.
     pub(super) form: tp::Form,
-    /// The probe of its first large formula, which decides its form
-    /// (`super::run_within`): armed until a formula reaches it or the
-    /// compile finishes, then the formula measured, if any.
+    /// The probe of its form (`super::run_within`): armed until a formula
+    /// reaches it or the compile finishes, then the formula measured, and
+    /// where that keeps few pairs in skip form, the work of either form
+    /// over the same stretch of the compile.
     pub(super) probe: tp::Probe,
+    /// Its stored compile, while it weighs the skip form against it
+    /// ([`tp::Probe::Duel`]).
+    pub(super) aside: Option<Box<Aside>>,
+}
+
+/// What a trial's stored compile had built when the trial began again in
+/// skip form to weigh it: the compile goes on from there where the stored
+/// form spends less over the stretch ([`Trial::set_aside`]).
+pub(super) struct Aside {
+    evaluation: Evaluation,
+    kept: Option<tp::KeptProjector>,
+    vtree: Arc<tididi::Vtree>,
+    progress: Vec<(u64, f64)>,
+    querying: bool,
+    mark: Option<u64>,
 }
 
 impl Trial {
@@ -92,12 +108,16 @@ impl Trial {
             revived: false,
             form: tp::Form::Stored,
             probe: tp::Probe::Off,
+            aside: None,
         }
     }
 
-    /// Whether its next attempt probes its first large formula.
+    /// Whether its next attempt probes its form.
     pub(super) fn probing(&self) -> bool {
-        matches!(self.probe, tp::Probe::Armed { .. })
+        matches!(
+            self.probe,
+            tp::Probe::Armed { .. } | tp::Probe::Stretch { .. } | tp::Probe::Duel { .. }
+        )
     }
 
     /// Whether its layout may have added copies to its rewrite: a `td`
@@ -289,7 +309,10 @@ impl Trial {
     /// Whether its attempts left anything built: the formulas of its phase,
     /// or the vtree its engine kept between attempts.
     pub(super) fn holds(&self) -> bool {
-        self.kept.is_some() || self.evaluation.is_compiled() || self.evaluation.progress().is_some()
+        self.kept.is_some()
+            || self.aside.is_some()
+            || self.evaluation.is_compiled()
+            || self.evaluation.progress().is_some()
     }
 
     /// Frees what its attempts built, and the scratch its engine kept: its
@@ -300,13 +323,67 @@ impl Trial {
     pub(super) fn release(&mut self) {
         self.evaluation = Evaluation::new(self.evaluation.traced());
         self.kept = None;
+        self.aside = None;
         self.progress.clear();
         self.querying = false;
         self.mark = None;
+        // A stretch or a duel under way is measured again on the compile
+        // begun again.
+        self.probe = match self.probe {
+            tp::Probe::Stretch { pairs, skip, .. } => tp::Probe::Stretch {
+                pairs,
+                skip,
+                start: None,
+            },
+            tp::Probe::Duel {
+                from, to, stored, ..
+            } => tp::Probe::Duel {
+                from,
+                to,
+                stored,
+                at: None,
+            },
+            p => p,
+        };
         if let Some(layout) = self.built.as_mut() {
             layout.vtree =
                 Arc::new(tididi::Vtree::clone(&layout.vtree).with_context(Arc::default()));
         }
+    }
+
+    /// Sets its stored compile aside and frees the rest
+    /// ([`Self::release`]), so that it begins again in skip form; where
+    /// its compile cannot go on, a run without a watch having stopped it,
+    /// nothing is set aside.
+    pub(super) fn set_aside(&mut self, goes_on: bool) {
+        let traced = self.evaluation.traced();
+        let aside = goes_on.then(|| Aside {
+            evaluation: std::mem::replace(&mut self.evaluation, Evaluation::new(traced)),
+            kept: self.kept.take(),
+            vtree: Arc::clone(&self.built.as_ref().unwrap().vtree),
+            progress: std::mem::take(&mut self.progress),
+            querying: self.querying,
+            mark: self.mark,
+        });
+        self.release();
+        self.aside = aside.map(Box::new);
+    }
+
+    /// Goes on with its stored compile where it was set aside
+    /// ([`Self::set_aside`]), or begins it again where none was: whether
+    /// one was.
+    pub(super) fn restore(&mut self) -> bool {
+        let Some(a) = self.aside.take() else {
+            self.release();
+            return false;
+        };
+        self.evaluation = a.evaluation;
+        self.kept = a.kept;
+        self.built.as_mut().unwrap().vtree = a.vtree;
+        self.progress = a.progress;
+        self.querying = a.querying;
+        self.mark = a.mark;
+        true
     }
 
     /// Ends the trial for the run, where an operation of its attempt was

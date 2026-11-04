@@ -714,39 +714,68 @@ fn run_within(
             }
             Err(error) => error,
         };
-        // The probe put the trial in skip form, or a step of it in skip
-        // form needs the stored form: it begins again in the other form,
-        // with the target and the work it has spent.
-        let switched = match error {
-            tp::CompileError::Skips { pairs, skip } => {
-                t.form = tp::Form::Skip;
-                Some(format!("keeps {skip} of {pairs} pairs in skip form"))
+        // The probe's stretch ended: the trial sets its stored compile
+        // aside and begins again in skip form, with the target and the
+        // work it has spent, to weigh the two forms over the stretch. The
+        // skip form spent as much as the stored form there, or a step of it
+        // needs the stored form: the trial goes on with its stored compile,
+        // or begins it again where none was set aside.
+        let to_stored = |t: &mut Trial| {
+            t.form = tp::Form::Stored;
+            t.probe = tp::Probe::Off;
+            if t.restore() {
+                "goes on stored"
+            } else {
+                "begins again stored"
             }
+        };
+        let switched = match error {
+            tp::CompileError::Skips {
+                pairs,
+                skip,
+                from,
+                to,
+                stored,
+            } => {
+                t.set_aside(!alone);
+                t.form = tp::Form::Skip;
+                t.probe = tp::Probe::Duel {
+                    from,
+                    to,
+                    stored,
+                    at: None,
+                };
+                Some((
+                    "begins again in skip form",
+                    format!(
+                        "keeps {skip} of {pairs} pairs in skip form, and the stored form spent \
+                         {stored} units from component {from} to {to}"
+                    ),
+                ))
+            }
+            tp::CompileError::Stored { skip, stored } => Some((
+                to_stored(t),
+                format!("spent {skip} units over the stretch, the stored form {stored}"),
+            )),
             tp::CompileError::SkipForm(what) if t.form == tp::Form::Skip => {
-                t.form = tp::Form::Stored;
-                Some(format!("{what} needs the stored form"))
+                Some((to_stored(t), format!("{what} needs the stored form")))
             }
             _ => None,
         };
-        if let Some(why) = switched {
-            t.release();
+        if let Some((how, why)) = switched {
             ledger.notes.push(format!(
-                "form: {} indicators={} begins again {} ({} units): {why}",
+                "form: {} indicators={} {how} ({} units): {why}",
                 t.kind,
                 t.kind.indicators_name(),
-                if t.form == tp::Form::Skip {
-                    "in skip form"
-                } else {
-                    "stored"
-                },
                 t.spent
             ));
             continue;
         }
-        // A compile finished below the probe leaves the trial stored for
-        // the run, as does a formula it measured (`attempt`).
+        // A compile finished before the probe decided leaves the trial in
+        // its form for the run, as does a formula it measured (`attempt`).
         if t.probing() && t.evaluation.is_compiled() {
             t.probe = tp::Probe::Off;
+            t.aside = None;
         }
         t.record_progress();
         let Some(stop) = Stop::of(bounds, t.last_work, &error) else {
@@ -981,6 +1010,8 @@ fn attempt(
     let mut reached = None;
     let kept = t.kept.take();
     let probing = t.probing();
+    let armed = matches!(t.probe, tp::Probe::Armed { .. });
+    let dueling = matches!(t.probe, tp::Probe::Duel { .. });
     let (form, probe) = (t.form, if probing { t.probe } else { tp::Probe::Off });
     let settled = t.evaluation.settled_work();
     let started = Instant::now();
@@ -1011,7 +1042,8 @@ fn attempt(
             limit: b.horizon,
             mark: t.target / 2,
         });
-        let backend = tp::TddBackend::resume(engine, tree.clone(), kept, form).with_probe(probe);
+        let backend = tp::TddBackend::resume(engine, tree.clone(), kept, form)
+            .with_probe(probe, start_work, t.spent);
         if let Some(b) = bounds {
             backend.end_turn_at(start_work.saturating_add(b.work));
         }
@@ -1039,6 +1071,18 @@ fn attempt(
     });
     if let Some(reached) = reached {
         t.built.as_mut().unwrap().vtree = reached;
+    }
+    // The skip form spent less over the stretch: the trial goes on in it,
+    // and its stored compile is freed.
+    if let (true, tp::Probe::Weighed { skip, stored }) = (dueling, t.probe) {
+        t.aside = None;
+        ledger.notes.push(format!(
+            "form: {} indicators={} goes on in skip form ({} units): spent {skip} units over the \
+             stretch, the stored form {stored}",
+            t.kind,
+            t.kind.indicators_name(),
+            t.spent
+        ));
     }
     let seconds = started.elapsed().as_secs_f64();
     ledger.trial_seconds += seconds;
@@ -1080,7 +1124,9 @@ fn attempt(
     let watch = bounds.map_or("none".to_string(), |b| b.pairs.to_string());
     let form = match (t.form, t.probe) {
         (tp::Form::Skip, _) => " in skip form".to_string(),
-        (_, tp::Probe::Measured { pairs, skip }) if probing => {
+        (_, tp::Probe::Measured { pairs, skip } | tp::Probe::Stretch { pairs, skip, .. })
+            if armed =>
+        {
             format!(" probed: {skip} of {pairs} pairs in skip form")
         }
         _ => String::new(),

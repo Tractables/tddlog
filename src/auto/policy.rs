@@ -31,19 +31,25 @@ pub(super) const WORK_PER_HELD_PAIR: u64 = 16;
 pub(super) const PROBE_PAIRS: usize = 1 << 16;
 
 /// The share of its pairs under which a trial's first large formula
-/// ([`PROBE_PAIRS`]) puts the trial in skip form (`--skip-levels`): a
-/// trial of `program`, `program:fanin` or `decision` begins again in skip
-/// form where the formula keeps fewer of its pairs there, and every other
-/// trial keeps the stored form. The bound is the per-pair cost: in
-/// `program`'s compiles of the circuits in either form, a pair in skip
-/// form took 2 to 23 times the time of a stored one, 8 at the median, so
-/// the skip form is faster where it keeps under one over that ratio, and
-/// the bound takes the ratio near its upper end. On the 173 bit-blasted
-/// circuits under `auto` it put 33 circuits' trials in skip form: fair_dt4
-/// and fair_dt14 at every size, weekend_p256 and population_s2 ran 1.1 to
-/// 3.3 times faster, altermu2_p64 and laplace_w15 were answered where no
-/// stored trial answered them, and addFun_max, whose trials kept 2.5% to
-/// 3.7% of their pairs, ran up to 2.3 times slower.
+/// ([`PROBE_PAIRS`]) has the trial weigh the skip form (`--skip-levels`):
+/// a trial of `program`, `program:fanin` or `decision` goes on stored until
+/// its work has doubled, sets that compile aside, and begins again in skip
+/// form, which it keeps where it spends less work than the stored form
+/// over the same components, and leaves for the compile set aside where
+/// it spends as much (`tp::Probe`). Every other trial, and every trial
+/// whose formula keeps more, stays stored.
+///
+/// The share alone does not decide, since a skip pair's cost varies too
+/// much: in `program`'s compiles of 49 circuits in either form, a pair in
+/// skip form took 0.5 to 250 times the time of a stored one, 5.5 at the
+/// median, and more the fewer pairs the skip form keeps; in
+/// `program:fanin`'s of 24 it took 35 to 56 times between the quartiles.
+/// addFun_max's trials keep 2.5% to 3.7% of their pairs, where fair_dt's
+/// keep 0.7% to 1.3%, and at its cost of about 40 the skip form spent 1.2
+/// to 1.5 times the stored form's work past its first large formula, where
+/// fair_dt's spent 0.4 to 0.8 times. The bound is that cost's 90th
+/// percentile in `program`'s compiles, 22: the trials whose formula keeps
+/// more seldom pay for the stretch weighed.
 pub(super) const SKIP_SHARE: f64 = 1.0 / 22.0;
 
 /// The doublings past its target within which a trial's projected finish
