@@ -20,12 +20,48 @@ pub(crate) fn facts_by_use(gp: &GroundProgram, deps: &Deps) -> Vec<AtomId> {
     facts_at_first_use(gp, &deps.by_head, &deps.sccs)
 }
 
+/// Fact atoms in the order the compiler consumes them, up to the order of
+/// components that do not depend on each other: [`facts_at_first_use`]
+/// over the components level by level, a component's level the longest
+/// chain of components it reads, and within a level in dependency order.
+///
+/// The dependency order is a depth-first search's, started from the atoms
+/// in the order the grounder numbered them, and so it follows how the
+/// program is written. Two netlists of one circuit that list one output
+/// word's bits in opposite orders use the gates of its carry chain first
+/// in different orders, while each gate's level is the same in both.
+pub(crate) fn facts_by_level(gp: &GroundProgram, deps: &Deps) -> Vec<AtomId> {
+    let mut component = vec![usize::MAX; gp.num_atoms()];
+    for (c, scc) in deps.sccs.iter().enumerate() {
+        for &a in scc {
+            component[a as usize] = c;
+        }
+    }
+    // The components come after those they read, so one pass in their
+    // order sets every level.
+    let mut level = vec![0usize; deps.sccs.len()];
+    for (c, scc) in deps.sccs.iter().enumerate() {
+        let above = scc
+            .iter()
+            .flat_map(|&h| &deps.by_head[h as usize])
+            .flat_map(|&ri| &gp.rules[ri].body)
+            .map(|l| component[l.atom() as usize])
+            .filter(|&d| d != usize::MAX && d != c)
+            .map(|d| level[d] + 1)
+            .max();
+        level[c] = above.unwrap_or(0);
+    }
+    let mut order: Vec<usize> = (0..deps.sccs.len()).collect();
+    order.sort_by_key(|&c| level[c]);
+    facts_at_first_use(gp, &deps.by_head, order.iter().map(|&c| &deps.sccs[c]))
+}
+
 /// Fact atoms at their first use by the components taken in the given
 /// order; unused facts last, in program order.
-pub(super) fn facts_at_first_use(
+pub(super) fn facts_at_first_use<'a>(
     gp: &GroundProgram,
     by_head: &RulesByHead,
-    components: &[Vec<AtomId>],
+    components: impl IntoIterator<Item = &'a Vec<AtomId>>,
 ) -> Vec<AtomId> {
     // Derived atoms count as seen, so that one byte per literal tells a
     // fact not seen yet.

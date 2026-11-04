@@ -12,7 +12,7 @@ use crate::ground::{AtomId, GroundProgram, add_fact_copies};
 use super::TD_SEED;
 use super::forest::Forest;
 use super::graph::{
-    elimination_budget, facts_by_use, interaction_edges, min_fill_cliques, minor_min_width,
+    elimination_budget, facts_by_level, interaction_edges, min_fill_cliques, minor_min_width,
 };
 use super::separators::{self, Atop, CopyRule};
 
@@ -570,7 +570,9 @@ pub(super) fn portfolio_to_bound(
 }
 
 /// `td` rooted where [`root_bag`] says, and the positions of the facts in
-/// the order the compiler consumes them.
+/// the order the compiler consumes them, level by level
+/// ([`facts_by_level`]): the root, and each bag's order of its children,
+/// then follow the program's structure and not the numbering of its atoms.
 fn rooted(
     gp: &GroundProgram,
     deps: &Deps,
@@ -578,7 +580,7 @@ fn rooted(
 ) -> Option<(Rooted, Vec<usize>)> {
     let num_atoms = gp.num_atoms();
     let mut position = vec![usize::MAX; num_atoms];
-    for (i, a) in facts_by_use(gp, deps).into_iter().enumerate() {
+    for (i, a) in facts_by_level(gp, deps).into_iter().enumerate() {
         position[a as usize] = i;
     }
     let is_fact = |a: AtomId| gp.is_fact(a);

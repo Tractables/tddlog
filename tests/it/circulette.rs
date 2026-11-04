@@ -195,12 +195,15 @@ fn compiled(text: &str, strategy: Strategy) -> (usize, Vec<(String, f64)>) {
 /// of 2203 to 8328 pairs, and `td`'s two writings differed 3.8 times; at
 /// eight bits one writing took 1.5 s and the other over 300 s. The queried
 /// cubes now shape no layout and keep no atom (`QueriedCubes` in
-/// `src/ground/shape.rs`, and the aliasing).
+/// `src/ground/shape.rs`, and the aliasing). `td` still breaks the ties of
+/// its elimination by the atoms' numbers, and its two writings differ 1.5
+/// times here.
 #[test]
 fn an_adder_compiles_alike_whichever_way_its_sum_is_listed() {
     let bounds = [
         (Strategy::Auto, (6, 5)),
         (Strategy::Trial(Kind::Closed), (6, 5)),
+        (Strategy::Trial(Kind::Td), (2, 1)),
     ];
     for (strategy, (num, den)) in bounds {
         let (low, low_answers) = compiled(&ripple_adder(6, false), strategy);
