@@ -707,15 +707,16 @@ function benchmarksOf(root) {
     // then tddlog), the subjects of the comparisons. A row's subject is the
     // first of them with a record in the systems' order: tddlog in a type,
     // its record "unread" (unanswered and not given) where only another
-    // system's front end reads the program; on system x's own page, x's own
-    // pipeline where it ran (results.js's and panels.py's). A system on another system's export
+    // system's front end reads the program; on system x's own page too, never
+    // X+tddlog, and Y+tddlog for Y+x where it ran (results.js's and panels.py's). A system on another system's export
     // (Roulette+ProbLog, categories.json's via) opens its exporter's
     // integration page.
     const isMine = (x) => x === "tddlog" || x.endsWith("-tddlog");
     const viaOf = (x) => cats.via?.[x.replace(/-process$/, "")] ?? null;
     const given = (r, x) => r.v[x] !== null && r.v[x] !== "unread";
     const myKey = (r) => Object.keys(r.v).find((x) => isMine(x) && r.v[x] !== null);
-    const pairKey = (x) => (r) => ((r.v[`${x}-tddlog`] ?? null) !== null ? `${x}-tddlog` : myKey(r));
+    const pipelineOf = (x) => { const v = viaOf(x), p = v ? `${v[0]}-tddlog` : null; return p !== x ? p : null; };
+    const pairKey = (x) => (r) => { const p = pipelineOf(x); return p && (r.v[p] ?? null) !== null ? p : myKey(r); };
     const subjectsOf = (rows) => [...new Set(rows.map(myKey))].filter(Boolean)
       .sort((a, b) => (b === "tddlog") - (a === "tddlog") || a.localeCompare(b));
     const answeredBy = (rows) => rows.filter((r) => number(r.v[myKey(r)])).length;
@@ -807,11 +808,10 @@ function benchmarksOf(root) {
     // Each row's subject (key) against x over rows, those that give x a run.
     const versus = (rows, x, key = myKey) => compare(rows.filter((r) => r.v[x] !== null).map((r) => [r.limit, r.v[key(r)], r.v[x]]));
     // A suite's runs of x: [limit, its subject's record, x's record] where x
-    // and x's own pipeline, or else the first of tddlog's, were given the
-    // row. The suite's other systems are those with such a run.
+    // and tddlog (Y+tddlog for Y+x, pipelineOf) were given the row. The suite's other systems are those with such a run.
     const suiteRuns = (s, x) => {
       const j = s.systems.indexOf(x) + 1;
-      const mine = [`${x}-tddlog`, ...s.systems.filter(isMine)].map((m) => s.systems.indexOf(m) + 1).filter((i) => i > 0);
+      const mine = [pipelineOf(x) ?? "tddlog"].map((m) => s.systems.indexOf(m) + 1).filter((i) => i > 0);
       return s.instances.flatMap((row) => {
         const m = mine.find((i) => row[i] !== null);
         return m !== undefined && row[j] !== null ? [[s.limit, row[m], row[j]]] : [];

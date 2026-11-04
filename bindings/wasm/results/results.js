@@ -252,10 +252,13 @@ const isMine = (key) => key === "tddlog" || key.endsWith("-tddlog");
 // and its time there.
 const myKey = (r) => Object.keys(r.v).find((x) => isMine(x) && r.v[x] !== null);
 const myTime = (r) => r.t[myKey(r)] ?? null;
-// The one of them system x is compared with on a row on x's own page: its own
-// pipeline (X+tddlog, which differs from x only in the inference) where it ran,
-// else the row's subject.
-const pairKey = (x) => (r) => ((r.v[`${x}-tddlog`] ?? null) !== null ? `${x}-tddlog` : myKey(r));
+// The one of them system x is compared with on a row on x's own page: the row's
+// subject, never X+tddlog, whose record is not tddlog's; for a system Y+x on
+// Y's export, Y+tddlog (which differs from it only in the inference) where it ran.
+const pairKey = (x) => {
+  const v = viaOf(x), p = v ? `${v[0]}-tddlog` : null;
+  return (r) => (p && p !== x && (r.v[p] ?? null) !== null ? p : myKey(r));
+};
 // The subjects of rows (tddlog first), and how many of the rows they answer.
 const subjectsOf = (rows, key = myKey) => [...new Set(rows.map(key))].filter(Boolean)
   .sort((a, b) => (b === "tddlog") - (a === "tddlog") || a.localeCompare(b));
@@ -1416,7 +1419,7 @@ function solverParts(x) {
     return { c, rows, tal: tally(c, rows) };
   });
   // the members of tddlog and its pipelines it is compared with over these
-  // categories (its own pipeline where it ran)
+  // categories (pairKey)
   const all = parts.flatMap((p) => p.rows);
   const ms = subjectsOf(all, pairKey(x));
   // in its own language and translated for it
@@ -1516,7 +1519,7 @@ function suiteView(route) {
         if (m) paras.set(m[1] + (m[2] ? ` (${m[2]})` : ""), para);
       }
     }
-    out.push(element("h3", {}, `${subject(s.systems.filter(isMine))} against each system`), headToHead(s, rows, paras));
+    out.push(element("h3", {}, `${subject(rowsMe(rows))} against each system`), headToHead(s, rows, paras));
   }
   for (const card of (s.home.findings ?? []).filter((c) => c.suite === s.key)) {
     out.push(element("h3", {}, card.title), ...card.paras.map((para) => prose("p", para, { class: "finding-text" })));
@@ -1548,8 +1551,11 @@ function familyTable(s, fams) {
   return scroller(element("table", { class: "grid counts" }, element("thead", {}, head), body));
 }
 
+// The members of tddlog and its pipelines a suite's rows (against) compare with.
+const rowsMe = (rows) => [...new Set(rows.flatMap(({ v }) => v.me))];
+
 function headToHead(s, rows, paras) {
-  const me = subject(s.systems.filter(isMine));
+  const me = subject(rowsMe(rows));
   const body = element("tbody");
   for (const { key, v } of rows) {
     const name = data.names[key];
