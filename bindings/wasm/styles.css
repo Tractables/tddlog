@@ -1085,6 +1085,7 @@ div.facts dd { max-width: 80ch; min-width: 0; overflow-wrap: anywhere; }
 /* The type open, its families under it; the baselines past the first ten
    folded under their control, which reads as the entries' link it is. */
 .tree li.cat:has(> ul) > a { color: var(--ink); font-weight: 600; }
+.tree li.legend { padding: 0 0.5rem; color: var(--muted); font-size: 11px; text-align: right; }
 .tree ul.baselines li.more { display: none; }
 .tree ul.baselines.all li.more { display: block; }
 .tree li.toggle button { width: auto; padding: 0.15rem 0.6rem; border: 0; background: none; color: var(--accent); font-size: 12.5px; text-align: left; cursor: pointer; }

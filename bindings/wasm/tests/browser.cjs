@@ -936,6 +936,8 @@ function benchmarksOf(root) {
       "the menu: the overview, the categories and the programs tddlog does not run");
     const walks = fs.readdirSync(path.join(site, "next", "walk")).filter((f) => f.endsWith(".json")).map((f) => `../#/how/${f.slice(0, -5)}`);
     assert.deepEqual([...menu[3].slice(1)].sort(), walks.sort(), "the menu: every walkthrough");
+    assert.deepEqual(await page.$$eval("#tree li.legend", (ls) => ls.map((l) => l.textContent)), ["instances answered", "instances"],
+      "the menu: what its counts count");
     for (const c of categories) {
       const what = `the category ${c.key}`;
       await visit(`#/category/${c.key}`, "figure.plot svg.cactus path.line");
@@ -962,8 +964,11 @@ function benchmarksOf(root) {
       assert.equal((await page.$$("#view ul.losses li")).length, c.losses?.length ?? 0, `${what}: where tddlog is slower`);
       assert.deepEqual(await page.$eval("#view figure.scatter", (f) => [f.dataset.faster, f.dataset.slower]),
         sides(rows, c.drawn.filter((x) => !isMine(x))), `${what}: tddlog against the fastest other system`);
-      const answers = [[`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(c.instances)}`],
-        ...(c.mine.length < 2 ? [] : c.mine.map((x) => [names[x], `${count(c.answers[x])} of ${count(c.given[x])}`]))];
+      // each member of tddlog's labelled, a subject given every instance not repeated
+      const subjects = subjectsOf(rows);
+      const answers = [[`${subject(subjects)} answers`, `${count(answeredBy(rows))} of ${count(c.instances)}`],
+        ...(c.mine.length < 2 ? [] : c.mine.filter((x) => !subjects.includes(x) || c.given[x] < c.instances).map((x) =>
+          [subjects.includes(x) ? `${names[x]} answers, of those it reads` : `${names[x]} answers`, `${count(c.answers[x])} of ${count(c.given[x])}`]))];
       const headline = await page.$$eval("#view .cells.headline .cell", (cs) => cs.map((x) => [x.querySelector("span").textContent, x.querySelector("b").textContent]));
       assert.deepEqual(headline.slice(0, answers.length), answers, `${what}: its headline's answers, each in a cell`);
       const filters = c.systems.filter((x) => c.classes[x].own > 0).length;

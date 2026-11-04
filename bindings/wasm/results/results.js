@@ -724,20 +724,31 @@ const totals = (v, name) => `the ${plural(v.either, "instance")} ${name} is give
 
 // A category's headline, in cells: the answers of the rows' subjects (tal,
 // tally's), and with several of tddlog and its pipelines each one's of the
-// instances it was given; the best native system's (the most answers, then
-// the least speed-up; on all programs the best other system's) and tddlog's
-// speed-up over it.
+// instances it was given (headMembers); the best native system's (the most
+// answers, then the least speed-up; on all programs the best other system's)
+// and tddlog's speed-up over it.
 function headline(c, rows, tal, only) {
-  const ms = c.systems.filter((x) => isMine(x) && tal[x].given > 0);
   const best = ranked(c, c.native.filter((x) => tal[x]?.given > 0), tal, only)[0];
   const v = best && versus(c, best, only);
   const which = c.key === ALL ? "other" : "native";
   const box = cells([`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(rows.length)}`],
-    ...(ms.length < 2 ? [] : ms.map((x) => [data.names[x], `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`])),
+    ...headMembers(c, rows, tal).map(([x, label]) => [label, `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`]),
     ...(v ? [[`best ${which}: ${data.names[best]}`, count(tal[best].answers), `the ${which} system with the most answers`],
       ["speed-up over it", speedup(v), `${subject(v.me)}'s speed-up over ${data.names[best]}`]] : []));
   box.classList.add("headline");
   return box;
+}
+
+// With several of tddlog and its pipelines in a category, the members its
+// headline gives a cell of their own after the subjects' answers, each with
+// its label: a pipeline's answers, and a subject's of those it reads where it
+// does not read every instance; a subject given every one repeats the first
+// cell and has none.
+function headMembers(c, rows, tal) {
+  const ms = c.systems.filter((x) => isMine(x) && tal[x].given > 0), subjects = subjectsOf(rows);
+  if (ms.length < 2) return [];
+  return ms.filter((x) => !subjects.includes(x) || tal[x].given < rows.length)
+    .map((x) => [x, subjects.includes(x) ? `${data.names[x]} answers, of those it reads` : `${data.names[x]} answers`]);
 }
 
 // How the totals and the speed-up are counted, in one line under a table
@@ -2253,7 +2264,9 @@ function rail(route) {
     // no storage: the ten alone
   }
   const more = others.length - MENU_TOP;
-  const list = element("ul", { class: `baselines${open ? " all" : ""}` }, ...others.map((s, i) => {
+  // a list's counts say what they count, in a line over them
+  const legend = (text) => element("li", { class: "legend", "aria-hidden": "true" }, text);
+  const list = element("ul", { class: `baselines${open ? " all" : ""}` }, legend("instances answered"), ...others.map((s, i) => {
     const li = entry(`#/baselines/${encodeURIComponent(s.key)}`, data.names[s.key], count(s.answers), s.key);
     li.firstChild.title = `${data.names[s.key]} answers ${count(s.answers)} of the ${count(s.given)} instances it was given`;
     if (i >= MENU_TOP) li.classList.add("more");
@@ -2281,7 +2294,7 @@ function rail(route) {
   // by program type: a benchmark's page is in the category and the family
   // of its instance, and the menu marks that family as it marks a category
   // narrowed to it
-  const types = element("ul");
+  const types = element("ul", {}, legend("instances"));
   if (front) types.append(element("li", {}, link({ view: "home" }, "Overview")));
   const at = route.view === "family" ? data.place.get(`${route.suite}/${route.instance}`) : undefined;
   const current = route.view === "category" ? route.category : at ? at.c.key : route.suite ? categoryFor(route.suite)?.key : undefined;
