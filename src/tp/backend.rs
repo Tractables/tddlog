@@ -338,8 +338,9 @@ pub(crate) enum Probe {
         at: Option<u64>,
     },
     /// The skip form spent `skip` over the stretch, under the stored
-    /// form's `stored`, and the trial goes on in it.
-    Weighed { skip: u64, stored: u64 },
+    /// form's `stored`, and the trial goes on in it from where its clock
+    /// read `at`.
+    Weighed { skip: u64, stored: u64, at: u64 },
 }
 
 impl Probe {
@@ -399,7 +400,14 @@ impl Probe {
                 debug_assert!(work >= at, "the trial's clock runs back");
                 let skip = work.saturating_sub(at);
                 if skip < stored {
-                    (Probe::Weighed { skip, stored }, None)
+                    (
+                        Probe::Weighed {
+                            skip,
+                            stored,
+                            at: work,
+                        },
+                        None,
+                    )
                 } else {
                     (self, Some(CompileError::Stored { skip, stored }))
                 }
@@ -3011,7 +3019,8 @@ mod tests {
             won,
             Probe::Weighed {
                 skip: 99,
-                stored: 100
+                stored: 100,
+                at: 1149
             }
         );
         // It loses once it has spent the stored form's work, at the end of
@@ -3083,7 +3092,7 @@ mod tests {
         });
         let skip = spent + more - at;
         assert!(
-            matches!(probe, Probe::Weighed { skip: s, .. } if s == skip),
+            matches!(probe, Probe::Weighed { skip: s, at: a, .. } if s == skip && a == spent + more),
             "{probe:?}, {skip} units"
         );
     }

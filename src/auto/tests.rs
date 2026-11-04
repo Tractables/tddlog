@@ -2033,8 +2033,10 @@ fn a_trial_whose_first_large_formula_keeps_few_pairs_weighs_the_skip_form() {
             .filter(|n| n.starts_with("form: program indicators=") && n.contains(how))
             .count()
     };
-    // The two forms' work over the stretch is the trial's, on a clock that
-    // runs on across its turns: neither is more than the trial has spent.
+    // The trial goes on in the form that spent less over the stretch, and
+    // the stored form's work there is part of what the trial has spent
+    // (the clock across turns: `tp::backend`'s
+    // `the_probes_clock_runs_on_across_a_trials_turns`).
     let weighed = |notes: &[String]| {
         for n in notes.iter().filter(|n| n.contains(" over the stretch, ")) {
             let units: Vec<u64> = n
@@ -2044,7 +2046,8 @@ fn a_trial_whose_first_large_formula_keeps_few_pairs_weighs_the_skip_form() {
             let [spent, skip, stored] = units[units.len() - 3..] else {
                 unreachable!()
             };
-            assert!(skip <= spent && stored <= spent, "{n}");
+            assert!(stored <= spent, "{n}");
+            assert_eq!(skip < stored, n.contains(" goes on in skip form "), "{n}");
         }
     };
     let run = run_probed(steps, vec![program], always);
@@ -2068,6 +2071,19 @@ fn a_trial_whose_first_large_formula_keeps_few_pairs_weighs_the_skip_form() {
     let run = run_probed(steps, vec![program, Kind::Closed], always);
     let notes = &run.vtree_notes;
     weighed(notes);
+    // The weighing is charged to no trial's turns: the trial goes on from
+    // the work it had spent where it set its stored compile aside.
+    let units = |how: &str| -> Option<u64> {
+        let n = notes
+            .iter()
+            .find(|n| n.starts_with("form: program indicators=") && n.contains(how))?;
+        n.split(['(', ' ']).find_map(|w| w.parse().ok())
+    };
+    let began = units(" begins again in skip form (").unwrap();
+    match units(" goes on stored (") {
+        Some(back) => assert_eq!(back, began, "{notes:#?}"),
+        None => assert!(units(" goes on in skip form (").unwrap() >= began),
+    }
     assert!(
         notes
             .iter()

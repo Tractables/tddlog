@@ -61,13 +61,17 @@
 //! form ([`Kind::takes_skip_form`]) measures its compile's first formula of
 //! [`policy::PROBE_PAIRS`] pairs or more in that form, once ([`tp::Probe`]).
 //! Where the formula keeps under [`policy::SKIP_SHARE`] of its pairs there,
-//! the trial begins again in skip form, with the target and the work it
-//! has spent; otherwise it keeps the stored form, as does every other
-//! trial. A skip operation charges the work clock in the stored engine's
-//! units, and the run's stop cuts it where its own units, so scaled, reach
-//! the stop (`tp::TddBackend::skip_op`): the turns, the guard and the watch
-//! are the same in either form. A trial in skip form that meets a step
-//! only the stored form takes begins again stored.
+//! the trial goes on stored until its work doubles, sets that compile
+//! aside and begins again in skip form, to weigh the two forms' work over
+//! the same stretch of the compile. It goes on in the form that spent less
+//! there, from where it set its stored compile aside: the weighing's work
+//! is charged to no trial's turns. Otherwise it keeps the stored form, as
+//! does every other trial. A skip operation charges the work clock in the
+//! stored engine's units, and the run's stop cuts it where its own units,
+//! so scaled, reach the stop (`tp::TddBackend::skip_op`): the turns, the
+//! guard and the watch are the same in either form. A trial in skip form
+//! that meets a step only the stored form takes goes back to the stored
+//! form the same way.
 
 mod policy;
 #[cfg(test)]
@@ -1072,10 +1076,11 @@ fn attempt(
     if let Some(reached) = reached {
         t.built.as_mut().unwrap().vtree = reached;
     }
-    // The skip form spent less over the stretch: the trial goes on in it,
-    // and its stored compile is freed.
-    if let (true, tp::Probe::Weighed { skip, stored }) = (dueling, t.probe) {
-        t.aside = None;
+    // The skip form spent less over the stretch: the trial goes on in it
+    // from where it set its stored compile aside, which is freed
+    // (`Trial::rejoin`).
+    if let (true, tp::Probe::Weighed { skip, stored, at }) = (dueling, t.probe) {
+        t.keep_skip_form(t.spent.saturating_sub(at));
         ledger.notes.push(format!(
             "form: {} indicators={} goes on in skip form ({} units): spent {skip} units over the \
              stretch, the stored form {stored}",
