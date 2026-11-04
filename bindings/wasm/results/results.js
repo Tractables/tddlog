@@ -1008,6 +1008,7 @@ const data = {
   families: new Map(), // `${suite}/${family}`: the promise of that family's data
   family: new Map(),   // `${suite}/${instance}`: the instance's family
   place: new Map(),    // `${suite}/${instance}`: the category and the family of its instances (c.groups) that hold it
+  copyOf: new Map(),   // `${suite}/${instance}` of a copy (categories.json's `copies`): the instance it copies
 };
 
 async function load(file) {
@@ -1026,6 +1027,18 @@ function familyData(suite, key) {
 const categoriesOf = (suite) => data.types.filter((c) => c.perSuite.has(suite));
 const familiesOf = (suite) => data.bench?.suites?.[suite] ?? null;
 const familyOf = (suite, name) => data.family.get(`${suite}/${name}`);
+// The page of an instance: its family's, or, for a copy without a page of
+// its own, the page of the instance it copies; else its suite's.
+function instancePage(suite, name) {
+  const f = familyOf(suite, name);
+  if (f) return { view: "family", suite, family: f.key, instance: name };
+  const of = data.copyOf.get(`${suite}/${name}`);
+  if (of) {
+    const [s, n] = of.split(/\/(.*)/);
+    if (familyOf(s, n)) return instancePage(s, n);
+  }
+  return { view: "suite", suite };
+}
 // The column of a system in a suite's rows (its first is the instance).
 const column = (suite, key) => suite.systems.indexOf(key) + 1;
 // The record's system of a column: alea-process's runs are Alea.jl's.
@@ -1101,10 +1114,14 @@ function parse(hash) {
   const suite = parts[0];
   if (!data.suites.has(suite)) return missing;
   if (parts.length === 1) return { view: "suite", suite };
-  const fams = familiesOf(suite);
-  if (!fams) return { view: "suite", suite };   // the site has no benchmarks' data
   // FAMILY[/NAME] or @NAME, then what is open in the instance's view
   const named = parts[1].startsWith("@");
+  // a copy without a page of its own opens on the instance it copies
+  if (named && !familyOf(suite, parts[1].slice(1)) && instancePage(suite, parts[1].slice(1)).view === "family") {
+    return instancePage(suite, parts[1].slice(1));
+  }
+  const fams = familiesOf(suite);
+  if (!fams) return { view: "suite", suite };   // the site has no benchmarks' data
   const instance = named ? parts[1].slice(1) : parts[2];
   const family = named ? familyOf(suite, instance) : fams.find((f) => f.key === parts[1]);
   if (!family || (instance !== undefined && !family.instances.includes(instance))) return missing;
@@ -1570,9 +1587,8 @@ function table(suite) {
   const seen = new Set();
   const rowOf = (row) => {
     const fastest = fastestOf(cols.map((key, i) => (dashed(key) ? null : row[i + 1])));
-    const family = familyOf(suite.key, row[0]);
-    const tr = element("tr", {}, element("th", { scope: "row" },
-      family ? link({ view: "family", suite: suite.key, family: family.key, instance: row[0] }, row[0]) : row[0]));
+    const page = instancePage(suite.key, row[0]);
+    const tr = element("tr", {}, element("th", { scope: "row" }, page.view === "family" ? link(page, row[0]) : row[0]));
     if (quick(row)) tr.className = "quick";
     cols.forEach((key, i) => {
       const v = row[i + 1];
@@ -1672,20 +1688,24 @@ function familyView(route, view) {
 // A family's instances by the systems given them: each time shaded by its
 // place between 0.2 s and the limit on a log scale, the fastest from 0.2 s
 // marked, a failure by its word; a time opens the system's runs of the
-// instance, a name the instance's programs.
+// instance, a name the instance's programs. A family of one model along
+// several axes (its question, its evidence, its sizes) names each instance
+// by its values, a column an axis, the first opening its programs.
 let showAll = false;
 function timesGrid(s, f, rows, short, route) {
   const given = s.systems.filter((x) => f.instances.some((name) => rows.get(name)[column(s, x)] !== null));
   const cols = showAll ? s.systems : given;
-  const head = element("tr", {}, element("th", { scope: "col" }, "instance"),
+  const axes = f.axes ?? ["instance"];
+  const head = element("tr", {}, ...axes.map((a) => element("th", { scope: "col" }, a)),
     ...cols.map((x) => element("th", { scope: "col", class: `sys${isMine(x) ? " mine" : ""}`, title: data.names[x] }, element("span", {}, data.names[x]))));
   const body = element("tbody");
   const seen = new Set();
   for (const name of f.instances) {
     const row = rows.get(name);
     const fastest = fastestOf(cols.filter((x) => !dashed(x)).map((x) => row[column(s, x)]));
+    const named = f.values?.[name] ?? [short.get(name)];
     const tr = element("tr", { class: name === route.instance ? "on" : null },
-      element("th", { scope: "row" }, link({ ...pageOf(route), instance: name }, short.get(name))));
+      ...named.map((v, k) => element("th", { scope: "row", title: k ? null : name }, k ? v : link({ ...pageOf(route), instance: name }, v))));
     for (const x of cols) {
       const v = row[column(s, x)];
       const mine = isMine(x) ? "mine" : "";
@@ -2295,8 +2315,9 @@ function hits(text) {
     for (const s of data.systems) add(data.names[s.key], s.key, "solver", { view: "system", system: s.key });
     for (const s of data.suites.values()) {
       for (const [name] of s.instances) {
-        const family = familyOf(s.key, name);
-        add(name, "", s.title, family ? { view: "family", suite: s.key, family: family.key, instance: name } : { view: "suite", suite: s.key });
+        // a copy without a page of its own is found as the instance it copies
+        if (!familyOf(s.key, name) && data.copyOf.has(`${s.key}/${name}`)) continue;
+        add(name, "", s.title, instancePage(s.key, name));
       }
     }
   }
@@ -2481,7 +2502,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       c.perSuite = new Map();
       const add = (key) => c.perSuite.set(key, (c.perSuite.get(key) ?? 0) + 1);
       for (const row of c.rows) add(row[0]);
-      for (const copies of Object.values(c.copies)) for (const copy of copies) add(copy.split("/")[0]);
+      for (const [key, copies] of Object.entries(c.copies)) {
+        for (const copy of copies) {
+          add(copy.split("/")[0]);
+          data.copyOf.set(copy, key);
+        }
+      }
       c.suites = [...c.perSuite.keys()];
       for (const key of c.suites) if (!data.suites.has(key)) throw new Error(`the category ${c.key} has no suite ${key}`);
       if (c.key === ALL) continue;
