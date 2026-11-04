@@ -87,7 +87,8 @@ typedef struct TddlogOptions {
   /**
    * What the program's text is, as the command line tells it by the
    * file's extension: `"problog"` (an LPAD where it holds
-   * `:- begin_lpad.`), `"dice"`, or a network's, `"bif"`, `"hugin"`
+   * `:- begin_lpad.`), `"dice"`, `"circulette"` (a `.cql` netlist), or a
+   * network's, `"bif"`, `"hugin"`
    * (`.net`), `"xdsl"` or `"uai"`, with every variable queried. Null is
    * `"problog"`.
    */
