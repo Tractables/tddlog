@@ -1067,7 +1067,8 @@ function instancePage(suite, name) {
 }
 // The column of a system in a suite's rows (its first is the instance).
 const column = (suite, key) => suite.systems.indexOf(key) + 1;
-// The record's system of a column: alea-process's runs are Alea.jl's.
+// The record's system of a column: alea-process's runs are Alea.jl's, and an
+// integration's are tddlog's where its records are tddlog's runs.
 const recorded = (key) => data.bench?.records?.[key] ?? base(key);
 // Whether a tab's reader is (a form of) the system of this name: "Ace auto"
 // and "Ace forceC2d" are Ace's.
@@ -2146,7 +2147,9 @@ async function runs(route) {
   }
   if (ticket !== drawn) return;
   const inst = fam.instances.find((i) => i.name === name);
-  const rec = recorded(key);
+  // the column's own runs where the instance has them (an integration that ran on the program
+  // itself), else its records' system's (Alea.jl's for alea-process)
+  const rec = (inst?.runs ?? []).some((r) => r.system === key) ? key : recorded(key);
   const mine = (inst?.runs ?? []).filter((r) => r.system === rec);
   const parts = [];
   const about = [];
