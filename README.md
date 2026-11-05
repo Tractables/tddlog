@@ -39,6 +39,7 @@ command-line tool with Python, C and WebAssembly bindings, and it
 </p>
 
 <!-- results:overview -->
+<sub>Results as of 2026-11-05, public main [53709e77](https://github.com/Tractables/tddlog/commit/53709e77). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given and either answers, and how many times faster tddlog is ([how it is counted](#performance)).</sub>
 <!-- /results:overview -->
 
 On every type of program, tddlog answers more instances than each
@@ -227,6 +228,8 @@ given and either answers, and how many times faster tddlog is. The
 instance, time and program, and a page for each system.
 
 <!-- results:setup -->
+<!-- written from bindings/wasm/results/categories.json, sha256 4b03715cf6e481981ba000a40ee2fe9b86bd051e6eb1cecb72ad6d268a5f5da8 -->
+Results as of 2026-11-05, public main [53709e77](https://github.com/Tractables/tddlog/commit/53709e77). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
 <!-- /results:setup -->
 
 The results page says how the speed-up is counted, and the
@@ -241,6 +244,7 @@ how each system was run.
 </p>
 
 <!-- results:logic-programs -->
+tddlog answers **334 of 357** programs, of 24 families.
 <!-- /results:logic-programs -->
 
 The ProbLog programs: paths in random graphs and grids, Biomine's paths,
@@ -251,6 +255,13 @@ hidden Markov models, and the programs of the ProbLog tutorial and of
 ProbLog's and cplint's examples.
 
 <!-- results:logic-programs-table -->
+| System | Answers | Its total time | tddlog's total time | tddlog faster |
+|---|--:|--:|--:|--:|
+| ProbLog | 255 | 15 h | 40 min | 48× |
+| PITA | 218 | 21 h | 30 min | 176× |
+| aspmc | 211 | 22 h | 30 min | 103× |
+| Scallop | 153 | 31 h | 29 min | too few in common |
+| PSouffle | 108 | 41 h | 30 min | 666× |
 <!-- /results:logic-programs-table -->
 
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
@@ -267,6 +278,7 @@ ProbLog's and cplint's examples.
 </p>
 
 <!-- results:database-queries -->
+tddlog answers **308 of 320** queries, of 19 families.
 <!-- /results:database-queries -->
 
 The queries are Boolean queries over tuple-independent databases: 16
@@ -274,6 +286,14 @@ TPC-H queries, the queries h0 and h1, the safe queries QW and Q9, and
 paths of two edges in random graphs.
 
 <!-- results:database-queries-table -->
+| System | Answers | Its total time | tddlog's total time | tddlog faster |
+|---|--:|--:|--:|--:|
+| ProvSQL | 268 | 16 h | 41 min | 22× |
+| ProbLog | 203 | 39 h | 41 min | 126× |
+| PSouffle | 189 | 41 h | 41 min | 117× |
+| PITA | 123 | 62 h | 41 min | 411× |
+| Scallop | 30 | 90 h | 41 min | too few in common |
+| aspmc | 22 | 95 h | 41 min | 520× |
 <!-- /results:database-queries-table -->
 
 - Where others win: ProbLog on the paths of two edges in random graphs
@@ -287,6 +307,7 @@ paths of two edges in random graphs.
 </p>
 
 <!-- results:bayesian-networks -->
+tddlog answers **607 of 634** networks, of 12 families.
 <!-- /results:bayesian-networks -->
 
 The networks: bnlearn's, the large ones and the Roulette and noDice
@@ -296,6 +317,16 @@ factors are conditional probability tables (diagnosis, pedigree, BN,
 blockmap, Mastermind and fs networks, and the classic networks).
 
 <!-- results:bayesian-networks-table -->
+| System | Answers | Its total time | tddlog's total time | tddlog faster |
+|---|--:|--:|--:|--:|
+| Ace | 414 | 34 h | 1.3 h | 23× |
+| TensorInference.jl | 321 | 56 h | 1.5 h | 34× |
+| Merlin | 292 | 57 h | 1.5 h | 34× |
+| libDAI | 290 | 58 h | 1.5 h | 33× |
+| pyAgrum | 261 | 63 h | 1.5 h | 37× |
+| 14 others: PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, ProbLog, Dice, Genfer, SPPL, noDice, Scallop, Psi, Geni | 41 to 236 | over 19 h each | 2 min to 1.5 h | at least 42× |
+
+PSouffle was given 11 of the networks and answers 6.
 <!-- /results:bayesian-networks-table -->
 
 - Where others win: the networks named BN of Ihler's collection. tddlog
@@ -311,6 +342,7 @@ blockmap, Mastermind and fs networks, and the classic networks).
 </p>
 
 <!-- results:markov-networks -->
+tddlog answers **243 of 290** networks, of 11 families.
 <!-- /results:markov-networks -->
 
 The networks are those of the UAI 2022 competition and of Ihler's
@@ -320,6 +352,13 @@ Alchemy networks, protein side chains, the rus networks, weighted CSPs,
 and pedigree and diagnosis networks.
 
 <!-- results:markov-networks-table -->
+| System | Answers | Its total time | tddlog's total time | tddlog faster |
+|---|--:|--:|--:|--:|
+| TensorInference.jl | 198 | 9.3 h | 2.5 h | 2.6× |
+| libDAI | 180 | 13 h | 1.4 h | 16× |
+| Merlin | 171 | 13 h | 1.5 h | 11× |
+| pyAgrum | 170 | 13 h | 1.4 h | 13× |
+| pgmpy | 117 | 22 h | 1.4 h | 28× |
 <!-- /results:markov-networks-table -->
 
 - Where others win: six partition functions of the UAI 2022 final set,
@@ -335,6 +374,7 @@ and pedigree and diagnosis networks.
 </p>
 
 <!-- results:functional-programs -->
+tddlog answers **249 of 335** programs, of 25 families.
 <!-- /results:functional-programs -->
 
 The programs are over discrete values with conditionals and loops: the
@@ -350,6 +390,14 @@ whose integration Alea.jl+tddlog is [below](#integrations) and whose
 circuits are [below](#circuits) too.
 
 <!-- results:functional-programs-table -->
+| System | Answers | Its total time | tddlog's total time | tddlog faster |
+|---|--:|--:|--:|--:|
+| Alea.jl | 191 | 21 h | 14 h | 1.4× |
+| Roulette | 168 | 34 h | 7.0 h | 4.6× |
+| Dice | 129 | 34 h | 6.2 h | 5.2× |
+| Pluck | 99 | 40 h | 3.5 h | 9.9× |
+| Geni | 76 | 47 h | 2.2 h | 22× |
+| 4 others: Genfer, noDice, SPPL, Psi | 7 to 75 | over 47 h each | 50 min to 3.5 h | at least 13× |
 <!-- /results:functional-programs-table -->
 
 ### All programs
@@ -360,12 +408,21 @@ circuits are [below](#circuits) too.
 </p>
 
 <!-- results:all-programs -->
+tddlog answers **1741 of 1936** programs.
 <!-- /results:all-programs -->
 
 All programs are the five types together, every system on every program
 it is given, natively or through a translation.
 
 <!-- results:all-programs-table -->
+| System | Answers | Its total time | tddlog's total time | tddlog faster |
+|---|--:|--:|--:|--:|
+| Ace | 952 | 130 h | 4.7 h | 30× |
+| libDAI | 857 | 162 h | 8.1 h | 21× |
+| TensorInference.jl | 839 | 174 h | 6.1 h | 29× |
+| pyAgrum | 808 | 169 h | 7.7 h | 23× |
+| Merlin | 800 | 175 h | 7.6 h | 23× |
+| 18 others: ProbLog, PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, Storm, Dice, PSouffle, ProvSQL, PRISM, Scallop, noDice, Genfer, Geni, SPPL, Psi | 84 to 701 | over 16 h each | 41 min to 16 h | at least 9.8× |
 <!-- /results:all-programs-table -->
 
 - Where others win: pgmpy answers grid25, a logic program's path query
@@ -384,6 +441,7 @@ it is given, natively or through a translation.
 </p>
 
 <!-- results:circuits -->
+tddlog answers **255 of 289** circuits, of 33 families.
 <!-- /results:circuits -->
 
 The circuits are an evaluation of their own, apart from the five types:
@@ -393,6 +451,14 @@ programs. Every system reads the circuit, as it is or translated into
 its language, and no one pays for its export.
 
 <!-- results:circuits-table -->
+| System | Answers | Its total time | tddlog's total time | tddlog faster |
+|---|--:|--:|--:|--:|
+| Roulette | 122 | 46 h | 2.3 h | 22× |
+| Ace | 99 | 54 h | 2.3 h | 40× |
+| PITA | 82 | 60 h | 2.3 h | 110× |
+| aspmc | 81 | 60 h | 2.3 h | 189× |
+| Pluck | 73 | 61 h | 2.2 h | 33× |
+| 15 others: Merlin, pyAgrum, libDAI, pgmpy, Storm, ProbLog, TensorInference.jl, Dice, PRISM, noDice, Genfer, SPPL, Scallop, Geni, Psi | 1 to 64 | over 63 h each | 2.2 h to 2.3 h | at least 45× |
 <!-- /results:circuits-table -->
 
 ### Integrations
@@ -409,6 +475,10 @@ Tractables/roulette](https://github.com/Tractables/roulette/tree/tddlog), a
 fork of neuppl/roulette.
 
 <!-- results:integrations -->
+| Integration | Instances | Answers | Total time | Faster |
+|---|--:|--:|--:|--:|
+| Alea.jl+tddlog against Alea.jl | 310 | 271 (Alea.jl 172) | 3.7 h (Alea.jl 37 h) | 7.0× |
+| Roulette+tddlog against Roulette | 578 | 443 (Roulette 320) | 7.1 h (Roulette 38 h) | 3.9× |
 <!-- /results:integrations -->
 
 ## Building and testing
