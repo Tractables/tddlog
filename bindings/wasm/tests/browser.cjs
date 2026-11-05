@@ -809,16 +809,13 @@ function benchmarksOf(root) {
     const places = new Set(circuitRows.map((r) => `${r.suite}/${r.name}`));
     const onCircuit = new Set(circuitRows.flatMap((r) => cats.circuits.systems.filter((x, j) => r.cls[j] !== "-")
       .map((x) => `${r.suite}/${r.name}/${x}`)));
-    // The pipeline's instances: the places, and the programs whose circuits
-    // the places copy under the same name (the circuits of a suite's Alea.jl
-    // programs, an evaluation of their own beside the programs).
-    const copied = new Set(circuitRows.map((r) => r.name));
     // x's mate on an instance of suite s (panels.py's mate): tddlog where x
     // reads the circuit (a system's process where the system does), the
-    // exporter's pipeline elsewhere on the pipeline's instances, and tddlog
-    // off them.
+    // exporter's pipeline elsewhere on the places, and tddlog off them. On
+    // a suite's Alea.jl programs, whose circuits the places copy, tddlog
+    // reads a port of the program, and Alea.jl is compared with it there.
     const reads = (s, name, x) => onCircuit.has(`${s.key}/${name}/${x.replace(/-process$/, "")}`);
-    const mate = (s, name, x) => (reads(s, name, x) || !(places.has(`${s.key}/${name}`) || copied.has(name))
+    const mate = (s, name, x) => (reads(s, name, x) || !places.has(`${s.key}/${name}`)
       ? "tddlog" : cats.circuits.pipeline);
     // A suite's runs of x: [limit, its mate's record, x's record] where x
     // and its mate were given the row. The suite's other systems are those with such a run.
