@@ -1027,6 +1027,8 @@ const data = {
   integrations: null,  // tddlog alone, and X+tddlog against X on X's programs (categories.json's `integrations`)
   circuits: null,   // the circuits' entry, as a category's (categories.json's `circuits`), with `suites` and `perSuite`
   splits: {},       // a suite's key: each system's answered time on its export, {answers, seconds, export}
+  stamp: null,      // categories.json's `stamp`: the data's date and public main's commit (stampLine)
+  methods: [],      // categories.json's `methods`: the methods table's rows on the runs (next.js's methodsView)
   suites: new Map(),   // a suite's key: the suite, with `home`, the data's family that holds it, and `file`
   bench: null,      // benchmarks/index.json: every suite's families, where the site has them
   families: new Map(), // `${suite}/${family}`: the promise of that family's data
@@ -1198,10 +1200,11 @@ function categoryFor(suite) {
 }
 
 // Where a suite's views sit in the crumbs: under its category, or, for a
-// suite in no type (the circuits, which only an integration compares),
-// under the integration whose rows hold it.
+// suite in no type, under the circuits where it holds circuits (an
+// evaluation of their own), else under the integration whose rows hold it.
 function suiteHome(suite, c) {
   if (c) return [inSection("types"), [c.title, { view: "category", category: c.key }]];
+  if (data.circuits?.perSuite.has(suite)) return [[data.circuits.title, { view: "category", category: APART }]];
   const k = integrationsOf().find((key) => data.integrations[key].rows?.some((row) => row[0] === suite));
   if (k === undefined) throw new Error(`the suite ${suite} is in no type and no integration`);
   const g = data.integrations[k];
@@ -1328,7 +1331,8 @@ function categoryView(route) {
   const tal = tally(c, rows, only);
   const drawn = drawnOf(c, rows, only);
   const whole = catSuite(c, rows, drawn, tal, only);
-  const out = [crumbs(HOME, inSection(c.key === APART ? APART : "types"), g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
+  // the circuits' entry is their section's page (#/circuits): one crumb for both
+  const out = [crumbs(HOME, ...(c.key === APART ? [] : [inSection("types")]), g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
     element("h2", {}, g ? g.title : c.title)];
   // a family: what it is and where it comes from
   if (g && !g.source) out.push(prose("p", g.about, { class: "lede" }), note("The type on its own, against the systems native to it: ",
@@ -2544,6 +2548,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     data.systems = cats.systems;
     data.integrations = cats.integrations ?? null;
     data.splits = cats.splits ?? {};
+    for (const k of ["stamp", "methods"]) if (!cats[k]) throw new Error(`categories.json has no ${k}`);
+    data.stamp = cats.stamp;
+    data.methods = cats.methods;
     for (const s of data.systems) if (!data.names[s.key]) throw new Error(`the solver ${s.key} has no name`);
     data.categories = [...cats.categories].sort((a, b) => a.order - b.order);
     data.types = data.categories.filter((c) => c.key !== ALL);
