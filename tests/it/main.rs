@@ -39,6 +39,7 @@ mod renormalize;
 mod separator_copies;
 mod share;
 mod shared_operand;
+mod subquery;
 mod table_models;
 mod templates;
 mod terms;

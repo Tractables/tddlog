@@ -289,6 +289,10 @@ pub(super) fn problog_builtin(name: &str, arity: usize) -> bool {
         || !name.starts_with(char::is_alphabetic)
 }
 
+/// The name of the facts that answer a program's `k`th call of
+/// `subquery/3` is this and `k` (`crate::solve`'s `subquery`).
+pub(crate) const ANSWERS: &str = "$sq";
+
 /// Refuses what ProbLog stops on with its "No clauses found": a query or an
 /// observation of a predicate that no clause defines, and a call of one
 /// that is not a built-in tddlog evaluates, in a clause of a predicate the
@@ -306,10 +310,14 @@ pub(super) fn problog_builtin(name: &str, arity: usize) -> bool {
 /// evaluate, which ProbLog would run.
 fn check_defined(program: &Program, defined: &ByHead) -> Result<(), GroundError> {
     // A call of a goal that is a variable is tested where it is made
-    // ([`super::library`]).
+    // ([`super::library`]), and a call of `subquery/3` that has no answers
+    // fails.
     let refused = |name: &str| {
         (!program.unknown_fails || PROBLOG_PREDICATES.contains(&name))
             && !super::library::is_call_name(name)
+            && name
+                .strip_prefix(ANSWERS)
+                .is_none_or(|k| k.parse::<usize>().is_err())
     };
     let mut reached: FxHashSet<(&str, usize)> = FxHashSet::default();
     let mut stack: Vec<(&str, usize)> = Vec::new();
@@ -490,7 +498,7 @@ fn spread_plan(program: &Program) -> FxHashMap<Pred, Vec<Option<usize>>> {
 }
 
 /// Each atom `body` calls, in findalls' goals too.
-pub(super) fn calls<'a>(body: &'a [Literal], f: &mut impl FnMut(&'a Atom)) {
+pub(crate) fn calls<'a>(body: &'a [Literal], f: &mut impl FnMut(&'a Atom)) {
     for l in body {
         match l {
             Literal::Pos(a) | Literal::Neg(a) => f(a),

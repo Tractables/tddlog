@@ -307,6 +307,20 @@ impl Term {
         out
     }
 
+    /// The term with the variables of `binding` replaced.
+    pub(crate) fn substituted(&self, binding: &rustc_hash::FxHashMap<&Term, &Term>) -> Term {
+        match self {
+            Term::Var(_) => binding
+                .get(self)
+                .map_or_else(|| self.clone(), |&b| b.clone()),
+            Term::Compound(c) if !c.ground => Compound::term(
+                c.name.clone(),
+                c.args.iter().map(|a| a.substituted(binding)).collect(),
+            ),
+            _ => self.clone(),
+        }
+    }
+
     /// The list of `items` ending in `tail`.
     pub(crate) fn list(
         items: impl IntoIterator<Item = Term, IntoIter: DoubleEndedIterator>,

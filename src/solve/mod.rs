@@ -5,6 +5,7 @@
 //! and one ground program's run ([`solve_ground`]).
 
 mod split;
+mod subquery;
 #[cfg(test)]
 mod tests;
 
@@ -185,13 +186,26 @@ fn solve_split(
     bounds: &SplitBounds,
     progress: &mut dyn FnMut(Progress<'_>),
 ) -> Result<Solution, Error> {
-    let (projection, first_pairs) = options.checked()?;
+    options.checked()?;
     let start = Instant::now();
     let program = parsed(source, options)?;
     progress(Progress::Parsed {
         seconds: start.elapsed().as_secs_f64(),
         program: &program,
     });
+    solve_parsed(program, options, bounds, progress)
+}
+
+/// [`solve_split`] of the program parsed, which a call of `subquery/3`
+/// runs too on the program with the call's query and evidence
+/// ([`subquery`]).
+fn solve_parsed(
+    program: Program,
+    options: &Options,
+    bounds: &SplitBounds,
+    progress: &mut dyn FnMut(Progress<'_>),
+) -> Result<Solution, Error> {
+    let (projection, first_pairs) = options.checked()?;
     let start = Instant::now();
     let ground_options = options.ground_options();
     // `auto` keeps the program as simplified before its views are
@@ -349,14 +363,16 @@ pub fn weighted_cnf(source: &str, options: &Options) -> Result<WeightedCnf, Erro
     WeightedCnf::of(Kind::eliminated(ground)).map_err(Error::Cnf)
 }
 
-/// `source` parsed, without its queries where `options` leave them out.
+/// `source` parsed, without its queries where `options` leave them out,
+/// and its calls of `subquery/3` answered ([`subquery`]).
 fn parsed(source: &str, options: &Options) -> Result<Program, Error> {
     let program = syntax::parse_program(source)?;
-    Ok(if options.queries {
+    let program = if options.queries {
         program
     } else {
         program.without_queries()
-    })
+    };
+    subquery::answered(program, options, 0)
 }
 
 /// Compile and answer the queries of `ground`, as grounded under
