@@ -3,6 +3,7 @@ import importlib.util
 from contextlib import redirect_stdout
 import fcntl
 import io
+import math
 import os
 from pathlib import Path
 import re
@@ -542,6 +543,73 @@ class RouletteTests(unittest.TestCase):
                 self.assertEqual(bench.rl_family(gargs[1]), family)
         self.assertEqual(families['rl_hmm_marginal_likelihood'][-1][0], 'rl_hmm_marginal_likelihood_900')
 
+    def test_alea_runs_its_own_diamond_and_the_ladders_port(self):
+        args = self.args(alea='julia --project=A {file}', timeout=30)
+        self.assertIsNone(bench.alea_program(args, ['gen_roulette.py', 'caesar', '25']))
+        self.assertIsNone(bench.alea_program(self.args(suite='dice'), ['gen_roulette.py', 'diamond', '1000']))
+        out = 'alea_q q1 0.25\nalea_q q2 0.5\nalea_seconds 1.5\nalea_compile_seconds 0.25\n'
+        with tempfile.TemporaryDirectory() as d:
+            pl = Path(d, 'rl_ladder_1000.pl')
+            pl.write_text('a.\nquery(o1(1000)).\nquery(o2(1000)).\n')
+            with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0, 'stdout': out,
+                                                            'stderr': ''}) as timed:
+                r = bench.run_alea(args, 'rl_ladder_1000', str(pl))
+        cmd = timed.call_args.args[0]
+        self.assertTrue(cmd[2].endswith('alea_bench.jl'))
+        self.assertEqual(cmd[3:8], ['run', '--warm-below', '10', '--set', 'N=1000'])
+        self.assertTrue(cmd[8].endswith('data/alea/verification/ladder.jl'))
+        self.assertEqual(r['answers'], {'o1(1000)': 0.25, 'o2(1000)': 0.5})
+        self.assertEqual(r['stats']['inproc_seconds'], 1.5)
+        for f in bench.ALEA_PROGRAMS.values():
+            self.assertEqual(len(re.findall(r'^const N = ', Path(f).read_text(), re.M)), 1, f)
+
+    def test_alea_tddlog_answers_from_the_circuit_alea_exports(self):
+        # Alea.jl+tddlog: the bitblast suite's export of the instance's Alea.jl program, timed warm,
+        # then tddlog on the circuit; the record holds both, and the circuit's files go after
+        self.assertIn('alea-tddlog', bench.OWN_TIME)
+        with tempfile.TemporaryDirectory() as d:
+            args = self.args(**{'alea-tddlog': 'julia --project=A {file}'}, dir=d, tddlog='tddlog')
+            self.assertFalse(bench.accepts_alea_tddlog(args, 'rl_caesar_25'))
+            self.assertTrue(bench.accepts_alea_tddlog(args, 'rl_ladder_1000'))
+            pl = Path(d, 'rl_ladder_1000.pl')
+            pl.write_text('a.\nquery(o1(1000)).\nquery(o2(1000)).\n')
+            circuit = Path(d, 'rl_ladder_1000.alea.pl')
+
+            def timed(export_out, tddlog_s):
+                def run(cmd, timeout, cwd=None, env=None):
+                    if 'export' in cmd:
+                        circuit.write_text('% ladder.jl N=1000\n% 3002 flips, 9000 gates, 2 queries\n')
+                        Path(d, 'rl_ladder_1000.alea.dicemap').write_text('')
+                        Path(d, 'rl_ladder_1000.alea__d1.dice').write_text('')
+                        return {'status': 'ok', 'seconds': 9.0, 'stdout': export_out, 'stderr': ''}
+                    self.assertEqual(cmd[-1], str(circuit))
+                    self.assertTrue(circuit.exists())
+                    return {'status': 'ok', 'seconds': tddlog_s, 'stdout': 'q1: 0.25\nq2: 0.5\n', 'stderr': ''}
+                return run
+
+            warm = 'alea_seconds 2.5\nalea_compile_seconds 2.0\nalea_warm_seconds 0.75\n'
+            with patch.object(bench, 'timed', side_effect=timed(warm, 0.5)) as t:
+                r = bench.run_alea_tddlog(args, 'rl_ladder_1000', str(pl))
+            export, tddlog = (c.args for c in t.call_args_list)
+            self.assertEqual(export[0][:2], ['julia', '--project=A'])
+            self.assertTrue(export[0][2].endswith('alea_bench.jl'))
+            self.assertEqual(export[0][3:8], ['export', '--warm-below', '10', '--set', 'N=1000'])
+            self.assertTrue(export[0][8].endswith('data/alea/verification/ladder.jl'))
+            self.assertEqual(export[0][9:], [str(Path(d, 'rl_ladder_1000.alea'))])
+            self.assertEqual(tddlog[1], 29.25)
+            self.assertEqual(r['status'], 'ok')
+            self.assertEqual(r['answers'], {'o1(1000)': 0.25, 'o2(1000)': 0.5})
+            self.assertEqual(r['seconds'], 9.5)
+            self.assertEqual(r['stats'], {'export_s': 0.75, 'flips': 3002, 'gates': 9000, 'tddlog_s': 0.5,
+                                          'inproc_seconds': 1.25})
+            self.assertEqual(bench.own_seconds(r['stats']), 1.25)
+            self.assertEqual(sorted(os.listdir(d)), ['rl_ladder_1000.pl'])
+            # no warm run: the first less Julia's compilation; past the limit with the export, a timeout
+            with patch.object(bench, 'timed', side_effect=timed('alea_seconds 31.0\nalea_compile_seconds 2.0\n', 1.5)):
+                r = bench.run_alea_tddlog(args, 'rl_ladder_1000', str(pl))
+            self.assertEqual((r['status'], r['stats']['export_s'], r['stats']['inproc_seconds']), ('timeout', 29.0, 30.5))
+            self.assertEqual(sorted(os.listdir(d)), ['rl_ladder_1000.pl'])
+
     def test_roulette_runs_the_artifacts_programs(self):
         args = self.args()
         data = bench.ROULETTE_DATA
@@ -986,40 +1054,79 @@ class RouletteTddlogTests(unittest.TestCase):
 
 
 class CirculetteTests(unittest.TestCase):
-    """The circulette suite: Circulette's netlists, Roulette's circulette.rkt
-    on each, and the ProbLog program Roulette's tddlog engine writes from
-    its run, one query a call of `infer`."""
+    """The circulette suite: Circulette's netlists, which tddlog reads
+    itself, Roulette's circulette.rkt on each, and every answer keyed as
+    the queries of the program tddlog's reader writes of the netlist
+    (NAME.pl): fault(G), faults(A,B) and faults(A,B,C)."""
 
-    def test_a_posterior_circulette_does_not_print_is_answered_only_below_its_threshold(self):
-        # 3 faults: q1 P(fail), q2 to q4 the singles, q5 to q7 the pairs, q8 the triple
-        ref = {'system': 'tddlog', 'export': {'queries': 8},
-               'answers': {'q1(1)': 1.0, 'q2(1)': 0.5, 'q3(1)': 0.0, 'q4(1)': 0.5,
-                           'q5(1)': 0.25, 'q6(1)': 1e-4, 'q7(1)': 0.25, 'q8(1)': 1e-9}}
-        printed = {'q1(1)': 1.0, 'q2(1)': 0.5, 'q4(1)': 0.5, 'q5(1)': 0.25, 'q7(1)': 0.25}
-        rec = {'instance': 'ct_exp', 'system': 'roulette', 'answers': printed}
-        self.assertEqual(bench.printed_answers(rec, ref), ref['answers'])
-        # left out above its threshold: a pair at 3e-4, a single above 0
-        for q, p in (('q6(1)', 3e-4), ('q3(1)', 1e-3), ('q8(1)', 1e-7)):
-            high = dict(ref, answers=dict(ref['answers'], **{q: p}))
-            self.assertNotIn(q, bench.printed_answers(rec, high))
-        # the failure's query is always printed
-        without = {'instance': 'ct_exp', 'system': 'roulette', 'answers': {'q2(1)': 0.5}}
-        self.assertNotIn('q1(1)', bench.printed_answers(without, ref))
-        # any other system, or instance, keeps its answers as they are
-        for other in (dict(rec, system='tddlog'), dict(rec, instance='rl_hmm_8')):
-            self.assertIs(bench.printed_answers(other, ref), printed)
-        # a reference that does not say how many calls there were
-        self.assertIs(bench.printed_answers(rec, {'answers': ref['answers']}), printed)
-
-    # n = 2 faults: P(fail)'s call, then the singles and the pair
-    PROGRAM = ('% infer was called 4 times; query K is its K-th call.\n'
-               '0.1::f1.\n0.2::f2.\ng1 :- f1.\ng1 :- f2.\nevidence(g1, true).\n'
-               '% q1(1): #t\nq1(1).\nquery(q1(1)).\n% q2(1): #t\nq2(1) :- f1.\nquery(q2(1)).\n'
-               '% q3(1): #t\nq3(1) :- f2.\nquery(q3(1)).\n% q4(1): #t\nq4(1) :- f1, f2.\nquery(q4(1)).\n')
+    GATES = [5, 7, 9]
+    # the reader's program of a netlist of two gates, 3 and 4, its faults 0 and 1 to Circulette
+    PROGRAM = ('% a netlist\n0.01::broken(3).\n0.01::broken(4).\ngate_and(3, a, b).\ngate_not(4, c).\n'
+               '% gate_or(8, x, y).\nevidence(failure).\nquery(fault(3)).\nquery(fault(4)).\nquery(faults(3,4)).\n')
     OUT = ('Diagnosis: (Circuit-Fault: #t) | Prob: 0.28\n'
            'Gate 0 Fault | Posterior P(Gate|Fail): 0.357\n'
            'Gate 1 Fault | Posterior P(Gate|Fail): 0.714\n'
            'Gates 0 & 1 Fault | Posterior P(i,j | Fail): 0.0714\n')
+
+    def test_the_queries_are_the_readers_atoms(self):
+        self.assertEqual([bench.circulette_atom(self.GATES, f) for f in ((1,), (2, 0), (0, 1, 2))],
+                         ['fault(7)', 'faults(5,9)', 'faults(5,7,9)'])
+        self.assertEqual([bench.circulette_size(q) for q in ('fault(3)', 'faults(3, 4)', 'faults(1,2,3)', 'q1(1)')],
+                         [1, 2, 3, None])
+        self.assertEqual((bench.circulette_asked(3), bench.circulette_faults(8)), (7, 3))
+        with self.assertRaises(ValueError):
+            bench.circulette_faults(9)
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, 'ct_x.pl')
+            path.write_text(self.PROGRAM)
+            self.assertEqual(bench.circulette_gates(str(path)), [3, 4])
+
+    def test_the_calls_are_numbered_as_circulette_loops(self):
+        for n in range(1, 8):
+            order = [(i,) for i in range(n)] + [(i, j) for i in range(n) for j in range(i + 1, n)] + \
+                    [(i, j, k) for i in range(n) for j in range(i + 1, n) for k in range(j + 1, n)]
+            self.assertEqual(list(bench.circulette_order(n)), order, n)
+
+    def test_an_exports_calls_are_rekeyed_by_the_gates(self):
+        # 3 faults: q1 P(fail), q2 to q4 the singles, q5 to q7 the pairs, q8 the triple
+        self.assertEqual(bench.circulette_rekey({'q1(1)': 1.0, 'q2(1)': 0.5, 'q5(1)': 0.25, 'q8(1)': 1e-9}, self.GATES),
+                         {'fault(5)': 0.5, 'faults(5,7)': 0.25, 'faults(5,7,9)': 1e-9})
+        for bad in ({'x': 0.5}, {'q9(1)': 0.5}, {'q2(1)': 0.5, 'q2(2)': 0.5}):
+            with self.assertRaises(ValueError):
+                bench.circulette_rekey(bad, self.GATES)
+
+    def test_roulette_tddlogs_circuit_is_answered_as_the_netlist(self):
+        # the circuit Roulette's tddlog engine writes: 4 calls of infer for 2 faults, q1 the failure
+        text = ('% infer was called 4 times; query K is its K-th call.\n'
+                '% q1(1): #t\nq1(1).\n% q2(1): #t\n% q3(1): #t\n% q4(1): #t\n')
+        tddlog = {'q1(1)': 1.0, 'q2(1)': 0.357, 'q3(1)': 0.714, 'q4(1)': 0.0714}
+        answers, p_fail = bench.circulette_circuit_answers(text, tddlog, math.log10(0.28), [3, 4])
+        self.assertEqual(answers, {'fault(3)': 0.357, 'fault(4)': 0.714, 'faults(3,4)': 0.0714})
+        self.assertAlmostEqual(p_fail, 0.28)
+        # no fault fails the outputs: no posterior, as tddlog's on the netlist
+        self.assertEqual(bench.circulette_circuit_answers(text, dict(tddlog, **{'q1(1)': 0.0}), 0.0, [3, 4]),
+                         ('inconsistent', 0.0))
+        self.assertEqual(bench.circulette_circuit_answers(text, 'inconsistent', -math.inf, [3, 4]), ('inconsistent', 0.0))
+        # evidence that is not the failure, or a circuit of other faults, is refused
+        with self.assertRaises(ValueError):
+            bench.circulette_circuit_answers(text, dict(tddlog, **{'q1(1)': 0.5}), 0.0, [3, 4])
+        with self.assertRaises(ValueError):
+            bench.circulette_circuit_answers(text, tddlog, 0.0, [3, 4, 5])
+
+    def test_a_posterior_circulette_does_not_print_is_answered_only_below_its_threshold(self):
+        ref = {'system': 'tddlog',
+               'answers': {'fault(5)': 0.5, 'fault(7)': 0.0, 'fault(9)': 0.5,
+                           'faults(5,7)': 0.25, 'faults(5,9)': 1e-4, 'faults(7,9)': 0.25, 'faults(5,7,9)': 1e-9}}
+        printed = {'fault(5)': 0.5, 'fault(9)': 0.5, 'faults(5,7)': 0.25, 'faults(7,9)': 0.25}
+        rec = {'instance': 'ct_exp', 'system': 'roulette', 'answers': printed}
+        self.assertEqual(bench.printed_answers(rec, ref), ref['answers'])
+        # left out above its threshold: a pair at 3e-4, a single above 0, a triple at 1e-7
+        for q, p in (('faults(5,9)', 3e-4), ('fault(7)', 1e-3), ('faults(5,7,9)', 1e-7)):
+            high = dict(ref, answers=dict(ref['answers'], **{q: p}))
+            self.assertNotIn(q, bench.printed_answers(rec, high))
+        # any other system, or instance, keeps its answers as they are, as does no posterior
+        for other in (dict(rec, system='tddlog'), dict(rec, instance='rl_hmm_8'), dict(rec, answers='inconsistent')):
+            self.assertIs(bench.printed_answers(other, ref), other['answers'])
 
     def args(self, **kw):
         base = dict(suite='circulette', only=[], families=[], dir='bench', timeout=30,
@@ -1036,55 +1143,45 @@ class CirculetteTests(unittest.TestCase):
         # Roulette reads the netlist, the network tools the program's ground route
         self.assertIsNone(bench.ground_form('gen_circulette.py', 'roulette', 'rsdd'))
         self.assertEqual(bench.ground_form('gen_circulette.py', 'ace', 'auto'), 'hugin')
+        # tddlog reads the netlist gen wrote beside its program, and the ProbLog family that program
+        self.assertIn('gen_circulette.py', bench.PROGRAM_OF_TDDLOG)
+        self.assertEqual(bench.original(['gen_circulette.py', 'root', '1-bit-mux'], '', 'd/ct_1-bit-mux'),
+                         os.path.abspath('d/ct_1-bit-mux.cql'))
+        with self.assertRaises(ValueError):
+            bench.original(['gen_circulette.py', 'root', '1-bit-mux'], '')
 
-    def test_the_calls_are_numbered_as_circulette_loops(self):
-        for n in range(1, 8):
-            order = [[i] for i in range(n)] + [[i, j] for i in range(n) for j in range(i + 1, n)] + \
-                    [[i, j, k] for i in range(n) for j in range(i + 1, n) for k in range(j + 1, n)]
-            self.assertEqual([bench.circulette_call(n, f) for f in order], list(range(2, 2 + len(order))), n)
-
-    def run_circulette(self, program, out, err='roulette_timer: program 2.25 s\n'):
+    def run_circulette(self, out, err='roulette_timer: program 2.25 s\n', program=None):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d, 'ct_1-bit-mux.pl')
-            path.write_text(program)
+            path.write_text(program or self.PROGRAM)
             with patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 3.0, 'stdout': out,
                                                             'stderr': err}) as timed:
                 r = bench.run_roulette(self.args(dir=d), 'ct_1-bit-mux', str(path), 'rsdd')
-            # tddlog's P(fail): its P(e) times its answer for the failure's query
-            p_fail = bench.circulette_p_fail(str(path), -0.5, {'q1(1)': 1.0}) if r['status'] == 'ok' else None
-        return r, timed.call_args_list, p_fail
+        return r, timed.call_args_list
 
-    def test_the_posteriors_are_keyed_by_the_calls(self):
-        r, calls, p_fail = self.run_circulette(self.PROGRAM, self.OUT)
+    def test_the_posteriors_are_keyed_by_the_gates(self):
+        r, calls = self.run_circulette(self.OUT)
         self.assertEqual(calls[0][0][0], ['racket', '-l-', 'raco', 'make', 'cb/circulette.rkt', bench.ROULETTE_TIMER])
-        # under the timer, whose span is Roulette's own time (own_seconds), as the export's
+        # under the timer, whose span is Roulette's own time (own_seconds)
         self.assertEqual(calls[1][0][0][:3], ['racket', bench.ROULETTE_TIMER, 'cb/circulette.rkt'])
         self.assertTrue(calls[1][0][0][3].endswith('/ct_1-bit-mux.cql'))
         self.assertEqual(r['status'], 'ok')
-        self.assertEqual(r['answers'], {'q1(1)': 1.0, 'q2(1)': 0.357, 'q3(1)': 0.714, 'q4(1)': 0.0714})
+        self.assertEqual(r['answers'], {'fault(3)': 0.357, 'fault(4)': 0.714, 'faults(3,4)': 0.0714})
         self.assertEqual(r['stats'], {'p_fail': 0.28, 'inproc_seconds': 2.25})
         self.assertEqual(bench.own_seconds(dict(r, system='roulette', **r['stats'])), 2.25)   # as the record holds it
-        self.assertAlmostEqual(p_fail, 10 ** -0.5)
-        r, _, _ = self.run_circulette(self.PROGRAM, self.OUT, err='')
+        r, _ = self.run_circulette(self.OUT, err='')
         self.assertEqual((r['status'], r['error']), ('error', 'no roulette_timer line: ' + self.OUT.splitlines()[-1]))
 
-    def test_no_fault_that_fails_the_outputs_answers_zero(self):
-        program = '% infer was called 1 times; query K is its K-th call.\n% q1(1): #t\nq1(1) :- fail.\n' \
-                  'query(q1(1)).\n'
-        r, _, _ = self.run_circulette(program, 'Diagnosis: (Circuit-Fault: #t) | Prob: 0\n')
-        self.assertEqual(r['answers'], {'q1(1)': 0.0})
-        # tddlog: no evidence, P(e) 1, and the failure's query answers 0
-        with tempfile.TemporaryDirectory() as d:
-            path = Path(d, 'ct_1-bit-mux.pl')
-            path.write_text(program)
-            self.assertEqual(bench.circulette_p_fail(str(path), 0.0, {'q1(1)': 0.0}), 0.0)
-
-    def test_a_program_whose_evidence_is_not_the_failure_is_refused(self):
-        r, _, _ = self.run_circulette(self.PROGRAM.replace('q1(1).\n', 'q1(1) :- g1.\n'), self.OUT)
-        self.assertEqual(r['status'], 'error')
-        self.assertIn('no posteriors', r['error'])
-        r, _, _ = self.run_circulette(self.PROGRAM.replace('called 4 times', 'called 5 times'), self.OUT)
-        self.assertIn('not 1 + n + C(n,2) + C(n,3)', r['error'])
+    def test_no_fault_that_fails_the_outputs_has_no_posterior(self):
+        r, _ = self.run_circulette('Diagnosis: (Circuit-Fault: #t) | Prob: 0\n')
+        self.assertEqual((r['status'], r['answers'], r['stats']['p_fail']), ('ok', 'inconsistent', 0.0))
+        # posteriors given a failure of probability 0, or of a fault the netlist lacks, are refused
+        r, _ = self.run_circulette(self.OUT.replace('Prob: 0.28', 'Prob: 0'))
+        self.assertIn('given a failure of probability 0', r['error'])
+        r, _ = self.run_circulette(self.OUT.replace('Gate 1 Fault', 'Gate 2 Fault'))
+        self.assertIn('the netlist has 2 gates', r['error'])
+        r, _ = self.run_circulette(self.OUT + self.OUT.splitlines()[1] + '\n')
+        self.assertIn('printed twice', r['error'])
 
 
 def fold_files(directory, names, suite='standard'):
@@ -1531,6 +1628,28 @@ class AspmcTests(unittest.TestCase):
     def test_impossible_evidence_is_inconsistent(self):
         self.assertEqual(bench.parse_aspmc('[RESULT] aspmc: bench_e: 0.0\n'
                                            '[RESULT] aspmc: bench_qe_q: 0.0\n'), 'inconsistent')
+        # bench_e no rule derives, which aspmc's grounder removes and does not print
+        # (Circulette's ct_ALU_Controller): inconsistent where the evidence was asked
+        self.assertEqual(bench.parse_aspmc('', conditioned=True), 'inconsistent')
+        self.assertEqual(bench.parse_aspmc(''), {})
+
+    def test_a_failure_reading_the_grounding_is_an_error(self):
+        # aspmc on a Circulette netlist's program, which its language expresses: its own
+        # failure, kept as the record, with no ground program asked for
+        err = ('    self._process_grounding(clingo_control)\n'
+               '  File "aspmc/programs/problogprogram.py", line 151, in _process_grounding\n'
+               '    head_name = "" if len(o.head) == 0 else symbol_map[abs(o.head[0])]\nKeyError: 45\n')
+        self.assertNotRegex(err, bench.ASPMC_REFUSED)
+        with patch('builtins.open', mock_open(read_data='0.5::a. query(a).')), \
+                patch.object(bench.os, 'makedirs'), \
+                patch.object(bench, 'timed', return_value={'status': 'error', 'seconds': 0.4,
+                                                           'error': err}) as run:
+            result = bench.run_aspmc(SimpleNamespace(dir='bench', aspmc='python3', timeout=1,
+                                                     tddlog='tddlog'), 'ct_x', 'ct_x.pl')
+        self.assertEqual((result['status'], result['error']), ('error', err))
+        self.assertNotIn('stats', result)
+        run.assert_called_once()
+        self.assertEqual(run.call_args[0][0][1:5], ['-u', '-m', 'aspmc.main', '-m'])
 
     def test_an_observation_with_a_body_goes_to_the_ground_program(self):
         # aspmc is not launched on the program; its ground program is asked for
@@ -1586,6 +1705,31 @@ class AspmcTests(unittest.TestCase):
         written = ('step(0).\nstep(T1) :- step(T), T < 9, T1 = T + 1.\n'
                    'd(T1) :- step(T), T1 = T+1, r(T).\nquery(this(is)).\n')
         self.assertEqual(bench.aspmc_is(program), written)
+
+    def test_each_variable_aspmc_cannot_read_gets_a_name_it_reads(self):
+        program = ("% p(_, _X) in a comment\n0.5::b(1, 1).\nc :- o(W), b(W, _), q(_, _X, 'a_', \"_\", a_B).\n"
+                   "d :- g(_X, A_b), b(A_b), 0'_ \\= A, r(V1, _).\n")
+        written = ("% p(_, _X) in a comment\n0.5::b(1, 1).\nc :- o(W), b(W, VV1), q(VV2, VV3, 'a_', \"_\", a_B).\n"
+                   "d :- g(VV3, VV4), b(VV4), 0'_ \\= A, r(V1, VV5).\n")
+        self.assertEqual(bench.aspmc_variables(program), written)
+        self.assertEqual(bench.aspmc_variables('c :- o(W), b(W, _), g(_, W).\n'),
+                         'c :- o(W), b(W, V1), g(V2, W).\n')
+        # names aspmc's grammar reads as variables, so that each grounding of
+        # a probabilistic rule's body is a choice of its own
+        self.assertEqual(bench.aspmc_variables('0.6::e :- s, f(_).\n0.3::d :- s, f(_F), f(_F).\n'),
+                         '0.6::e :- s, f(V1).\n0.3::d :- s, f(V2), f(V2).\n')
+        # run_aspmc writes the named form for aspmc
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'anon.pl')
+            with open(path, 'w') as f:
+                f.write('0.5::b(1, 1).\no(1).\nc :- o(W), b(W, _).\nquery(c).\n')
+            args = SimpleNamespace(dir=d, aspmc='python3', timeout=1)
+            with patch.object(bench, 'timed', return_value={
+                        'status': 'ok', 'seconds': 0.1, 'stderr': '[RESULT] aspmc: c: 0.5\n'}) as run:
+                result = bench.run_aspmc(args, 'anon', path)
+            with open(run.call_args[0][0][-1]) as f:
+                self.assertEqual(f.read(), '0.5::b(1, 1).\no(1).\nc :- o(W), b(W, V1).\nquery(c).\n')
+            self.assertEqual(result['answers'], {'c': 0.5})
 
     def test_a_ground_query_aspmc_leaves_out_answers_0(self):
         program = '0.5::a.\nb :- a, c.\nquery(a).\nquery(b).\nquery(r(X)).\nquery(p(X)) :- a.\n'
@@ -2081,7 +2225,8 @@ class MerlinTests(unittest.TestCase):
     def test_own_seconds(self):
         """The own time of a system timed so (bench.OWN_TIME): warm, else in the
         process less its compilation, else the process's."""
-        self.assertEqual(set(bench.OWN_TIME), {'alea', 'roulette', 'roulette-tddlog', 'pluck', 'tensorinference'})
+        self.assertEqual(set(bench.OWN_TIME), {'alea', 'alea-tddlog', 'roulette', 'roulette-tddlog', 'pluck',
+                                                'tensorinference'})
         alea = {'system': 'alea', 'seconds': 20.0, 'inproc_seconds': 12.5, 'jit_seconds': 12.25}
         self.assertEqual(bench.own_seconds(alea), 0.25)
         self.assertEqual(bench.own_seconds(dict(alea, warm_seconds=0.0625)), 0.0625)
@@ -2450,6 +2595,20 @@ class AnswersCheckTests(unittest.TestCase):
         # a query at more than 0 is compared as it is written
         ref['answers']['different_color(X3,X4)'] = 0.5
         self.assertEqual(bench.answers_check(rec, ref)[2], 1)
+
+    def test_evidence_found_inconsistent_is_the_reference_where_none_answers(self):
+        # Circulette's ct_ALU_Controller asks no query, and no fault makes it fail
+        recs = [{'system': 'tddlog', 'variant': 'auto', 'status': 'ok', 'answers': 'inconsistent'},
+                {'system': 'roulette', 'variant': 'rsdd', 'status': 'ok', 'answers': 'inconsistent'},
+                {'system': 'problog', 'variant': 'sdd', 'status': 'ok', 'answers': 'inconsistent'},
+                {'system': 'pita', 'variant': 'bdd', 'status': 'ok', 'answers': {}}]
+        refs = bench.reference_records(recs)
+        self.assertEqual([r['system'] for r in refs], ['problog', 'tddlog'])
+        self.assertEqual(bench.answers_check(recs[3], refs[0])[0], False)
+        self.assertEqual(bench.answers_check(dict(recs[3], answers='inconsistent'), refs[0]), (True, 0.0, 1))
+        # a record that answers a query is the reference where there is one
+        recs.append({'system': 'merlin', 'variant': 'bte', 'status': 'ok', 'answers': {'q': 0.5}})
+        self.assertEqual([r['system'] for r in bench.reference_records(recs)], ['merlin'])
 
     def test_the_instances_of_a_query_with_variables(self):
         # a repeated variable binds one value; a variable below an argument is not read
@@ -2901,6 +3060,12 @@ class ScallopTests(unittest.TestCase):
         r, _ = self.run_scallop(bench.SCALLOP_VARIANT, 'e: {0.5::()}\nq0e: {}\n')
         self.assertEqual(r['answers'], {'c': 0.0})
 
+    def test_evidence_without_a_proof_is_inconsistent(self):
+        # Circulette's ct_ALU_Controller: the evidence no fault causes, and no query
+        self.assertEqual(bench.parse_scallop('e: {}\n', 'query e\n'), 'inconsistent')
+        r, _ = self.run_scallop(bench.SCALLOP_VARIANT, 'e: {}\nq0e: {}\n')
+        self.assertEqual(r['answers'], 'inconsistent')
+
 
 class Ground2ScallopTests(unittest.TestCase):
     def test_a_name_of_two_arities_is_two_relations(self):
@@ -3083,6 +3248,24 @@ class PsouffleTests(unittest.TestCase):
                 patch.object(bench, 'translated', translated):
             r = bench.run_psouffle(SimpleNamespace(dir=d, psouffle='souffle', timeout=300), 'p', str(Path(d) / 'p.pl'))
         self.assertEqual((r['status'], r['seconds'], r['stats']), ('timeout', 300.0, {'compile_s': 7.5}))
+
+    def test_inconsistent_evidence_is_its_answer(self):
+        # Circulette's ct_ALU_Controller: PSouffle stops on the evidence, as ProbLog does
+        def timed(cmd, timeout, cwd=None, env=None):
+            if '--full-only' in cmd:
+                return self.timed(cmd, timeout, cwd, env)
+            return {'status': 'error', 'seconds': 0.5, 'returncode': 1,
+                    'error': 'Problog calc failedInconsistent evidence: failure() is deterministically false'}
+
+        def translated(args, script, argv, *rest):
+            os.makedirs(argv[1], exist_ok=True)
+            Path(argv[1], 'compute.dl').write_text('failure() :- fail().')
+        with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', timed), \
+                patch.object(bench, 'translated', translated):
+            r = bench.run_psouffle(SimpleNamespace(dir=d, psouffle='souffle', timeout=300), 'p', str(Path(d) / 'p.pl'))
+        self.assertEqual((r['status'], r['answers'], r['seconds']), ('ok', 'inconsistent', 0.5))
+        self.assertRegex("InconsistentEvidenceError: Inconsistent evidence detected: 'evidence(failure,true)'.",
+                         bench.INCONSISTENT)
 
 
 if __name__ == '__main__':

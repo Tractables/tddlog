@@ -301,7 +301,7 @@ mod regress {
     use super::*;
 
     #[test]
-    fn aliasing_keeps_queried_facts() {
+    fn aliasing_answers_the_queries_of_a_fact() {
         check(
             "../tests/regress/alias_query.pl",
             &[
@@ -918,6 +918,63 @@ mod dice {
             let expected: Vec<(&str, f64)> =
                 queries.iter().map(String::as_str).zip(answers).collect();
             check_text(&format!("steps.dice {k}"), &input.program, &expected);
+        }
+    }
+
+    /// With arguments, a Dice program's places stand for any of its
+    /// integers: here a width, a uniform's bound and two counts, one of an
+    /// iterate inside the loop's step. Read with each set of arguments, it
+    /// answers as the program with the integers written in and the inner
+    /// iterate written as calls in a row, and as by hand: r starts uniform
+    /// over 0 to u - 1, and each of k steps adds n with probability 0.5,
+    /// so that r is U + n B modulo 2^w, B of the binomial (k, 0.5).
+    #[test]
+    fn the_arguments_take_the_places_of_its_integers() {
+        let placed = "fun g(x: int($1)) { x + int($1, 1) }\n\
+                      fun f(x: int($1)) { if flip 0.5 then iterate(g, x, $2) else x }\n\
+                      let r = iterate(f, uniform($1, 0, $3), $4) in r";
+        for (w, n, u, k, answers) in [
+            (3, 2, 2, 3, &[1, 1, 3, 3, 3, 3, 1, 1][..]),
+            (
+                4,
+                3,
+                4,
+                2,
+                &[1, 1, 1, 3, 2, 2, 3, 1, 1, 1, 0, 0, 0, 0, 0, 0][..],
+            ),
+        ] {
+            let calls = (0..n).fold("x".to_string(), |x, _| format!("g({x})"));
+            let literal = format!(
+                "fun g(x: int({w})) {{ x + int({w}, 1) }}\n\
+                 fun f(x: int({w})) {{ if flip 0.5 then {calls} else x }}\n\
+                 let r = iterate(f, uniform({w}, 0, {u}), {k}) in r"
+            );
+            let options = tddlog::network::ReadOptions {
+                arguments: [w, n, u, k].iter().map(u64::to_string).collect(),
+                ..Default::default()
+            };
+            let input = tddlog::read(placed.as_bytes(), tddlog::Format::Dice, &options).unwrap();
+            let what = format!("{w} {n} {u} {k}");
+            for (program, text) in [
+                ("places", input.program.to_string()),
+                ("literal", read(&literal, &what)),
+            ] {
+                // r's atoms, as the reader names them: r_1(0), r_1(1), ...
+                let query = text
+                    .lines()
+                    .find_map(|l| l.strip_prefix("query(")?.split('(').next())
+                    .unwrap_or_else(|| panic!("{program} {what}: no query"))
+                    .to_string();
+                let queries: Vec<String> = (0..answers.len())
+                    .map(|v| format!("{query}({v})"))
+                    .collect();
+                let expected: Vec<(&str, f64)> = queries
+                    .iter()
+                    .map(String::as_str)
+                    .zip(answers.iter().map(|&a| f64::from(a) / 16.0))
+                    .collect();
+                check_text(&format!("{program} {what}"), &text, &expected);
+            }
         }
     }
 

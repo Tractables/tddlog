@@ -2,15 +2,28 @@
 categories (bindings/wasm/results/categories.json), and the numbers its text quotes,
 printed as JSON.
 
-    python3 scripts/readme_figures.py [--png] [--data FILE] [OUT_DIR]     (default docs/images)
+    python3 scripts/readme_figures.py [--png] [--data FILE] [--readme README | --check README] [OUT_DIR]
+                                                                           (default docs/images)
 
 --png also writes each figure as a PNG at the SVG's own size, to look at;
---data reads another categories.json than the tree's.
+--data reads another categories.json than the tree's; --readme rewrites
+README's generated blocks from the same data, and --check only compares
+them, each failing (exit 1) where a block differs from the data, a block
+or its marker is missing, or the sentence under the overview no longer
+holds (ahead). A generated block is the text between `<!-- results:KEY -->`
+and `<!-- /results:KEY -->` (blocks): the overview's caption and the
+setup line, each with the data's stamp (when and on which commit of the
+source tree they were processed), each type's headline and table, the
+circuits' and the integrations' table. The setup block names the SHA-256 of the
+categories.json it was written from, which release/push_check.sh checks
+against the file pushed beside it.
 
 The results are partitioned by type of program: each instance counts in
 one type, whatever language its source was written in, and all programs
 are a sixth category, their union. A type is compared with the systems
-native to it, all programs with every system. A system's answers count
+native to it, all programs with every system. The circuits (the data's
+`circuits`: every circuit Alea.jl exports, read by every system) are an
+evaluation apart from the types and written as one. A system's answers count
 over all of a category's instances, an instance it does not answer
 (out of time or memory, a wrong answer, a program it cannot express, a
 skip, or one it was not given) counting as unanswered. tddlog is compared
@@ -36,8 +49,7 @@ where another system's code ran first and handed it the inference
 own. Each is drawn as a curve of its own in tddlog's colour (a pipeline
 dashed or dotted), and the texts, the scatter plot and the comparisons
 take each row's subject, plain tddlog in a type (the data's vs[x]['me']
-names them). An integration on another system's export (Roulette+ProbLog)
-is drawn in its system's colour, dotted.
+names them).
 
 Writes, as SVG:
   overview          for each type, tddlog's answers and, for each of its
@@ -52,11 +64,13 @@ Writes, as SVG:
                     the scatter plot of tddlog's time against the fastest
                     other drawn system's, instance by instance; the legend
                     under them, ordered by answers, each system's answers
-                    and tddlog's speed-up over it.
+                    and tddlog's speed-up over it; results-circuits the
+                    same of the circuits.
 
-The JSON printed is {categories, integrations}: for each category, the
-numbers its text quotes and `table`, the lines of the README's table of
-its native systems (all programs: every system); for each integration
+The JSON printed is {categories, integrations}: for each category and the
+circuits (`circuits`), the numbers its text quotes and `table`, the lines
+of the README's table of its native systems (all programs and the
+circuits: every system); for each integration
 (rule 26: a pipeline against the system whose code runs first, over the
 instances the pipeline is given, the data's `integrations`), its
 instances, answers and comparison, and `table`, the lines of the README's
@@ -69,6 +83,7 @@ time limit; the scatter plots' are logarithmic from 0.2 s, shorter runs
 drawn at 0.2 s. Alea.jl's and Roulette's times are their in-process
 times, without their language's start-up. Needs matplotlib."""
 import collections
+import hashlib
 import json
 import math
 import os
@@ -108,30 +123,31 @@ COLOURS = {
     'provsql': ('#8a6a12', '-'),
 }
 ALL = 'all-programs'  # all programs, the union of the types: a category of its own, not on the overview
+APART = 'circuits'    # the circuits, apart from the types: written as a category, not on the overview
 THEME = dict(bg='#ffffff', text='#1f2328', muted='#59636e', grid='#d8dee4')
 FONTS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
 
 
 def load(path):
-    """The data panels.py writes: names, categories (in the README's order)
-    and own."""
+    """The data panels.py writes: names, categories (in the README's order),
+    circuits and own."""
     data = json.load(open(path))
     data['categories'].sort(key=lambda c: c['order'])
     return data
 
 
-def colours(categories, via=None):
-    """{system: (colour, line style)}, an integration on an export (via:
-    {key: [exporter, system]}, Roulette+ProbLog) its system's colour, dotted
-    (dashed where the system's is dotted); a system of the data without a
+def written(data):
+    """The categories the README writes, in its order, then the circuits
+    where the data have them."""
+    return data['categories'] + ([data['circuits']] if data.get('circuits') else [])
+
+
+def colours(categories):
+    """{system: (colour, line style)}; a system of the data without a
     colour stops the figures."""
-    out = dict(COLOURS)
-    for k, (_, x) in (via or {}).items():
-        if k not in out and x in COLOURS:
-            out[k] = (COLOURS[x][0], DASH if COLOURS[x][1] == DOT else DOT)
-    missing = sorted({s for c in categories for s in c['systems']} - set(out))
+    missing = sorted({s for c in categories for s in c['systems']} - set(COLOURS))
     assert not missing, f'systems without a colour (COLOURS): {missing}'
-    return out
+    return dict(COLOURS)
 
 
 def answered(v):
@@ -376,7 +392,7 @@ def results(cat, names, col, out):
     solved = cactus(fig.add_axes(box(0.8, 0.4, 4.35, 3.45)), cat, systems, hi, c, col)
     loss = col[cat['named'][0]][0] if cat['named'] else c['muted']
     sc = scatter(fig.add_axes(box(5.85, 0.4, 3.45, 3.45)), cat, others, hi, c, col, loss,
-                 'fastest other system' if cat['key'] == ALL else 'fastest native system', subject(cat, names))
+                 'fastest other system' if cat['key'] in (ALL, APART) else 'fastest native system', subject(cat, names))
     legend = [(s, names[s], [solved[s], '' if is_mine(s) else faster(cat['vs'][s])]) for s in systems]
     legend_table(fig, h, (WIDTH - ncol * LEGEND_BLOCK) / 2, legend_top, legend, cat['instances'], cat['noun'],
                  ncol, c, col)
@@ -440,35 +456,18 @@ def speed_mark(ax, x, y, r, transform, colour, muted, least=False):
 WORDS = 'no one two three four five six seven eight nine ten'.split()
 
 
-# what each of tddlog's pipelines (rule 26) is, for the overview's footnote
-PIPELINE_TEXT = {
-    'alea-tddlog': 'Alea.jl runs the program up to the Boolean circuit it builds, then tddlog answers from the circuit, '
-                   'and its time is both, Alea.jl’s timed warm',
-    'roulette-tddlog': 'Roulette runs the program up to the formulas of its queries, then tddlog answers from them',
-}
+def times_par(m):
+    """How a run that does not answer counts, from the data's parameters
+    of the measure (panels.py's): twice its time limit."""
+    return 'twice' if m['par'] == 2 else f"{m['par']:g} times"
 
 
-def measure_text(m, pipelines=(), names=None):
-    """The overview's footnote: how its rows compare (rule 16), from the
-    data's parameters of the measure (panels.py's), and what the
-    pipelines its heads name are."""
-    missing = [p for p in pipelines if p not in PIPELINE_TEXT]
-    assert not missing, f'pipelines without a text (PIPELINE_TEXT): {missing}'
-    piped = ''.join(f' Where a type’s head names {names[p]}, its rows’ tddlog is {names[p]}: {PIPELINE_TEXT[p]}.'
-                    for p in pipelines)
-    par = 'twice' if m['par'] == 2 else f"{m['par']:g} times"
-    return (
-        'Each instance counts in one type, whatever language its source was written in. A system’s answers are over '
-        'all of the type’s instances. On each row, the system’s total time and tddlog’s (teal) over the instances the '
-        'system is given and either answers, a run that does not answer (out of time or memory, failed, or a program '
-        f"the system cannot express) counted as {par} its time limit (PAR-{m['par']:g}, as in the SAT and model "
-        f"counting competitions) and a time under {m['floor']:g} s as {m['floor']:g} s. tddlog’s speed-up over a "
-        'system is the ratio of their total times on the instances both answer, together with the instances only one '
-        'of them answers: tddlog’s failures counted at its time limit, and the other system’s timeouts counted at the '
-        'limit where that lower bound is at least the speed-up measured on the instances both answer; with fewer than '
-        f"{m['common']} instances both answer, there are too few in common for one. The {WORDS[m['named']]} best "
-        'native systems by answers, then speed-up, have a row each; the others share one, with the least of their '
-        'total times and of their speed-ups.' + piped)
+def others_text(o, names):
+    """The others' row of the overview: their names and, where each has an
+    instance that it or tddlog answers (a total time above 0), the least of
+    their total times."""
+    text = ', '.join(names[x] for x in o['systems'])
+    return text + (f": each more than {at_least(o['total'])} in total" if o['total'] else '')
 
 
 def overview(data, names, col, out):
@@ -491,14 +490,11 @@ def overview(data, names, col, out):
             lines.append(('row', names[x], cat['answers'][x], (x, v['tddlog_total'], v['total'], v['speedup'])))
         o = cat['others']
         if o['systems']:
-            text = textwrap.fill(', '.join(names[x] for x in o['systems']) + f": each more than {at_least(o['total'])} in total", 70)
+            text = textwrap.fill(others_text(o, names), 70)
             lines.append(('others', f"{len(o['systems'])} others", None, (text, o['speedup'])))
     ts = [t for kind, _, _, st in lines if kind == 'row' for t in st[1:3]]
-    ts += [o['others']['total'] for o in data['categories'] if o['key'] != ALL and o['others']['systems']]
-    pipelines = list(dict.fromkeys(m for cat in data['categories'] if cat['key'] != ALL for m in cat['mine']
-                                   if m != 'tddlog' and m in my_keys(cat)))
-    foot = textwrap.wrap(measure_text(data['measure'], pipelines, names), 112)
-    names_w, ratio_w, row, top, bottom = 2.6, 1.2, 0.34, 1.0, 0.55 + 0.2 * len(foot)
+    ts += [o['others']['total'] for o in data['categories'] if o['key'] != ALL and o['others']['total']]
+    names_w, ratio_w, row, top, bottom = 2.6, 1.2, 0.34, 1.0, 0.55
     # each line's height in rows, and its middle, from the top
     tall = [0.6 + 0.55 * st[0].count('\n') + 0.4 if kind == 'others' else 1 for kind, _, _, st in lines]
     mids = [sum(tall[:k]) + tall[k] / 2 for k in range(len(lines))]
@@ -557,8 +553,6 @@ def overview(data, names, col, out):
             color=c['muted'])
     ax.text(ratio_x, over, 'tddlog\nfaster', transform=ax.transAxes, ha='left', va='bottom', fontsize=11,
             color=c['muted'], linespacing=1.1)
-    fig.text(0.006, 0.08 / h, '\n'.join(foot), ha='left', va='bottom', fontsize=10.5, color=c['muted'],
-             linespacing=1.35)
     save(fig, out, 'overview')
 
 
@@ -572,8 +566,9 @@ def ahead(cat):
     tddlog, or take no more total time than it over the instances they are
     given and either answers. The README's sentence under the overview says
     that on every type of program tddlog answers more instances than each
-    native system, in less total time; a system here makes it false."""
-    if cat['key'] == ALL:
+    native system, in less total time; a system here makes it false.
+    All programs and the circuits are not on the overview."""
+    if cat['key'] in (ALL, APART):
         return []
     mine = my_answers(cat)
     return [x for x in cat['native'] if cat['answers'][x] >= mine
@@ -623,9 +618,9 @@ def table(cat, names):
     if o['systems']:
         span = lambda lo, hi: lo if lo == hi else f'{lo} to {hi}'
         mine = span(*map(seconds, o['tddlog']))
+        total = f"over {at_least(o['total'])} each" if o['total'] else '–'
         lines.append(f"| {len(o['systems'])} others: {', '.join(names[x] for x in o['systems'])} | "
-                     f"{span(*o['answers'])} | over {at_least(o['total'])} each | {mine} | "
-                     f"{least_text(o['speedup'])} |")
+                     f"{span(*o['answers'])} | {total} | {mine} | {least_text(o['speedup'])} |")
     return lines
 
 
@@ -649,19 +644,93 @@ def integrations(data, names):
     return dict(out, table=lines)
 
 
+REPO = 'https://github.com/Tractables/tddlog'
+SITE = 'https://tractables.github.io/tddlog'
+# a generated block of the README: its key, then its text up to its end marker
+BLOCK = re.compile(r'<!-- results:(?P<key>[\w-]+) -->\n(?P<body>.*?)<!-- /results:(?P=key) -->', re.S)
+
+
+def in_words(xs):
+    xs = [str(x) for x in xs]
+    return xs[0] if len(xs) == 1 else f"{', '.join(xs[:-1])} or {xs[-1]}"
+
+
+def stamp_text(data):
+    """When and on which commit of the source tree the data were processed."""
+    s = data['stamp']
+    return f"Results as of {s['date']}, public main [{s['source']}]({REPO}/commit/{s['source']})."
+
+
+def blocks(data, numbers, names, digest):
+    """{key: text} of the README's generated blocks, from the data and the
+    numbers main computes of it: the overview's caption and key, the setup
+    line (the stamp and the time limits, digest the SHA-256 of the
+    categories.json read), each type's headline and its table (KEY-table,
+    with the native systems too few of whose instances it was given to be
+    drawn), the circuits' headline and table, and the integrations' table."""
+    m = data['measure']
+    limits = sorted({r[2] for c in written(data) for r in c['rows']})
+    out = {
+        'overview': (f"<sub>{stamp_text(data)} Each row: a native system's answers of the type's instances, its "
+                     f"total time (its colour) and tddlog's (teal) over the instances it is given and either answers, "
+                     f"and how many times faster tddlog is ([how it is counted](#performance)).</sub>"),
+        'setup': (f"<!-- written from bindings/wasm/results/categories.json, sha256 {digest} -->\n"
+                  f"{stamp_text(data)} Runs are single-threaded, under a time limit of {in_words(limits)} s by "
+                  f"suite; a run that does not answer counts as {times_par(m)} its limit, and a time under "
+                  f"{m['floor']:g} s as {m['floor']:g} s."),
+        'integrations': '\n'.join(numbers['integrations']['table']),
+    }
+    for cat in written(data):
+        res = numbers['categories'][cat['key']]
+        verb = 'answers' if len(set(my_keys(cat))) == 1 else 'answer'
+        families = '' if cat['key'] == ALL else f", of {len(cat['groups'])} families"
+        out[cat['key']] = f"{res['subject']} {verb} **{res['my_answers']} of {cat['instances']}** {cat['noun']}{families}."
+        few = [f"{names[x]} was given {cat['given'][x]} of the {cat['noun']} and answers {cat['answers'][x]}."
+               for x in cat['native'] if x not in cat['drawn'] and cat['given'][x]]
+        out[f"{cat['key']}-table"] = '\n'.join(res['table'] + ([''] + few if few else []))
+    return out
+
+
+def readme(text, want):
+    """text, a README, with each generated block's body the one want gives
+    (blocks), and the keys whose body differed; a block of want without its
+    markers in text, or markers want has no block for, stops (rule 3)."""
+    seen, changed = set(), []
+
+    def put(m):
+        k = m['key']
+        assert k in want, f'README: a block results:{k} that the data have none of'
+        assert k not in seen, f'README: the block results:{k} twice'
+        seen.add(k)
+        body = want[k] + '\n'
+        if m['body'] != body:
+            changed.append(k)
+        return f'<!-- results:{k} -->\n{body}<!-- /results:{k} -->'
+
+    new = BLOCK.sub(put, text)
+    missing = sorted(set(want) - seen)
+    assert not missing, f'README: no block for {missing} (<!-- results:KEY --> ... <!-- /results:KEY -->)'
+    return new, changed
+
+
 def main():
     args = [a for a in sys.argv[1:] if a != '--png']
     path = os.path.join(SOURCE, 'bindings', 'wasm', 'results', 'categories.json')
     if args[:1] == ['--data']:
         path, args = args[1], args[2:]
+    write = check = None
+    if args[:1] == ['--readme']:
+        write, args = args[1], args[2:]
+    elif args[:1] == ['--check']:
+        check, args = args[1], args[2:]
     out = args[0] if args else os.path.join(SOURCE, 'docs', 'images')
     os.makedirs(out, exist_ok=True)
     data = load(path)
     global FLOOR
     FLOOR = data['measure']['floor']  # the data's, as its numbers were computed with it
-    names, col = data["names"], colours(data["categories"], data.get("via"))
+    names, col = data["names"], colours(written(data))
     numbers = {}
-    for cat in data['categories']:
+    for cat in written(data):
         assert cat['drawn'][:len(cat['mine'])] == cat['mine'], f"{cat['key']}: tddlog not drawn"
         res = dict(instances=cat['instances'], limit=max(r[2] for r in cat['rows']))
         # who the text names for tddlog (tddlog, Alea.jl+tddlog or both) and their answers
@@ -684,9 +753,20 @@ def main():
                   + ', '.join(names[x] for x in res['ahead']), file=sys.stderr)
         numbers[cat['key']] = res
     overview(data, names, col, out)
-    json.dump(dict(categories=numbers, integrations=integrations(data, names)), sys.stdout, indent=1,
-              ensure_ascii=False)
+    printed = dict(categories=numbers, integrations=integrations(data, names))
+    json.dump(printed, sys.stdout, indent=1, ensure_ascii=False)
     print()
+    if write or check:
+        digest = hashlib.sha256(open(path, 'rb').read()).hexdigest()
+        text = open(write or check).read()
+        new, changed = readme(text, blocks(data, printed, names, digest))
+        if write:
+            open(write, 'w').write(new)
+            changed = []
+        late = [names[x] for res in numbers.values() for x in res['ahead']]
+        if changed or late:
+            sys.exit(f"README.md: {'the blocks ' + ', '.join(changed) + ' differ from the data; ' if changed else ''}"
+                     + (f"the sentence under the overview no longer holds for {', '.join(late)}" if late else ''))
 
 
 if __name__ == '__main__':

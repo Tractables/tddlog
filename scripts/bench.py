@@ -2,7 +2,7 @@
 """Benchmark tddlog against ProbLog on generated instance families.
 
     bench.py gen  [--dir bench] [--cnf] [--pr] [--alea CMD] [--tddlog BIN]
-                  [--circulette-racket CMD [--circulette-python PY] [--export-timeout S]] [SELECTION]
+                  [--circulette-python PY] [SELECTION]
     bench.py run  [--dir bench] [--out results.jsonl] [--tddlog BIN] [--problog BIN]
                   [--strategies s1,s2] [--kbs ddnnf,sdd,fsdd] [--dice CMD] [--alea CMD] [--timeout S]
                   [--pita SWIPL] [--pita-packs DIR] [--aspmc PYTHON] [--scallop SCLI]
@@ -93,9 +93,12 @@ circuit Roulette builds and tddlog answers it, charged Roulette's run up
 to the circuit and tddlog's (docs/baselines.md, section 11). On `--suite
 circulette` the template's Racket has Roulette's package roulette-lib and
 Circulette installed, and `roulette:rsdd` is circulette.rkt on an instance's
-netlist (`run_circulette`); gen writes the instance's ProbLog program with
-the engine (`--circulette-racket`, the fork's Racket, gen_circulette.py), and
-tddlog answers it with `--evidence-probability`, P(fail) with the posteriors.
+netlist (`run_circulette`); tddlog reads the netlist itself with
+`--evidence-probability`, P(fail) with the posteriors, and gen writes the
+program its reader writes of it (`tddlog --program NAME.cql`, NAME.pl), which
+the systems that read ProbLog programs are given; Roulette+tddlog runs
+circulette.rkt on Roulette's tddlog engine with --circulette-tddlog, a
+Circulette compiled by the fork's Racket.
 
 `--suite ppl` is the benchmark programs of the Dice and Alea.jl papers and
 of later papers (`PPL`): Dice programs (`nodice`), which run as a `dice`
@@ -311,6 +314,11 @@ PPL = {}
 for family, names in [('arith', ARITH), ('pluck', PLUCK)]:
     for name in names:
         PPL[f'{family}_{name}'] = (family, ['alea_bench.jl', os.path.join(ROOT, 'data', 'alea', family, f'{name}.jl')])
+# caesar-small to -huge are one program, the first LENGTH letters of its text
+# (each size's text in the paper's files is a prefix of the next's)
+for _name, _length in [('small', 10), ('medium', 50), ('large', 100), ('huge', 250)]:
+    PPL[f'arith_caesar_{_name}'] = ('arith', ['alea_bench.jl', os.path.join(ROOT, 'data', 'alea', 'arith', 'caesar.jl'),
+                                              f'LENGTH={_length}'])
 for name in NODICE:
     PPL[f'nodice_{name}'] = ('nodice', ['dice2problog.py', os.path.join(ROOT, 'data', 'nodice', f'{name}.dice')])
 # An instance whose generator is dice2problog.py is a Dice program (its
@@ -320,10 +328,10 @@ for name in NODICE:
 # Dice program beside the ProbLog one (`--dice`, NAME.dice).
 DICE_WRITERS = ('gen_roulette.py', 'gen_geni.py')
 # The generators whose programs tddlog's reader writes (`tddlog --program`):
-# of a network, of a Dice program, and of a cplint LPAD, whole or with
-# its students or families made anew.
+# of a network, of a Dice program, of a cplint LPAD, whole or with its
+# students or families made anew, and of a Circulette netlist.
 PROGRAM_OF_TDDLOG = ('gen_bn.py', 'dice2problog.py', 'gen_cplint.py', 'gen_uwcse.py', 'gen_pedigree.py',
-                     'gen_geni.py')
+                     'gen_geni.py', 'gen_circulette.py')
 def fold_key(family, a):
     """The name of the data file of an instance of `family` from its
     generator's arguments `a`: the family and the arguments, as one word."""
@@ -551,8 +559,9 @@ for _h in GENI_WEATHER_H:
 # fullAdder8.v's adder by its bits (ct_fulladder, 8 the file as written)
 # and openfpga_mac_2.v's multiply-accumulate by DATA_WIDTH (ct_mac, 2 and
 # 4 openfpga_mac_2.v and openfpga_mac_4.v). gen_circulette.py writes the
-# netlist and, through Roulette's tddlog engine, the ProbLog program of
-# Circulette's queries; Roulette runs circulette.rkt itself on the netlist
+# netlist NAME.cql, which tddlog reads itself (`original`) and gen writes
+# the program of (`tddlog --program`, NAME.pl) for the systems that read
+# ProbLog programs; Roulette runs circulette.rkt itself on the netlist
 # (`run_circulette`). The other netlists are no sizes of one another
 # (COLLECTIONS).
 CT_ROOT = ['1-bit-mux', '4-bit-comparator', 'adder8', 'exp']
@@ -1046,12 +1055,22 @@ def stale_refusal(r):
     return r['status'] == 'error' and 'aspmc ProbLog frontend does not condition on evidence' in str(r.get('error'))
 
 
+def unexpressed(r):
+    """Whether record r is a program its system was not given since it cannot
+    be: a translator's refusal of what the system's language lacks, or the
+    language's own refusal (status `unsupported`, the reason in `error`).
+    It is a program the system does not support, on
+    every suite, never one it failed on. The tables and the
+    PPL suites' data (ppl_data.py) both read a record's failure so."""
+    return r.get('status') == 'unsupported'
+
+
 # The systems the tables time by their own time in the process,
 # without their language's start, their packages' load and their
-# compilation: Alea.jl, Pluck and TensorInference.jl in Julia, Roulette in
+# compilation: Alea.jl (and Alea.jl+tddlog), Pluck and TensorInference.jl in Julia, Roulette in
 # Racket. Their records' `seconds` stay the process's wall time, and a run
 # whose wall time passed the limit stays a timeout.
-OWN_TIME = ('alea', 'roulette', 'roulette-tddlog', 'pluck', 'tensorinference')
+OWN_TIME = ('alea', 'alea-tddlog', 'roulette', 'roulette-tddlog', 'pluck', 'tensorinference')
 
 
 def own_seconds(r):
@@ -1066,6 +1085,31 @@ def own_seconds(r):
     if r.get('inproc_seconds') is not None:
         return max(r['inproc_seconds'] - r.get('jit_seconds', 0.0), 0.0)
     return r['seconds']
+
+
+# The times rel/charge.py adds a conversion's seconds to, which it keeps as they were before
+# that charge under RAW + the key.
+CHARGED_TIMES = ('seconds', 'inproc_seconds', 'warm_seconds')
+RAW = 'raw_'
+
+
+def uncharged(r):
+    """Record r without the conversion it pays (rel/charge.py's
+    `translation_seconds`): its status and times as they were before that
+    charge (`raw_status`, `raw_seconds` and the other CHARGED_TIMES), its
+    answers back where the charge put them past the limit, and no
+    `translation`. A PSouffle compilation or a ground route charged with it
+    stays in them. A record that pays no conversion is r itself. The
+    circuits Alea.jl exports are read so (no one pays the
+    export), and Alea.jl+tddlog's record with it."""
+    if RAW + 'status' not in r:
+        return r
+    out = {k: v for k, v in r.items() if not k.startswith(RAW) and k not in ('translation', 'translation_seconds')}
+    out['status'] = r[RAW + 'status']
+    out.update({k: r[RAW + k] for k in CHARGED_TIMES if RAW + k in r})
+    if 'answers_past_limit' in out and out['status'] != 'timeout':
+        out['answers'] = out.pop('answers_past_limit')
+    return out
 
 
 def has_cnf(entry):
@@ -1116,16 +1160,21 @@ def network_args(args, name, gargs, no_queries):
     return out, [out[0]] + [out[i + 1] for i, x in enumerate(out) if x == '--evidence']
 
 
-def original(gargs, variant):
+def original(gargs, variant, stem=None):
     """The file tddlog reads itself where NAME.pl is its reader's
     conversion of a whole file (`write_program`): a Dice program
-    (dice2problog.py) or a cplint LPAD (gen_cplint.py), so that reading it
-    is part of tddlog's time, as a network's is (`network_args`). None for
-    another instance."""
+    (dice2problog.py), a cplint LPAD (gen_cplint.py) or a Circulette netlist
+    (gen_circulette.py, NAME.cql beside NAME.pl: `stem` is DIR/NAME, the
+    instance's), so that reading it is part of tddlog's time, as a network's
+    is (`network_args`). None for another instance."""
     if gargs[0] == 'dice2problog.py':
         return gargs[1]
     if gargs[0] == 'gen_cplint.py':
         return os.path.join(ROOT, 'data', (gargs[2:] or ['cplint'])[0], gargs[1] + '.pl')   # gen_cplint.py NAME [swish]
+    if gargs[0] == 'gen_circulette.py':
+        if stem is None:
+            raise ValueError("a Circulette instance's netlist is gen's, in its directory: original needs its stem")
+        return os.path.abspath(stem + '.cql')
     return None
 
 
@@ -1303,9 +1352,9 @@ def uai_kind(path):
 def write_program(args, name, argv):
     """NAME.pl of instance `name`, the program tddlog reads a file as
     (`tddlog --program ARGV`, gen's --tddlog): a network's (`gen_network`),
-    a Dice program's, or a FOLD program's with its arguments in its places
-    (`gen_folded`), which the systems that read ProbLog programs are
-    given."""
+    a Dice program's, a Circulette netlist's (`gen_circulette`), or a FOLD
+    program's with its arguments in its places (`gen_folded`), which the
+    systems that read ProbLog programs are given."""
     part = os.path.join(args.dir, name + '.pl.part')
     with open(part, 'w') as f:
         source_tree.program(*argv, stdout=f, binary=getattr(args, 'tddlog', None))
@@ -1391,16 +1440,9 @@ def gen(args):
     if getattr(args, 'pr', False) and args.suite != 'uai':
         raise SystemExit('--pr writes the uai suite\'s programs for the partition function alone, and the suite is '
                          + args.suite)
-    circulette = [n for n, e in spec.items() if e[1][0] == 'gen_circulette.py']
-    if circulette and not getattr(args, 'circulette_racket', ''):
-        raise SystemExit(f'{circulette[0]} is a netlist of Circulette, whose program Roulette\'s tddlog engine '
-                         f'writes under --circulette-racket ({len(circulette)} instances)')
-    if not circulette:
-        for opt, given in [('--circulette-racket', getattr(args, 'circulette_racket', '')),
-                           ('--export-timeout', getattr(args, 'export_timeout', None)),
-                           ('--circulette-python', getattr(args, 'circulette_python', 'python3') != 'python3')]:
-            if given:
-                raise SystemExit(f'{opt} writes the programs of Circulette\'s netlists, and none is selected')
+    if getattr(args, 'circulette_python', 'python3') != 'python3' and \
+            not any(e[1][0] == 'gen_circulette.py' for e in spec.values()):
+        raise SystemExit("--circulette-python converts Circulette's Verilog designs, and no netlist is selected")
     tddlog = getattr(args, 'tddlog', None) or str(source_tree.BINARY)
     os.environ['TDDLOG'] = tddlog   # the generators that convert an LPAD (--template of gen_uwcse.py, gen_pedigree.py)
     if any(e[1][0] in PROGRAM_OF_TDDLOG or fold_of(e[1]) for e in spec.values()) and not os.access(tddlog, os.X_OK):
@@ -1447,34 +1489,17 @@ def gen(args):
     print(f'{len(spec)} instances in {args.dir}')
 
 
-# gen_circulette.py's exit status for an export that failed or passed its time limit.
-EXPORT_FAILED = 3
-
-
 def gen_circulette(args, name, gargs):
-    """Writes a Circulette instance's netlist NAME.cql, its ProbLog program
-    NAME.pl and the export's outcome NAME.export.json (gen_circulette.py). An
-    export that fails or passes --export-timeout leaves no NAME.pl, and the
-    systems that read it are recorded as having failed or run out of time
-    (`circulette_lost`); a netlist that does not convert stops gen."""
-    stats, pl = (os.path.join(args.dir, name + x) for x in ('.export.json', '.pl'))
-    for f in (stats, pl):
-        if os.path.exists(f):
-            os.remove(f)
-    cmd = [sys.executable, str(source_tree.script('gen_circulette.py')), *gargs[1:],
-           '--circulette', args.circulette_benchmarks, '--cql', os.path.join(args.dir, name + '.cql'),
-           '--racket', args.circulette_racket, '--python', args.circulette_python, '--stats', stats]
-    if args.export_timeout:
-        cmd += ['--timeout', str(args.export_timeout)]
-    with open(pl + '.part', 'wb') as f:
-        p = subprocess.run(cmd, stdout=f, stderr=subprocess.PIPE, text=True)
-    if p.returncode == 0:
-        os.replace(pl + '.part', pl)
-        return
-    os.remove(pl + '.part')
-    if p.returncode != EXPORT_FAILED or not os.path.exists(stats):
+    """Writes a Circulette instance's netlist NAME.cql (gen_circulette.py)
+    and the program tddlog's reader writes of it, NAME.pl (`write_program`);
+    a netlist that does not convert, or that the reader refuses, stops gen."""
+    cql = original(gargs, '', os.path.join(args.dir, name))
+    p = subprocess.run([sys.executable, str(source_tree.script('gen_circulette.py')), *gargs[1:],
+                        '--circulette', args.circulette_benchmarks, '--cql', cql, '--python', args.circulette_python],
+                       capture_output=True, text=True)
+    if p.returncode != 0:
         raise SystemExit(f'{name}: ' + p.stderr.strip()[-2000:])
-    print(p.stderr.strip().splitlines()[-1], file=sys.stderr)
+    write_program(args, name, [cql])
 
 
 def parse_answers(out):
@@ -1493,6 +1518,11 @@ def parse_answers(out):
     return res
 
 
+# A system that stops on evidence of probability 0 says so, and that is its
+# answer, as tddlog's `evidence is inconsistent` is: ProbLog's
+# InconsistentEvidenceError (problog_each.py reads it so too), PSouffle's
+# `Inconsistent evidence: A is deterministically false`.
+INCONSISTENT = re.compile(r'InconsistentEvidenceError|Inconsistent evidence')
 EVIDENCE_LINE = 'P(e):'
 # The line tddlog prints in its place for a Markov network it reads itself:
 # the partition function given the evidence, `Z:<tab>z<tab>log10 l`.
@@ -1607,14 +1637,17 @@ PRINTED = {'merlin': ('dec', 6), 'nodice': ('unit', 1e-6), 'geni': ('dec', 7), '
            ('exact', 'reliability'): ('dec', 17), ('exact', 'lifted'): ('dec', 17)}
 # An answer's reference: an exact record (the solvers written for the
 # evaluation, bn_exact.py and the like, or the generator's own), then
-# Alea.jl's, ProbLog's, Merlin's (six decimals) and Ace's records, the
-# first of them that answered a query of the record checked and comes
-# before it in this order (the instance's reference itself is checked
-# against none); tddlog's only where none did (the taint apps), and never
-# for tddlog's own. Ace computes in doubles and underflows (below): an Ace
-# answer of 0 or NaN is never a reference (reference_answers).
-REFERENCE_ORDER = [('exact', None), ('alea', None), ('problog', 'ddnnf'), ('problog', 'sdd'), ('problog', 'fsdd'),
-                   ('merlin', 'bte'), ('ace', None)]
+# the systems that compute in exact arithmetic (Psi's rationals, Storm's
+# exact engine, Genfer's rational runs on its own Dice programs:
+# reference_variant), then Alea.jl's, ProbLog's, Merlin's (six decimals)
+# and Ace's records, which compute in doubles; the first of them that
+# answered a query of the record checked and comes before it in this order
+# (the instance's reference itself is checked against none); tddlog's only
+# where none did (the taint apps), and never for tddlog's own. Ace
+# computes in doubles and underflows (below): an Ace answer of 0 or NaN is
+# never a reference (reference_answers).
+REFERENCE_ORDER = [('exact', None), ('psi', None), ('storm', 'exact'), ('genfer', 'rational'), ('alea', None),
+                   ('problog', 'ddnnf'), ('problog', 'sdd'), ('problog', 'fsdd'), ('merlin', 'bte'), ('ace', None)]
 UNDERFLOWS = {'ace'}
 # On the networks of --suite uai, observed factors take P(e) as low as
 # 1e-618, and a baseline that computes in doubles can answer wrongly (Ace
@@ -1716,16 +1749,27 @@ def reference_answers(rec):
     return {q: p for q, p in a.items() if not (isinstance(p, (int, float)) and (p == 0 or math.isnan(p)))}
 
 
+def reference_variant(r):
+    """Record r's variant as REFERENCE_ORDER names it: `rational` for
+    Genfer's run on one of its own Dice programs (GENFER_DICE, run_genfer's
+    --rational), which computes in exact rationals; its other runs compute
+    in floating point and are no reference."""
+    if r['system'] == 'genfer':
+        return 'rational' if r.get('instance') in GENFER_DICE else None
+    return r.get('variant')
+
+
 def reference_records(records):
     """The records an answer is checked against, of `records` (one
     instance's): those that answered (ok, a non-empty dict of finite
     answers, reference_answers's), in REFERENCE_ORDER, then tddlog's
     default arm (`auto`; another arm may answer
     other queries). An Ace record stands with its reference_answers alone,
-    a copy. The first is the instance's reference."""
+    a copy. Where none answered so, those of the evidence found
+    inconsistent, in the same order. The first is the instance's reference."""
     def rank(r):
         for k, (s, v) in enumerate(REFERENCE_ORDER):
-            if r['system'] == s and v in (None, r.get('variant')):
+            if r['system'] == s and v in (None, reference_variant(r)):
                 return k
         return len(REFERENCE_ORDER) if r['system'] == 'tddlog' and r.get('variant') in (None, 'auto') else None
     answered = []
@@ -1735,6 +1779,13 @@ def reference_records(records):
         a = reference_answers(r)
         if isinstance(a, dict) and a and all(isinstance(p, (int, float)) and math.isfinite(p) for p in a.values()):
             answered.append(r if a is r.get('answers') else dict(r, answers=a))
+    if not answered:
+        # where none answers a query, those that find the evidence inconsistent: a
+        # program whose evidence has probability 0 and that asks nothing else (Circulette's
+        # ct_ALU_Controller, which no fault fails), where a record that does not say so
+        # answers wrongly
+        answered = [r for r in records if r.get('status') == 'ok' and rank(r) is not None
+                    and r.get('answers') == 'inconsistent']
     return sorted(answered, key=rank)
 
 
@@ -2313,12 +2364,38 @@ def alea_answers(qs, comps):
     return answers
 
 
+# The roulette suite's families that Alea.jl reads in its own language:
+# Alea.jl's own diamond, and the ladder's port, Alea.jl having none (data/alea/README.md,
+# verification), each run by alea_bench.jl with its size as N.
+ALEA_PROGRAMS = {f: os.path.join(ROOT, 'data', 'alea', 'verification', f'{f}.jl') for f in ('diamond', 'ladder')}
+
+
+def alea_program(args, gargs):
+    """The Alea.jl program of an instance of ALEA_PROGRAMS's families and its
+    setting, as alea_command takes them; None for another instance."""
+    if args.suite == 'roulette' and gargs[0] == 'gen_roulette.py' and gargs[1] in ALEA_PROGRAMS:
+        return [ALEA_PROGRAMS[gargs[1]], f'N={gargs[2]}']
+    return None
+
+
+def alea_program_answers(path, answers):
+    """The answers to the queries of the instance's program at `path` from
+    those of its Alea.jl program (alea_program), whose value is a tuple of
+    Booleans: the K-th component's `qK`, as Alea.jl names it and as the
+    circuit Alea.jl exports asks it, answers the K-th query. ValueError
+    where they do not line up (alea_answers)."""
+    comps = [{'true': answers[f'q{k}']} for k in range(1, len(answers) + 1) if f'q{k}' in answers]
+    return alea_answers(queries(path), comps)
+
+
 def run_alea(args, name, path):
     """Alea.jl on the Dice program behind a `dice`, `nodice`, roulette, geni or `bn` instance
     (`dice_source`), translated by dice2alea.py, or on the Alea.jl program
     of an instance written from one (`run_alea_program`): a network as one
     program whose value is the tuple of its queried variables, all answered
-    by one `pr`. The translation is not timed, but bounded by
+    by one `pr`. On the families of ALEA_PROGRAMS, the Alea.jl program
+    there, its Boolean components' answers named as the instance's
+    queries, in order. The translation is not timed, but bounded by
     translation_bound (a harness time-out past it, so that a lane cannot
     stall); the seconds are the Julia process's, and `inproc_seconds` what
     it reports for building the program and `pr`
@@ -2326,6 +2403,15 @@ def run_alea(args, name, path):
     family, gargs = instances(args)[name]
     if gargs[0] == 'alea_bench.jl':
         return run_alea_program(args, gargs[1:])
+    own = alea_program(args, gargs)
+    if own is not None:
+        r = run_alea_program(args, own)
+        if r['status'] != 'ok':
+            return r
+        try:
+            return dict(r, answers=alea_program_answers(path, r['answers']))
+        except ValueError as x:
+            return {'status': 'error', 'seconds': r['seconds'], 'error': f'alea: {x}'}
     source = dice_source(args, name)
     if source is None:
         return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for family {family}'}
@@ -2354,11 +2440,12 @@ def run_alea(args, name, path):
     return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers, 'stats': stats}
 
 
-def alea_command(args, mode, program, prefix=None, warm_below=None):
-    """The command that runs alea_bench.jl under the `--alea` template on
-    `program`, an instance's generator arguments after `alea_bench.jl`:
-    the program's path, then the NAME=VALUE it is run with (`--set`)."""
-    cmd = args.alea.format(file=ALEA_BENCH, dir=HERE, base=os.path.basename(ALEA_BENCH)).split() + [mode]
+def alea_command(args, mode, program, prefix=None, warm_below=None, template=None):
+    """The command that runs alea_bench.jl under the `--alea` template (or
+    `template`, --alea-tddlog's) on `program`, an instance's generator
+    arguments after `alea_bench.jl`: the program's path, then the
+    NAME=VALUE it is run with (`--set`)."""
+    cmd = (template or args.alea).format(file=ALEA_BENCH, dir=HERE, base=os.path.basename(ALEA_BENCH)).split() + [mode]
     if warm_below is not None:
         cmd += ['--warm-below', f'{warm_below:g}']
     for setting in program[1:]:
@@ -2501,7 +2588,7 @@ def roulette_network_answers(names, values):
     return printed
 
 
-def roulette_program(args, name):
+def roulette_program(args, name, checkout=None):
     """The Racket program and arguments Roulette (neuppl/roulette's main,
     docs/baselines.md section 11) runs an instance with, under the variant
     rsdd. A Bayesian network, data/roulette/bn.rkt on its BIF file and what
@@ -2512,10 +2599,12 @@ def roulette_program(args, name):
     instance's Dice program translated by dice2roulette.py
     (`roulette_translate`), which prints each component's distribution
     (`roulette K VALUE P`). On --suite circulette, circulette.rkt on the
-    instance's netlist (`run_circulette`)."""
+    instance's netlist (`run_circulette`), of the Circulette `checkout`
+    (by default --circulette-benchmarks, which Roulette's Racket compiles;
+    Roulette+tddlog's is --circulette-tddlog)."""
     if args.suite == 'circulette':
-        return (os.path.join(args.circulette_benchmarks, 'circulette.rkt'),
-                [os.path.abspath(os.path.join(args.dir, name + '.cql'))])
+        return (os.path.join(checkout or args.circulette_benchmarks, 'circulette.rkt'),
+                [original(instances(args)[name][1], '', os.path.join(args.dir, name))])
     bif = roulette_bif(args, name)
     if bif is not None:
         return os.path.join(ROULETTE_DATA, 'bn.rkt'), [bif[0], bif[1]]
@@ -2614,10 +2703,10 @@ def roulette_masses(args, label, source, joint, budget):
 def roulette_source(args, name, prog):
     """The program Roulette runs on an instance written where it is a
     translation: the instance's Dice program by dice2roulette.py into
-    `prog`, outside --suite roulette and the Bayesian networks
-    (`roulette_bif`). An error record where there is none or it fails, else
-    None."""
-    if args.suite == 'roulette' or roulette_bif(args, name) is not None:
+    `prog`, outside --suite roulette, --suite circulette (circulette.rkt on
+    the netlist) and the Bayesian networks (`roulette_bif`). An error record
+    where there is none or it fails, else None."""
+    if args.suite in ('roulette', 'circulette') or roulette_bif(args, name) is not None:
         return None
     source = dice_source(args, name)
     if source is None:
@@ -2694,19 +2783,20 @@ RT_FAILED = re.compile(r'^⊥\d*$')
 
 
 def roulette_tddlog_accepts(args, name):
-    """Roulette+tddlog's instances: those of --suite roulette, the Bayesian
-    networks Roulette reads in its BN language (`roulette_bif`), and the
-    Dice programs Roulette runs through dice2roulette.py: the Dice paper's
+    """Roulette+tddlog's instances: those of --suite roulette and --suite
+    circulette (circulette.rkt on the netlist), the Bayesian networks
+    Roulette reads in its BN language (`roulette_bif`), and the Dice
+    programs Roulette runs through dice2roulette.py: the Dice paper's
     (data/dice, --suite standard and indicators), noDice's (data/nodice,
     --suite ppl) and Geni's (gen_geni.py's, --suite geni). Not a circuit's
     Dice programs nor a Markov network's, whose Roulette+tddlog would be
     Alea.jl's or the network's own reader with more steps between."""
-    if args.suite == 'roulette':
+    if args.suite in ('roulette', 'circulette'):
         return True
     gargs = instances(args)[name][1]
     if gargs[0] in ('dice2problog.py', 'gen_geni.py'):
         return True
-    if args.suite == 'circulette' or gargs[0] != 'gen_bn.py':
+    if gargs[0] != 'gen_bn.py':
         return False
     key = tuple(gargs)
     if key not in BAYESIAN:
@@ -2773,6 +2863,15 @@ def roulette_tddlog_atom(family, atom, value, dist):
     return atom
 
 
+def tddlog_on_circuit(args, pl, limit, pe=False):
+    """tddlog (--tddlog's binary, strategy auto) on the ProbLog program
+    `pl` that an integration's exporter wrote (Roulette's tddlog engine,
+    Alea.jl's tddlog backend), within `limit` seconds, at least one; with
+    `pe`, the probability of its evidence (a Circulette netlist's)."""
+    return timed([args.tddlog, '--stats', '--precision', '17'] + tddlog_flags('auto')
+                 + (['--evidence-probability'] if pe else []) + [pl], max(1.0, limit))
+
+
 def run_roulette_tddlog(args, name, path):
     """Roulette+tddlog on an instance: Roulette's program for it
     (`roulette_program`, variant rsdd) run on Roulette's tddlog engine under
@@ -2791,9 +2890,14 @@ def run_roulette_tddlog(args, name, path):
     (2K-1)-th call, the 2K-th its observations', and a circuit of another
     number of calls is an error), a translated Dice
     program's components as run_roulette reads them
-    (roulette_tddlog_components)."""
+    (roulette_tddlog_components). On --suite circulette, circulette.rkt of
+    --circulette-tddlog on the netlist, run where the netlist is as
+    run_circulette runs it, and tddlog with --evidence-probability: the
+    posteriors keyed as the queries of the program tddlog's reader writes of
+    the netlist (`circulette_circuit_answers`), P(fail) kept as `p_fail`."""
     family, _ = instances(args)[name]
-    prog, rest = roulette_program(args, name)
+    ct = args.suite == 'circulette'
+    prog, rest = roulette_program(args, name, args.circulette_tddlog if ct else None)
     err = roulette_source(args, name, prog)
     if err:
         return err
@@ -2801,7 +2905,8 @@ def run_roulette_tddlog(args, name, path):
     err = roulette_make(args, racket, prog)
     if err:
         return err
-    x = timed(roulette_command(racket, prog, *RT_ENGINE) + rest, args.timeout)
+    x = timed(roulette_command(racket, prog, *RT_ENGINE) + rest, args.timeout,
+              **({'cwd': os.path.dirname(rest[0])} if ct else {}))
     if x['status'] != 'ok':
         return x
     m = RT_SUMMARY.search(x.get('stderr', ''))
@@ -2814,8 +2919,7 @@ def run_roulette_tddlog(args, name, path):
     write_new(pl, x['stdout'])
     stats = {'program_s': round(program_s, 3), 'circuit_s': round(circuit_s, 3),
              'circuit_bytes': len(x['stdout'].encode())}
-    t = timed([args.tddlog, '--stats', '--precision', '17'] + tddlog_flags('auto') + [pl],
-              max(1.0, args.timeout - program_s - circuit_s))
+    t = tddlog_on_circuit(args, pl, args.timeout - program_s - circuit_s, pe=ct)
     os.remove(pl)   # the circuit is the program's, which the run keeps
     seconds = x['seconds'] + t['seconds']
     if t['status'] != 'ok':
@@ -2825,6 +2929,13 @@ def run_roulette_tddlog(args, name, path):
     if charge > args.timeout:
         return {'status': 'timeout', 'seconds': seconds, 'stats': stats}
     answers = parse_answers(t['stdout'])
+    if ct:
+        try:
+            printed, stats['p_fail'] = circulette_circuit_answers(
+                x['stdout'], answers, parse_evidence_probability(t['stdout']), circulette_gates(path))
+        except (OSError, ValueError) as e:
+            return {'status': 'error', 'seconds': seconds, 'error': f'roulette-tddlog: {e}'}
+        return {'status': 'ok', 'seconds': seconds, 'answers': printed, 'stats': stats}
     try:
         if answers == 'inconsistent':
             raise ValueError("the circuit's evidence is inconsistent")
@@ -2860,88 +2971,159 @@ def run_roulette_tddlog(args, name, path):
 # posterior given the failure of each single, pair and triple of faults
 # whose joint weight is above 0, the pairs' above 2e-4 and the triples'
 # above 1e-8 (CT_PRINTED_ABOVE, by the number of faults; printed_answers).
+# Circulette numbers the faults 0 to n - 1 in the order of the netlist's
+# live logic gates, the order of the gate_* facts of the program tddlog's
+# reader writes of it (NAME.pl, `tddlog --program NAME.cql`;
+# circulette_gates). Every system's answers are keyed as that program's
+# queries, fault(G), faults(A,B) and faults(A,B,C) for gate ids A < B < C
+# (circulette_atom): tddlog's and the ProbLog family's as they print them,
+# Roulette's and Roulette+tddlog's through the gates' order.
 CT_PRINTED_ABOVE = {1: 0.0, 2: 2e-4, 3: 1e-8}
 CT_FAIL = re.compile(r'^Diagnosis: \(Circuit-Fault: #t\) \| Prob: (\S+)$', re.M)
 CT_FAULTS = re.compile(r'^Gates? (\d+)(?: & (\d+))?(?: & (\d+))? Fault \| Posterior P\([^)]*\): (\S+)$', re.M)
-# The note of the engine's program that counts the calls of `infer`.
+CT_GATE = re.compile(r'^gate_(?:and|or|xor|not)\((\d+),', re.M)
+CT_QUERY = re.compile(r'fault\(\d+\)|faults\(\d+,\d+(?:,\d+)?\)')
+# The note of Roulette's tddlog engine's circuit that counts the calls of `infer`.
 CT_CALLS = re.compile(r'^% infer was called (\d+) times', re.M)
+
+
+def circulette_gates(path):
+    """The gate ids of the program tddlog's reader writes of a netlist
+    (NAME.pl), in the order of its gate_* facts: Circulette's faults 0 to
+    n - 1."""
+    with open(path) as f:
+        return [int(g) for g in CT_GATE.findall(f.read())]
+
+
+def circulette_atom(gates, faults):
+    """The query of the reader's program that asks the posterior of
+    Circulette's faults `faults` (one to three of its indices, of `gates`)."""
+    ids = sorted(gates[i] for i in faults)
+    return f'fault({ids[0]})' if len(ids) == 1 else f"faults({','.join(map(str, ids))})"
+
+
+def circulette_size(atom):
+    """How many faults a query of the reader's program asks the posterior
+    of: 1 for fault(G), 2 or 3 for faults(...); None for another atom."""
+    a = re.sub(r'\s+', '', atom)
+    return a.count(',') + 1 if CT_QUERY.fullmatch(a) else None
+
+
+def circulette_asked(n):
+    """The posteriors Circulette asks of n faults: every single, pair and triple."""
+    return n + math.comb(n, 2) + math.comb(n, 3)
 
 
 def circulette_faults(calls):
     """The n faults of a run of circulette.rkt that called `infer` `calls`
     times: P(fail)'s, and one for each single, pair and triple of faults."""
     n = 0
-    while 1 + n + math.comb(n, 2) + math.comb(n, 3) < calls:
+    while 1 + circulette_asked(n) < calls:
         n += 1
-    if 1 + n + math.comb(n, 2) + math.comb(n, 3) != calls:
+    if 1 + circulette_asked(n) != calls:
         raise ValueError(f'{calls} calls of infer are not 1 + n + C(n,2) + C(n,3) for any n')
     return n
 
 
-def circulette_queries(path):
-    """(n, {K: I}, fact) of a Circulette instance's ProbLog program: its n
-    faults, from the calls of `infer` the program's note counts, which are
-    P(fail)'s and one for each single, pair and triple of faults, 1 + n +
-    C(n, 2) + C(n, 3); the index I of the value #t of each query qK it asks;
-    and whether the failure's query, q1's #t, is a fact, the failure being
-    the evidence, so that each other query's answer is its posterior."""
-    with open(path) as f:
-        text = f.read()
+def circulette_order(n):
+    """The faults that each call of `infer` after P(fail)'s asks of n faults,
+    in the order of circulette.rkt's loops: the singles, the pairs and the
+    triples, each ascending, the second call's first."""
+    yield from ((i,) for i in range(n))
+    yield from itertools.combinations(range(n), 2)
+    yield from itertools.combinations(range(n), 3)
+
+
+def circulette_rekey(answers, gates):
+    """Answers keyed as the queries of a circuit that Roulette's tddlog
+    engine writes of circulette.rkt's run on a netlist of the gates
+    `gates`, qK(I) for the K-th call of `infer` (I the index of its value
+    #t), keyed as the queries of the program tddlog's reader writes of the
+    netlist (circulette_atom), the failure's call, q1, left out: those of
+    Roulette+tddlog (circulette_circuit_answers) and of the systems that
+    read that circuit before tddlog read the netlists. A key
+    of another form, a call past the last or a call answered twice is an
+    error."""
+    by_call = {}
+    for q, p in answers.items():
+        m = re.fullmatch(r'q(\d+)\(\d+\)', q)
+        if m is None:
+            raise ValueError(f'{q} is no query of the circuit')
+        k = int(m.group(1))
+        if k in by_call:
+            raise ValueError(f'call {k} of infer answered twice')
+        by_call[k] = p
+    by_call.pop(1, None)
+    last = 1 + circulette_asked(len(gates))
+    if by_call and not 2 <= min(by_call) <= max(by_call) <= last:
+        raise ValueError(f'calls {min(by_call)} to {max(by_call)} of infer, of {last} for {len(gates)} faults')
+    out = {}
+    for k, faults in zip(itertools.count(2), circulette_order(len(gates))):
+        if not by_call:
+            break
+        if k in by_call:
+            out[circulette_atom(gates, faults)] = by_call.pop(k)
+    return out
+
+
+def circulette_circuit_answers(text, answers, log10_pe, gates):
+    """(the posteriors, P(fail)) of tddlog's answers `answers`, with log10
+    P(e) (--evidence-probability), to the circuit `text` that Roulette's
+    tddlog engine writes of circulette.rkt's run on a netlist of the gates
+    `gates`: its queries are the calls of `infer` (CT_CALLS, 1 + n + C(n,2)
+    + C(n,3) for the gates' n faults), the first, q1, the failure, whose
+    guard is the evidence (a fact; `q1(I) :- fail.` where no fault fails the
+    outputs), so that P(fail) is P(e) times its answer, and each other
+    answer is a posterior (circulette_rekey). Where P(fail) is 0 there is no
+    posterior, and the answers are 'inconsistent', as tddlog's on the
+    netlist."""
     m = CT_CALLS.search(text)
     if m is None:
-        raise ValueError(f'{path} does not count the calls of infer')
-    n = circulette_faults(int(m.group(1)))
-    asked = {int(k): int(i) for k, i in re.findall(r'^% q(\d+)\((\d+)\): #t$', text, re.M)}
-    if 1 not in asked:
-        raise ValueError(f'{path} does not ask the failure (q1, #t)')
-    return n, asked, re.search(rf'^q1\({asked[1]}\)\.$', text, re.M) is not None
-
-
-def circulette_p_fail(path, log10_pe, answers):
-    """P(fail) of a run that answered a Circulette instance's program
-    (`answers`) and printed log10 P(e): P(e) times the answer of the
-    failure's query, q1's #t, which is 1 where the failure is the evidence
-    and 0 where no fault makes the outputs wrong."""
-    _, asked, _ = circulette_queries(path)
-    q = f'q1({asked[1]})'
-    if not isinstance(answers, dict) or q not in answers:
-        raise ValueError(f'no answer for {q}')
-    return 10 ** log10_pe * answers[q]
-
-
-def circulette_call(n, faults):
-    """The call of `infer` (from 1, P(fail)'s) that asks for the faults
-    `faults` (ascending, one to three of n) in circulette.rkt's loops."""
-    if len(faults) == 1:
-        return 2 + faults[0]
-    if len(faults) == 2:
-        i, j = faults
-        return 2 + n + i * n - i * (i + 1) // 2 + j - i - 1
-    i, j, k = faults
-    before = sum(math.comb(n - 1 - a, 2) for a in range(i)) + sum(n - 1 - b for b in range(i + 1, j)) + k - j - 1
-    return 2 + n + math.comb(n, 2) + before
+        raise ValueError('the circuit does not count the calls of infer')
+    calls = int(m.group(1))
+    if circulette_faults(calls) != len(gates):
+        raise ValueError(f'the circuit asks of {circulette_faults(calls)} faults, and the netlist has '
+                         f'{len(gates)} gates')
+    asked = {}
+    for k, i, value in RT_VALUE.findall(text):
+        if value == '#t':
+            asked.setdefault(int(k), []).append(f'q{k}({i})')
+    if sorted(asked) != list(range(1, calls + 1)) or any(len(qs) != 1 for qs in asked.values()):
+        raise ValueError(f'the circuit does not ask the value #t of each of its {calls} calls once')
+    if log10_pe is None:
+        raise ValueError('tddlog prints no P(e)')
+    if answers == 'inconsistent' and log10_pe == -math.inf:
+        return 'inconsistent', 0.0
+    if not isinstance(answers, dict):
+        raise ValueError("tddlog answers none of the circuit's queries")
+    missing = [qs[0] for qs in asked.values() if qs[0] not in answers]
+    if missing:
+        raise ValueError(f'tddlog answers no {missing[0]}')
+    failure = answers[asked[1][0]]
+    p_fail = 10 ** log10_pe * failure
+    if p_fail == 0:
+        return 'inconsistent', 0.0
+    if abs(failure - 1) > CHECK_NOISE:
+        raise ValueError("the circuit's evidence is not the failure, so its answers are no posteriors")
+    return circulette_rekey({qs[0]: answers[qs[0]] for qs in asked.values()}, gates), p_fail
 
 
 def printed_answers(rec, ref):
     """The answers of `rec`, a record of an instance, against the reference
     record `ref`. Roulette's on a Circulette instance computes every
-    posterior and prints those above CT_PRINTED_ABOVE, so a query it leaves
-    out where the reference's answer is at or below its threshold (within
+    posterior and prints those above CT_PRINTED_ABOVE (by the number of
+    faults the query asks of, circulette_size), so a query it leaves out
+    where the reference's answer is at or below its threshold (within
     CHECK_NOISE) is answered: the reference's answer stands for it. A query
     left out above its threshold stays left out, and the record answers less
     than was asked."""
     a = rec.get('answers')
-    calls = (ref.get('export') or {}).get('queries')
-    if rec.get('system') != 'roulette' or rec.get('instance') not in CIRCULETTE or not isinstance(a, dict) or not calls:
+    if rec.get('system') != 'roulette' or rec.get('instance') not in CIRCULETTE or not isinstance(a, dict) \
+            or not isinstance(ref.get('answers'), dict):
         return a
-    n = circulette_faults(calls)
-
-    def faults(k):      # of the k-th call: P(fail)'s, then the singles, the pairs and the triples
-        return 0 if k == 1 else 1 if k <= 1 + n else 2 if k <= 1 + n + math.comb(n, 2) else 3
     full = dict(a)
     for q, p in ref['answers'].items():
-        m = re.fullmatch(r'q(\d+)\(\d+\)', q)
-        k = faults(int(m.group(1))) if m and q not in a else 0
+        k = None if q in a else circulette_size(q)
         if k and p <= CT_PRINTED_ABOVE[k] + CHECK_NOISE:
             full[q] = p
     return full
@@ -2953,11 +3135,10 @@ def run_circulette(args, name, path, variant):
     NAME.cql`), Racket the --roulette template's (with roulette-lib and
     Circulette), rsdd its engine, compiled by `raco make` before the clock.
     It runs under roulette_timer.rkt (`roulette_timed`).
-    The posteriors it prints (CT_FAULTS) are keyed as the queries of the
-    instance's ProbLog program, qK(I) for the K-th call of `infer`
-    (circulette_call) and its value #t, and the failure's query q1 answers
-    1 (0 where P(fail) is 0); P(fail) is kept as `p_fail`, which tddlog's
-    --evidence-probability gives too (circulette_p_fail)."""
+    The posteriors it prints (CT_FAULTS, Circulette's faults by index) are
+    keyed as the queries of the program tddlog's reader writes of the
+    netlist (NAME.pl, `path`; circulette_atom), and P(fail) is kept as
+    `p_fail`, which tddlog's --evidence-probability gives as P(e)."""
     prog, rest = roulette_program(args, name)
     r = roulette_timed(args, prog, rest, args.timeout, cwd=os.path.dirname(rest[0]))
     if r['status'] != 'ok':
@@ -2966,53 +3147,27 @@ def run_circulette(args, name, path, variant):
     if m is None:
         tail = (r.get('stderr', '').strip() or r['stdout'].strip()).splitlines()
         return {'status': 'error', 'seconds': r['seconds'], 'error': 'no answers: ' + (tail[-1] if tail else 'empty output')}
-    p_fail = float(m.group(1))
-    stats = {'p_fail': p_fail, 'inproc_seconds': r['inproc_seconds']}
-    printed = CT_FAULTS.findall(r['stdout'])
-    if not os.path.exists(path):
-        # The export is Circulette's run with an engine that answers nothing,
-        # so it ends sooner than this one where its bound is above the limit.
-        return {'status': 'error', 'seconds': r['seconds'],
-                'error': f'{len(printed)} posteriors and no program to key them by ({name}.export.json)'}
+    stats = {'p_fail': float(m.group(1)), 'inproc_seconds': r['inproc_seconds']}
     try:
-        n, asked, fact = circulette_queries(path)
-        if p_fail > 0 and not fact:
-            raise ValueError('the program\'s evidence is not the failure, so its answers are no posteriors')
-        # the failure's query: 1 given the failure, 0 where no fault makes the outputs wrong
-        answers = {f'q1({asked[1]})': 1.0 if p_fail > 0 else 0.0}
-        for *faults, p in printed:
+        gates = circulette_gates(path)
+        answers = {}
+        for *faults, p in CT_FAULTS.findall(r['stdout']):
             fs = [int(f) for f in faults if f]
-            k = circulette_call(n, fs)
-            if k not in asked:
-                raise ValueError(f'faults {fs} are call {k}, which the program does not ask')
-            answers[f'q{k}({asked[k]})'] = float(p)
-    except ValueError as x:
+            if max(fs) >= len(gates) or len(set(fs)) != len(fs):
+                raise ValueError(f'faults {fs}, and the netlist has {len(gates)} gates')
+            q = circulette_atom(gates, fs)
+            if q in answers:
+                raise ValueError(f'the posterior of faults {fs} printed twice')
+            answers[q] = float(p)
+        if stats['p_fail'] == 0:
+            # no posterior given a failure of probability zero: tddlog's
+            # 'evidence is inconsistent' (parse_answers)
+            if answers:
+                raise ValueError(f'{len(answers)} posteriors given a failure of probability 0')
+            answers = 'inconsistent'
+    except (OSError, ValueError) as x:
         return {'status': 'error', 'seconds': r['seconds'], 'error': f'circulette: {x}'}
     return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers, 'stats': stats}
-
-
-def circulette_export(args, name):
-    """The outcome of a Circulette instance's export (NAME.export.json,
-    gen_circulette), or None for an instance of another suite."""
-    if args.suite != 'circulette':
-        return None
-    with open(os.path.join(args.dir, name + '.export.json')) as f:
-        return json.load(f)
-
-
-def circulette_lost(args, name, system):
-    """The record of a system that reads a Circulette instance's ProbLog
-    program, or a file made from it, where its export wrote none: out of time
-    at the limit where the export passed --export-timeout, else failed with
-    the export's error. None where the program is there, and for Roulette,
-    which reads the netlist."""
-    export = circulette_export(args, name)
-    if export is None or export['status'] == 'ok' or system == 'roulette':
-        return None
-    if export['status'] == 'timeout':
-        return {'status': 'timeout', 'seconds': args.timeout,
-                'error': f"Roulette's tddlog engine: no program within {export['seconds']:g} s"}
-    return {'status': 'error', 'seconds': 0, 'error': f"Roulette's tddlog engine: {export.get('error', 'failed')}"}
 
 
 # --- Systems for probabilistic programs (rule 15: every exact method with an
@@ -3633,6 +3788,78 @@ program_system('sppl', "SPPL (Saad, Rinard and Mansinghka, PLDI 2021) on its own
                "and run by sppl_dice.py; e.g. 'SPPL/venv/bin/python -I {file}'", accepts_sppl, run_sppl)
 
 
+def accepts_alea_tddlog(args, name):
+    return alea_program(args, instances(args)[name][1]) is not None
+
+
+ALEA_EXPORT_TIMES = ('alea_seconds', 'alea_compile_seconds', 'alea_warm_seconds')
+
+
+def run_alea_tddlog(args, name, path):
+    """Alea.jl+tddlog on an instance of ALEA_PROGRAMS'
+    families, beside plain tddlog on the instance's ProbLog program:
+    Alea.jl runs the instance's Alea.jl program (alea_program) up to the
+    circuit it builds and writes it as a ProbLog program, by the export
+    the bitblast suite's gen makes (alea_command's `export` under
+    --alea-tddlog's template, timed warm as Alea.jl's own record is), and
+    tddlog answers from that program (tddlog_on_circuit). The time
+    charged, kept as `inproc_seconds` (own_seconds), is the export's own,
+    its warm run where it made one (else its first less Julia's
+    compilation), and tddlog's run; the record's seconds are the two
+    processes' wall times. The record holds the export: charge.py charges
+    an export to the readers of the bitblast suite's circuits alone
+    (TRANSLATE), so it adds nothing here. The circuit's answers are named
+    as Alea.jl's are (alea_program_answers); its files go once tddlog has
+    read it, as Roulette+tddlog's do."""
+    family, gargs = instances(args)[name]
+    own = alea_program(args, gargs)
+    if own is None:
+        return {'status': 'error', 'seconds': 0, 'error': f'alea-tddlog: no Alea.jl program for family {family}'}
+    prefix = os.path.abspath(os.path.join(args.dir, f'{name}.alea'))
+    pl = prefix + '.pl'
+    try:
+        x = timed(alea_command(args, 'export', own, prefix, warm_below=args.timeout / 3,
+                               template=getattr(args, 'alea-tddlog')), args.timeout)
+        if x['status'] != 'ok':
+            return x
+        times = {}
+        for line in x['stdout'].splitlines():
+            f = line.split()
+            if len(f) == 2 and f[0] in ALEA_EXPORT_TIMES:
+                times[f[0]] = float(f[1])
+        if 'alea_seconds' not in times or not os.path.exists(pl):
+            return {'status': 'error', 'seconds': x['seconds'], 'error': 'alea-tddlog: alea_bench.jl export wrote no circuit'}
+        jit = times.get('alea_compile_seconds', 0.0)
+        export_s = times.get('alea_warm_seconds', times['alea_seconds'] - (0.0 if math.isnan(jit) else jit))
+        stats = {'export_s': round(export_s, 3), **circuit_size(pl)}
+        t = tddlog_on_circuit(args, pl, args.timeout - export_s)
+    finally:
+        for f in [pl, prefix + '.dicemap'] + glob.glob(glob.escape(prefix) + '__d*.dice'):
+            if os.path.exists(f):
+                os.remove(f)
+    seconds = x['seconds'] + t['seconds']
+    if t['status'] != 'ok':
+        return {**t, 'seconds': seconds, 'stats': stats}
+    charge = export_s + t['seconds']
+    stats.update(tddlog_s=round(t['seconds'], 3), inproc_seconds=round(charge, 3))
+    if charge > args.timeout:
+        return {'status': 'timeout', 'seconds': seconds, 'stats': stats}
+    answers = parse_answers(t['stdout'])
+    try:
+        if answers == 'inconsistent':
+            raise ValueError("the circuit's evidence is inconsistent")
+        answers = alea_program_answers(path, answers)
+    except ValueError as e:
+        return {'status': 'error', 'seconds': seconds, 'error': f'alea-tddlog: {e}', 'stats': stats}
+    return {'status': 'ok', 'seconds': seconds, 'answers': answers, 'stats': stats}
+
+
+program_system('alea-tddlog', "Alea.jl+tddlog on the roulette suite's diamond and ladder, Alea.jl's own diamond and "
+               "the ladder's port (ALEA_PROGRAMS), which Alea.jl runs up to the circuit it exports (alea_bench.jl "
+               "export) for tddlog to answer; the command template of --alea's Julia, e.g. "
+               "'env JULIA_DEPOT_PATH=... julia --project=ALEA {file}'", accepts_alea_tddlog, run_alea_tddlog)
+
+
 program_system('nodice', "noDice (Gürtler and Kaminski, OOPSLA 2026) on the Dice programs, the circuits' included, as "
                "Dice runs them; e.g. 'NODICE/_build/default/bin/nDice.exe {file}'", accepts_translated,
                lambda args, name, path: run_dice(args, name, path, 'nodice'))
@@ -3726,17 +3953,19 @@ def aspmc_conditioned(text):
     return '\n'.join(lines) + '\n'
 
 
-def parse_aspmc(out):
+def parse_aspmc(out, conditioned=False):
     """aspmc prints `[RESULT] aspmc: <query>: <probability>`, on stderr.
-    For a program asked through `aspmc_conditioned`, the answer to Q is
-    P(bench_qe_Q) / P(bench_e), and 'inconsistent' where P(bench_e) is 0."""
+    For a program asked through `aspmc_conditioned` (`conditioned`), the
+    answer to Q is P(bench_qe_Q) / P(bench_e), and 'inconsistent' where
+    P(bench_e) is 0, or where aspmc prints nothing, bench_e an atom its
+    grounder removed as no rule derives it."""
     res = {}
     for line in out.splitlines():
         m = re.match(r'\[RESULT\] aspmc:\s+(.*):\s+([0-9.eE+-]+)\s*$', line)
         if m:
             res[re.sub(r'\s+', '', m.group(1))] = float(m.group(2))
     if ASPMC_E not in res:
-        return res
+        return 'inconsistent' if conditioned and not res else res
     if res[ASPMC_E] == 0:
         return 'inconsistent'
     return {q.removeprefix(ASPMC_QE): p / res[ASPMC_E] for q, p in res.items() if q.startswith(ASPMC_QE)}
@@ -3763,10 +3992,53 @@ def aspmc_is(text):
     return ASPMC_IS.sub(r'\1 = ', text)
 
 
+# clingo projects an anonymous variable out of a body of two or more
+# literals into an auxiliary atom, which has no symbol, and aspmc's ProbLog
+# front end looks each ground rule's head up by its symbol: `c :- o(W),
+# b(W, _).` stops it with a KeyError in _process_grounding. A named variable
+# is not projected, so each `_` is given a name of its own, which means the
+# same (docs/baselines.md section 6). aspmc's grammar reads only
+# `[A-Z][a-zA-Z0-9]*` as a variable, and any other variable (`_V1`, `_X`,
+# `A_b`) as a constant: left out of the variables that tell a probabilistic
+# rule's groundings apart, `_V1` gave cplint's eruption 0.42 for ProbLog's
+# 0.588. So every variable it cannot read is named in that form too.
+ASPMC_VARIABLE = re.compile(r"""'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.)*"|%[^\n]*|/\*.*?\*/|0'\\?.|"""
+                            r"""(?P<v>(?<!\w)[A-Z_]\w*)""", re.S)
+ASPMC_READS = re.compile(r'[A-Z][a-zA-Z0-9]*')
+
+
+def aspmc_variables(text):
+    """The ProbLog program `text` with each variable aspmc's grammar cannot
+    read named `V1`, `V2`...: each `_` a name of its own, each other name
+    (`_X`, `A_b`) one name wherever it occurs, and a longer prefix where the
+    program has a name of that form already; quoted atoms, strings, comments
+    and the variables it reads are left as they are."""
+    prefix = 'V'
+    while re.search(rf'(?<!\w){prefix}\d', text):
+        prefix += 'V'
+    count = itertools.count(1)
+    names = {}
+
+    def name(m):
+        v = m.group('v')
+        if v is None or ASPMC_READS.fullmatch(v):
+            return m.group(0)
+        if v == '_':
+            return f'{prefix}{next(count)}'
+        if v not in names:
+            names[v] = f'{prefix}{next(count)}'
+        return names[v]
+    return ASPMC_VARIABLE.sub(name, text)
+
+
 # aspmc's ProbLog front end refuses much of what ProbLog reads: fractions as
 # probabilities (`1/3::`), lists, facts and queries with variables (its
 # grounder clingo's "unsafe variables"); it refused 109 of the ProbLog
-# tutorial's 122 programs. A program it
+# tutorial's 122 programs. Where it stops with a KeyError reading clingo's
+# grounding (problogprogram.py's _process_grounding) on the program
+# aspmc_variables writes, it fails on a program its language expresses,
+# ProbLog reading the same file: an error, not a refusal, and no ground
+# program is asked for. A program it
 # refuses so is given to it again as the ground program tddlog prints
 # (`tddlog --ground`, as Scallop reads it), every predicate and constant
 # renamed to a plain name (`aspmc_ground`); the grounding is part of that
@@ -3875,7 +4147,7 @@ def aspmc_run(args, name, path):
         conditioned = aspmc_conditioned(text)
     except ValueError as e:
         return {'status': 'error', 'seconds': 0.0, 'error': str(e)}
-    program = aspmc_is(aspmc_numbers(text if conditioned is None else conditioned))
+    program = aspmc_variables(aspmc_is(aspmc_numbers(text if conditioned is None else conditioned)))
     if program != text:
         path = os.path.join(d, name + '.pl')
         write_new(path, program)
@@ -3883,7 +4155,7 @@ def aspmc_run(args, name, path):
     r = timed([python, '-u', '-m', 'aspmc.main', '-m', 'problog', '-c', '-v', 'result',
                os.path.abspath(path)], args.timeout, cwd=d)
     if r['status'] == 'ok':
-        r['answers'] = parse_aspmc(r['stderr'])
+        r['answers'] = parse_aspmc(r['stderr'], conditioned is not None)
         if isinstance(r['answers'], dict):
             for q in asked:
                 if not re.search(r'[(,][A-Z_]', q):
@@ -3895,13 +4167,15 @@ def parse_scallop(out, scl):
     """scli prints `<relation>: {<p>::()}` for a nullary relation, `{}` when
     it has no proof. The query names map back through the comment lines
     `ground2scallop.py` writes, and with evidence the answer is
-    `q<i>e / e`."""
+    `q<i>e / e`, 'inconsistent' where e has no proof."""
     names = dict(re.findall(r'^// query (q\d+) (.*)$', scl, re.M))
     probs = {}
     for line in out.splitlines():
         m = re.match(r'^(\w+): \{(?:([0-9.eE+-]+)::\(\))?\}\s*$', line)
         if m:
             probs[m.group(1)] = float(m.group(2)) if m.group(2) else 0.0
+    if probs.get('e', 1) == 0:
+        return 'inconsistent'
     res = {}
     for q, atom in names.items():
         key = re.sub(r'\s+', '', atom)
@@ -3928,6 +4202,29 @@ def scallop_variant(system, variant):
     SCALLOP_VARIANT: a run before the variant had its name wrote the same
     command as topk followed by K."""
     return SCALLOP_VARIANT if system == 'scallop' and variant == f'topk{SCALLOP_K}' else variant
+
+
+def holds(specs, what):
+    """The holds TAG=SYSTEM[@INSTANCES] of the processing (rerun.py --system-hold,
+    capmerge.py --hold): TAG's records or calls of SYSTEM on the instances the
+    regular expression INSTANCES matches whole (every instance without it) are
+    left out, so that an earlier run's stay in their place. `what` names the
+    option in the error a spec of another form stops with."""
+    out = []
+    for spec in specs:
+        tag, eq, rest = spec.partition('=')
+        system, at, pattern = rest.partition('@')
+        if not eq or not tag or not system or (at and not pattern):
+            raise SystemExit(f'{what} {spec}: not TAG=SYSTEM[@INSTANCES]')
+        out.append((tag, system, re.compile(pattern if at else '.*'), spec))
+    return out
+
+
+def held(hold_list, tag, system, instance):
+    """The spec of the first hold of `hold_list` (holds) on TAG's record or call of
+    `system` on `instance`, or None."""
+    return next((spec for t, s, pattern, spec in hold_list
+                 if t == tag and s == system and pattern.fullmatch(instance)), None)
 
 
 def run_scallop(args, name, path, variant):
@@ -4749,6 +5046,8 @@ def run_psouffle(args, name, path):
                       args.timeout, cwd=d)
         except OSError as x:
             return {'status': 'error', 'seconds': 0.0, 'error': f'PSouffle: {x}', 'stats': stats}
+        if r['status'] == 'error' and INCONSISTENT.search(r.get('error', '')):
+            return {'status': 'ok', 'seconds': r['seconds'], 'answers': 'inconsistent', 'stats': stats}
         if r['status'] != 'ok':
             return r | {'stats': stats}
         try:
@@ -5223,9 +5522,15 @@ def run(args):
         systems += [('roulette', v) for v in args.roulette_variants]
     if getattr(args, 'roulette_tddlog', ''):
         if not any(roulette_tddlog_accepts(args, n) for n in names):
-            raise SystemExit('--roulette-tddlog runs --suite roulette, the Bayesian networks and the Dice programs '
-                             'of data/dice, data/nodice and gen_geni.py, and none is selected')
+            raise SystemExit('--roulette-tddlog runs --suite roulette, the Bayesian networks, the Dice programs '
+                             "of data/dice, data/nodice and gen_geni.py and Circulette's netlists, and none is selected")
+        if args.suite == 'circulette' and not getattr(args, 'circulette_tddlog', ''):
+            raise SystemExit("--roulette-tddlog on --suite circulette runs circulette.rkt of --circulette-tddlog, "
+                             "a Circulette compiled by its Racket, and there is none")
         systems.append(('roulette-tddlog', 'auto'))
+    if getattr(args, 'circulette_tddlog', '') and not (args.suite == 'circulette' and getattr(args, 'roulette_tddlog', '')):
+        raise SystemExit('--circulette-tddlog is the Circulette of --roulette-tddlog on --suite circulette, '
+                         'and neither runs')
     for opt, ps in PROGRAM_SYSTEMS.items():
         if getattr(args, opt, ''):
             if not any(ps['accepts'](args, n) for n in names):
@@ -5366,6 +5671,7 @@ def run_job(args, spec, systems, out, lock, names):
         pe = pe_program(path, os.path.join(args.dir, name + '.pe.pl')) \
             if args.pr and any(s in PE_SYSTEMS for s, _ in systems) else None
         program = series(spec[name][0], name)
+        stem = os.path.join(args.dir, name)
         done, held = {}, []
         for system, variant in system_order(systems, name, getattr(args, 'rotate', None)):
             if system == 'exact' and EXACT.get(spec[name][1][0], ('',))[0] != variant:
@@ -5392,17 +5698,13 @@ def run_job(args, spec, systems, out, lock, names):
                 continue
             src = pe if pe and system in PE_SYSTEMS else path
             LANE.usage = {}   # the memory of the record's commands (timed)
-            # a Circulette instance whose export wrote no program
-            lost = circulette_lost(args, name, system)
             # the systems given the instance through its ground program
-            ground = ground_route(args, name, path, form) if form and not lost else None
+            ground = ground_route(args, name, path, form) if form else None
             rargs, rpath = args, src
             if ground and ground['status'] == 'ok':
                 rargs = argparse.Namespace(**{**vars(args), 'timeout': max(1.0, args.timeout - ground['seconds'])})
                 rpath = ground['ground']
-            if lost:
-                r = lost
-            elif ground and ground['status'] != 'ok':
+            if ground and ground['status'] != 'ok':
                 r = dict(ground)
             elif system == 'dice':
                 r = run_dice(rargs, name, rpath)
@@ -5453,9 +5755,9 @@ def run_job(args, spec, systems, out, lock, names):
                         # program and its count), likewise
                         inputs = list(folded(args, name, spec[name][1], variant)) + folded_data(args, spec[name][1])
                         target = inputs[:1] + (arguments_of(inputs[1]) if os.path.exists(inputs[1]) else [])
-                    elif original(spec[name][1], variant):
-                        # the Dice program or the LPAD itself, likewise
-                        target = inputs = [original(spec[name][1], variant)]
+                    elif original(spec[name][1], variant, stem):
+                        # the Dice program, the LPAD or the netlist itself, likewise
+                        target = inputs = [original(spec[name][1], variant, stem)]
                     cmd = [binary, '--stats', '--precision', '17'] + tddlog_flags(variant) + target
                     if args.suite == 'circulette' and '--evidence-probability' not in cmd:
                         # Circulette's question includes P(fail), the evidence's probability
@@ -5465,6 +5767,8 @@ def run_job(args, spec, systems, out, lock, names):
                 missing = [f for f in inputs if not os.path.exists(f)] if system == 'tddlog' else []
                 r = {'status': 'error', 'seconds': 0.0, 'error': f'no {missing[0]}: rerun bench.py gen'} if missing \
                     else timed(cmd, args.timeout)
+                if system == 'problog' and r['status'] == 'error' and INCONSISTENT.search(r.get('error', '')):
+                    r = {**r, 'status': 'ok', 'stdout': 'evidence is inconsistent\n', 'stderr': ''}
             if ground and ground['status'] == 'ok':   # the grounding and the translation are timed
                 r['seconds'] += ground['seconds']
                 r.setdefault('stats', {})['ground_s'] = round(ground['seconds'], 3)
@@ -5484,12 +5788,9 @@ def run_job(args, spec, systems, out, lock, names):
                     rec['arguments'] = arguments_of(given)
                 if folded_data(args, spec[name][1]):
                     rec['data'] = [os.path.basename(f) for f in folded_data(args, spec[name][1])]
-            elif system == 'tddlog' and original(spec[name][1], variant):
-                # the Dice program or the LPAD, no converted program (rel/charge.py)
-                rec['original'] = os.path.basename(original(spec[name][1], variant))
-            if spec[name][1][0] == 'gen_circulette.py' and system != 'roulette':
-                # Circulette's run up to the hand-off and the program's writing, as gen's export timed them
-                rec['export'] = circulette_export(args, name)
+            elif system == 'tddlog' and original(spec[name][1], variant, stem):
+                # the Dice program, the LPAD or the netlist, no converted program (rel/charge.py)
+                rec['original'] = os.path.basename(original(spec[name][1], variant, stem))
             rec.update(r.get('stats', {}))
             if r['status'] == 'ok' and 'log10_z' in r:
                 rec['log10_z'] = r['log10_z']   # Merlin's PR task and the counters, and Ace's beside its answers
@@ -5512,11 +5813,11 @@ def run_job(args, spec, systems, out, lock, names):
                         if 'network' in rec:
                             rec['log10_z'] = network_partition_function(r['stdout'])
                         elif args.suite == 'circulette':
-                            # P(fail), which Circulette prints (run_circulette)
+                            # P(fail), the evidence's probability, which Circulette prints (run_circulette)
                             rec['log10_pe'] = parse_evidence_probability(r['stdout'])
                             if rec['log10_pe'] is None:
                                 raise ValueError('no P(e) line')
-                            rec['p_fail'] = circulette_p_fail(path, rec['log10_pe'], rec.get('answers'))
+                            rec['p_fail'] = 10 ** rec['log10_pe']
                         else:
                             rec['log10_pe'], rec['log10_z'] = partition_function(r['stdout'], path)
                     except (OSError, ValueError) as x:
@@ -5526,7 +5827,8 @@ def run_job(args, spec, systems, out, lock, names):
                 # A system that exits 0 without printing an answer failed
                 # (aspmc does so on a parse error), and a run without
                 # answers can be checked against nothing.
-                if asked and rec['status'] == 'ok' and not rec['answers'] and queries(path):
+                if asked and rec['status'] == 'ok' and not rec['answers'] and \
+                        (circulette_asked(len(circulette_gates(path))) if args.suite == 'circulette' else queries(path)):
                     tail = (r.get('stderr', '').strip() or r.get('stdout', '').strip()).splitlines()
                     r = {'status': 'error', 'error': 'no answers: ' + (tail[-1] if tail else 'empty output')}
                     rec['status'] = 'error'
@@ -5814,18 +6116,11 @@ def main():
     g.add_argument('--pr', action='store_true',
                    help="the uai suite's programs for the partition function alone, for run --pr: no queries, and "
                    "a Potts network's colour symmetry broken (gen_bn.py --query none)")
-    g.add_argument('--circulette-racket', default='',
-                   help="the Racket with the fork's roulette-lib, which has Roulette's tddlog engine, split at "
-                   'spaces, which runs circulette.rkt on that engine for --suite circulette (gen_circulette.py), '
-                   "--circulette-benchmarks a Circulette compiled by it")
     g.add_argument('--circulette-python', default='python3',
                    help="the Python with pyrtl that runs Circulette's rkt_of_verilog.py, yosys on PATH")
-    g.add_argument('--export-timeout', type=float,
-                   help="--suite circulette: the seconds of an instance's export, past which it has no "
-                   'program and its readers time out (NAME.export.json); by default none')
     g.add_argument('--tddlog', default=str(source_tree.BINARY),
-                   help="the tddlog that writes the program of a network, a Dice program or an LPAD (`tddlog "
-                   "--program`), which the systems that read ProbLog programs are given")
+                   help="the tddlog that writes the program of a network, a Dice program, an LPAD or a Circulette "
+                   "netlist (`tddlog --program`), which the systems that read ProbLog programs are given")
     g.set_defaults(fn=gen)
     r = sub.add_parser('run')
     r.add_argument('--dir', default=os.path.join(ROOT, 'bench'))
@@ -5886,9 +6181,14 @@ def main():
     r.add_argument('--roulette-tddlog', default='',
                    help="command template, as --roulette's, for the Racket that runs Roulette+tddlog "
                    "(Roulette's tddlog engine, then tddlog on the circuit it writes) on --suite roulette, the "
-                   "Bayesian networks and the Dice programs of data/dice, data/nodice and gen_geni.py; empty = not run")
+                   "Bayesian networks, the Dice programs of data/dice, data/nodice and gen_geni.py, and "
+                   "Circulette's netlists; empty = not run")
+    r.add_argument('--circulette-tddlog', default='',
+                   help="--suite circulette under --roulette-tddlog: a Circulette checkout compiled by that "
+                   "Racket (the fork's roulette-lib), whose circulette.rkt Roulette+tddlog runs, apart from "
+                   "--circulette-benchmarks, which Roulette's Racket compiles")
     for opt, ps in PROGRAM_SYSTEMS.items():
-        r.add_argument('--' + opt, default='', help=ps['help'] + '; empty = not run')
+        r.add_argument('--' + opt, dest=opt, default='', help=ps['help'] + '; empty = not run')
     r.add_argument('--geni-benchmarks', default=os.path.join(os.path.expanduser('~'), 'local/geni/src/bench/ICFP'),
                    help="the Geni artifact's bench/ICFP directory, where the weather factory's programs are")
     r.add_argument('--genfer-benchmarks', default=os.path.join(os.path.expanduser('~'), 'local/genfer/src/benchmarks/neurips2023'),

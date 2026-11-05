@@ -1,13 +1,14 @@
 // The site's front page in headless Chromium: each of its views (the home
 // page, by baseline and a baseline's page, by integration and each
 // integration's page, by program type and a type's page with its
-// head-to-head and translated parts, the coverage, how it works, its strip
-// of stages a trace's steps, each a link to its step, and each step of its
-// walkthroughs, each a trace drawn with a caption over every step, the step
-// on show marked) draws without an error, its views.json written from the
-// same results as categories.json, with a member of tddlog's (tddlog or a
-// pipeline) for each row a system was given, named where a baseline's page
-// compares with it; a link to a section of a baseline's page scrolls to it;
+// head-to-head and translated parts, the coverage, the methods table, how
+// it works, its strip of stages a trace's steps, each a link to its step,
+// and each step of its walkthroughs, each a trace drawn with a caption
+// over every step, the step on show marked) draws without an error, its
+// views.json written from the same results as categories.json, with a
+// member of tddlog's (tddlog or a pipeline) for each row a system was
+// given, named where a baseline's page compares with it; a link to a
+// section of a baseline's page scrolls to it;
 // a benchmark's page has its playground link; an address of nothing is not
 // found; the addresses these pages once had (#/tools, #/system, next/) open
 // the same views; every page's bar names the sections as the menu does, in
@@ -142,6 +143,14 @@ function drawn(page) {
         const line = await page.locator("#view .versus").first().textContent();
         assert.ok(line.includes(cats.names[i.pipeline]) && line.includes(cats.names[i.system]), `${k}: ${i.pipeline} against ${i.system}`);
         assert.equal(await page.locator("table.board tbody tr").count(), i.groups.length, `${k}: a row a family`);
+        // a line names the families where the system is faster, as the scatter counts it
+        const t = (row, y) => (typeof row[4 + i.systems.indexOf(y)] === "number" ? row[4 + i.systems.indexOf(y)] : null);
+        const faster = i.rows.filter((row) => {
+          const a = t(row, i.system), b = t(row, i.pipeline);
+          return a !== null && (b === null || (Math.max(a, b) >= 0.2 && Math.max(b, 0.2) > Math.max(a, 0.2)));
+        }).length;
+        const where = page.locator("#view .note", { hasText: `Where ${cats.names[i.system]} is faster:` });
+        assert.equal(await where.count(), faster ? 1 : 0, `${k}: where ${i.system} is faster`);
       }
     }]),
     ["#/types", "types", async () => assert.equal(await page.locator("table.types-t tbody tr").count(), cats.categories.length)],
@@ -154,7 +163,22 @@ function drawn(page) {
         assert.equal(to, `#/baselines/${x}`, `${c.key}: ${x}'s name opens its page`);
       }
     }]),
-    ["#/coverage", "coverage", async () => assert.ok(await page.locator(".census").count() >= views.census.sources.length)],
+    // the circuits, where the data has them: every system on them, a row a family
+    ...(cats.circuits ? [["#/circuits", "category", async () => {
+      await page.waitForSelector("#view figure.plot svg.cactus path.line");
+      assert.equal(await page.locator("section.split").count(), 0, "the circuits: no head-to-head and translated split");
+      assert.equal(await page.locator("#tree a[aria-current]").getAttribute("href"), "#/circuits", "the circuits: marked in the menu");
+    }]] : []),
+    ["#/coverage", "coverage", async () => {
+      assert.ok(await page.locator(".census").count() >= views.census.sources.length);
+      // each count above 0 opens its system's coverage
+      const cells = await page.$$eval("table.board:not(.census-t) tbody tr", (trs) => trs.map((tr) => [tr.querySelector("th a").getAttribute("href"),
+        ...[...tr.querySelectorAll("td")].map((td) => [td.textContent, td.querySelector("a")?.getAttribute("href") ?? null])]));
+      assert.ok(cells.length, "coverage: a row a system");
+      for (const [to, ...counts] of cells) {
+        for (const [n, a] of counts) assert.equal(a, n === "0" ? null : `${to}/coverage`, `coverage: ${to}'s count ${n}`);
+      }
+    }],
     // how it works: the first walkthrough, its strip of stages its steps, each a link to its step
     ["#/how", "how", async () => {
       await page.waitForSelector(".walk-trace p.trace-api");
@@ -163,6 +187,16 @@ function drawn(page) {
         steps.map((t, k) => [`${k + 1}. ${t.title}`, `#/how/${key}/${k + 1}`]), "the strip is the first walkthrough's steps");
       assert.equal(await page.locator("nav.walks a").count(), WALKS.length);
       assert.equal(await page.textContent("ol.pipeline a[aria-current]"), `1. ${steps[0].title}`);
+      assert.equal(await page.locator('#view a[href="#/methods"]').count(), 1, "how it works: a link to the methods");
+    }],
+    // the methods table: the facts of the runs, each type's time limits after the memory's, how the results are counted, the data's stamp
+    ["#/methods", "methods", async () => {
+      const rows = await page.$$eval("table.methods tbody tr:not(.group)", (trs) => trs.map((tr) => [tr.querySelector("th").textContent, tr.querySelector("td").textContent]));
+      assert.deepEqual(rows.map(([what]) => what), [...cats.methods.flatMap(([what]) => (what === "memory" ? [what, "time limits"] : [what])),
+        "answers", `total (PAR-${cats.measure.par})`, "speed-up", "X+tddlog", "circuits", "data"], "methods: its rows");
+      const limits = rows.find(([what]) => what === "time limits")[1];
+      for (const c of cats.categories.filter((c) => c.key !== "all-programs")) assert.ok(limits.includes(`${c.title} `), `methods: ${c.key}'s time limits`);
+      assert.ok(cats.methods.every(([, fact]) => !fact.includes("{version}")), "methods: tddlog's version in place");
     }],
     // each step of each walkthrough: its trace drawn, under its caption
     ...WALKS.flatMap(([key, example, steps]) => steps.map((step, i) => [`#/how/${key}/${i + 1}`, "how", async () => {
@@ -200,13 +234,18 @@ function drawn(page) {
     await page.goto(base + hash);
     await drawn(page);
     await check();
+    // every speed-up's header a link to the methods table (rule 20)
+    assert.deepEqual(await page.$$eval("#view thead th, #view .cell > span", (hs) => hs.filter((h) => /\b(faster|speed-up)\b/.test(h.textContent)
+      && !h.querySelector('a[href="#/methods"]')).map((h) => h.textContent)), [], `${hash}: every speed-up's header links to the methods`);
     assert.deepEqual(await page.$$eval("#tree ul.baselines li.solver a", (as) => as.map((a) => a.getAttribute("href"))), baselines,
       `${hash}: the baselines in the menu`);
     // by integration where the data has the integrations, and the bar's link to it with it
     assert.deepEqual(await page.$$eval("#tree .tree > li.group > a", (as) => as.map((a) => a.textContent)),
-      sections.filter(([key]) => key !== "integrations" || cats.integrations).map(([, name]) => name), `${hash}: the menu's sections`);
+      sections.filter(([key]) => (key !== "integrations" || cats.integrations) && (key !== "circuits" || cats.circuits)).map(([, name]) => name),
+      `${hash}: the menu's sections`);
     assert.equal(await page.isVisible('.site-nav a[href="#/integrations"]'), Boolean(cats.integrations),
       `${hash}: the bar's link to the integrations`);
+    assert.equal(await page.isVisible('.site-nav a[href="#/circuits"]'), Boolean(cats.circuits), `${hash}: the bar's link to the circuits`);
     const marked = await page.$$eval("#tree a[aria-current]", (as) => as.map((a) => a.getAttribute("href")));
     // nothing on the home page, an address of nothing, and the integrations' page where the menu has no such section
     const none = view === "missing" || view === "draft-home" || (view === "integrations" && !cats.integrations);

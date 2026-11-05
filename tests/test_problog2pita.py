@@ -63,6 +63,34 @@ class TranslationTests(unittest.TestCase):
         self.assertIn('prob(Q, P)), (term_to_atom(Q, Q0), ', main)
         self.assertTrue(main.rstrip().endswith('[Q1, P]))).'), main)
 
+    def test_a_query_body_enumerates_the_certain_rules_once(self):
+        # the Circulette reader's program: gate/1 a rule over the gates' facts, read by
+        # two queries' bodies, its copies given once
+        text = ('gate_and(1, 7, 8).\ngate_xor(2, 7, 8).\ngate(G) :- gate_and(G, _, _).\n'
+                'gate(G) :- gate_xor(G, _, _).\n0.01::fault(G) :- gate(G).\n'
+                'faults(A, B) :- fault(A), fault(B).\nevidence(fault(1)).\n'
+                'query(fault(G)) :- gate(G).\nquery(faults(A, B)) :- gate(A), gate(B), A < B.\n')
+        lines = problog2pita.program(text, driver=True).split('\n')
+        copies = lines[lines.index(':- end_lpad.') + 1:lines.index('main :-')]
+        self.assertEqual(sorted(copies), sorted([
+            'query_gen_gate(G) :- query_gen_gate_and(G, _, _).', 'query_gen_gate(G) :- query_gen_gate_xor(G, _, _).',
+            'query_gen_gate_and(1, 7, 8).', 'query_gen_gate_xor(2, 7, 8).']))
+        main = '\n'.join(lines[lines.index('main :-'):])
+        self.assertIn('forall((query_gen_gate(G), Q = fault(G), prob(Q, (fault(1)), P)), ', main)
+        self.assertIn('forall((query_gen_gate(A), query_gen_gate(B), A < B, Q = faults(A, B), ', main)
+        # a rule over a probabilistic predicate is not copied: its body is asked as it is
+        lines = problog2pita.program('0.5::e(1).\nr(X) :- e(X).\nquery(p(X)) :- r(X).\n', driver=True).split('\n')
+        self.assertEqual(lines[lines.index(':- end_lpad.') + 1], 'main :-')
+        self.assertIn('forall((r(X), Q = p(X), prob(Q, P)), ', lines[-2])
+
+    def test_without_a_query_the_evidence_is_asked(self):
+        # Circulette's ct_ALU_Controller: no gate, no query, a failure no fault causes
+        main = problog2pita.program('bit(W) :- wire(W, A), bit(A).\nfailure :- bit(_).\nevidence(failure).\n',
+                                    driver=True).split('main :-')[1]
+        self.assertEqual(main, '\n    prob((failure), P),\n    (P =:= 0 -> format("evidence is inconsistent~n") ; '
+                               'format("P(e):\\t~w~n", [P])).\n')
+        self.assertEqual(problog2pita.program('0.5::a.\n', driver=True).split('main :-')[1], '\n    true.\n')
+
     def test_a_long_chain_is_translated_in_linear_time(self):
         # a gate a predicate, as a circuit's program has them: the earlier
         # search from every predicate took quadratic time

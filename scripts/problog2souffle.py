@@ -32,7 +32,7 @@ its arity) from a ProbLog program:
 - `query(A)` and `evidence(A, true|false)` are PSouffle's own, one of each
   a relation (PSouffle names their code after it): a second ground atom is
   asked through a relation of no arguments, q__N() :- A; a query with a
-  body over certain facts is its ground queries. OUTDIR/queries.txt lists
+  body over certain relations is its ground queries. OUTDIR/queries.txt lists
   the queries as tddlog prints their atoms.
 
 An argument position holds Souffle numbers where every constant that
@@ -395,38 +395,115 @@ def translate(text):
 
 
 def ground_queries(query_rules, facts, rules, ads):
-    """The ground queries of each `query(A) :- B.`, where B is one atom of a
-    relation of certain facts and no rules (smokers' `query(smokes(X)) :-
-    person(X).`) or `between(L, H, V)` of integer bounds (graph's
-    `query(path(1,Y)) :- between(2,N,Y).`), as ProbLog's grounding finds them."""
-    derived = {(h[0], len(h[1])) for _, h, _ in rules} | {(h[0], len(h[1])) for alts, _ in ads for _, h in alts}
+    """The ground queries of each `query(A) :- B.`, as ProbLog's grounding
+    finds them: B a conjunction of atoms of certain relations (`certain`),
+    `between(L, H, V)` of integer bounds and comparisons (smokers'
+    `query(smokes(X)) :- person(X).`, graph's `query(path(1,Y)) :-
+    between(2,N,Y).`, the Circulette reader's `query(faults(A, B)) :-
+    gate(A), gate(B), A < B.` over `gate(G) :- gate_and(G, _, _).`)."""
+    rel = certain(facts, rules, ads, [lit[1] for _, body in query_rules for lit in body if lit[0] == 'pos'])
     out = []
     for atom, body in query_rules:
-        lits = [lit for lit in body if lit[0] != 'true']
-        if len(lits) != 1 or lits[0][0] != 'pos':
-            raise Refused('a query whose body is not one atom')
-        name, args = lits[0][1]
-        if (name, len(args)) == ('between', 3):
-            lo, hi, v = args
-            if lo[0] != 'int' or hi[0] != 'int' or v[0] != 'var':
-                raise Refused('a query whose body between/3 has no integer bounds and variable')
-            rows, args = {(('int', i),): 1.0 for i in range(lo[1], hi[1] + 1)}, [v]
-        else:
-            rows = facts.get((name, len(args)), {})
-            # a relation of no facts and no rules is a builtin or an undefined predicate, which
-            # would otherwise give no query at all
-            if not rows and (name, len(args)) not in derived:
-                raise Refused(f'a query whose body {name}/{len(args)} has no facts')
-        if (name, len(args)) in derived or any(q != 1.0 for q in rows.values()):
-            raise Refused(f'a query whose body {name}/{len(args)} is not a relation of certain facts')
-        for row in rows:
-            bind = {}
-            if all(match(t, c, bind) for t, c in zip(args, row)):
-                ground = [bind.get(t[1]) if t[0] == 'var' else t for t in atom[1]]
-                if any(g is None or g[0] not in ('int', 'sym', 'num') for g in ground):
-                    raise Refused(f'a query of {atom[0]}/{len(atom[1])} whose variables its body does not bind')
-                out.append((atom[0], ground))
+        for bind in solutions([lit for lit in body if lit[0] != 'true'], rel, {}):
+            ground = [bind.get(t[1]) if t[0] == 'var' else t for t in atom[1]]
+            if any(g is None or g[0] not in ('int', 'sym', 'num') for g in ground):
+                raise Refused(f'a query of {atom[0]}/{len(atom[1])} whose variables its body does not bind')
+            out.append((atom[0], ground))
     return out
+
+
+BETWEEN = ('between', 3)
+
+
+def certain(facts, rules, ads, atoms):
+    """{(name, arity): {row: None}}: the rows of the relations of `atoms`
+    and of those they read, each a relation the program states for certain
+    (facts of probability one, rules without a probability whose bodies are
+    atoms of such relations and comparisons), evaluated bottom up. A
+    relation that is not certain, or has no clause, is refused; between/3
+    is the builtin where the program does not define it."""
+    uncertain = {(h[0], len(h[1])) for alts, _ in ads for _, h in alts}
+    uncertain |= {k for k, rows in facts.items() if any(q != 1.0 for q in rows.values())}
+    by = {}
+    for prob, head, body in rules:
+        k = (head[0], len(head[1]))
+        if prob is not None and prob < 1:
+            uncertain.add(k)
+        by.setdefault(k, []).append((head, body))
+    need, todo = set(), [(name, len(args)) for name, args in atoms]
+    while todo:
+        k = todo.pop()
+        if k in need or k == BETWEEN and k not in facts and k not in by:
+            continue
+        if k not in facts and k not in by:
+            raise Refused(f'a query whose body {k[0]}/{k[1]} has no facts')
+        if k in uncertain or any(lit[0] not in ('pos', 'cmp') for _, body in by.get(k, ()) for lit in body):
+            raise Refused(f'a query whose body {k[0]}/{k[1]} is not a relation of certain facts')
+        need.add(k)
+        todo += [(lit[1][0], len(lit[1][1])) for _, body in by.get(k, ()) for lit in body if lit[0] == 'pos']
+    rel = {k: dict.fromkeys(facts.get(k, {})) for k in need}
+    changed = True
+    while changed:
+        changed = False
+        for k in need:
+            for head, body in by.get(k, ()):
+                for bind in list(solutions(body, rel, {})):
+                    row = tuple(resolve(t, bind) for t in head[1])
+                    if any(t is None for t in row):
+                        raise Refused(f'a rule of {k[0]}/{k[1]} whose head its body does not bind')
+                    if row not in rel[k]:
+                        rel[k][row] = None
+                        changed = True
+    return rel
+
+
+def solutions(body, rel, bind):
+    """The bindings that extend `bind` under which each literal of `body`
+    holds: an atom of a relation of `rel` (`certain`), between/3 of integer
+    bounds where `rel` has no such relation, a comparison of constants."""
+    if not body:
+        yield bind
+        return
+    lit, rest = body[0], body[1:]
+    if lit[0] == 'pos':
+        name, args = lit[1]
+        if (name, len(args)) == BETWEEN and BETWEEN not in rel:
+            lo, hi = resolve(args[0], bind), resolve(args[1], bind)
+            if lo is None or hi is None or lo[0] != 'int' or hi[0] != 'int':
+                raise Refused('a query whose body between/3 has no integer bounds')
+            rows = [(lo, hi, ('int', i)) for i in range(lo[1], hi[1] + 1)]
+        else:
+            rows = rel[(name, len(args))]
+        for row in rows:
+            b = dict(bind)
+            if all(match(t, c, b) for t, c in zip(args, row)):
+                yield from solutions(rest, rel, b)
+    elif lit[0] == 'cmp':
+        a, c = resolve(lit[2], bind), resolve(lit[3], bind)
+        if a is None or c is None:
+            raise Refused(f'a query whose body compares by {lit[1]} a term that is no bound constant')
+        if compare(lit[1], a, c):
+            yield from solutions(rest, rel, bind)
+    else:
+        raise Refused('a query whose body is not atoms and comparisons')
+
+
+def resolve(t, bind):
+    """The constant term `t` is under `bind`; None where it is unbound or no constant."""
+    if t[0] == 'var':
+        return bind.get(t[1])
+    return t if t[0] in ('int', 'sym', 'num') else None
+
+
+def compare(op, a, b):
+    """ProbLog's comparison `op` of two constants: = and == and their
+    negations on terms, the orders, =:= and =\\= on numbers."""
+    if op in ('=', '==', '\\=', '\\=='):
+        return (a == b) == (op in ('=', '=='))
+    if a[0] == 'sym' or b[0] == 'sym':
+        raise Refused(f'a query whose body compares a symbol by {op}')
+    x, y = a[1], b[1]
+    return {'=:=': x == y, '=\\=': x != y, '<': x < y, '>': x > y, '=<': x <= y, '>=': x >= y}[op]
 
 
 def match(t, c, bind):

@@ -4,9 +4,10 @@
 use rustc_hash::{FxBuildHasher, FxHashMap};
 use std::hash::BuildHasher;
 
-use super::{Bits, Copies, PartId, Sets};
+use super::{Bits, Copies, PartId, Sets, push};
 use crate::by_hash::ByHash;
 use crate::ground::{AtomId, GLit, GroundProgram, GroundRule};
+use std::collections::TryReserveError;
 
 /// A table whose readers' links hold clauses.
 pub(super) struct ClauseTable {
@@ -23,40 +24,49 @@ pub(super) struct ClauseTable {
 
 /// Rules for `head` whose bodies are the worlds where two of `vars` hold,
 /// one rule of pairs ([`GroundRule`]) where they are three or more, and,
-/// if `exhaustive`, the world where none does.
+/// if `exhaustive`, the world where none does. `Err` where the allocator
+/// refuses `rules` room ([`push`]).
 pub(super) fn not_one(
     rules: &mut Vec<GroundRule>,
     head: AtomId,
     vars: &[AtomId],
     exhaustive: bool,
-) {
+) -> Result<(), TryReserveError> {
     match vars {
-        [a, b] => rules.push(GroundRule::new(head, vec![GLit::Pos(*a), GLit::Pos(*b)])),
-        [_, _, _, ..] => rules.push(GroundRule {
-            pairs: true,
-            ..GroundRule::new(head, vars.iter().map(|&w| GLit::Pos(w)).collect())
-        }),
+        [a, b] => push(
+            rules,
+            GroundRule::new(head, vec![GLit::Pos(*a), GLit::Pos(*b)]),
+        )?,
+        [_, _, _, ..] => push(
+            rules,
+            GroundRule {
+                pairs: true,
+                ..GroundRule::new(head, vars.iter().map(|&w| GLit::Pos(w)).collect())
+            },
+        )?,
         _ => {}
     }
     if exhaustive {
-        rules.push(GroundRule::new(
-            head,
-            vars.iter().map(|&w| GLit::Neg(w)).collect(),
-        ));
+        push(
+            rules,
+            GroundRule::new(head, vars.iter().map(|&w| GLit::Neg(w)).collect()),
+        )?;
     }
+    Ok(())
 }
 
 /// Rules for `head` whose bodies are the codes over `bits` (bit j the j-th)
 /// of no value of a set of `values` ([`Bits`]), and, unless `none`, the code
 /// 0 of none of them: cubes over the high bits, each a run of codes that
-/// starts at a multiple of its length.
+/// starts at a multiple of its length. `Err` where the allocator refuses
+/// `rules` room ([`push`]).
 pub(super) fn outside_codes(
     rules: &mut Vec<GroundRule>,
     head: AtomId,
     bits: &[AtomId],
     values: usize,
     none: bool,
-) {
+) -> Result<(), TryReserveError> {
     let outside = |code: usize| code > values || (code == 0 && !none);
     // The codes `prefix << low` up to the next multiple of `1 << low`.
     fn cover(
@@ -66,10 +76,10 @@ pub(super) fn outside_codes(
         outside: &dyn Fn(usize) -> bool,
         prefix: usize,
         low: usize,
-    ) {
+    ) -> Result<(), TryReserveError> {
         let codes = (prefix << low)..((prefix + 1) << low);
         if !codes.clone().any(outside) {
-            return;
+            return Ok(());
         }
         if low == 0 || codes.clone().all(outside) {
             let body = (low..bits.len())
@@ -81,13 +91,12 @@ pub(super) fn outside_codes(
                     }
                 })
                 .collect();
-            rules.push(GroundRule::new(head, body));
-            return;
+            return push(rules, GroundRule::new(head, body));
         }
-        cover(rules, head, bits, outside, prefix << 1, low - 1);
-        cover(rules, head, bits, outside, prefix << 1 | 1, low - 1);
+        cover(rules, head, bits, outside, prefix << 1, low - 1)?;
+        cover(rules, head, bits, outside, prefix << 1 | 1, low - 1)
     }
-    cover(rules, head, bits, &outside, 0, bits.len());
+    cover(rules, head, bits, &outside, 0, bits.len())
 }
 
 /// The tables whose links can hold clauses, in the order of their sets, and

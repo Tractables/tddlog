@@ -60,43 +60,45 @@ linked statically, and every baseline, each suite's baselines in one job
 physical cores and 503 GB; 20 physical cores and 503 GB; 16 physical
 cores and 251 GB; 16 physical cores and 125 GB), 2026-10-19 to
 2026-10-21), in parallel lanes, and tddlog alone in a later job for
-each, on the same machine, in the same lanes, with the same limits and
-repetitions (2026-10-22 to 2026-10-29) but the UAI networks's in 32
-lanes rather than 8, with the same 31 GB a process, the UAI networks
-asked P(e)'s in 28 lanes rather than 14, with the same 35 GB a process
-and the final PR set's in 17 lanes rather than 34, with the same 29 GB a
-process (Setup). The runs on Bayesian and Markov networks ran a build of
-2026-10-28 (tididi ca759585, goatd e592d1e). The runs beside Roulette on
-its upstream main and Roulette+tddlog's ran a build of 2026-10-31
-(tididi c5642b97, goatd e592d1e). The third literature scan ran a build
-of 2026-10-30 (tididi df7b84a3, goatd e592d1e). The reruns of tddlog
-where an older build's record stood, and every system's runs on eleven
-of the growth sizes ran a build of 2026-11-01 (tididi c5642b97, goatd
-e592d1e). The runs beside Scallop ran a build of 2026-10-29 (tididi
-df7b84a3, goatd e592d1e). The runs on the literature's logic programs
-ran a build of 2026-10-31 (tididi c5642b97, goatd e592d1e). The runs on
-the standard suite and the runs beside TensorInference.jl timed warm ran
-a build of 2026-10-29 (tididi b5d9b21d, goatd e592d1e). The
-event-calculus programs, the reruns of the literature scan's taint apps
-and the growth sizes ran a build of 2026-10-25 with twin contraction
-(tididi b9e5064e, goatd e592d1e) and a recursion over a successor
-relation grounded level by level, which lacks only the release's sparse
-route (tididi 9fc0a599). The runs on four of cplint on SWISH's examples,
-and tddlog's on the families read as one program and its arguments ran a
-build of 2026-10-31 (tididi c5642b97, goatd e592d1e). The reruns of
-tddlog where an older build's record stood ran a build of 2026-10-31
-(tididi c5642b97, goatd e592d1e). The runs on the symmetric smokers ran
-a build of 2026-10-30 (tididi df7b84a3, goatd e592d1e). The runs on five
-more of cplint's examples and one more of ProbLog's tutorial ran a build
-of 2026-10-31 (tididi c5642b97, goatd e592d1e). The release's main
-contains every solver change those builds have. The baselines: ProbLog
-2.3.0 with d-DNNF, SDD and forward SDD compilation, PITA's BDDs and
-aspmc with sharpSAT-TD on the program suites and Ace's networks, the
-large networks and the UAI networks; Ace 3.0 (default route and c2d
-forced, and in log space, `-Xlog`, on the UAI networks), Merlin 1.7.0's
-bucket-tree elimination (`-a bte`), pyAgrum's junction tree, pgmpy's
-variable elimination, libDAI's junction tree and TensorInference.jl's
-tensor network contraction on the networks, and ProvSQL on TPC-H; Dice,
+each, with the same limits and repetitions (2026-10-22 to 2026-10-29)
+but the UAI networks's in 32 lanes rather than 8, with the same 31 GB a
+process, the UAI networks asked P(e)'s in 28 lanes rather than 14, with
+the same 35 GB a process and the final PR set's in 17 lanes rather than
+34, with the same 29 GB a process (Setup). The runs on Bayesian and
+Markov networks ran a build of 2026-10-28 (tididi ca759585, goatd
+e592d1e). The runs beside Roulette on its upstream main and
+Roulette+tddlog's ran a build of 2026-10-31 (tididi c5642b97, goatd
+e592d1e). The third literature scan ran a build of 2026-10-30 (tididi
+df7b84a3, goatd e592d1e). The runs beside Roulette in its BN language
+and Roulette+tddlog's on the Bayesian networks ran a build of 2026-11-03
+(tididi 427cb8f8, goatd e592d1e). The reruns of tddlog where an older
+build's record stood, and every system's runs on eleven of the growth
+sizes ran a build of 2026-11-01 (tididi c5642b97, goatd e592d1e). The
+runs beside Scallop ran a build of 2026-10-29 (tididi df7b84a3, goatd
+e592d1e). The runs on the literature's logic programs ran a build of
+2026-10-31 (tididi c5642b97, goatd e592d1e). The runs on the standard
+suite and the runs beside TensorInference.jl timed warm ran a build of
+2026-10-29 (tididi b5d9b21d, goatd e592d1e). The event-calculus
+programs, the reruns of the literature scan's taint apps and the growth
+sizes ran a build of 2026-10-25 with twin contraction (tididi b9e5064e,
+goatd e592d1e) and a recursion over a successor relation grounded level
+by level, which lacks only the release's sparse route (tididi 9fc0a599).
+The runs on four of cplint on SWISH's examples, and tddlog's on the
+families read as one program and its arguments ran a build of 2026-10-31
+(tididi c5642b97, goatd e592d1e). The reruns of tddlog where an older
+build's record stood ran a build of 2026-10-31 (tididi c5642b97, goatd
+e592d1e). The runs on the symmetric smokers ran a build of 2026-10-30
+(tididi df7b84a3, goatd e592d1e). The runs on five more of cplint's
+examples and one more of ProbLog's tutorial ran a build of 2026-10-31
+(tididi c5642b97, goatd e592d1e). The release's main contains every
+solver change those builds have. The baselines: ProbLog 2.3.0 with
+d-DNNF, SDD and forward SDD compilation, PITA's BDDs and aspmc with
+sharpSAT-TD on the program suites and Ace's networks, the large networks
+and the UAI networks; Ace 3.0 (default route and c2d forced, and in log
+space, `-Xlog`, on the UAI networks), Merlin 1.7.0's bucket-tree
+elimination (`-a bte`), pyAgrum's junction tree, pgmpy's variable
+elimination, libDAI's junction tree and TensorInference.jl's tensor
+network contraction on the networks, and ProvSQL on TPC-H; Dice,
 Alea.jl, Roulette, noDice, Psi, Genfer, SPPL, Geni and Pluck, the exact
 systems that read Dice programs, on the standard suite's networks, Ace's
 networks, the large networks and the UAI networks and with Ace, Merlin
@@ -841,7 +843,7 @@ each instance; its two orders follow.
 | aspmc | 34 | 23 | 34 | 5 344 | 5.0 | 23 | 2 044 | 1.1 | 0 |
 | Dice | 34 | 31 | 34 | 1 677 | 5.0 | 31 | 777.2 | 3.8 | 0 |
 | Alea.jl | 34 | 31 | 34 | 1 147 | 5.0 | 31 | 246.8 | 3.8 | 0 |
-| Roulette | 34 | 28 | 34 | 2 144 | 6.5 | 28 | 344.2 | 2.9 | 0 |
+| Roulette | 34 | 30 | 34 | 1 441 | 4.9 | 30 | 241.4 | 2.6 | 0 |
 | noDice | 34 | 27 | 34 | 3 095 | 5.0 | 27 | 995.2 | 2.8 | 0 |
 | Psi | 34 | 8 | 34 | 7 820 | 5.0 | 8 | 20.4 | 0.3 | 0 |
 | Genfer | 34 | 25 | 34 | 3 200 | 5.0 | 25 | 500.2 | 1.3 | 0 |
@@ -868,7 +870,7 @@ each instance; its two orders follow.
 | aspmc | 46 | 10 | 46 | 22 373 | 15.6 | 10 | 772.5 | 0.4 | 0 |
 | Dice | 43 | 14 | 43 | 18 544 | 10.4 | 14 | 1 144 | 1.4 | 0 |
 | Alea.jl | 43 | 34 | 43 | 6 375 | 10.4 | 34 | 975.3 | 6.6 | 0 |
-| Roulette | 46 | 29 | 46 | 10 935 | 20.4 | 29 | 734.8 | 5.5 | 0 |
+| Roulette | 46 | 32 | 46 | 8 819 | 20.5 | 32 | 419.0 | 7.5 | 0 |
 | noDice | 43 | 11 | 43 | 20 956 | 10.4 | 11 | 1 756 | 0.7 | 0 |
 | Psi | 43 | 1 | 43 | 25 241 | 10.4 | 1 | 40.9 | 0.0 | 0 |
 | Genfer | 43 | 4 | 43 | 23 601 | 10.4 | 4 | 201.1 | 0.2 | 0 |
@@ -895,7 +897,7 @@ each instance; its two orders follow.
 | aspmc | 14 | 0 | 14 | 8 400 | 15.2 | 0 | 0.0 | 0.0 | 0 |
 | Dice | 14 | 3 | 14 | 7 624 | 15.2 | 3 | 1 024 | 1.8 | 0 |
 | Alea.jl | 14 | 3 | 14 | 7 112 | 15.2 | 3 | 512.1 | 1.8 | 0 |
-| Roulette | 14 | 0 | 14 | 8 400 | 19.8 | 0 | 0.0 | 0.0 | 0 |
+| Roulette | 14 | 0 | 14 | 8 400 | 18.3 | 0 | 0.0 | 0.0 | 0 |
 | noDice | 14 | 0 | 14 | 8 400 | 15.2 | 0 | 0.0 | 0.0 | 0 |
 | Psi | 14 | 0 | 14 | 8 400 | 15.2 | 0 | 0.0 | 0.0 | 0 |
 | Genfer | 14 | 0 | 14 | 8 400 | 15.2 | 0 | 0.0 | 0.0 | 0 |
@@ -1196,7 +1198,7 @@ Against each baseline (columns as in "Against each baseline"):
 | aspmc | 120 | 0 | 120 | 36 000 | 342.4 | 0 | 0.0 | 0.0 | 0 |
 | Dice | 120 | 10 | 120 | 33 351 | 342.4 | 10 | 351.4 | 0.7 | 0 |
 | Alea.jl | 120 | 14 | 120 | 32 248 | 342.4 | 14 | 448.0 | 0.9 | 0 |
-| Roulette | 120 | 4 | 120 | 35 366 | 335.0 | 4 | 566.3 | 0.2 | 0 |
+| Roulette | 120 | 4 | 120 | 35 352 | 335.4 | 4 | 552.3 | 0.2 | 0 |
 | noDice | 120 | 0 | 120 | 36 000 | 342.4 | 0 | 0.0 | 0.0 | 0 |
 | Psi | 120 | 0 | 120 | 36 000 | 342.4 | 0 | 0.0 | 0.0 | 0 |
 | Genfer | 120 | 4 | 120 | 35 306 | 342.4 | 4 | 505.7 | 0.2 | 0 |
@@ -1232,7 +1234,7 @@ Against each baseline (columns as in "Against each baseline"):
 | aspmc | 120 | 18 | 120 | 31 189 | 591.8 | 18 | 588.8 | 1.3 | 0 |
 | Dice | 120 | 17 | 120 | 31 325 | 591.8 | 17 | 424.7 | 0.7 | 0 |
 | Alea.jl | 120 | 18 | 120 | 30 887 | 591.8 | 18 | 287.5 | 0.7 | 0 |
-| Roulette | 120 | 17 | 120 | 31 184 | 570.1 | 17 | 283.9 | 0.5 | 0 |
+| Roulette | 120 | 17 | 120 | 31 149 | 570.1 | 17 | 249.4 | 0.5 | 0 |
 | noDice | 120 | 0 | 120 | 36 000 | 591.8 | 0 | 0.0 | 0.0 | 0 |
 | Psi | 120 | 0 | 120 | 36 000 | 591.8 | 0 | 0.0 | 0.0 | 0 |
 | Genfer | 120 | 4 | 120 | 34 843 | 591.8 | 4 | 43.1 | 0.1 | 0 |
@@ -1284,7 +1286,7 @@ each baseline"):
 | aspmc | 197 | 77 | 158 | 28 537 | 3 992 | 77 | 4 237 | 35.2 | 0 |
 | Dice | 197 | 33 | 158 | 37 781 | 3 992 | 33 | 280.8 | 1.8 | 0 |
 | Alea.jl | 197 | 83 | 158 | 22 535 | 3 992 | 83 | 34.9 | 41.5 | 30 |
-| Roulette | 197 | 79 | 162 | 25 193 | 1 653 | 79 | 292.6 | 41.1 | 11 |
+| Roulette | 197 | 60 | 162 | 31 241 | 1 663 | 60 | 640.7 | 36.3 | 1 |
 | noDice | 197 | 7 | 158 | 45 300 | 3 992 | 7 | 0.1 | 0.3 | 0 |
 | Psi | 197 | 29 | 158 | 38 845 | 3 992 | 29 | 144.9 | 1.3 | 0 |
 | Genfer | 197 | 16 | 158 | 43 306 | 3 992 | 16 | 705.7 | 0.8 | 0 |
@@ -1333,7 +1335,7 @@ The tuning set:
 | aspmc | 121 | 24 | 121 | 30 781 | 543.4 | 24 | 1 681 | 1.9 | 0 |
 | Dice | 121 | 18 | 121 | 31 331 | 543.4 | 18 | 431.4 | 0.6 | 0 |
 | Alea.jl | 121 | 19 | 121 | 30 897 | 543.4 | 19 | 296.7 | 0.6 | 0 |
-| Roulette | 121 | 18 | 121 | 31 206 | 561.0 | 18 | 305.6 | 0.6 | 0 |
+| Roulette | 121 | 18 | 121 | 31 173 | 561.0 | 18 | 272.9 | 0.6 | 0 |
 | noDice | 121 | 0 | 121 | 36 300 | 543.4 | 0 | 0.0 | 0.0 | 0 |
 | Psi | 121 | 0 | 121 | 36 300 | 543.4 | 0 | 0.0 | 0.0 | 0 |
 | Genfer | 121 | 4 | 121 | 35 142 | 543.4 | 4 | 42.4 | 0.1 | 0 |
@@ -1577,9 +1579,11 @@ revision cf5e5b8 (Julia 1.11.9, CUDD 3.0.0) in one job on a lab machine
 (16 physical cores, 125 GB) on 2026-10-22, in 8 lanes, each process
 limited to 15 GB of address space. The runs beside Roulette on its
 upstream main and Roulette+tddlog's ran a build of 2026-11-01 (tididi
-c5642b97, goatd e592d1e). The release's main contains every solver
-change those builds have. The three systems run on a program back to
-back in one lane, in an order rotated by program and repetition
+c5642b97, goatd e592d1e). The runs beside Roulette in its BN language
+and Roulette+tddlog's on the Bayesian networks ran a build of 2026-11-03
+(tididi 427cb8f8, goatd e592d1e). The release's main contains every
+solver change those builds have. The three systems run on a program back
+to back in one lane, in an order rotated by program and repetition
 (`bench.py run --rotate`); three repetitions, 300 s each on the networks
 and the paper's programs and 600 s on the loops. Seconds are the median
 of the repetitions, a failed repetition counted as longer than any time;
@@ -1589,7 +1593,7 @@ columns:
 
 - **Alea**: the wall time of the Julia process, as every other column is
   the wall time of its system's process. It includes Julia's start,
-  `using Alea`, a warm-up program and parsing the script: 8.39 s in the
+  `using Alea`, a warm-up program and parsing the script: 8.41 s in the
   median over the runs, from 8.11 to 20.8 s.
 - **in-process**: what the script reports for building the program and
   running `pr`.
@@ -1659,14 +1663,6 @@ evidence below its cutoff of 1e-6):
 
 | program | steps | tddlog | Dice | Alea | in-process | JIT |
 |---|---:|---:|---:|---:|---:|---:|
-| diamond | 100 | 0.01 | 0.02 | 8.23 | 0.07 | 0.07 |
-| diamond | 400 | 0.03 | 0.03 | 8.49 | 0.16 | 0.07 |
-| diamond | 1 600 | 0.14 | 0.07 | 10.26 | 2.10 | 0.07 |
-| diamond | 6 400 | 0.35 | 0.19 | 49.04 | 40.54 | 0.07 |
-| ladder | 100 | 0.05 | 0.02 | 9.41 | 1.16 | 1.13 |
-| ladder | 400 | 0.20 | 0.03 | 9.63 | 1.45 | 1.12 |
-| ladder | 1 600 | 0.46 | 0.10 | 14.96 | 6.81 | 1.12 |
-| ladder | 6 400 | 1.45 | 0.35 | oom | oom | oom |
 | caesar-iter | 100 | 0.03 | 0.03 (zero) | 9.65 | 1.04 | 1.02 |
 | caesar-iter | 1 000 | 0.41 | 0.09 (zero) | 10.12 | 1.96 | 0.95 |
 | caesar-iter | 3 000 | 1.60 | 0.25 (zero) | 21.98 | 13.63 | 0.98 |
@@ -1681,17 +1677,11 @@ evidence below its cutoff of 1e-6):
 | pmc2 | 20 | 0.10 | >600 | 12.15 | 3.50 | 3.49 |
 | pmc2 | 51 | 0.23 | >600 | 18.26 | 10.00 | 8.65 |
 
-On diamond Dice is faster than tddlog from 1 600 steps on (0.19 s
-against 0.35 at 6 400 steps). Alea's time in the process on diamond
-grows from 0.072 s at 100 steps to 40.5 s at 6 400. On ladder Dice is
-faster than tddlog from 100 steps on (0.35 s against 1.45 at 6 400
-steps). Alea answers ladder up to 1 600 steps (oom at 6 400). On pmc1
-and pmc2 Dice fails on 6 of the 7 sizes; Alea answers 7, in 3.38 to
-22.78 s in the process, and tddlog 7, in 0.06 to 0.69 s.
+On pmc1 and pmc2 Dice fails on 6 of the 7 sizes; Alea answers 7, in 3.38
+to 22.78 s in the process, and tddlog 7, in 0.06 to 0.69 s.
 
-The repetitions differ by more than half in two places where one takes a
-second or more, most on dice_pmc1_k75 (tddlog 0.69 to 1.12 s) and
-dice_ladder_k6400 (tddlog 1.45 to 2.3 s).
+The repetitions differ by more than half in one places where one takes a
+second or more, most on dice_pmc1_k75 (tddlog 0.69 to 1.12 s).
 
 Considered with TPC-H and Biomine and left out: WebKB on its real pages
 (no theory comes with the folds), NELL (extraction scores, safe
@@ -1704,7 +1694,7 @@ evaluation), reachability on SNAP networks with random probabilities.
 the Dice and Alea.jl papers") holds the programs of three papers: Cao et
 al.'s integer arithmetic programs (`arith`, 28), Pluck's Dice.jl
 sequence models (`pluck`, 4), all Alea.jl programs, and noDice's purely
-probabilistic Dice programs (`nodice`, 69). Alea runs an Alea.jl program
+probabilistic Dice programs (`nodice`, 43). Alea runs an Alea.jl program
 itself; tddlog, ProbLog and Dice run the Boolean circuit Alea builds for
 it, which `alea_bench.jl` writes (a ProbLog program, and a Dice program
 per Boolean answer or per bit of an expectation, the seconds summed).
@@ -1749,43 +1739,43 @@ The arithmetic programs of Cao et al.:
 
 | instance | paper | tddlog | Dice | Alea | in-proc | JIT | warm | ProbLog | tddlog Δ | Dice Δ |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| book | 5.3 | 9.40 | >600 | 66.11 | 52.95 | 51.72 | 1.18 | >300 | 7e-17 / 6e-16 |  |
-| tugofwar | 0.106 | 0.11 | 296.12 | 79.75 | 69.21 | 69.14 | 0.04 | >300 | 8e-16 / 8e-16 | 4e-13 / 5e-13 |
-| caesar_small | 0.041 | 0.11 | 0.55 | 81.89 | 71.37 | 71.31 | 0.03 | 11.74 | 1e-15 / 3e-14 | zero |
-| caesar_medium | 0.239 | 1.60 | 15.43 | 82.32 | 71.38 | 71.16 | 0.16 | 60.67 | 9e-15 / 3e-13 | zero |
-| caesar_large | 0.556 | 1.09 | 62.05 | 82.63 | 71.50 | 71.06 | 0.40 | 128.09 | 1e-29 / 6e-13 | zero |
-| caesar_huge |  | 2.29 | 411.33 | 89.98 | 75.56 | 73.49 | 1.95 | >300 | 3e-69 / 3e-12 | underflow |
-| ranking_small | 0.007 | 0.01 | 0.71 | 41.80 | 31.36 | 31.35 | 0.008 | 48.50 | 3e-16 / 1e-15 | 5e-13 / 2e-12 |
+| book | 5.3 | 9.39 | >600 | 66.11 | 52.95 | 51.72 | 1.18 | >300 | 7e-17 / 6e-16 |  |
+| tugofwar | 0.106 | 0.10 | 296.11 | 79.75 | 69.21 | 69.14 | 0.04 | >300 | 8e-16 / 8e-16 | 4e-13 / 5e-13 |
+| caesar_small | 0.041 | 0.09 | 0.52 |  |  |  |  | 11.71 | 3e-9 / 5e-8 (P) | zero |
+| caesar_medium | 0.239 | 1.45 | 15.28 |  |  |  |  | 60.52 | 2e-9 / 4e-8 (P) | zero |
+| caesar_large | 0.556 | 0.89 | 61.85 |  |  |  |  | 127.89 | 2e-26 / 2e-8 (P) | zero |
+| caesar_huge |  | 1.71 | 410.75 |  |  |  |  | >300 | unchecked | underflow |
+| ranking_small | 0.007 | 0.01 | 0.71 | 41.80 | 31.36 | 31.35 | 0.008 | 48.49 | 3e-16 / 1e-15 | 5e-13 / 2e-12 |
 | ranking_medium | 0.022 | 0.03 | 209.36 | 42.14 | 31.62 | 31.60 | 0.01 | 202.13 | 6e-16 / 1e-14 | 4e-13 / 2e-12 |
 | ranking_large | 0.048 | 0.04 | >600 | 41.87 | 31.29 | 31.25 | 0.03 | >300 | 2e-15 / 3e-14 |  |
-| radar | 0.034 | 0.11 | 0.21 | 56.43 | 45.51 | 45.46 | 0.03 | 41.37 | 3e-16 / 2e-15 | 5e-13 / 3e-12 |
-| fw_small | 0.009 | 0.01 | 0.05 | 87.69 | 77.52 | 77.49 | 0.01 | 0.13 | 0 | 0 |
-| fw_medium | 0.515 | 0.10 | >600 | 96.13 | 84.86 | 84.33 | 0.49 | 17.83 | 8e-17 / 3e-14 |  |
-| fw_large | 3.41 | 0.51 | >600 | 102.19 | 85.87 | 83.06 | 2.71 | >300 | 4e-17 / 9e-15 |  |
-| linext_small | 0.003 | 0.006 | 0.10 | 39.43 | 29.02 | 29.01 | 0.005 | 0.19 | 2e-16 / 4e-16 | 2e-16 / 4e-16 |
+| radar | 0.034 | 0.09 | 0.19 | 56.43 | 45.51 | 45.46 | 0.03 | 41.35 | 3e-16 / 2e-15 | 5e-13 / 3e-12 |
+| fw_small | 0.009 | 0.006 | 0.04 | 87.69 | 77.52 | 77.49 | 0.01 | 0.12 | 0 | 0 |
+| fw_medium | 0.515 | 0.06 | >600 | 96.13 | 84.86 | 84.33 | 0.49 | 17.80 | 8e-17 / 3e-14 |  |
+| fw_large | 3.41 | 0.33 | >600 | 102.19 | 85.87 | 83.06 | 2.71 | >300 | 4e-17 / 9e-15 |  |
+| linext_small | 0.003 | 0.005 | 0.10 | 39.43 | 29.02 | 29.01 | 0.005 | 0.19 | 2e-16 / 4e-16 | 2e-16 / 4e-16 |
 | linext_medium | 0.007 | 0.01 | 0.24 | 40.80 | 30.55 | 30.54 | 0.007 | 41.82 | 6e-16 / 2e-15 | 3e-13 / 3e-12 |
-| linext_large | 0.072 | 0.02 | 0.85 | 41.54 | 30.98 | 30.96 | 0.02 | >300 | 4e-16 / 2e-15 | 4e-13 / 2e-12 |
-| triangle_small | 0.086 | 0.24 | 91.32 | 52.50 | 41.99 | 41.93 | 0.05 | >300 | 3e-16 / 5e-15 | 2e-13 / 7e-13 |
-| triangle_medium | 0.455 | 0.47 | 465.86 | 53.14 | 42.37 | 42.18 | 0.15 | >300 | 2e-15 / 3e-14 | 4e-13 / 2e-12 |
+| linext_large | 0.072 | 0.01 | 0.84 | 41.54 | 30.98 | 30.96 | 0.02 | >300 | 4e-16 / 2e-15 | 4e-13 / 2e-12 |
+| triangle_small | 0.086 | 0.24 | 91.31 | 52.50 | 41.99 | 41.93 | 0.05 | >300 | 3e-16 / 5e-15 | 2e-13 / 7e-13 |
+| triangle_medium | 0.455 | 0.47 | 465.85 | 53.14 | 42.37 | 42.18 | 0.15 | >300 | 2e-15 / 3e-14 | 4e-13 / 2e-12 |
 | triangle_large | 17.4 | 18.93 | >600 | 88.31 | 54.27 | 41.93 | 12.60 | >300 | 5e-15 / 8e-14 |  |
-| gcd_small | 2.88 | 8.60 | >600 | 21.38 | 6.03 | 3.61 | 2.35 | >300 | 2e-16 / 4e-16 |  |
-| gcd_medium | 104 | 107.82 | >600 | 277.76 | 91.48 | 3.69 | 84.50 | >300 | 2e-16 / 4e-16 |  |
+| gcd_small | 2.88 | 8.54 | >600 | 21.38 | 6.03 | 3.61 | 2.35 | >300 | 2e-16 / 4e-16 |  |
+| gcd_medium | 104 | 107.72 | >600 | 277.76 | 91.48 | 3.69 | 84.50 | >300 | 2e-16 / 4e-16 |  |
 | gcd_large | >3600 | >600 | >600 | >600 | >600 | >600 | >600 | oom |  |  |
-| disease_small | 7.91 | 20.38 | oom | 196.46 | 91.03 | 36.49 | 53.95 | >300 | 8e-16 / 6e-13 |  |
-| disease_medium | 764 | 306.43 | oom | oom | oom | oom | oom | oom | unchecked |  |
+| disease_small | 7.91 | 20.11 | oom | 196.46 | 91.03 | 36.49 | 53.95 | >300 | 8e-16 / 6e-13 |  |
+| disease_medium | 764 | 305.52 | oom | oom | oom | oom | oom | oom | unchecked |  |
 | disease_large |  | >600 | oom | >600 | >600 | >600 | >600 | stack |  |  |
-| luhn_small | 0.039 | 0.02 | 0.27 | 66.55 | 55.94 | 55.89 | 0.01 | 4.73 | 2e-16 / 1e-15 | 2e-13 / 2e-12 |
-| luhn_medium | 4.58 | 0.15 | 4.20 | 66.59 | 56.08 | 55.98 | 0.04 | >300 | 8e-16 / 5e-15 | 4e-13 / 2e-12 |
-| plankton |  | 0.33 | oom | 47.92 | 36.79 | 36.66 | 0.14 | >300 | 1e-16 / 4e-14 |  |
+| luhn_small | 0.039 | 0.02 | 0.26 | 66.55 | 55.94 | 55.89 | 0.01 | 4.72 | 2e-16 / 1e-15 | 2e-13 / 2e-12 |
+| luhn_medium | 4.58 | 0.14 | 4.18 | 66.59 | 56.08 | 55.98 | 0.04 | >300 | 8e-16 / 5e-15 | 4e-13 / 2e-12 |
+| plankton |  | 0.30 | oom | 47.92 | 36.79 | 36.66 | 0.14 | >300 | 1e-16 / 4e-14 |  |
 
 Pluck's sequence models:
 
 | instance | paper | tddlog | Dice | Alea | in-proc | JIT | warm | ProbLog | tddlog Δ | Dice Δ |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| hmm | 0.00276 | 0.03 | >600 | 11.36 | 0.62 | 0.61 | 0.008 | >300 | 6e-27 / 3e-14 |  |
-| pcfg | 8.83 | 105.35 | >600 | 41.59 | 11.69 | 2.66 | 9.31 | >300 | 9e-23 / 2e-15 |  |
-| string_editing | 61.3 | 0.06 | 1.52 | 167.25 | 53.52 | 2.03 | 51.31 | >300 | 2e-26 / 7e-15 | 2e-24 / 1e-12 |
-| sorted_list | 21.9 | 5.83 | 43.19 | 85.18 | 26.05 | 1.33 | 23.87 | >300 | 2e-25 / 2e-14 | 4e-24 / 5e-13 |
+| hmm | 0.00276 | 0.02 | >600 | 11.36 | 0.62 | 0.61 | 0.008 | >300 | 6e-27 / 3e-14 |  |
+| pcfg | 8.83 | 98.12 | >600 | 41.59 | 11.69 | 2.66 | 9.31 | >300 | 9e-23 / 2e-15 |  |
+| string_editing | 61.3 | 0.05 | 1.51 | 167.25 | 53.52 | 2.03 | 51.31 | >300 | 2e-26 / 7e-15 | 2e-24 / 1e-12 |
+| sorted_list | 21.9 | 5.81 | 43.17 | 85.18 | 26.05 | 1.33 | 23.87 | >300 | 2e-25 / 2e-14 | 4e-24 / 5e-13 |
 
 noDice's programs:
 
@@ -1806,18 +1796,22 @@ noDice's programs:
 | alarm | 160 | 0.05 | 0.18 | 10.04 | 1.12 | 0.76 | 2.18 | 8e-17 / 4e-16 | 3e-13 / 8e-13 |
 | 3sat-0 | 19.5 | 0.40 | 9.49 | 9.63 | 1.39 | 0.34 | >300 | 1e-22 / 1e-15 | 1e-19 / 1e-12 |
 
-Answers. Of the 46 instances tddlog answers 43, Dice 29, Alea 40 and
-ProbLog's d-DNNF 16. tddlog answers three where Alea fails (arith
-disease_medium, nodice coupon2-16-obs and nodice coupon2-18-obs). tddlog
-answers every instance Dice answers.
+Answers. Of the 46 instances tddlog answers 43, Dice 29, Alea 36 and
+ProbLog's d-DNNF 16. tddlog answers seven where Alea fails (arith
+caesar_small, arith caesar_medium, arith caesar_large, arith
+caesar_huge, arith disease_medium, nodice coupon2-16-obs and nodice
+coupon2-18-obs). tddlog answers every instance Dice answers.
 
 tddlog agrees with the reference on every instance both answer, to a
-relative 3.1e-12 at most (on arith caesar_huge, absolute 3.5e-69).
-tddlog alone answers arith disease_medium, nodice coupon2-16-obs and
-nodice coupon2-18-obs (unchecked). Dice agrees to a relative 2.7e-12 or
-less wherever it prints nonzero answers, but for nodice insurance. Dice
-prints 0 for every answer on arith caesar_small, arith caesar_medium,
-arith caesar_large and arith caesar_huge. Their evidence has probability
+relative 6.1e-13 at most (on arith disease_small, absolute 8.2e-16).
+Where Alea fails, ProbLog agrees with tddlog to its eight printed digits
+on arith caesar_small (3e-9), arith caesar_medium (2e-9) and arith
+caesar_large (2e-26). tddlog alone answers arith caesar_huge, arith
+disease_medium, nodice coupon2-16-obs and nodice coupon2-18-obs
+(unchecked). Dice agrees to a relative 2.7e-12 or less wherever it
+prints nonzero answers, but for nodice insurance. Dice prints 0 for
+every answer on arith caesar_small, arith caesar_medium, arith
+caesar_large and arith caesar_huge. Their evidence has probability
 4.6e-15 (small), 2.3e-69 (medium), 4.5e-132 (large) and 1.1e-323 (huge),
 from tddlog's `--evidence-probability`; Dice prints zeros wherever the
 evidence has probability below 1e-6 (baselines.md, section 4), so they
@@ -1826,40 +1820,41 @@ where it is below the smallest normal double. On insurance Dice is off
 by 7.4e-6 (relative 4.4e-4): its `discrete` drops the network's table
 entries below 1e-4.
 
-Failures. Of the 414 timed runs 16 ended on a failed allocation: 3 of
+Failures. Of the 402 timed runs 16 ended on a failed allocation: 3 of
 tddlog's, 10 of Dice's and 3 of Alea's.
 
 Times. Against Dice (its zero answers counted as answers), over the 43
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, tddlog takes 664 s in all and Dice 10277 s;
-over the 29 both answer, 15 s against 1877 s. tddlog is faster on 24 of
-the 29 both answer and Dice on 0, both under 0.2 s or level on the other
-5. tddlog alone answers 14, Dice alone 0. Against Alea's wall time, over
-the 43 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, tddlog takes 664 s in all and Alea
-4190 s; over the 40 both answer, 286 s against 2390 s; against its first
-time in the process, over the 43 instances given to both that either
-answers, a run that does not answer counted at the 600 s limit, tddlog
-takes 664 s in all and Alea 3303 s; over the 40 both answer, 286 s
-against 1503 s. Without Julia's compilation (the warm time, or the first
-time in the process less its JIT where there was no warm run), over the
-43 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, tddlog takes 664 s in all and Alea
-2079 s; over the 40 both answer, 286 s against 279 s. tddlog is faster
-on 12 of the 40 both answer and Alea on 12, both under 0.2 s or level on
-the other 16. tddlog alone answers 3, Alea alone 0. Alea's largest leads
-are on pluck pcfg (9.31 s against 105), arith gcd_medium (84.5 s against
-108), arith book (1.18 s against 9.4), arith triangle_large (12.6 s
-against 18.9) and arith gcd_small (2.35 s against 8.6).
+counted at the 600 s limit, tddlog takes 654 s in all and Dice 10276 s;
+over the 29 both answer, 13.9 s against 1876 s. tddlog is faster on 23
+of the 29 both answer and Dice on 0, both under 0.2 s or level on the
+other 6. tddlog alone answers 14, Dice alone 0. Against Alea's wall
+time, over the 39 instances given to both that either answers, a run
+that does not answer counted at the 600 s limit, tddlog takes 650 s in
+all and Alea 3853 s; over the 36 both answer, 273 s against 2053 s;
+against its first time in the process, over the 39 instances given to
+both that either answers, a run that does not answer counted at the 600
+s limit, tddlog takes 650 s in all and Alea 3013 s; over the 36 both
+answer, 273 s against 1213 s. Without Julia's compilation (the warm
+time, or the first time in the process less its JIT where there was no
+warm run), over the 39 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, tddlog takes 650 s
+in all and Alea 2076 s; over the 36 both answer, 273 s against 276 s.
+tddlog is faster on 12 of the 36 both answer and Alea on 9, both under
+0.2 s or level on the other 15. tddlog alone answers 3, Alea alone 0.
+Alea's largest leads are on pluck pcfg (9.31 s against 98.1), arith
+gcd_medium (84.5 s against 108), arith book (1.18 s against 9.39), arith
+triangle_large (12.6 s against 18.9) and arith gcd_small (2.35 s against
+8.54).
 
-Of the 13 instances where tddlog takes 1 s or more, `auto`'s attempts
+Of the 12 instances where tddlog takes 1 s or more, `auto`'s attempts
 before the one that answers (vtrees it tries and drops, and attempts
 stopped at a smaller work limit) take half the time or more on 3: on
-Alea's largest leads they take 16.6 of 105 s on pluck pcfg, 16.5 of 108
-s on arith gcd_medium, 1.04 of 9.4 s on arith book, 5.98 of 18.9 s on
-arith triangle_large and 2.47 of 8.6 s on arith gcd_small, and without
-them tddlog would take 88.7 s on pluck pcfg, 91.3 s on arith gcd_medium,
-8.37 s on arith book, 13 s on arith triangle_large and 6.13 s on arith
+Alea's largest leads they take 16.6 of 98.1 s on pluck pcfg, 16.5 of 108
+s on arith gcd_medium, 1.04 of 9.39 s on arith book, 5.98 of 18.9 s on
+arith triangle_large and 2.47 of 8.54 s on arith gcd_small, and without
+them tddlog would take 81.5 s on pluck pcfg, 91.2 s on arith gcd_medium,
+8.35 s on arith book, 12.9 s on arith triangle_large and 6.07 s on arith
 gcd_small against Alea's 9.31, 84.5, 1.18, 12.6 and 2.35.
 
 Alea's first run is mostly Julia compiling Alea's methods for the
@@ -1944,55 +1939,55 @@ prints 0 for every answer of 8 more.
 
 - Against Alea's warm time, over the 87 instances given to both that
   either answers, a run that does not answer counted at the 600 s limit,
-  tddlog (`auto`) takes 3004 s in all and Alea 13214 s; over the 72 both
-  answer, 2012 s against 4721 s. tddlog (`auto`) is faster on 44 of the
-  72 both answer and Alea on 24, both under 0.2 s or level on the other
+  tddlog (`auto`) takes 2927 s in all and Alea 13214 s; over the 72 both
+  answer, 1945 s against 4721 s. tddlog (`auto`) is faster on 48 of the
+  72 both answer and Alea on 20, both under 0.2 s or level on the other
   4. tddlog (`auto`) alone answers 14, Alea alone 1. Against the Julia
   process, over the 87 instances given to both that either answers, a
-  run that does not answer counted at the 600 s limit, tddlog takes 3004
-  s in all and the process 22935 s; over the 72 both answer, 2012 s
+  run that does not answer counted at the 600 s limit, tddlog takes 2927
+  s in all and the process 22935 s; over the 72 both answer, 1945 s
   against 14188 s. For `program` against Alea, over the 63 instances
   given to both that either answers, a run that does not answer counted
-  at the 600 s limit, `program` takes 7456 s in all and Alea 6987 s;
-  over the 49 both answer, 1848 s against 2740 s; for `decision`, over
+  at the 600 s limit, `program` takes 7435 s in all and Alea 6987 s;
+  over the 49 both answer, 1832 s against 2740 s; for `decision`, over
   the 64 instances given to both that either answers, a run that does
-  not answer counted at the 600 s limit, `decision` takes 18137 s in all
-  and Alea 4758 s; over the 35 both answer, 1888 s against 1625 s.
+  not answer counted at the 600 s limit, `decision` takes 18071 s in all
+  and Alea 4758 s; over the 35 both answer, 1827 s against 1625 s.
 - tddlog reaches further than Alea on 14 programs: GPA, to 31 bits in
-  58.3 s, where Alea times out at 19; addFun_max, to 29 bits in 37.7 s,
+  53.4 s, where Alea times out at 19; addFun_max, to 29 bits in 37.6 s,
   where Alea answers to 21 bits (215 s) and times out at 23; addFun_sum,
-  to 29 bits in 1.79 s, where Alea answers to 21 bits (122 s) and times
-  out at 23; clickGraph, to 16 bits in 0.97 s, where Alea answers to 8
-  bits (9.92 s) and times out at 10; clinicalTrial1, to 14 bits in 25.6
+  to 29 bits in 1.77 s, where Alea answers to 21 bits (122 s) and times
+  out at 23; clickGraph, to 16 bits in 0.96 s, where Alea answers to 8
+  bits (9.92 s) and times out at 10; clinicalTrial1, to 14 bits in 25.2
   s, where Alea answers to 8 bits (347 s) and times out at 10;
-  clinicalTrial2, to 18 bits in 0.06 s, where Alea answers to 12 bits
-  (374 s) and times out at 14; conjugate_gaussians, to 29 bits in 3.23
+  clinicalTrial2, to 18 bits in 0.041 s, where Alea answers to 12 bits
+  (374 s) and times out at 14; conjugate_gaussians, to 29 bits in 3.21
   s, where Alea answers to 23 bits (230 s) and times out at 25; genes,
-  to 100 genes in 26.2 s, where Alea times out at 5; normal_mixture_mu2,
+  to 100 genes in 24 s, where Alea times out at 5; normal_mixture_mu2,
   to 9 bits in 199 s, where Alea answers to 7 bits (2.51 s) and times
-  out at 9; normal_mixture_theta, to 9 bits in 40.8 s, where Alea times
-  out at 9; pi, to 20 bits in 184 s, where Alea answers to 16 bits (305
-  s) and times out at 18; tug_of_war, to 28 bits in 1.02 s, where Alea
+  out at 9; normal_mixture_theta, to 9 bits in 40.2 s, where Alea times
+  out at 9; pi, to 20 bits in 183 s, where Alea answers to 16 bits (305
+  s) and times out at 18; tug_of_war, to 28 bits in 1 s, where Alea
   answers to 20 bits (197 s) and times out at 22; zeroone_w1, to 30 bits
-  in 12.7 s, where Alea answers to 22 bits (56.1 s) and times out at 26;
-  zeroone_w2, to 29 bits in 18.6 s, where Alea answers to 21 bits (98.4
+  in 9.68 s, where Alea answers to 22 bits (56.1 s) and times out at 26;
+  zeroone_w2, to 29 bits in 15.9 s, where Alea answers to 21 bits (98.4
   s) and times out at 23.
 - Alea reaches further on conjugate_ex3. Of these, tddlog answers no
   size of none.
 - `program` against `auto`: over the 77 instances given to both that
   either answers, a run that does not answer counted at the 600 s limit,
-  `auto` takes 1742 s in all and `program` 13797 s; over the 59 both
-  answer, 850 s against 2997 s; `auto` is faster on 34 of the 59 both
-  answer and `program` on 18. `program` answers 0 that `auto` does not,
+  `auto` takes 1696 s in all and `program` 13772 s; over the 59 both
+  answer, 825 s against 2972 s; `auto` is faster on 33 of the 59 both
+  answer and `program` on 16. `program` answers 0 that `auto` does not,
   `auto` 18 that `program` does not (GPA, addFun_max, addFun_sum,
   altermu2, clickGraph, clinicalTrial1, coinBias, conjugate_ex3,
   conjugate_gaussians, genes, genes5, multimodal, normal_mixture_theta,
   pi, tug_of_war, weekend, zeroone_w1 and zeroone_w2).
 - `decision` against `auto`: over the 92 instances given to both that
   either answers, a run that does not answer counted at the 600 s limit,
-  `auto` takes 2609 s in all and `decision` 25817 s; over the 53 both
-  answer, 1542 s against 2417 s; `auto` is faster on 11 of the 53 both
-  answer and `decision` on 42. `decision` answers 0 that `auto` does
+  `auto` takes 2489 s in all and `decision` 25704 s; over the 53 both
+  answer, 1430 s against 2304 s; `auto` is faster on 11 of the 53 both
+  answer and `decision` on 41. `decision` answers 0 that `auto` does
   not, `auto` 39 that `decision` does not (addFun_max, addFun_sum,
   clickGraph, clinicalTrial1, clinicalTrial2, conjugate_gaussians,
   multimodal, normal_mixture_mu1, normal_mixture_mu2,
@@ -2016,281 +2011,281 @@ at the smallest size it ran; `paper` is the paper's precision.
 
 | program | paper | auto | program | decision | Alea | Dice (earlier) |
 |---|---:|---:|---:|---:|---:|---:|
-| GPA | 25 | 31 (58.3 s) | >600 at 19 | 31 (51.8 s) | >600 at 19 | 31 (69.8 s) |
-| addFun_max | 23 | 29 (37.7 s) | 19 (176 s) | oom at 17 | 21 (215 s) | >600 at 17 |
-| addFun_sum | 23 | 29 (1.79 s) | 21 (61.3 s) | 17 (441 s) | 21 (122 s) | >600 at 17 |
-| altermu2 | 17 | 15 (73.1 s) | 13 (392 s) | 15 (69.9 s) | 15 (143 s) | >600 at 11 |
-| clickGraph | 10 | 16 (0.97 s) | 10 (20.7 s) | n/a at 4 | 8 (9.92 s) | 6 (47.9 s) |
-| clinicalTrial1 | 8 | 14 (25.6 s) | 10 (40.7 s) | n/a at 4 | 8 (347 s) | zero at 4 |
-| clinicalTrial2 | 12 | 18 (0.06 s) | 18 (1.3 s) | n/a at 6 | 12 (374 s) | 8 (137 s) |
-| coinBias | 22 | 22 (201 s) | >600 at 16 | 22 (162 s) | 22 (416 s) | >600 at 16 |
-| conjugate_ex3 |  | 20 (84.3 s) | oom at 18 | 20 (72.5 s) | 24 (383 s) | >600 at 18 |
-| conjugate_gaussians | 23 | 29 (3.23 s) | 23 (151 s) | 17 (417 s) | 23 (230 s) | >600 at 17 |
-| genes | 5-50 | 100 (26.2 s) | oom at 5 | 100 (23.8 s) | >600 at 5 | >600 at 5 |
-| genes5 |  | 27 (24.2 s) | >600 at 17 | 27 (20.7 s) | 27 (503 s) | zero at 17 |
-| multimodal |  | 11 (501 s) | oom at 11 | oom at 11 | 11 (50.3 s) | >600 at 11 |
-| normal_mixture_mu1 | 9 | 9 (202 s) | 9 (370 s) | 7 (1.67 s) | 9 (480 s) | >600 at 7 |
-| normal_mixture_mu2 | 9 | 9 (199 s) | 9 (591 s) | oom at 7 | 7 (2.51 s) | >600 at 7 |
-| normal_mixture_theta | 9 | 9 (40.8 s) | oom at 9 | oom at 9 | >600 at 9 | >600 at 9 |
-| pi | 14 | 20 (184 s) | 16 (92.3 s) | n/a at 8 | 16 (305 s) | >600 at 8 |
+| GPA | 25 | 31 (53.4 s) | >600 at 19 | 31 (47 s) | >600 at 19 | 31 (65 s) |
+| addFun_max | 23 | 29 (37.6 s) | 19 (176 s) | oom at 17 | 21 (215 s) | >600 at 17 |
+| addFun_sum | 23 | 29 (1.77 s) | 21 (61.2 s) | 17 (441 s) | 21 (122 s) | >600 at 17 |
+| altermu2 | 17 | 15 (70.4 s) | 13 (390 s) | 15 (67.2 s) | 15 (143 s) | >600 at 11 |
+| clickGraph | 10 | 16 (0.96 s) | 10 (20.7 s) | n/a at 4 | 8 (9.92 s) | 6 (47.9 s) |
+| clinicalTrial1 | 8 | 14 (25.2 s) | 10 (40.2 s) | n/a at 4 | 8 (347 s) | zero at 4 |
+| clinicalTrial2 | 12 | 18 (0.041 s) | 18 (1.28 s) | n/a at 6 | 12 (374 s) | 8 (137 s) |
+| coinBias | 22 | 22 (199 s) | >600 at 16 | 22 (161 s) | 22 (416 s) | >600 at 16 |
+| conjugate_ex3 |  | 20 (82.5 s) | oom at 18 | 20 (70.7 s) | 24 (383 s) | >600 at 18 |
+| conjugate_gaussians | 23 | 29 (3.21 s) | 23 (151 s) | 17 (417 s) | 23 (230 s) | >600 at 17 |
+| genes | 5-50 | 100 (24 s) | oom at 5 | 100 (21.5 s) | >600 at 5 | >600 at 5 |
+| genes5 |  | 27 (22 s) | >600 at 17 | 27 (18.6 s) | 27 (503 s) | zero at 17 |
+| multimodal |  | 11 (500 s) | oom at 11 | oom at 11 | 11 (50.3 s) | >600 at 11 |
+| normal_mixture_mu1 | 9 | 9 (202 s) | 9 (369 s) | 7 (1.54 s) | 9 (480 s) | >600 at 7 |
+| normal_mixture_mu2 | 9 | 9 (199 s) | 9 (590 s) | oom at 7 | 7 (2.51 s) | >600 at 7 |
+| normal_mixture_theta | 9 | 9 (40.2 s) | oom at 9 | oom at 9 | >600 at 9 | >600 at 9 |
+| pi | 14 | 20 (183 s) | 16 (92.2 s) | n/a at 8 | 16 (305 s) | >600 at 8 |
 | spacex | 19 | 19 (130 s) | 19 (74 s) | oom at 13 | 19 (204 s) | >600 at 13 |
-| trueskill | 10 | 10 (61.2 s) | 10 (35.1 s) | oom at 8 | 10 (123 s) | >600 at 8 |
-| tug_of_war | 22 | 28 (1.02 s) | 18 (151 s) | oom at 16 | 20 (197 s) | >600 at 16 |
-| weekend | 24 | 30 (49.2 s) | >600 at 18 | 30 (44.9 s) | 30 (22.1 s) | 20 (359 s) |
-| zeroone_w1 | 16 | 30 (12.7 s) | 26 (137 s) | 20 (95.3 s) | 22 (56.1 s) | 14 (354 s) |
-| zeroone_w2 | 19 | 29 (18.6 s) | 27 (274 s) | 19 (21.3 s) | 21 (98.4 s) | 13 (131 s) |
+| trueskill | 10 | 10 (61.2 s) | 10 (35 s) | oom at 8 | 10 (123 s) | >600 at 8 |
+| tug_of_war | 22 | 28 (1 s) | 18 (151 s) | oom at 16 | 20 (197 s) | >600 at 16 |
+| weekend | 24 | 30 (43.3 s) | >600 at 18 | 30 (39.1 s) | 30 (22.1 s) | 20 (355 s) |
+| zeroone_w1 | 16 | 30 (9.68 s) | 26 (134 s) | 20 (94.1 s) | 22 (56.1 s) | 14 (354 s) |
+| zeroone_w2 | 19 | 29 (15.9 s) | 27 (271 s) | 19 (20.2 s) | 21 (98.4 s) | 13 (131 s) |
 
 The full table:
 
 | instance | flips | gates | tddlog | program | decision | Dice (earlier) | Alea | Alea process | ProbLog | ref | tddlog diff | program diff | decision diff | Dice (earlier) diff | Alea diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| GPA_w19 | 45061 | 368680 | 31.2 | >600 | 26.9 | 43.2 | >600 | >600 | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
-| GPA_w21 | 61441 | 417832 | 34.8 | - | 31.2 | 47.7 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
-| GPA_w23 | 77812 | 466966 | 38.9 | - | 34.9 | 52.4 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
-| GPA_w25 | 94168 | 516070 | 44.5 | - | 40.2 | 56.1 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
-| GPA_w27 | 110529 | 565184 | 49.6 | - | 44.6 | 61 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
-| GPA_w29 | 126871 | 614260 | 53.7 | - | 48.5 | 66.8 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
-| GPA_w31 | 143187 | 663285 | 58.3 | - | 51.8 | 69.8 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
-| addFun_max_w17 | 566 | 18099 | 18.4 | 41.8 | oom | >600 | 10.3 | 70.7 | >600 | alea | 2.2e-16 / 4.4e-16 | 7.9e-15 / 1.6e-14 |  |  | ref |
-| addFun_max_w19 | 580 | 21035 | 40.9 | 176 | - | - | 47.7 | 176 | - | alea | 3.3e-16 / 6.7e-16 | 4.5e-14 / 9.1e-14 |  |  | ref |
-| addFun_max_w21 | 594 | 23603 | 30.9 | >600 | - | - | 215 | 259 | - | alea | 5.6e-16 / 1.1e-15 |  |  |  | ref |
-| addFun_max_w23 | 604 | 26275 | 33.8 | - | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
-| addFun_max_w25 | 618 | 28939 | 35 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| addFun_max_w27 | 630 | 31297 | 36.1 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| addFun_max_w29 | 642 | 33393 | 37.7 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| GPA_w19 | 45061 | 368680 | 28.8 | >600 | 24.5 | 40.8 | >600 | >600 | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
+| GPA_w21 | 61441 | 417832 | 31.8 | - | 28.2 | 44.7 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
+| GPA_w23 | 77812 | 466966 | 35 | - | 31.1 | 48.6 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
+| GPA_w25 | 94168 | 516070 | 40.6 | - | 36.3 | 52.2 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
+| GPA_w27 | 110529 | 565184 | 45.3 | - | 40.3 | 56.7 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
+| GPA_w29 | 126871 | 614260 | 49 | - | 43.8 | 62.1 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
+| GPA_w31 | 143187 | 663285 | 53.4 | - | 47 | 65 | - | - | stack | tddlog | ref |  |  | 9.4e-14 / 1.5e-13 |  |
+| addFun_max_w17 | 566 | 18099 | 18.3 | 41.7 | oom | >600 | 10.3 | 70.7 | >600 | alea | 2.2e-16 / 4.4e-16 | 7.9e-15 / 1.6e-14 |  |  | ref |
+| addFun_max_w19 | 580 | 21035 | 40.8 | 176 | - | - | 47.7 | 176 | - | alea | 3.3e-16 / 6.7e-16 | 4.5e-14 / 9.1e-14 |  |  | ref |
+| addFun_max_w21 | 594 | 23603 | 30.8 | >600 | - | - | 215 | 259 | - | alea | 5.6e-16 / 1.1e-15 |  |  |  | ref |
+| addFun_max_w23 | 604 | 26275 | 33.6 | - | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| addFun_max_w25 | 618 | 28939 | 34.9 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| addFun_max_w27 | 630 | 31297 | 36 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| addFun_max_w29 | 642 | 33393 | 37.6 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
 | addFun_max_p1024 | 4014 | 187241 | >600 | - | - | - | - | - | - |  |  |  |  |  |  |
-| addFun_max_p16 | 196 | 3801 | 0.918 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| addFun_max_p16 | 196 | 3801 | 0.905 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
 | addFun_max_p256 | 1090 | 50669 | 175 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| addFun_max_p4 | 168 | 1249 | 0.505 | oom | oom | >600 | >600 | >600 | oom | tddlog | ref |  |  |  |  |
-| addFun_max_p64 | 366 | 13777 | 5.29 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| addFun_sum_w17 | 152 | 2800 | 0.813 | 3.66 | 441 | >600 | 5.38 | 123 | >600 | alea | 7.8e-16 / 1.6e-15 | 1.1e-13 / 2.2e-13 | 1.8e-11 / 3.6e-11 |  | ref |
-| addFun_sum_w19 | 168 | 3212 | 0.926 | 14.6 | oom | - | 28.5 | 181 | - | alea | 5.6e-16 / 1.1e-15 | 5.5e-13 / 1.1e-12 |  |  | ref |
-| addFun_sum_w21 | 184 | 3624 | 1.08 | 61.3 | - | - | 122 | 238 | - | alea | 6.7e-16 / 1.3e-15 | 1.3e-12 / 2.6e-12 |  |  | ref |
-| addFun_sum_w23 | 196 | 3820 | 1.21 | oom | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
-| addFun_sum_w25 | 212 | 4208 | 1.36 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| addFun_sum_w27 | 228 | 4596 | 1.54 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| addFun_sum_w29 | 244 | 4984 | 1.79 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| altermu2_w11 | 20458 | 274380 | 23.1 | 125 | 21.5 | >600 | 8.16 | 112 | >600 | alea | 4.7e-14 / 9.4e-14 | 4.8e-14 / 9.6e-14 | 4.7e-14 / 9.4e-14 |  | ref |
-| altermu2_w13 | 40822 | 336280 | 36.1 | 392 | 34.1 | - | 35.4 | 193 | - | alea | 3.4e-14 / 6.8e-14 | 2.9e-14 / 5.7e-14 | 3.4e-14 / 6.8e-14 |  | ref |
-| altermu2_w15 | 60746 | 397700 | 73.1 | oom | 69.9 | - | 143 | 231 | - | alea | 1.6e-14 / 3.1e-14 |  | 1.6e-14 / 3.1e-14 |  | ref |
+| addFun_max_p4 | 168 | 1249 | 0.5 | oom | oom | >600 | >600 | >600 | oom | tddlog | ref |  |  |  |  |
+| addFun_max_p64 | 366 | 13777 | 5.24 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| addFun_sum_w17 | 152 | 2800 | 0.801 | 3.65 | 441 | >600 | 5.38 | 123 | >600 | alea | 7.8e-16 / 1.6e-15 | 1.1e-13 / 2.2e-13 | 1.8e-11 / 3.6e-11 |  | ref |
+| addFun_sum_w19 | 168 | 3212 | 0.913 | 14.6 | oom | - | 28.5 | 181 | - | alea | 5.6e-16 / 1.1e-15 | 5.5e-13 / 1.1e-12 |  |  | ref |
+| addFun_sum_w21 | 184 | 3624 | 1.06 | 61.2 | - | - | 122 | 238 | - | alea | 6.7e-16 / 1.3e-15 | 1.3e-12 / 2.6e-12 |  |  | ref |
+| addFun_sum_w23 | 196 | 3820 | 1.19 | oom | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| addFun_sum_w25 | 212 | 4208 | 1.35 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| addFun_sum_w27 | 228 | 4596 | 1.52 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| addFun_sum_w29 | 244 | 4984 | 1.77 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| altermu2_w11 | 20458 | 274380 | 21.5 | 123 | 19.8 | >600 | 8.16 | 112 | >600 | alea | 4.7e-14 / 9.4e-14 | 4.8e-14 / 9.6e-14 | 4.7e-14 / 9.4e-14 |  | ref |
+| altermu2_w13 | 40822 | 336280 | 34 | 390 | 32 | - | 35.4 | 193 | - | alea | 3.4e-14 / 6.8e-14 | 2.9e-14 / 5.7e-14 | 3.4e-14 / 6.8e-14 |  | ref |
+| altermu2_w15 | 60746 | 397700 | 70.4 | oom | 67.2 | - | 143 | 231 | - | alea | 1.6e-14 / 3.1e-14 |  | 1.6e-14 / 3.1e-14 |  | ref |
 | altermu2_w17 | 80350 | 457880 | oom | - | oom | - | >600 | >600 | - |  |  |  |  |  |  |
 | altermu2_p1024 | 240710 | 1777240 | >600 | - | - | - | - | - | - |  |  |  |  |  |  |
-| altermu2_p16 | 7670 | 35720 | 3.86 | oom | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| altermu2_p4 | 2230 | 13800 | 2.49 | 138 | oom | >600 | >600 | >600 | >600 | merlin | 4.9e-07 / 9.7e-07 | 4.9e-07 / 9.7e-07 |  |  |  |
-| altermu2_p64 | 25430 | 121720 | 26.3 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| clickGraph_w4 | 52 | 135 | 0.015 | 0.014 | n/a | 0.176 | 0.016 | 85.8 | 0.155 | alea | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 |  | 3.5e-13 / 5.7e-13 | ref |
-| clickGraph_w6 | 104 | 345 | 0.03 | 0.028 | n/a | 47.9 | 0.083 | 82.7 | 0.377 | alea | 2.2e-16 / 4.1e-16 | 2.2e-16 / 4.1e-16 |  | 4.4e-13 / 8.4e-13 | ref |
-| clickGraph_w8 | 156 | 555 | 0.389 | 0.265 | n/a | >600 | 9.92 | 113 | 1.53 | alea | 6.7e-16 / 9.9e-16 | 6.7e-16 / 9.9e-16 |  |  | ref |
-| clickGraph_w10 | 208 | 765 | 0.58 | 20.7 | n/a | - | >600 | >600 | 5.92 | Ganak | 5.2e-15 / 1.0e-14 | 1.0e-15 / 1.5e-15 |  |  |  |
-| clickGraph_w12 | 260 | 975 | 0.762 | oom | n/a | - | - | - | 30.9 | Ganak | 8.3e-15 / 1.4e-14 |  |  |  |  |
-| clickGraph_w14 | 312 | 1185 | 1.16 | - | n/a | - | - | - | wrong | Ganak | 1.2e-14 / 2.1e-14 |  |  |  |  |
-| clickGraph_w16 | 364 | 1395 | 0.971 | - | n/a | - | - | - | oom | Ganak | 4.2e-15 / 8.4e-15 |  |  |  |  |
-| clinicalTrial1_w4 | 807 | 3200 | 0.494 | 0.486 | n/a | zero | 0.439 | 94.2 | 1.51 | alea | 5.8e-15 / 2.9e-14 | 5.8e-15 / 2.9e-14 |  |  | ref |
-| clinicalTrial1_w6 | 1613 | 8000 | 1 | 0.715 | n/a | zero | 10.9 | 125 | 5.19 | alea | 1.1e-14 / 6.4e-14 | 1.1e-14 / 6.4e-14 |  |  | ref |
-| clinicalTrial1_w8 | 2419 | 12800 | 3.39 | 2.47 | n/a | >600 | 347 | 440 | 24.5 | alea | 4.4e-16 / 2.6e-15 | 4.4e-16 / 2.6e-15 |  |  | ref |
-| clinicalTrial1_w10 | 3225 | 17600 | 8.53 | 40.7 | n/a | - | >600 | >600 | 121 | Ganak | 1.1e-16 / 6.5e-16 | 5.6e-17 / 3.3e-16 |  |  |  |
-| clinicalTrial1_w12 | 4031 | 22400 | 12.2 | oom | n/a | - | - | - | oom | merlin | 4.5e-07 / 2.6e-06 |  |  |  |  |
-| clinicalTrial1_w14 | 4837 | 27200 | 25.6 | - | n/a | - | - | - | - | ace-Xlog | 4.4e-15 / 2.6e-14 |  |  |  |  |
-| clinicalTrial2_w6 | 89 | 412 | 0.019 | 0.018 | n/a | 1.37 | 0.033 | 86.8 | 0.398 | alea | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 |  | 3.7e-13 / 7.4e-13 | ref |
-| clinicalTrial2_w8 | 133 | 658 | 0.026 | 0.024 | n/a | 137 | 0.442 | 89 | 1.08 | alea | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |  | 4.7e-13 / 1.2e-12 | ref |
-| clinicalTrial2_w10 | 177 | 904 | 0.032 | 0.03 | n/a | >600 | 13.8 | 128 | 4.74 | alea | 1.1e-15 / 2.2e-15 | 1.1e-15 / 2.2e-15 |  |  | ref |
-| clinicalTrial2_w12 | 221 | 1150 | 0.049 | 0.046 | n/a | - | 374 | 460 | 24 | alea | 3.6e-15 / 7.1e-15 | 3.6e-15 / 7.1e-15 |  |  | ref |
-| clinicalTrial2_w14 | 265 | 1396 | 0.052 | 0.104 | n/a | - | >600 | >600 | 118 | Ganak | 1.1e-16 / 2.2e-16 | 4.2e-15 / 8.4e-15 |  |  |  |
-| clinicalTrial2_w16 | 309 | 1642 | 0.056 | 0.319 | n/a | - | - | - | oom | Ganak | 2.2e-16 / 4.4e-16 | 2.4e-15 / 4.9e-15 |  |  |  |
-| clinicalTrial2_w18 | 353 | 1888 | 0.06 | 1.3 | n/a | - | - | - | - | Ganak | 2.2e-16 / 4.4e-16 | 2.8e-15 / 5.6e-15 |  |  |  |
-| coinBias_w16 | 12422 | 152450 | 14 | >600 | 12.5 | >600 | 13.9 | 145 | oom | alea | 2.4e-15 / 5.3e-15 |  | 2.4e-15 / 5.3e-15 |  | ref |
-| coinBias_w18 | 20630 | 177156 | 23 | - | 21.4 | - | 29.6 | 189 | - | alea | 3.8e-15 / 6.1e-15 |  | 3.8e-15 / 6.1e-15 |  | ref |
-| coinBias_w20 | 28834 | 201858 | 51 | - | 48.5 | - | 104 | 298 | - | alea | 1.0e-14 / 2.1e-14 |  | 1.0e-14 / 2.1e-14 |  | ref |
-| coinBias_w22 | 37026 | 226532 | 201 | - | 162 | - | 416 | 524 | - | alea | 1.4e-14 / 2.9e-14 |  | 1.4e-14 / 2.9e-14 |  | ref |
+| altermu2_p16 | 7670 | 35720 | 3.71 | oom | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| altermu2_p4 | 2230 | 13800 | 2.43 | 138 | oom | >600 | >600 | >600 | >600 | merlin | 4.9e-07 / 9.7e-07 | 4.9e-07 / 9.7e-07 |  |  |  |
+| altermu2_p64 | 25430 | 121720 | 25.7 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| clickGraph_w4 | 52 | 135 | 0.01 | 0.009 | n/a | 0.171 | 0.016 | 85.8 | 0.15 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 3.5e-13 / 5.7e-13 | 2.2e-16 / 3.7e-16 |
+| clickGraph_w6 | 104 | 345 | 0.023 | 0.021 | n/a | 47.9 | 0.083 | 82.7 | 0.37 | storm-exact | 3.3e-16 / 6.4e-16 | 3.3e-16 / 6.4e-16 |  | 4.4e-13 / 8.4e-13 | 2.2e-16 / 4.2e-16 |
+| clickGraph_w8 | 156 | 555 | 0.381 | 0.257 | n/a | >600 | 9.92 | 113 | 1.52 | storm-exact | 3.3e-16 / 5.0e-16 | 3.3e-16 / 5.0e-16 |  |  | 4.4e-16 / 8.5e-16 |
+| clickGraph_w10 | 208 | 765 | 0.57 | 20.7 | n/a | - | >600 | >600 | 5.91 | Ganak | 5.2e-15 / 1.0e-14 | 1.0e-15 / 1.5e-15 |  |  |  |
+| clickGraph_w12 | 260 | 975 | 0.751 | oom | n/a | - | - | - | 30.9 | Ganak | 8.3e-15 / 1.4e-14 |  |  |  |  |
+| clickGraph_w14 | 312 | 1185 | 1.15 | - | n/a | - | - | - | wrong | Ganak | 1.2e-14 / 2.1e-14 |  |  |  |  |
+| clickGraph_w16 | 364 | 1395 | 0.957 | - | n/a | - | - | - | oom | Ganak | 4.2e-15 / 8.4e-15 |  |  |  |  |
+| clinicalTrial1_w4 | 807 | 3200 | 0.108 | 0.1 | n/a | zero | 0.439 | 94.2 | 1.12 | alea | 5.8e-15 / 2.9e-14 | 5.8e-15 / 2.9e-14 |  |  | ref |
+| clinicalTrial1_w6 | 1613 | 8000 | 0.588 | 0.299 | n/a | zero | 10.9 | 125 | 4.77 | alea | 1.1e-14 / 6.4e-14 | 1.1e-14 / 6.4e-14 |  |  | ref |
+| clinicalTrial1_w8 | 2419 | 12800 | 2.91 | 2 | n/a | >600 | 347 | 440 | 24 | alea | 4.4e-16 / 2.6e-15 | 4.4e-16 / 2.6e-15 |  |  | ref |
+| clinicalTrial1_w10 | 3225 | 17600 | 8.01 | 40.2 | n/a | - | >600 | >600 | 121 | Ganak | 1.1e-16 / 6.5e-16 | 5.6e-17 / 3.3e-16 |  |  |  |
+| clinicalTrial1_w12 | 4031 | 22400 | 11.6 | oom | n/a | - | - | - | oom | merlin | 4.5e-07 / 2.6e-06 |  |  |  |  |
+| clinicalTrial1_w14 | 4837 | 27200 | 25.2 | - | n/a | - | - | - | - | ace-Xlog | 4.4e-15 / 2.6e-14 |  |  |  |  |
+| clinicalTrial2_w6 | 89 | 412 | 0.01 | 0.009 | n/a | 1.36 | 0.033 | 86.8 | 0.389 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 3.7e-13 / 7.4e-13 | 6.7e-16 / 1.3e-15 |
+| clinicalTrial2_w8 | 133 | 658 | 0.015 | 0.013 | n/a | 137 | 0.442 | 89 | 1.07 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 4.7e-13 / 1.2e-12 | 5.6e-16 / 1.1e-15 |
+| clinicalTrial2_w10 | 177 | 904 | 0.02 | 0.018 | n/a | >600 | 13.8 | 128 | 4.73 | alea | 1.1e-15 / 2.2e-15 | 1.1e-15 / 2.2e-15 |  |  | ref |
+| clinicalTrial2_w12 | 221 | 1150 | 0.035 | 0.032 | n/a | - | 374 | 460 | 24 | alea | 3.6e-15 / 7.1e-15 | 3.6e-15 / 7.1e-15 |  |  | ref |
+| clinicalTrial2_w14 | 265 | 1396 | 0.036 | 0.088 | n/a | - | >600 | >600 | 118 | Ganak | 1.1e-16 / 2.2e-16 | 4.2e-15 / 8.4e-15 |  |  |  |
+| clinicalTrial2_w16 | 309 | 1642 | 0.038 | 0.301 | n/a | - | - | - | oom | Ganak | 2.2e-16 / 4.4e-16 | 2.4e-15 / 4.9e-15 |  |  |  |
+| clinicalTrial2_w18 | 353 | 1888 | 0.041 | 1.28 | n/a | - | - | - | - | Ganak | 2.2e-16 / 4.4e-16 | 2.8e-15 / 5.6e-15 |  |  |  |
+| coinBias_w16 | 12422 | 152450 | 13.2 | >600 | 11.8 | >600 | 13.9 | 145 | oom | alea | 2.4e-15 / 5.3e-15 |  | 2.4e-15 / 5.3e-15 |  | ref |
+| coinBias_w18 | 20630 | 177156 | 22 | - | 20.4 | - | 29.6 | 189 | - | alea | 3.8e-15 / 6.1e-15 |  | 3.8e-15 / 6.1e-15 |  | ref |
+| coinBias_w20 | 28834 | 201858 | 49.9 | - | 47.3 | - | 104 | 298 | - | alea | 1.0e-14 / 2.1e-14 |  | 1.0e-14 / 2.1e-14 |  | ref |
+| coinBias_w22 | 37026 | 226532 | 199 | - | 161 | - | 416 | 524 | - | alea | 1.4e-14 / 2.9e-14 |  | 1.4e-14 / 2.9e-14 |  | ref |
 | coinBias_w24 | 45190 | 251150 | >600 | - | oom | - | >600 | >600 | - |  |  |  |  |  |  |
-| conjugate_ex3_w18 | 9147 | 239177 | 51.8 | oom | 45.9 | >600 | 10.4 | 110 | oom | alea | 5.6e-15 / 1.0e-14 |  | 5.6e-15 / 1.0e-14 |  | ref |
-| conjugate_ex3_w20 | 9135 | 290908 | 84.3 | - | 72.5 | - | 25.2 | 152 | - | alea | 6.4e-15 / 1.3e-14 |  | 6.4e-15 / 1.3e-14 |  | ref |
+| conjugate_ex3_w18 | 9147 | 239177 | 50.3 | oom | 44.3 | >600 | 10.4 | 110 | oom | alea | 5.6e-15 / 1.0e-14 |  | 5.6e-15 / 1.0e-14 |  | ref |
+| conjugate_ex3_w20 | 9135 | 290908 | 82.5 | - | 70.7 | - | 25.2 | 152 | - | alea | 6.4e-15 / 1.3e-14 |  | 6.4e-15 / 1.3e-14 |  | ref |
 | conjugate_ex3_w22 | 9135 | 342186 | >600 | - | oom | - | 93.2 | 347 | - | alea |  |  |  |  | ref |
 | conjugate_ex3_w24 | 9117 | 392519 | - | - | - | - | 383 | 461 | - | alea |  |  |  |  | ref |
 | conjugate_ex3_w26 | 9105 | 442375 | - | - | - | - | >600 | >600 | - |  |  |  |  |  |  |
-| conjugate_gaussians_w17 | 177 | 2788 | 0.624 | 2.21 | 417 | >600 | 1.6 | 83.3 | >600 | alea | 4.0e-15 / 2.1e-14 | 6.2e-15 / 2.1e-14 | 4.1e-15 / 2.2e-14 |  | ref |
-| conjugate_gaussians_w19 | 201 | 3258 | 0.849 | 8.38 | oom | - | 9.78 | 109 | - | alea | 2.4e-15 / 5.8e-15 | 8.7e-15 / 1.7e-14 |  |  | ref |
-| conjugate_gaussians_w21 | 225 | 3728 | 1.1 | 34.1 | - | - | 47.3 | 214 | - | alea | 4.3e-15 / 8.7e-15 | 2.5e-14 / 4.9e-14 |  |  | ref |
-| conjugate_gaussians_w23 | 249 | 4198 | 1.86 | 151 | - | - | 230 | 309 | - | alea | 2.7e-15 / 6.5e-15 | 3.3e-13 / 6.6e-13 |  |  | ref |
-| conjugate_gaussians_w25 | 273 | 4668 | 1.66 | oom | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
-| conjugate_gaussians_w27 | 297 | 5138 | 2.42 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| conjugate_gaussians_w29 | 321 | 5608 | 3.23 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| fair_dt14_w12 | 1795 | 9432 | 7.97 | 4.04 | 274 | >600 | 0.191 | 128 | oom | alea | 2.8e-17 / 5.6e-16 | 1.7e-17 / 5.6e-16 | 1.4e-17 / 2.2e-16 |  | ref |
-| fair_dt14_w16 | 3034 | 13225 | 14.6 | 62.9 | oom | - | 1.08 | 135 | - | alea | 5.2e-17 / 1.7e-15 | 5.6e-17 / 8.6e-16 |  |  | ref |
-| fair_dt14_w20 | 4259 | 17021 | 30.4 | oom | - | - | 20.6 | 192 | - | alea | 5.6e-17 / 1.0e-15 |  |  |  | ref |
-| fair_dt14_w24 | 5272 | 20135 | 35.8 | - | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
-| fair_dt14_w28 | 6274 | 23227 | 51.2 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| fair_dt14_w32 | 7263 | 26293 | 84.4 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| fair_dt14_w36 | 8145 | 29141 | 86.4 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| fair_dt14_w40 | 8974 | 31891 | 97.2 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| fair_dt16_w12 | 420 | 2143 | 0.417 | 0.211 | 0.121 | >600 | 0.048 | 129 | 3.9 | alea | 2.8e-17 / 2.8e-16 | 2.8e-17 / 2.8e-16 | 2.8e-17 / 2.8e-16 |  | ref |
-| fair_dt16_w16 | 638 | 2884 | 0.634 | 0.367 | 0.194 | - | 0.067 | 129 | 3.92 | alea | 5.6e-17 / 2.9e-16 | 5.6e-17 / 2.9e-16 | 5.6e-17 / 4.2e-16 |  | ref |
-| fair_dt16_w20 | 793 | 3420 | 0.804 | 0.476 | 0.236 | - | 0.069 | 131 | 9.19 | alea | 8.3e-17 / 5.6e-16 | 8.3e-17 / 5.6e-16 | 8.3e-17 / 4.4e-16 |  | ref |
-| fair_dt16_w24 | 780 | 3394 | 0.832 | 0.476 | 0.24 | - | 0.067 | 128 | 8.96 | alea | 5.6e-17 / 2.9e-16 | 5.6e-17 / 2.9e-16 | 4.2e-17 / 8.4e-16 |  | ref |
-| fair_dt16_w28 | 754 | 3342 | 0.699 | 0.457 | 0.233 | - | 0.068 | 126 | 8.47 | alea | 2.8e-17 / 4.2e-16 | 2.8e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 |  | ref |
-| fair_dt16_w32 | 741 | 3316 | 0.694 | 0.44 | 0.228 | - | 0.069 | 126 | 8.2 | alea | 2.8e-17 / 4.2e-16 | 2.8e-17 / 4.2e-16 | 4.2e-17 / 8.4e-16 |  | ref |
-| fair_dt4_w12 | 1871 | 9632 | 4.54 | 3.47 | 210 | >600 | 0.201 | 128 | 263 | alea | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 6.9e-18 / 2.4e-16 |  | ref |
+| conjugate_gaussians_w17 | 177 | 2788 | 0.613 | 2.19 | 417 | >600 | 1.6 | 83.3 | >600 | alea | 4.0e-15 / 2.1e-14 | 6.2e-15 / 2.1e-14 | 4.1e-15 / 2.2e-14 |  | ref |
+| conjugate_gaussians_w19 | 201 | 3258 | 0.837 | 8.37 | oom | - | 9.78 | 109 | - | alea | 2.4e-15 / 5.8e-15 | 8.7e-15 / 1.7e-14 |  |  | ref |
+| conjugate_gaussians_w21 | 225 | 3728 | 1.08 | 34.1 | - | - | 47.3 | 214 | - | alea | 4.3e-15 / 8.7e-15 | 2.5e-14 / 4.9e-14 |  |  | ref |
+| conjugate_gaussians_w23 | 249 | 4198 | 1.85 | 151 | - | - | 230 | 309 | - | alea | 2.7e-15 / 6.5e-15 | 3.3e-13 / 6.6e-13 |  |  | ref |
+| conjugate_gaussians_w25 | 273 | 4668 | 1.64 | oom | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| conjugate_gaussians_w27 | 297 | 5138 | 2.4 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| conjugate_gaussians_w29 | 321 | 5608 | 3.21 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| fair_dt14_w12 | 1795 | 9432 | 7.93 | 4 | 274 | >600 | 0.191 | 128 | oom | alea | 2.8e-17 / 5.6e-16 | 1.7e-17 / 5.6e-16 | 1.4e-17 / 2.2e-16 |  | ref |
+| fair_dt14_w16 | 3034 | 13225 | 14.5 | 62.8 | oom | - | 1.08 | 135 | - | alea | 5.2e-17 / 1.7e-15 | 5.6e-17 / 8.6e-16 |  |  | ref |
+| fair_dt14_w20 | 4259 | 17021 | 30.3 | oom | - | - | 20.6 | 192 | - | alea | 5.6e-17 / 1.0e-15 |  |  |  | ref |
+| fair_dt14_w24 | 5272 | 20135 | 35.6 | - | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| fair_dt14_w28 | 6274 | 23227 | 51.1 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| fair_dt14_w32 | 7263 | 26293 | 84.2 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| fair_dt14_w36 | 8145 | 29141 | 86.3 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| fair_dt14_w40 | 8974 | 31891 | 97.1 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| fair_dt16_w12 | 420 | 2143 | 0.401 | 0.195 | 0.105 | >600 | 0.048 | 129 | 3.88 | alea | 2.8e-17 / 2.8e-16 | 2.8e-17 / 2.8e-16 | 2.8e-17 / 2.8e-16 |  | ref |
+| fair_dt16_w16 | 638 | 2884 | 0.614 | 0.347 | 0.174 | - | 0.067 | 129 | 3.9 | alea | 5.6e-17 / 2.9e-16 | 5.6e-17 / 2.9e-16 | 5.6e-17 / 4.2e-16 |  | ref |
+| fair_dt16_w20 | 793 | 3420 | 0.783 | 0.455 | 0.215 | - | 0.069 | 131 | 9.17 | alea | 8.3e-17 / 5.6e-16 | 8.3e-17 / 5.6e-16 | 8.3e-17 / 4.4e-16 |  | ref |
+| fair_dt16_w24 | 780 | 3394 | 0.81 | 0.454 | 0.218 | - | 0.067 | 128 | 8.94 | alea | 5.6e-17 / 2.9e-16 | 5.6e-17 / 2.9e-16 | 4.2e-17 / 8.4e-16 |  | ref |
+| fair_dt16_w28 | 754 | 3342 | 0.675 | 0.433 | 0.209 | - | 0.068 | 126 | 8.45 | alea | 2.8e-17 / 4.2e-16 | 2.8e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 |  | ref |
+| fair_dt16_w32 | 741 | 3316 | 0.671 | 0.417 | 0.205 | - | 0.069 | 126 | 8.18 | alea | 2.8e-17 / 4.2e-16 | 2.8e-17 / 4.2e-16 | 4.2e-17 / 8.4e-16 |  | ref |
+| fair_dt4_w12 | 1871 | 9632 | 4.5 | 3.43 | 210 | >600 | 0.201 | 128 | 263 | alea | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 6.9e-18 / 2.4e-16 |  | ref |
 | fair_dt4_w16 | 3064 | 13311 | 15.3 | 49.9 | oom | - | 0.933 | 126 | >600 | alea | 2.8e-17 / 1.9e-16 | 2.8e-17 / 1.9e-16 |  |  | ref |
-| fair_dt4_w20 | 4349 | 17315 | 31.2 | oom | - | - | 16.9 | 172 | - | alea | 2.8e-17 / 2.5e-16 |  |  |  | ref |
-| fair_dt4_w24 | 5360 | 20425 | 38.3 | - | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
-| fair_dt4_w28 | 6358 | 23509 | 54.9 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| fair_dt4_w32 | 7345 | 26571 | 103 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| fair_dt4_w20 | 4349 | 17315 | 31.1 | oom | - | - | 16.9 | 172 | - | alea | 2.8e-17 / 2.5e-16 |  |  |  | ref |
+| fair_dt4_w24 | 5360 | 20425 | 38.2 | - | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| fair_dt4_w28 | 6358 | 23509 | 54.8 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| fair_dt4_w32 | 7345 | 26571 | 102 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
 | fair_dt4_w36 | 8223 | 29411 | 131 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| fair_dt4_w40 | 9050 | 32157 | 90.9 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| fair_dt44_w12 | 478 | 2361 | 0.371 | 0.243 | 0.137 | >600 | 0.051 | 137 | 2.06 | alea | 8.3e-17 / 5.8e-16 | 8.3e-17 / 5.8e-16 | 8.3e-17 / 4.8e-16 |  | ref |
-| fair_dt44_w16 | 696 | 3090 | 0.541 | 0.38 | 0.214 | - | 0.062 | 132 | 4.69 | alea | 2.8e-17 / 1.6e-16 | 3.5e-17 / 5.8e-16 | 1.4e-17 / 2.3e-16 |  | ref |
-| fair_dt44_w20 | 851 | 3614 | 0.723 | 0.473 | 0.261 | - | 0.068 | 131 | 8.11 | alea | 1.1e-16 / 6.4e-16 | 1.1e-16 / 6.4e-16 | 5.6e-17 / 8.1e-16 |  | ref |
-| fair_dt44_w24 | 838 | 3588 | 0.679 | 0.46 | 0.26 | - | 0.071 | 130 | 7.82 | alea | 8.3e-17 / 5.8e-16 | 8.3e-17 / 5.8e-16 | 8.3e-17 / 4.8e-16 |  | ref |
-| fair_dt44_w28 | 812 | 3536 | 0.662 | 0.451 | 0.256 | - | 0.065 | 132 | 7.58 | alea | 8.3e-17 / 4.8e-16 | 8.3e-17 / 4.8e-16 | 1.1e-16 / 6.4e-16 |  | ref |
-| fair_dt44_w32 | 799 | 3510 | 0.602 | 0.434 | 0.249 | - | 0.072 | 132 | 6.97 | alea | 2.8e-17 / 2.3e-16 | 5.6e-17 / 3.2e-16 | 8.3e-17 / 4.8e-16 |  | ref |
-| genes_t5 | 67284 | 308661 | 25.7 | oom | 22.4 | >600 | >600 | >600 | oom | tddlog | ref |  |  |  |  |
-| genes_t10 | 67484 | 309241 | 25.2 | - | 22.3 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes_t15 | 67684 | 309821 | 25.2 | - | 23.1 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes_t20 | 67884 | 310401 | 25.4 | - | 22.7 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes_t25 | 68084 | 310981 | 25.2 | - | 22.3 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes_t30 | 68284 | 311561 | 25 | - | 22.4 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes_t40 | 68684 | 312721 | 25.3 | - | 22.3 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes_t50 | 69084 | 313881 | 26 | - | 22.6 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes_t60 | 69484 | 315041 | 25.8 | - | 23.1 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes_t80 | 70284 | 317361 | 27 | - | 23.8 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes_t100 | 71084 | 319681 | 26.2 | - | 23.8 | - | - | - | - | tddlog | ref |  |  |  |  |
-| genes5_w17 | 24148 | 173021 | 12.8 | >600 | 11.3 | zero | 3.23 | 103 | oom | alea | 5.4e-15 / 1.1e-14 |  | 5.4e-15 / 1.1e-14 |  | ref |
-| genes5_w19 | 31844 | 196665 | 15.3 | - | 13.8 | >600 | 4.67 | 116 | - | alea | 7.5e-15 / 1.5e-14 |  | 7.5e-15 / 1.5e-14 |  | ref |
-| genes5_w21 | 39336 | 219821 | 17.1 | - | 15.6 | - | 8.64 | 123 | - | alea | 6.9e-15 / 1.4e-14 |  | 6.9e-15 / 1.4e-14 |  | ref |
-| genes5_w23 | 46572 | 242497 | 19.4 | - | 17.4 | - | 24.1 | 173 | - | alea | 3.7e-15 / 7.3e-15 |  | 3.7e-15 / 7.3e-15 |  | ref |
-| genes5_w25 | 53588 | 264781 | 21.1 | - | 19 | - | 107 | 305 | - | alea | 3.9e-15 / 8.4e-15 |  | 3.9e-15 / 8.4e-15 |  | ref |
-| genes5_w27 | 60520 | 286833 | 24.2 | - | 20.7 | - | 503 (2/3) | 600 (2/3) | - | alea | 2.9e-15 / 7.3e-15 |  | 2.9e-15 / 7.3e-15 |  | ref |
-| laplace_w13 | 4125 | 110955 | 10.2 | 141 | 9.52 | >600 | 8.57 | 170 | >600 | alea | 4.6e-15 / 9.1e-15 | 4.6e-15 / 9.1e-15 | 4.6e-15 / 9.1e-15 |  | ref |
-| laplace_w15 | 8145 | 158877 | >600 | 416 | oom | - | 146 | 289 | - | alea |  | 5.1e-15 / 1.0e-14 |  |  | ref |
+| fair_dt4_w40 | 9050 | 32157 | 90.8 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| fair_dt44_w12 | 478 | 2361 | 0.353 | 0.225 | 0.119 | >600 | 0.051 | 137 | 2.04 | alea | 8.3e-17 / 5.8e-16 | 8.3e-17 / 5.8e-16 | 8.3e-17 / 4.8e-16 |  | ref |
+| fair_dt44_w16 | 696 | 3090 | 0.52 | 0.359 | 0.193 | - | 0.062 | 132 | 4.67 | alea | 2.8e-17 / 1.6e-16 | 3.5e-17 / 5.8e-16 | 1.4e-17 / 2.3e-16 |  | ref |
+| fair_dt44_w20 | 851 | 3614 | 0.7 | 0.45 | 0.238 | - | 0.068 | 131 | 8.09 | alea | 1.1e-16 / 6.4e-16 | 1.1e-16 / 6.4e-16 | 5.6e-17 / 8.1e-16 |  | ref |
+| fair_dt44_w24 | 838 | 3588 | 0.656 | 0.437 | 0.237 | - | 0.071 | 130 | 7.79 | alea | 8.3e-17 / 5.8e-16 | 8.3e-17 / 5.8e-16 | 8.3e-17 / 4.8e-16 |  | ref |
+| fair_dt44_w28 | 812 | 3536 | 0.639 | 0.428 | 0.233 | - | 0.065 | 132 | 7.56 | alea | 8.3e-17 / 4.8e-16 | 8.3e-17 / 4.8e-16 | 1.1e-16 / 6.4e-16 |  | ref |
+| fair_dt44_w32 | 799 | 3510 | 0.578 | 0.41 | 0.225 | - | 0.072 | 132 | 6.94 | alea | 2.8e-17 / 2.3e-16 | 5.6e-17 / 3.2e-16 | 8.3e-17 / 4.8e-16 |  | ref |
+| genes_t5 | 67284 | 308661 | 23.5 | oom | 20.2 | >600 | >600 | >600 | oom | tddlog | ref |  |  |  |  |
+| genes_t10 | 67484 | 309241 | 23 | - | 20.2 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes_t15 | 67684 | 309821 | 23.1 | - | 21 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes_t20 | 67884 | 310401 | 23.2 | - | 20.5 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes_t25 | 68084 | 310981 | 23 | - | 20.1 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes_t30 | 68284 | 311561 | 22.8 | - | 20.2 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes_t40 | 68684 | 312721 | 23 | - | 20 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes_t50 | 69084 | 313881 | 23.8 | - | 20.4 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes_t60 | 69484 | 315041 | 23.4 | - | 20.8 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes_t80 | 70284 | 317361 | 24.6 | - | 21.5 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes_t100 | 71084 | 319681 | 24 | - | 21.5 | - | - | - | - | tddlog | ref |  |  |  |  |
+| genes5_w17 | 24148 | 173021 | 11.9 | >600 | 10.4 | zero | 3.23 | 103 | oom | alea | 5.4e-15 / 1.1e-14 |  | 5.4e-15 / 1.1e-14 |  | ref |
+| genes5_w19 | 31844 | 196665 | 14.1 | - | 12.6 | >600 | 4.67 | 116 | - | alea | 7.5e-15 / 1.5e-14 |  | 7.5e-15 / 1.5e-14 |  | ref |
+| genes5_w21 | 39336 | 219821 | 15.6 | - | 14.1 | - | 8.64 | 123 | - | alea | 6.9e-15 / 1.4e-14 |  | 6.9e-15 / 1.4e-14 |  | ref |
+| genes5_w23 | 46572 | 242497 | 17.8 | - | 15.8 | - | 24.1 | 173 | - | alea | 3.7e-15 / 7.3e-15 |  | 3.7e-15 / 7.3e-15 |  | ref |
+| genes5_w25 | 53588 | 264781 | 19.3 | - | 17.1 | - | 107 | 305 | - | alea | 3.9e-15 / 8.4e-15 |  | 3.9e-15 / 8.4e-15 |  | ref |
+| genes5_w27 | 60520 | 286833 | 22 | - | 18.6 | - | 503 (2/3) | 600 (2/3) | - | alea | 2.9e-15 / 7.3e-15 |  | 2.9e-15 / 7.3e-15 |  | ref |
+| laplace_w13 | 4125 | 110955 | 9.65 | 141 | 9 | >600 | 8.57 | 170 | >600 | alea | 4.6e-15 / 9.1e-15 | 4.6e-15 / 9.1e-15 | 4.6e-15 / 9.1e-15 |  | ref |
+| laplace_w15 | 8145 | 158877 | >600 | 415 | oom | - | 146 | 289 | - | alea |  | 5.1e-15 / 1.0e-14 |  |  | ref |
 | laplace_w17 | 8133 | 205643 | - | oom | - | - | >600 | >600 | - |  |  |  |  |  |  |
-| linreg_w8 | 372 | 5404 | 0.397 | 0.9 | 0.518 | >600 | 0.375 | 158 | >600 | alea | 3.9e-15 / 2.8e-14 | 4.7e-15 / 3.0e-14 | 4.1e-15 / 2.9e-14 |  | ref |
-| linreg_w9 | 564 | 6754 | 0.702 | 2.79 | 1.4 | - | 0.732 | 160 | - | alea | 4.6e-15 / 1.6e-14 | 4.0e-15 / 1.4e-14 | 4.2e-15 / 1.5e-14 |  | ref |
-| linreg_w10 | 756 | 8204 | 7.28 | 7.77 | 4.46 | - | 1.99 | 154 | - | alea | 6.3e-15 / 2.4e-14 | 5.1e-15 / 2.4e-14 | 6.2e-15 / 2.4e-14 |  | ref |
-| linreg_w11 | 948 | 9788 | 12.5 | 26 | 29.7 | - | 8.38 | 171 | - | alea | 6.3e-15 / 9.1e-15 | 6.6e-15 / 1.0e-14 | 7.3e-15 / 1.0e-14 |  | ref |
-| linreg_w12 | 1140 | 11532 | 36.1 | 106 | oom | - | 40 | 255 | - | alea | 4.9e-15 / 1.9e-14 | 4.3e-15 / 1.8e-14 |  |  | ref |
-| linreg_w13 | 1332 | 13436 | 208 | 502 | - | - | 192 | 330 | - | alea | 8.0e-15 / 2.7e-14 | 1.9e-14 / 3.8e-14 |  |  | ref |
-| linreg_w14 | 1524 | 15500 | oom | oom | - | - | >600 | >600 | - |  |  |  |  |  |  |
-| markov_n10 | 2050 | 7887 | 1.28 | 0.468 | 3.39 | zero | 0.195 | 160 | 5.06 | alea | 1.7e-15 / 9.7e-15 | 1.7e-15 / 9.7e-15 | 1.4e-15 / 1.1e-12 |  | ref |
-| markov_n100 | 20500 | 78897 | 10.7 | 8.88 | - | - | 2.47 | 164 | 302 | alea | 4.0e-15 / 2.7e-12 | 4.0e-15 / 2.7e-12 |  |  | ref |
-| markov_n1000 | 205000 | 788997 | 99.5 | 356 | - | - | 91.2 | 237 | - | alea | 4.1e-13 / 4.1e-13 | 4.1e-13 / 4.1e-13 |  |  | ref |
-| markov_n20 | 4100 | 15777 | 1.12 | 1.06 | oom | >600 | 0.48 | 164 | 17 | alea | 1.2e-14 / 1.5e-14 | 1.2e-14 / 1.7e-14 |  |  | ref |
-| markov_n200 | 41000 | 157797 | 22.8 | 25.2 | - | - | 6.78 | 178 | >600 | alea | 1.3e-13 / 9.0e-12 | 1.3e-13 / 9.0e-12 |  |  | ref |
-| markov_n2000 | 410000 | 1577997 | 212 | oom | - | - | 381 | 523 | - | alea | 4.8e-13 / 1.0e-12 |  |  |  | ref |
-| markov_n50 | 10250 | 39447 | 4.4 | 3.38 | - | - | 1.18 | 161 | 84.3 | alea | 2.8e-14 / 2.8e-14 | 2.8e-14 / 2.8e-14 |  |  | ref |
-| markov_n500 | 102500 | 394497 | 44.9 | 110 | - | - | 26.5 | 228 | - | alea | 1.9e-13 / 4.6e-13 | 1.9e-13 / 4.6e-13 |  |  | ref |
-| multimodal_w11 | 4617 | 116721 | 501 | oom | oom | >600 | 50.3 | 259 | >600 | alea | 9.1e-15 / 1.8e-14 |  |  |  | ref |
+| linreg_w8 | 372 | 5404 | 0.306 | 0.809 | 0.427 | >600 | err | err | >600 | alea | 3.9e-15 / 2.8e-14 | 4.7e-15 / 3.0e-14 | 4.1e-15 / 2.9e-14 |  |  |
+| linreg_w9 | 564 | 6754 | 0.544 | 2.63 | 1.24 | - | err | err | - | alea | 4.6e-15 / 1.6e-14 | 4.0e-15 / 1.4e-14 | 4.2e-15 / 1.5e-14 |  |  |
+| linreg_w10 | 756 | 8204 | 7.13 | 7.62 | 4.3 | - | err | err | - | alea | 6.3e-15 / 2.4e-14 | 5.1e-15 / 2.4e-14 | 6.2e-15 / 2.4e-14 |  |  |
+| linreg_w11 | 948 | 9788 | 12.3 | 25.8 | 29.5 | - | err | err | - | alea | 6.3e-15 / 9.1e-15 | 6.6e-15 / 1.0e-14 | 7.3e-15 / 1.0e-14 |  |  |
+| linreg_w12 | 1140 | 11532 | 35.9 | 105 | oom | - | err | err | - | alea | 4.9e-15 / 1.9e-14 | 4.3e-15 / 1.8e-14 |  |  |  |
+| linreg_w13 | 1332 | 13436 | 208 | 502 | - | - | err | err | - | alea | 8.0e-15 / 2.7e-14 | 1.9e-14 / 3.8e-14 |  |  |  |
+| linreg_w14 | 1524 | 15500 | oom | oom | - | - | >600 | >600 | - | psi |  |  |  |  |  |
+| markov_n10 | 2050 | 7887 | 1.2 | 0.391 | 3.31 | zero | 0.195 | 160 | 4.99 | alea | 1.7e-15 / 9.7e-15 | 1.7e-15 / 9.7e-15 | 1.4e-15 / 1.1e-12 |  | ref |
+| markov_n100 | 20500 | 78897 | 9.78 | 7.95 | - | - | 2.47 | 164 | 301 | alea | 4.0e-15 / 2.7e-12 | 4.0e-15 / 2.7e-12 |  |  | ref |
+| markov_n1000 | 205000 | 788997 | 84.9 | 341 | - | - | 91.2 | 237 | - | alea | 4.1e-13 / 4.1e-13 | 4.1e-13 / 4.1e-13 |  |  | ref |
+| markov_n20 | 4100 | 15777 | 0.965 | 0.913 | oom | >600 | 0.48 | 164 | 16.8 | alea | 1.2e-14 / 1.5e-14 | 1.2e-14 / 1.7e-14 |  |  | ref |
+| markov_n200 | 41000 | 157797 | 20.9 | 23.3 | - | - | 6.78 | 178 | >600 | alea | 1.3e-13 / 9.0e-12 | 1.3e-13 / 9.0e-12 |  |  | ref |
+| markov_n2000 | 410000 | 1577997 | 176 | oom | - | - | 381 | 523 | - | alea | 4.8e-13 / 1.0e-12 |  |  |  | ref |
+| markov_n50 | 10250 | 39447 | 3.98 | 2.97 | - | - | 1.18 | 161 | 83.9 | alea | 2.8e-14 / 2.8e-14 | 2.8e-14 / 2.8e-14 |  |  | ref |
+| markov_n500 | 102500 | 394497 | 39 | 104 | - | - | 26.5 | 228 | - | alea | 1.9e-13 / 4.6e-13 | 1.9e-13 / 4.6e-13 |  |  | ref |
+| multimodal_w11 | 4617 | 116721 | 500 | oom | oom | >600 | 50.3 | 259 | >600 | alea | 9.1e-15 / 1.8e-14 |  |  |  | ref |
 | multimodal_w13 | 13837 | 144765 | oom | - | - | - | >600 | >600 | - |  |  |  |  |  |  |
-| normal_mixture_mu1_w7 | 2583 | 25704 | 2.13 | 3.85 | 1.67 | >600 | 2.08 | 121 | >600 | alea | 2.9e-15 / 2.5e-14 | 2.2e-15 / 2.6e-14 | 2.9e-15 / 2.2e-14 |  | ref |
-| normal_mixture_mu1_w9 | 5289 | 35812 | 202 | 370 | oom | - | 480 (2/3) | 594 (2/3) | - | alea | 1.3e-14 / 1.2e-13 | 1.4e-14 / 1.2e-13 |  |  | ref |
+| normal_mixture_mu1_w7 | 2583 | 25704 | 2 | 3.73 | 1.54 | >600 | 2.08 | 121 | >600 | alea | 2.9e-15 / 2.5e-14 | 2.2e-15 / 2.6e-14 | 2.9e-15 / 2.2e-14 |  | ref |
+| normal_mixture_mu1_w9 | 5289 | 35812 | 202 | 369 | oom | - | 480 (2/3) | 594 (2/3) | - | alea | 1.3e-14 / 1.2e-13 | 1.4e-14 / 1.2e-13 |  |  | ref |
 | normal_mixture_mu1_w11 | 7995 | 45920 | >600 | oom | - | - | >600 | >600 | - |  |  |  |  |  |  |
-| normal_mixture_mu2_w7 | 2583 | 45770 | 3.14 | 5.15 | oom | >600 | 2.51 | 125 | >600 | alea | 1.3e-14 / 1.1e-13 | 1.1e-14 / 1.1e-13 |  |  | ref |
-| normal_mixture_mu2_w9 | 7913 | 63750 | 199 | 591 | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| normal_mixture_mu2_w7 | 2583 | 45770 | 2.92 | 4.94 | oom | >600 | 2.51 | 125 | >600 | alea | 1.3e-14 / 1.1e-13 | 1.1e-14 / 1.1e-13 |  |  | ref |
+| normal_mixture_mu2_w9 | 7913 | 63750 | 199 | 590 | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
 | normal_mixture_mu2_w11 | 13243 | 81730 | >600 | oom | - | - | - | - | - |  |  |  |  |  |  |
-| normal_mixture_theta_w9 | 10537 | 118560 | 40.8 | oom | oom | >600 | >600 | >600 | >600 | Ganak | 2.2e-16 / 5.2e-16 |  |  |  |  |
+| normal_mixture_theta_w9 | 10537 | 118560 | 40.2 | oom | oom | >600 | >600 | >600 | >600 | Ganak | 2.2e-16 / 5.2e-16 |  |  |  |  |
 | normal_mixture_theta_w11 | 21115 | 152284 | oom | - | - | - | - | - | - |  |  |  |  |  |  |
-| pedestrian_s10 | 89 | 3176 | 2.19 | 3.42 | - | - | 15 | 147 | - | alea | 3.3e-16 / 4.3e-14 | 3.9e-16 / 4.2e-14 |  |  | ref |
-| pedestrian_s12 | 99 | 3784 | 6.06 | 6.44 | - | - | 32.8 | 202 | - | alea | 4.4e-16 / 4.3e-14 | 4.4e-16 / 4.3e-14 |  |  | ref |
+| pedestrian_s10 | 89 | 3176 | 2.17 | 3.4 | - | - | 15 | 147 | - | alea | 3.3e-16 / 4.3e-14 | 3.9e-16 / 4.2e-14 |  |  | ref |
+| pedestrian_s12 | 99 | 3784 | 6.04 | 6.42 | - | - | 32.8 | 202 | - | alea | 4.4e-16 / 4.3e-14 | 4.4e-16 / 4.3e-14 |  |  | ref |
 | pedestrian_s16 | 119 | 5000 | 12 | 17.5 | - | - | 110 | 314 | - | alea | 3.3e-16 / 4.2e-14 | 4.4e-16 / 4.1e-14 |  |  | ref |
-| pedestrian_s20 | 139 | 6216 | 79 | 40.1 | - | - | 265 | 363 | - | alea | 8.9e-16 / 4.9e-14 | 7.8e-16 / 5.0e-14 |  |  | ref |
-| pedestrian_s24 | 159 | 7432 | 145 | 78.9 | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| pedestrian_s20 | 139 | 6216 | 78.9 | 40.1 | - | - | 265 | 363 | - | alea | 8.9e-16 / 4.9e-14 | 7.8e-16 / 5.0e-14 |  |  | ref |
+| pedestrian_s24 | 159 | 7432 | 145 | 78.8 | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
 | pedestrian_s32 | 199 | 9864 | 383 | 204 | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| pedestrian_s4 | 59 | 1393 | 0.352 | 0.205 | 7.76 | >600 | 0.236 | 114 | >600 | alea | 6.7e-16 / 2.7e-14 | 5.6e-16 / 2.7e-14 | 1.7e-13 / 3.4e-13 |  | ref |
+| pedestrian_s4 | 59 | 1393 | 0.343 | 0.196 | 7.75 | >600 | 0.236 | 114 | >600 | alea | 6.7e-16 / 2.7e-14 | 5.6e-16 / 2.7e-14 | 1.7e-13 / 3.4e-13 |  | ref |
 | pedestrian_s40 | 239 | 12296 | 339 | 477 | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| pedestrian_s6 | 69 | 1968 | 0.516 | 0.626 | >600 | - | 1.72 | 108 | - | alea | 7.8e-16 / 4.0e-14 | 2.8e-16 / 4.0e-14 |  |  | ref |
-| pedestrian_s8 | 79 | 2568 | 2.23 | 1.53 | - | - | 5.62 | 121 | - | alea | 6.7e-16 / 4.1e-14 | 6.7e-16 / 4.1e-14 |  |  | ref |
-| pi_w8 | 12 | 3759 | 0.168 | 0.213 | n/a | >600 | 0.08 | 178 | 2.39 | alea | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  | ref |
-| pi_w10 | 16 | 6141 | 0.293 | 0.663 | n/a | - | 0.187 | 186 | 27.2 | alea | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  |  | ref |
-| pi_w12 | 20 | 9099 | 0.688 | 2.58 | n/a | - | 1.45 | 182 | wrong | alea | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  | ref |
-| pi_w14 | 24 | 12633 | 1.63 | 13.7 | n/a | - | 30.4 | 267 | >600 | alea | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  |  | ref |
-| pi_w16 | 28 | 16743 | 7.33 | 92.3 | n/a | - | 305 | 479 | - | alea | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  | ref |
-| pi_w18 | 32 | 21429 | 37.4 | >600 | n/a | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
-| pi_w20 | 36 | 26691 | 184 | - | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
+| pedestrian_s6 | 69 | 1968 | 0.504 | 0.614 | >600 | - | 1.72 | 108 | - | alea | 7.8e-16 / 4.0e-14 | 2.8e-16 / 4.0e-14 |  |  | ref |
+| pedestrian_s8 | 79 | 2568 | 2.22 | 1.52 | - | - | 5.62 | 121 | - | alea | 6.7e-16 / 4.1e-14 | 6.7e-16 / 4.1e-14 |  |  | ref |
+| pi_w8 | 12 | 3759 | 0.139 | 0.184 | n/a | >600 | 0.08 | 178 | 2.36 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | 1.1e-16 / 2.4e-16 |
+| pi_w10 | 16 | 6141 | 0.253 | 0.623 | n/a | - | 0.187 | 186 | 27.2 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | 5.6e-17 / 1.2e-16 |
+| pi_w12 | 20 | 9099 | 0.634 | 2.53 | n/a | - | 1.45 | 182 | wrong | alea | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  | ref |
+| pi_w14 | 24 | 12633 | 1.56 | 13.6 | n/a | - | 30.4 | 267 | >600 | alea | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  |  | ref |
+| pi_w16 | 28 | 16743 | 7.24 | 92.2 | n/a | - | 305 | 479 | - | alea | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  | ref |
+| pi_w18 | 32 | 21429 | 37.2 | >600 | n/a | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| pi_w20 | 36 | 26691 | 183 | - | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
 | pi_w22 | 40 | 32529 | >600 | - | n/a | - | - | - | - |  |  |  |  |  |  |
-| population_s1 | 2540 | 8332 | 0.841 | >600 | oom | >600 | 23.9 | 234 | >600 | alea | 1.1e-15 / 9.2e-14 |  |  |  | ref |
-| population_s12 | 34957 | 115507 | 26.1 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| population_s16 | 46780 | 154582 | 47.2 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| population_s2 | 5587 | 18373 | 11.6 | - | - | - | 326 | 479 | - | alea | 3.7e-15 / 6.6e-15 |  |  |  | ref |
-| population_s24 | 70426 | 232732 | 36 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| population_s3 | 8637 | 28421 | 11.8 | - | - | - | >600 | >600 | - | ace-Xlog | 5.6e-14 / 7.5e-13 |  |  |  |  |
-| population_s32 | 94072 | 310882 | 48.7 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| population_s4 | 11311 | 37357 | 13.4 | - | - | - | - | - | - | ace-Xlog | 1.0e-13 / 3.5e+05 |  |  |  |  |
-| population_s48 | 141364 | 467182 | 74.4 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| population_s6 | 17410 | 57448 | 16.8 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| population_s64 | 188656 | 623482 | 109 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| population_s8 | 23134 | 76432 | 38.8 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| spacex_w13 | 279 | 2037 | 0.716 | 0.877 | oom | >600 | 0.755 | 73.8 | >600 | alea | 2.2e-16 / 9.4e-16 | 4.1e-15 / 6.1e-15 |  |  | ref |
-| spacex_w15 | 357 | 2423 | 5.41 | 3.56 | - | - | 4.61 | 82.7 | - | alea | 5.4e-15 / 8.7e-15 | 5.4e-15 / 8.7e-15 |  |  | ref |
+| population_s1 | 2540 | 8332 | 0.654 | >600 | oom | >600 | 23.9 | 234 | >600 | alea | 1.1e-15 / 9.2e-14 |  |  |  | ref |
+| population_s12 | 34957 | 115507 | 23.8 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| population_s16 | 46780 | 154582 | 43.9 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| population_s2 | 5587 | 18373 | 11.2 | - | - | - | 326 | 479 | - | alea | 3.7e-15 / 6.6e-15 |  |  |  | ref |
+| population_s24 | 70426 | 232732 | 31.3 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| population_s3 | 8637 | 28421 | 11.2 | - | - | - | >600 | >600 | - | ace-Xlog | 5.6e-14 / 7.5e-13 |  |  |  |  |
+| population_s32 | 94072 | 310882 | 41.9 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| population_s4 | 11311 | 37357 | 12.6 | - | - | - | - | - | - | ace-Xlog | 1.0e-13 / 3.5e+05 |  |  |  |  |
+| population_s48 | 141364 | 467182 | 64.2 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| population_s6 | 17410 | 57448 | 15.7 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| population_s64 | 188656 | 623482 | 95.6 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| population_s8 | 23134 | 76432 | 37.3 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| spacex_w13 | 279 | 2037 | 0.708 | 0.869 | oom | >600 | 0.755 | 73.8 | >600 | alea | 2.2e-16 / 9.4e-16 | 4.1e-15 / 6.1e-15 |  |  | ref |
+| spacex_w15 | 357 | 2423 | 5.4 | 3.55 | - | - | 4.61 | 82.7 | - | alea | 5.4e-15 / 8.7e-15 | 5.4e-15 / 8.7e-15 |  |  | ref |
 | spacex_w17 | 435 | 2809 | 33.4 | 15.7 | - | - | 28.1 | 142 | - | alea | 2.8e-14 / 7.0e-14 | 2.8e-14 / 7.0e-14 |  |  | ref |
 | spacex_w19 | 513 | 3195 | 130 | 74 | - | - | 204 | 277 | - | alea | 8.5e-14 / 2.2e-13 | 8.5e-14 / 2.2e-13 |  |  | ref |
 | spacex_w21 | 577 | 3553 | oom | oom | - | - | >600 | >600 | - |  |  |  |  |  |  |
-| spacex_p16 | 293 | 1752 | 57.7 | 29.2 | oom | - | 102 | 284 | - | alea | 6.2e-14 / 1.9e-13 | 6.2e-14 / 1.9e-13 |  |  | ref |
+| spacex_p16 | 293 | 1752 | 57.6 | 29.2 | oom | - | 102 | 284 | - | alea | 6.2e-14 / 1.9e-13 | 6.2e-14 / 1.9e-13 |  |  | ref |
 | spacex_p256 | 2970 | 23577 | - | - | - | - | >600 | >600 | - |  |  |  |  |  |  |
-| spacex_p4 | 106 | 635 | 0.093 | 4.75 | 13.2 | >600 | 33.6 | 158 | >600 | alea | 6.7e-16 / 1.6e-14 | 1.1e-14 / 1.9e-14 | 4.4e-14 / 7.7e-14 |  | ref |
+| spacex_p4 | 106 | 635 | 0.089 | 4.74 | 13.2 | >600 | 33.6 | 158 | >600 | alea | 6.7e-16 / 1.6e-14 | 1.1e-14 / 1.9e-14 | 4.4e-14 / 7.7e-14 |  | ref |
 | spacex_p64 | 920 | 6092 | oom | oom | - | - | 359 | 432 | - | alea |  |  |  |  | ref |
-| trueskill_w8 | 312 | 3868 | 3.24 | 2.02 | oom | >600 | 2.51 | 84.1 | >600 | alea | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 |  |  | ref |
-| trueskill_w10 | 376 | 5592 | 61.2 | 35.1 | - | - | 123 | 329 | - | alea | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 |  |  | ref |
+| trueskill_w8 | 312 | 3868 | 3.22 | 2.01 | oom | >600 | 2.51 | 84.1 | >600 | alea | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 |  |  | ref |
+| trueskill_w10 | 376 | 5592 | 61.2 | 35 | - | - | 123 | 329 | - | alea | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 |  |  | ref |
 | trueskill_w12 | 440 | 7316 | oom | oom | - | - | >600 | >600 | - |  |  |  |  |  |  |
-| tug_of_war_w16 | 392 | 2044 | 0.542 | 32.7 | oom | >600 | 7.56 | 131 | >600 | alea | 1.1e-15 / 2.1e-15 | 7.2e-15 / 1.4e-14 |  |  | ref |
-| tug_of_war_w18 | 456 | 2292 | 0.617 | 151 | - | - | 37.7 | 216 | - | alea | 2.2e-16 / 4.4e-16 | 6.8e-15 / 1.4e-14 |  |  | ref |
-| tug_of_war_w20 | 520 | 2540 | 0.735 | oom | - | - | 197 | 310 | - | alea | 8.3e-16 / 1.7e-15 |  |  |  | ref |
-| tug_of_war_w22 | 550 | 2720 | 0.771 | - | - | - | >600 | >600 | - | Ganak | 5.0e-16 / 1.0e-15 |  |  |  |  |
-| tug_of_war_w24 | 610 | 2960 | 0.472 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| tug_of_war_w26 | 670 | 3200 | 0.945 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| tug_of_war_w28 | 722 | 3416 | 1.02 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| weekend_w18 | 49151 | 368566 | 25.2 | >600 | 22.7 | 268 | 14.6 | 138 | oom | alea | 3.3e-16 / 8.9e-16 |  | 3.3e-16 / 8.9e-16 | 7.3e-14 / 1.9e-13 | ref |
-| weekend_w20 | 65535 | 417718 | 30 | - | 27.1 | 359 | 16.3 | 147 | - | alea | 2.8e-16 / 7.4e-16 |  | 2.8e-16 / 7.4e-16 | 1.0e-13 / 2.7e-13 | ref |
-| weekend_w22 | 81919 | 466870 | 33.7 | - | 31 | zero | 15.5 | 142 | - | alea | 5.6e-17 / 1.5e-16 |  | 5.6e-17 / 1.5e-16 |  | ref |
-| weekend_w24 | 98303 | 516022 | 37.5 | - | 34.1 | zero | 17.2 | 151 | - | alea | 8.3e-16 / 2.2e-15 |  | 8.3e-16 / 2.2e-15 |  | ref |
-| weekend_w26 | 114687 | 565174 | 42.6 | - | 38 | zero | 19.5 | 157 | - | alea | 9.4e-16 / 2.5e-15 |  | 9.4e-16 / 2.5e-15 |  | ref |
-| weekend_w28 | 131071 | 614326 | 44.7 | - | 41.6 | zero | 20.7 | 154 | - | alea | 6.1e-16 / 1.6e-15 |  | 6.1e-16 / 1.6e-15 |  | ref |
-| weekend_w30 | 147455 | 663478 | 49.2 | - | 44.9 | zero | 22.1 | 161 | - | alea | 1.6e-15 / 4.2e-15 |  | 1.6e-15 / 4.2e-15 |  | ref |
-| weekend_p1024 | 28671 | 131010 | 8.29 | >600 | 7.62 | zero | 2.33 | 102 | oom | alea | 2.8e-16 / 7.4e-16 |  | 2.8e-16 / 7.4e-16 |  | ref |
-| weekend_p16 | 639 | 2118 | 0.134 | 0.113 | 0.124 | zero | 0.032 | 94.1 | 1.05 | alea | 5.0e-16 / 1.3e-15 | 4.4e-16 / 1.2e-15 | 2.8e-16 / 7.4e-16 |  | ref |
-| weekend_p16384 | 327679 | 2031530 | 196 | - | 176 | >600 | 225 | 320 | - | alea | 6.1e-16 / 1.6e-15 |  | 6.1e-16 / 1.6e-15 |  | ref |
-| weekend_p256 | 8191 | 33230 | 4.67 | 22.4 | 1.81 | zero | 0.496 | 96.2 | 276 | alea | 1.4e-15 / 3.7e-15 | 1.4e-15 / 3.7e-15 | 1.3e-15 / 3.6e-15 |  | ref |
-| weekend_p4 | 175 | 530 | 0.028 | 0.025 | 0.027 | zero | 0.015 | 96.7 | 0.283 | alea | 1.7e-15 / 4.4e-15 | 1.7e-15 / 4.4e-15 | 1.4e-15 / 3.7e-15 |  | ref |
-| weekend_p4096 | 98303 | 516022 | 39.1 | - | 34.9 | zero | 17.7 | 146 | - | alea | 8.3e-16 / 2.2e-15 |  | 8.3e-16 / 2.2e-15 |  | ref |
-| weekend_p64 | 2303 | 8410 | 1.98 | 1.16 | 0.444 | zero | 0.106 | 93.6 | 10.9 | alea | 5.6e-17 / 1.5e-16 | 5.6e-17 / 1.5e-16 | 2.2e-16 / 5.9e-16 |  | ref |
+| tug_of_war_w16 | 392 | 2044 | 0.532 | 32.6 | oom | >600 | 7.56 | 131 | >600 | alea | 1.1e-15 / 2.1e-15 | 7.2e-15 / 1.4e-14 |  |  | ref |
+| tug_of_war_w18 | 456 | 2292 | 0.607 | 151 | - | - | 37.7 | 216 | - | alea | 2.2e-16 / 4.4e-16 | 6.8e-15 / 1.4e-14 |  |  | ref |
+| tug_of_war_w20 | 520 | 2540 | 0.722 | oom | - | - | 197 | 310 | - | alea | 8.3e-16 / 1.7e-15 |  |  |  | ref |
+| tug_of_war_w22 | 550 | 2720 | 0.758 | - | - | - | >600 | >600 | - | Ganak | 5.0e-16 / 1.0e-15 |  |  |  |  |
+| tug_of_war_w24 | 610 | 2960 | 0.459 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| tug_of_war_w26 | 670 | 3200 | 0.93 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| tug_of_war_w28 | 722 | 3416 | 1 | - | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| weekend_w18 | 49151 | 368566 | 22.6 | >600 | 20.1 | 265 | 14.6 | 138 | oom | alea | 3.3e-16 / 8.9e-16 |  | 3.3e-16 / 8.9e-16 | 7.3e-14 / 1.9e-13 | ref |
+| weekend_w20 | 65535 | 417718 | 26.6 | - | 23.7 | 355 | 16.3 | 147 | - | alea | 2.8e-16 / 7.4e-16 |  | 2.8e-16 / 7.4e-16 | 1.0e-13 / 2.7e-13 | ref |
+| weekend_w22 | 81919 | 466870 | 29.7 | - | 26.9 | zero | 15.5 | 142 | - | alea | 5.6e-17 / 1.5e-16 |  | 5.6e-17 / 1.5e-16 |  | ref |
+| weekend_w24 | 98303 | 516022 | 33 | - | 29.6 | zero | 17.2 | 151 | - | alea | 8.3e-16 / 2.2e-15 |  | 8.3e-16 / 2.2e-15 |  | ref |
+| weekend_w26 | 114687 | 565174 | 37.9 | - | 33.4 | zero | 19.5 | 157 | - | alea | 9.4e-16 / 2.5e-15 |  | 9.4e-16 / 2.5e-15 |  | ref |
+| weekend_w28 | 131071 | 614326 | 39 | - | 35.8 | zero | 20.7 | 154 | - | alea | 6.1e-16 / 1.6e-15 |  | 6.1e-16 / 1.6e-15 |  | ref |
+| weekend_w30 | 147455 | 663478 | 43.3 | - | 39.1 | zero | 22.1 | 161 | - | alea | 1.6e-15 / 4.2e-15 |  | 1.6e-15 / 4.2e-15 |  | ref |
+| weekend_p1024 | 28671 | 131010 | 7.63 | >600 | 6.96 | zero | 2.33 | 102 | oom | alea | 2.8e-16 / 7.4e-16 |  | 2.8e-16 / 7.4e-16 |  | ref |
+| weekend_p16 | 639 | 2118 | 0.125 | 0.104 | 0.115 | zero | 0.032 | 94.1 | 1.04 | alea | 5.0e-16 / 1.3e-15 | 4.4e-16 / 1.2e-15 | 2.8e-16 / 7.4e-16 |  | ref |
+| weekend_p16384 | 327679 | 2031530 | 170 | - | 151 | >600 | 225 | 320 | - | alea | 6.1e-16 / 1.6e-15 |  | 6.1e-16 / 1.6e-15 |  | ref |
+| weekend_p256 | 8191 | 33230 | 4.54 | 22.3 | 1.67 | zero | 0.496 | 96.2 | 276 | alea | 1.4e-15 / 3.7e-15 | 1.4e-15 / 3.7e-15 | 1.3e-15 / 3.6e-15 |  | ref |
+| weekend_p4 | 175 | 530 | 0.023 | 0.02 | 0.022 | zero | 0.015 | 96.7 | 0.278 | alea | 1.7e-15 / 4.4e-15 | 1.7e-15 / 4.4e-15 | 1.4e-15 / 3.7e-15 |  | ref |
+| weekend_p4096 | 98303 | 516022 | 34.8 | - | 30.6 | zero | 17.7 | 146 | - | alea | 8.3e-16 / 2.2e-15 |  | 8.3e-16 / 2.2e-15 |  | ref |
+| weekend_p64 | 2303 | 8410 | 1.95 | 1.13 | 0.412 | zero | 0.106 | 93.6 | 10.9 | alea | 5.6e-17 / 1.5e-16 | 5.6e-17 / 1.5e-16 | 2.2e-16 / 5.9e-16 |  | ref |
 | weekend_p65536 | 1048575 | 7995294 | oom | - | oom | - | >600 | >600 | - |  |  |  |  |  |  |
-| wmi_path_n1024 | 8192 | 91060 | 9.33 | 4.76 | n/a | - | oom | oom | - | ace-auto | 1.6e-15 / 2.2e-15 | 1.6e-15 / 2.2e-15 |  |  |  |
-| wmi_path_n128 | 1024 | 11316 | 1.16 | 0.673 | n/a | - | 6.96 | 112 | - | alea | 1.0e-15 / 1.4e-15 | 1.0e-15 / 1.4e-15 |  |  | ref |
-| wmi_path_n16 | 128 | 1348 | 0.137 | 0.073 | n/a | 414 | 0.121 | 101 | >600 | alea | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 |  | 3.5e-13 / 5.0e-13 | ref |
-| wmi_path_n16384 | 131072 | 1458100 | 172 | 84.2 | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
-| wmi_path_n256 | 2048 | 22708 | 2.15 | 1.17 | n/a | - | 28.6 | 181 | - | alea | 5.0e-15 / 7.1e-15 | 5.0e-15 / 7.1e-15 |  |  | ref |
-| wmi_path_n32 | 256 | 2772 | 0.276 | 0.145 | n/a | >600 | 0.41 | 92.3 | - | alea | 3.3e-16 / 4.7e-16 | 3.3e-16 / 4.7e-16 |  |  | ref |
-| wmi_path_n4096 | 32768 | 364468 | 48.8 | 19.9 | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
-| wmi_path_n512 | 4096 | 45492 | 4.46 | 2.43 | n/a | - | 122 | 337 | - | alea | 1.6e-14 / 2.3e-14 | 1.6e-14 / 2.3e-14 |  |  | ref |
-| wmi_path_n64 | 512 | 5620 | 0.57 | 0.303 | n/a | - | 1.66 | 96.1 | - | alea | 5.6e-16 / 7.8e-16 | 5.6e-16 / 7.8e-16 |  |  | ref |
-| wmi_path_n65536 | 524288 | 5832628 | >600 | 365 | n/a | - | - | - | - |  |  |  |  |  |  |
-| wmi_star_n1024 | 8200 | 91149 | 10.7 | 6.11 | n/a | - | >600 | >600 | - | ace-Xlog | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  |  |  |
-| wmi_star_n128 | 1032 | 11405 | 1.19 | 0.725 | n/a | - | 8.08 | 113 | 78.4 | alea | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  |  | ref |
-| wmi_star_n16 | 136 | 1437 | 0.157 | 0.088 | n/a | 305 | 0.123 | 97.3 | wrong | alea | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 |  | 4.1e-14 / 7.6e-14 | ref |
-| wmi_star_n16384 | 131080 | 1458189 | 187 | 105 | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
-| wmi_star_n256 | 2056 | 22797 | 2.36 | 1.48 | n/a | - | 36.7 | 197 | 162 | alea | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 |  |  | ref |
-| wmi_star_n32 | 264 | 2861 | 0.298 | 0.177 | n/a | >600 | 0.413 | 88.2 | wrong | alea | 3.3e-16 / 6.4e-16 | 3.3e-16 / 6.4e-16 |  |  | ref |
-| wmi_star_n4096 | 32776 | 364557 | 55.1 | 25.5 | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
-| wmi_star_n512 | 4104 | 45581 | 5 | 3 | n/a | - | 165 | 251 | oom | alea | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 |  |  | ref |
-| wmi_star_n64 | 520 | 5709 | 0.606 | 0.347 | n/a | - | 1.88 | 94.7 | 37.8 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | ref |
-| wmi_star_n65536 | 524296 | 5832717 | >600 | 459 | n/a | - | - | - | - |  |  |  |  |  |  |
-| zeroone_w1_w10 | 32 | 2511 | 0.338 | 0.308 | 0.31 | 4.79 | 0.433 | 156 | 3.2 | alea | 7.8e-16 / 1.5e-15 | 7.8e-16 / 1.5e-15 | 3.3e-16 / 8.1e-16 | 4.7e-13 / 8.8e-13 | ref |
-| zeroone_w1_w12 | 36 | 4184 | 0.602 | 0.5 | 2.37 | 40 | 0.688 | 155 | 195 | alea | 7.8e-16 / 1.5e-15 | 7.8e-16 / 1.5e-15 | 5.9e-14 / 1.1e-13 | 4.8e-13 / 9.6e-13 | ref |
-| zeroone_w1_w14 | 40 | 6254 | 0.826 | 0.796 | 7.02 | 354 | 1.09 | 157 | >600 | alea | 1.9e-15 / 3.8e-15 | 1.2e-15 / 2.4e-15 | 1.6e-12 / 3.2e-12 | 4.2e-13 / 8.0e-13 | ref |
-| zeroone_w1_w16 | 44 | 8780 | 1.3 | 1.21 | 16.6 | >600 | 1.89 | 160 | - | alea | 3.9e-15 / 7.7e-15 | 1.0e-15 / 2.0e-15 | 2.8e-12 / 5.7e-12 |  | ref |
-| zeroone_w1_w18 | 48 | 11762 | 2.52 | 2.04 | 51.5 | - | 4.26 | 170 | - | alea | 1.6e-15 / 3.1e-15 | 1.6e-15 / 3.1e-15 | 7.8e-12 / 1.6e-11 |  | ref |
-| zeroone_w1_w20 | 52 | 15200 | 3.16 | 4.01 | 95.3 | - | 13.9 | 198 | - | alea | 4.2e-15 / 8.4e-15 | 3.3e-15 / 6.7e-15 | 1.7e-11 / 3.5e-11 |  | ref |
-| zeroone_w1_w22 | 56 | 19094 | 4.39 | 10.6 | oom | - | 56.1 | 319 | - | alea | 6.2e-15 / 1.2e-14 | 4.1e-15 / 8.2e-15 |  |  | ref |
-| zeroone_w1_w26 | 64 | 28250 | 6.52 | 137 | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
-| zeroone_w1_w30 | 72 | 39230 | 12.7 | >600 | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| wmi_path_n1024 | 8192 | 91060 | 8.62 | 4.04 | n/a | - | oom | oom | - | ace-auto | 1.6e-15 / 2.2e-15 | 1.6e-15 / 2.2e-15 |  |  |  |
+| wmi_path_n128 | 1024 | 11316 | 0.987 | 0.505 | n/a | - | 6.96 | 112 | - | alea | 1.0e-15 / 1.4e-15 | 1.0e-15 / 1.4e-15 |  |  | ref |
+| wmi_path_n16 | 128 | 1348 | 0.128 | 0.064 | n/a | 414 | 0.121 | 101 | >600 | alea | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 |  | 3.5e-13 / 5.0e-13 | ref |
+| wmi_path_n16384 | 131072 | 1458100 | 153 | 65 | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
+| wmi_path_n256 | 2048 | 22708 | 2 | 1.02 | n/a | - | 28.6 | 181 | - | alea | 5.0e-15 / 7.1e-15 | 5.0e-15 / 7.1e-15 |  |  | ref |
+| wmi_path_n32 | 256 | 2772 | 0.258 | 0.127 | n/a | >600 | 0.41 | 92.3 | - | alea | 3.3e-16 / 4.7e-16 | 3.3e-16 / 4.7e-16 |  |  | ref |
+| wmi_path_n4096 | 32768 | 364468 | 45 | 16 | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
+| wmi_path_n512 | 4096 | 45492 | 4.1 | 2.07 | n/a | - | 122 | 337 | - | alea | 1.6e-14 / 2.3e-14 | 1.6e-14 / 2.3e-14 |  |  | ref |
+| wmi_path_n64 | 512 | 5620 | 0.529 | 0.262 | n/a | - | 1.66 | 96.1 | - | alea | 5.6e-16 / 7.8e-16 | 5.6e-16 / 7.8e-16 |  |  | ref |
+| wmi_path_n65536 | 524288 | 5832628 | 549 | 266 | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
+| wmi_star_n1024 | 8200 | 91149 | 10 | 5.42 | n/a | - | >600 | >600 | - | ace-Xlog | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  |  |  |
+| wmi_star_n128 | 1032 | 11405 | 1.12 | 0.65 | n/a | - | 8.08 | 113 | 78.3 | alea | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  |  | ref |
+| wmi_star_n16 | 136 | 1437 | 0.147 | 0.078 | n/a | 305 | 0.123 | 97.3 | wrong | alea | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 |  | 4.1e-14 / 7.6e-14 | ref |
+| wmi_star_n16384 | 131080 | 1458189 | 168 | 87 | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
+| wmi_star_n256 | 2056 | 22797 | 2.21 | 1.33 | n/a | - | 36.7 | 197 | 162 | alea | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 |  |  | ref |
+| wmi_star_n32 | 264 | 2861 | 0.28 | 0.159 | n/a | >600 | 0.413 | 88.2 | wrong | alea | 3.3e-16 / 6.4e-16 | 3.3e-16 / 6.4e-16 |  |  | ref |
+| wmi_star_n4096 | 32776 | 364557 | 51.2 | 21.6 | n/a | - | - | - | - | tddlog | ref |  |  |  |  |
+| wmi_star_n512 | 4104 | 45581 | 4.64 | 2.65 | n/a | - | 165 | 251 | oom | alea | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 |  |  | ref |
+| wmi_star_n64 | 520 | 5709 | 0.571 | 0.312 | n/a | - | 1.88 | 94.7 | 37.8 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | ref |
+| wmi_star_n65536 | 524296 | 5832717 | >600 | 359 | n/a | - | - | - | - |  |  |  |  |  |  |
+| zeroone_w1_w10 | 32 | 2511 | 0.104 | 0.074 | 0.076 | 4.56 | 0.433 | 156 | 2.96 | storm-exact | 2.2e-16 / 4.1e-16 | 1.1e-16 / 2.1e-16 | 6.7e-16 / 1.3e-15 | 4.7e-13 / 8.7e-13 | 7.8e-16 / 1.5e-15 |
+| zeroone_w1_w12 | 36 | 4184 | 0.242 | 0.14 | 2.01 | 39.6 | 0.688 | 155 | 194 | alea | 7.8e-16 / 1.5e-15 | 7.8e-16 / 1.5e-15 | 5.9e-14 / 1.1e-13 | 4.8e-13 / 9.6e-13 | ref |
+| zeroone_w1_w14 | 40 | 6254 | 0.288 | 0.258 | 6.48 | 354 | 1.09 | 157 | >600 | alea | 1.9e-15 / 3.8e-15 | 1.2e-15 / 2.4e-15 | 1.6e-12 / 3.2e-12 | 4.2e-13 / 8.0e-13 | ref |
+| zeroone_w1_w16 | 44 | 8780 | 0.573 | 0.477 | 15.8 | >600 | 1.89 | 160 | - | alea | 3.9e-15 / 7.7e-15 | 1.0e-15 / 2.0e-15 | 2.8e-12 / 5.7e-12 |  | ref |
+| zeroone_w1_w18 | 48 | 11762 | 1.56 | 1.09 | 50.6 | - | 4.26 | 170 | - | alea | 1.6e-15 / 3.1e-15 | 1.6e-15 / 3.1e-15 | 7.8e-12 / 1.6e-11 |  | ref |
+| zeroone_w1_w20 | 52 | 15200 | 1.96 | 2.81 | 94.1 | - | 13.9 | 198 | - | alea | 4.2e-15 / 8.4e-15 | 3.3e-15 / 6.7e-15 | 1.7e-11 / 3.5e-11 |  | ref |
+| zeroone_w1_w22 | 56 | 19094 | 2.9 | 9.07 | oom | - | 56.1 | 319 | - | alea | 6.2e-15 / 1.2e-14 | 4.1e-15 / 8.2e-15 |  |  | ref |
+| zeroone_w1_w26 | 64 | 28250 | 4.34 | 134 | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| zeroone_w1_w30 | 72 | 39230 | 9.68 | >600 | - | - | - | - | - | tddlog | ref |  |  |  |  |
 | zeroone_w1_w34 | 928 | 54788 | oom | - | - | - | - | - | - |  |  |  |  |  |  |
-| zeroone_w2_w13 | 38 | 5230 | 0.66 | 0.637 | 0.897 | 131 | 0.926 | 155 | >600 | alea | 2.0e-15 / 3.8e-15 | 8.9e-16 / 1.5e-15 | 3.2e-15 / 6.1e-15 | 4.9e-13 / 9.7e-13 | ref |
-| zeroone_w2_w15 | 42 | 7560 | 1.05 | 0.961 | 1.88 | >600 | 1.7 | 157 | - | alea | 1.0e-14 / 1.4e-14 | 7.2e-15 / 1.0e-14 | 4.2e-15 / 6.9e-15 |  | ref |
-| zeroone_w2_w17 | 46 | 10346 | 1.91 | 1.52 | 5.75 | - | 5.81 | 168 | - | alea | 3.2e-14 / 5.8e-14 | 2.9e-14 / 5.5e-14 | 4.7e-15 / 9.3e-15 |  | ref |
-| zeroone_w2_w19 | 50 | 13588 | 3.6 | 2.81 | 21.3 | - | 23 | 209 | - | alea | 1.1e-13 / 1.6e-13 | 1.1e-13 / 1.6e-13 | 1.8e-15 / 3.5e-15 |  | ref |
-| zeroone_w2_w21 | 54 | 17286 | 4.43 | 6.35 | oom | - | 98.4 | 257 | - | alea | 4.0e-15 / 7.9e-15 | 1.2e-12 / 1.9e-12 |  |  | ref |
-| zeroone_w2_w23 | 58 | 21440 | 4.86 | 18.6 | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
-| zeroone_w2_w25 | 62 | 26050 | 11 | 66 | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| zeroone_w2_w27 | 66 | 31116 | 10.2 | 274 | - | - | - | - | - | tddlog | ref |  |  |  |  |
-| zeroone_w2_w29 | 70 | 36638 | 18.6 | >600 | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| zeroone_w2_w13 | 38 | 5230 | 0.215 | 0.192 | 0.452 | 131 | 0.926 | 155 | >600 | alea | 2.0e-15 / 3.8e-15 | 8.9e-16 / 1.5e-15 | 3.2e-15 / 6.1e-15 | 4.9e-13 / 9.7e-13 | ref |
+| zeroone_w2_w15 | 42 | 7560 | 0.443 | 0.354 | 1.27 | >600 | 1.7 | 157 | - | alea | 1.0e-14 / 1.4e-14 | 7.2e-15 / 1.0e-14 | 4.2e-15 / 6.9e-15 |  | ref |
+| zeroone_w2_w17 | 46 | 10346 | 1.11 | 0.723 | 4.95 | - | 5.81 | 168 | - | alea | 3.2e-14 / 5.8e-14 | 2.9e-14 / 5.5e-14 | 4.7e-15 / 9.3e-15 |  | ref |
+| zeroone_w2_w19 | 50 | 13588 | 2.54 | 1.75 | 20.2 | - | 23 | 209 | - | alea | 1.1e-13 / 1.6e-13 | 1.1e-13 / 1.6e-13 | 1.8e-15 / 3.5e-15 |  | ref |
+| zeroone_w2_w21 | 54 | 17286 | 3.1 | 5.01 | oom | - | 98.4 | 257 | - | alea | 4.0e-15 / 7.9e-15 | 1.2e-12 / 1.9e-12 |  |  | ref |
+| zeroone_w2_w23 | 58 | 21440 | 3.25 | 17 | - | - | >600 | >600 | - | tddlog | ref |  |  |  |  |
+| zeroone_w2_w25 | 62 | 26050 | 9.07 | 64.1 | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| zeroone_w2_w27 | 66 | 31116 | 7.92 | 271 | - | - | - | - | - | tddlog | ref |  |  |  |  |
+| zeroone_w2_w29 | 70 | 36638 | 15.9 | >600 | - | - | - | - | - | tddlog | ref |  |  |  |  |
 | zeroone_w2_w31 | 772 | 44920 | >600 | - | - | - | - | - | - |  |  |  |  |  |  |
 
 Answers. The largest differences from the reference: `auto` 2.2e-13
@@ -2299,8 +2294,8 @@ against ProbLog's eight printed digits, 2.1e-14 relative (1.2e-14
 absolute, clickGraph_w14) against Ganak; `program` 2.6e-12 relative
 (1.3e-12 absolute, addFun_sum_w21) and `decision` 3.6e-11 relative
 (1.8e-11 absolute, addFun_sum_w17) against Alea; Dice (earlier run)
-1.2e-12 relative (4.7e-13 absolute, clinicalTrial2_w8) against Alea
-where it prints answers other than 0.
+9.7e-13 relative (4.9e-13 absolute, zeroone_w2_w13) against Alea where
+it prints answers other than 0.
 
 ProbLog's d-DNNF is wrong on `bb_clickGraph_w14`: it gives 0.68647591
 for `e1(3)` with all twelve queries and with that query alone, where
@@ -2445,33 +2440,33 @@ and whether it returns a closed form or leaves an integral.
 
 | program | truth | target | tddlog | Alea | Stan | WebPPL rej. | WebPPL MCMC | WebPPL SMC | Psi |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| pi | 0.464602 | 1e-4 | 1.63 | 30.4 | 15.3 (1e6, 6e-5) | 2.2 (1e6, 9e-5) | err 2e-4 (1e7, 27.1 s) | err 2e-3 (1e5, 1.51 s) | 0.252, integral left |
-| weekend | 0.374206 | 2e-8 | 37.5 | 17.2 | other model (1) | other model (2) | other model (2) | other model (2) | 0.083, closed form |
+| pi | 0.464602 | 1e-4 | 1.56 | 30.4 | 15.3 (1e6, 6e-5) | 2.2 (1e6, 9e-5) | err 2e-4 (1e7, 27.1 s) | err 2e-3 (1e5, 1.51 s) | 0.252, integral left |
+| weekend | 0.374206 | 2e-8 | 33 | 17.2 | other model (1) | other model (2) | other model (2) | other model (2) | 0.083, closed form |
 | spacex | 30.0046 | 7e-4 | 130 | 204 | err 2e-3 (1e6, 14.5 s) | err 3e-3 (1e6, 7.16 s) | err 1e-2 (1e6, 9.37 s) | err 2e-2 (1e5, 3.07 s) | 0.177, integral left |
-| GPA | 0.611511 | 1e-16 | 44.5 | skipped | n/a | err 7e-3 (1e3, 243 s) | err 2e-3 (1e4, 208 s) | err 8e-3 (1e3, 8.24 s) | 1.39, closed form |
-| tug_of_war | 0.5 | 5e-7 | 0.771 | >600 | err 4e-5 (1e7, 51.9 s) | err 4e-4 (1e6, 431 s) | err 7e-4 (1e7, 97.5 s) | err 2e-4 (1e5, 114 s) | 0.537, integral left |
+| GPA | 0.611511 | 1e-16 | 40.6 | skipped | n/a | err 7e-3 (1e3, 243 s) | err 2e-3 (1e4, 208 s) | err 8e-3 (1e3, 8.24 s) | 1.39, closed form |
+| tug_of_war | 0.5 | 5e-7 | 0.758 | >600 | err 4e-5 (1e7, 51.9 s) | err 4e-4 (1e6, 431 s) | err 7e-4 (1e7, 97.5 s) | err 2e-4 (1e5, 114 s) | 0.537, integral left |
 | altermu2 | 0.155062 | none | memout | >600 | err 7e-3 (1e6, 45.4 s) | >600 | err 8e-1 (1e7, 390 s) | err 6e-1 (1e4, 18.4 s) | 24.8, closed form |
-| conjugate_gaussians | 1 | 5e-6 | 1.86 | 230 | err 3e-4 (1e6, 9.01 s) | err 2e-4 (1e6, 70.7 s) | err 3e-4 (1e7, 67.5 s) | err 2e-3 (1e5, 42.3 s) | 0.019, closed form |
-| normal_mixture_theta | 0.285714 | 5e-5 | 40.8 | >600 | 35.9 (1e6, 4e-5) | >600 | err 4e-4 (1e7, 270 s) | err 1e-3 (1e4, 12.2 s) | >600 |
+| conjugate_gaussians | 1 | 5e-6 | 1.85 | 230 | err 3e-4 (1e6, 9.01 s) | err 2e-4 (1e6, 70.7 s) | err 3e-4 (1e7, 67.5 s) | err 2e-3 (1e5, 42.3 s) | 0.019, closed form |
+| normal_mixture_theta | 0.285714 | 5e-5 | 40.2 | >600 | 35.9 (1e6, 4e-5) | >600 | err 4e-4 (1e7, 270 s) | err 1e-3 (1e4, 12.2 s) | >600 |
 | normal_mixture_mu1 | -9.70236 | 5e-3 | 202 | 480 | 0.432 (1e4, 4e-3) | >600 | 27.7 (1e6, 2e-3) | err 1e-2 (1e4, 12.4 s) | >600 |
 | normal_mixture_mu2 | 9.65795 | 4e-3 | 199 | >600 | 0.207 (1e3, 3e-3) | >600 | 27.5 (1e6, 2e-3) | err 3e-2 (1e4, 12.4 s) | >600 |
-| zeroone_w1 | 0.0565823 | 9e-5 | 1.3 | 1.89 | err 2e-1 (1e5, 102 s) | other model (3) | other model (3) | other model (3) | >600 |
-| zeroone_w2 | 3.68883 | 5e-4 | 3.6 | 23 | err 1e-1 (1e5, 102 s) | other model (4) | other model (4) | other model (4) | >600 |
-| coinBias | 0.416667 | 2e-7 | 201 | 416 | err 1e-4 (1e7, 31.5 s) | err 1e-4 (1e6, 181 s) | err 2e-4 (1e6, 5.7 s) | err 6e-4 (1e5, 164 s) | 0.221, closed form |
-| addFun_sum | 0 | 4e-6 | 1.21 | >600 | err 1e-3 (1e6, 9.79 s) | err 7e-4 (1e6, 7.28 s) | err 9e-4 (1e7, 80.3 s) | err 3e-3 (1e5, 2.27 s) | n/a |
-| clickGraph | 0.614154 | 2e-3 | 0.58 | >600 | 0.442 (1e4, 6e-4) | 21.6 (1e4, 2e-3) | 114 (1e7, 1e-3) | err 4e-3 (1e5, 365 s) | n/a |
+| zeroone_w1 | 0.0565823 | 9e-5 | 0.573 | 1.89 | err 2e-1 (1e5, 102 s) | other model (3) | other model (3) | other model (3) | >600 |
+| zeroone_w2 | 3.68883 | 5e-4 | 2.54 | 23 | err 1e-1 (1e5, 102 s) | other model (4) | other model (4) | other model (4) | >600 |
+| coinBias | 0.416667 | 2e-7 | 199 | 416 | err 1e-4 (1e7, 31.5 s) | err 1e-4 (1e6, 181 s) | err 2e-4 (1e6, 5.7 s) | err 6e-4 (1e5, 164 s) | 0.221, closed form |
+| addFun_sum | 0 | 4e-6 | 1.19 | >600 | err 1e-3 (1e6, 9.79 s) | err 7e-4 (1e6, 7.28 s) | err 9e-4 (1e7, 80.3 s) | err 3e-3 (1e5, 2.27 s) | n/a |
+| clickGraph | 0.614154 | 2e-3 | 0.57 | >600 | 0.442 (1e4, 6e-4) | 21.6 (1e4, 2e-3) | 114 (1e7, 1e-3) | err 4e-3 (1e5, 365 s) | n/a |
 | trueskill | 0.5 | 3e-3 | 61.2 | 123 | 1.36 (1e5, 1e-3) | 5.91 (1e5, 4e-4) | 15.2 (1e6, 3e-3) | 17.7 (1e5, 2e-3) | 0.154, integral left |
-| clinicalTrial1 | 0.170362 | 5e-16 | 3.39 | 347 | err 2e-3 (1e6, 311 s) | failed | failed | failed | >600 |
-| clinicalTrial2 | 0.285714 | 7e-7 | 0.049 | 374 | err 1e-4 (1e7, 86.8 s) | other model (5) | other model (5) | other model (5) | 0.727, closed form |
-| addFun_max | 0.56419 | 3e-7 | 33.8 | >600 | err 6e-4 (1e6, 9.96 s) | err 7e-4 (1e6, 6.78 s) | err 4e-4 (1e7, 67.6 s) | err 1e-3 (1e5, 2.03 s) | 0.028, integral left |
-| genes_5 | 0.5 | defect | 25.7 | >600 | err 2e-4 (1e6, 119 s) | >600 | err 3e-4 (1e7, 86.9 s) | err 4e-3 (1e4, 1.63 s) | 4.77, closed form |
-| genes_10 | 0.5 | defect | 25.2 | skipped | err 2e-4 (1e5, 572 s) | >600 | err 2e-4 (1e7, 134 s) | err 2e-4 (1e5, 5.36 s) | 75.2, closed form |
-| genes_15 | 0.5 | defect | 25.2 | skipped | err 1e-3 (1e3, 365 s) | >600 | err 1e-3 (1e7, 204 s) | err 4e-4 (1e4, 2.06 s) | >600 |
-| genes_20 | 0.5 | defect | 25.4 | skipped | >600 | >600 | err 5e-4 (1e7, 251 s) | err 8e-4 (1e5, 8.62 s) | >600 |
-| genes_25 | 0.5 | defect | 25.2 | skipped | failed | >600 | err 2e-3 (1e7, 313 s) | err 5e-4 (1e5, 10.1 s) | >600 |
-| genes_30 | 0.5 | defect | 25 | skipped | >600 | >600 | err 2e-3 (1e7, 372 s) | err 1e-3 (1e5, 12 s) | memout |
-| genes_40 | 0.5 | defect | 25.3 | skipped | failed | >600 | err 2e-3 (1e7, 492 s) | err 7e-4 (1e5, 15.9 s) | >600 |
-| genes_50 | 0.5 | defect | 26 | skipped | failed | >600 | err 3e-3 (1e6, 65.3 s) | err 2e-4 (1e4, 3.84 s) | >600 |
+| clinicalTrial1 | 0.170362 | 5e-16 | 2.91 | 347 | err 2e-3 (1e6, 311 s) | failed | failed | failed | >600 |
+| clinicalTrial2 | 0.285714 | 7e-7 | 0.035 | 374 | err 1e-4 (1e7, 86.8 s) | other model (5) | other model (5) | other model (5) | 0.727, closed form |
+| addFun_max | 0.56419 | 3e-7 | 33.6 | >600 | err 6e-4 (1e6, 9.96 s) | err 7e-4 (1e6, 6.78 s) | err 4e-4 (1e7, 67.6 s) | err 1e-3 (1e5, 2.03 s) | 0.028, integral left |
+| genes_5 | 0.5 | defect | 23.5 | >600 | err 2e-4 (1e6, 119 s) | >600 | err 3e-4 (1e7, 86.9 s) | err 4e-3 (1e4, 1.63 s) | 4.77, closed form |
+| genes_10 | 0.5 | defect | 23 | skipped | err 2e-4 (1e5, 572 s) | >600 | err 2e-4 (1e7, 134 s) | err 2e-4 (1e5, 5.36 s) | 75.2, closed form |
+| genes_15 | 0.5 | defect | 23.1 | skipped | err 1e-3 (1e3, 365 s) | >600 | err 1e-3 (1e7, 204 s) | err 4e-4 (1e4, 2.06 s) | >600 |
+| genes_20 | 0.5 | defect | 23.2 | skipped | >600 | >600 | err 5e-4 (1e7, 251 s) | err 8e-4 (1e5, 8.62 s) | >600 |
+| genes_25 | 0.5 | defect | 23 | skipped | failed | >600 | err 2e-3 (1e7, 313 s) | err 5e-4 (1e5, 10.1 s) | >600 |
+| genes_30 | 0.5 | defect | 22.8 | skipped | >600 | >600 | err 2e-3 (1e7, 372 s) | err 1e-3 (1e5, 12 s) | memout |
+| genes_40 | 0.5 | defect | 23 | skipped | failed | >600 | err 2e-3 (1e7, 492 s) | err 7e-4 (1e5, 15.9 s) | >600 |
+| genes_50 | 0.5 | defect | 23.8 | skipped | failed | >600 | err 3e-3 (1e6, 65.3 s) | err 2e-4 (1e4, 3.84 s) | >600 |
 | multimodal | 3.88889 | none | memout | >600 | err 9e0 (1e5, 1.5 s) | >600 | err 1e0 (1e2, 1.06 s) | err 1e-1 (1e4, 3.54 s) | n/a |
 | conjugate_ex3 | 5.66667 | 7e-3 | skipped | 383 | 0.907 (1e5, 1e-3) | >600 | err 9e-1 (1e7, 47.8 s) | err 1e0 (1e5, 32.8 s) | n/a |
 
@@ -2540,7 +2535,7 @@ ladders in a row, the Caesar cipher, the hidden Markov model with its
 five queries, the lossy network and the perturbed-memory interpreter,
 each on a ladder from the artifact's sizes up to sizes where the systems
 run out of time, and the artifact's nine Bayesian networks with the
-variable it queries: 130 instances in 13 families. `gen_roulette.py`
+variable it queries: 134 instances in 13 families. `gen_roulette.py`
 writes each program's ProbLog and Dice versions with the same
 probabilities; Alea.jl runs the Dice programs (as on the Dice paper's
 programs), and Roulette the artifact's programs in its upstream
@@ -2566,89 +2561,109 @@ section 11), ran again in a job of their own on a lab machine (36
 physical cores, 503 GB) on 2026-11-01 and 02, 34 lanes of 29 GB, each
 instance beside tddlog `auto` (built from 2ceeb514) in the same lane and
 in the same way, and are compared with that `auto`, the column `auto`
-(Roulette's job). Roulette's time is its run of the program after
-Racket's start and the modules' load; `Roulette process` adds them.
-Roulette+tddlog's is the same run up to the circuit, the writing of the
-circuit and tddlog's run on it. The runs beside Roulette on its upstream
-main and Roulette+tddlog's ran a build of 2026-11-01 (tididi c5642b97,
-goatd e592d1e). The runs on Bayesian and Markov networks ran a build of
-2026-10-28 (tididi ca759585, goatd e592d1e). The growth sizes ran a
-build of 2026-10-25 with twin contraction (tididi b9e5064e, goatd
-e592d1e) and a recursion over a successor relation grounded level by
-level, which lacks only the release's sparse route (tididi 9fc0a599).
-The runs beside Scallop ran a build of 2026-10-29 (tididi df7b84a3,
-goatd e592d1e). The reruns of runs skipped without a failure on a
-smaller size ran a build of 2026-10-24 that adds a vtree search run to
-convergence (tididi ef11abfd, goatd e592d1e). The release's main
-contains every solver change those builds have.
+(Roulette's job). On the nine networks they ran again later, Roulette
+reading each network's BIF in its language for networks
+(`roulette/example/bn`, baselines.md section 11), in a job of the same
+kind on a lab machine (20 physical cores, 503 GB) on 2026-11-04, 9 lanes
+of 49 GB, beside tddlog `auto` (built from 1e911a9c), the column `auto`
+(the networks' job). On the diamond's and the ladder's 21 sizes they ran
+again later, as did the other systems on the two families, in a job of
+the same kind on a lab machine (16 physical cores, 125 GB) on
+2026-11-04, 3 lanes of 30 GB, beside tddlog `auto` (built from
+52a8cb11), the column `auto` (the diamond and ladder's job). Roulette's
+time is its run of the program after Racket's start and the modules'
+load; `Roulette process` adds them. Roulette+tddlog's is the same run up
+to the circuit, the writing of the circuit and tddlog's run on it. The
+runs beside Roulette on its upstream main and Roulette+tddlog's ran a
+build of 2026-11-01 (tididi c5642b97, goatd e592d1e). The runs on
+Bayesian and Markov networks ran a build of 2026-10-28 (tididi ca759585,
+goatd e592d1e). The growth sizes ran a build of 2026-10-25 with twin
+contraction (tididi b9e5064e, goatd e592d1e) and a recursion over a
+successor relation grounded level by level, which lacks only the
+release's sparse route (tididi 9fc0a599). The runs beside Scallop ran a
+build of 2026-10-29 (tididi df7b84a3, goatd e592d1e). The runs beside
+Roulette in its BN language and Roulette+tddlog's on the Bayesian
+networks ran a build of 2026-11-03 (tididi 427cb8f8, goatd e592d1e). The
+runs beside Alea.jl on its own diamond and the ladder's port ran a build
+of 2026-11-04 (tididi 6e472575, goatd e592d1e). The reruns of runs
+skipped without a failure on a smaller size ran a build of 2026-10-24
+that adds a vtree search run to convergence (tididi ef11abfd, goatd
+e592d1e). The release's main contains every solver change those builds
+have.
 
-Of the 130 instances, four lie past the sizes at which every system had
-failed, and two every system answers in under a second. Answers: `auto`
-111, `program` 30, `decision` 16, Dice 45, Alea 80, Roulette 68,
-Roulette+tddlog 91.
+Of the 134 instances, four lie past the sizes at which every system had
+failed, and six every system answers in under a second. Answers: `auto`
+97, `program` 30, `decision` 16, Dice 55, Alea 80, Alea.jl+tddlog 17,
+Roulette 74, Roulette+tddlog 95.
 
-| family | sizes | `auto` | `program` | `decision` | Dice | Alea | Roulette | Roulette+tddlog |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| motivating | 1 000 to 9 000 000 | 1 000 000 (60.5 s) | memout | unsupported, memout | 10 000 (203 s) | 100 000 (55.4 s) | 1 000 000 (287 s) | 1 000 000 (409 s) |
-| diamond | 1 000 to 6 000 000 | 1 000 000 (62 s) | memout | unsupported, memout | 10 000 (147 s) | 100 000 (46.6 s) | 300 000 (178 s) | 300 000 (263 s) |
-| ladder | 1 000 to 3 000 000 | 1 000 000 (119 s) | memout | unsupported, memout | 10 000 (435 s) | 100 000 (45.9 s) | 300 000 (233 s) | 300 000 (370 s) |
-| caesar | 25 to 100 000 | 20 000 (86.8 s) | memout | unsupported | zero, underflow, timeout | 2 000 (348 s) | 200 (2.44 s) | 10 000 (317 s) |
-| hmm marginal likelihood | 100 to 900 | 900 (0.13 s) | memout | unsupported | 900 (0.44 s) | 900 (1.22 s) | 900 (2.27 s) | 900 (1.02 s) |
-| hmm filtering marginal | 100 to 3 000 000 | 300 000 (50.8 s) | memout | unsupported, memout | zero, underflow, timeout | 10 000 (238 s) | 300 (0.3 s) | 30 000 (42 s) |
-| hmm smoothing marginal | 100 to 3 000 000 | 300 000 (54.8 s) | memout | unsupported, memout | zero, underflow, timeout | 10 000 (232 s) | 300 (0.3 s) | 30 000 (42.6 s) |
-| hmm filtering joint | 100 to 3 000 000 | 300 000 (59.3 s) | memout | unsupported, memout | 10 000 (76.5 s) | 3 000 (18.9 s) | 3 000 (40 s) | 10 000 (35.9 s) |
-| hmm smoothing joint | 100 to 3 000 000 | 300 000 (47 s) | memout | unsupported, memout | 10 000 (81 s) | 10 000 (241 s) | 3 000 (36.4 s) | 10 000 (39.9 s) |
-| network | 10 to 1 000 000 | 100 000 (129 s) | memout | unsupported, memout | 30 000 (207 s) | 1 000 (67.4 s) | 300 (22.8 s) | 30 000 (419 s) |
-| hardware | 10 to 1 000 000 | 100 000 (180 s) | 1 000 (80.1 s) | unsupported, memout | 100 000 (295 s) | 1 000 (103 s) | 300 (22 s) | 1 000 (423 s) |
-| hardware bitwidth | 5 to 100 000 000 | 100 000 000 (0.009 s) | 100 000 000 (0.009 s) | 100 000 000 (0.008 s) | 10 (0.62 s) | 10 000 000 (44.9 s) | 3 000 000 (263 s) | 3 000 000 (270 s) |
-| bn | 9 networks | 9 (0.4 s) | 9 (7.1 s) | - | 9 (2.67 s) | 9 (2.55 s) | 9 (13.6 s) | 9 (13.8 s) |
+| family | sizes | `auto` | `program` | `decision` | Dice | Alea | Alea.jl+tddlog | Roulette | Roulette+tddlog |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| motivating | 1 000 to 9 000 000 | 1 000 000 (60.5 s) | memout | unsupported, memout | 10 000 (203 s) | 100 000 (55.4 s) | - | 1 000 000 (287 s) | 1 000 000 (409 s) |
+| diamond | 100 to 6 000 000 | - | - | - | 300 000 (82.9 s) | 10 000 (139 s) | 1 000 000 (194 s) | 1 000 000 (440 s) | 300 000 (204 s) |
+| ladder | 100 to 3 000 000 | - | - | - | 300 000 (202 s) | 10 000 (317 s) | 300 000 (184 s) | 1 000 000 (524 s) | 300 000 (194 s) |
+| caesar | 25 to 100 000 | 20 000 (86.8 s) | memout | unsupported | zero, underflow, timeout | 2 000 (348 s) | - | 200 (2.44 s) | 10 000 (317 s) |
+| hmm marginal likelihood | 100 to 900 | 900 (0.13 s) | memout | unsupported | 900 (0.44 s) | 900 (1.22 s) | - | 900 (2.27 s) | 900 (1.02 s) |
+| hmm filtering marginal | 100 to 3 000 000 | 300 000 (50.8 s) | memout | unsupported, memout | zero, underflow, timeout | 10 000 (238 s) | - | 300 (0.3 s) | 30 000 (42 s) |
+| hmm smoothing marginal | 100 to 3 000 000 | 300 000 (54.8 s) | memout | unsupported, memout | zero, underflow, timeout | 10 000 (232 s) | - | 300 (0.3 s) | 30 000 (42.6 s) |
+| hmm filtering joint | 100 to 3 000 000 | 300 000 (59.3 s) | memout | unsupported, memout | 10 000 (76.5 s) | 3 000 (18.9 s) | - | 3 000 (40 s) | 10 000 (35.9 s) |
+| hmm smoothing joint | 100 to 3 000 000 | 300 000 (47 s) | memout | unsupported, memout | 10 000 (81 s) | 10 000 (241 s) | - | 3 000 (36.4 s) | 10 000 (39.9 s) |
+| network | 10 to 1 000 000 | 100 000 (129 s) | memout | unsupported, memout | 30 000 (207 s) | 1 000 (67.4 s) | - | 300 (22.8 s) | 30 000 (419 s) |
+| hardware | 10 to 1 000 000 | 100 000 (180 s) | 1 000 (80.1 s) | unsupported, memout | 100 000 (295 s) | 1 000 (103 s) | - | 300 (22 s) | 1 000 (423 s) |
+| hardware bitwidth | 5 to 100 000 000 | 100 000 000 (0.009 s) | 100 000 000 (0.009 s) | 100 000 000 (0.008 s) | 10 (0.62 s) | 10 000 000 (44.9 s) | - | 3 000 000 (263 s) | 3 000 000 (270 s) |
+| bn | 9 networks | 9 (0.4 s) | 9 (7.1 s) | - | 9 (2.67 s) | 9 (2.55 s) | - | 9 (14.1 s) | 9 (11.3 s) |
 
 The table above gives, a family a row, the largest size each system
 answers and its time there (on the networks, how many it answers and
 their total time), or its failures where it answers no size.
 
-- Against `program`, over the 41 instances given to both that either
+- Against `program`, over the 39 instances given to both that either
   answers, a run that does not answer counted at the 600 s limit, `auto`
-  takes 5.17 s in all and `program` 6694 s; over the 30 both answer,
+  takes 5.06 s in all and `program` 5494 s; over the 30 both answer,
   1.88 s against 94.3 s. `auto` is faster on 6 of the 30 both answer and
   `program` on 0, both under 0.2 s or level on the other 24. `auto`
-  alone answers 11, `program` alone 0.
-- Against `decision`, over the 110 instances given to both that either
+  alone answers 9, `program` alone 0.
+- Against `decision`, over the 97 instances given to both that either
   answers, a run that does not answer counted at the 600 s limit, `auto`
-  takes 1061 s in all and `decision` 56400 s; over the 16 both answer,
+  takes 934 s in all and `decision` 48600 s; over the 16 both answer,
   0.15 s against 0.13 s. `auto` is faster on 0 of the 16 both answer and
   `decision` on 0, both under 0.2 s or level on the other 16. `auto`
-  alone answers 94, `decision` alone 0.
-- Against Dice, over the 83 instances given to both that either answers,
+  alone answers 81, `decision` alone 0.
+- Against Dice, over the 75 instances given to both that either answers,
   a run that does not answer counted at the 600 s limit, `auto` takes
-  618 s in all and Dice 24470 s; over the 45 both answer, 277 s against
-  1670 s. `auto` is faster on 30 of the 45 both answer and Dice on 3,
-  both under 0.2 s or level on the other 12. `auto` alone answers 38,
+  613 s in all and Dice 22634 s; over the 39 both answer, 275 s against
+  1034 s. `auto` is faster on 24 of the 39 both answer and Dice on 3,
+  both under 0.2 s or level on the other 12. `auto` alone answers 36,
   Dice alone 0.
 - Against Alea, over the 94 instances given to both that either answers,
   a run that does not answer counted at the 600 s limit, `auto` takes
-  274 s in all and Alea 10051 s; over the 80 both answer, 53.2 s against
-  1651 s. `auto` is faster on 42 of the 80 both answer and Alea on 0,
-  both under 0.2 s or level on the other 38. `auto` alone answers 14,
+  215 s in all and Alea 10440 s; over the 80 both answer, 36.6 s against
+  2040 s. `auto` is faster on 41 of the 80 both answer and Alea on 0,
+  both under 0.2 s or level on the other 39. `auto` alone answers 14,
   Alea alone 0. Against Alea's process, over the 94 instances given to
   both that either answers, a run that does not answer counted at the
-  600 s limit, `auto` takes 274 s in all and the process 13113 s; over
-  the 80 both answer, 53.2 s against 4713 s.
-- Against Roulette, over the 90 instances given to both that either
-  answers, a run that does not answer counted at the 600 s limit, `auto`
-  takes 778 s in all and Roulette 14687 s; over the 68 both answer, 245
-  s against 1487 s. `auto` is faster on 49 of the 68 both answer and
-  Roulette on 0, both under 0.2 s or level on the other 19. `auto` alone
-  answers 22, Roulette alone 0. Against Roulette's process, over the 90
-  instances given to both that either answers, a run that does not
-  answer counted at the 600 s limit, `auto` takes 778 s in all and the
-  process 14738 s; over the 68 both answer, 245 s against 1538 s.
-- Against Roulette+tddlog, over the 101 instances given to both that
+  600 s limit, `auto` takes 215 s in all and the process 12880 s; over
+  the 80 both answer, 36.6 s against 4480 s.
+- Against Alea.jl+tddlog, over the 19 instances given to both that
   either answers, a run that does not answer counted at the 600 s limit,
-  `auto` takes 1103 s in all and Roulette+tddlog 9640 s; over the 91
-  both answer, 460 s against 3640 s. `auto` is faster on 69 of the 91
-  both answer and Roulette+tddlog on 0, both under 0.2 s or level on the
-  other 22. `auto` alone answers 10, Roulette+tddlog alone 0.
+  `auto` takes 548 s in all and Alea.jl+tddlog 1745 s; over the 17 both
+  answer, 162 s against 545 s. `auto` is faster on 12 of the 17 both
+  answer and Alea.jl+tddlog on 0, both under 0.2 s or level on the other
+  5. `auto` alone answers 2, Alea.jl+tddlog alone 0.
+- Against Roulette, over the 76 instances given to both that either
+  answers, a run that does not answer counted at the 600 s limit, `auto`
+  takes 429 s in all and Roulette 12898 s; over the 56 both answer, 128
+  s against 898 s. `auto` is faster on 37 of the 56 both answer and
+  Roulette on 0, both under 0.2 s or level on the other 19. `auto` alone
+  answers 20, Roulette alone 0. Against Roulette's process, over the 76
+  instances given to both that either answers, a run that does not
+  answer counted at the 600 s limit, `auto` takes 429 s in all and the
+  process 12940 s; over the 56 both answer, 128 s against 940 s.
+- Against Roulette+tddlog, over the 87 instances given to both that
+  either answers, a run that does not answer counted at the 600 s limit,
+  `auto` takes 754 s in all and Roulette+tddlog 7520 s; over the 79 both
+  answer, 343 s against 2720 s. `auto` is faster on 57 of the 79 both
+  answer and Roulette+tddlog on 0, both under 0.2 s or level on the
+  other 22. `auto` alone answers 8, Roulette+tddlog alone 0.
 - Dice prints 0 for every answer (zero) on 11 instances: caesar_25,
   caesar_50, caesar_100, hmm_filtering_joint_100,
   hmm_filtering_joint_300, hmm_filtering_marginal_100,
@@ -2670,142 +2685,148 @@ their total time), or its failures where it answers no size.
   hmm_smoothing_joint_1000, hmm_smoothing_marginal_1000,
   hmm_smoothing_marginal_3000.
 
-| instance | tddlog | program | decision | Dice | Alea | Roulette | Roulette+tddlog | `auto` (Roulette's job) | Alea process | Roulette process | ProbLog | ref | tddlog diff | program diff | decision diff | Dice diff | Alea diff | Roulette diff | Roulette+tddlog diff | `auto` (Roulette's job) diff |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| bn_alarm | 0.026 | 0.031 | n/a | 0.066 | 0.01 | 0.117 | 0.15 | 0.01 | 11.6 | 0.867 | 0.501 | exact | 6.7e-16 / 2.5e-14 | 5.6e-16 / 2.2e-15 |  | 1.1e-16 / 5.3e-16 | 5.6e-17 / 7.6e-16 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 | 6.7e-16 / 2.5e-14 |
-| bn_cancer | 0.026 | 0.03 | n/a | 0.06 | 0.006 | 0.009 | 0.016 | 0.005 | 11.7 | 0.754 | 0.282 | exact | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 |  | 2.8e-17 / 1.3e-16 | 1.1e-16 / 1.4e-16 | 0.0e+00 / 0.0e+00 | 2.8e-17 / 1.3e-16 | 1.1e-16 / 5.3e-16 |
-| bn_hailfinder | 0.063 | 2.09 | n/a | 0.434 | 1.24 | 1.81 | 1.45 | 0.051 | 14.9 | 2.56 | >600 | exact | 5.0e-16 / 1.6e-15 | 5.0e-16 / 1.1e-15 |  | 4.9e-13 / 1.6e-12 | 1.7e-16 / 5.4e-16 | 2.2e-16 / 5.4e-16 | 2.2e-16 / 7.2e-16 | 5.0e-16 / 1.6e-15 |
-| bn_hepar2 | 0.034 | 0.229 | n/a | 0.074 | 0.022 | 0.405 | 0.528 | 0.016 | 12.3 | 1.15 | 3.35 | exact | 2.8e-16 / 6.5e-16 | 5.6e-17 / 1.3e-16 |  | 4.7e-13 / 1.1e-12 | 5.6e-17 / 1.3e-16 | 2.5e-10 / 5.8e-10 | 2.5e-10 / 5.8e-10 | 2.8e-16 / 6.5e-16 |
-| bn_insurance | 0.043 | 4.45 | n/a | 0.757 | 1.03 | 1.18 | 0.345 | 0.031 | 15.1 | 1.95 | >600 | exact | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 |  | 1.5e-11 / 2.6e-11 | 1.5e-11 / 2.7e-11 | 2.4e-11 / 1.4e-09 | 2.4e-11 / 1.4e-09 | 1.5e-11 / 2.7e-11 |
-| bn_munin | 0.104 | 0.117 | n/a | 0.241 | 0.075 | 8.66 | 9.47 | 0.054 | 13.8 | 9.4 | 64.3 | exact | 4.5e-16 / 1.9e-13 | 6.5e-16 / 3.5e-13 |  | 3.0e-13 / 2.8e-12 | 5.6e-17 / 1.7e-14 | 9.6e-09 / 3.5e-06 | 9.6e-09 / 3.5e-06 | 4.5e-16 / 1.9e-13 |
-| bn_pigs | 0.031 | 0.021 | n/a | 0.06 | 0.007 | 0.822 | 0.871 | 0.009 | 12.3 | 1.56 | 1.2 | exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| bn_survey | 0.027 | 0.014 | n/a | 0.063 | 0.006 | 0.011 | 0.019 | 0.005 | 11.8 | 0.753 | 0.153 | exact | 4.7e-16 / 3.0e-15 | 1.4e-16 / 8.8e-16 |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.0e-16 | 4.7e-16 / 3.0e-15 |
-| bn_water | 0.048 | 0.125 | n/a | 0.916 | 0.159 | 0.559 | 0.946 | 0.039 | 14.5 | 1.3 | 18.9 | exact | 2.8e-16 / 2.7e-14 | 5.0e-16 / 1.8e-14 |  | 9.9e-14 / 7.0e-13 | 1.1e-16 / 4.9e-16 | 7.2e-09 / 9.6e-08 | 7.2e-09 / 9.6e-08 | 2.8e-16 / 2.7e-14 |
-| caesar_25 | 0.076 | oom | n/a | zero | 0.049 | 0.291 | 0.503 | 0.153 | 9.62 | 0.999 | 28.8 | exact | 5.1e-15 / 1.0e-13 |  |  |  | 7.8e-15 / 4.3e-13 | 4.6e-15 / 1.1e-13 | 5.1e-15 / 1.1e-13 | 5.1e-15 / 1.0e-13 |
-| caesar_50 | 0.139 | - | n/a | zero | 0.102 | 0.56 | 1.01 | 0.296 | 9.72 | 1.27 | 61.4 | exact | 2.3e-15 / 2.2e-13 |  |  |  | 5.3e-15 / 8.5e-13 | 2.3e-15 / 2.2e-13 | 2.3e-15 / 2.3e-13 | 2.3e-15 / 2.2e-13 |
-| caesar_100 | 0.294 | - | n/a | zero | 0.456 | 1.19 | 2.11 | 0.588 | 10.1 | 1.91 | 113 | exact | 4.4e-16 / 4.8e-13 |  |  |  | 4.4e-15 / 2.3e-12 | 1.1e-16 / 1.0e+00 | 5.1e-26 / 4.9e-13 | 4.4e-16 / 4.8e-13 |
-| caesar_200 | 0.571 | - | n/a | underflow | 2.3 | 2.44 | 4.22 | 1.2 | 12 | 3.15 | 253 | exact | 1.4e-29 / 1.5e-12 |  |  |  | 1.8e-29 / 5.5e-12 | 9.6e-18 / 1.0e+00 | 1.4e-29 / 1.5e-12 | 1.4e-29 / 1.5e-12 |
-| caesar_300 | 0.89 | - | n/a | underflow | 5.51 | underflow | 6.86 | 1.82 | 15.2 | underflow | 207 | exact | 3.6e-31 / 4.0e-12 |  |  |  | 1.2e-30 / 9.3e-12 |  | 3.6e-31 / 4.0e-12 | 3.6e-31 / 4.0e-12 |
-| caesar_500 | 1.53 | - | n/a | underflow | 16.9 | underflow | 10.9 | 3.17 | 26.6 | underflow | 448 | exact | 2.2e-16 / 2.5e-12 |  |  |  | 1.8e-33 / 1.5e-11 |  | 2.3e-34 / 2.5e-12 | 2.4e-34 / 2.5e-12 |
-| caesar_1000 | 3.22 | - | n/a | underflow | 74.6 | underflow | 22.8 | 6.62 | 84.9 | underflow | >600 | exact | 1.1e-16 / 3.2e-11 |  |  |  | 6.8e-79 / 7.4e-11 |  | 1.3e-78 / 3.2e-11 | 1.1e-16 / 3.2e-11 |
-| caesar_2000 | 7.01 | - | n/a | underflow | 348 | underflow | 46.8 | 13.9 | 360 | underflow | - | exact | 3.3e-16 / 6.4e-11 |  |  |  | 2.1e-171 / 1.3e-10 |  | 1.0e-171 / 6.4e-11 | 1.1e-16 / 6.4e-11 |
-| caesar_5000 | 17.5 | - | n/a | underflow | oom | underflow | 145 | 35.9 | oom | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 |
-| caesar_10000 | 38.2 | - | n/a | underflow | - | underflow | 317 | 76.1 | - | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 |
-| caesar_20000 | 86.8 | - | n/a | underflow | - | underflow | >600 | 150 | - | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 3.3e-16 / 3.3e-16 |
-| caesar_50000 | oom | - | n/a | >600 | - | >600 | - | oom | - | >600 | - | exact |  |  |  |  |  |  |  |  |
-| caesar_100000 | oom | - | n/a | >600 | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |
-| diamond_1000 | 0.038 | oom | n/a | 1.14 | 0.049 | 0.352 | 0.556 | 0.076 | 9.13 | 1.19 | 17 | exact | 1.1e-16 / 1.2e-16 |  |  | 4.1e-14 / 4.3e-14 | 1.1e-14 / 1.1e-14 | 3.3e-16 / 3.5e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.2e-16 |
-| diamond_3000 | 0.11 | - | n/a | 12.3 | 0.171 | 1.02 | 1.78 | 0.236 | 10.9 | 1.84 | stack | exact | 1.1e-15 / 1.3e-15 |  |  | 3.9e-13 / 4.6e-13 | 3.1e-14 / 3.6e-14 | 3.0e-15 / 3.5e-15 | 8.9e-16 / 1.0e-15 | 1.1e-15 / 1.3e-15 |
-| diamond_10000 | 0.399 | - | n/a | 147 | 0.629 | 4.14 | 6.62 | 0.76 | 18.1 | 4.87 | stack | exact | 7.7e-15 / 1.3e-14 |  |  | 4.5e-14 / 7.4e-14 | 1.0e-14 / 1.6e-14 | 1.8e-14 / 3.0e-14 | 7.3e-15 / 1.2e-14 | 7.7e-15 / 1.3e-14 |
-| diamond_30000 | 1.21 | - | n/a | >600 | 2.1 | 15 | 23.8 | 2.26 | 44.9 | 15.7 | stack | exact | 4.2e-14 / 1.9e-13 |  |  |  | 4.6e-13 / 2.1e-12 | 3.5e-14 / 1.6e-13 | 1.7e-14 / 7.4e-14 | 4.2e-14 / 1.9e-13 |
-| diamond_100000 | 4.46 | - | n/a | - | 46.6 | 49.7 | 78.6 | 8 | 380 | 50.5 | stack | exact | 9.1e-14 / 1.3e-11 |  |  |  | 9.5e-16 / 1.4e-13 | 6.0e-15 / 9.0e-13 | 2.9e-15 / 4.3e-13 | 9.1e-14 / 1.3e-11 |
-| diamond_300000 | 17.9 | - | n/a | - | >600 | 178 | 263 | 25.2 | >600 | 179 | stack | exact | 5.1e-19 / 1.7e-12 |  |  |  |  | 9.5e-19 / 3.1e-12 | 4.6e-19 / 1.5e-12 | 5.1e-19 / 1.7e-12 |
-| diamond_1000000 | 62 | - | oom | - | - | >600 | >600 | 87.3 | - | >600 | >600 | exact | 1.1e-33 / 5.5e-12 |  |  |  |  |  |  | 1.1e-33 / 5.5e-12 |
-| diamond_3000000 | oom | - | oom | - | - | - | - | >600 | - | - | >600 | exact |  |  |  |  |  |  |  |  |
-| hardware_10 | 0.011 | 0.01 | n/a | 0.024 | 0.008 | 0.041 | 0.07 | 0.02 | 9.6 | 0.77 | err | exact | 1.2e-18 / 1.2e-14 | 4.4e-16 / 1.2e-14 |  | 1.8e-14 / 2.1e-12 | 1.1e-16 / 1.4e-14 | 1.1e-16 / 3.3e-13 | 1.1e-17 / 3.3e-13 | 1.2e-18 / 1.2e-14 |
-| hardware_30 | 0.032 | 0.067 | n/a | 0.035 | 0.035 | 0.217 | 0.309 | 0.059 | 9.68 | 0.948 | >600 | exact | 2.2e-16 / 1.1e-14 | 4.4e-16 / 1.1e-14 |  | 1.7e-14 / 3.3e-12 | 1.1e-16 / 7.1e-14 | 1.1e-16 / 1.1e-12 | 1.1e-16 / 1.1e-12 | 2.2e-16 / 1.1e-14 |
-| hardware_100 | 0.091 | 0.684 | n/a | 0.112 | 0.58 | 2.3 | 2.18 | 0.186 | 10.3 | 3.09 | - | exact | 1.1e-16 / 1.1e-14 | 4.4e-16 / 1.1e-14 |  | 1.7e-14 / 3.2e-12 | 1.1e-16 / 1.9e-12 | 1.1e-16 / 3.7e-12 | 2.2e-16 / 3.7e-12 | 2.2e-16 / 1.1e-14 |
-| hardware_300 | 0.277 | 6.19 | n/a | 0.314 | 7.26 | 22 | 43 | 0.602 | 17.5 | 23.1 | - | exact | 3.3e-16 / 1.1e-14 | 4.4e-16 / 1.1e-14 |  | 1.7e-14 / 3.2e-12 | 1.1e-16 / 1.9e-15 | 1.1e-16 / 1.1e-13 | 2.2e-16 / 1.1e-13 | 4.4e-16 / 1.1e-14 |
-| hardware_1000 | 0.925 | 80.1 | n/a | 0.871 | 103 | oom | 423 | 2 | 115 | oom | - | exact | 2.2e-16 / 1.1e-14 | 4.4e-16 / 1.1e-14 |  | 1.7e-14 / 3.2e-12 | 1.1e-16 / 1.9e-15 |  | 1.1e-16 / 1.1e-13 | 3.3e-16 / 1.1e-14 |
-| hardware_3000 | 2.95 | oom | n/a | 2.53 | oom | - | >600 | 6.66 | oom | - | - | exact | 2.2e-16 / 1.1e-14 |  |  | 1.7e-14 / 3.2e-12 |  |  |  | 1.1e-16 / 1.1e-14 |
-| hardware_10000 | 11 | - | n/a | 9.43 | - | - | - | 21.9 | - | - | oom | exact | 1.1e-16 / 1.1e-14 |  |  | 1.7e-14 / 3.2e-12 |  |  |  | 1.1e-16 / 1.1e-14 |
-| hardware_30000 | 48 | - | n/a | 50.9 | - | - | - | 76.8 | - | - | - | exact | 3.3e-16 / 1.1e-14 |  |  | 1.7e-14 / 3.2e-12 |  |  |  | 3.3e-16 / 1.1e-14 |
-| hardware_100000 | 180 | - | n/a | 295 | - | - | - | 248 | - | - | - | exact | 1.1e-16 / 1.4e-13 |  |  | 1.7e-14 / 3.2e-12 |  |  |  | 1.1e-16 / 1.4e-13 |
-| hardware_300000 | oom | - | n/a | >600 | - | - | - | err | - | - | - | exact |  |  |  |  |  |  |  |  |
-| hardware_1000000 | oom | - | oom | >600 | - | - | - | oom | - | - | - | exact |  |  |  |  |  |  |  |  |
-| hardware_bitwidth_5 | 0.008 | 0.007 | 0.011 | 0.282 | 0.022 | 0.007 | 0.018 | 0.008 | 80.6 | 0.533 | 0.187 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_10 | 0.009 | 0.008 | 0.007 | 0.62 | 0.01 | 0.007 | 0.018 | 0.006 | 14.3 | 0.537 | 0.171 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_20 | 0.01 | 0.009 | 0.007 | >600 | 0.011 | 0.008 | 0.019 | 0.006 | 14.2 | 0.541 | 0.16 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_50 | 0.01 | 0.01 | 0.009 | - | 0.011 | 0.009 | 0.021 | 0.007 | 14.2 | 0.536 | 0.162 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_100 | 0.01 | 0.008 | 0.007 | - | 0.011 | 0.02 | 0.023 | 0.006 | 14.3 | 0.547 | 0.162 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_300 | 0.01 | 0.008 | 0.008 | - | 0.012 | 0.031 | 0.044 | 0.006 | 14.2 | 0.559 | 0.161 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_1000 | 0.009 | 0.008 | 0.007 | - | 0.014 | 0.07 | 0.082 | 0.006 | 14.2 | 0.599 | 0.168 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_3000 | 0.01 | 0.008 | 0.008 | - | 0.02 | 0.197 | 0.201 | 0.006 | 14.2 | 0.726 | 0.167 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_10000 | 0.009 | 0.009 | 0.009 | - | 0.045 | 0.574 | 0.623 | 0.006 | 14.2 | 1.11 | 0.166 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_30000 | 0.009 | 0.008 | 0.008 | - | 0.128 | 1.74 | 1.78 | 0.007 | 14.3 | 2.27 | 0.172 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_100000 | 0.01 | 0.008 | 0.007 | - | 0.589 | 5.86 | 5.85 | 0.006 | 14.8 | 6.4 | 0.168 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_300000 | 0.009 | 0.008 | 0.007 | - | 1.56 | 18.5 | 18.3 | 0.006 | 15.8 | 19 | 0.17 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_1000000 | 0.008 | 0.007 | 0.007 | - | 4.68 | 68.2 | 69.5 | 0.006 | 19.1 | 68.7 | 0.164 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_3000000 | 0.009 | 0.008 | 0.007 | - | 13.8 | 263 | 270 | 0.007 | 28.1 | 263 | 0.166 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_10000000 | 0.008 | 0.009 | 0.008 | - | 44.9 | >600 | >600 | 0.007 | 59.4 | >600 | 0.165 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  |  | 3.3e-16 / 6.8e-16 |
-| hardware_bitwidth_100000000 | 0.009 | 0.009 | 0.008 | - | oom | - | - | 0.007 | oom | - | 0.164 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  |  |  |  | 3.3e-16 / 6.8e-16 |
-| hmm_filtering_joint_100 | 0.014 | oom | n/a | zero | 0.015 | 0.057 | 0.063 | 0.024 | 8.76 | 0.773 | 0.635 | exact | 5.8e-32 / 1.5e-13 |  |  |  | 2.1e-32 / 5.7e-14 | 5.9e-32 / 1.6e-13 | 5.9e-32 / 1.6e-13 | 5.8e-32 / 1.5e-13 |
-| hmm_filtering_joint_300 | 0.046 | - | n/a | zero | 0.13 | 0.348 | 0.193 | 0.065 | 8.97 | 1.06 | 2.05 | exact | 3.8e-69 / 2.8e-14 |  |  |  | 1.7e-67 / 1.3e-12 | 5.5e-69 / 4.0e-14 | 5.7e-69 / 4.1e-14 | 3.8e-69 / 2.8e-14 |
-| hmm_filtering_joint_1000 | 0.106 | - | n/a | underflow | 1.66 | underflow | 0.886 | 0.201 | 147 | underflow | 13 | exact | 5.5e-194 / 1.4e-11 |  |  |  | 6.1e-194 / 1.5e-11 |  | 5.6e-194 / 1.4e-11 | 5.5e-194 / 1.4e-11 |
-| hmm_filtering_joint_3000 | 0.351 | - | n/a | 6.2 | 18.9 | 40 | 4.94 | 0.648 | 166 | 41.5 | oom | exact | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| hmm_filtering_joint_10000 | 1.21 | - | n/a | 76.5 | oom | oom | 35.9 | 2.26 | oom | oom | - | exact | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| hmm_filtering_joint_30000 | 3.64 | - | n/a | >600 | - | - | >600 | 7.13 | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| hmm_filtering_joint_100000 | 13.2 | - | n/a | - | - | - | - | 25.8 | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| hmm_filtering_joint_300000 | 59.3 | - | oom | - | stack | - | - | 83.6 | stack | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| hmm_filtering_joint_1000000 | oom | - | - | - | stack | - | - | oom | stack | - | - | exact |  |  |  |  |  |  |  |  |
-| hmm_filtering_joint_3000000 | - | - | - | - | stack | - | - | - | stack | - | - | exact |  |  |  |  |  |  |  |  |
-| hmm_filtering_marginal_100 | 0.027 | oom | n/a | zero | 0.014 | 0.056 | 0.058 | 0.04 | 8.61 | 0.843 | 0.531 | exact | 6.2e-15 / 1.0e-14 |  |  |  | 0.0e+00 / 0.0e+00 | 6.0e-15 / 9.6e-15 | 5.8e-15 / 9.3e-15 | 6.2e-15 / 1.0e-14 |
-| hmm_filtering_marginal_300 | 0.042 | - | n/a | zero | 0.12 | 0.303 | 0.172 | 0.072 | 8.63 | 1.02 | 1.88 | exact | 6.0e-15 / 9.6e-15 |  |  |  | 0.0e+00 / 0.0e+00 | 6.2e-15 / 1.0e-14 | 5.8e-15 / 9.3e-15 | 6.0e-15 / 9.6e-15 |
-| hmm_filtering_marginal_1000 | 0.11 | - | n/a | underflow | 1.51 | underflow | 0.631 | 0.18 | 10.4 | underflow | 12.3 | exact | 3.0e-14 / 4.9e-14 |  |  |  | 7.1e-14 / 1.1e-13 |  | 3.0e-14 / 4.8e-14 | 3.0e-14 / 4.9e-14 |
-| hmm_filtering_marginal_3000 | 2.48 | - | n/a | underflow | 18.2 | underflow | 2.21 | 0.608 | 27.8 | underflow | stack | exact | 1.1e-13 / 1.8e-13 |  |  |  | 2.8e-13 / 4.5e-13 |  | 1.1e-13 / 1.8e-13 | 1.1e-13 / 1.8e-13 |
-| hmm_filtering_marginal_10000 | 3.02 | - | n/a | underflow | 238 | oom | 8.84 | 2.07 | 252 | oom | stack | exact | 4.0e-13 / 6.4e-13 |  |  |  | 5.7e-13 / 9.1e-13 |  | 3.9e-13 / 6.3e-13 | 4.0e-13 / 6.4e-13 |
-| hmm_filtering_marginal_30000 | 3.66 | - | n/a | underflow | oom | - | 42 | 6.37 | oom | - | stack | exact | 9.7e-13 / 1.6e-12 |  |  |  |  |  | 9.6e-13 / 1.5e-12 | 9.7e-13 / 1.6e-12 |
-| hmm_filtering_marginal_100000 | 11.8 | - | n/a | >600 | - | - | oom | 22.6 | - | - | stack | exact | 3.3e-12 / 5.2e-12 |  |  |  |  |  |  | 3.3e-12 / 5.2e-12 |
-| hmm_filtering_marginal_300000 | 50.8 | - | oom | - | - | - | - | 71.1 | - | - | stack | exact | 1.5e-11 / 2.4e-11 |  |  |  |  |  |  | 1.5e-11 / 2.4e-11 |
-| hmm_filtering_marginal_1000000 | oom | - | - | - | - | - | - | oom | - | - | >600 | exact |  |  |  |  |  |  |  |  |
-| hmm_marginal_likelihood_100 | 0.016 | oom | n/a | 0.033 | 0.013 | 0.049 | 0.068 | 0.027 | 8.5 | 0.767 | oom | exact | 1.7e-48 / 6.1e-14 |  |  | 3.1e-47 / 1.1e-12 | 0.0e+00 / 0.0e+00 | 1.7e-48 / 6.0e-14 | 1.7e-48 / 6.0e-14 | 1.7e-48 / 6.1e-14 |
-| hmm_marginal_likelihood_300 | 0.038 | - | n/a | 0.074 | 0.124 | 0.257 | 0.22 | 0.071 | 8.69 | 0.996 | - | exact | 2.7e-116 / 1.2e-12 |  |  | 2.6e-116 / 1.2e-12 | 0.0e+00 / 0.0e+00 | 2.7e-116 / 1.2e-12 | 2.6e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 |
-| hmm_marginal_likelihood_600 | 0.098 | - | n/a | 0.231 | 0.519 | 0.995 | 0.64 | 0.136 | 146 | 1.77 | - | exact | 3.2e-219 / 7.0e-12 |  |  | 3.6e-219 / 7.8e-12 | 2.6e-221 / 5.7e-14 | 3.2e-219 / 7.0e-12 | 3.2e-219 / 7.0e-12 | 3.2e-219 / 7.0e-12 |
-| hmm_marginal_likelihood_900 | 0.13 | - | n/a | 0.44 | 1.22 | 2.27 | 1.02 | 0.199 | 146 | 3.07 | - | exact | 1.2e-322 / 1.3e-11 |  |  | 1.2e-322 / 1.3e-11 | 0.0e+00 / 0.0e+00 | 1.2e-322 / 1.3e-11 | 1.2e-322 / 1.3e-11 | 1.2e-322 / 1.3e-11 |
-| hmm_smoothing_joint_100 | 0.014 | oom | n/a | zero | 0.015 | 0.055 | 0.064 | 0.023 | 8.74 | 0.769 | 0.602 | exact | 1.3e-31 / 2.0e-13 |  |  |  | 3.6e-32 / 5.7e-14 | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 |
-| hmm_smoothing_joint_300 | 0.036 | - | n/a | zero | 0.128 | 0.326 | 0.198 | 0.063 | 8.99 | 1.03 | 2.4 | exact | 3.1e-67 / 1.3e-12 |  |  |  | 3.1e-67 / 1.4e-12 | 3.1e-67 / 1.4e-12 | 3.1e-67 / 1.4e-12 | 3.1e-67 / 1.3e-12 |
-| hmm_smoothing_joint_1000 | 0.123 | - | n/a | underflow | 1.56 | underflow | 0.884 | 0.199 | 10.8 | underflow | 16.9 | exact | 2.0e-193 / 2.9e-11 |  |  |  | 1.0e-193 / 1.5e-11 |  | 2.0e-193 / 2.9e-11 | 2.0e-193 / 2.9e-11 |
-| hmm_smoothing_joint_3000 | 0.313 | - | n/a | 6.93 | 17.5 | 36.4 | 5.06 | 0.63 | 164 | 37.9 | oom | exact | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| hmm_smoothing_joint_10000 | 1.12 | - | n/a | 81 | 241 | oom | 39.9 | 2.23 | 393 | oom | - | exact | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| hmm_smoothing_joint_30000 | 3.54 | - | n/a | >600 | stack | - | >600 | 6.8 | stack | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| hmm_smoothing_joint_100000 | 12.8 | - | n/a | - | stack | - | - | 24.7 | stack | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| hmm_smoothing_joint_300000 | 47 | - | oom | - | stack | - | - | 81.7 | stack | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| hmm_smoothing_joint_1000000 | oom | - | oom | - | stack | - | - | oom | stack | - | - | exact |  |  |  |  |  |  |  |  |
-| hmm_smoothing_joint_3000000 | oom | - | oom | - | stack | - | - | - | stack | - | - | exact |  |  |  |  |  |  |  |  |
-| hmm_smoothing_marginal_100 | 0.027 | oom | n/a | zero | 0.014 | 0.054 | 0.056 | 0.04 | 8.48 | 0.794 | 0.513 | exact | 5.6e-17 / 1.2e-16 |  |  |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.2e-16 | 1.7e-16 / 3.7e-16 | 5.6e-17 / 1.2e-16 |
-| hmm_smoothing_marginal_300 | 0.066 | - | n/a | zero | 0.118 | 0.298 | 0.17 | 0.074 | 8.63 | 1.02 | 1.78 | exact | 6.3e-15 / 1.4e-14 |  |  |  | 0.0e+00 / 0.0e+00 | 6.2e-15 / 1.4e-14 | 6.3e-15 / 1.4e-14 | 6.3e-15 / 1.4e-14 |
-| hmm_smoothing_marginal_1000 | 0.11 | - | n/a | underflow | 1.48 | underflow | 0.623 | 0.181 | 10.3 | underflow | 10.9 | exact | 3.2e-14 / 7.1e-14 |  |  |  | 0.0e+00 / 0.0e+00 |  | 3.2e-14 / 7.0e-14 | 3.2e-14 / 7.1e-14 |
-| hmm_smoothing_marginal_3000 | 0.315 | - | n/a | underflow | 17 | underflow | 2.22 | 0.604 | 26.5 | underflow | err | exact | 3.2e-14 / 7.1e-14 |  |  |  | 0.0e+00 / 0.0e+00 |  | 3.2e-14 / 7.1e-14 | 3.2e-14 / 7.1e-14 |
-| hmm_smoothing_marginal_10000 | 3.52 | - | n/a | underflow | 232 | oom | 8.78 | 2.11 | 246 | oom | - | exact | 1.7e-13 / 3.8e-13 |  |  |  | 0.0e+00 / 0.0e+00 |  | 1.7e-13 / 3.8e-13 | 1.7e-13 / 3.8e-13 |
-| hmm_smoothing_marginal_30000 | 6.18 | - | n/a | underflow | oom | - | 42.6 | 6.53 | oom | - | - | exact | 6.5e-13 / 1.4e-12 |  |  |  |  |  | 6.5e-13 / 1.4e-12 | 6.5e-13 / 1.4e-12 |
-| hmm_smoothing_marginal_100000 | 12 | - | n/a | >600 | - | - | oom | 22.8 | - | - | - | exact | 2.6e-12 / 5.8e-12 |  |  |  |  |  |  | 2.6e-12 / 5.8e-12 |
-| hmm_smoothing_marginal_300000 | 54.8 | - | n/a | - | - | - | - | 72.5 | - | - | - | exact | 1.6e-11 / 3.5e-11 |  |  |  |  |  |  | 1.6e-11 / 3.5e-11 |
-| hmm_smoothing_marginal_1000000 | oom | - | oom | - | - | - | - | oom | - | - | - | exact |  |  |  |  |  |  |  |  |
-| ladder_1000 | 0.073 | oom | n/a | 3.53 | 0.085 | 0.393 | 0.816 | 0.153 | 10.1 | 1.11 | >600 | exact | 4.4e-16 / 1.5e-15 |  |  | 4.6e-13 / 1.5e-12 | 1.2e-15 / 3.8e-15 | 7.8e-16 / 2.6e-15 | 6.1e-16 / 2.0e-15 | 4.4e-16 / 1.5e-15 |
-| ladder_3000 | 0.235 | - | n/a | 37 | 0.292 | 1.67 | 3.08 | 0.477 | 13.3 | 2.39 | - | exact | 1.4e-16 / 1.2e-15 |  |  | 3.0e-13 / 2.7e-12 | 2.4e-15 / 2.2e-14 | 6.2e-16 / 5.6e-15 | 1.1e-16 / 1.0e-15 | 1.4e-16 / 1.2e-15 |
-| ladder_10000 | 0.795 | - | n/a | 435 | 1.18 | 5.42 | 10.6 | 1.73 | 25.2 | 6.17 | - | exact | 1.3e-18 / 3.9e-16 |  |  | 4.3e-15 / 1.3e-12 | 1.8e-15 / 5.4e-13 | 3.9e-17 / 1.2e-14 | 1.9e-17 / 5.5e-15 | 1.3e-18 / 3.9e-16 |
-| ladder_30000 | 2.54 | - | n/a | >600 | 5.5 | 19.8 | 32.7 | 5.03 | 80.8 | 20.6 | - | exact | 1.4e-21 / 9.0e-15 |  |  |  | 5.6e-19 / 3.7e-12 | 3.5e-21 / 2.3e-14 | 1.4e-21 / 9.0e-15 | 1.4e-21 / 9.0e-15 |
-| ladder_100000 | 8.91 | - | n/a | - | 45.9 | 81.4 | 128 | 17.8 | 476 | 82.2 | - | exact | 8.4e-36 / 8.8e-14 |  |  |  | 1.8e-33 / 1.8e-11 | 8.1e-36 / 8.6e-14 | 8.4e-36 / 8.8e-14 | 8.4e-36 / 8.8e-14 |
-| ladder_300000 | 28.4 | - | oom | - | >600 | 233 | 370 | 55 | >600 | 234 | - | exact | 3.3e-79 / 9.6e-14 |  |  |  |  | 1.6e-79 / 4.7e-14 | 3.3e-79 / 9.6e-14 | 3.3e-79 / 9.6e-14 |
-| ladder_1000000 | 119 | - | - | - | - | >600 | >600 | 144 | - | >600 | - | exact | 2.8e-231 / 9.0e-14 |  |  |  |  |  |  | 2.8e-231 / 9.0e-14 |
-| ladder_3000000 | oom | - | oom | - | - | - | - | err | - | - | - | exact |  |  |  |  |  |  |  |  |
-| motivating_1000 | 0.037 | oom | n/a | 1.59 | 0.032 | 0.136 | 0.24 | 0.069 | 8.76 | 0.922 | 5.51 | exact | 5.6e-16 / 2.0e-15 |  |  | 2.7e-13 / 1.0e-12 | 5.6e-17 / 2.0e-16 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |
-| motivating_3000 | 0.103 | - | n/a | 16.4 | 0.112 | 0.486 | 0.782 | 0.213 | 9.97 | 1.32 | stack | exact | 5.6e-16 / 2.0e-15 |  |  | 2.7e-13 / 1.0e-12 | 5.6e-17 / 2.0e-16 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |
-| motivating_10000 | 0.401 | - | n/a | 203 | 0.435 | 1.74 | 2.62 | 0.727 | 15.1 | 2.49 | stack | exact | 5.6e-16 / 2.0e-15 |  |  | 2.7e-13 / 1.0e-12 | 5.6e-17 / 2.0e-16 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |
-| motivating_30000 | 1.18 | - | n/a | >600 | 1.47 | 5.49 | 8.89 | 2.18 | 35.5 | 6.24 | stack | exact | 5.6e-16 / 2.0e-15 |  |  |  | 5.6e-17 / 2.0e-16 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |
-| motivating_100000 | 4.22 | - | n/a | - | 55.4 | 22.4 | 33.3 | 7.88 | 453 | 23.2 | stack | exact | 5.6e-16 / 2.0e-15 |  |  |  | 5.6e-17 / 2.0e-16 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |
-| motivating_300000 | 18.3 | - | n/a | - | >600 | 73.1 | 103 | 25.3 | >600 | 74.2 | stack | exact | 5.6e-16 / 2.0e-15 |  |  |  |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |
-| motivating_1000000 | 60.5 | - | n/a | - | - | 287 | 409 | 85.8 | - | 288 | >600 | exact | 5.6e-16 / 2.0e-15 |  |  |  |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |
-| motivating_3000000 | >600 | - | oom | - | - | >600 | >600 | oom | - | >600 | >600 | exact |  |  |  |  |  |  |  |  |
-| network_10 | 0.008 | oom | n/a | 0.038 | 0.013 | 0.059 | 0.072 | 0.015 | 12.2 | 0.766 | err | exact | 1.2e-15 / 3.0e-14 |  |  | 2.3e-13 / 3.8e-12 | 3.3e-16 / 7.1e-15 | 4.4e-16 / 1.4e-15 | 3.3e-16 / 3.0e-14 | 1.2e-15 / 3.0e-14 |
-| network_30 | 0.019 | - | n/a | 0.074 | 0.039 | 0.279 | 0.19 | 0.033 | 12.2 | 0.989 | - | exact | 3.2e-15 / 5.9e-15 |  |  | 3.0e-13 / 3.4e-12 | 1.9e-16 / 2.3e-14 | 2.2e-16 / 1.6e-15 | 2.2e-16 / 3.6e-15 | 3.2e-15 / 5.9e-15 |
-| network_100 | 0.059 | - | n/a | 0.255 | 0.462 | 2.47 | 0.729 | 0.106 | 12.7 | 3.24 | - | exact | 1.7e-15 / 4.4e-15 |  |  | 2.7e-13 / 6.9e-13 | 1.2e-15 / 5.7e-14 | 7.2e-16 / 2.9e-15 | 1.1e-15 / 3.1e-15 | 1.7e-15 / 4.4e-15 |
-| network_300 | 0.159 | - | n/a | 0.84 | 5.01 | 22.8 | 2.17 | 0.307 | 17.2 | 24 | - | exact | 6.4e-15 / 1.2e-14 |  |  | 2.5e-13 / 1.4e-12 | 6.3e-16 / 7.7e-14 | 2.4e-15 / 1.1e-14 | 6.9e-16 / 1.1e-14 | 6.4e-15 / 1.2e-14 |
-| network_1000 | 0.559 | - | n/a | 3.48 | 67.4 | oom | 8.79 | 1.04 | 80.3 | oom | - | exact | 3.0e-15 / 1.6e-14 |  |  | 1.7e-13 / 1.0e-12 | 7.8e-16 / 4.0e-13 |  | 2.2e-16 / 4.2e-14 | 3.0e-15 / 1.6e-14 |
-| network_3000 | 1.71 | - | n/a | 11.6 | oom | - | 26.8 | 3.25 | oom | - | - | exact | 1.0e-14 / 1.0e-14 |  |  | 4.4e-13 / 2.1e-12 |  |  | 5.6e-16 / 9.8e-14 | 1.0e-14 / 1.0e-14 |
-| network_10000 | 5.89 | - | n/a | 56.3 | - | - | 102 | 11.6 | - | - | - | exact | 2.2e-16 / 3.0e-14 |  |  | 1.1e-14 / 3.9e-12 |  |  | 1.1e-14 / 6.3e-13 | 2.2e-16 / 3.0e-14 |
-| network_30000 | 18.9 | - | n/a | 207 | - | - | 419 | 36.4 | - | - | - | exact | 4.6e-15 / 1.1e-13 |  |  | 1.1e-14 / 3.9e-13 |  |  | 1.1e-14 / 2.0e-12 | 4.6e-15 / 1.1e-13 |
-| network_100000 | 129 | - | n/a | >600 | - | - | >600 | 195 | - | - | - | exact | 4.6e-15 / 5.9e-13 |  |  |  |  |  |  | 4.6e-15 / 5.9e-13 |
-| network_300000 | oom | - | n/a | - | - | - | - | oom | - | - | - | exact |  |  |  |  |  |  |  |  |
-| network_1000000 | - | - | oom | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |
+| instance | flips | gates | tddlog | program | decision | Dice | Alea | Alea.jl+tddlog | Roulette | Roulette+tddlog | `auto` (Roulette's job) | `auto` (the networks' job) | `auto` (the diamond and ladder's job) | Alea process | Roulette process | ProbLog | ref | tddlog diff | program diff | decision diff | Dice diff | Alea diff | Alea.jl+tddlog diff | Roulette diff | Roulette+tddlog diff | `auto` (Roulette's job) diff | `auto` (the networks' job) diff | `auto` (the diamond and ladder's job) diff |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| bn_alarm |  |  | 0.026 | 0.031 | n/a | 0.066 | 0.01 |  | 0.123 | 0.173 |  | 0.009 |  | 11.6 | 0.818 | 0.501 | exact | 6.7e-16 / 2.5e-14 | 5.6e-16 / 2.2e-15 |  | 1.1e-16 / 5.3e-16 | 5.6e-17 / 7.6e-16 |  | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 |  | 6.7e-16 / 2.5e-14 |  |
+| bn_cancer |  |  | 0.026 | 0.03 | n/a | 0.06 | 0.006 |  | 0.006 | 0.013 |  | 0.006 |  | 11.7 | 0.709 | 0.282 | exact | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 |  | 2.8e-17 / 1.3e-16 | 1.1e-16 / 1.4e-16 |  | 0.0e+00 / 0.0e+00 | 2.8e-17 / 1.3e-16 |  | 1.1e-16 / 5.3e-16 |  |
+| bn_hailfinder |  |  | 0.063 | 2.09 | n/a | 0.434 | 1.24 |  | 1.8 | 1.26 |  | 0.051 |  | 14.9 | 2.53 | >600 | exact | 5.0e-16 / 1.6e-15 | 5.0e-16 / 1.1e-15 |  | 4.9e-13 / 1.6e-12 | 1.7e-16 / 5.4e-16 |  | 2.2e-16 / 5.4e-16 | 2.2e-16 / 7.2e-16 |  | 5.0e-16 / 1.6e-15 |  |
+| bn_hepar2 |  |  | 0.034 | 0.229 | n/a | 0.074 | 0.022 |  | 0.424 | 0.518 |  | 0.016 |  | 12.3 | 1.11 | 3.35 | exact | 2.8e-16 / 6.5e-16 | 5.6e-17 / 1.3e-16 |  | 4.7e-13 / 1.1e-12 | 5.6e-17 / 1.3e-16 |  | 2.5e-10 / 5.8e-10 | 2.5e-10 / 5.8e-10 |  | 2.8e-16 / 6.5e-16 |  |
+| bn_insurance |  |  | 0.043 | 4.45 | n/a | 0.757 | 1.03 |  | 1.12 | 0.365 |  | 0.03 |  | 15.1 | 1.84 | >600 | exact | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 |  | 1.5e-11 / 2.6e-11 | 1.5e-11 / 2.7e-11 |  | 2.4e-11 / 1.4e-09 | 2.4e-11 / 1.4e-09 |  | 1.5e-11 / 2.7e-11 |  |
+| bn_munin |  |  | 0.104 | 0.117 | n/a | 0.241 | 0.075 |  | 9.24 | 7.32 |  | 0.039 |  | 13.8 | 9.95 | 64.3 | exact | 4.5e-16 / 1.9e-13 | 6.5e-16 / 3.5e-13 |  | 3.0e-13 / 2.8e-12 | 5.6e-17 / 1.7e-14 |  | 9.6e-09 / 3.5e-06 | 9.6e-09 / 3.5e-06 |  | 4.5e-16 / 1.9e-13 |  |
+| bn_pigs |  |  | 0.031 | 0.021 | n/a | 0.06 | 0.007 |  | 0.727 | 0.603 |  | 0.008 |  | 12.3 | 1.38 | 1.2 | exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.2e-16 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 |  |
+| bn_survey |  |  | 0.027 | 0.014 | n/a | 0.063 | 0.006 |  | 0.008 | 0.019 |  | 0.007 |  | 11.8 | 0.706 | 0.153 | exact | 4.7e-16 / 3.0e-15 | 1.4e-16 / 8.8e-16 |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 |  | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.0e-16 |  | 4.7e-16 / 3.0e-15 |  |
+| bn_water |  |  | 0.048 | 0.125 | n/a | 0.916 | 0.159 |  | 0.637 | 0.995 |  | 0.032 |  | 14.5 | 1.36 | 18.9 | exact | 2.8e-16 / 2.7e-14 | 5.0e-16 / 1.8e-14 |  | 9.9e-14 / 7.0e-13 | 1.1e-16 / 4.9e-16 |  | 7.2e-09 / 9.6e-08 | 7.2e-09 / 9.6e-08 |  | 2.8e-16 / 2.7e-14 |  |
+| caesar_25 |  |  | 0.076 | oom | n/a | zero | 0.049 |  | 0.291 | 0.503 | 0.153 |  |  | 9.62 | 0.999 | 28.8 | exact | 5.1e-15 / 1.0e-13 |  |  |  | 7.8e-15 / 4.3e-13 |  | 4.6e-15 / 1.1e-13 | 5.1e-15 / 1.1e-13 | 5.1e-15 / 1.0e-13 |  |  |
+| caesar_50 |  |  | 0.139 | - | n/a | zero | 0.102 |  | 0.56 | 1.01 | 0.296 |  |  | 9.72 | 1.27 | 61.4 | exact | 2.3e-15 / 2.2e-13 |  |  |  | 5.3e-15 / 8.5e-13 |  | 2.3e-15 / 2.2e-13 | 2.3e-15 / 2.3e-13 | 2.3e-15 / 2.2e-13 |  |  |
+| caesar_100 |  |  | 0.294 | - | n/a | zero | 0.456 |  | 1.19 | 2.11 | 0.588 |  |  | 10.1 | 1.91 | 113 | exact | 4.4e-16 / 4.8e-13 |  |  |  | 4.4e-15 / 2.3e-12 |  | 1.1e-16 / 1.0e+00 | 5.1e-26 / 4.9e-13 | 4.4e-16 / 4.8e-13 |  |  |
+| caesar_200 |  |  | 0.571 | - | n/a | underflow | 2.3 |  | 2.44 | 4.22 | 1.2 |  |  | 12 | 3.15 | 253 | exact | 1.4e-29 / 1.5e-12 |  |  |  | 1.8e-29 / 5.5e-12 |  | 9.6e-18 / 1.0e+00 | 1.4e-29 / 1.5e-12 | 1.4e-29 / 1.5e-12 |  |  |
+| caesar_300 |  |  | 0.89 | - | n/a | underflow | 5.51 |  | underflow | 6.86 | 1.82 |  |  | 15.2 | underflow | 207 | exact | 3.6e-31 / 4.0e-12 |  |  |  | 1.2e-30 / 9.3e-12 |  |  | 3.6e-31 / 4.0e-12 | 3.6e-31 / 4.0e-12 |  |  |
+| caesar_500 |  |  | 1.53 | - | n/a | underflow | 16.9 |  | underflow | 10.9 | 3.17 |  |  | 26.6 | underflow | 448 | exact | 2.2e-16 / 2.5e-12 |  |  |  | 1.8e-33 / 1.5e-11 |  |  | 2.3e-34 / 2.5e-12 | 2.4e-34 / 2.5e-12 |  |  |
+| caesar_1000 |  |  | 3.22 | - | n/a | underflow | 74.6 |  | underflow | 22.8 | 6.62 |  |  | 84.9 | underflow | >600 | exact | 1.1e-16 / 3.2e-11 |  |  |  | 6.8e-79 / 7.4e-11 |  |  | 1.3e-78 / 3.2e-11 | 1.1e-16 / 3.2e-11 |  |  |
+| caesar_2000 |  |  | 7.01 | - | n/a | underflow | 348 |  | underflow | 46.8 | 13.9 |  |  | 360 | underflow | - | exact | 3.3e-16 / 6.4e-11 |  |  |  | 2.1e-171 / 1.3e-10 |  |  | 1.0e-171 / 6.4e-11 | 1.1e-16 / 6.4e-11 |  |  |
+| caesar_5000 |  |  | 17.5 | - | n/a | underflow | oom |  | underflow | 145 | 35.9 |  |  | oom | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 |  |  |
+| caesar_10000 |  |  | 38.2 | - | n/a | underflow | - |  | underflow | 317 | 76.1 |  |  | - | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 |  |  |
+| caesar_20000 |  |  | 86.8 | - | n/a | underflow | - |  | underflow | >600 | 150 |  |  | - | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 3.3e-16 / 3.3e-16 |  |  |
+| caesar_50000 |  |  | oom | - | n/a | >600 | - |  | >600 | - | oom |  |  | - | >600 | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| caesar_100000 |  |  | oom | - | n/a | >600 | - |  | - | - | - |  |  | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| diamond_100 | 200 | 398 |  |  |  | 0.287 | 0.015 | 0.034 | 0.036 | 0.115 |  |  |  | 15.9 | 0.684 | 2.39 | exact |  |  |  | 1.6e-14 / 1.6e-14 | 4.8e-15 / 4.8e-15 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |  |  |  |
+| diamond_300 | 600 | 1198 |  |  |  | 0.025 | 0.064 | 0.033 | 0.071 | 0.158 |  |  |  | 16.2 | 0.676 | 13.8 | exact |  |  |  | 1.6e-13 / 1.6e-13 | 1.4e-14 / 1.4e-14 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |
+| diamond_1000 | 2000 | 3998 |  |  |  | 0.044 | 1.21 | 0.105 | 0.266 | 0.481 |  |  |  | 19.8 | 0.906 | 157 | exact |  |  |  | 4.1e-14 / 4.3e-14 | 4.6e-14 / 4.8e-14 | 0.0e+00 / 0.0e+00 | 3.3e-16 / 3.5e-16 | 0.0e+00 / 0.0e+00 |  |  |  |
+| diamond_3000 | 6000 | 11998 |  |  |  | 0.136 | 8.13 | 0.444 | 0.95 | 1.45 |  |  |  | 38 | 1.53 | >600 | exact |  |  |  | 3.9e-13 / 4.6e-13 | 1.2e-13 / 1.4e-13 | 1.3e-14 / 1.5e-14 | 3.0e-15 / 3.5e-15 | 8.9e-16 / 1.0e-15 |  |  |  |
+| diamond_10000 | 20000 | 39998 |  |  |  | 0.341 | 139 | 1.47 | 3.53 | 5.03 |  |  |  | 289 | 4.14 | - | exact |  |  |  | 4.5e-14 / 7.4e-14 | 3.1e-14 / 5.1e-14 | 7.8e-16 / 1.3e-15 | 1.8e-14 / 3.0e-14 | 7.3e-15 / 1.2e-14 |  |  |  |
+| diamond_30000 | 60000 | 119998 |  |  |  | 1.36 | oom | 4.41 | 13.2 | 17.4 |  |  |  | oom | 13.8 | - | exact |  |  |  | 4.0e-13 / 1.8e-12 |  | 3.5e-14 / 1.6e-13 | 3.5e-14 / 1.6e-13 | 1.7e-14 / 7.4e-14 |  |  |  |
+| diamond_100000 | 200000 | 399998 |  |  |  | 10.4 | - | 15.5 | 44.4 | 66 |  |  |  | - | 45.1 | - | exact |  |  |  | 3.7e-15 / 5.5e-13 |  | 3.8e-15 / 5.7e-13 | 6.0e-15 / 9.0e-13 | 2.9e-15 / 4.3e-13 |  |  |  |
+| diamond_300000 | 600000 | 1199998 |  |  |  | 82.9 | - | 74.3 | 157 | 204 |  |  |  | - | 158 | - | exact |  |  |  | 7.8e-19 / 2.6e-12 |  | 4.7e-21 / 1.5e-14 | 9.5e-19 / 3.1e-12 | 4.6e-19 / 1.5e-12 |  |  |  |
+| diamond_1000000 | 2000000 | 3999998 |  |  |  | >600 | - | 194 | 440 (2/3) | >600 |  |  |  | - | 441 (2/3) | - | exact |  |  |  |  |  | 1.1e-33 / 5.5e-12 | 2.5e-33 / 1.3e-11 |  |  |  |  |
+| diamond_3000000 |  |  |  |  |  | - | - | >600 | - | - |  |  |  | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| hardware_10 |  |  | 0.011 | 0.01 | n/a | 0.024 | 0.008 |  | 0.041 | 0.07 | 0.02 |  |  | 9.6 | 0.77 | err | exact | 1.2e-18 / 1.2e-14 | 4.4e-16 / 1.2e-14 |  | 1.8e-14 / 2.1e-12 | 1.1e-16 / 1.4e-14 |  | 1.1e-16 / 3.3e-13 | 1.1e-17 / 3.3e-13 | 1.2e-18 / 1.2e-14 |  |  |
+| hardware_30 |  |  | 0.032 | 0.067 | n/a | 0.035 | 0.035 |  | 0.217 | 0.309 | 0.059 |  |  | 9.68 | 0.948 | >600 | exact | 2.2e-16 / 1.1e-14 | 4.4e-16 / 1.1e-14 |  | 1.7e-14 / 3.3e-12 | 1.1e-16 / 7.1e-14 |  | 1.1e-16 / 1.1e-12 | 1.1e-16 / 1.1e-12 | 2.2e-16 / 1.1e-14 |  |  |
+| hardware_100 |  |  | 0.091 | 0.684 | n/a | 0.112 | 0.58 |  | 2.3 | 2.18 | 0.186 |  |  | 10.3 | 3.09 | - | exact | 1.1e-16 / 1.1e-14 | 4.4e-16 / 1.1e-14 |  | 1.7e-14 / 3.2e-12 | 1.1e-16 / 1.9e-12 |  | 1.1e-16 / 3.7e-12 | 2.2e-16 / 3.7e-12 | 2.2e-16 / 1.1e-14 |  |  |
+| hardware_300 |  |  | 0.277 | 6.19 | n/a | 0.314 | 7.26 |  | 22 | 43 | 0.602 |  |  | 17.5 | 23.1 | - | exact | 3.3e-16 / 1.1e-14 | 4.4e-16 / 1.1e-14 |  | 1.7e-14 / 3.2e-12 | 1.1e-16 / 1.9e-15 |  | 1.1e-16 / 1.1e-13 | 2.2e-16 / 1.1e-13 | 4.4e-16 / 1.1e-14 |  |  |
+| hardware_1000 |  |  | 0.925 | 80.1 | n/a | 0.871 | 103 |  | oom | 423 | 2 |  |  | 115 | oom | - | exact | 2.2e-16 / 1.1e-14 | 4.4e-16 / 1.1e-14 |  | 1.7e-14 / 3.2e-12 | 1.1e-16 / 1.9e-15 |  |  | 1.1e-16 / 1.1e-13 | 3.3e-16 / 1.1e-14 |  |  |
+| hardware_3000 |  |  | 2.95 | oom | n/a | 2.53 | oom |  | - | >600 | 6.66 |  |  | oom | - | - | exact | 2.2e-16 / 1.1e-14 |  |  | 1.7e-14 / 3.2e-12 |  |  |  |  | 1.1e-16 / 1.1e-14 |  |  |
+| hardware_10000 |  |  | 11 | - | n/a | 9.43 | - |  | - | - | 21.9 |  |  | - | - | oom | exact | 1.1e-16 / 1.1e-14 |  |  | 1.7e-14 / 3.2e-12 |  |  |  |  | 1.1e-16 / 1.1e-14 |  |  |
+| hardware_30000 |  |  | 48 | - | n/a | 50.9 | - |  | - | - | 76.8 |  |  | - | - | - | exact | 3.3e-16 / 1.1e-14 |  |  | 1.7e-14 / 3.2e-12 |  |  |  |  | 3.3e-16 / 1.1e-14 |  |  |
+| hardware_100000 |  |  | 180 | - | n/a | 295 | - |  | - | - | 248 |  |  | - | - | - | exact | 1.1e-16 / 1.4e-13 |  |  | 1.7e-14 / 3.2e-12 |  |  |  |  | 1.1e-16 / 1.4e-13 |  |  |
+| hardware_300000 |  |  | oom | - | n/a | >600 | - |  | - | - | err |  |  | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| hardware_1000000 |  |  | oom | - | oom | >600 | - |  | - | - | oom |  |  | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| hardware_bitwidth_5 |  |  | 0.008 | 0.007 | 0.011 | 0.282 | 0.022 |  | 0.007 | 0.018 | 0.008 |  |  | 80.6 | 0.533 | 0.187 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_10 |  |  | 0.009 | 0.008 | 0.007 | 0.62 | 0.01 |  | 0.007 | 0.018 | 0.006 |  |  | 14.3 | 0.537 | 0.171 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_20 |  |  | 0.01 | 0.009 | 0.007 | >600 | 0.011 |  | 0.008 | 0.019 | 0.006 |  |  | 14.2 | 0.541 | 0.16 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_50 |  |  | 0.01 | 0.01 | 0.009 | - | 0.011 |  | 0.009 | 0.021 | 0.007 |  |  | 14.2 | 0.536 | 0.162 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_100 |  |  | 0.01 | 0.008 | 0.007 | - | 0.011 |  | 0.02 | 0.023 | 0.006 |  |  | 14.3 | 0.547 | 0.162 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_300 |  |  | 0.01 | 0.008 | 0.008 | - | 0.012 |  | 0.031 | 0.044 | 0.006 |  |  | 14.2 | 0.559 | 0.161 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_1000 |  |  | 0.009 | 0.008 | 0.007 | - | 0.014 |  | 0.07 | 0.082 | 0.006 |  |  | 14.2 | 0.599 | 0.168 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_3000 |  |  | 0.01 | 0.008 | 0.008 | - | 0.02 |  | 0.197 | 0.201 | 0.006 |  |  | 14.2 | 0.726 | 0.167 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_10000 |  |  | 0.009 | 0.009 | 0.009 | - | 0.045 |  | 0.574 | 0.623 | 0.006 |  |  | 14.2 | 1.11 | 0.166 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_30000 |  |  | 0.009 | 0.008 | 0.008 | - | 0.128 |  | 1.74 | 1.78 | 0.007 |  |  | 14.3 | 2.27 | 0.172 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_100000 |  |  | 0.01 | 0.008 | 0.007 | - | 0.589 |  | 5.86 | 5.85 | 0.006 |  |  | 14.8 | 6.4 | 0.168 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_300000 |  |  | 0.009 | 0.008 | 0.007 | - | 1.56 |  | 18.5 | 18.3 | 0.006 |  |  | 15.8 | 19 | 0.17 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_1000000 |  |  | 0.008 | 0.007 | 0.007 | - | 4.68 |  | 68.2 | 69.5 | 0.006 |  |  | 19.1 | 68.7 | 0.164 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_3000000 |  |  | 0.009 | 0.008 | 0.007 | - | 13.8 |  | 263 | 270 | 0.007 |  |  | 28.1 | 263 | 0.166 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  | 2.2e-16 / 2.2e-13 | 2.2e-16 / 2.2e-13 | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_10000000 |  |  | 0.008 | 0.009 | 0.008 | - | 44.9 |  | >600 | >600 | 0.007 |  |  | 59.4 | >600 | 0.165 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  | 3.3e-16 / 3.6e-15 |  |  |  | 3.3e-16 / 6.8e-16 |  |  |
+| hardware_bitwidth_100000000 |  |  | 0.009 | 0.009 | 0.008 | - | oom |  | - | - | 0.007 |  |  | oom | - | 0.164 | exact | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 2.2e-16 / 6.8e-16 |  |  |  |  |  | 3.3e-16 / 6.8e-16 |  |  |
+| hmm_filtering_joint_100 |  |  | 0.014 | oom | n/a | zero | 0.015 |  | 0.057 | 0.063 | 0.024 |  |  | 8.76 | 0.773 | 0.635 | exact | 5.8e-32 / 1.5e-13 |  |  |  | 2.1e-32 / 5.7e-14 |  | 5.9e-32 / 1.6e-13 | 5.9e-32 / 1.6e-13 | 5.8e-32 / 1.5e-13 |  |  |
+| hmm_filtering_joint_300 |  |  | 0.046 | - | n/a | zero | 0.13 |  | 0.348 | 0.193 | 0.065 |  |  | 8.97 | 1.06 | 2.05 | exact | 3.8e-69 / 2.8e-14 |  |  |  | 1.7e-67 / 1.3e-12 |  | 5.5e-69 / 4.0e-14 | 5.7e-69 / 4.1e-14 | 3.8e-69 / 2.8e-14 |  |  |
+| hmm_filtering_joint_1000 |  |  | 0.106 | - | n/a | underflow | 1.66 |  | underflow | 0.886 | 0.201 |  |  | 147 | underflow | 13 | exact | 5.5e-194 / 1.4e-11 |  |  |  | 6.1e-194 / 1.5e-11 |  |  | 5.6e-194 / 1.4e-11 | 5.5e-194 / 1.4e-11 |  |  |
+| hmm_filtering_joint_3000 |  |  | 0.351 | - | n/a | 6.2 | 18.9 |  | 40 | 4.94 | 0.648 |  |  | 166 | 41.5 | oom | exact | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_filtering_joint_10000 |  |  | 1.21 | - | n/a | 76.5 | oom |  | oom | 35.9 | 2.26 |  |  | oom | oom | - | exact | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_filtering_joint_30000 |  |  | 3.64 | - | n/a | >600 | - |  | - | >600 | 7.13 |  |  | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_filtering_joint_100000 |  |  | 13.2 | - | n/a | - | - |  | - | - | 25.8 |  |  | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_filtering_joint_300000 |  |  | 59.3 | - | oom | - | stack |  | - | - | 83.6 |  |  | stack | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_filtering_joint_1000000 |  |  | oom | - | - | - | stack |  | - | - | oom |  |  | stack | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_filtering_joint_3000000 |  |  | - | - | - | - | stack |  | - | - | - |  |  | stack | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_filtering_marginal_100 |  |  | 0.027 | oom | n/a | zero | 0.014 |  | 0.056 | 0.058 | 0.04 |  |  | 8.61 | 0.843 | 0.531 | exact | 6.2e-15 / 1.0e-14 |  |  |  | 0.0e+00 / 0.0e+00 |  | 6.0e-15 / 9.6e-15 | 5.8e-15 / 9.3e-15 | 6.2e-15 / 1.0e-14 |  |  |
+| hmm_filtering_marginal_300 |  |  | 0.042 | - | n/a | zero | 0.12 |  | 0.303 | 0.172 | 0.072 |  |  | 8.63 | 1.02 | 1.88 | exact | 6.0e-15 / 9.6e-15 |  |  |  | 0.0e+00 / 0.0e+00 |  | 6.2e-15 / 1.0e-14 | 5.8e-15 / 9.3e-15 | 6.0e-15 / 9.6e-15 |  |  |
+| hmm_filtering_marginal_1000 |  |  | 0.11 | - | n/a | underflow | 1.51 |  | underflow | 0.631 | 0.18 |  |  | 10.4 | underflow | 12.3 | exact | 3.0e-14 / 4.9e-14 |  |  |  | 7.1e-14 / 1.1e-13 |  |  | 3.0e-14 / 4.8e-14 | 3.0e-14 / 4.9e-14 |  |  |
+| hmm_filtering_marginal_3000 |  |  | 2.48 | - | n/a | underflow | 18.2 |  | underflow | 2.21 | 0.608 |  |  | 27.8 | underflow | stack | exact | 1.1e-13 / 1.8e-13 |  |  |  | 2.8e-13 / 4.5e-13 |  |  | 1.1e-13 / 1.8e-13 | 1.1e-13 / 1.8e-13 |  |  |
+| hmm_filtering_marginal_10000 |  |  | 3.02 | - | n/a | underflow | 238 |  | oom | 8.84 | 2.07 |  |  | 252 | oom | stack | exact | 4.0e-13 / 6.4e-13 |  |  |  | 5.7e-13 / 9.1e-13 |  |  | 3.9e-13 / 6.3e-13 | 4.0e-13 / 6.4e-13 |  |  |
+| hmm_filtering_marginal_30000 |  |  | 3.66 | - | n/a | underflow | oom |  | - | 42 | 6.37 |  |  | oom | - | stack | exact | 9.7e-13 / 1.6e-12 |  |  |  |  |  |  | 9.6e-13 / 1.5e-12 | 9.7e-13 / 1.6e-12 |  |  |
+| hmm_filtering_marginal_100000 |  |  | 11.8 | - | n/a | >600 | - |  | - | oom | 22.6 |  |  | - | - | stack | exact | 3.3e-12 / 5.2e-12 |  |  |  |  |  |  |  | 3.3e-12 / 5.2e-12 |  |  |
+| hmm_filtering_marginal_300000 |  |  | 50.8 | - | oom | - | - |  | - | - | 71.1 |  |  | - | - | stack | exact | 1.5e-11 / 2.4e-11 |  |  |  |  |  |  |  | 1.5e-11 / 2.4e-11 |  |  |
+| hmm_filtering_marginal_1000000 |  |  | oom | - | - | - | - |  | - | - | oom |  |  | - | - | >600 | exact |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_marginal_likelihood_100 |  |  | 0.016 | oom | n/a | 0.033 | 0.013 |  | 0.049 | 0.068 | 0.027 |  |  | 8.5 | 0.767 | oom | exact | 1.7e-48 / 6.1e-14 |  |  | 3.1e-47 / 1.1e-12 | 0.0e+00 / 0.0e+00 |  | 1.7e-48 / 6.0e-14 | 1.7e-48 / 6.0e-14 | 1.7e-48 / 6.1e-14 |  |  |
+| hmm_marginal_likelihood_300 |  |  | 0.038 | - | n/a | 0.074 | 0.124 |  | 0.257 | 0.22 | 0.071 |  |  | 8.69 | 0.996 | - | exact | 2.7e-116 / 1.2e-12 |  |  | 2.6e-116 / 1.2e-12 | 0.0e+00 / 0.0e+00 |  | 2.7e-116 / 1.2e-12 | 2.6e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 |  |  |
+| hmm_marginal_likelihood_600 |  |  | 0.098 | - | n/a | 0.231 | 0.519 |  | 0.995 | 0.64 | 0.136 |  |  | 146 | 1.77 | - | exact | 3.2e-219 / 7.0e-12 |  |  | 3.6e-219 / 7.8e-12 | 2.6e-221 / 5.7e-14 |  | 3.2e-219 / 7.0e-12 | 3.2e-219 / 7.0e-12 | 3.2e-219 / 7.0e-12 |  |  |
+| hmm_marginal_likelihood_900 |  |  | 0.13 | - | n/a | 0.44 | 1.22 |  | 2.27 | 1.02 | 0.199 |  |  | 146 | 3.07 | - | exact | 1.2e-322 / 1.3e-11 |  |  | 1.2e-322 / 1.3e-11 | 0.0e+00 / 0.0e+00 |  | 1.2e-322 / 1.3e-11 | 1.2e-322 / 1.3e-11 | 1.2e-322 / 1.3e-11 |  |  |
+| hmm_smoothing_joint_100 |  |  | 0.014 | oom | n/a | zero | 0.015 |  | 0.055 | 0.064 | 0.023 |  |  | 8.74 | 0.769 | 0.602 | exact | 1.3e-31 / 2.0e-13 |  |  |  | 3.6e-32 / 5.7e-14 |  | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 |  |  |
+| hmm_smoothing_joint_300 |  |  | 0.036 | - | n/a | zero | 0.128 |  | 0.326 | 0.198 | 0.063 |  |  | 8.99 | 1.03 | 2.4 | exact | 3.1e-67 / 1.3e-12 |  |  |  | 3.1e-67 / 1.4e-12 |  | 3.1e-67 / 1.4e-12 | 3.1e-67 / 1.4e-12 | 3.1e-67 / 1.3e-12 |  |  |
+| hmm_smoothing_joint_1000 |  |  | 0.123 | - | n/a | underflow | 1.56 |  | underflow | 0.884 | 0.199 |  |  | 10.8 | underflow | 16.9 | exact | 2.0e-193 / 2.9e-11 |  |  |  | 1.0e-193 / 1.5e-11 |  |  | 2.0e-193 / 2.9e-11 | 2.0e-193 / 2.9e-11 |  |  |
+| hmm_smoothing_joint_3000 |  |  | 0.313 | - | n/a | 6.93 | 17.5 |  | 36.4 | 5.06 | 0.63 |  |  | 164 | 37.9 | oom | exact | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_smoothing_joint_10000 |  |  | 1.12 | - | n/a | 81 | 241 |  | oom | 39.9 | 2.23 |  |  | 393 | oom | - | exact | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_smoothing_joint_30000 |  |  | 3.54 | - | n/a | >600 | stack |  | - | >600 | 6.8 |  |  | stack | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_smoothing_joint_100000 |  |  | 12.8 | - | n/a | - | stack |  | - | - | 24.7 |  |  | stack | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_smoothing_joint_300000 |  |  | 47 | - | oom | - | stack |  | - | - | 81.7 |  |  | stack | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |
+| hmm_smoothing_joint_1000000 |  |  | oom | - | oom | - | stack |  | - | - | oom |  |  | stack | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_smoothing_joint_3000000 |  |  | oom | - | oom | - | stack |  | - | - | - |  |  | stack | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_smoothing_marginal_100 |  |  | 0.027 | oom | n/a | zero | 0.014 |  | 0.054 | 0.056 | 0.04 |  |  | 8.48 | 0.794 | 0.513 | exact | 5.6e-17 / 1.2e-16 |  |  |  | 0.0e+00 / 0.0e+00 |  | 5.6e-17 / 1.2e-16 | 1.7e-16 / 3.7e-16 | 5.6e-17 / 1.2e-16 |  |  |
+| hmm_smoothing_marginal_300 |  |  | 0.066 | - | n/a | zero | 0.118 |  | 0.298 | 0.17 | 0.074 |  |  | 8.63 | 1.02 | 1.78 | exact | 6.3e-15 / 1.4e-14 |  |  |  | 0.0e+00 / 0.0e+00 |  | 6.2e-15 / 1.4e-14 | 6.3e-15 / 1.4e-14 | 6.3e-15 / 1.4e-14 |  |  |
+| hmm_smoothing_marginal_1000 |  |  | 0.11 | - | n/a | underflow | 1.48 |  | underflow | 0.623 | 0.181 |  |  | 10.3 | underflow | 10.9 | exact | 3.2e-14 / 7.1e-14 |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 3.2e-14 / 7.0e-14 | 3.2e-14 / 7.1e-14 |  |  |
+| hmm_smoothing_marginal_3000 |  |  | 0.315 | - | n/a | underflow | 17 |  | underflow | 2.22 | 0.604 |  |  | 26.5 | underflow | err | exact | 3.2e-14 / 7.1e-14 |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 3.2e-14 / 7.1e-14 | 3.2e-14 / 7.1e-14 |  |  |
+| hmm_smoothing_marginal_10000 |  |  | 3.52 | - | n/a | underflow | 232 |  | oom | 8.78 | 2.11 |  |  | 246 | oom | - | exact | 1.7e-13 / 3.8e-13 |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 1.7e-13 / 3.8e-13 | 1.7e-13 / 3.8e-13 |  |  |
+| hmm_smoothing_marginal_30000 |  |  | 6.18 | - | n/a | underflow | oom |  | - | 42.6 | 6.53 |  |  | oom | - | - | exact | 6.5e-13 / 1.4e-12 |  |  |  |  |  |  | 6.5e-13 / 1.4e-12 | 6.5e-13 / 1.4e-12 |  |  |
+| hmm_smoothing_marginal_100000 |  |  | 12 | - | n/a | >600 | - |  | - | oom | 22.8 |  |  | - | - | - | exact | 2.6e-12 / 5.8e-12 |  |  |  |  |  |  |  | 2.6e-12 / 5.8e-12 |  |  |
+| hmm_smoothing_marginal_300000 |  |  | 54.8 | - | n/a | - | - |  | - | - | 72.5 |  |  | - | - | - | exact | 1.6e-11 / 3.5e-11 |  |  |  |  |  |  |  | 1.6e-11 / 3.5e-11 |  |  |
+| hmm_smoothing_marginal_1000000 |  |  | oom | - | oom | - | - |  | - | - | oom |  |  | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| ladder_100 | 299 | 992 |  |  |  | 0.028 | 0.023 | 0.033 | 0.022 | 0.116 |  |  |  | 12.3 | 0.432 | 15 | exact |  |  |  | 6.8e-14 / 1.4e-13 | 5.6e-16 / 1.2e-15 | 5.6e-17 / 1.2e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |
+| ladder_300 | 899 | 2992 |  |  |  | 0.026 | 0.175 | 0.142 | 0.061 | 0.174 |  |  |  | 11.9 | 0.471 | 420 | exact |  |  |  | 3.9e-13 / 9.1e-13 | 1.8e-15 / 4.3e-15 | 3.3e-16 / 7.7e-16 | 2.8e-16 / 6.5e-16 | 3.9e-16 / 9.0e-16 |  |  |  |
+| ladder_1000 | 2999 | 9992 |  |  |  | 0.074 | 2.23 | 0.343 | 0.208 | 0.444 |  |  |  | 18 | 0.612 | >600 | exact |  |  |  | 4.6e-13 / 1.5e-12 | 4.3e-15 / 1.4e-14 | 1.1e-15 / 3.5e-15 | 7.8e-16 / 2.6e-15 | 6.1e-16 / 2.0e-15 |  |  |  |
+| ladder_3000 | 8999 | 29992 |  |  |  | 0.19 | 22.7 | 1.5 | 0.783 | 1.32 |  |  |  | 84.2 | 1.2 | - | exact |  |  |  | 3.0e-13 / 2.7e-12 | 5.9e-15 / 5.3e-14 | 2.5e-16 / 2.2e-15 | 6.2e-16 / 5.6e-15 | 1.1e-16 / 1.0e-15 |  |  |  |
+| ladder_10000 | 29999 | 99992 |  |  |  | 0.627 | 317 | 4.31 | 2.61 | 5.11 |  |  |  | 331 | 3.03 | - | exact |  |  |  | 4.3e-15 / 1.3e-12 | 3.1e-15 / 9.1e-13 | 1.9e-17 / 5.5e-15 | 3.9e-17 / 1.2e-14 | 1.9e-17 / 5.5e-15 |  |  |  |
+| ladder_30000 | 89999 | 299992 |  |  |  | 3.15 | oom | 14.6 | 10.4 | 14.5 |  |  |  | oom | 10.9 | - | exact |  |  |  | 4.3e-20 / 2.8e-13 |  | 5.6e-22 / 3.6e-15 | 3.5e-21 / 2.3e-14 | 1.4e-21 / 9.0e-15 |  |  |  |
+| ladder_100000 | 299999 | 999992 |  |  |  | 25.5 | - | 50 | 42.9 | 58.3 |  |  |  | - | 43.5 | - | exact |  |  |  | 3.0e-35 / 3.2e-13 |  | 2.2e-35 / 2.3e-13 | 8.1e-36 / 8.6e-14 | 8.4e-36 / 8.8e-14 |  |  |  |
+| ladder_300000 | 899999 | 2999992 |  |  |  | 202 | - | 184 | 125 | 194 |  |  |  | - | 125 | - | exact |  |  |  | 3.4e-79 / 9.9e-14 |  | 3.3e-79 / 9.6e-14 | 1.6e-79 / 4.7e-14 | 3.3e-79 / 9.6e-14 |  |  |  |
+| ladder_1000000 |  |  |  |  |  | >600 | - | >600 | 524 | oom |  |  |  | - | 525 | - | exact |  |  |  |  |  |  | 1.2e-230 / 3.8e-13 |  |  |  |  |
+| ladder_3000000 |  |  |  |  |  | - | - | - | >600 | - |  |  |  | - | >600 | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| motivating_1000 |  |  | 0.037 | oom | n/a | 1.59 | 0.032 |  | 0.136 | 0.24 | 0.069 |  |  | 8.76 | 0.922 | 5.51 | exact | 5.6e-16 / 2.0e-15 |  |  | 2.7e-13 / 1.0e-12 | 5.6e-17 / 2.0e-16 |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |  |  |
+| motivating_3000 |  |  | 0.103 | - | n/a | 16.4 | 0.112 |  | 0.486 | 0.782 | 0.213 |  |  | 9.97 | 1.32 | stack | exact | 5.6e-16 / 2.0e-15 |  |  | 2.7e-13 / 1.0e-12 | 5.6e-17 / 2.0e-16 |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |  |  |
+| motivating_10000 |  |  | 0.401 | - | n/a | 203 | 0.435 |  | 1.74 | 2.62 | 0.727 |  |  | 15.1 | 2.49 | stack | exact | 5.6e-16 / 2.0e-15 |  |  | 2.7e-13 / 1.0e-12 | 5.6e-17 / 2.0e-16 |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |  |  |
+| motivating_30000 |  |  | 1.18 | - | n/a | >600 | 1.47 |  | 5.49 | 8.89 | 2.18 |  |  | 35.5 | 6.24 | stack | exact | 5.6e-16 / 2.0e-15 |  |  |  | 5.6e-17 / 2.0e-16 |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |  |  |
+| motivating_100000 |  |  | 4.22 | - | n/a | - | 55.4 |  | 22.4 | 33.3 | 7.88 |  |  | 453 | 23.2 | stack | exact | 5.6e-16 / 2.0e-15 |  |  |  | 5.6e-17 / 2.0e-16 |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |  |  |
+| motivating_300000 |  |  | 18.3 | - | n/a | - | >600 |  | 73.1 | 103 | 25.3 |  |  | >600 | 74.2 | stack | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |  |  |
+| motivating_1000000 |  |  | 60.5 | - | n/a | - | - |  | 287 | 409 | 85.8 |  |  | - | 288 | >600 | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-16 / 2.0e-15 |  |  |
+| motivating_3000000 |  |  | >600 | - | oom | - | - |  | >600 | >600 | oom |  |  | - | >600 | >600 | exact |  |  |  |  |  |  |  |  |  |  |  |
+| network_10 |  |  | 0.008 | oom | n/a | 0.038 | 0.013 |  | 0.059 | 0.072 | 0.015 |  |  | 12.2 | 0.766 | err | exact | 1.2e-15 / 3.0e-14 |  |  | 2.3e-13 / 3.8e-12 | 3.3e-16 / 7.1e-15 |  | 4.4e-16 / 1.4e-15 | 3.3e-16 / 3.0e-14 | 1.2e-15 / 3.0e-14 |  |  |
+| network_30 |  |  | 0.019 | - | n/a | 0.074 | 0.039 |  | 0.279 | 0.19 | 0.033 |  |  | 12.2 | 0.989 | - | exact | 3.2e-15 / 5.9e-15 |  |  | 3.0e-13 / 3.4e-12 | 1.9e-16 / 2.3e-14 |  | 2.2e-16 / 1.6e-15 | 2.2e-16 / 3.6e-15 | 3.2e-15 / 5.9e-15 |  |  |
+| network_100 |  |  | 0.059 | - | n/a | 0.255 | 0.462 |  | 2.47 | 0.729 | 0.106 |  |  | 12.7 | 3.24 | - | exact | 1.7e-15 / 4.4e-15 |  |  | 2.7e-13 / 6.9e-13 | 1.2e-15 / 5.7e-14 |  | 7.2e-16 / 2.9e-15 | 1.1e-15 / 3.1e-15 | 1.7e-15 / 4.4e-15 |  |  |
+| network_300 |  |  | 0.159 | - | n/a | 0.84 | 5.01 |  | 22.8 | 2.17 | 0.307 |  |  | 17.2 | 24 | - | exact | 6.4e-15 / 1.2e-14 |  |  | 2.5e-13 / 1.4e-12 | 6.3e-16 / 7.7e-14 |  | 2.4e-15 / 1.1e-14 | 6.9e-16 / 1.1e-14 | 6.4e-15 / 1.2e-14 |  |  |
+| network_1000 |  |  | 0.559 | - | n/a | 3.48 | 67.4 |  | oom | 8.79 | 1.04 |  |  | 80.3 | oom | - | exact | 3.0e-15 / 1.6e-14 |  |  | 1.7e-13 / 1.0e-12 | 7.8e-16 / 4.0e-13 |  |  | 2.2e-16 / 4.2e-14 | 3.0e-15 / 1.6e-14 |  |  |
+| network_3000 |  |  | 1.71 | - | n/a | 11.6 | oom |  | - | 26.8 | 3.25 |  |  | oom | - | - | exact | 1.0e-14 / 1.0e-14 |  |  | 4.4e-13 / 2.1e-12 |  |  |  | 5.6e-16 / 9.8e-14 | 1.0e-14 / 1.0e-14 |  |  |
+| network_10000 |  |  | 5.89 | - | n/a | 56.3 | - |  | - | 102 | 11.6 |  |  | - | - | - | exact | 2.2e-16 / 3.0e-14 |  |  | 1.1e-14 / 3.9e-12 |  |  |  | 1.1e-14 / 6.3e-13 | 2.2e-16 / 3.0e-14 |  |  |
+| network_30000 |  |  | 18.9 | - | n/a | 207 | - |  | - | 419 | 36.4 |  |  | - | - | - | exact | 4.6e-15 / 1.1e-13 |  |  | 1.1e-14 / 3.9e-13 |  |  |  | 1.1e-14 / 2.0e-12 | 4.6e-15 / 1.1e-13 |  |  |
+| network_100000 |  |  | 129 | - | n/a | >600 | - |  | - | >600 | 195 |  |  | - | - | - | exact | 4.6e-15 / 5.9e-13 |  |  |  |  |  |  |  | 4.6e-15 / 5.9e-13 |  |  |
+| network_300000 |  |  | oom | - | n/a | - | - |  | - | - | oom |  |  | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
+| network_1000000 |  |  | - | - | oom | - | - |  | - | - | - |  |  | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |
 
 Answers. The largest differences from the reference: `auto` 6.4e-11
 relative (3.3e-16 absolute, caesar_2000); `program` 2.7e-11 relative
 (1.5e-11 absolute, bn_insurance); `decision` 6.8e-16 relative (2.2e-16
 absolute, hardware_bitwidth_10); Dice 2.6e-11 relative (1.5e-11
 absolute, bn_insurance); Alea 1.3e-10 relative (2.1e-171 absolute,
-caesar_2000); Roulette 1.0e+00 relative (1.1e-16 absolute, caesar_100);
-Roulette+tddlog 3.5e-06 relative (9.6e-09 absolute, bn_munin).
+caesar_2000); Alea.jl+tddlog 5.5e-12 relative (1.1e-33 absolute,
+diamond_1000000); Roulette 1.0e+00 relative (1.1e-16 absolute,
+caesar_100); Roulette+tddlog 3.5e-06 relative (9.6e-09 absolute,
+bn_munin).
 
 ## Geni's programs
 
@@ -3192,7 +3213,7 @@ bn_hailfinder and bn_munin.
 
 **Psi.** Psi ran 25 instances and answered 10 (1 fail, 14 time out). Its
 answers differ from the reference's by at most 4.9e-16 relative (1.4e-17
-absolute, bn_earthquake) over 10 instances. Over the 25 instances given
+absolute, bn_earthquake) over 4 instances. Over the 25 instances given
 to both that either answers, a run that does not answer counted at the
 600 s limit, Psi takes 9011 s in all and tddlog 2.06 s; over the 10 both
 answer, 11 s against tddlog's 0.074. tddlog alone answers bn_alarm,
@@ -3200,7 +3221,7 @@ bn_andes, bn_child, bn_hailfinder, bn_hepar2 and 10 more.
 
 **Genfer.** Genfer ran 25 instances and answered 22 (1 fail, 2 time
 out). Its answers differ from the reference's by at most 1.9e+02
-relative (5.8e-15 absolute, digitRecognition) over 22 instances. Over
+relative (7.4e-29 absolute, digitRecognition) over 22 instances. Over
 the 25 instances given to both that either answers, a run that does not
 answer counted at the 600 s limit, Genfer takes 2055 s in all and tddlog
 2.06 s; over the 22 both answer, 255 s against tddlog's 0.7. Genfer is
@@ -3251,7 +3272,7 @@ bn_hailfinder and 11 more.
 
 **Storm sparse.** Storm sparse ran 25 instances and answered 22 (3 time
 out). Its answers differ from the reference's by at most 1.0e+00
-relative (5.8e-15 absolute, digitRecognition) over 22 instances. Over
+relative (2.6e-29 absolute, digitRecognition) over 22 instances. Over
 the 25 instances given to both that either answers, a run that does not
 answer counted at the 600 s limit, Storm sparse takes 2140 s in all and
 tddlog 2.08 s; over the 22 both answer, 340 s against tddlog's 0.72.
@@ -3259,7 +3280,7 @@ tddlog alone answers bn_link, bn_munin and bn_pathfinder.
 
 **Storm exact.** Storm exact ran 25 instances and answered 21 (4 time
 out). Its answers differ from the reference's by at most 4.0e-10
-relative (1.2e-10 absolute, bn_sachs) over 21 instances. Over the 25
+relative (1.2e-10 absolute, bn_sachs) over 19 instances. Over the 25
 instances given to both that either answers, a run that does not answer
 counted at the 600 s limit, Storm exact takes 2468 s in all and tddlog
 2.08 s; over the 21 both answer, 67.6 s against tddlog's 0.68. tddlog
@@ -3275,7 +3296,7 @@ bn_munin, bn_pathfinder and digitRecognition.
 
 **PRISM sparse.** PRISM sparse ran 25 instances and answered 22 (3 time
 out). Its answers differ from the reference's by at most 1.0e+00
-relative (5.8e-15 absolute, digitRecognition) over 22 instances. Over
+relative (5.0e-29 absolute, digitRecognition) over 22 instances. Over
 the 25 instances given to both that either answers, a run that does not
 answer counted at the 600 s limit, PRISM sparse takes 2502 s in all and
 tddlog 2.08 s; over the 22 both answer, 702 s against tddlog's 0.72.
@@ -3283,7 +3304,7 @@ tddlog alone answers bn_link, bn_munin and bn_pathfinder.
 
 **PRISM hybrid.** PRISM hybrid ran 25 instances and answered 22 (3 time
 out). Its answers differ from the reference's by at most 1.0e+00
-relative (5.8e-15 absolute, digitRecognition) over 22 instances. Over
+relative (5.0e-29 absolute, digitRecognition) over 22 instances. Over
 the 25 instances given to both that either answers, a run that does not
 answer counted at the 600 s limit, PRISM hybrid takes 2519 s in all and
 tddlog 2.08 s; over the 22 both answer, 719 s against tddlog's 0.72.
@@ -3306,7 +3327,7 @@ s; over the 23 both answer, 157 s against tddlog's 2.15. tddlog alone
 answers bn_link and digitRecognition.
 
 **Ace log space.** Ace log space ran 1 instance and answered 1. Its
-answers differ from the reference's by at most 3.8e-12 relative (1.3e-27
+answers differ from the reference's by at most 5.5e-12 relative (5.8e-15
 absolute, digitRecognition) over 1 instance. Over the 1 instance given
 to both that either answers, Ace log space takes 11.7 s in all and
 tddlog 0.37 s.
@@ -3318,7 +3339,7 @@ either answers, Merlin takes 107 s in all and tddlog 3.34 s. Merlin is
 faster on 1 (bn_pathfinder 0.071 s against 0.41).
 
 **pyAgrum.** pyAgrum ran 25 instances and answered 25. Its answers
-differ from the reference's by at most 1.0e+00 relative (1.7e-27
+differ from the reference's by at most 1.0e+00 relative (5.8e-15
 absolute, digitRecognition) over 25 instances. Over the 25 instances
 given to both that either answers, pyAgrum takes 220 s in all and tddlog
 3.34 s. pyAgrum is faster on 1 (bn_pathfinder 0.23 s against 0.41).
@@ -3358,41 +3379,40 @@ TensorInference.jl treesa takes 1744 s in all and tddlog 3.34 s; over
 the 24 both answer, 1144 s against tddlog's 2.97. tddlog alone answers
 digitRecognition.
 
-**Roulette.** Roulette ran 24 instances and answered 23 (1 time out).
-Its answers differ from the reference's by at most 4.0e-10 relative
-(1.2e-10 absolute, bn_sachs) over 23 instances. Over the 24 instances
-given to both that either answers, a run that does not answer counted at
-the 600 s limit, Roulette takes 691 s in all and tddlog 2.7 s; over the
-23 both answer, 91.2 s against tddlog's 1.84. tddlog alone answers
-bn_munin.
+**Roulette.** Roulette ran 24 instances and answered 23 (1 fail). Its
+answers differ from the reference's by at most 2.4e-09 relative (1.9e-10
+absolute, bn_sachs) over 23 instances. Over the 24 instances given to
+both that either answers, a run that does not answer counted at the 600
+s limit, Roulette takes 677 s in all and tddlog 2.91 s; over the 23 both
+answer, 77.1 s against tddlog's 1.96. tddlog alone answers bn_munin.
 
 | instance | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Scallop | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Ace log space | Merlin | pyAgrum | pgmpy | libDAI | TI greedy | TI treesa | Roulette | Roulette process | ProbLog | ref | tddlog diff | Geni diff | noDice diff | Psi diff | Genfer diff | SPPL diff | Pluck diff | PITA diff | aspmc diff | Scallop diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Ace diff | Ace c2d diff | Ace log space diff | Merlin diff | pyAgrum diff | pgmpy diff | libDAI diff | TI greedy diff | TI treesa diff | Roulette diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| bn_alarm | 0.013 | 0.357 | >600 | >600 | 0.325 | >600 | 8.63 | >600 | 148 | >600 | 2.32 | 2.52 | 6.99 | 18.6 | 18.9 | 1.19 | 1.27 |  | 0.005 | 0.123 | 1.64 | 0.005 | 26.1 | 30.5 | 0.58 | 1.25 | err | exact | 6.7e-16 / 1.2e-14 | 2.5e-07 / 3.5e-06 |  |  | 6.7e-16 / 9.2e-16 |  | 3.3e-16 / 7.6e-16 |  | 1.7e-15 / 2.9e-15 |  | 2.2e-16 / 8.7e-16 | 1.1e-16 / 5.8e-16 | 4.4e-16 / 1.1e-15 | 6.7e-16 / 9.6e-16 | 6.7e-16 / 9.6e-16 | 3.3e-16 / 5.1e-16 | 3.3e-16 / 4.7e-16 |  | 4.9e-07 / 1.7e-05 | 4.4e-13 / 2.3e-12 | 4.4e-13 / 2.3e-12 | 4.4e-13 / 2.3e-12 | 1.7e-16 / 8.7e-16 | 1.7e-16 / 8.7e-16 | 2.2e-16 / 1.2e-15 |
-| bn_andes | 0.044 | 99.5 | 128 | >600 | 79 | >600 | err | >600 | >600 | >600 | 276 | >600 | 74.7 | 73.4 | 77 | 3.07 | 6.31 |  | 0.095 | 0.161 | 3.52 | 0.067 | 59.1 | 94 | 29 | 30.1 | >600 | exact | 2.2e-16 / 1.4e-15 | 1.4e-07 / 1.4e-06 | 8.8e-07 / 5.4e-06 |  | 2.4e-15 / 3.1e-15 |  |  |  |  |  | 2.3e-15 / 2.6e-15 |  | 2.2e-15 / 2.8e-15 | 2.4e-15 / 3.1e-15 | 2.4e-15 / 3.1e-15 | 5.6e-16 / 7.0e-16 | 4.4e-16 / 7.9e-16 |  | 4.6e-07 / 4.0e-06 | 4.7e-13 / 4.1e-12 | 4.7e-13 / 4.1e-12 | 4.7e-13 / 4.1e-12 | 1.1e-16 / 5.2e-16 | 2.2e-16 / 3.4e-16 | 1.1e-16 / 8.7e-16 |
-| bn_asia | 0.009 | 0.021 | 0.064 | 6.13 | 0.015 | 0.784 | 5.09 | 0.877 | 2.7 | oom | 0.389 | 0.386 | 0.476 | 3.16 | 3.19 | 1.02 | 1.08 |  | 0.004 | 0.127 | 1.69 | 0.005 | 21.4 | 23.3 | 0.004 | 0.681 | 0.177 | exact | 1.1e-16 / 2.5e-16 | 2.9e-08 / 2.6e-07 | 4.0e-07 / 9.2e-07 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.4e-17 / 1.3e-16 | 1.1e-16 / 2.5e-16 | 1.1e-16 / 2.0e-16 | 2.2e-16 / 2.5e-16 |  | 1.1e-16 / 2.5e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.5e-16 | 1.1e-16 / 2.5e-16 | 1.1e-16 / 2.5e-16 | 5.6e-17 / 1.3e-16 |  | 4.0e-07 / 9.2e-07 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.3e-16 | 5.6e-17 / 1.3e-16 | 1.1e-16 / 2.5e-16 |
-| bn_cancer | 0.007 | 0.021 | 0.065 | 0.847 | 0.015 | 0.753 | 4.59 | 1.41 | 2.69 | 0.314 | 0.414 | 0.386 | 0.41 | 3.16 | 3.17 | 1.1 | 1.15 |  | 0.004 | 0.13 | 1.73 | 0.004 | 18.6 | 21.3 | 0.004 | 0.688 | 0.168 | exact | 1.7e-16 / 5.5e-16 | 5.6e-17 / 1.8e-16 | 5.0e-07 / 1.6e-06 | 5.6e-17 / 1.8e-16 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.8e-16 | 1.1e-16 / 2.7e-16 | 5.6e-17 / 1.8e-16 | 2.2e-16 / 3.2e-16 | 1.1e-16 / 1.6e-16 | 2.2e-16 / 3.2e-16 | 5.6e-17 / 1.8e-16 | 2.2e-16 / 3.2e-16 | 2.2e-16 / 3.2e-16 | 2.2e-16 / 3.2e-16 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 |  | 5.0e-07 / 1.6e-06 | 5.6e-17 / 1.8e-16 | 5.6e-17 / 1.8e-16 | 5.6e-17 / 1.8e-16 | 1.1e-16 / 3.7e-16 | 1.1e-16 / 3.7e-16 | 1.1e-16 / 3.7e-16 |
-| bn_child | 0.015 | 0.175 | 0.28 | >600 | 0.116 | 10.6 | 8.04 | 1.34 | 62.7 | oom | 1.39 | 1.54 | 2.82 | 11.7 | 11.8 | 1.17 | 1.31 |  | 0.006 | 0.124 | 1.74 | 0.004 | 23.5 | 26.3 | 0.063 | 0.726 | 1.04 | exact | 5.0e-16 / 3.2e-15 | 7.5e-08 / 6.9e-07 | 6.2e-07 / 4.5e-06 |  | 2.2e-16 / 3.9e-16 | 2.2e-16 / 9.0e-16 | 2.2e-16 / 6.4e-16 | 3.1e-16 / 3.5e-15 | 6.7e-16 / 1.4e-15 |  | 3.9e-16 / 8.0e-16 | 1.1e-16 / 3.1e-16 | 2.2e-16 / 5.6e-16 | 2.2e-16 / 4.5e-16 | 2.2e-16 / 4.5e-16 | 2.2e-16 / 5.1e-16 | 4.4e-16 / 6.8e-16 |  | 5.0e-07 / 4.5e-06 | 5.0e-13 / 2.4e-12 | 5.0e-13 / 2.4e-12 | 5.0e-13 / 2.4e-12 | 2.2e-16 / 3.9e-16 | 2.2e-16 / 4.9e-16 | 1.1e-16 / 5.0e-16 |
-| bn_earthquake | 0.011 | 0.021 | 0.066 | 0.997 | 0.016 | 0.782 | 4.53 | 0.901 | 2.54 | 0.156 | 0.382 | 0.379 | 0.436 | 3.34 | 3.41 | 1.15 | 1.18 |  | 0.004 | 0.135 | 1.75 | 0.007 | 18.3 | 20.7 | 0.004 | 0.68 | 0.168 | exact | 5.9e-17 / 2.8e-15 | 2.4e-08 / 3.7e-07 | 2.0e-07 / 9.6e-06 | 1.4e-17 / 4.9e-16 | 1.1e-16 / 3.3e-16 | 1.1e-16 / 1.3e-15 | 4.2e-17 / 1.5e-15 | 1.4e-17 / 4.9e-16 | 1.1e-16 / 4.9e-16 | 2.8e-17 / 4.4e-16 | 1.1e-16 / 3.3e-16 | 1.4e-17 / 4.9e-16 | 1.1e-16 / 4.4e-16 | 1.1e-16 / 4.9e-16 | 1.1e-16 / 4.9e-16 | 1.1e-16 / 3.3e-16 | 1.1e-16 / 3.3e-16 |  | 2.0e-07 / 9.6e-06 | 1.4e-17 / 4.9e-16 | 1.4e-17 / 4.9e-16 | 1.4e-17 / 4.9e-16 | 1.4e-17 / 6.6e-16 | 6.9e-18 / 3.3e-16 | 4.2e-17 / 1.6e-15 |
-| bn_hailfinder | 0.037 | 19.4 | >600 | >600 | 134 | >600 | 58.4 | >600 | 273 | >600 | 5.79 | 6.45 | 18 | 26.3 | 23.8 | 1.51 | 1.7 |  | 0.007 | 0.14 | 1.59 | 0.007 | 27.3 | 33.1 | 2.84 | 3.55 | >600 | exact | 7.2e-16 / 9.0e-15 | 1.9e-07 / 1.2e-06 |  |  | 2.2e-16 / 7.2e-16 |  | 1.1e-16 / 5.9e-16 |  | 3.2e-15 / 6.8e-15 |  | 4.4e-16 / 1.0e-15 | 2.2e-16 / 5.4e-16 | 1.7e-16 / 6.6e-16 | 2.8e-16 / 6.6e-16 | 2.8e-16 / 6.6e-16 | 2.2e-16 / 6.0e-16 | 2.2e-16 / 5.0e-16 |  | 4.8e-07 / 3.7e-06 | 4.9e-13 / 1.6e-12 | 4.9e-13 / 1.6e-12 | 4.9e-13 / 1.6e-12 | 1.7e-16 / 5.4e-16 | 2.8e-16 / 6.3e-16 | 2.2e-16 / 5.4e-16 |
-| bn_hepar2 | 0.031 | 1 | 1.98 | >600 | 1.07 | >600 | 8.95 | 86.2 | 177 | >600 | 8.36 | 9.04 | 23.4 | 68.8 | 68.6 | 1.5 | 1.71 |  | 0.008 | 0.134 | 1.9 | 0.009 | 32.4 | 41.9 | 0.749 | 1.43 | 23.2 | exact | 1.1e-15 / 5.1e-14 | 1.2e-07 / 1.8e-05 | 9.7e-07 / 2.4e-04 |  | 2.2e-16 / 1.1e-15 |  | 3.3e-16 / 4.0e-15 | 2.2e-16 / 7.2e-15 | 5.9e-15 / 6.6e-15 |  | 1.8e-15 / 1.9e-15 | 1.1e-16 / 1.0e-15 | 4.4e-16 / 1.1e-15 | 3.3e-16 / 1.0e-15 | 3.3e-16 / 1.0e-15 | 3.3e-16 / 1.0e-15 | 4.4e-16 / 7.7e-16 |  | 4.9e-07 / 1.2e-04 | 4.8e-13 / 4.4e-12 | 4.8e-13 / 4.4e-12 | 4.8e-13 / 4.4e-12 | 2.2e-16 / 8.1e-16 | 2.2e-16 / 8.1e-16 | 1.1e-16 / 3.8e-15 |
-| bn_insurance | 0.022 | 13.8 | 7.97 | >600 | 30.8 | >600 | 21.7 | >600 | 40.2 | >600 | 3.65 | 4.82 | 15.2 | 11.8 | 12.3 | 1.69 | 1.9 |  | 0.007 | 0.131 | 1.74 | 0.008 | 30.8 | 34.9 | 2.38 | 3.11 | >600 | exact | 1.5e-11 / 2.7e-11 | 1.2e-07 / 4.9e-06 | 7.1e-07 / 4.5e-05 |  | 1.5e-11 / 2.7e-11 |  | 1.5e-11 / 2.7e-11 |  | 5.1e-08 / 1.4e-07 |  | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 |  | 4.9e-07 / 4.5e-05 | 1.3e-11 / 2.6e-11 | 1.3e-11 / 2.6e-11 | 1.3e-11 / 2.6e-11 | 1.3e-11 / 2.6e-11 | 1.3e-11 / 2.6e-11 | 1.5e-11 / 2.7e-11 |
-| bn_link | 0.592 | >600 | 139 | >600 | err | >600 | err | 101 | >600 | >600 | >600 | >600 | 282 | >600 | >600 | 51.4 | >600 |  | 33 | 85.6 | >600 | 4.08 | >600 | 175 | 9.26 | 10.1 | >600 | alea | 6.0e-14 / 4.8e-13 |  | 5.3e-07 / 2.9e-03 |  |  |  |  | 9.4e-16 / 7.1e-12 |  |  |  |  | 6.7e-16 / 2.8e-15 |  |  | 1.6e-13 / 1.8e-13 |  |  | 4.7e-07 / 2.8e-03 | 5.0e-13 / 5.0e-13 |  | 5.0e-13 / 5.0e-13 |  | 3.3e-16 / 5.4e-15 | 4.4e-16 / 3.0e-15 |
-| bn_munin | 0.492 | >600 | >600 | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | 7.26 | 107 |  | 2.37 | 1.04 | >600 | 3.37 | oom | 194 | >600 | >600 | >600 | exact | 3.6e-15 / 1.6e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.7e-16 / 2.4e-13 | 5.4e-15 / 2.4e-13 |  | 5.0e-07 / 3.0e-02 | 5.0e-13 / 4.7e-12 |  | 5.0e-13 / 4.7e-12 |  | 4.4e-16 / 2.5e-13 |  |
-| bn_pathfinder | 0.271 | >600 | 17.1 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | 2.3 | 4.12 |  | 0.071 | 0.231 | 4.16 | 0.068 | 31.8 | 43.8 | 20.3 | 21.1 | >600 | exact | 1.1e-15 / 2.2e-12 |  | 9.4e-07 / 5.4e-03 |  |  |  |  |  |  |  |  |  |  |  |  | 4.4e-16 / 1.6e-14 | 5.6e-16 / 1.7e-14 |  | 5.0e-07 / 2.6e-03 | 4.9e-13 / 4.1e-12 | 4.9e-13 / 4.1e-12 | 4.9e-13 / 4.1e-12 | 4.4e-16 / 1.6e-14 | 2.8e-16 / 1.6e-14 | 3.3e-16 / 1.7e-14 |
-| bn_pigs | 0.057 | 4.4 | 91.9 | >600 | 3.02 | >600 | 23.6 | 7.95 | >600 | >600 | 29.4 | 30 | 91.8 | 237 | 238 | 3.49 | 13.5 |  | 0.145 | 0.212 | 34.9 | 0.135 | 60.7 | 113 | 25.4 | 26.1 | >600 | exact | 1.1e-16 / 2.4e-16 | 5.0e-08 / 1.0e-07 | 7.5e-07 / 3.0e-06 |  | 1.1e-16 / 2.4e-16 |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  | 5.0e-07 / 1.9e-06 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 4.4e-16 | 1.1e-16 / 4.3e-16 | 1.1e-16 / 2.4e-16 |
-| bn_sachs | 0.011 | 0.086 | 0.15 | >600 | 0.054 | 2.96 | 7.84 | 1.13 | 3.97 | oom | 0.796 | 0.806 | 1.48 | 6.65 | 6.42 | 1.17 | 1.23 |  | 0.004 | 0.13 | 1.7 | 0.004 | 24.5 | 25.4 | 0.037 | 0.723 | 0.324 | exact | 1.2e-10 / 4.0e-10 | 8.4e-08 / 1.1e-06 | 8.1e-07 / 1.0e-05 |  | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.9e-10 / 2.4e-09 | 5.6e-17 / 3.6e-16 |  | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 |  | 4.6e-07 / 3.2e-06 | 1.2e-10 / 1.9e-10 | 1.2e-10 / 1.9e-10 | 1.2e-10 / 1.9e-10 | 1.2e-10 / 1.9e-10 | 1.2e-10 / 1.9e-10 | 1.2e-10 / 4.0e-10 |
-| bn_survey | 0.008 | 0.013 | 0.05 | 1.56 | 0.009 | 0.872 | 6.12 | 0.908 | 2.82 | oom | 0.202 | 0.205 | 0.302 | 1.62 | 1.66 | 1.06 | 1.08 |  | 0.006 | 0.126 | 1.68 | 0.004 | 21 | 22.6 | 0.005 | 0.68 | 0.182 | exact | 4.7e-16 / 3.0e-15 | 3.2e-08 / 7.8e-08 | 7.5e-07 / 2.7e-06 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 3.5e-16 | 1.1e-16 / 4.0e-16 | 1.4e-16 / 8.8e-16 | 1.1e-16 / 7.1e-16 |  | 1.1e-16 / 3.5e-16 | 0.0e+00 / 0.0e+00 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 |  | 2.5e-07 / 1.4e-06 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 1.1e-16 / 2.0e-16 | 5.6e-17 / 3.5e-16 |
-| bn_water | 0.029 | wrong | 2.4 | >600 | 6.72 | >600 | 9.2 | 43.1 | 18.5 | >600 | 4.34 | 4.44 | 14.8 | 16.5 | 16.2 | 1.98 | 2.5 |  | 0.392 | 0.305 | 1.93 | 0.318 | 36.8 | 43.3 | 0.358 | 1.03 | >600 | exact | 4.4e-16 / 1.4e-10 | 1.2e-07 / 1.0e+00 | 7.5e-07 / 1.0e+00 |  | 1.1e-16 / 1.4e-10 |  | 1.1e-16 / 1.4e-10 | 2.2e-16 / 5.5e-09 | 3.3e-16 / 1.4e-10 |  | 4.4e-16 / 1.4e-10 | 1.1e-16 / 1.4e-10 | 1.1e-16 / 1.4e-10 | 4.4e-16 / 1.4e-10 | 4.4e-16 / 1.4e-10 | 4.4e-16 / 1.4e-10 | 3.3e-16 / 1.4e-10 |  | 5.0e-07 / 1.0e+00 | 4.6e-13 / 1.4e-10 | 4.6e-13 / 1.4e-10 | 4.6e-13 / 1.4e-10 | 2.2e-16 / 1.4e-10 | 2.2e-16 / 1.4e-10 | 1.1e-16 / 1.4e-10 |
-| bn_win95pts | 0.014 | 0.254 | 0.376 | >600 | 0.269 | >600 | 10.9 | 3.52 | 104 | >600 | 3.58 | 3.32 | 5.84 | 27 | 28 | 1.35 | 1.41 |  | 0.007 | 0.13 | 1.73 | 0.008 | 36.2 | 45.2 | 0.089 | 0.753 | 197 | exact | 2.2e-16 / 3.5e-14 | 1.3e-07 / 1.3e-05 | 5.3e-07 / 4.6e-06 |  | 2.2e-16 / 3.8e-16 |  | 2.2e-16 / 3.9e-16 | 2.2e-16 / 1.7e-14 | 4.4e-16 / 8.1e-15 |  | 5.6e-16 / 9.7e-16 | 1.1e-16 / 2.0e-16 | 3.3e-16 / 4.1e-16 | 2.2e-16 / 3.8e-16 | 2.2e-16 / 3.8e-16 | 5.6e-16 / 9.7e-16 | 4.4e-16 / 5.0e-16 |  | 4.7e-07 / 4.0e-06 | 4.9e-13 / 3.3e-12 | 4.9e-13 / 3.3e-12 | 4.9e-13 / 3.3e-12 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 4.0e-16 | 2.2e-16 / 4.1e-16 |
-| dice_alarm | 0.007 | 0.005 | 0.01 | 0.073 | 0.003 | 0.573 | 3.56 | 0.315 | 2.45 | 0.056 | 0.156 | 0.153 | 0.192 | 1.27 | 1.27 | 1.2 | 1.25 |  | 0.054 | 0.169 | 1.56 | 0.055 | 20.6 | 24.3 | 0.003 | 0.678 | 0.072 | alea | 5.2e-18 / 1.7e-15 | 1.8e-08 / 6.0e-06 | 4.5e-07 / 1.5e-04 | 8.7e-19 / 2.9e-16 | 8.7e-19 / 2.9e-16 | 3.5e-17 / 1.2e-14 | 1.3e-18 / 4.3e-16 | 2.2e-18 / 7.2e-16 | 8.7e-19 / 2.9e-16 | 1.3e-18 / 4.3e-16 | 1.7e-18 / 5.8e-16 | 8.7e-19 / 2.9e-16 | 1.7e-18 / 5.8e-16 | 1.3e-18 / 4.3e-16 | 1.3e-18 / 4.3e-16 | 1.7e-18 / 5.8e-16 | 1.3e-18 / 4.3e-16 |  | 4.5e-07 / 1.5e-04 | 4.5e-15 / 1.5e-12 | 4.5e-15 / 1.5e-12 | 4.5e-15 / 1.5e-12 | 1.7e-18 / 5.8e-16 | 1.7e-18 / 5.8e-16 | 1.3e-18 / 4.3e-16 |
-| dice_digitRecognition | 0.352 | err | 17.7 | >600 | 0.102 | >600 | oom | >600 | >600 | oom | 2.16 | 2.25 | >600 | 183 | 197 | err | err | 11.7 | 70.8 | 130 | >600 | >600 | >600 | >600 |  |  | 17.9 | alea | 5.8e-15 / 7.5e-12 |  | 5.7e-15 / 1.0e+00 |  | 5.8e-15 / 1.9e+02 |  |  |  |  |  | 5.8e-15 / 1.0e+00 | 5.8e-15 / 7.5e-12 |  | 5.8e-15 / 1.0e+00 | 5.8e-15 / 1.0e+00 |  |  | 1.3e-27 / 3.8e-12 | 5.7e-15 / 1.0e+00 | 1.7e-27 / 1.0e+00 |  |  |  |  |  |
-| dice_evidence1 | 0.007 | 0.005 | 0.01 | 0.021 | 0.002 | 0.559 | 3.37 | 0.315 | 2.45 | 0.042 | 0.157 | 0.15 | 0.161 | 1.28 | 1.27 | 1.08 | 1.18 |  | 0.044 | 0.151 | 1.55 | 0.045 | 18.4 | 20.2 | 0.002 | 0.676 | 0.07 | alea | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 3.3e-07 / 1.0e-06 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 |  | 3.3e-07 / 1.0e-06 | 3.3e-13 / 1.0e-12 | 3.3e-13 / 1.0e-12 | 3.3e-13 / 1.0e-12 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 |
-| dice_evidence2 | 0.006 | 0.005 | 0.009 | 0.021 | 0.003 | 0.556 | 3.49 | 0.319 | 2.46 | 0.038 | 0.149 | 0.16 | 0.154 | 1.26 | 1.27 | 1.11 | 1.19 |  | 0.046 | 0.154 | 1.57 | 0.047 | 19.3 | 21.5 | 0.003 | 0.681 | 0.069 | alea | 1.1e-16 / 1.7e-16 | 0.0e+00 / 0.0e+00 | 3.3e-07 / 5.0e-07 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.7e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 3.3e-07 / 5.0e-07 | 3.3e-13 / 5.0e-13 | 3.3e-13 / 5.0e-13 | 3.3e-13 / 5.0e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_grass | 0.006 | 0.005 | 0.011 | 0.056 | 0.006 | 0.587 | 3.56 | 0.325 | 2.45 | 0.045 | 0.148 | 0.148 | 0.197 | 1.27 | 1.28 | 1.18 | 1.21 |  | 0.047 | 0.158 | 1.58 | 0.047 | 20.5 | 23.9 | 0.003 | 0.679 | 0.073 | alea | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 | 6.8e-07 / 9.6e-07 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 2.2e-16 / 3.1e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 |  | 3.2e-07 / 4.6e-07 | 3.8e-13 / 5.3e-13 | 3.8e-13 / 5.3e-13 | 3.8e-13 / 5.3e-13 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 |
-| dice_murderMystery | 0.004 | 0.005 | 0.011 | err | 0.002 | 0.565 | 3.44 | 0.314 | 2.45 | 0.045 | 0.152 | 0.152 | 0.159 | 1.27 | 1.27 | 1.12 | 1.14 |  | 0.045 | 0.154 | 1.57 | 0.046 | 19.5 | 21.3 | 0.002 | 0.681 | 0.069 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.2e-07 / 1.4e-05 |  | 3.5e-18 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 |  | 2.2e-07 / 1.4e-05 | 6.0e-15 / 3.8e-13 | 6.0e-15 / 3.8e-13 | 6.0e-15 / 3.8e-13 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 |
-| dice_noisyOr | 0.008 | 0.005 | 0.012 | 1.28 | 0.016 | 0.613 | 3.44 | 0.321 | 2.46 | 3.17 | 0.146 | 0.145 | 0.218 | 1.27 | 1.27 | 1.15 | 1.24 |  | 0.048 | 0.156 | 1.58 | 0.048 | 20.9 | 26 | 0.003 | 0.674 | 0.077 | alea | 0.0e+00 / 0.0e+00 | 5.0e-08 / 6.1e-08 | 7.5e-07 / 9.2e-07 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 2.2e-16 / 2.7e-16 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 2.2e-16 / 2.7e-16 | 1.1e-16 / 1.4e-16 |  | 2.5e-07 / 3.1e-07 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.4e-16 |
-| dice_twocoins | 0.005 | 0.005 | 0.008 | 0.022 | 0.002 | 0.561 | 3.38 | 0.318 | 2.46 | 0.043 | 0.157 | 0.155 | 0.159 | 1.26 | 1.27 | 1.11 | 1.16 |  | 0.057 | 0.179 | 1.58 | 0.058 | 16.6 | 18.4 | 0.002 | 0.664 | 0.119 | alea | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 3.3e-07 / 1.0e-06 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 |  | 3.3e-07 / 1.0e-06 | 3.3e-13 / 1.0e-12 | 3.3e-13 / 1.0e-12 | 3.3e-13 / 1.0e-12 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 | 5.6e-17 / 1.7e-16 |
+| bn_alarm | 0.013 | 0.357 | >600 | >600 | 0.325 | >600 | 8.63 | >600 | 148 | >600 | 2.32 | 2.52 | 6.99 | 18.6 | 18.9 | 1.19 | 1.27 |  | 0.005 | 0.123 | 1.64 | 0.005 | 26.1 | 30.5 | 0.186 | 0.859 | err | exact | 6.7e-16 / 1.2e-14 | 2.5e-07 / 3.5e-06 |  |  | 6.7e-16 / 9.2e-16 |  | 3.3e-16 / 7.6e-16 |  | 1.7e-15 / 2.9e-15 |  | 2.2e-16 / 8.7e-16 | 1.1e-16 / 5.8e-16 | 4.4e-16 / 1.1e-15 | 6.7e-16 / 9.6e-16 | 6.7e-16 / 9.6e-16 | 3.3e-16 / 5.1e-16 | 3.3e-16 / 4.7e-16 |  | 4.9e-07 / 1.7e-05 | 4.4e-13 / 2.3e-12 | 4.4e-13 / 2.3e-12 | 4.4e-13 / 2.3e-12 | 1.7e-16 / 8.7e-16 | 1.7e-16 / 8.7e-16 | 2.2e-16 / 1.2e-15 |
+| bn_andes | 0.044 | 99.5 | 128 | >600 | 79 | >600 | err | >600 | >600 | >600 | 276 | >600 | 74.7 | 73.4 | 77 | 3.07 | 6.31 |  | 0.095 | 0.161 | 3.52 | 0.067 | 59.1 | 94 | 29.2 | 30.3 | >600 | exact | 2.2e-16 / 1.4e-15 | 1.4e-07 / 1.4e-06 | 8.8e-07 / 5.4e-06 |  | 2.4e-15 / 3.1e-15 |  |  |  |  |  | 2.3e-15 / 2.6e-15 |  | 2.2e-15 / 2.8e-15 | 2.4e-15 / 3.1e-15 | 2.4e-15 / 3.1e-15 | 5.6e-16 / 7.0e-16 | 4.4e-16 / 7.9e-16 |  | 4.6e-07 / 4.0e-06 | 4.7e-13 / 4.1e-12 | 4.7e-13 / 4.1e-12 | 4.7e-13 / 4.1e-12 | 1.1e-16 / 5.2e-16 | 2.2e-16 / 3.4e-16 | 1.4e-16 / 8.6e-16 |
+| bn_asia | 0.009 | 0.021 | 0.064 | 6.13 | 0.015 | 0.784 | 5.09 | 0.877 | 2.7 | oom | 0.389 | 0.386 | 0.476 | 3.16 | 3.19 | 1.02 | 1.08 |  | 0.004 | 0.127 | 1.69 | 0.005 | 21.4 | 23.3 | 0.008 | 0.714 | 0.177 | exact | 1.1e-16 / 2.5e-16 | 2.9e-08 / 2.6e-07 | 4.0e-07 / 9.2e-07 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.4e-17 / 1.3e-16 | 1.1e-16 / 2.5e-16 | 1.1e-16 / 2.0e-16 | 2.2e-16 / 2.5e-16 |  | 1.1e-16 / 2.5e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.5e-16 | 1.1e-16 / 2.5e-16 | 1.1e-16 / 2.5e-16 | 5.6e-17 / 1.3e-16 |  | 4.0e-07 / 9.2e-07 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.3e-16 | 5.6e-17 / 1.3e-16 | 1.1e-16 / 2.5e-16 |
+| bn_cancer | 0.007 | 0.021 | 0.065 | 0.847 | 0.015 | 0.753 | 4.59 | 1.41 | 2.69 | 0.314 | 0.414 | 0.386 | 0.41 | 3.16 | 3.17 | 1.1 | 1.15 |  | 0.004 | 0.13 | 1.73 | 0.004 | 18.6 | 21.3 | 0.005 | 0.695 | 0.168 | exact | 1.7e-16 / 5.5e-16 | 5.6e-17 / 1.8e-16 | 5.0e-07 / 1.6e-06 | 5.6e-17 / 1.8e-16 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.8e-16 | 1.1e-16 / 2.7e-16 | 5.6e-17 / 1.8e-16 | 2.2e-16 / 3.2e-16 | 1.1e-16 / 1.6e-16 | 2.2e-16 / 3.2e-16 | 5.6e-17 / 1.8e-16 | 2.2e-16 / 3.2e-16 | 2.2e-16 / 3.2e-16 | 2.2e-16 / 3.2e-16 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 |  | 5.0e-07 / 1.6e-06 | 5.6e-17 / 1.8e-16 | 5.6e-17 / 1.8e-16 | 5.6e-17 / 1.8e-16 | 1.1e-16 / 3.7e-16 | 1.1e-16 / 3.7e-16 | 1.1e-16 / 3.7e-16 |
+| bn_child | 0.015 | 0.175 | 0.28 | >600 | 0.116 | 10.6 | 8.04 | 1.34 | 62.7 | oom | 1.39 | 1.54 | 2.82 | 11.7 | 11.8 | 1.17 | 1.31 |  | 0.006 | 0.124 | 1.74 | 0.004 | 23.5 | 26.3 | 0.06 | 0.763 | 1.04 | exact | 5.0e-16 / 3.2e-15 | 7.5e-08 / 6.9e-07 | 6.2e-07 / 4.5e-06 |  | 2.2e-16 / 3.9e-16 | 2.2e-16 / 9.0e-16 | 2.2e-16 / 6.4e-16 | 3.1e-16 / 3.5e-15 | 6.7e-16 / 1.4e-15 |  | 3.9e-16 / 8.0e-16 | 1.1e-16 / 3.1e-16 | 2.2e-16 / 5.6e-16 | 2.2e-16 / 4.5e-16 | 2.2e-16 / 4.5e-16 | 2.2e-16 / 5.1e-16 | 4.4e-16 / 6.8e-16 |  | 5.0e-07 / 4.5e-06 | 5.0e-13 / 2.4e-12 | 5.0e-13 / 2.4e-12 | 5.0e-13 / 2.4e-12 | 2.2e-16 / 3.9e-16 | 2.2e-16 / 4.9e-16 | 2.2e-16 / 7.2e-16 |
+| bn_earthquake | 0.011 | 0.021 | 0.066 | 0.997 | 0.016 | 0.782 | 4.53 | 0.901 | 2.54 | 0.156 | 0.382 | 0.379 | 0.436 | 3.34 | 3.41 | 1.15 | 1.18 |  | 0.004 | 0.135 | 1.75 | 0.007 | 18.3 | 20.7 | 0.005 | 0.719 | 0.168 | exact | 5.9e-17 / 2.8e-15 | 2.4e-08 / 3.7e-07 | 2.0e-07 / 9.6e-06 | 1.4e-17 / 4.9e-16 | 1.1e-16 / 3.3e-16 | 1.1e-16 / 1.3e-15 | 4.2e-17 / 1.5e-15 | 1.4e-17 / 4.9e-16 | 1.1e-16 / 4.9e-16 | 2.8e-17 / 4.4e-16 | 1.1e-16 / 3.3e-16 | 1.4e-17 / 4.9e-16 | 1.1e-16 / 4.4e-16 | 1.1e-16 / 4.9e-16 | 1.1e-16 / 4.9e-16 | 1.1e-16 / 3.3e-16 | 1.1e-16 / 3.3e-16 |  | 2.0e-07 / 9.6e-06 | 1.4e-17 / 4.9e-16 | 1.4e-17 / 4.9e-16 | 1.4e-17 / 4.9e-16 | 1.4e-17 / 6.6e-16 | 6.9e-18 / 3.3e-16 | 1.4e-17 / 6.6e-16 |
+| bn_hailfinder | 0.037 | 19.4 | >600 | >600 | 134 | >600 | 58.4 | >600 | 273 | >600 | 5.79 | 6.45 | 18 | 26.3 | 23.8 | 1.51 | 1.7 |  | 0.007 | 0.14 | 1.59 | 0.007 | 27.3 | 33.1 | 2.15 | 2.87 | >600 | exact | 7.2e-16 / 9.0e-15 | 1.9e-07 / 1.2e-06 |  |  | 2.2e-16 / 7.2e-16 |  | 1.1e-16 / 5.9e-16 |  | 3.2e-15 / 6.8e-15 |  | 4.4e-16 / 1.0e-15 | 2.2e-16 / 5.4e-16 | 1.7e-16 / 6.6e-16 | 2.8e-16 / 6.6e-16 | 2.8e-16 / 6.6e-16 | 2.2e-16 / 6.0e-16 | 2.2e-16 / 5.0e-16 |  | 4.8e-07 / 3.7e-06 | 4.9e-13 / 1.6e-12 | 4.9e-13 / 1.6e-12 | 4.9e-13 / 1.6e-12 | 1.7e-16 / 5.4e-16 | 2.8e-16 / 6.3e-16 | 2.2e-16 / 5.4e-16 |
+| bn_hepar2 | 0.031 | 1 | 1.98 | >600 | 1.07 | >600 | 8.95 | 86.2 | 177 | >600 | 8.36 | 9.04 | 23.4 | 68.8 | 68.6 | 1.5 | 1.71 |  | 0.008 | 0.134 | 1.9 | 0.009 | 32.4 | 41.9 | 0.675 | 1.38 | 23.2 | exact | 1.1e-15 / 5.1e-14 | 1.2e-07 / 1.8e-05 | 9.7e-07 / 2.4e-04 |  | 2.2e-16 / 1.1e-15 |  | 3.3e-16 / 4.0e-15 | 2.2e-16 / 7.2e-15 | 5.9e-15 / 6.6e-15 |  | 1.8e-15 / 1.9e-15 | 1.1e-16 / 1.0e-15 | 4.4e-16 / 1.1e-15 | 3.3e-16 / 1.0e-15 | 3.3e-16 / 1.0e-15 | 3.3e-16 / 1.0e-15 | 4.4e-16 / 7.7e-16 |  | 4.9e-07 / 1.2e-04 | 4.8e-13 / 4.4e-12 | 4.8e-13 / 4.4e-12 | 4.8e-13 / 4.4e-12 | 2.2e-16 / 8.1e-16 | 2.2e-16 / 8.1e-16 | 1.1e-16 / 8.9e-16 |
+| bn_insurance | 0.022 | 13.8 | 7.97 | >600 | 30.8 | >600 | 21.7 | >600 | 40.2 | >600 | 3.65 | 4.82 | 15.2 | 11.8 | 12.3 | 1.69 | 1.9 |  | 0.007 | 0.131 | 1.74 | 0.008 | 30.8 | 34.9 | 2.42 | 3.17 | >600 | exact | 1.5e-11 / 2.7e-11 | 1.2e-07 / 4.9e-06 | 7.1e-07 / 4.5e-05 |  | 1.5e-11 / 2.7e-11 |  | 1.5e-11 / 2.7e-11 |  | 5.1e-08 / 1.4e-07 |  | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 |  | 4.9e-07 / 4.5e-05 | 1.3e-11 / 2.6e-11 | 1.3e-11 / 2.6e-11 | 1.3e-11 / 2.6e-11 | 1.3e-11 / 2.6e-11 | 1.3e-11 / 2.6e-11 | 2.4e-11 / 1.4e-09 |
+| bn_link | 0.592 | >600 | 139 | >600 | err | >600 | err | 101 | >600 | >600 | >600 | >600 | 282 | >600 | >600 | 51.4 | >600 |  | 33 | 85.6 | >600 | 4.08 | >600 | 175 | 10.4 | 11.3 | >600 | alea | 6.0e-14 / 4.8e-13 |  | 5.3e-07 / 2.9e-03 |  |  |  |  | 9.4e-16 / 7.1e-12 |  |  |  |  | 6.7e-16 / 2.8e-15 |  |  | 1.6e-13 / 1.8e-13 |  |  | 4.7e-07 / 2.8e-03 | 5.0e-13 / 5.0e-13 |  | 5.0e-13 / 5.0e-13 |  | 3.3e-16 / 5.4e-15 | 4.4e-16 / 2.7e-15 |
+| bn_munin | 0.492 | >600 | >600 | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | 7.26 | 107 |  | 2.37 | 1.04 | >600 | 3.37 | oom | 194 | err | err | >600 | exact | 3.6e-15 / 1.6e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.7e-16 / 2.4e-13 | 5.4e-15 / 2.4e-13 |  | 5.0e-07 / 3.0e-02 | 5.0e-13 / 4.7e-12 |  | 5.0e-13 / 4.7e-12 |  | 4.4e-16 / 2.5e-13 |  |
+| bn_pathfinder | 0.271 | >600 | 17.1 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | 2.3 | 4.12 |  | 0.071 | 0.231 | 4.16 | 0.068 | 31.8 | 43.8 | 29.2 | 30.1 | >600 | exact | 1.1e-15 / 2.2e-12 |  | 9.4e-07 / 5.4e-03 |  |  |  |  |  |  |  |  |  |  |  |  | 4.4e-16 / 1.6e-14 | 5.6e-16 / 1.7e-14 |  | 5.0e-07 / 2.6e-03 | 4.9e-13 / 4.1e-12 | 4.9e-13 / 4.1e-12 | 4.9e-13 / 4.1e-12 | 4.4e-16 / 1.6e-14 | 2.8e-16 / 1.6e-14 | 3.3e-16 / 1.6e-14 |
+| bn_pigs | 0.057 | 4.4 | 91.9 | >600 | 3.02 | >600 | 23.6 | 7.95 | >600 | >600 | 29.4 | 30 | 91.8 | 237 | 238 | 3.49 | 13.5 |  | 0.145 | 0.212 | 34.9 | 0.135 | 60.7 | 113 | 1.95 | 2.67 | >600 | exact | 1.1e-16 / 2.4e-16 | 5.0e-08 / 1.0e-07 | 7.5e-07 / 3.0e-06 |  | 1.1e-16 / 2.4e-16 |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  | 5.0e-07 / 1.9e-06 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 4.4e-16 | 1.1e-16 / 4.3e-16 | 1.1e-16 / 2.4e-16 |
+| bn_sachs | 0.011 | 0.086 | 0.15 | >600 | 0.054 | 2.96 | 7.84 | 1.13 | 3.97 | oom | 0.796 | 0.806 | 1.48 | 6.65 | 6.42 | 1.17 | 1.23 |  | 0.004 | 0.13 | 1.7 | 0.004 | 24.5 | 25.4 | 0.038 | 0.741 | 0.324 | exact | 1.2e-10 / 4.0e-10 | 8.4e-08 / 1.1e-06 | 8.1e-07 / 1.0e-05 |  | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.9e-10 / 2.4e-09 | 5.6e-17 / 3.6e-16 |  | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 | 1.2e-10 / 4.0e-10 |  | 4.6e-07 / 3.2e-06 | 1.2e-10 / 1.9e-10 | 1.2e-10 / 1.9e-10 | 1.2e-10 / 1.9e-10 | 1.2e-10 / 1.9e-10 | 1.2e-10 / 1.9e-10 | 1.9e-10 / 2.4e-09 |
+| bn_survey | 0.008 | 0.013 | 0.05 | 1.56 | 0.009 | 0.872 | 6.12 | 0.908 | 2.82 | oom | 0.202 | 0.205 | 0.302 | 1.62 | 1.66 | 1.06 | 1.08 |  | 0.006 | 0.126 | 1.68 | 0.004 | 21 | 22.6 | 0.007 | 0.698 | 0.182 | exact | 4.7e-16 / 3.0e-15 | 3.2e-08 / 7.8e-08 | 7.5e-07 / 2.7e-06 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 3.5e-16 | 1.1e-16 / 4.0e-16 | 1.4e-16 / 8.8e-16 | 1.1e-16 / 7.1e-16 |  | 1.1e-16 / 3.5e-16 | 0.0e+00 / 0.0e+00 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 |  | 2.5e-07 / 1.4e-06 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 1.1e-16 / 2.0e-16 | 2.8e-17 / 1.8e-16 |
+| bn_water | 0.029 | wrong | 2.4 | >600 | 6.72 | >600 | 9.2 | 43.1 | 18.5 | >600 | 4.34 | 4.44 | 14.8 | 16.5 | 16.2 | 1.98 | 2.5 |  | 0.392 | 0.305 | 1.93 | 0.318 | 36.8 | 43.3 | 0.587 | 1.28 | >600 | exact | 4.4e-16 / 1.4e-10 | 1.2e-07 / 1.0e+00 | 7.5e-07 / 1.0e+00 |  | 1.1e-16 / 1.4e-10 |  | 1.1e-16 / 1.4e-10 | 2.2e-16 / 5.5e-09 | 3.3e-16 / 1.4e-10 |  | 4.4e-16 / 1.4e-10 | 1.1e-16 / 1.4e-10 | 1.1e-16 / 1.4e-10 | 4.4e-16 / 1.4e-10 | 4.4e-16 / 1.4e-10 | 4.4e-16 / 1.4e-10 | 3.3e-16 / 1.4e-10 |  | 5.0e-07 / 1.0e+00 | 4.6e-13 / 1.4e-10 | 4.6e-13 / 1.4e-10 | 4.6e-13 / 1.4e-10 | 2.2e-16 / 1.4e-10 | 2.2e-16 / 1.4e-10 | 1.1e-16 / 1.4e-10 |
+| bn_win95pts | 0.014 | 0.254 | 0.376 | >600 | 0.269 | >600 | 10.9 | 3.52 | 104 | >600 | 3.58 | 3.32 | 5.84 | 27 | 28 | 1.35 | 1.41 |  | 0.007 | 0.13 | 1.73 | 0.008 | 36.2 | 45.2 | 0.161 | 0.853 | 197 | exact | 2.2e-16 / 3.5e-14 | 1.3e-07 / 1.3e-05 | 5.3e-07 / 4.6e-06 |  | 2.2e-16 / 3.8e-16 |  | 2.2e-16 / 3.9e-16 | 2.2e-16 / 1.7e-14 | 4.4e-16 / 8.1e-15 |  | 5.6e-16 / 9.7e-16 | 1.1e-16 / 2.0e-16 | 3.3e-16 / 4.1e-16 | 2.2e-16 / 3.8e-16 | 2.2e-16 / 3.8e-16 | 5.6e-16 / 9.7e-16 | 4.4e-16 / 5.0e-16 |  | 4.7e-07 / 4.0e-06 | 4.9e-13 / 3.3e-12 | 4.9e-13 / 3.3e-12 | 4.9e-13 / 3.3e-12 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 4.0e-16 | 1.1e-16 / 7.5e-15 |
+| dice_alarm | 0.007 | 0.005 | 0.01 | 0.073 | 0.003 | 0.573 | 3.56 | 0.315 | 2.45 | 0.056 | 0.156 | 0.153 | 0.192 | 1.27 | 1.27 | 1.2 | 1.25 |  | 0.054 | 0.169 | 1.56 | 0.055 | 20.6 | 24.3 | 0.003 | 0.678 | 0.072 | psi | 4.3e-18 / 1.4e-15 | 1.8e-08 / 6.0e-06 | 4.5e-07 / 1.5e-04 | ref | 0.0e+00 / 0.0e+00 | 3.4e-17 / 1.1e-14 | 4.3e-19 / 1.4e-16 | 1.3e-18 / 4.3e-16 | 0.0e+00 / 0.0e+00 | 4.3e-19 / 1.4e-16 | 8.7e-19 / 2.9e-16 | 0.0e+00 / 0.0e+00 | 8.7e-19 / 2.9e-16 | 4.3e-19 / 1.4e-16 | 4.3e-19 / 1.4e-16 | 8.7e-19 / 2.9e-16 | 4.3e-19 / 1.4e-16 |  | 4.5e-07 / 1.5e-04 | 4.5e-15 / 1.5e-12 | 4.5e-15 / 1.5e-12 | 4.5e-15 / 1.5e-12 | 8.7e-19 / 2.9e-16 | 8.7e-19 / 2.9e-16 | 4.3e-19 / 1.4e-16 |
+| dice_digitRecognition | 0.352 | err | 17.7 | >600 | 0.102 | >600 | oom | >600 | >600 | oom | 2.16 | 2.25 | >600 | 183 | 197 | err | err | 11.7 | 70.8 | 130 | >600 | >600 | >600 | >600 |  |  | 17.9 | storm-exact | 6.5e-29 / 1.6e-14 |  | 5.8e-15 / 1.0e+00 |  | 7.4e-29 / 1.9e+02 |  |  |  |  |  | 2.6e-29 / 1.0e+00 | ref |  | 5.0e-29 / 1.0e+00 | 5.0e-29 / 1.0e+00 |  |  | 5.8e-15 / 5.5e-12 | 5.8e-15 / 1.0e+00 | 5.8e-15 / 1.0e+00 |  |  |  |  |  |
+| dice_evidence1 | 0.007 | 0.005 | 0.01 | 0.021 | 0.002 | 0.559 | 3.37 | 0.315 | 2.45 | 0.042 | 0.157 | 0.15 | 0.161 | 1.28 | 1.27 | 1.08 | 1.18 |  | 0.044 | 0.151 | 1.55 | 0.045 | 18.4 | 20.2 | 0.002 | 0.676 | 0.07 | psi | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 3.3e-07 / 1.0e-06 | ref | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.7e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 3.3e-07 / 1.0e-06 | 3.3e-13 / 1.0e-12 | 3.3e-13 / 1.0e-12 | 3.3e-13 / 1.0e-12 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_evidence2 | 0.006 | 0.005 | 0.009 | 0.021 | 0.003 | 0.556 | 3.49 | 0.319 | 2.46 | 0.038 | 0.149 | 0.16 | 0.154 | 1.26 | 1.27 | 1.11 | 1.19 |  | 0.046 | 0.154 | 1.57 | 0.047 | 19.3 | 21.5 | 0.003 | 0.681 | 0.069 | psi | 1.1e-16 / 1.7e-16 | 0.0e+00 / 0.0e+00 | 3.3e-07 / 5.0e-07 | ref | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.7e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 3.3e-07 / 5.0e-07 | 3.3e-13 / 5.0e-13 | 3.3e-13 / 5.0e-13 | 3.3e-13 / 5.0e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_grass | 0.006 | 0.005 | 0.011 | 0.056 | 0.006 | 0.587 | 3.56 | 0.325 | 2.45 | 0.045 | 0.148 | 0.148 | 0.197 | 1.27 | 1.28 | 1.18 | 1.21 |  | 0.047 | 0.158 | 1.58 | 0.047 | 20.5 | 23.9 | 0.003 | 0.679 | 0.073 | psi | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 | 6.8e-07 / 9.6e-07 | ref | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 2.2e-16 / 3.1e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 |  | 3.2e-07 / 4.6e-07 | 3.8e-13 / 5.3e-13 | 3.8e-13 / 5.3e-13 | 3.8e-13 / 5.3e-13 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 |
+| dice_murderMystery | 0.004 | 0.005 | 0.011 | err | 0.002 | 0.565 | 3.44 | 0.314 | 2.45 | 0.045 | 0.152 | 0.152 | 0.159 | 1.27 | 1.27 | 1.12 | 1.14 |  | 0.045 | 0.154 | 1.57 | 0.046 | 19.5 | 21.3 | 0.002 | 0.681 | 0.069 | storm-exact | 3.5e-18 / 2.2e-16 | 3.5e-18 / 2.2e-16 | 2.2e-07 / 1.4e-05 |  | 0.0e+00 / 0.0e+00 | 3.5e-18 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 2.2e-07 / 1.4e-05 | 6.0e-15 / 3.8e-13 | 6.0e-15 / 3.8e-13 | 6.0e-15 / 3.8e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_noisyOr | 0.008 | 0.005 | 0.012 | 1.28 | 0.016 | 0.613 | 3.44 | 0.321 | 2.46 | 3.17 | 0.146 | 0.145 | 0.218 | 1.27 | 1.27 | 1.15 | 1.24 |  | 0.048 | 0.156 | 1.58 | 0.048 | 20.9 | 26 | 0.003 | 0.674 | 0.077 | psi | 1.1e-16 / 1.4e-16 | 5.0e-08 / 6.1e-08 | 7.5e-07 / 9.2e-07 | ref | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.7e-16 | 1.1e-16 / 1.4e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.7e-16 | 2.2e-16 / 2.7e-16 | 2.2e-16 / 2.7e-16 | 3.3e-16 / 4.1e-16 | 2.2e-16 / 2.7e-16 |  | 2.5e-07 / 3.1e-07 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 | 0.0e+00 / 0.0e+00 |
+| dice_twocoins | 0.005 | 0.005 | 0.008 | 0.022 | 0.002 | 0.561 | 3.38 | 0.318 | 2.46 | 0.043 | 0.157 | 0.155 | 0.159 | 1.26 | 1.27 | 1.11 | 1.16 |  | 0.057 | 0.179 | 1.58 | 0.058 | 16.6 | 18.4 | 0.002 | 0.664 | 0.119 | psi | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 3.3e-07 / 1.0e-06 | ref | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.7e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 3.3e-07 / 1.0e-06 | 3.3e-13 / 1.0e-12 | 3.3e-13 / 1.0e-12 | 3.3e-13 / 1.0e-12 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 
 Seconds per system, the median over the repetitions; a failure is `>600`
 (timeout), `oom`, `err` or `n/a`; each system's last columns are its
@@ -3404,300 +3424,270 @@ largest absolute and relative difference from the reference named in
 | family | instances | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Ace log space | Merlin | pyAgrum | pgmpy | libDAI | TensorInference.jl greedy | TensorInference.jl treesa | Roulette |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | caesar-iter | 7 | 7 | 0 of 7 | 2 of 3 | 0 of 7 | 2 of 7 | 1 of 2 | 2 of 4 | 0 of 2 | 2 of 4 | 2 of 7 | 6 of 7 | 2 of 6 | 2 of 6 | 2 of 6 | 1 of 4 | 1 of 4 | 3 of 4 | 2 of 3 | 2 of 3 | 2 of 3 | 1 of 2 | 1 of 2 | 1 of 2 | 2 of 4 |
-| diamond | 8 | 8 | 1 of 8 | 3 of 4 | 0 of 8 | 3 of 8 | 3 of 4 | 3 of 5 | 2 of 3 | 4 of 5 | 8 of 8 | 5 of 6 | 5 of 6 | 5 of 6 | 5 of 6 | 5 of 7 | 2 of 7 |  | 3 of 4 | 3 of 4 | 4 of 5 | 4 of 5 | 2 of 3 | 2 of 3 | 3 of 4 |
-| ladder | 8 | 7 | 3 of 7 | 0 of 4 | 0 of 8 | 2 of 8 | 3 of 4 | 2 of 4 | 1 of 2 | 3 of 5 | 8 of 8 | 5 of 6 | 3 of 4 | 4 of 5 | 4 of 5 | 2 of 8 | 2 of 8 |  | 2 of 3 | 3 of 4 | 3 of 4 | 3 of 4 | 2 of 3 | 1 of 2 | 3 of 4 |
 | pmc1 | 7 | 7 | 3 of 4 | 0 of 4 | 0 of 7 | 0 of 1 | 0 of 1 | 7 of 7 | 7 of 7 | 3 of 5 | 2 of 3 | 2 of 3 | 7 of 7 | 6 of 7 | 6 of 7 | 4 of 5 | 4 of 5 |  | 3 of 4 | 3 of 4 | 3 of 4 | 3 of 4 | 3 of 7 | 3 of 5 | 7 of 7 |
 | pmc2 | 7 | 7 | 2 of 3 | 0 of 3 | 0 of 7 | 0 of 1 | 0 of 1 | 7 of 7 | 7 of 7 | 3 of 5 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 |  | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 | 7 of 7 |
 | simpleCaesar | 7 | 6 | 0 of 4 | 1 of 3 | 0 of 7 | 1 of 2 | 0 of 1 | 1 of 3 | 0 of 1 | 1 of 3 | 1 of 7 | 5 of 6 | 1 of 7 | 1 of 7 | 1 of 7 | 1 of 5 | 1 of 5 | 4 of 5 | 1 of 2 | 1 of 4 | 1 of 2 | 1 of 2 | 1 of 4 | 0 of 1 | 1 of 4 |
 
-**Geni.** Geni ran 33 instances and answered 9 (9 fail, 3 run out of
-memory, 3 time out, 9 answer wrongly). Its answers differ from the
-reference's by at most 4.4e-05 relative (8.9e-07 absolute, ladder_k6400)
-over 9 instances. Geni's answer is wrong, zero or underflowed on
-diamond_k102400, diamond_k1600, diamond_k25600, diamond_k400,
-diamond_k409600 and 4 more. Over the 33 instances given to both that
-either answers, a run that does not answer counted at the 600 s limit,
-Geni takes 14404 s in all and tddlog 494 s; over the 9 both answer, 4.48
-s against tddlog's 2.46. Geni is faster on 1 (pmc1_k20 0.005 s against
-0.26). tddlog alone answers caesar-iter_k100, caesar-iter_k1000,
-caesar-iter_k10000, caesar-iter_k100000, caesar-iter_k3000 and 19 more.
+**Geni.** Geni ran 18 instances and answered 5 (9 fail, 1 run out of
+memory, 3 time out). Its answers differ from the reference's by at most
+0.0e+00 relative (0.0e+00 absolute, pmc1_k10) over 5 instances. Over the
+18 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, Geni takes 7800 s in all and tddlog
+161 s; over the 5 both answer, 0.025 s against tddlog's 0.74. Geni is
+faster on 1 (pmc1_k20 0.005 s against 0.26). tddlog alone answers
+caesar-iter_k100, caesar-iter_k1000, caesar-iter_k10000,
+caesar-iter_k100000, caesar-iter_k3000 and 8 more.
 
-**noDice.** noDice ran 21 instances and answered 6 (4 run out of memory,
-10 time out, 1 answer wrongly). Its answers differ from the reference's
-by at most 1.0e+00 relative (7.9e-31 absolute, caesar-iter_k100) over 6
+**noDice.** noDice ran 13 instances and answered 3 (2 run out of memory,
+7 time out, 1 answer wrongly). Its answers differ from the reference's
+by at most 1.0e+00 relative (7.9e-31 absolute, caesar-iter_k100) over 3
 instances. noDice's answer is wrong, zero or underflowed on
-simpleCaesar_k300. Over the 21 instances given to both that either
+simpleCaesar_k300. Over the 13 instances given to both that either
 answers, a run that does not answer counted at the 600 s limit, noDice
-takes 9027 s in all and tddlog 10.9 s; over the 6 both answer, 27.4 s
-against tddlog's 0.96. tddlog alone answers caesar-iter_k3000,
-diamond_k6400, ladder_k100, ladder_k1600, ladder_k400 and 10 more.
+takes 6024 s in all and tddlog 8.16 s; over the 3 both answer, 23.5 s
+against tddlog's 0.79. tddlog alone answers caesar-iter_k3000, pmc1_k10,
+pmc1_k20, pmc1_k40, pmc1_k75 and 5 more.
 
-**Psi.** Psi ran 44 instances and answered 0 (44 fail). Over the 42
+**Psi.** Psi ran 28 instances and answered 0 (28 fail). Over the 27
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, Psi takes 25200 s in all and tddlog 1007 s.
+counted at the 600 s limit, Psi takes 16200 s in all and tddlog 674 s.
 tddlog alone answers caesar-iter_k100, caesar-iter_k1000,
-caesar-iter_k10000, caesar-iter_k100000, caesar-iter_k3000 and 37 more.
+caesar-iter_k10000, caesar-iter_k100000, caesar-iter_k3000 and 22 more.
 
-**Genfer.** Genfer ran 27 instances and answered 8 (16 fail, 3 time
-out). Its answers differ from the reference's by at most 1.0e+00
-relative (9.3e-302 absolute, caesar-iter_k1000) over 8 instances. Over
-the 26 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, Genfer takes 11183 s in all and
-tddlog 465 s; over the 8 both answer, 383 s against tddlog's 1.21.
-Genfer is faster on 1 (caesar-iter_k1000 0.4 s against 0.41). tddlog
-alone answers caesar-iter_k10000, caesar-iter_k100000,
-caesar-iter_k3000, caesar-iter_k30000, caesar-iter_k300000 and 13 more.
-
-**SPPL.** SPPL ran 13 instances and answered 7 (6 time out). Its answers
-differ from the reference's by at most 2.7e-13 relative (2.2e-16
-absolute, caesar-iter_k100) over 7 instances. Over the 13 instances
-given to both that either answers, a run that does not answer counted at
-the 600 s limit, SPPL takes 4051 s in all and tddlog 3.69 s; over the 7
-both answer, 451 s against tddlog's 0.92. tddlog alone answers
-caesar-iter_k1000, diamond_k6400, ladder_k6400, pmc1_k10, pmc2_k10 and 1
-more.
-
-**Pluck.** Pluck ran 30 instances and answered 22 (8 fail). Its answers
-differ from the reference's by at most 1.0e+00 relative (9.3e-302
-absolute, caesar-iter_k1000) over 22 instances. Over the 30 instances
-given to both that either answers, a run that does not answer counted at
-the 600 s limit, Pluck takes 5341 s in all and tddlog 364 s; over the 22
-both answer, 541 s against tddlog's 326. Pluck is faster on 2 (pmc1_k300
-26 s against 94.2 and pmc1_k600 54.5 s against 184). tddlog alone
-answers caesar-iter_k10000, caesar-iter_k3000, diamond_k25600,
-diamond_k6400, ladder_k1600 and 3 more.
-
-**PITA.** PITA ran 22 instances and answered 17 (4 time out, 1 answer
-wrongly). Its answers differ from the reference's by at most 1.9e-14
-relative (1.9e-14 absolute, diamond_k400) over 17 instances. PITA's
-answer is wrong, zero or underflowed on caesar-iter_k100. Over the 22
+**Genfer.** Genfer ran 11 instances and answered 3 (5 fail, 3 time out).
+Its answers differ from the reference's by at most 1.0e+00 relative
+(9.3e-302 absolute, caesar-iter_k1000) over 3 instances. Over the 11
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, PITA takes 3473 s in all and tddlog 326 s;
-over the 17 both answer, 473 s against tddlog's 325. PITA is faster on 3
-(pmc1_k150 4.03 s against 18.3, pmc1_k300 11.2 s against 94.2 and
-pmc1_k600 36.3 s against 184). tddlog alone answers caesar-iter_k100,
-caesar-iter_k1000, diamond_k1600, ladder_k400 and simpleCaesar_k100.
+counted at the 600 s limit, Genfer takes 5182 s in all and tddlog 133 s;
+over the 3 both answer, 382 s against tddlog's 0.79. Genfer is faster on
+1 (caesar-iter_k1000 0.4 s against 0.41). tddlog alone answers
+caesar-iter_k10000, caesar-iter_k100000, caesar-iter_k3000,
+caesar-iter_k30000, caesar-iter_k300000 and 3 more.
 
-**aspmc.** aspmc ran 27 instances and answered 16 (1 run out of memory,
-10 time out). Its answers differ from the reference's by at most 1.0e+00
-relative (9.3e-302 absolute, caesar-iter_k1000) over 16 instances. Over
-the 27 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, aspmc takes 7550 s in all and tddlog
-65.2 s; over the 16 both answer, 950 s against tddlog's 3.01. tddlog
-alone answers caesar-iter_k10000, caesar-iter_k3000, diamond_k25600,
-ladder_k25600, ladder_k6400 and 6 more.
+**SPPL.** SPPL ran 5 instances and answered 1 (4 time out). Its answers
+differ from the reference's by at most 1.8e-13 relative (2.2e-16
+absolute, caesar-iter_k100) over 1 instance. Over the 5 instances given
+to both that either answers, a run that does not answer counted at the
+600 s limit, SPPL takes 2415 s in all and tddlog 1 s; over the 1 both
+answer, 14.9 s against tddlog's 0.028. tddlog alone answers
+caesar-iter_k1000, pmc1_k10, pmc2_k10 and simpleCaesar_k100.
 
-**Storm sparse.** Storm sparse ran 40 instances and answered 28 (11
+**Pluck.** Pluck ran 21 instances and answered 17 (4 fail). Its answers
+differ from the reference's by at most 1.0e+00 relative (9.3e-302
+absolute, caesar-iter_k1000) over 17 instances. Over the 21 instances
+given to both that either answers, a run that does not answer counted at
+the 600 s limit, Pluck takes 2877 s in all and tddlog 353 s; over the 17
+both answer, 477 s against tddlog's 326. Pluck is faster on 2 (pmc1_k300
+26 s against 94.2 and pmc1_k600 54.5 s against 184). tddlog alone
+answers caesar-iter_k10000, caesar-iter_k3000, simpleCaesar_k300 and
+simpleCaesar_k3000.
+
+**PITA.** PITA ran 17 instances and answered 14 (2 time out, 1 answer
+wrongly). Its answers differ from the reference's by at most 0.0e+00
+relative (0.0e+00 absolute, pmc1_k10) over 14 instances. PITA's answer
+is wrong, zero or underflowed on caesar-iter_k100. Over the 17 instances
+given to both that either answers, a run that does not answer counted at
+the 600 s limit, PITA takes 2142 s in all and tddlog 326 s; over the 14
+both answer, 342 s against tddlog's 325. PITA is faster on 3 (pmc1_k150
+4.03 s against 18.3, pmc1_k300 11.2 s against 94.2 and pmc1_k600 36.3 s
+against 184). tddlog alone answers caesar-iter_k100, caesar-iter_k1000
+and simpleCaesar_k100.
+
+**aspmc.** aspmc ran 17 instances and answered 9 (8 time out). Its
+answers differ from the reference's by at most 1.0e+00 relative
+(9.3e-302 absolute, caesar-iter_k1000) over 9 instances. Over the 17
+instances given to both that either answers, a run that does not answer
+counted at the 600 s limit, aspmc takes 5521 s in all and tddlog 53.1 s;
+over the 9 both answer, 721 s against tddlog's 1.77. tddlog alone
+answers caesar-iter_k10000, caesar-iter_k3000, pmc1_k150, pmc1_k75,
+pmc2_k200 and 3 more.
+
+**Storm sparse.** Storm sparse ran 24 instances and answered 12 (11
 fail, 1 time out). Its answers differ from the reference's by at most
-1.0e+00 relative (9.3e-302 absolute, caesar-iter_k1000) over 27
-instances. Over the 39 instances given to both that either answers, a
+1.0e+00 relative (9.3e-302 absolute, caesar-iter_k1000) over 12
+instances. Over the 23 instances given to both that either answers, a
 run that does not answer counted at the 600 s limit, Storm sparse takes
-6831 s in all and tddlog 1312 s; over the 27 both answer, 193 s against
-tddlog's 362. Storm sparse is faster on 12 (diamond_k6400 0.21 s against
-0.35, simpleCaesar_k100 0.2 s against 0.35, caesar-iter_k1000 0.17 s
-against 0.41 and ladder_k1600 0.33 s against 0.69, the largest
-differences). Only Storm sparse answers ladder_k1638400. tddlog alone
+6755 s in all and tddlog 378 s; over the 12 both answer, 155 s against
+tddlog's 28.5. Storm sparse is faster on 2 (simpleCaesar_k100 0.2 s
+against 0.35 and caesar-iter_k1000 0.17 s against 0.41). tddlog alone
 answers caesar-iter_k10000, caesar-iter_k100000, caesar-iter_k3000,
 caesar-iter_k30000, caesar-iter_k300000 and 6 more.
 
-**Storm exact.** Storm exact ran 35 instances and answered 30 (2 fail, 3
-time out). Its answers differ from the reference's by at most 1.9e-10
-relative (1.0e-302 absolute, simpleCaesar_k1000) over 30 instances. Over
-the 35 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, Storm exact takes 3866 s in all and
-tddlog 425 s; over the 30 both answer, 866 s against tddlog's 158. Storm
-exact is faster on 9 (simpleCaesar_k100 0.32 s against 0.35,
-caesar-iter_k1000 0.21 s against 0.41, simpleCaesar_k300 0.66 s against
-0.86 and caesar-iter_k3000 0.37 s against 0.91, the largest
-differences). tddlog alone answers caesar-iter_k300000, diamond_k102400,
-ladder_k102400, pmc1_k40 and simpleCaesar_k30000.
+**Storm exact.** Storm exact ran 23 instances and answered 20 (2 fail, 1
+time out). It is the reference on 20 instances. Over the 23 instances
+given to both that either answers, a run that does not answer counted at
+the 600 s limit, Storm exact takes 2108 s in all and tddlog 378 s; over
+the 20 both answer, 308 s against tddlog's 146. Storm exact is faster on
+9 (simpleCaesar_k100 0.32 s against 0.35, caesar-iter_k1000 0.21 s
+against 0.41, simpleCaesar_k300 0.66 s against 0.86 and
+caesar-iter_k3000 0.37 s against 0.91, the largest differences). tddlog
+alone answers caesar-iter_k300000, pmc1_k40 and simpleCaesar_k30000.
 
-**Storm dd.** Storm dd ran 37 instances and answered 25 (8 fail, 4 time
+**Storm dd.** Storm dd ran 27 instances and answered 17 (8 fail, 2 time
 out). Its answers differ from the reference's by at most 1.0e+00
-relative (9.3e-302 absolute, caesar-iter_k1000) over 25 instances. Over
-the 36 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, Storm dd takes 7226 s in all and
-tddlog 598 s; over the 25 both answer, 626 s against tddlog's 329. Storm
+relative (9.3e-302 absolute, caesar-iter_k1000) over 17 instances. Over
+the 26 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, Storm dd takes 5607 s in all and
+tddlog 585 s; over the 17 both answer, 207 s against tddlog's 326. Storm
 dd is faster on 3 (pmc1_k150 17.3 s against 18.3, pmc1_k300 22.1 s
 against 94.2 and pmc1_k600 29.9 s against 184). tddlog alone answers
 caesar-iter_k10000, caesar-iter_k100000, caesar-iter_k3000,
-caesar-iter_k30000, diamond_k102400 and 6 more.
+caesar-iter_k30000, simpleCaesar_k1000 and 4 more.
 
-**PRISM sparse.** PRISM sparse ran 38 instances and answered 25 (8 fail,
-1 run out of memory, 4 time out). Its answers differ from the
+**PRISM sparse.** PRISM sparse ran 27 instances and answered 16 (8 fail,
+1 run out of memory, 2 time out). Its answers differ from the
 reference's by at most 1.0e+00 relative (9.3e-302 absolute,
-caesar-iter_k1000) over 25 instances. Over the 37 instances given to
+caesar-iter_k1000) over 16 instances. Over the 26 instances given to
 both that either answers, a run that does not answer counted at the 600
-s limit, PRISM sparse takes 8324 s in all and tddlog 605 s; over the 25
-both answer, 1124 s against tddlog's 147. tddlog alone answers
+s limit, PRISM sparse takes 6910 s in all and tddlog 585 s; over the 16
+both answer, 910 s against tddlog's 142. tddlog alone answers
 caesar-iter_k10000, caesar-iter_k100000, caesar-iter_k3000,
-caesar-iter_k30000, diamond_k102400 and 7 more.
+caesar-iter_k30000, pmc1_k600 and 5 more.
 
-**PRISM hybrid.** PRISM hybrid ran 38 instances and answered 25 (8 fail,
-1 run out of memory, 4 time out). Its answers differ from the
+**PRISM hybrid.** PRISM hybrid ran 27 instances and answered 16 (8 fail,
+1 run out of memory, 2 time out). Its answers differ from the
 reference's by at most 1.0e+00 relative (9.3e-302 absolute,
-caesar-iter_k1000) over 25 instances. Over the 37 instances given to
+caesar-iter_k1000) over 16 instances. Over the 26 instances given to
 both that either answers, a run that does not answer counted at the 600
-s limit, PRISM hybrid takes 8345 s in all and tddlog 605 s; over the 25
-both answer, 1145 s against tddlog's 147. tddlog alone answers
+s limit, PRISM hybrid takes 6943 s in all and tddlog 585 s; over the 16
+both answer, 943 s against tddlog's 142. tddlog alone answers
 caesar-iter_k10000, caesar-iter_k100000, caesar-iter_k3000,
-caesar-iter_k30000, diamond_k102400 and 7 more.
+caesar-iter_k30000, pmc1_k600 and 5 more.
 
-**Ace.** Ace ran 36 instances and answered 20 (12 fail, 4 time out). Its
-answers differ from the reference's by at most 5.2e-12 relative (2.7e-42
-absolute, simpleCaesar_k100) over 19 instances. Over the 35 instances
+**Ace.** Ace ran 21 instances and answered 13 (5 fail, 3 time out). Its
+answers differ from the reference's by at most 2.8e-15 relative (9.1e-45
+absolute, simpleCaesar_k100) over 13 instances. Over the 21 instances
 given to both that either answers, a run that does not answer counted at
-the 600 s limit, Ace takes 9139 s in all and tddlog 320 s; over the 20
-both answer, 139 s against tddlog's 32. Ace is faster on 2 (pmc2_k800
+the 600 s limit, Ace takes 4848 s in all and tddlog 128 s; over the 13
+both answer, 47.7 s against tddlog's 29. Ace is faster on 2 (pmc2_k800
 6.44 s against 7.01 and pmc2_k1600 11.9 s against 15.2). tddlog alone
 answers caesar-iter_k1000, caesar-iter_k10000, caesar-iter_k3000,
-diamond_k102400, diamond_k409600 and 10 more.
+pmc1_k150, simpleCaesar_k1000 and 3 more.
 
-**Ace c2d.** Ace c2d ran 36 instances and answered 17 (12 fail, 4 time
-out, 3 answer wrongly). Its answers differ from the reference's by at
-most 5.2e-12 relative (2.7e-42 absolute, simpleCaesar_k100) over 17
-instances. Ace c2d's answer is wrong, zero or underflowed on
-diamond_k1600, diamond_k25600 and diamond_k6400. Over the 35 instances
-given to both that either answers, a run that does not answer counted at
-the 600 s limit, Ace c2d takes 10866 s in all and tddlog 320 s; over the
-17 both answer, 66.1 s against tddlog's 29.3. Ace c2d is faster on 2
-(pmc2_k800 6.61 s against 7.01 and pmc2_k1600 11.6 s against 15.2).
-tddlog alone answers caesar-iter_k1000, caesar-iter_k10000,
-caesar-iter_k3000, diamond_k102400, diamond_k1600 and 13 more.
+**Ace c2d.** Ace c2d ran 21 instances and answered 13 (5 fail, 3 time
+out). Its answers differ from the reference's by at most 1.6e-14
+relative (1.3e-44 absolute, caesar-iter_k100) over 13 instances. Over
+the 21 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, Ace c2d takes 4849 s in all and
+tddlog 128 s; over the 13 both answer, 48.5 s against tddlog's 29. Ace
+c2d is faster on 2 (pmc2_k800 6.61 s against 7.01 and pmc2_k1600 11.6 s
+against 15.2). tddlog alone answers caesar-iter_k1000,
+caesar-iter_k10000, caesar-iter_k3000, pmc1_k150, simpleCaesar_k1000 and
+3 more.
 
 **Ace log space.** Ace log space ran 9 instances and answered 7 (2 time
-out). Its answers differ from the reference's by at most 2.8e-10
-relative (1.5e-302 absolute, simpleCaesar_k1000) over 6 instances. Over
+out). Its answers differ from the reference's by at most 8.8e-11
+relative (4.9e-303 absolute, simpleCaesar_k1000) over 7 instances. Over
 the 9 instances given to both that either answers, a run that does not
 answer counted at the 600 s limit, Ace log space takes 1504 s in all and
 tddlog 81.2 s; over the 7 both answer, 304 s against tddlog's 31.4.
 tddlog alone answers caesar-iter_k10000 and simpleCaesar_k10000.
 
-**Merlin.** Merlin ran 23 instances and answered 18 (4 run out of
+**Merlin.** Merlin ran 16 instances and answered 13 (2 run out of
 memory, 1 time out). Its answers differ from the reference's by at most
-1.0e+00 relative (7.9e-31 absolute, caesar-iter_k100) over 18 instances.
-Over the 23 instances given to both that either answers, a run that does
-not answer counted at the 600 s limit, Merlin takes 3392 s in all and
-tddlog 32.6 s; over the 18 both answer, 392 s against tddlog's 29.1.
+1.0e+00 relative (7.9e-31 absolute, caesar-iter_k100) over 13 instances.
+Over the 16 instances given to both that either answers, a run that does
+not answer counted at the 600 s limit, Merlin takes 2184 s in all and
+tddlog 31.2 s; over the 13 both answer, 384 s against tddlog's 28.7.
 Merlin is faster on 5 (pmc2_k51 0.24 s against 0.25, pmc2_k200 1.26 s
 against 1.28, pmc2_k400 2.71 s against 3.33 and pmc2_k800 5.48 s against
 7.01, the largest differences). tddlog alone answers caesar-iter_k3000,
-diamond_k6400, ladder_k1600, pmc1_k75 and simpleCaesar_k300.
+pmc1_k75 and simpleCaesar_k300.
 
-**pyAgrum.** pyAgrum ran 26 instances and answered 19 (1 fail, 1 run out
-of memory, 5 time out). Its answers differ from the reference's by at
-most 1.0e+00 relative (9.3e-302 absolute, caesar-iter_k1000) over 19
-instances. Over the 26 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, pyAgrum takes 4502
-s in all and tddlog 62.9 s; over the 19 both answer, 302 s against
-tddlog's 29.8. pyAgrum is faster on 3 (pmc2_k400 2.93 s against 3.33,
+**pyAgrum.** pyAgrum ran 18 instances and answered 13 (1 fail, 1 run out
+of memory, 3 time out). Its answers differ from the reference's by at
+most 1.0e+00 relative (9.3e-302 absolute, caesar-iter_k1000) over 13
+instances. Over the 18 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, pyAgrum takes 3131
+s in all and tddlog 60 s; over the 13 both answer, 131 s against
+tddlog's 28.7. pyAgrum is faster on 3 (pmc2_k400 2.93 s against 3.33,
 pmc2_k800 5.41 s against 7.01 and pmc2_k1600 10.9 s against 15.2).
-tddlog alone answers caesar-iter_k3000, diamond_k6400, ladder_k6400,
-pmc1_k75, simpleCaesar_k1000 and 2 more.
+tddlog alone answers caesar-iter_k3000, pmc1_k75, simpleCaesar_k1000,
+simpleCaesar_k300 and simpleCaesar_k3000.
 
-**pgmpy.** pgmpy ran 25 instances and answered 20 (1 run out of memory,
-4 time out). Its answers differ from the reference's by at most 1.0e+00
-relative (9.3e-302 absolute, caesar-iter_k1000) over 20 instances. Over
-the 25 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, pgmpy takes 4013 s in all and tddlog
-36.3 s; over the 20 both answer, 1013 s against tddlog's 30.2. pgmpy is
+**pgmpy.** pgmpy ran 16 instances and answered 13 (1 run out of memory,
+2 time out). Its answers differ from the reference's by at most 1.0e+00
+relative (9.3e-302 absolute, caesar-iter_k1000) over 13 instances. Over
+the 16 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, pgmpy takes 2396 s in all and tddlog
+31.2 s; over the 13 both answer, 596 s against tddlog's 28.7. pgmpy is
 faster on 1 (pmc2_k1600 12.5 s against 15.2). tddlog alone answers
-caesar-iter_k3000, diamond_k25600, ladder_k6400, pmc1_k75 and
-simpleCaesar_k300.
+caesar-iter_k3000, pmc1_k75 and simpleCaesar_k300.
 
-**libDAI.** libDAI ran 24 instances and answered 19 (1 run out of
-memory, 4 time out). Its answers differ from the reference's by at most
-4.9e-12 relative (4.8e-42 absolute, simpleCaesar_k100) over 19
-instances. Over the 24 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, libDAI takes 3457 s
-in all and tddlog 35.4 s; over the 19 both answer, 457 s against
-tddlog's 29.8. libDAI is faster on 5 (pmc2_k200 1.28 s against 1.28,
+**libDAI.** libDAI ran 15 instances and answered 12 (1 run out of
+memory, 2 time out). Its answers differ from the reference's by at most
+3.5e-13 relative (2.1e-42 absolute, simpleCaesar_k100) over 12
+instances. Over the 15 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, libDAI takes 1902 s
+in all and tddlog 30.2 s; over the 12 both answer, 102 s against
+tddlog's 28.3. libDAI is faster on 5 (pmc2_k200 1.28 s against 1.28,
 pmc2_k51 0.24 s against 0.25, pmc2_k400 2.68 s against 3.33 and
 pmc2_k800 5.43 s against 7.01, the largest differences). tddlog alone
-answers caesar-iter_k1000, diamond_k25600, ladder_k6400, pmc1_k75 and
-simpleCaesar_k300.
+answers caesar-iter_k1000, pmc1_k75 and simpleCaesar_k300.
 
-**TensorInference.jl greedy.** TensorInference.jl greedy ran 26
-instances and answered 16 (5 fail, 5 time out). Its answers differ from
-the reference's by at most 5.2e-12 relative (2.7e-42 absolute,
-simpleCaesar_k100) over 16 instances. Over the 26 instances given to
+**TensorInference.jl greedy.** TensorInference.jl greedy ran 20
+instances and answered 12 (5 fail, 3 time out). Its answers differ from
+the reference's by at most 8.2e-15 relative (9.8e-45 absolute,
+simpleCaesar_k100) over 12 instances. Over the 20 instances given to
 both that either answers, a run that does not answer counted at the 600
-s limit, TensorInference.jl greedy takes 7033 s in all and tddlog 356 s;
-over the 16 both answer, 1033 s against tddlog's 28.6.
-TensorInference.jl greedy is faster on 3 (pmc2_k400 2.67 s against 3.33,
-pmc2_k800 5.44 s against 7.01 and pmc2_k1600 10.9 s against 15.2).
-tddlog alone answers caesar-iter_k1000, diamond_k1600, ladder_k1600,
-pmc1_k150, pmc1_k300 and 5 more.
+s limit, TensorInference.jl greedy takes 5427 s in all and tddlog 355 s;
+over the 12 both answer, 627 s against tddlog's 28.3. TensorInference.jl
+greedy is faster on 3 (pmc2_k400 2.67 s against 3.33, pmc2_k800 5.44 s
+against 7.01 and pmc2_k1600 10.9 s against 15.2). tddlog alone answers
+caesar-iter_k1000, pmc1_k150, pmc1_k300, pmc1_k600, pmc1_k75 and 3 more.
 
-**TensorInference.jl treesa.** TensorInference.jl treesa ran 20
-instances and answered 14 (1 fail, 5 time out). Its answers differ from
-the reference's by at most 2.6e-13 relative (6.9e-44 absolute,
-caesar-iter_k100) over 14 instances. Over the 20 instances given to both
+**TensorInference.jl treesa.** TensorInference.jl treesa ran 15
+instances and answered 11 (1 fail, 3 time out). Its answers differ from
+the reference's by at most 0.0e+00 relative (0.0e+00 absolute,
+caesar-iter_k100) over 11 instances. Over the 15 instances given to both
 that either answers, a run that does not answer counted at the 600 s
-limit, TensorInference.jl treesa takes 4990 s in all and tddlog 48.1 s;
-over the 14 both answer, 1390 s against tddlog's 28. TensorInference.jl
+limit, TensorInference.jl treesa takes 2909 s in all and tddlog 47.7 s;
+over the 11 both answer, 509 s against tddlog's 27.9. TensorInference.jl
 treesa is faster on 1 (pmc2_k1600 14.1 s against 15.2). tddlog alone
-answers caesar-iter_k1000, diamond_k1600, ladder_k400, pmc1_k150,
-pmc1_k75 and 1 more.
+answers caesar-iter_k1000, pmc1_k150, pmc1_k75 and simpleCaesar_k100.
 
-**Roulette.** Roulette ran 30 instances and answered 23 (4 run out of
+**Roulette.** Roulette ran 22 instances and answered 17 (2 run out of
 memory, 3 underflow). Its answers differ from the reference's by at most
-1.0e+00 relative (9.3e-302 absolute, caesar-iter_k1000) over 23
+1.0e+00 relative (9.3e-302 absolute, caesar-iter_k1000) over 17
 instances. Roulette's answer is wrong, zero or underflowed on
-caesar-iter_k3000, simpleCaesar_k1000 and simpleCaesar_k300. Over the 30
+caesar-iter_k3000, simpleCaesar_k1000 and simpleCaesar_k300. Over the 22
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, Roulette takes 5404 s in all and tddlog 643
-s; over the 23 both answer, 1204 s against tddlog's 588. Roulette is
+counted at the 600 s limit, Roulette takes 4180 s in all and tddlog 638
+s; over the 17 both answer, 1180 s against tddlog's 587. Roulette is
 faster on 5 (pmc1_k10 0.029 s against 0.27, pmc1_k20 0.042 s against
 0.29, pmc1_k40 0.069 s against 0.34 and pmc1_k300 151 s against 171, the
 largest differences). tddlog alone answers caesar-iter_k10000,
-caesar-iter_k3000, diamond_k6400, ladder_k6400, simpleCaesar_k1000 and 2
-more.
+caesar-iter_k3000, simpleCaesar_k1000, simpleCaesar_k300 and
+simpleCaesar_k3000.
 
 | instance | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Ace log space | Merlin | pyAgrum | pgmpy | libDAI | TI greedy | TI treesa | Roulette | Roulette process | ProbLog | ref | tddlog diff | Geni diff | noDice diff | Psi diff | Genfer diff | SPPL diff | Pluck diff | PITA diff | aspmc diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Ace diff | Ace c2d diff | Ace log space diff | Merlin diff | pyAgrum diff | pgmpy diff | libDAI diff | TI greedy diff | TI treesa diff | Roulette diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| dice_caesar-iter_k100 | 0.028 | err | 0.172 | err | 0.04 | 14.9 | 6.04 | wrong | 3.95 | 0.147 | 0.151 | 1.14 | 1.27 | 1.28 | 3.31 | 3.5 | 3.14 | 0.833 | 0.869 | 5.75 | 3.31 | 65.3 | 342 | 0.078 | 0.784 | 1.44 | alea | 5.6e-44 / 2.5e-13 |  | 7.9e-31 / 1.0e+00 |  | 6.9e-44 / 2.6e-13 | 2.2e-16 / 2.7e-13 | 6.9e-44 / 2.6e-13 | 1.0e+00 / 1.6e+60 | 6.4e-44 / 2.5e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.8e-44 / 2.6e-13 | 5.6e-44 / 2.5e-13 | 1.1e-43 / 1.4e-13 | 7.9e-31 / 1.0e+00 | 5.7e-44 / 7.6e-14 | 5.7e-44 / 7.6e-14 | 5.7e-44 / 7.6e-14 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 | 6.9e-44 / 2.6e-13 |
-| dice_caesar-iter_k1000 | 0.41 | err | 18.4 | err | 0.399 | >600 | 43.9 | >600 | 437 | 0.172 | 0.214 | 6.04 | 1.68 | 1.65 | err | err | 15.4 | 355 | 98.9 | 339 | >600 | >600 | >600 | 3.95 | 4.76 | oom | alea | 4.3e-312 / 4.6e-11 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 4.3e-312 / 4.6e-11 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 |  |  | 5.5e-312 / 5.9e-11 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 |  |  |  | 9.3e-302 / 1.0e+00 |
-| dice_caesar-iter_k3000 | 0.928 | err | oom | err | err | - | err | - | >600 | err | 0.366 | err | err | err | err | err | 50.5 | >600 | >600 | >600 | - | - | - | underflow | underflow | >600 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
-| dice_caesar-iter_k10000 | 2.6 | err | - | err | err | - | err | - | >600 | err | 1.47 | err | err | err | >600 | >600 | >600 | - | - | - | - | - | - | oom | oom | >600 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_caesar-iter_k30000 | 8.88 | err | - | err | err | - | - | - | - | err | 7 | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_caesar-iter_k100000 | 27.7 | err | - | err | err | - | - | - | - | err | 56.9 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| dice_caesar-iter_k100 | 0.028 | err | 0.172 | err | 0.04 | 14.9 | 6.04 | wrong | 3.95 | 0.147 | 0.151 | 1.14 | 1.27 | 1.28 | 3.31 | 3.5 | 3.14 | 0.833 | 0.869 | 5.75 | 3.31 | 65.3 | 342 | 0.078 | 0.784 | 1.44 | storm-exact | 1.2e-44 / 1.6e-14 |  | 7.9e-31 / 1.0e+00 |  | 0.0e+00 / 0.0e+00 | 2.2e-16 / 1.8e-13 | 0.0e+00 / 0.0e+00 | 1.0e+00 / 1.6e+60 | 4.4e-45 / 5.6e-15 | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.8e-46 / 2.2e-16 | 1.3e-44 / 1.6e-14 | 1.8e-43 / 3.2e-13 | 7.9e-31 / 1.0e+00 | 1.2e-44 / 1.8e-13 | 1.2e-44 / 1.8e-13 | 1.2e-44 / 1.8e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_caesar-iter_k1000 | 0.41 | err | 18.4 | err | 0.399 | >600 | 43.9 | >600 | 437 | 0.172 | 0.214 | 6.04 | 1.68 | 1.65 | err | err | 15.4 | 355 | 98.9 | 339 | >600 | >600 | >600 | 3.95 | 4.76 | oom | storm-exact | 1.6e-314 / 1.7e-13 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 |  | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | ref | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 |  |  | 1.2e-312 / 1.3e-11 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 | 9.3e-302 / 1.0e+00 |  |  |  | 9.3e-302 / 1.0e+00 |
+| dice_caesar-iter_k3000 | 0.928 | err | oom | err | err | - | err | - | >600 | err | 0.366 | err | err | err | err | err | 50.5 | >600 | >600 | >600 | - | - | - | underflow | underflow | >600 | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | ref |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| dice_caesar-iter_k10000 | 2.6 | err | - | err | err | - | err | - | >600 | err | 1.47 | err | err | err | >600 | >600 | >600 | - | - | - | - | - | - | oom | oom | >600 | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| dice_caesar-iter_k30000 | 8.88 | err | - | err | err | - | - | - | - | err | 7 | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| dice_caesar-iter_k100000 | 27.7 | err | - | err | err | - | - | - | - | err | 56.9 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | - | - | - | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_caesar-iter_k300000 | 90.6 | oom | - | err | err | - | - | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_diamond_k100 | 0.01 | 0.019 | 0.043 | err | 0.008 | 3 | 5.05 | 0.809 | 2.6 | 0.148 | 0.152 | 0.721 | 1.28 | 1.28 | 2.08 | 2.31 |  | 0.127 | 0.337 | 2.1 | 0.153 | 45 | 132 | 0.046 | 0.743 | 1.18 | alea | 4.2e-15 / 4.2e-15 | 7.5e-07 / 7.6e-07 | 6.5e-07 / 6.5e-07 |  | 4.0e-15 / 4.0e-15 | 4.2e-15 / 4.2e-15 | 4.4e-15 / 4.5e-15 | 4.3e-15 / 4.4e-15 | 4.2e-15 / 4.2e-15 | 1.5e-14 / 1.5e-14 | 4.8e-15 / 4.8e-15 | 4.4e-15 / 4.5e-15 | 4.4e-15 / 4.5e-15 | 4.4e-15 / 4.5e-15 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 |  | 3.5e-07 / 3.6e-07 | 1.1e-14 / 1.1e-14 | 1.1e-14 / 1.1e-14 | 1.1e-14 / 1.1e-14 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 |
-| dice_diamond_k400 | 0.027 | wrong | 0.234 | err | 0.025 | 13.7 | 6.13 | 120 | 3.35 | 0.154 | 0.166 | 2.62 | 1.28 | 1.27 | 3.43 | 4.16 |  | 0.555 | 1.45 | 3.27 | 1.1 | 81.1 | 520 | 0.463 | 1.17 | 16.4 | alea | 1.8e-14 / 1.8e-14 | 3.0e-06 / 3.0e-06 | 1.8e-07 / 1.9e-07 |  | 1.3e-14 / 1.3e-14 | 1.7e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.9e-14 / 1.9e-14 | 1.8e-14 / 1.8e-14 | 6.0e-14 / 6.1e-14 | 1.9e-14 / 1.9e-14 | 1.6e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.8e-14 / 1.8e-14 | 1.9e-14 / 2.0e-14 |  | 1.8e-07 / 1.9e-07 | 2.2e-13 / 2.3e-13 | 2.2e-13 / 2.3e-13 | 2.2e-13 / 2.3e-13 | 1.8e-14 / 1.9e-14 | 1.8e-14 / 1.9e-14 | 1.9e-14 / 1.9e-14 |
-| dice_diamond_k1600 | 0.135 | wrong | 3.6 | err | 0.101 | 145 | 31.8 | >600 | 10.4 | 0.166 | 0.346 | 8.24 | 1.52 | 1.53 | 8.14 | wrong |  | 4.83 | 25 | 16.7 | 15.6 | >600 | >600 | 8.27 | 9.17 | 352 | alea | 6.4e-14 / 7.0e-14 | 1.2e-05 / 1.3e-05 | 5.0e-07 / 5.4e-07 |  | 5.2e-14 / 5.6e-14 | 6.7e-14 / 7.3e-14 | 6.3e-14 / 6.8e-14 |  | 6.4e-14 / 7.0e-14 | 2.3e-13 / 2.5e-13 | 7.1e-14 / 7.7e-14 | 6.3e-14 / 6.8e-14 | 6.3e-14 / 6.8e-14 | 6.3e-14 / 6.8e-14 | 6.9e-14 / 7.5e-14 | inf / inf |  | 5.0e-07 / 5.4e-07 | 3.2e-13 / 3.4e-13 | 3.2e-13 / 3.4e-13 | 3.2e-13 / 3.4e-13 |  |  | 7.2e-14 / 7.8e-14 |
-| dice_diamond_k6400 | 0.353 | wrong | oom | err | err | >600 | err | - | 98.5 | 0.209 | 4.86 | 21.2 | 7.75 | 8.55 | 21.8 | wrong |  | oom | >600 | 277 | 258 | - | - | oom | oom | >600 | alea | 1.8e-13 / 2.5e-13 | 4.0e-05 / 5.5e-05 |  |  |  |  |  |  | 1.8e-13 / 2.5e-13 | 7.4e-13 / 1.0e-12 | 2.0e-13 / 2.8e-13 | 1.8e-13 / 2.4e-13 | 1.8e-13 / 2.4e-13 | 1.8e-13 / 2.4e-13 | 2.0e-13 / 2.8e-13 | inf / inf |  |  |  | 1.9e-13 / 2.6e-13 | 1.9e-13 / 2.6e-13 |  |  |  |
-| dice_diamond_k25600 | 2.26 | wrong | - | err | err | - | err | - | >600 | 0.459 | 147 | 274 | 171 | 160 | 47.5 | wrong |  | - | - | >600 | >600 | - | - | - | - | >600 | ace-auto | 4.6e-14 / 1.7e-13 | 6.3e-05 / 2.3e-04 |  |  |  |  |  |  |  | 9.1e-13 / 3.3e-12 | 8.0e-15 / 2.9e-14 | 4.4e-14 / 1.6e-13 | 4.4e-14 / 1.6e-13 | 4.4e-14 / 1.6e-13 |  | inf / inf |  |  |  |  |  |  |  |  |
-| dice_diamond_k102400 | 7.5 | wrong | - | err | err | - | - | - | - | 1.16 | >600 | >600 | >600 | >600 | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref | 9.7e-05 / 1.6e-02 |  |  |  |  |  |  |  | 8.3e-14 / 1.4e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_diamond_k409600 | 31.1 | wrong | - | err | err | - | - | - | - | 4.23 | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | - | - | - | tddlog | ref | 2.1e-03 / 1.6e+06 |  |  |  |  |  |  |  | 7.1e-20 / 5.6e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_diamond_k1638400 | 142 | oom | - | err | err | - | - | - | - | 16.9 | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  | 5.9e-46 / 2.2e-10 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_ladder_k100 | 0.057 | 0.06 | >600 | err | 0.075 | 4.13 | 5.63 | 9.66 | 2.98 | 0.302 | 0.305 | 6.89 | 2.55 | 2.54 | 2.6 | 3.07 |  | 0.268 | 0.601 | 2.76 | 0.396 | 47.1 | 228 | 0.083 | 0.786 | 2.24 | alea | 5.6e-16 / 1.2e-15 | 2.6e-07 / 5.4e-07 |  |  | 5.6e-16 / 1.2e-15 | 6.1e-16 / 1.3e-15 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 | 7.2e-16 / 1.5e-15 | 5.6e-16 / 1.2e-15 | 7.2e-16 / 1.5e-15 | 7.2e-16 / 1.5e-15 | 7.2e-16 / 1.5e-15 | 3.9e-16 / 8.2e-16 | 5.6e-16 / 1.2e-15 |  | 1.6e-07 / 3.3e-07 | 6.8e-14 / 1.4e-13 | 6.8e-14 / 1.4e-13 | 6.8e-14 / 1.4e-13 | 6.7e-16 / 1.4e-15 | 6.7e-16 / 1.4e-15 | 7.2e-16 / 1.5e-15 |
-| dice_ladder_k400 | 0.196 | 0.234 | >600 | err | 0.289 | 23.8 | 16 | >600 | 7.89 | 0.306 | 0.336 | 21.3 | 2.52 | 2.55 | 5.53 | 8.08 |  | 1.65 | 5.06 | 8.88 | 4.44 | 233 | >600 | 0.869 | 1.59 | oom | alea | 1.9e-15 / 4.6e-15 | 9.7e-07 / 2.4e-06 |  |  | 2.5e-15 / 6.1e-15 | 1.8e-15 / 4.3e-15 | 2.1e-15 / 5.2e-15 |  | 2.4e-15 / 6.0e-15 | 2.7e-15 / 6.5e-15 | 1.8e-15 / 4.5e-15 | 2.8e-15 / 6.9e-15 | 2.8e-15 / 6.9e-15 | 2.8e-15 / 6.9e-15 | 2.4e-15 / 5.8e-15 | 2.5e-15 / 6.1e-15 |  | 1.3e-07 / 3.1e-07 | 4.9e-13 / 1.2e-12 | 4.9e-13 / 1.2e-12 | 4.9e-13 / 1.2e-12 | 2.7e-15 / 6.5e-15 |  | 2.4e-15 / 5.8e-15 |
-| dice_ladder_k1600 | 0.462 | wrong | >600 | err | err | 246 | err | - | 103 | 0.327 | 0.807 | 84 | 3.29 | 3.23 | err | err |  | oom | 139 | 106 | 74.5 | >600 | - | 14.5 | 15.5 | - | alea | 3.9e-15 / 1.7e-14 | 1.9e-06 / 8.6e-06 |  |  |  | 3.2e-15 / 1.4e-14 |  |  | 4.7e-15 / 2.1e-14 | 4.5e-15 / 2.0e-14 | 4.1e-15 / 1.8e-14 | 4.7e-15 / 2.1e-14 | 4.7e-15 / 2.1e-14 | 4.7e-15 / 2.1e-14 |  |  |  |  | 3.7e-13 / 1.7e-12 | 3.7e-13 / 1.7e-12 | 3.7e-13 / 1.7e-12 |  |  | 4.4e-15 / 2.0e-14 |
-| dice_ladder_k6400 | 1.45 | 4.15 | oom | err | err | >600 | - | - | oom | 0.397 | 11.7 | >600 | 22.8 | 20.8 | err | err |  | - | >600 | >600 | >600 | - | - | oom | oom | - | tddlog | ref | 8.9e-07 / 4.4e-05 |  |  |  |  |  |  |  | 2.0e-16 / 1.0e-14 | 1.0e-16 / 5.1e-15 |  | 2.8e-16 / 1.4e-14 | 2.8e-16 / 1.4e-14 |  |  |  |  |  |  |  |  |  |  |
-| dice_ladder_k25600 | 7.16 | wrong | - | err | err | - | err | - | >600 | 0.922 | 392 | - | >600 | >600 | err | err |  | - | - | - | - | - | - | - | - | >600 | tddlog | ref | 2.8e-05 / 2.1e+01 |  |  |  |  |  |  |  | 3.7e-20 / 2.7e-14 | 2.3e-20 / 1.6e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_ladder_k102400 | 26.5 | wrong | - | err | err | - | - | - | - | 2.75 | >600 | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref | 3.0e-05 / 1.0e+18 |  |  |  |  |  |  |  | 3.5e-36 / 1.2e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_ladder_k409600 | 114 | oom | - | err | err | - | - | - | - | 9.48 | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  | 5.8e-103 / 1.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_ladder_k1638400 | oom | - | - | err | err | - | - | - | - | 37.9 | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_pmc1_k10 | 0.145 | 0.005 | >600 | err | >600 | >600 | 9.24 | 1.24 | 6.86 | 0.476 | 0.499 | 8.22 | 1.96 | 2 | 1.33 | 1.39 |  | 0.296 | 0.438 | 2.27 | 0.309 | 15.5 | 16.4 | 0.029 | 0.741 | 2.57 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc1_k20 | 0.257 | 0.005 | >600 | err | - | - | 9.91 | 1.32 | 25.8 | 107 | 134 | 7.7 | 2 | 1.97 | 1.33 | 1.42 |  | 0.316 | 0.455 | 2.32 | 0.32 | 15.7 | 16.4 | 0.042 | 0.761 | 9.37 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc1_k10 | 0.145 | 0.005 | >600 | err | >600 | >600 | 9.24 | 1.24 | 6.86 | 0.476 | 0.499 | 8.22 | 1.96 | 2 | 1.33 | 1.39 |  | 0.296 | 0.438 | 2.27 | 0.309 | 15.5 | 16.4 | 0.029 | 0.741 | 2.57 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc1_k20 | 0.257 | 0.005 | >600 | err | - | - | 9.91 | 1.32 | 25.8 | 107 | 134 | 7.7 | 2 | 1.97 | 1.33 | 1.42 |  | 0.316 | 0.455 | 2.32 | 0.32 | 15.7 | 16.4 | 0.042 | 0.761 | 9.37 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | dice_pmc1_k40 | 0.174 | 0.005 | >600 | err | - | - | 10.3 | 1.5 | 102 | >600 | >600 | 7.71 | 2.49 | 2.57 | 1.33 | 1.39 |  | 0.271 | 0.39 | 2.27 | 0.255 | 15.3 | 16.1 | 0.069 | 0.775 | 30.6 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | dice_pmc1_k75 | 0.694 | >600 | >600 | err | - | - | 13.9 | 2.28 | >600 | - | - | 10.2 | 145 | 156 | 3.67 | 3.7 |  | oom | oom | oom | oom | err | err | 11.8 | 12.6 | oom | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
 | dice_pmc1_k150 | 18.3 | - | - | err | - | - | 19.6 | 4.03 | >600 | - | - | 17.3 | 285 | 286 | >600 | >600 |  | - | - | - | - | err | >600 | 62.7 | 63.5 | oom | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
 | dice_pmc1_k300 | 94.2 | - | - | err | - | - | 26 | 11.2 | - | - | - | 22.1 | 395 | 413 | - | - |  | - | - | - | - | err | - | 151 | 152 | - | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
 | dice_pmc1_k600 | 184 | - | - | err | - | - | 54.5 | 36.3 | - | - | - | 29.9 | oom | oom | - | - |  | - | - | - | - | err | - | 329 | 330 | - | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k10 | 0.061 | 0.005 | >600 | err | >600 | >600 | 8 | 0.743 | 3.96 | 0.253 | 0.264 | 3.54 | 1.34 | 1.36 | 1.23 | 1.27 |  | 0.115 | 0.271 | 2.1 | 0.114 | 15.4 | 16.5 | 0.01 | 0.772 | 1.8 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k20 | 0.104 | 0.005 | >600 | err | - | - | 8.29 | 0.796 | 11.6 | 0.426 | 0.499 | 3.71 | 1.38 | 1.33 | 1.19 | 1.25 |  | 0.126 | 0.282 | 2.14 | 0.135 | 15.5 | 16.4 | 0.026 | 0.755 | 4.85 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k51 | 0.24 | >600 | >600 | err | - | - | 9.73 | 1.02 | 96.9 | 0.82 | 1.06 | 5.62 | 2.17 | 2.06 | 1.5 | 1.54 |  | 0.244 | 0.389 | 2.26 | 0.239 | 25.6 | 31.2 | 2.96 | 3.68 | oom | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k200 | 1.28 | - | - | err | - | - | 14.3 | 2.99 | >600 | 2.08 | 2.91 | 10.8 | 5.63 | 5.6 | 1.98 | 2.03 |  | 1.26 | 1.37 | 2.76 | 1.28 | 20.6 | 24.2 | 37.8 | 38.5 | oom | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k400 | 3.33 | - | - | err | - | - | 30.2 | 17.7 | >600 | 7.53 | 10.9 | 15.9 | 11.8 | 13.2 | 3.92 | 3.99 |  | 2.71 | 2.93 | 4.65 | 2.68 | 2.67 | 6.62 | 73 | 73.8 | >600 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k800 | 7.01 | - | - | err | - | - | 52.4 | 57.1 | - | 12.7 | 17.9 | 20.5 | 20.1 | 20 | 6.44 | 6.61 |  | 5.48 | 5.41 | 7.16 | 5.43 | 5.44 | 9.1 | 156 | 157 | - | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_pmc2_k1600 | 15.2 | - | - | err | - | - | 103 | 204 | - | 23.5 | 33.3 | 32.8 | 32.1 | 33 | 11.9 | 11.6 |  | 10.4 | 10.9 | 12.5 | 10.4 | 10.9 | 14.1 | 350 | 351 | - | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| dice_simpleCaesar_k100 | 0.352 | err | 5.01 | err | 382 | >600 | 57.2 | >600 | 33.2 | 0.198 | 0.315 | 4.27 | 1.56 | 1.51 | 8.56 | 8.83 | 8.38 | 7.28 | 8.71 | 211 | 77.7 | 419 | >600 | 0.865 | 1.62 | >600 | alea | 2.7e-42 / 5.2e-12 |  | 5.9e-30 / 1.0e+00 |  | 2.7e-42 / 5.2e-12 |  | 2.7e-42 / 5.2e-12 |  | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.3e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.3e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.2e-12 | 2.7e-42 / 5.2e-12 | 6.8e-43 / 5.5e-12 | 5.9e-30 / 1.0e+00 | 4.8e-42 / 4.9e-12 | 4.8e-42 / 4.9e-12 | 4.8e-42 / 4.9e-12 | 2.7e-42 / 5.2e-12 |  | 2.7e-42 / 5.2e-12 |
-| dice_simpleCaesar_k300 | 0.867 | err | wrong | err | >600 | - | err | - | >600 | err | 0.66 | err | err | err | err | err | 16.9 | oom | err | >600 | >600 | err | - | underflow | underflow | - | alea | 2.7e-99 / 1.3e-11 |  | 5.0e-01 / 2.4e+87 |  |  |  |  |  |  |  | 2.7e-99 / 1.3e-11 |  |  |  |  |  | 1.7e-99 / 8.1e-12 |  |  |  |  |  |  |  |
-| dice_simpleCaesar_k1000 | 3.9 | err | oom | err | - | - | - | - | - | err | 1.91 | err | err | err | err | err | 51.4 | - | >600 | - | - | >600 | - | underflow | underflow | - | alea | 1.0e-302 / 1.9e-10 |  |  |  |  |  |  |  |  |  | 1.0e-302 / 1.9e-10 |  |  |  |  |  | 1.5e-302 / 2.8e-10 |  |  |  |  |  |  |  |
-| dice_simpleCaesar_k3000 | 23.3 | >600 | - | err | - | - | err | - | >600 | err | 7.74 | err | err | err | err | err | 159 | - | >600 | - | - | >600 | - | oom | oom | >600 | ace-Xlog | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| dice_simpleCaesar_k10000 | 47.2 | - | - | err | - | - | - | - | - | err | 30.1 | err | err | err | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| dice_pmc2_k10 | 0.061 | 0.005 | >600 | err | >600 | >600 | 8 | 0.743 | 3.96 | 0.253 | 0.264 | 3.54 | 1.34 | 1.36 | 1.23 | 1.27 |  | 0.115 | 0.271 | 2.1 | 0.114 | 15.4 | 16.5 | 0.01 | 0.772 | 1.8 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc2_k20 | 0.104 | 0.005 | >600 | err | - | - | 8.29 | 0.796 | 11.6 | 0.426 | 0.499 | 3.71 | 1.38 | 1.33 | 1.19 | 1.25 |  | 0.126 | 0.282 | 2.14 | 0.135 | 15.5 | 16.4 | 0.026 | 0.755 | 4.85 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc2_k51 | 0.24 | >600 | >600 | err | - | - | 9.73 | 1.02 | 96.9 | 0.82 | 1.06 | 5.62 | 2.17 | 2.06 | 1.5 | 1.54 |  | 0.244 | 0.389 | 2.26 | 0.239 | 25.6 | 31.2 | 2.96 | 3.68 | oom | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc2_k200 | 1.28 | - | - | err | - | - | 14.3 | 2.99 | >600 | 2.08 | 2.91 | 10.8 | 5.63 | 5.6 | 1.98 | 2.03 |  | 1.26 | 1.37 | 2.76 | 1.28 | 20.6 | 24.2 | 37.8 | 38.5 | oom | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc2_k400 | 3.33 | - | - | err | - | - | 30.2 | 17.7 | >600 | 7.53 | 10.9 | 15.9 | 11.8 | 13.2 | 3.92 | 3.99 |  | 2.71 | 2.93 | 4.65 | 2.68 | 2.67 | 6.62 | 73 | 73.8 | >600 | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc2_k800 | 7.01 | - | - | err | - | - | 52.4 | 57.1 | - | 12.7 | 17.9 | 20.5 | 20.1 | 20 | 6.44 | 6.61 |  | 5.48 | 5.41 | 7.16 | 5.43 | 5.44 | 9.1 | 156 | 157 | - | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_pmc2_k1600 | 15.2 | - | - | err | - | - | 103 | 204 | - | 23.5 | 33.3 | 32.8 | 32.1 | 33 | 11.9 | 11.6 |  | 10.4 | 10.9 | 12.5 | 10.4 | 10.9 | 14.1 | 350 | 351 | - | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| dice_simpleCaesar_k100 | 0.352 | err | 5.01 | err | 382 | >600 | 57.2 | >600 | 33.2 | 0.198 | 0.315 | 4.27 | 1.56 | 1.51 | 8.56 | 8.83 | 8.38 | 7.28 | 8.71 | 211 | 77.7 | 419 | >600 | 0.865 | 1.62 | >600 | storm-exact | 9.1e-45 / 9.1e-14 |  | 5.9e-30 / 1.0e+00 |  | 9.1e-45 / 3.2e-15 |  | 9.1e-45 / 9.1e-14 |  | 1.3e-44 / 9.2e-14 | 9.1e-45 / 1.4e-14 | ref | 9.1e-45 / 1.4e-14 | 9.1e-45 / 3.2e-15 | 9.1e-45 / 3.2e-15 | 9.1e-45 / 2.8e-15 | 9.1e-45 / 3.2e-15 | 3.4e-42 / 5.7e-13 | 5.9e-30 / 1.0e+00 | 2.1e-42 / 3.5e-13 | 2.1e-42 / 3.5e-13 | 2.1e-42 / 3.5e-13 | 9.8e-45 / 8.2e-15 |  | 9.1e-45 / 9.1e-14 |
+| dice_simpleCaesar_k300 | 0.867 | err | wrong | err | >600 | - | err | - | >600 | err | 0.66 | err | err | err | err | err | 16.9 | oom | err | >600 | >600 | err | - | underflow | underflow | - | storm-exact | 9.5e-103 / 4.5e-15 |  | 5.0e-01 / 2.4e+87 |  |  |  |  |  |  |  | ref |  |  |  |  |  | 1.0e-99 / 4.8e-12 |  |  |  |  |  |  |  |
+| dice_simpleCaesar_k1000 | 3.9 | err | oom | err | - | - | - | - | - | err | 1.91 | err | err | err | err | err | 51.4 | - | >600 | - | - | >600 | - | underflow | underflow | - | storm-exact | 9.5e-307 / 1.7e-14 |  |  |  |  |  |  |  |  |  | ref |  |  |  |  |  | 4.9e-303 / 8.8e-11 |  |  |  |  |  |  |  |
+| dice_simpleCaesar_k3000 | 23.3 | >600 | - | err | - | - | err | - | >600 | err | 7.74 | err | err | err | err | err | 159 | - | >600 | - | - | >600 | - | oom | oom | >600 | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | ref |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| dice_simpleCaesar_k10000 | 47.2 | - | - | err | - | - | - | - | - | err | 30.1 | err | err | err | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_simpleCaesar_k30000 | 142 | - | - | err | - | - | - | - | - | err | err | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | dice_simpleCaesar_k100000 | oom | - | - | err | - | - | - | - | - | err | - | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
@@ -3711,358 +3701,325 @@ largest absolute and relative difference from the reference named in
 | family | instances | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Scallop | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Merlin | pyAgrum | pgmpy | libDAI | TensorInference.jl greedy | TensorInference.jl treesa | Roulette |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | arith | 28 | 26 | 2 of 28 | 0 of 28 | 1 of 28 | 3 of 28 | 2 of 28 | 19 of 28 | 18 of 28 | 20 of 28 | 2 of 28 | 13 of 28 | 12 of 28 | 19 of 28 | 9 of 28 | 9 of 28 | 20 of 25 | 19 of 24 | 14 of 22 | 14 of 22 | 13 of 21 | 14 of 22 | 12 of 20 | 15 of 21 | 22 of 25 |
-| nodice | 69 | 68 | 32 of 66 | 51 of 58 | 1 of 69 | 49 of 63 | 35 of 56 | 59 of 64 | 50 of 55 | 57 of 64 | 3 of 32 | 63 of 67 | 61 of 66 | 63 of 66 | 61 of 66 | 62 of 67 | 61 of 64 | 53 of 63 | 53 of 60 | 54 of 60 | 52 of 66 | 54 of 60 | 39 of 59 | 50 of 55 | 61 of 65 |
-| pluck | 4 | 4 | 0 of 4 | 0 of 4 | 0 of 4 | 0 of 4 | 0 of 4 | 1 of 4 | 3 of 4 | 3 of 4 | 0 of 4 | 0 of 4 | 0 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 0 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 2 of 4 | 3 of 4 |
+| nodice | 43 | 42 | 19 of 40 | 32 of 38 | 1 of 43 | 27 of 37 | 13 of 33 | 35 of 39 | 34 of 38 | 32 of 38 | 1 of 28 | 37 of 41 | 35 of 40 | 41 of 43 | 37 of 41 | 38 of 42 | 35 of 38 | 32 of 37 | 28 of 34 | 29 of 34 | 26 of 40 | 28 of 34 | 18 of 37 | 34 of 38 | 37 of 40 |
+| pluck | 4 | 4 | 0 of 4 | 0 of 4 | 0 of 4 | 0 of 4 | 0 of 4 | 1 of 4 | 3 of 4 | 3 of 4 | 0 of 4 | 0 of 4 | 0 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 1 of 4 | 2 of 4 | 3 of 4 |
 
-**Geni.** Geni ran 98 instances and answered 34 (1 fail, 4 run out of
-memory, 44 time out, 15 answer wrongly). Its answers differ from the
+**Geni.** Geni ran 72 instances and answered 21 (1 fail, 4 run out of
+memory, 44 time out, 2 answer wrongly). Its answers differ from the
 reference's by at most 3.2e-06 relative (8.0e-07 absolute,
-arith_linext_small) over 34 instances. Geni's answer is wrong, zero or
-underflowed on brp4096-2, brp64-2, diamond-1000-p, diamond-10000-p,
-diamond-200-p and 10 more. Over the 96 instances given to both that
-either answers, a run that does not answer counted at the 600 s limit,
-Geni takes 37329 s in all and tddlog 1052 s; over the 34 both answer,
-129 s against tddlog's 9.78. Geni is faster on 3 (hepar2 0.15 s against
-0.76, brp256-2 0.31 s against 1.29 and brp1024-2 1.24 s against 6.39).
-tddlog alone answers arith_book, arith_caesar_huge, arith_caesar_large,
-arith_caesar_medium, arith_caesar_small and 57 more.
+arith_linext_small) over 21 instances. Geni's answer is wrong, zero or
+underflowed on brp4096-2 and brp64-2. Over the 70 instances given to
+both that either answers, a run that does not answer counted at the 600
+s limit, Geni takes 29528 s in all and tddlog 1036 s; over the 21 both
+answer, 128 s against tddlog's 9.34. Geni is faster on 3 (hepar2 0.15 s
+against 0.76, brp256-2 0.31 s against 1.29 and brp1024-2 1.24 s against
+6.39). tddlog alone answers arith_book, arith_caesar_huge,
+arith_caesar_large, arith_caesar_medium, arith_caesar_small and 44 more.
 
-**noDice.** noDice ran 90 instances and answered 51 (9 fail, 16 run out
-of memory, 12 time out, 2 print zeros). Its answers differ from the
+**noDice.** noDice ran 70 instances and answered 32 (9 fail, 16 run out
+of memory, 11 time out, 2 print zeros). Its answers differ from the
 reference's by at most 4.9e-02 relative (4.6e-07 absolute, uf20-0990)
-over 51 instances. noDice's answer is wrong, zero or underflowed on
-3sat-0 and string_editing. Over the 87 instances given to both that
+over 32 instances. noDice's answer is wrong, zero or underflowed on
+3sat-0 and string_editing. Over the 67 instances given to both that
 either answers, a run that does not answer counted at the 600 s limit,
-noDice takes 23485 s in all and tddlog 697 s; over the 51 both answer,
-1885 s against tddlog's 8.68. tddlog alone answers arith_book,
+noDice takes 22005 s in all and tddlog 681 s; over the 32 both answer,
+1005 s against tddlog's 3.03. tddlog alone answers arith_book,
 arith_caesar_huge, arith_caesar_large, arith_caesar_medium,
-arith_caesar_small and 31 more.
+arith_caesar_small and 30 more.
 
-**Psi.** Psi ran 101 instances and answered 2 (52 fail, 17 run out of
-memory, 30 time out). Its answers differ from the reference's by at most
-4.4e-16 relative (2.2e-16 absolute, arith_linext_small) over 2
-instances. Over the 98 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, Psi takes 57797 s
-in all and tddlog 1120 s; over the 2 both answer, 197 s against tddlog's
-0.01. tddlog alone answers arith_book, arith_caesar_huge,
-arith_caesar_large, arith_caesar_medium, arith_caesar_small and 91 more.
-
-**Genfer.** Genfer ran 95 instances and answered 52 (14 fail, 28 run out
-of memory, 1 time out). Its answers differ from the reference's by at
-most 7.0e-14 relative (6.3e-14 absolute, diamond-2000-p) over 52
-instances. Over the 93 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, Genfer takes 25155
-s in all and tddlog 1051 s; over the 52 both answer, 555 s against
-tddlog's 11.4. Genfer is faster on 5 (diamond-2000-p 0.24 s against
-0.35, brp64-2 0.081 s against 0.28, hepar2 0.27 s against 0.76 and
-brp256-2 0.31 s against 1.29, the largest differences). tddlog alone
+**Psi.** Psi ran 75 instances and answered 2 (26 fail, 17 run out of
+memory, 30 time out). It is the reference on 2 instances. Over the 72
+instances given to both that either answers, a run that does not answer
+counted at the 600 s limit, Psi takes 42197 s in all and tddlog 1104 s;
+over the 2 both answer, 197 s against tddlog's 0.009. tddlog alone
 answers arith_book, arith_caesar_huge, arith_caesar_large,
-arith_caesar_medium, arith_caesar_small and 36 more.
+arith_caesar_medium, arith_caesar_small and 65 more.
 
-**SPPL.** SPPL ran 88 instances and answered 37 (3 fail, 1 run out of
-memory, 47 time out). Its answers differ from the reference's by at most
-8.4e-14 relative (7.6e-14 absolute, diamond-2000-p) over 37 instances.
-Over the 86 instances given to both that either answers, a run that does
-not answer counted at the 600 s limit, SPPL takes 30969 s in all and
-tddlog 633 s; over the 37 both answer, 1569 s against tddlog's 4.58.
-tddlog alone answers arith_book, arith_caesar_huge, arith_caesar_large,
-arith_caesar_medium, arith_caesar_small and 44 more.
+**Genfer.** Genfer ran 69 instances and answered 30 (10 fail, 28 run out
+of memory, 1 time out). Its answers differ from the reference's by at
+most 2.2e-14 relative (2.1e-14 absolute, brp1024-2) over 30 instances.
+Over the 67 instances given to both that either answers, a run that does
+not answer counted at the 600 s limit, Genfer takes 22754 s in all and
+tddlog 1036 s; over the 30 both answer, 554 s against tddlog's 9.83.
+Genfer is faster on 4 (brp64-2 0.081 s against 0.28, hepar2 0.27 s
+against 0.76, brp256-2 0.31 s against 1.29 and brp1024-2 2.3 s against
+6.39). tddlog alone answers arith_book, arith_caesar_huge,
+arith_caesar_large, arith_caesar_medium, arith_caesar_small and 32 more.
 
-**Pluck.** Pluck ran 96 instances and answered 79 (6 fail, 9 run out of
+**SPPL.** SPPL ran 65 instances and answered 15 (3 fail, 1 run out of
+memory, 46 time out). Its answers differ from the reference's by at most
+1.5e-15 relative (2.8e-17 absolute, water) over 15 instances. Over the
+63 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, SPPL takes 29499 s in all and tddlog
+621 s; over the 15 both answer, 699 s against tddlog's 3.02. tddlog
+alone answers arith_book, arith_caesar_huge, arith_caesar_large,
+arith_caesar_medium, arith_caesar_small and 43 more.
+
+**Pluck.** Pluck ran 71 instances and answered 55 (5 fail, 9 run out of
 memory, 2 answer wrongly). Its answers differ from the reference's by at
-most 3.4e-13 relative (9.1e-15 absolute, arith_caesar_medium) over 79
+most 8.0e-06 relative (4.3e-07 absolute, arith_linext_large) over 55
 instances. Pluck's answer is wrong, zero or underflowed on pcfg and
-string_editing. Over the 94 instances given to both that either answers,
-a run that does not answer counted at the 600 s limit, Pluck takes 10855
-s in all and tddlog 657 s; over the 79 both answer, 1855 s against
-tddlog's 38.7. tddlog alone answers arith_book, arith_caesar_huge,
-arith_caesar_large, arith_disease_medium, arith_disease_small and 10
+string_editing. Over the 69 instances given to both that either answers,
+a run that does not answer counted at the 600 s limit, Pluck takes 9545
+s in all and tddlog 644 s; over the 55 both answer, 1145 s against
+tddlog's 35.3. tddlog alone answers arith_book, arith_caesar_huge,
+arith_caesar_large, arith_disease_medium, arith_disease_small and 9
 more.
 
-**PITA.** PITA ran 87 instances and answered 71 (15 time out, 1 answer
+**PITA.** PITA ran 70 instances and answered 55 (14 time out, 1 answer
 wrongly). Its answers differ from the reference's by at most 1.0e+00
-relative (1.3e-16 absolute, arith_plankton) over 71 instances. PITA's
-answer is wrong, zero or underflowed on arith_caesar_small. Over the 85
+relative (7.6e-17 absolute, arith_plankton) over 55 instances. PITA's
+answer is wrong, zero or underflowed on arith_caesar_small. Over the 68
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, PITA takes 10478 s in all and tddlog 630 s;
-over the 71 both answer, 2078 s against tddlog's 54.2. PITA is faster on
-1 (sorted_list 2.2 s against 5.82). tddlog alone answers
+counted at the 600 s limit, PITA takes 9290 s in all and tddlog 620 s;
+over the 55 both answer, 1490 s against tddlog's 53.2. PITA is faster on
+1 (sorted_list 2.18 s against 5.8). tddlog alone answers
 arith_caesar_huge, arith_caesar_large, arith_caesar_medium,
-arith_caesar_small, arith_disease_medium and 9 more.
+arith_caesar_small, arith_disease_medium and 8 more.
 
-**aspmc.** aspmc ran 96 instances and answered 80 (1 run out of memory,
-15 time out). Its answers differ from the reference's by at most 6.1e-13
-relative (8.5e-16 absolute, arith_disease_small) over 80 instances. Over
-the 94 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, aspmc takes 11702 s in all and tddlog
-636 s; over the 80 both answer, 3302 s against tddlog's 72.4. aspmc is
-faster on 2 (sorted_list 5.09 s against 5.82 and uf50-0999 3.09 s
-against 13.1). tddlog alone answers arith_caesar_huge,
-arith_caesar_large, arith_disease_medium, arith_fw_large,
-arith_gcd_medium and 9 more.
+**aspmc.** aspmc ran 70 instances and answered 55 (1 run out of memory,
+14 time out). Its answers differ from the reference's by at most 8.0e-06
+relative (4.3e-07 absolute, arith_linext_large) over 55 instances. Over
+the 68 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, aspmc takes 10686 s in all and tddlog
+620 s; over the 55 both answer, 2886 s against tddlog's 68. aspmc is
+faster on 2 (sorted_list 5.07 s against 5.8 and uf50-0999 3.09 s against
+13.1). tddlog alone answers arith_caesar_huge, arith_caesar_large,
+arith_disease_medium, arith_fw_large, arith_gcd_medium and 8 more.
 
-**Scallop.** Scallop ran 64 instances and answered 5 (35 run out of
-memory, 24 time out). Its answers differ from the reference's by at most
-4.4e-16 relative (2.2e-16 absolute, arith_linext_small) over 5
-instances. Over the 61 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, Scallop takes 33600
-s in all and tddlog 690 s; over the 5 both answer, 0.48 s against
-tddlog's 0.036. tddlog alone answers arith_book, arith_caesar_huge,
-arith_caesar_large, arith_caesar_medium, arith_caesar_small and 51 more.
+**Scallop.** Scallop ran 60 instances and answered 3 (35 run out of
+memory, 22 time out). Its answers differ from the reference's by at most
+0.0e+00 relative (0.0e+00 absolute, arith_fw_small) over 3 instances.
+Over the 57 instances given to both that either answers, a run that does
+not answer counted at the 600 s limit, Scallop takes 32400 s in all and
+tddlog 680 s; over the 3 both answer, 0.44 s against tddlog's 0.016.
+tddlog alone answers arith_book, arith_caesar_huge, arith_caesar_large,
+arith_caesar_medium, arith_caesar_small and 49 more.
 
-**Storm sparse.** Storm sparse ran 99 instances and answered 76 (1 fail,
+**Storm sparse.** Storm sparse ran 73 instances and answered 50 (1 fail,
 2 run out of memory, 20 time out). Its answers differ from the
-reference's by at most 1.3e-12 relative (7.7e-13 absolute,
-diamond-10000-p) over 76 instances. Over the 97 instances given to both
-that either answers, a run that does not answer counted at the 600 s
-limit, Storm sparse takes 14785 s in all and tddlog 1190 s; over the 76
-both answer, 2185 s against tddlog's 77.2. Storm sparse is faster on 4
-(hepar2 0.18 s against 0.76, brp256-2 0.27 s against 1.28, brp1024-2
+reference's by at most 4.1e-06 relative (4.1e-07 absolute,
+arith_luhn_medium) over 50 instances. Over the 71 instances given to
+both that either answers, a run that does not answer counted at the 600
+s limit, Storm sparse takes 14679 s in all and tddlog 1173 s; over the
+50 both answer, 2079 s against tddlog's 70.7. Storm sparse is faster on
+4 (hepar2 0.18 s against 0.76, brp256-2 0.27 s against 1.28, brp1024-2
 0.29 s against 6.09 and brp4096-2 0.4 s against 45.1). tddlog alone
 answers arith_book, arith_caesar_huge, arith_caesar_large,
 arith_disease_medium, arith_disease_small and 16 more.
 
-**Storm exact.** Storm exact ran 98 instances and answered 73 (5 fail, 5
+**Storm exact.** Storm exact ran 72 instances and answered 47 (5 fail, 5
 run out of memory, 15 time out). Its answers differ from the reference's
-by at most 3.4e-13 relative (9.1e-15 absolute, arith_caesar_medium) over
-73 instances. Over the 96 instances given to both that either answers, a
+by at most 0.0e+00 relative (0.0e+00 absolute, arith_linext_small) over
+2 instances. Over the 70 instances given to both that either answers, a
 run that does not answer counted at the 600 s limit, Storm exact takes
-15620 s in all and tddlog 1182 s; over the 73 both answer, 1820 s
-against tddlog's 75.7. Storm exact is faster on 5 (brp64-2 0.27 s
+15485 s in all and tddlog 1166 s; over the 47 both answer, 1685 s
+against tddlog's 69.3. Storm exact is faster on 5 (brp64-2 0.27 s
 against 0.27, brp4096-2 45 s against 45.1, hepar2 0.19 s against 0.76
 and brp256-2 0.36 s against 1.28, the largest differences). tddlog alone
 answers arith_book, arith_caesar_huge, arith_caesar_large,
 arith_disease_medium, arith_disease_small and 18 more.
 
-**Storm dd.** Storm dd ran 98 instances and answered 83 (5 fail, 1 run
-out of memory, 9 time out). Its answers differ from the reference's by
-at most 6.0e-13 relative (1.3e-29 absolute, arith_caesar_large) over 82
-instances. Over the 96 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, Storm dd takes
-10801 s in all and tddlog 1840 s; over the 82 both answer, 2975 s
-against tddlog's 246. Storm dd is faster on 1 (coupon2-18-obs 18 s
-against 54.4). Only Storm dd answers coupon2-20-obs. tddlog alone
-answers arith_book, arith_caesar_huge, arith_disease_medium,
-arith_disease_small, arith_fw_large and 8 more.
+**Storm dd.** Storm dd ran 75 instances and answered 61 (5 fail, 1 run
+out of memory, 8 time out). Its answers differ from the reference's by
+at most 8.0e-06 relative (4.3e-07 absolute, arith_linext_large) over 60
+instances. Over the 73 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Storm dd takes 9327
+s in all and tddlog 1828 s; over the 60 both answer, 2101 s against
+tddlog's 244. Storm dd is faster on 1 (coupon2-18-obs 18 s against
+54.4). Only Storm dd answers coupon2-20-obs. tddlog alone answers
+arith_book, arith_caesar_huge, arith_disease_medium,
+arith_disease_small, arith_fw_large and 7 more.
 
-**PRISM sparse.** PRISM sparse ran 98 instances and answered 71 (1 fail,
-6 run out of memory, 20 time out). Its answers differ from the
-reference's by at most 3.4e-02 relative (6.2e-15 absolute, hmm) over 71
-instances. Over the 96 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, PRISM sparse takes
-16588 s in all and tddlog 1187 s; over the 71 both answer, 1588 s
-against tddlog's 61.9. PRISM sparse is faster on 2 (brp1024-2 4.16 s
-against 6.09 and brp4096-2 25.1 s against 45.1). tddlog alone answers
+**PRISM sparse.** PRISM sparse ran 73 instances and answered 47 (1 fail,
+6 run out of memory, 19 time out). Its answers differ from the
+reference's by at most 1.1e-13 relative (1.0e-13 absolute, brp4096-2)
+over 47 instances. Over the 71 instances given to both that either
+answers, a run that does not answer counted at the 600 s limit, PRISM
+sparse takes 15145 s in all and tddlog 1173 s; over the 47 both answer,
+745 s against tddlog's 58.9. PRISM sparse is faster on 2 (brp1024-2 4.16
+s against 6.09 and brp4096-2 25.1 s against 45.1). tddlog alone answers
 arith_book, arith_caesar_huge, arith_caesar_large, arith_caesar_medium,
-arith_disease_medium and 20 more.
+arith_disease_medium and 19 more.
 
-**PRISM hybrid.** PRISM hybrid ran 99 instances and answered 72 (1 fail,
-6 run out of memory, 20 time out). Its answers differ from the
-reference's by at most 3.4e-02 relative (6.2e-15 absolute, hmm) over 72
-instances. Over the 97 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, PRISM hybrid takes
-16893 s in all and tddlog 1242 s; over the 72 both answer, 1893 s
-against tddlog's 69.6. PRISM hybrid is faster on 2 (brp1024-2 3.58 s
-against 6.09 and brp4096-2 29.1 s against 45.1). tddlog alone answers
-arith_book, arith_caesar_huge, arith_caesar_large, arith_caesar_medium,
-arith_disease_medium and 20 more.
+**PRISM hybrid.** PRISM hybrid ran 74 instances and answered 48 (1 fail,
+6 run out of memory, 19 time out). Its answers differ from the
+reference's by at most 1.1e-13 relative (1.0e-13 absolute, brp4096-2)
+over 48 instances. Over the 72 instances given to both that either
+answers, a run that does not answer counted at the 600 s limit, PRISM
+hybrid takes 15465 s in all and tddlog 1228 s; over the 48 both answer,
+1065 s against tddlog's 66.6. PRISM hybrid is faster on 2 (brp1024-2
+3.58 s against 6.09 and brp4096-2 29.1 s against 45.1). tddlog alone
+answers arith_book, arith_caesar_huge, arith_caesar_large,
+arith_caesar_medium, arith_disease_medium and 19 more.
 
-**Ace.** Ace ran 93 instances and answered 82 (1 fail, 10 time out). Its
-answers differ from the reference's by at most 6.0e-13 relative (3.3e-16
-absolute, arith_caesar_large) over 82 instances. Over the 93 instances
+**Ace.** Ace ran 67 instances and answered 56 (1 fail, 10 time out). Its
+answers differ from the reference's by at most 8.0e-06 relative (4.3e-07
+absolute, arith_linext_large) over 52 instances. Over the 67 instances
 given to both that either answers, a run that does not answer counted at
-the 600 s limit, Ace takes 8396 s in all and tddlog 821 s; over the 82
-both answer, 1796 s against tddlog's 525. Ace is faster on 1 (brp16384-2
+the 600 s limit, Ace takes 8247 s in all and tddlog 806 s; over the 56
+both answer, 1647 s against tddlog's 519. Ace is faster on 1 (brp16384-2
 181 s against 446). tddlog alone answers arith_book, arith_caesar_huge,
 arith_disease_small, arith_gcd_medium, arith_triangle_large and 6 more.
 
-**Ace c2d.** Ace c2d ran 91 instances and answered 73 (1 fail, 12 time
-out, 5 answer wrongly). Its answers differ from the reference's by at
-most 6.0e-13 relative (1.1e-16 absolute, arith_caesar_large) over 73
-instances. Ace c2d's answer is wrong, zero or underflowed on
-diamond-10000-p, diamond-2000-p, diamond-3000-p, diamond-4000-p and
-diamond-5000-p. Over the 91 instances given to both that either answers,
-a run that does not answer counted at the 600 s limit, Ace c2d takes
-12179 s in all and tddlog 712 s; over the 73 both answer, 1379 s against
-tddlog's 64.9. tddlog alone answers arith_book, arith_caesar_huge,
-arith_disease_small, arith_gcd_small, arith_triangle_large and 13 more.
-
-**Merlin.** Merlin ran 86 instances and answered 67 (5 fail, 11 run out
-of memory, 2 time out, 1 print zeros). Its answers differ from the
-reference's by at most 1.0e+00 relative (4.7e-17 absolute,
-arith_caesar_large) over 67 instances. Merlin's answer is wrong, zero or
-underflowed on hmm. Over the 86 instances given to both that either
-answers, a run that does not answer counted at the 600 s limit, Merlin
-takes 11778 s in all and tddlog 236 s; over the 67 both answer, 378 s
-against tddlog's 17. Merlin is faster on 1 (hepar2 0.23 s against 0.76).
+**Ace c2d.** Ace c2d ran 65 instances and answered 52 (1 fail, 12 time
+out). Its answers differ from the reference's by at most 8.0e-06
+relative (4.3e-07 absolute, arith_linext_large) over 52 instances. Over
+the 65 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, Ace c2d takes 9100 s in all and
+tddlog 698 s; over the 52 both answer, 1300 s against tddlog's 63.
 tddlog alone answers arith_book, arith_caesar_huge, arith_disease_small,
-arith_fw_large, arith_gcd_small and 14 more.
+arith_gcd_small, arith_triangle_large and 8 more.
 
-**pyAgrum.** pyAgrum ran 86 instances and answered 69 (2 fail, 10 run
-out of memory, 5 time out). Its answers differ from the reference's by
-at most 5.1e-12 relative (4.2e-29 absolute, arith_caesar_large) over 69
-instances. Over the 86 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, pyAgrum takes 11532
-s in all and tddlog 236 s; over the 69 both answer, 1332 s against
-tddlog's 17.3. pyAgrum is faster on 1 (hepar2 0.4 s against 0.76).
+**Merlin.** Merlin ran 60 instances and answered 43 (4 fail, 11 run out
+of memory, 2 time out). Its answers differ from the reference's by at
+most 1.0e+00 relative (4.7e-17 absolute, arith_caesar_large) over 40
+instances. Over the 60 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Merlin takes 10469
+s in all and tddlog 221 s; over the 43 both answer, 269 s against
+tddlog's 12.6. Merlin is faster on 1 (hepar2 0.23 s against 0.76).
 tddlog alone answers arith_book, arith_caesar_huge, arith_disease_small,
 arith_fw_large, arith_gcd_small and 12 more.
 
-**pgmpy.** pgmpy ran 91 instances and answered 66 (1 fail, 4 run out of
+**pyAgrum.** pyAgrum ran 60 instances and answered 44 (2 fail, 10 run
+out of memory, 4 time out). Its answers differ from the reference's by
+at most 8.0e-06 relative (4.3e-07 absolute, arith_linext_large) over 44
+instances. Over the 60 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, pyAgrum takes 10038
+s in all and tddlog 221 s; over the 44 both answer, 438 s against
+tddlog's 13. pyAgrum is faster on 1 (hepar2 0.4 s against 0.76). tddlog
+alone answers arith_book, arith_caesar_huge, arith_disease_small,
+arith_fw_large, arith_gcd_small and 11 more.
+
+**pgmpy.** pgmpy ran 65 instances and answered 40 (1 fail, 4 run out of
 memory, 20 time out). Its answers differ from the reference's by at most
-4.2e-12 relative (4.5e-13 absolute, insurance) over 66 instances. Over
-the 91 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, pgmpy takes 17208 s in all and tddlog
-245 s; over the 66 both answer, 2208 s against tddlog's 21.4. tddlog
-alone answers arith_book, arith_caesar_large, arith_disease_small,
-arith_fw_large, arith_gcd_small and 20 more.
+8.0e-06 relative (4.3e-07 absolute, arith_linext_large) over 40
+instances. Over the 65 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, pgmpy takes 16253 s
+in all and tddlog 231 s; over the 40 both answer, 1253 s against
+tddlog's 15.5. tddlog alone answers arith_book, arith_caesar_large,
+arith_disease_small, arith_fw_large, arith_gcd_small and 20 more.
 
-**libDAI.** libDAI ran 86 instances and answered 69 (3 fail, 10 run out
+**libDAI.** libDAI ran 60 instances and answered 43 (3 fail, 10 run out
 of memory, 4 time out). Its answers differ from the reference's by at
-most 5.1e-12 relative (4.2e-29 absolute, arith_caesar_large) over 69
-instances. Over the 86 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, libDAI takes 11886
-s in all and tddlog 236 s; over the 69 both answer, 1686 s against
-tddlog's 18.8. libDAI is faster on 1 (hepar2 0.35 s against 0.76).
+most 8.0e-06 relative (4.3e-07 absolute, arith_linext_large) over 43
+instances. Over the 60 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, libDAI takes 10991
+s in all and tddlog 221 s; over the 43 both answer, 791 s against
+tddlog's 12.6. libDAI is faster on 1 (hepar2 0.35 s against 0.76).
 tddlog alone answers arith_book, arith_caesar_huge, arith_disease_small,
 arith_fw_large, arith_gcd_small and 12 more.
 
-**TensorInference.jl greedy.** TensorInference.jl greedy ran 83
-instances and answered 52 (17 fail, 8 run out of memory, 6 time out).
-Its answers differ from the reference's by at most 4.5e-14 relative
-(4.3e-14 absolute, diamond-1000-p) over 52 instances. Over the 83
+**TensorInference.jl greedy.** TensorInference.jl greedy ran 61
+instances and answered 31 (17 fail, 8 run out of memory, 5 time out).
+Its answers differ from the reference's by at most 8.0e-06 relative
+(4.3e-07 absolute, arith_linext_large) over 31 instances. Over the 61
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, TensorInference.jl greedy takes 19070 s in
-all and tddlog 187 s; over the 52 both answer, 470 s against tddlog's
-4.74. TensorInference.jl greedy is faster on 1 (hepar2 0.28 s against
+counted at the 600 s limit, TensorInference.jl greedy takes 18450 s in
+all and tddlog 177 s; over the 31 both answer, 450 s against tddlog's
+3.43. TensorInference.jl greedy is faster on 1 (hepar2 0.28 s against
 0.76). tddlog alone answers arith_book, arith_caesar_medium,
-arith_disease_small, arith_fw_large, arith_gcd_small and 26 more.
+arith_disease_small, arith_fw_large, arith_gcd_small and 25 more.
 
-**TensorInference.jl treesa.** TensorInference.jl treesa ran 80
-instances and answered 67 (5 run out of memory, 8 time out). Its answers
-differ from the reference's by at most 4.3e-14 relative (1.2e-16
-absolute, arith_plankton) over 67 instances. Over the 80 instances given
-to both that either answers, a run that does not answer counted at the
-600 s limit, TensorInference.jl treesa takes 16293 s in all and tddlog
-189 s; over the 67 both answer, 8493 s against tddlog's 19. tddlog alone
-answers arith_caesar_medium, arith_disease_small, arith_fw_large,
-arith_gcd_small, arith_triangle_medium and 8 more.
+**TensorInference.jl treesa.** TensorInference.jl treesa ran 63
+instances and answered 51 (5 run out of memory, 7 time out). Its answers
+differ from the reference's by at most 8.0e-06 relative (4.3e-07
+absolute, arith_linext_large) over 51 instances. Over the 63 instances
+given to both that either answers, a run that does not answer counted at
+the 600 s limit, TensorInference.jl treesa takes 13328 s in all and
+tddlog 180 s; over the 51 both answer, 6128 s against tddlog's 18.2.
+tddlog alone answers arith_caesar_medium, arith_disease_small,
+arith_fw_large, arith_gcd_small, arith_triangle_medium and 7 more.
 
-**Roulette.** Roulette ran 94 instances and answered 86 (4 run out of
+**Roulette.** Roulette ran 69 instances and answered 62 (3 run out of
 memory, 4 time out). Its answers differ from the reference's by at most
-1.0e+00 relative (1.2e-57 absolute, arith_caesar_huge) over 86
-instances. Over the 94 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, Roulette takes 6308
-s in all and tddlog 1110 s; over the 86 both answer, 1508 s against
-tddlog's 337. Roulette is faster on 10 (arith_caesar_large 1.33 s
-against 1.49, water 0.41 s against 0.61, arith_triangle_small 0.21 s
-against 0.52 and arith_caesar_medium 0.58 s against 1.92, the largest
+1.0e+00 relative (1.2e-57 absolute, arith_caesar_huge) over 62
+instances. Over the 69 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Roulette takes 5580
+s in all and tddlog 1098 s; over the 62 both answer, 1380 s against
+tddlog's 326. Roulette is faster on 10 (arith_caesar_large 1.12 s
+against 1.29, water 0.41 s against 0.61, arith_triangle_small 0.2 s
+against 0.52 and arith_caesar_medium 0.43 s against 1.78, the largest
 differences). tddlog alone answers arith_disease_small,
-arith_gcd_medium, arith_plankton, brp16384-2, coupon2-14-obs and 3 more.
+arith_gcd_medium, arith_plankton, brp16384-2, coupon2-14-obs and 2 more.
 
 | instance | flips | gates | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Scallop | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Merlin | pyAgrum | pgmpy | libDAI | TI greedy | TI treesa | Roulette | Roulette process | ProbLog | ref | tddlog diff | Geni diff | noDice diff | Psi diff | Genfer diff | SPPL diff | Pluck diff | PITA diff | aspmc diff | Scallop diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Ace diff | Ace c2d diff | Merlin diff | pyAgrum diff | pgmpy diff | libDAI diff | TI greedy diff | TI treesa diff | Roulette diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| arith_book | 180 | 2453 | 9.4 | >600 | >600 | >600 | oom | >600 | oom | 106 | 165 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 | err | oom | >600 | err | err | 347 | 3.58 | 4.37 | >600 | alea | 6.9e-17 / 5.6e-16 |  |  |  |  |  |  | 8.3e-17 / 6.7e-16 | 2.8e-17 / 2.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 8.9e-16 | 5.6e-17 / 4.5e-16 |
-| arith_caesar_huge | 6260 | 38517 | 2.29 | oom | oom | oom | err | >600 | oom | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | err | err | oom | >600 | - | >600 | - | - | 5.33 | 6.24 | >600 | alea | 3.5e-69 / 3.1e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.2e-57 / 1.0e+00 |
-| arith_caesar_large | 2510 | 15417 | 1.09 | >600 | oom | oom | oom | >600 | oom | >600 | >600 | oom | >600 | >600 | 168 | >600 | >600 | 14.6 | 33.7 | 22.4 | 89.1 | >600 | 425 | - | - | 1.33 | 2.12 | 128 | alea | 1.3e-29 / 6.0e-13 |  |  |  |  |  |  |  |  |  |  |  | 1.3e-29 / 6.0e-13 |  |  | 3.3e-16 / 6.0e-13 | 1.1e-16 / 6.0e-13 | 4.7e-17 / 1.0e+00 | 4.2e-29 / 5.1e-12 |  | 4.2e-29 / 5.1e-12 |  |  | 1.3e-29 / 5.9e-13 |
-| arith_caesar_medium | 1260 | 7717 | 1.6 | >600 | oom | oom | oom | >600 | 24.1 | >600 | 191 | oom | 188 | 242 | 44.2 | >600 | >600 | 9.2 | 13.9 | 5.8 | 16.5 | 268 | 69.6 | >600 | >600 | 0.576 | 1.31 | 60.7 | alea | 9.1e-15 / 3.4e-13 |  |  |  |  |  | 9.1e-15 / 3.4e-13 |  | 8.9e-15 / 3.4e-13 |  | 9.1e-15 / 3.4e-13 | 9.1e-15 / 3.4e-13 | 9.1e-15 / 3.4e-13 |  |  | 9.1e-15 / 3.4e-13 | 9.1e-15 / 3.4e-13 | 9.8e-08 / 1.0e+00 | 2.3e-13 / 3.2e-12 | 2.3e-13 / 3.2e-12 | 2.3e-13 / 3.2e-12 |  |  | 9.1e-15 / 3.4e-13 |
-| arith_caesar_small | 260 | 1557 | 0.108 | >600 | err | >600 | oom | >600 | 6.42 | wrong | 6.11 | >600 | 1.65 | 3.1 | 10.3 | 10.2 | 9.71 | 3.52 | 4.02 | 1.01 | 1.05 | 22.3 | 2.29 | 0.709 | 200 | 0.105 | 0.853 | 11.7 | alea | 1.3e-15 / 3.3e-14 |  |  |  |  |  | 1.3e-15 / 3.2e-14 | 3.1e-02 / 1.3e+03 | 1.8e-15 / 3.2e-14 |  | 1.2e-15 / 3.1e-14 | 1.4e-15 / 3.1e-14 | 1.4e-15 / 3.1e-14 | 1.0e-15 / 3.0e-14 | 1.0e-15 / 3.0e-14 | 1.3e-15 / 3.2e-14 | 1.3e-15 / 3.1e-14 | 4.9e-07 / 1.0e+00 | 5.0e-13 / 2.9e-12 | 5.0e-13 / 2.9e-12 | 5.0e-13 / 2.9e-12 | 1.1e-15 / 3.2e-14 | 1.6e-15 / 3.2e-14 | 1.4e-15 / 3.1e-14 |
+| arith_book | 180 | 2453 | 9.39 | >600 | >600 | >600 | oom | >600 | oom | 106 | 165 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 | err | oom | >600 | err | err | 347 | 3.57 | 4.36 | >600 | alea | ref |  |  |  |  |  |  | 1.4e-17 / 1.1e-16 | 4.2e-17 / 3.3e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.2e-17 / 3.3e-16 | 1.4e-17 / 1.1e-16 |
+| arith_caesar_huge | 6260 | 38517 | 1.71 | oom | oom | oom | err | >600 | oom | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | err | err | oom | >600 | - | >600 | - | - | 4.74 | 5.65 | >600 | alea | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.2e-57 / 1.0e+00 |
+| arith_caesar_large | 2510 | 15417 | 0.886 | >600 | oom | oom | oom | >600 | oom | >600 | >600 | oom | >600 | >600 | 168 | >600 | >600 | 14.4 | 33.5 | 22.2 | 88.9 | >600 | 425 | - | - | 1.12 | 1.92 | 128 | alea | 2.1e-26 / 2.1e-08 |  |  |  |  |  |  |  |  |  |  |  | 2.1e-26 / 2.1e-08 |  |  | 3.3e-16 / 2.1e-08 | 1.1e-16 / 2.1e-08 | 4.7e-17 / 1.0e+00 | 2.1e-26 / 2.1e-08 |  | 2.1e-26 / 2.1e-08 |  |  | 2.1e-26 / 2.1e-08 |
+| arith_caesar_medium | 1260 | 7717 | 1.45 | >600 | oom | oom | oom | >600 | 24 | >600 | 191 | oom | 188 | 242 | 44 | >600 | >600 | 9.05 | 13.7 | 5.66 | 16.3 | 268 | 69.5 | >600 | >600 | 0.428 | 1.17 | 60.5 | alea | 2.4e-22 / 4.5e-15 |  |  |  |  |  | 1.6e-22 / 4.4e-15 |  | 2.2e-16 / 3.9e-15 |  | 2.1e-22 / 3.5e-15 | ref | 1.6e-22 / 6.0e-15 |  |  | 1.2e-22 / 4.1e-15 | 4.0e-23 / 4.5e-15 | 9.8e-08 / 1.0e+00 | 2.4e-13 / 3.3e-12 | 2.4e-13 / 3.3e-12 | 2.4e-13 / 3.3e-12 |  |  | 2.6e-23 / 4.8e-15 |
+| arith_caesar_small | 260 | 1557 | 0.086 | >600 | err | >600 | oom | >600 | 6.4 | wrong | 6.09 | >600 | 1.63 | 3.07 | 10.3 | 10.2 | 9.69 | 3.5 | 4 | 0.991 | 1.03 | 22.3 | 2.27 | 0.687 | 200 | 0.083 | 0.831 | 11.7 | alea | 1.1e-16 / 3.4e-14 |  |  |  |  |  | 1.1e-16 / 1.6e-15 | 3.1e-02 / 1.3e+03 | 3.3e-16 / 1.2e-15 |  | 2.2e-16 / 1.9e-15 | ref | 1.1e-16 / 1.2e-15 | 4.4e-16 / 1.5e-15 | 4.4e-16 / 1.5e-15 | 1.1e-16 / 1.1e-15 | 1.1e-16 / 1.6e-15 | 4.9e-07 / 1.0e+00 | 5.0e-13 / 2.9e-12 | 5.0e-13 / 2.9e-12 | 5.0e-13 / 2.9e-12 | 3.3e-16 / 1.3e-14 | 1.7e-16 / 1.3e-14 | 2.8e-17 / 1.1e-15 |
 | arith_disease_large | 3044 | 188220 | >600 | oom | oom | oom | err | err | oom | >600 | oom | >600 | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | - | oom |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| arith_disease_medium | 1022 | 62049 | 306 | >600 | oom | oom | err | >600 | oom | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | - | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| arith_disease_small | 213 | 11614 | 20.4 | >600 | >600 | oom | err | >600 | oom | >600 | 456 | oom | >600 | >600 | err | oom | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | alea | 8.2e-16 / 6.1e-13 |  |  |  |  |  |  |  | 8.5e-16 / 6.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| arith_fw_large | 44 | 7444 | 0.507 | >600 | >600 | >600 | oom | >600 | 20.8 | 489 | >600 | oom | >600 | >600 | >600 | oom | oom | 403 | 413 | oom | oom | >600 | oom | oom | oom | 0.768 | 1.49 | >600 | alea | 4.2e-17 / 8.9e-15 |  |  |  |  |  | 4.2e-17 / 7.5e-15 | 1.2e-16 / 6.1e-09 |  |  |  |  |  |  |  | 1.9e-16 / 7.5e-15 | 1.4e-16 / 7.5e-15 |  |  |  |  |  |  | 5.6e-17 / 7.4e-15 |
-| arith_fw_medium | 17 | 2844 | 0.1 | >600 | >600 | >600 | oom | err | 6.32 | 8.54 | 9.48 | oom | 14.3 | 51.2 | 60.3 | 243 | 255 | 2.81 | 2.31 | 0.506 | 0.485 | 2.86 | 0.465 | 0.197 | 40.2 | 0.086 | 0.782 | 17.8 | alea | 8.3e-17 / 2.6e-14 |  |  |  |  |  | 8.3e-17 / 6.2e-16 | 1.4e-16 / 5.7e-14 | 5.6e-17 / 8.3e-16 |  | 8.3e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 4.2e-16 | 5.6e-17 / 6.2e-16 | 5.6e-17 / 6.8e-16 | 4.2e-07 / 1.6e-03 | 3.3e-13 / 2.6e-12 | 3.3e-13 / 2.6e-12 | 3.3e-13 / 2.6e-12 | 2.8e-17 / 2.8e-16 | 5.6e-17 / 4.2e-16 | 8.3e-17 / 6.2e-16 |
-| arith_fw_small | 3 | 118 | 0.012 | 5.38 | err | >600 | 0.057 | 2.5 | 5.73 | 0.758 | 3.53 | 0.121 | 0.176 | 0.18 | 0.549 | 1.29 | 1.29 | 1.13 | 1.17 | 0.074 | 0.206 | 1.85 | 0.068 | 0.0534 | 1.79 | 0.01 | 0.744 | 0.127 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.8e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| arith_disease_medium | 1022 | 62049 | 306 | >600 | oom | oom | err | >600 | oom | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | - | oom | alea-tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| arith_disease_small | 213 | 11614 | 20.1 | >600 | >600 | oom | err | >600 | oom | >600 | 456 | oom | >600 | >600 | err | oom | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | alea | ref |  |  |  |  |  |  |  | 4.2e-17 / 1.6e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| arith_fw_large | 44 | 7444 | 0.332 | >600 | >600 | >600 | oom | >600 | 20.6 | 489 | >600 | oom | >600 | >600 | >600 | oom | oom | 402 | 413 | oom | oom | >600 | oom | oom | oom | 0.593 | 1.32 | >600 | alea | 1.7e-16 / 8.3e-15 |  |  |  |  |  | 1.9e-16 / 1.3e-15 | 2.2e-16 / 6.1e-09 |  |  |  |  |  |  |  |  | 1.7e-16 / 7.2e-16 |  |  |  |  |  |  | 1.4e-16 / 1.1e-15 |
+| arith_fw_medium | 17 | 2844 | 0.062 | >600 | >600 | >600 | oom | err | 6.29 | 8.5 | 9.44 | oom | 14.3 | 51.1 | 60.3 | 243 | 255 | 2.77 | 2.28 | 0.468 | 0.447 | 2.82 | 0.427 | 0.159 | 40.2 | 0.048 | 0.744 | 17.8 | alea | 2.8e-17 / 2.6e-14 |  |  |  |  |  | 2.8e-17 / 3.4e-16 | 8.3e-17 / 5.7e-14 | 2.8e-17 / 4.2e-16 |  | 2.8e-17 / 2.1e-16 | ref | 2.8e-17 / 2.1e-16 | 2.8e-17 / 2.1e-16 | 2.8e-17 / 2.1e-16 | 2.8e-17 / 3.4e-16 | 5.6e-17 / 6.8e-16 | 4.2e-07 / 1.6e-03 | 3.3e-13 / 2.6e-12 | 3.3e-13 / 2.6e-12 | 3.3e-13 / 2.6e-12 | 2.8e-17 / 2.7e-16 | 5.6e-17 / 4.2e-16 | 2.8e-17 / 3.4e-16 |
+| arith_fw_small | 3 | 118 | 0.006 | 5.38 | err | >600 | 0.051 | 2.49 | 5.73 | 0.752 | 3.52 | 0.115 | 0.17 | 0.174 | 0.543 | 1.29 | 1.28 | 1.13 | 1.17 | 0.068 | 0.2 | 1.84 | 0.062 | 0.0474 | 1.78 | 0.004 | 0.738 | 0.121 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.8e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | arith_gcd_large | 24 | 52462 | >600 | >600 | oom | oom | err | >600 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | - | oom |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| arith_gcd_medium | 20 | 30487 | 108 | >600 | oom | oom | err | >600 | oom | >600 | >600 | oom | >600 | >600 | 278 | >600 | >600 | >600 | - | - | - | - | - | - | - | oom | oom | >600 | alea | 2.2e-16 / 3.6e-16 |  |  |  |  |  |  |  |  |  |  |  | 2.2e-16 / 3.6e-16 |  |  |  |  |  |  |  |  |  |  |  |
-| arith_gcd_small | 16 | 15724 | 8.6 | >600 | oom | oom | oom | >600 | oom | >600 | 247 | oom | 157 | 174 | 30.6 | >600 | >600 | 284 | >600 | oom | oom | >600 | oom | oom | >600 | 8.15 | 9.03 | >600 | alea | 2.2e-16 / 3.6e-16 |  |  |  |  |  |  |  | 2.2e-16 / 3.6e-16 |  | 2.2e-16 / 3.6e-16 | 2.2e-16 / 3.6e-16 | 2.2e-16 / 3.6e-16 |  |  | 2.2e-16 / 3.6e-16 |  |  |  |  |  |  |  | 2.2e-16 / 3.6e-16 |
-| arith_linext_large | 24 | 386 | 0.016 | >600 | err | >600 | oom | >600 | 49.6 | 15.2 | 223 | oom | >600 | >600 | 405 | >600 | >600 | 5.68 | 2.84 | 13.3 | 1.61 | 63.3 | 18.8 | 3.71 | 51.8 | 0.37 | 6.05 | >600 | alea | 4.4e-16 / 2.5e-15 |  |  |  |  |  | 4.4e-16 / 2.5e-15 | 4.4e-16 / 2.5e-15 | 5.3e-16 / 3.0e-15 |  |  |  | 4.4e-16 / 2.5e-15 |  |  | 4.4e-16 / 2.5e-15 | 4.4e-16 / 2.5e-15 | 4.3e-07 / 8.0e-06 | 4.3e-13 / 2.4e-12 | 4.3e-13 / 2.4e-12 | 4.3e-13 / 2.4e-12 | 4.2e-16 / 2.3e-15 | 4.7e-16 / 2.6e-15 | 4.4e-16 / 2.5e-15 |
-| arith_linext_medium | 24 | 254 | 0.012 | >600 | err | oom | 182 | >600 | 34.9 | 1.34 | 4.75 | oom | 4.11 | 7.17 | 42.9 | 14.8 | 14.8 | 2.05 | 2.06 | 0.378 | 0.288 | 5.39 | 0.376 | 0.201 | 32.8 | 0.058 | 4.23 | 41.8 | alea | 6.1e-16 / 1.7e-15 |  |  |  | 6.7e-16 / 1.7e-15 |  | 7.2e-16 / 1.8e-15 | 1.4e-13 / 6.9e-13 | 5.6e-16 / 1.7e-15 |  | 6.7e-16 / 1.7e-15 | 6.7e-16 / 1.7e-15 | 7.8e-16 / 1.9e-15 | 7.8e-16 / 1.9e-15 | 7.8e-16 / 1.9e-15 | 6.7e-16 / 1.7e-15 | 7.2e-16 / 1.8e-15 | 3.3e-07 / 2.5e-06 | 3.3e-13 / 2.5e-12 | 3.3e-13 / 2.5e-12 | 3.3e-13 / 2.5e-12 | 6.7e-16 / 1.7e-15 | 6.7e-16 / 1.7e-15 | 7.2e-16 / 1.8e-15 |
-| arith_linext_small | 8 | 56 | 0.006 | 1.58 | err | 195 | 0.037 | 11.5 | 17.3 | 1.06 | 3.26 | 0.295 | 0.685 | 0.688 | 2.07 | 5.16 | 5.18 | 1.41 | 1.46 | 0.078 | 0.195 | 1.97 | 0.078 | 0.0592 | 6.36 | 0.017 | 2.83 | 0.189 | alea | 2.2e-16 / 4.4e-16 | 8.0e-07 / 3.2e-06 |  | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 3.9e-16 / 1.1e-15 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 4.4e-16 | 2.2e-16 / 3.0e-16 | 2.2e-16 / 3.0e-16 | 2.2e-16 / 4.4e-16 |
-| arith_luhn_medium | 36 | 485 | 0.15 | >600 | err | >600 | oom | >600 | 44.8 | 7.05 | 4.5 | oom | 328 | >600 | 79.4 | >600 | >600 | 2.36 | 2.87 | 0.181 | 0.438 | 14.5 | 0.325 | 0.466 | 59.6 | 0.368 | 4.65 | >600 | alea | 7.8e-16 / 4.6e-15 |  |  |  |  |  | 3.1e-16 / 2.1e-15 | 7.2e-14 / 7.9e-13 | 3.3e-16 / 2.9e-15 |  | 3.6e-16 / 2.7e-15 |  | 2.8e-16 / 2.6e-15 |  |  | 3.3e-16 / 2.4e-15 | 2.8e-16 / 2.1e-15 | 4.1e-07 / 4.1e-06 | 3.5e-13 / 1.8e-12 | 3.5e-13 / 1.8e-12 | 3.5e-13 / 1.8e-12 | 3.1e-16 / 2.4e-15 | 3.3e-16 / 2.4e-15 | 3.3e-16 / 2.4e-15 |
-| arith_luhn_small | 24 | 328 | 0.024 | >600 | err | oom | oom | >600 | 24.1 | 1.12 | 3.66 | oom | 2.47 | 4.99 | 14.4 | 10.2 | 9.93 | 2.12 | 2.43 | 0.166 | 0.322 | 6.81 | 0.19 | 0.168 | 36.8 | 0.092 | 2.9 | 4.73 | alea | 1.7e-16 / 1.2e-15 |  |  |  |  |  | 1.9e-16 / 1.2e-15 | 1.3e-14 / 6.9e-14 | 1.1e-16 / 1.1e-15 |  | 1.7e-16 / 1.2e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.1e-15 | 1.7e-16 / 1.2e-15 | 2.2e-16 / 1.4e-15 | 4.1e-07 / 4.4e-06 | 1.9e-13 / 1.9e-12 | 1.9e-13 / 1.9e-12 | 1.9e-13 / 1.9e-12 | 1.9e-16 / 1.4e-15 | 1.7e-16 / 1.4e-15 | 1.7e-16 / 1.2e-15 |
-| arith_plankton | 60 | 1747 | 0.33 | >600 | >600 | >600 | oom | >600 | 7.22 | 193 | 7.36 | oom | >600 | oom | err | oom | oom | 7.04 | 6.15 | oom | oom | >600 | oom | err | 192 | >600 | >600 | >600 | alea | 1.1e-16 / 4.3e-14 |  |  |  |  |  | 1.0e-16 / 4.4e-14 | 1.3e-16 / 1.0e+00 | 1.1e-16 / 4.3e-14 |  |  |  |  |  |  | 1.2e-16 / 4.4e-14 | 1.2e-16 / 4.4e-14 |  |  |  |  |  | 1.2e-16 / 4.3e-14 |  |
-| arith_radar | 66 | 1195 | 0.107 | >600 | err | >600 | oom | >600 | 7.68 | 69.4 | 36.9 | oom | oom | err | 28 | >600 | >600 | 2.09 | 2.12 | 0.186 | 0.363 | 4.19 | 0.237 | 0.201 | 30 | 0.073 | 0.803 | 41.4 | alea | 2.8e-16 / 1.5e-15 |  |  |  |  |  | 2.5e-16 / 1.4e-15 | 6.7e-12 / 2.9e-10 | 3.1e-16 / 1.7e-15 |  |  |  | 2.5e-16 / 1.5e-15 |  |  | 2.8e-16 / 1.5e-15 | 2.8e-16 / 1.5e-15 | 4.8e-07 / 3.2e-05 | 4.8e-13 / 2.7e-12 | 4.8e-13 / 2.7e-12 | 4.8e-13 / 2.7e-12 | 2.5e-16 / 1.4e-15 | 2.8e-16 / 1.5e-15 | 2.5e-16 / 1.4e-15 |
-| arith_ranking_large | 88 | 1212 | 0.044 | >600 | >600 | >600 | oom | >600 | 236 | 18.6 | 9.06 | oom | 13.9 | 20.1 | 44.9 | 42.6 | 44.4 | 2.87 | 3.21 | 0.346 | 0.601 | 6.92 | 1.01 | 0.662 | 139 | 0.52 | 3.37 | >600 | alea | 2.0e-15 / 2.8e-14 |  |  |  |  |  | 1.9e-15 / 2.8e-14 | 3.8e-08 / 2.5e-04 | 1.7e-15 / 2.8e-14 |  | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.7e-15 / 2.8e-14 | 4.7e-07 / 1.3e-02 | 4.6e-13 / 2.2e-12 | 4.6e-13 / 2.2e-12 | 4.6e-13 / 2.2e-12 | 1.8e-15 / 2.8e-14 | 1.8e-15 / 2.8e-14 | 1.9e-15 / 2.8e-14 |
-| arith_ranking_medium | 56 | 744 | 0.029 | >600 | >600 | >600 | oom | >600 | 34.9 | 6.12 | 5.24 | oom | 6.75 | 10.3 | 38.5 | 31.7 | 31.7 | 2.35 | 2.76 | 0.215 | 0.401 | 4.37 | 0.425 | 0.273 | 81 | 0.247 | 3.05 | 202 | alea | 5.6e-16 / 1.2e-14 |  |  |  |  |  | 5.6e-16 / 1.2e-14 | 8.5e-11 / 2.0e-08 | 6.1e-16 / 1.2e-14 |  | 6.1e-16 / 1.2e-14 | 6.1e-16 / 1.2e-14 | 5.6e-16 / 1.2e-14 | 5.6e-16 / 1.2e-14 | 5.6e-16 / 1.2e-14 | 6.1e-16 / 1.3e-14 | 6.1e-16 / 1.3e-14 | 5.0e-07 / 2.1e-04 | 4.4e-13 / 2.0e-12 | 4.4e-13 / 2.0e-12 | 4.4e-13 / 2.0e-12 | 5.6e-16 / 1.2e-14 | 6.1e-16 / 1.2e-14 | 6.1e-16 / 1.2e-14 |
-| arith_ranking_small | 24 | 276 | 0.014 | >600 | err | oom | oom | >600 | 23.8 | 0.92 | 3.36 | oom | 1.9 | 2.86 | 24.3 | 9.92 | 10.2 | 1.99 | 2.04 | 0.115 | 0.261 | 2.66 | 0.138 | 0.112 | 28.5 | 0.048 | 2.9 | 48.5 | alea | 3.3e-16 / 1.1e-15 |  |  |  |  |  | 4.4e-16 / 1.3e-15 | 6.7e-14 / 2.3e-13 | 3.3e-16 / 9.4e-16 |  | 3.3e-16 / 9.4e-16 | 3.9e-16 / 1.1e-15 | 4.4e-16 / 1.1e-15 | 4.4e-16 / 1.1e-15 | 4.4e-16 / 1.1e-15 | 3.3e-16 / 9.5e-16 | 3.3e-16 / 9.5e-16 | 4.2e-07 / 2.8e-06 | 5.0e-13 / 1.7e-12 | 5.0e-13 / 1.7e-12 | 5.0e-13 / 1.7e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.4e-16 | 3.3e-16 / 1.1e-15 |
-| arith_triangle_large | 132 | 1916 | 18.9 | >600 | oom | >600 | oom | >600 | 54 | 155 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | 22.9 | 23.9 | >600 | alea | 5.0e-15 / 7.9e-14 |  |  |  |  |  | 1.1e-16 / 1.2e-15 | 2.2e-16 / 1.7e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-16 / 9.7e-16 |
-| arith_triangle_medium | 57 | 1298 | 0.472 | >600 | oom | >600 | oom | >600 | 7.58 | 5.46 | 158 | >600 | >600 | err | 184 | >600 | >600 | 112 | 79.9 | - | - | - | - | - | oom | 0.81 | 1.56 | >600 | alea | 1.8e-15 / 2.9e-14 |  |  |  |  |  | 1.1e-16 / 1.4e-15 | 5.7e-17 / 1.9e-13 | 1.1e-16 / 1.4e-15 |  |  |  | 2.2e-16 / 2.2e-15 |  |  | 4.1e-13 / 4.4e-13 | 3.1e-14 / 3.3e-14 |  |  |  |  |  |  | 1.1e-16 / 1.3e-15 |
-| arith_triangle_small | 48 | 1277 | 0.243 | >600 | oom | >600 | oom | >600 | 6.39 | 3.42 | 29.1 | >600 | 272 | 381 | 49.4 | >600 | >600 | 76.4 | 46.1 | oom | oom | oom | oom | err | 152 | 0.211 | 0.91 | >600 | alea | 2.8e-16 / 5.0e-15 |  |  |  |  |  | 1.4e-17 / 1.1e-15 | 3.1e-17 / 3.0e-13 | 6.9e-18 / 1.3e-15 |  | 4.4e-16 / 9.8e-16 | 6.9e-18 / 1.1e-15 | 5.4e-20 / 1.1e-15 |  |  | 1.4e-14 / 2.5e-14 | 4.0e-14 / 4.3e-14 |  |  |  |  |  | 8.7e-19 / 9.8e-16 | 1.4e-17 / 1.1e-15 |
-| arith_tugofwar | 44 | 1372 | 0.107 | >600 | >600 | >600 | oom | >600 | 7.99 | 1.96 | 194 | oom | >600 | >600 | 285 | >600 | >600 | 66.9 | 82.9 | oom | oom | oom | oom | oom | oom | 0.166 | 0.869 | >600 | alea | 7.8e-16 / 8.0e-16 |  |  |  |  |  | 2.2e-16 / 2.3e-16 | 2.2e-16 / 2.3e-16 | 4.4e-16 / 4.6e-16 |  |  |  | 3.3e-16 / 3.4e-16 |  |  | 3.3e-16 / 3.4e-16 | 4.4e-16 / 4.6e-16 |  |  |  |  |  |  | 3.3e-16 / 3.4e-16 |
+| arith_gcd_medium | 20 | 30487 | 108 | >600 | oom | oom | err | >600 | oom | >600 | >600 | oom | >600 | >600 | 278 | >600 | >600 | >600 | - | - | - | - | - | - | - | oom | oom | >600 | alea | ref |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |
+| arith_gcd_small | 16 | 15724 | 8.54 | >600 | oom | oom | oom | >600 | oom | >600 | 247 | oom | 157 | 174 | 30.6 | >600 | >600 | 284 | >600 | oom | oom | >600 | oom | oom | >600 | 8.09 | 8.97 | >600 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| arith_linext_large | 24 | 386 | 0.013 | >600 | err | >600 | oom | >600 | 49.6 | 15.2 | 223 | oom | >600 | >600 | 405 | >600 | >600 | 5.68 | 2.83 | 13.3 | 1.6 | 63.3 | 18.8 | 3.7 | 51.8 | 0.367 | 6.05 | >600 | alea | 4.3e-07 / 8.0e-06 |  |  |  |  |  | 4.3e-07 / 8.0e-06 | 4.3e-07 / 8.0e-06 | 4.3e-07 / 8.0e-06 |  |  |  | 4.3e-07 / 8.0e-06 |  |  | 4.3e-07 / 8.0e-06 | 4.3e-07 / 8.0e-06 | ref | 4.3e-07 / 8.0e-06 | 4.3e-07 / 8.0e-06 | 4.3e-07 / 8.0e-06 | 4.3e-07 / 8.0e-06 | 4.3e-07 / 8.0e-06 | 4.3e-07 / 8.0e-06 |
+| arith_linext_medium | 24 | 254 | 0.01 | >600 | err | oom | 182 | >600 | 34.9 | 1.33 | 4.75 | oom | 4.1 | 7.17 | 42.9 | 14.8 | 14.8 | 2.05 | 2.06 | 0.376 | 0.286 | 5.39 | 0.374 | 0.199 | 32.8 | 0.056 | 4.23 | 41.8 | alea | 1.1e-16 / 2.2e-16 |  |  |  | 1.1e-16 / 2.1e-16 |  | 5.6e-17 / 1.7e-16 | 1.4e-13 / 6.9e-13 | 1.1e-16 / 2.8e-16 |  | 1.1e-16 / 2.2e-16 | ref | 1.1e-16 / 2.8e-16 | 1.1e-16 / 2.8e-16 | 1.1e-16 / 2.8e-16 | 1.1e-16 / 3.0e-16 | 1.7e-16 / 3.3e-16 | 3.3e-07 / 2.5e-06 | 3.3e-13 / 2.5e-12 | 3.3e-13 / 2.5e-12 | 3.3e-13 / 2.5e-12 | 5.6e-17 / 2.1e-16 | 5.6e-17 / 3.3e-16 | 5.6e-17 / 1.7e-16 |
+| arith_linext_small | 8 | 56 | 0.005 | 1.58 | err | 195 | 0.036 | 11.5 | 17.3 | 1.06 | 3.26 | 0.294 | 0.684 | 0.687 | 2.07 | 5.16 | 5.18 | 1.41 | 1.46 | 0.077 | 0.194 | 1.97 | 0.077 | 0.0582 | 6.36 | 0.016 | 2.83 | 0.188 | alea | 0.0e+00 / 0.0e+00 | 8.0e-07 / 3.2e-06 |  | ref | 0.0e+00 / 0.0e+00 | 2.2e-16 / 8.9e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.5e-16 | 5.6e-17 / 1.5e-16 | 0.0e+00 / 0.0e+00 |
+| arith_luhn_medium | 36 | 485 | 0.138 | >600 | err | >600 | oom | >600 | 44.7 | 7.04 | 4.49 | oom | 328 | >600 | 79.4 | >600 | >600 | 2.35 | 2.86 | 0.169 | 0.426 | 14.5 | 0.313 | 0.454 | 59.6 | 0.356 | 4.64 | >600 | alea | 4.1e-07 / 4.1e-06 |  |  |  |  |  | 4.1e-07 / 4.1e-06 | 4.1e-07 / 4.1e-06 | 4.1e-07 / 4.1e-06 |  | 4.1e-07 / 4.1e-06 |  | 4.1e-07 / 4.1e-06 |  |  | 4.1e-07 / 4.1e-06 | 4.1e-07 / 4.1e-06 | ref | 4.1e-07 / 4.1e-06 | 4.1e-07 / 4.1e-06 | 4.1e-07 / 4.1e-06 | 4.1e-07 / 4.1e-06 | 4.1e-07 / 4.1e-06 | 4.1e-07 / 4.1e-06 |
+| arith_luhn_small | 24 | 328 | 0.016 | >600 | err | oom | oom | >600 | 24.1 | 1.11 | 3.65 | oom | 2.46 | 4.98 | 14.4 | 10.2 | 9.92 | 2.11 | 2.42 | 0.158 | 0.314 | 6.8 | 0.182 | 0.16 | 36.8 | 0.084 | 2.89 | 4.72 | alea | 2.5e-16 / 1.7e-15 |  |  |  |  |  | 5.6e-17 / 5.6e-16 | 1.3e-14 / 6.9e-14 | 5.6e-17 / 4.6e-16 |  | 2.8e-17 / 3.1e-16 | ref | 2.8e-17 / 3.1e-16 | 2.8e-17 / 3.1e-16 | 2.8e-17 / 3.1e-16 | 4.2e-17 / 4.2e-16 | 5.6e-17 / 6.1e-16 | 4.1e-07 / 4.4e-06 | 1.9e-13 / 1.9e-12 | 1.9e-13 / 1.9e-12 | 1.9e-13 / 1.9e-12 | 2.8e-17 / 3.1e-16 | 5.6e-17 / 3.1e-16 | 4.2e-17 / 4.2e-16 |
+| arith_plankton | 60 | 1747 | 0.304 | >600 | >600 | >600 | oom | >600 | 7.19 | 193 | 7.33 | oom | >600 | oom | err | oom | oom | 7.02 | 6.12 | oom | oom | >600 | oom | err | 192 | >600 | >600 | >600 | alea | 2.1e-17 / 2.5e-14 |  |  |  |  |  | 2.1e-17 / 5.3e-16 | 7.6e-17 / 1.0e+00 | 1.4e-17 / 6.0e-16 |  |  |  |  |  |  |  | 2.8e-17 / 7.1e-16 |  |  |  |  |  | 2.8e-17 / 1.5e-15 |  |
+| arith_radar | 66 | 1195 | 0.088 | >600 | err | >600 | oom | >600 | 7.66 | 69.4 | 36.8 | oom | oom | err | 28 | >600 | >600 | 2.07 | 2.1 | 0.167 | 0.344 | 4.17 | 0.218 | 0.182 | 30 | 0.054 | 0.784 | 41.4 | alea | 4.8e-09 / 2.7e-08 |  |  |  |  |  | 4.8e-09 / 2.7e-08 | 4.8e-09 / 2.7e-08 | 4.8e-09 / 2.7e-08 |  |  |  | 4.8e-09 / 2.7e-08 |  |  | 4.8e-09 / 2.7e-08 | 4.8e-09 / 2.7e-08 | 4.8e-07 / 3.2e-05 | 4.8e-09 / 2.7e-08 | 4.8e-09 / 2.7e-08 | 4.8e-09 / 2.7e-08 | 4.8e-09 / 2.7e-08 | 4.8e-09 / 2.7e-08 | 4.8e-09 / 2.7e-08 |
+| arith_ranking_large | 88 | 1212 | 0.039 | >600 | >600 | >600 | oom | >600 | 236 | 18.6 | 9.06 | oom | 13.9 | 20.1 | 44.9 | 42.6 | 44.4 | 2.86 | 3.2 | 0.341 | 0.596 | 6.92 | 1.01 | 0.657 | 139 | 0.515 | 3.36 | >600 | alea | 2.2e-16 / 5.9e-16 |  |  |  |  |  | 1.1e-16 / 3.8e-16 | 3.8e-08 / 2.5e-04 | 1.1e-16 / 8.8e-16 |  | 1.1e-16 / 4.1e-16 | ref | 5.6e-17 / 2.5e-16 | 5.6e-17 / 2.5e-16 | 5.6e-17 / 2.5e-16 | 1.1e-16 / 6.3e-16 | 1.1e-16 / 3.8e-16 | 4.7e-07 / 1.3e-02 | 4.6e-13 / 2.2e-12 | 4.6e-13 / 2.2e-12 | 4.6e-13 / 2.2e-12 | 1.1e-16 / 4.0e-16 | 1.1e-16 / 5.7e-16 | 1.1e-16 / 3.8e-16 |
+| arith_ranking_medium | 56 | 744 | 0.025 | >600 | >600 | >600 | oom | >600 | 34.9 | 6.11 | 5.24 | oom | 6.75 | 10.3 | 38.5 | 31.7 | 31.7 | 2.35 | 2.75 | 0.211 | 0.397 | 4.36 | 0.421 | 0.269 | 81 | 0.243 | 3.05 | 202 | alea | 1.1e-16 / 4.4e-16 |  |  |  |  |  | 1.1e-16 / 3.8e-16 | 8.5e-11 / 2.0e-08 | 1.1e-16 / 4.7e-16 |  | 5.6e-17 / 3.8e-16 | ref | 1.1e-16 / 2.8e-16 | 1.1e-16 / 2.8e-16 | 1.1e-16 / 2.8e-16 | 1.1e-16 / 4.7e-16 | 1.1e-16 / 5.1e-16 | 5.0e-07 / 2.1e-04 | 4.4e-13 / 2.0e-12 | 4.4e-13 / 2.0e-12 | 4.4e-13 / 2.0e-12 | 1.1e-16 / 4.2e-16 | 1.1e-16 / 3.2e-16 | 1.1e-16 / 3.8e-16 |
+| arith_ranking_small | 24 | 276 | 0.012 | >600 | err | oom | oom | >600 | 23.8 | 0.918 | 3.35 | oom | 1.9 | 2.86 | 24.3 | 9.92 | 10.2 | 1.99 | 2.04 | 0.113 | 0.259 | 2.66 | 0.136 | 0.11 | 28.4 | 0.046 | 2.9 | 48.5 | alea | 5.6e-17 / 2.2e-16 |  |  |  |  |  | 5.6e-17 / 2.2e-16 | 6.7e-14 / 2.3e-13 | 5.6e-17 / 4.4e-16 |  | 5.6e-17 / 2.9e-16 | ref | 5.6e-17 / 2.1e-16 | 5.6e-17 / 2.1e-16 | 5.6e-17 / 2.1e-16 | 5.6e-17 / 2.2e-16 | 5.6e-17 / 2.2e-16 | 4.2e-07 / 2.8e-06 | 5.0e-13 / 1.7e-12 | 5.0e-13 / 1.7e-12 | 5.0e-13 / 1.7e-12 | 1.1e-16 / 2.2e-16 | 5.6e-17 / 2.2e-16 | 5.6e-17 / 2.2e-16 |
+| arith_triangle_large | 132 | 1916 | 18.9 | >600 | oom | >600 | oom | >600 | 54 | 155 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | - | - | - | - | - | - | 22.9 | 23.9 | >600 | alea | ref |  |  |  |  |  | 4.9e-15 / 7.9e-14 | 4.8e-15 / 1.7e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.9e-15 / 7.9e-14 |
+| arith_triangle_medium | 57 | 1298 | 0.466 | >600 | oom | >600 | oom | >600 | 7.57 | 5.45 | 158 | >600 | >600 | err | 184 | >600 | >600 | 112 | 79.9 | - | - | - | - | - | oom | 0.804 | 1.56 | >600 | alea | 4.1e-13 / 4.4e-13 |  |  |  |  |  | 4.1e-13 / 4.4e-13 | 4.1e-13 / 4.4e-13 | 4.1e-13 / 4.4e-13 |  |  |  | 4.1e-13 / 4.4e-13 |  |  |  | 3.8e-13 / 4.1e-13 |  |  |  |  |  |  | 4.1e-13 / 4.4e-13 |
+| arith_triangle_small | 48 | 1277 | 0.237 | >600 | oom | >600 | oom | >600 | 6.38 | 3.41 | 29.1 | >600 | 272 | 381 | 49.4 | >600 | >600 | 76.4 | 46.1 | oom | oom | oom | oom | err | 152 | 0.205 | 0.904 | >600 | alea | 2.8e-16 / 5.1e-15 |  |  |  |  |  | 6.9e-18 / 3.3e-16 | 3.0e-17 / 3.0e-13 | 8.7e-19 / 1.6e-16 |  | 4.4e-16 / 1.1e-15 | ref | 6.9e-18 / 1.6e-16 |  |  | 1.4e-14 / 2.5e-14 | 4.0e-14 / 4.3e-14 |  |  |  |  |  | 6.9e-18 / 1.4e-16 | 6.9e-18 / 3.3e-16 |
+| arith_tugofwar | 44 | 1372 | 0.096 | >600 | >600 | >600 | oom | >600 | 7.98 | 1.94 | 194 | oom | >600 | >600 | 285 | >600 | >600 | 66.9 | 82.9 | oom | oom | oom | oom | oom | oom | 0.155 | 0.858 | >600 | alea | 4.4e-16 / 4.6e-16 |  |  |  |  |  | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  | 1.1e-16 / 1.1e-16 |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
 | nodice_3sat-0 |  |  | 0.396 | >600 | zero | oom | oom | >600 | 22.6 | 16.6 | 2.74 | >600 | >600 | err | 21 | >600 | >600 | >600 | >600 | oom | oom | oom | oom | oom | oom | 3.92 | 4.75 | >600 | alea | 1.3e-22 / 1.1e-15 |  |  |  |  |  | 1.3e-22 / 1.1e-15 | 1.3e-22 / 1.1e-15 | 1.3e-22 / 1.1e-15 |  |  |  | 1.3e-22 / 1.1e-15 |  |  |  |  |  |  |  |  |  |  | 1.3e-22 / 1.1e-15 |
-| nodice_alarm |  |  | 0.047 | 0.769 | 465 | >600 | 1.48 | 6.04 | 9.41 | 29.2 | 8.56 | oom | 0.209 | 0.236 | 3.12 | 1.26 | 1.29 | 2.83 | 3.07 | 0.29 | 0.602 | 3.34 | 0.681 | 0.72 | 139 | 458 | 459 | 2.18 | alea | 8.3e-17 / 4.1e-16 | 5.1e-08 / 2.1e-07 | 2.4e-07 / 1.2e-06 |  | 2.2e-16 / 5.5e-16 | 2.2e-16 / 5.5e-16 | 5.6e-17 / 1.4e-16 | 3.9e-16 / 1.1e-15 | 2.2e-16 / 8.1e-16 |  | 1.7e-16 / 5.4e-16 | 1.1e-16 / 2.7e-16 | 2.2e-16 / 8.1e-16 | 5.6e-17 / 1.4e-16 | 5.6e-17 / 1.4e-16 | 5.6e-17 / 1.4e-16 | 1.7e-16 / 4.3e-16 | 2.4e-07 / 1.2e-06 | 3.1e-13 / 7.9e-13 | 3.1e-13 / 7.9e-13 | 3.1e-13 / 7.9e-13 | 2.2e-16 / 5.7e-16 | 2.2e-16 / 5.7e-16 | 1.1e-16 / 2.8e-16 |
-| nodice_brp10-2 |  |  | 0.077 | 0.017 | 102 | err | 0.017 | 2.44 | 8.28 | 0.641 | 3.62 | - | 0.264 | 0.266 | 0.736 | 2.2 | 2.17 | 2.12 | 2.22 | 0.133 | 0.361 | 7.77 | 0.138 | 0.921 | 44.4 | 0.047 | 0.747 | 1.11 | alea | 1.1e-16 / 1.1e-16 | 4.4e-09 / 4.4e-09 | 4.0e-07 / 4.0e-07 |  | 2.2e-16 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 0.0e+00 / 0.0e+00 |  | 7.8e-16 / 7.8e-16 | 0.0e+00 / 0.0e+00 | 4.4e-16 / 4.4e-16 | 3.3e-16 / 3.3e-16 | 3.3e-16 / 3.3e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 | 4.0e-07 / 4.0e-07 | 2.5e-13 / 2.5e-13 | 2.5e-13 / 2.5e-13 | 2.5e-13 / 2.5e-13 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 |
-| nodice_brp1024-2 |  |  | 6.39 | 1.24 | - | err | 2.3 | >600 | 80 | >600 | >600 | - | 0.288 | 1.66 | 15.1 | 4.16 | 3.58 | 18.9 | 30.5 | 36.5 | 267 | 134 | 141 | >600 | - | 23.5 | 24.2 | - | alea | 6.7e-16 / 6.8e-16 | 4.8e-07 / 4.9e-07 |  |  | 2.0e-14 / 2.1e-14 |  | 3.9e-15 / 4.0e-15 |  |  |  | 8.7e-14 / 9.0e-14 | 1.1e-15 / 1.1e-15 | 3.0e-14 / 3.1e-14 | 2.5e-14 / 2.5e-14 | 2.5e-14 / 2.5e-14 | 1.7e-15 / 1.7e-15 | 1.3e-15 / 1.4e-15 | 1.9e-07 / 2.0e-07 | 1.1e-13 / 1.2e-13 | 1.1e-13 / 1.2e-13 | 1.1e-13 / 1.2e-13 |  |  | 1.1e-15 / 1.1e-15 |
-| nodice_brp16-2 |  |  | 0.058 | 0.023 | >600 | err | 0.024 | 3.25 | 8.26 | 0.646 | 4.34 | - | 0.258 | 0.289 | 0.976 | 2.21 | 2.18 | 2.16 | 2.3 | 0.127 | 0.321 | 2.43 | 0.141 | 0.258 | 72.5 | 0.065 | 0.761 | 80.4 | alea | 0.0e+00 / 0.0e+00 | 6.7e-08 / 6.7e-08 |  |  | 5.6e-16 / 5.6e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |  | 1.2e-15 / 1.2e-15 | 0.0e+00 / 0.0e+00 | 6.7e-16 / 6.7e-16 | 6.7e-16 / 6.7e-16 | 6.7e-16 / 6.7e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 | 3.3e-07 / 3.3e-07 | 2.3e-13 / 2.3e-13 | 2.3e-13 / 2.3e-13 | 2.3e-13 / 2.3e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_alarm |  |  | 0.047 | 0.769 | 465 | >600 | 1.48 | 6.04 | 9.41 | 29.2 | 8.56 | oom | 0.209 | 0.236 | 3.12 | 1.26 | 1.29 | 2.83 | 3.07 | 0.29 | 0.602 | 3.34 | 0.681 | 0.72 | 139 | 458 | 459 | 2.18 | storm-exact | 1.7e-16 / 4.1e-16 | 5.1e-08 / 2.1e-07 | 2.4e-07 / 1.2e-06 |  | 1.1e-16 / 2.7e-16 | 2.2e-16 / 5.7e-16 | 1.1e-16 / 2.8e-16 | 3.3e-16 / 1.1e-15 | 2.8e-16 / 8.1e-16 |  | 2.2e-16 / 5.7e-16 | ref | 3.3e-16 / 8.2e-16 | 1.1e-16 / 2.8e-16 | 1.1e-16 / 2.8e-16 | 5.6e-17 / 1.4e-16 | 1.1e-16 / 2.8e-16 | 2.4e-07 / 1.2e-06 | 3.1e-13 / 7.9e-13 | 3.1e-13 / 7.9e-13 | 3.1e-13 / 7.9e-13 | 1.7e-16 / 4.3e-16 | 1.7e-16 / 4.3e-16 | 5.6e-17 / 1.4e-16 |
+| nodice_brp10-2 |  |  | 0.077 | 0.017 | 102 | err | 0.017 | 2.44 | 8.28 | 0.641 | 3.62 | - | 0.264 | 0.266 | 0.736 | 2.2 | 2.17 | 2.12 | 2.22 | 0.133 | 0.361 | 7.77 | 0.138 | 0.921 | 44.4 | 0.047 | 0.747 | 1.11 | storm-exact | 1.1e-16 / 1.1e-16 | 4.4e-09 / 4.4e-09 | 4.0e-07 / 4.0e-07 |  | 2.2e-16 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 0.0e+00 / 0.0e+00 |  | 7.8e-16 / 7.8e-16 | ref | 4.4e-16 / 4.4e-16 | 3.3e-16 / 3.3e-16 | 3.3e-16 / 3.3e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 | 4.0e-07 / 4.0e-07 | 2.5e-13 / 2.5e-13 | 2.5e-13 / 2.5e-13 | 2.5e-13 / 2.5e-13 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 |
+| nodice_brp1024-2 |  |  | 6.39 | 1.24 | - | err | 2.3 | >600 | 80 | >600 | >600 | - | 0.288 | 1.66 | 15.1 | 4.16 | 3.58 | 18.9 | 30.5 | 36.5 | 267 | 134 | 141 | >600 | - | 23.5 | 24.2 | - | storm-exact | 4.4e-16 / 4.6e-16 | 4.8e-07 / 4.9e-07 |  |  | 2.1e-14 / 2.2e-14 |  | 2.8e-15 / 2.9e-15 |  |  |  | 8.6e-14 / 8.9e-14 | ref | 3.1e-14 / 3.2e-14 | 2.6e-14 / 2.6e-14 | 2.6e-14 / 2.6e-14 | 5.6e-16 / 5.7e-16 | 2.2e-16 / 2.3e-16 | 1.9e-07 / 2.0e-07 | 1.1e-13 / 1.2e-13 | 1.1e-13 / 1.2e-13 | 1.1e-13 / 1.2e-13 |  |  | 0.0e+00 / 0.0e+00 |
+| nodice_brp16-2 |  |  | 0.058 | 0.023 | >600 | err | 0.024 | 3.25 | 8.26 | 0.646 | 4.34 | - | 0.258 | 0.289 | 0.976 | 2.21 | 2.18 | 2.16 | 2.3 | 0.127 | 0.321 | 2.43 | 0.141 | 0.258 | 72.5 | 0.065 | 0.761 | 80.4 | storm-exact | 0.0e+00 / 0.0e+00 | 6.7e-08 / 6.7e-08 |  |  | 5.6e-16 / 5.6e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |  | 1.2e-15 / 1.2e-15 | ref | 6.7e-16 / 6.7e-16 | 6.7e-16 / 6.7e-16 | 6.7e-16 / 6.7e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 | 3.3e-07 / 3.3e-07 | 2.3e-13 / 2.3e-13 | 2.3e-13 / 2.3e-13 | 2.3e-13 / 2.3e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | nodice_brp16384-2 |  |  | 379 | err | - | err | err | - | - | - | - | - | err | err | err | err | err | 181 | >600 | - | - | - | - | - | - | >600 | >600 | - | alea | 2.3e-13 / 3.5e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.2e-13 / 1.8e-13 |  |  |  |  |  |  |  |  |
-| nodice_brp256-2 |  |  | 1.29 | 0.306 | - | err | 0.311 | 489 | 11.7 | 21.7 | 370 | - | 0.269 | 0.357 | 4.62 | 2.57 | 2.49 | 7.22 | 8.74 | 2.9 | 11.1 | 10.2 | 8.64 | 4.27 | >600 | 3.02 | 3.72 | - | alea | 1.1e-16 / 1.1e-16 | 7.2e-08 / 7.2e-08 |  |  | 5.9e-15 / 5.9e-15 | 3.3e-16 / 3.4e-16 | 7.8e-16 / 7.8e-16 | 6.7e-16 / 6.7e-16 | 2.8e-15 / 2.8e-15 |  | 2.2e-14 / 2.3e-14 | 3.3e-16 / 3.4e-16 | 8.7e-15 / 8.7e-15 | 5.7e-15 / 5.7e-15 | 5.7e-15 / 5.7e-15 | 4.4e-16 / 4.5e-16 | 4.4e-16 / 4.5e-16 | 1.3e-07 / 1.3e-07 | 4.4e-13 / 4.4e-13 | 4.4e-13 / 4.4e-13 | 4.4e-13 / 4.4e-13 | 3.3e-16 / 3.4e-16 |  | 3.3e-16 / 3.4e-16 |
-| nodice_brp4-2 |  |  | 0.021 | 0.01 | 0.21 | err | 0.009 | 1.47 | 8.15 | 0.766 | 3.12 | >600 | 0.293 | 0.271 | 0.44 | 2.16 | 2.22 | 1.62 | 1.74 | 0.08 | 0.23 | 2.15 | 0.08 | 0.1 | 15.5 | 0.01 | 0.724 | 0.223 | alea | 1.1e-16 / 1.1e-16 | 5.0e-08 / 5.0e-08 | 8.5e-07 / 8.5e-07 |  | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |  | 3.3e-16 / 3.3e-16 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 | 1.5e-07 / 1.5e-07 | 1.4e-13 / 1.4e-13 | 1.4e-13 / 1.4e-13 | 1.4e-13 / 1.4e-13 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 |
-| nodice_brp4096-2 |  |  | 35.6 | wrong | - | err | err | - | err | - | - | - | 0.395 | 45 | 124 | 25.1 | 29.1 | 59.5 | 205 | err | >600 | >600 | >600 | - | - | 160 | 162 | - | alea | 1.1e-14 / 1.2e-14 | 1.6e-06 / 1.7e-06 |  |  |  |  |  |  |  |  | 3.2e-13 / 3.5e-13 | 3.1e-15 / 3.5e-15 | 1.2e-13 / 1.4e-13 | 1.0e-13 / 1.2e-13 | 1.0e-13 / 1.2e-13 | 7.8e-16 / 8.7e-16 | 1.4e-14 / 1.6e-14 |  |  |  |  |  |  | 2.9e-15 / 3.2e-15 |
-| nodice_brp6-2 |  |  | 0.033 | 0.013 | 0.343 | err | 0.011 | 1.76 | 7.98 | 0.645 | 3.9 | - | 0.291 | 0.279 | 0.544 | 2.28 | 2.33 | 1.95 | 2 | 0.102 | 0.275 | 2.23 | 0.102 | 0.167 | 24.7 | 0.028 | 0.735 | 0.289 | alea | 4.4e-16 / 4.4e-16 | 2.9e-08 / 2.9e-08 | 2.3e-07 / 2.3e-07 |  | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |  | 4.4e-16 / 4.4e-16 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 | 2.3e-07 / 2.3e-07 | 4.5e-13 / 4.5e-13 | 4.5e-13 / 4.5e-13 | 4.5e-13 / 4.5e-13 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 |
-| nodice_brp64-2 |  |  | 0.281 | wrong | - | err | 0.081 | 20.3 | 8.43 | 1.01 | 24 | - | 0.289 | 0.272 | 2.47 | 2.22 | 2.26 | 3.25 | 3.65 | 0.375 | 0.977 | 2.88 | 0.694 | 1.04 | 333 | 0.492 | 1.18 | >600 | alea | 0.0e+00 / 0.0e+00 | 1.2e-06 / 1.2e-06 |  |  | 1.7e-15 / 1.7e-15 | 1.1e-16 / 1.1e-16 | 3.3e-16 / 3.3e-16 | 3.3e-16 / 3.3e-16 | 4.4e-16 / 4.4e-16 |  | 5.0e-15 / 5.0e-15 | 1.1e-16 / 1.1e-16 | 1.8e-15 / 1.8e-15 | 1.6e-15 / 1.6e-15 | 1.6e-15 / 1.6e-15 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.6e-07 / 2.6e-07 | 3.0e-13 / 3.0e-13 | 3.0e-13 / 3.0e-13 | 3.0e-13 / 3.0e-13 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |
-| nodice_brp8-2 |  |  | 0.054 | 0.015 | 2.46 | err | 0.014 | 1.97 | 8.54 | 0.641 | 3.42 | - | 0.31 | 0.28 | 0.662 | 2.31 | 2.34 | 2 | 2.18 | 0.117 | 0.29 | 2.38 | 0.119 | 0.247 | 34.4 | 0.034 | 0.741 | 0.462 | alea | 0.0e+00 / 0.0e+00 | 1.1e-08 / 1.1e-08 | 6.9e-07 / 6.9e-07 |  | 2.2e-16 / 2.2e-16 | 1.1e-16 / 1.1e-16 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 3.3e-16 / 3.3e-16 |  | 5.6e-16 / 5.6e-16 | 0.0e+00 / 0.0e+00 | 4.4e-16 / 4.4e-16 | 3.3e-16 / 3.3e-16 | 3.3e-16 / 3.3e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 | 3.1e-07 / 3.1e-07 | 3.0e-14 / 3.0e-14 | 3.0e-14 / 3.0e-14 | 3.0e-14 / 3.0e-14 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| nodice_coupon2-10-obs |  |  | 0.1 | oom | 4.27 | err | oom | >600 | 14.8 | 4.55 | >600 | oom | 6.95 | 18.1 | 3.5 | 3.49 | 1.88 | 17.8 | 26.4 | oom | oom | 14.7 | oom | err | 146 | 1.55 | 2.28 | >600 | alea | 2.2e-16 / 8.5e-16 |  | 5.2e-07 / 2.0e-06 |  |  |  | 2.2e-16 / 8.5e-16 | 1.5e-15 / 5.7e-15 |  |  | 1.7e-16 / 6.3e-16 | 2.2e-16 / 8.5e-16 | 1.7e-16 / 6.3e-16 | 1.7e-16 / 6.3e-16 | 1.7e-16 / 6.3e-16 | 5.6e-17 / 2.1e-16 | 5.6e-17 / 2.1e-16 |  |  | 3.2e-13 / 1.2e-12 |  |  | 3.3e-16 / 1.3e-15 | 2.2e-16 / 8.5e-16 |
-| nodice_coupon2-11-obs |  |  | 0.198 | >600 | 12.2 | err | oom | >600 | 25.1 | 13.1 | >600 | oom | 20.9 | 58.8 | 5.17 | 8.21 | 3.45 | 51.4 | 66.8 | - | - | 9.17 | - | err | 203 | 6.78 | 7.53 | >600 | alea | 2.8e-16 / 1.3e-15 |  | 7.0e-07 / 3.2e-06 |  |  |  | 2.5e-16 / 1.1e-15 | 1.1e-16 / 5.1e-16 |  |  | 1.1e-16 / 5.1e-16 | 2.2e-16 / 1.0e-15 | 3.3e-16 / 1.5e-15 | 1.1e-16 / 5.1e-16 | 1.1e-16 / 5.1e-16 | 8.3e-17 / 3.8e-16 | 8.0e-16 / 3.7e-15 |  |  | 1.6e-13 / 7.1e-13 |  |  | 1.9e-16 / 8.8e-16 | 1.4e-16 / 6.3e-16 |
-| nodice_coupon2-12-obs |  |  | 0.174 | >600 | 34.8 | err | oom | >600 | 60 | 63.2 | >600 | oom | 62.3 | 172 | 5.88 | 21.3 | 7.87 | >600 | >600 | - | - | 11.2 | - | err | 218 | 51.2 | 51.9 | >600 | alea | 6.7e-16 / 3.6e-15 |  | 1.4e-07 / 7.6e-07 |  |  |  | 6.7e-16 / 3.6e-15 | 1.7e-15 / 9.1e-15 |  |  | 3.9e-16 / 2.1e-15 | 6.7e-16 / 3.6e-15 | 7.2e-16 / 3.9e-15 | 3.9e-16 / 2.1e-15 | 3.9e-16 / 2.1e-15 |  |  |  |  | 1.8e-13 / 1.0e-12 |  |  | 7.2e-16 / 3.9e-15 | 6.7e-16 / 3.6e-15 |
+| nodice_brp256-2 |  |  | 1.29 | 0.306 | - | err | 0.311 | 489 | 11.7 | 21.7 | 370 | - | 0.269 | 0.357 | 4.62 | 2.57 | 2.49 | 7.22 | 8.74 | 2.9 | 11.1 | 10.2 | 8.64 | 4.27 | >600 | 3.02 | 3.72 | - | storm-exact | 2.2e-16 / 2.2e-16 | 7.2e-08 / 7.2e-08 |  |  | 6.2e-15 / 6.3e-15 | 0.0e+00 / 0.0e+00 | 4.4e-16 / 4.5e-16 | 3.3e-16 / 3.4e-16 | 3.1e-15 / 3.1e-15 |  | 2.2e-14 / 2.2e-14 | ref | 9.0e-15 / 9.1e-15 | 6.0e-15 / 6.0e-15 | 6.0e-15 / 6.0e-15 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.3e-07 / 1.3e-07 | 4.4e-13 / 4.4e-13 | 4.4e-13 / 4.4e-13 | 4.4e-13 / 4.4e-13 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 |
+| nodice_brp4-2 |  |  | 0.021 | 0.01 | 0.21 | err | 0.009 | 1.47 | 8.15 | 0.766 | 3.12 | >600 | 0.293 | 0.271 | 0.44 | 2.16 | 2.22 | 1.62 | 1.74 | 0.08 | 0.23 | 2.15 | 0.08 | 0.1 | 15.5 | 0.01 | 0.724 | 0.223 | storm-exact | 1.1e-16 / 1.1e-16 | 5.0e-08 / 5.0e-08 | 8.5e-07 / 8.5e-07 |  | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |  | 3.3e-16 / 3.3e-16 | ref | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 | 1.5e-07 / 1.5e-07 | 1.4e-13 / 1.4e-13 | 1.4e-13 / 1.4e-13 | 1.4e-13 / 1.4e-13 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 |
+| nodice_brp4096-2 |  |  | 35.6 | wrong | - | err | err | - | err | - | - | - | 0.395 | 45 | 124 | 25.1 | 29.1 | 59.5 | 205 | err | >600 | >600 | >600 | - | - | 160 | 162 | - | storm-exact | 7.9e-15 / 8.8e-15 | 1.6e-06 / 1.7e-06 |  |  |  |  |  |  |  |  | 3.2e-13 / 3.6e-13 | ref | 1.2e-13 / 1.3e-13 | 1.0e-13 / 1.1e-13 | 1.0e-13 / 1.1e-13 | 2.3e-15 / 2.6e-15 | 1.1e-14 / 1.2e-14 |  |  |  |  |  |  | 2.2e-16 / 2.5e-16 |
+| nodice_brp6-2 |  |  | 0.033 | 0.013 | 0.343 | err | 0.011 | 1.76 | 7.98 | 0.645 | 3.9 | - | 0.291 | 0.279 | 0.544 | 2.28 | 2.33 | 1.95 | 2 | 0.102 | 0.275 | 2.23 | 0.102 | 0.167 | 24.7 | 0.028 | 0.735 | 0.289 | storm-exact | 4.4e-16 / 4.4e-16 | 2.9e-08 / 2.9e-08 | 2.3e-07 / 2.3e-07 |  | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |  | 4.4e-16 / 4.4e-16 | ref | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 | 2.3e-07 / 2.3e-07 | 4.5e-13 / 4.5e-13 | 4.5e-13 / 4.5e-13 | 4.5e-13 / 4.5e-13 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 0.0e+00 / 0.0e+00 |
+| nodice_brp64-2 |  |  | 0.281 | wrong | - | err | 0.081 | 20.3 | 8.43 | 1.01 | 24 | - | 0.289 | 0.272 | 2.47 | 2.22 | 2.26 | 3.25 | 3.65 | 0.375 | 0.977 | 2.88 | 0.694 | 1.04 | 333 | 0.492 | 1.18 | >600 | storm-exact | 1.1e-16 / 1.1e-16 | 1.2e-06 / 1.2e-06 |  |  | 1.8e-15 / 1.8e-15 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.2e-16 | 4.4e-16 / 4.4e-16 | 5.6e-16 / 5.6e-16 |  | 4.9e-15 / 4.9e-15 | ref | 1.9e-15 / 1.9e-15 | 1.7e-15 / 1.7e-15 | 1.7e-15 / 1.7e-15 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 2.6e-07 / 2.6e-07 | 3.0e-13 / 3.0e-13 | 3.0e-13 / 3.0e-13 | 3.0e-13 / 3.0e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_brp8-2 |  |  | 0.054 | 0.015 | 2.46 | err | 0.014 | 1.97 | 8.54 | 0.641 | 3.42 | - | 0.31 | 0.28 | 0.662 | 2.31 | 2.34 | 2 | 2.18 | 0.117 | 0.29 | 2.38 | 0.119 | 0.247 | 34.4 | 0.034 | 0.741 | 0.462 | storm-exact | 0.0e+00 / 0.0e+00 | 1.1e-08 / 1.1e-08 | 6.9e-07 / 6.9e-07 |  | 2.2e-16 / 2.2e-16 | 1.1e-16 / 1.1e-16 | 2.2e-16 / 2.2e-16 | 2.2e-16 / 2.2e-16 | 3.3e-16 / 3.3e-16 |  | 5.6e-16 / 5.6e-16 | ref | 4.4e-16 / 4.4e-16 | 3.3e-16 / 3.3e-16 | 3.3e-16 / 3.3e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.1e-16 | 3.1e-07 / 3.1e-07 | 3.0e-14 / 3.0e-14 | 3.0e-14 / 3.0e-14 | 3.0e-14 / 3.0e-14 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_coupon2-10-obs |  |  | 0.1 | oom | 4.27 | err | oom | >600 | 14.8 | 4.55 | >600 | oom | 6.95 | 18.1 | 3.5 | 3.49 | 1.88 | 17.8 | 26.4 | oom | oom | 14.7 | oom | err | 146 | 1.55 | 2.28 | >600 | storm-exact | 0.0e+00 / 0.0e+00 |  | 5.2e-07 / 2.0e-06 |  |  |  | 0.0e+00 / 0.0e+00 | 1.7e-15 / 6.6e-15 |  |  | 5.6e-17 / 2.1e-16 | ref | 5.6e-17 / 2.1e-16 | 5.6e-17 / 2.1e-16 | 5.6e-17 / 2.1e-16 | 2.8e-16 / 1.1e-15 | 1.7e-16 / 6.3e-16 |  |  | 3.2e-13 / 1.2e-12 |  |  | 1.1e-16 / 4.2e-16 | 0.0e+00 / 0.0e+00 |
+| nodice_coupon2-11-obs |  |  | 0.198 | >600 | 12.2 | err | oom | >600 | 25.1 | 13.1 | >600 | oom | 20.9 | 58.8 | 5.17 | 8.21 | 3.45 | 51.4 | 66.8 | - | - | 9.17 | - | err | 203 | 6.78 | 7.53 | >600 | storm-exact | 5.6e-17 / 2.5e-16 |  | 7.0e-07 / 3.2e-06 |  |  |  | 2.8e-17 / 1.3e-16 | 3.3e-16 / 1.5e-15 |  |  | 3.3e-16 / 1.5e-15 | ref | 1.1e-16 / 5.1e-16 | 3.3e-16 / 1.5e-15 | 3.3e-16 / 1.5e-15 | 1.4e-16 / 6.3e-16 | 5.8e-16 / 2.7e-15 |  |  | 1.6e-13 / 7.1e-13 |  |  | 2.8e-17 / 1.3e-16 | 8.3e-17 / 3.8e-16 |
+| nodice_coupon2-12-obs |  |  | 0.174 | >600 | 34.8 | err | oom | >600 | 60 | 63.2 | >600 | oom | 62.3 | 172 | 5.88 | 21.3 | 7.87 | >600 | >600 | - | - | 11.2 | - | err | 218 | 51.2 | 51.9 | >600 | storm-exact | 0.0e+00 / 0.0e+00 |  | 1.4e-07 / 7.6e-07 |  |  |  | 0.0e+00 / 0.0e+00 | 2.3e-15 / 1.3e-14 |  |  | 2.8e-16 / 1.5e-15 | ref | 5.6e-17 / 3.0e-16 | 2.8e-16 / 1.5e-15 | 2.8e-16 / 1.5e-15 |  |  |  |  | 1.8e-13 / 1.0e-12 |  |  | 5.6e-17 / 3.0e-16 | 0.0e+00 / 0.0e+00 |
 | nodice_coupon2-13-obs |  |  | 0.581 | >600 | 97 | err | oom | >600 | err | 211 | >600 | oom | 182 | err | 7.42 | 60.3 | 20.8 | - | - | - | - | 146 | - | err | 295 | 593 | 594 | >600 | alea | 5.0e-16 / 3.3e-15 |  | 2.8e-07 / 1.8e-06 |  |  |  |  | 2.4e-15 / 1.6e-14 |  |  | 5.8e-16 / 3.8e-15 |  | 6.4e-16 / 4.2e-15 | 5.8e-16 / 3.8e-15 | 5.8e-16 / 3.8e-15 |  |  |  |  | 1.0e-13 / 6.8e-13 |  |  | 5.3e-16 / 3.4e-15 | 5.3e-16 / 3.4e-15 |
 | nodice_coupon2-14-obs |  |  | 0.744 | >600 | 259 | err | oom | >600 | err | >600 | >600 | oom | 502 | oom | 8.32 | 155 | 56.4 | - | - | - | - | 121 | - | err | 333 | >600 | >600 | >600 | alea | 2.2e-16 / 1.7e-15 |  | 2.7e-07 / 2.1e-06 |  |  |  |  |  |  |  | 2.8e-17 / 2.2e-16 |  | 5.6e-17 / 4.3e-16 | 2.8e-17 / 2.2e-16 | 2.8e-17 / 2.2e-16 |  |  |  |  | 2.0e-14 / 1.6e-13 |  |  | 2.2e-16 / 1.7e-15 |  |
 | nodice_coupon2-16-obs |  |  | 5.84 | - | >600 | err | - | - | - | - | - | >600 | >600 | - | 13.5 | oom | 465 | - | - | - | - | oom | - | - | >600 | - | - | >600 | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  | 1.6e-15 / 1.8e-14 |  | 1.7e-15 / 1.9e-14 |  |  |  |  |  |  |  |  |  |
 | nodice_coupon2-18-obs |  |  | 65.5 | - | oom | err | - | - | - | - | - | oom | - | - | 18 | - | oom | - | - | - | - | - | - | - | - | - | - | >600 | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  | 9.2e-16 / 1.5e-14 |  |  |  |  |  |  |  |  |  |  |  |
-| nodice_coupon2-2-obs |  |  | 0.006 | 0.013 | 0.037 | err | 0.005 | 1.06 | 6.91 | 0.566 | 2.9 | 0.028 | 0.277 | 0.27 | 0.304 | 2.14 | 2.16 | 1.41 | 1.41 | 0.068 | 0.214 | 2.1 | 0.068 | 0.0658 | 1.56 | 0.003 | 0.718 | 0.128 | alea | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_coupon2-2-obs |  |  | 0.006 | 0.013 | 0.037 | err | 0.005 | 1.06 | 6.91 | 0.566 | 2.9 | 0.028 | 0.277 | 0.27 | 0.304 | 2.14 | 2.16 | 1.41 | 1.41 | 0.068 | 0.214 | 2.1 | 0.068 | 0.0658 | 1.56 | 0.003 | 0.718 | 0.128 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | nodice_coupon2-20-obs |  |  | oom | - | oom | err | - | - | - | - | - | oom | - | - | 26.2 | - | - | - | - | - | - | - | - | - | - | - | - | >600 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| nodice_coupon2-3-obs |  |  | 0.009 | 0.028 | 0.04 | err | 0.007 | 2.27 | 8.82 | 0.599 | 2.91 | >600 | 0.286 | 0.281 | 0.428 | 2.29 | 2.31 | 1.71 | 1.73 | 0.073 | 0.218 | 2.12 | 0.074 | 0.089 | 11.8 | 0.005 | 0.716 | 0.189 | alea | 2.2e-16 / 2.5e-16 | 2.2e-16 / 2.5e-16 | 1.1e-07 / 1.3e-07 |  | 3.3e-16 / 3.7e-16 | 2.2e-16 / 2.5e-16 | 2.2e-16 / 2.5e-16 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.5e-16 |  | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.5e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.5e-16 | 2.2e-16 / 2.5e-16 | 1.1e-07 / 1.3e-07 | 1.1e-13 / 1.3e-13 | 1.1e-13 / 1.3e-13 | 1.1e-13 / 1.3e-13 | 2.2e-16 / 2.5e-16 | 2.2e-16 / 2.5e-16 | 2.2e-16 / 2.5e-16 |
-| nodice_coupon2-4-obs |  |  | 0.01 | 0.087 | 0.052 | err | 0.156 | >600 | 10.8 | 0.614 | 2.98 | - | 0.277 | 0.317 | 0.591 | 2.42 | 2.42 | 1.92 | 2.04 | 0.102 | 0.23 | 2.09 | 0.092 | 0.184 | 25.4 | 0.005 | 0.705 | 1.42 | alea | 2.2e-16 / 2.9e-16 | 2.0e-08 / 2.7e-08 | 3.7e-07 / 4.9e-07 |  | 2.2e-16 / 2.9e-16 |  | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 |  | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 | 3.7e-07 / 4.9e-07 | 3.7e-13 / 4.9e-13 | 3.7e-13 / 4.9e-13 | 3.7e-13 / 4.9e-13 | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 | 2.2e-16 / 2.9e-16 |
-| nodice_coupon2-5-obs |  |  | 0.015 | 1.72 | 0.101 | err | 34.7 | - | 10.3 | 0.653 | 3.27 | - | 0.289 | 0.372 | 0.865 | 2.42 | 2.3 | 2.35 | 2.44 | 0.237 | 0.253 | 2.08 | 0.13 | 0.199 | 52.2 | 0.011 | 0.702 | 189 | alea | 1.1e-16 / 1.7e-16 | 8.5e-08 / 1.3e-07 | 1.1e-16 / 1.7e-16 |  | 1.1e-16 / 1.7e-16 |  | 1.1e-16 / 1.7e-16 | 4.4e-16 / 7.0e-16 | 1.1e-16 / 1.7e-16 |  | 1.1e-16 / 1.7e-16 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 1.7e-16 | 1.0e-15 / 1.6e-15 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 1.7e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.7e-16 |
-| nodice_coupon2-6-obs |  |  | 0.018 | 5.53 | 0.191 | err | err | - | 10.6 | 0.692 | 3.54 | - | 0.351 | 0.52 | 1.08 | 2.49 | 2.35 | 3.01 | 3.26 | 0.693 | 1.34 | 2.23 | 0.204 | 0.429 | 67.5 | 0.018 | 0.719 | >600 | alea | 2.2e-16 / 4.2e-16 | 8.3e-08 / 1.6e-07 | 3.5e-07 / 6.5e-07 |  |  |  | 1.1e-16 / 2.1e-16 | 3.3e-16 / 6.2e-16 | 1.1e-16 / 2.1e-16 |  | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 | 2.2e-16 / 4.2e-16 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 | 3.3e-16 / 6.2e-16 | 1.1e-16 / 2.1e-16 | 3.5e-07 / 6.5e-07 | 1.2e-14 / 2.3e-14 | 1.2e-14 / 2.3e-14 | 1.2e-14 / 2.3e-14 | 1.1e-16 / 2.1e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 |
-| nodice_coupon2-7-obs |  |  | 0.03 | 17.5 | 0.439 | err | - | - | 10.8 | 0.917 | 9.51 | - | 0.578 | 1.24 | 1.49 | 2.65 | 2.51 | 3.98 | 4.32 | 3.17 | 0.614 | 2.38 | 0.354 | 5.73 | 116 | 0.06 | 0.757 | - | alea | 4.4e-16 / 9.9e-16 | 2.9e-07 / 6.4e-07 | 1.9e-07 / 4.2e-07 |  |  |  | 4.4e-16 / 9.9e-16 | 2.2e-16 / 5.0e-16 | 6.1e-16 / 1.4e-15 |  | 2.2e-16 / 5.0e-16 | 4.4e-16 / 9.9e-16 | 4.4e-16 / 9.9e-16 | 2.2e-16 / 5.0e-16 | 2.2e-16 / 5.0e-16 | 4.4e-16 / 9.9e-16 | 8.3e-16 / 1.9e-15 | 1.9e-07 / 4.2e-07 | 4.0e-13 / 8.9e-13 | 4.0e-13 / 8.9e-13 | 4.0e-13 / 8.9e-13 | 3.9e-16 / 8.7e-16 | 2.8e-16 / 6.2e-16 | 5.0e-16 / 1.1e-15 |
-| nodice_coupon2-8-obs |  |  | 0.03 | 51 | 1.12 | err | - | - | 11.3 | 1.04 | 51.5 | - | 1.4 | 3.44 | 1.88 | 2.98 | 2.74 | 126 | >600 | err | err | 69.9 | err | oom | 159 | 0.132 | 0.834 | - | alea | 4.4e-16 / 1.2e-15 | 2.7e-07 / 7.1e-07 | 5.8e-07 / 1.5e-06 |  |  |  | 4.4e-16 / 1.2e-15 | 4.4e-16 / 1.2e-15 | 3.9e-16 / 1.0e-15 |  | 4.4e-16 / 1.2e-15 | 4.4e-16 / 1.2e-15 | 4.4e-16 / 1.2e-15 | 4.4e-16 / 1.2e-15 | 4.4e-16 / 1.2e-15 | 4.4e-16 / 1.2e-15 |  |  |  | 3.3e-13 / 8.9e-13 |  |  | 5.6e-16 / 1.5e-15 | 4.4e-16 / 1.2e-15 |
-| nodice_coupon2-9-obs |  |  | 0.058 | >600 | 3.52 | err | - | - | 13.7 | 1.71 | 304 | - | 4.21 | 12.2 | 2.62 | 4.08 | 3.31 | 14.1 | - | - | - | 3.04 | - | - | 206 | 0.413 | 1.11 | - | alea | 5.0e-16 / 1.6e-15 |  | 1.1e-07 / 3.4e-07 |  |  |  | 6.7e-16 / 2.1e-15 | 2.1e-15 / 6.7e-15 | 3.9e-16 / 1.2e-15 |  | 6.1e-16 / 1.9e-15 | 5.6e-16 / 1.8e-15 | 5.0e-16 / 1.6e-15 | 6.1e-16 / 1.9e-15 | 6.1e-16 / 1.9e-15 | 5.6e-16 / 1.8e-15 |  |  |  | 3.2e-13 / 1.0e-12 |  |  | 5.0e-16 / 1.6e-15 | 4.4e-16 / 1.4e-15 |
-| nodice_diamond-1-p |  |  | 0.006 | 0.026 | 0.035 | err | 0.006 | 1.06 | 6.69 | 0.567 | 2.87 | 0.016 | 0.268 | 0.266 | 0.264 | 2.16 | 2.2 | 1.3 | 1.31 | 0.071 | 0.217 | 2.16 | 0.072 | 0.0687 | 2.68 | 0.003 | 0.721 | 0.121 | alea | 1.1e-16 / 1.1e-16 | 2.5e-09 / 2.5e-09 | 2.5e-09 / 2.5e-09 |  | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 3.3e-16 / 3.3e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 2.5e-09 / 2.5e-09 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |
-| nodice_diamond-100-p |  |  | 0.023 | 0.036 | 0.086 | err | 0.015 | 6.44 | 10.3 | 1.96 | 3.12 | >600 | 0.299 | 0.303 | 2.06 | 2.6 | 2.69 | 2.36 | 2.62 | 0.13 | 0.355 | 2.33 | 0.154 | 0.364 | 108 | 0.05 | 0.786 | 0.685 | alea | 4.8e-15 / 4.8e-15 | 7.0e-07 / 7.1e-07 | 6.0e-07 / 6.1e-07 |  | 4.0e-15 / 4.0e-15 | 4.2e-15 / 4.2e-15 | 4.4e-15 / 4.5e-15 | 4.7e-15 / 4.7e-15 | 4.2e-15 / 4.2e-15 |  | 1.5e-14 / 1.5e-14 | 4.8e-15 / 4.8e-15 | 4.4e-15 / 4.5e-15 | 4.4e-15 / 4.5e-15 | 4.4e-15 / 4.5e-15 | 5.0e-15 / 5.0e-15 | 4.9e-15 / 4.9e-15 | 4.0e-07 / 4.0e-07 | 2.5e-13 / 2.5e-13 | 2.5e-13 / 2.5e-13 | 2.5e-13 / 2.5e-13 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 | 4.7e-15 / 4.7e-15 |
-| nodice_diamond-1000-p |  |  | 0.149 | wrong | 2.05 | err | 0.118 | 106 | 22.4 | - | 9.08 | - | 1.17 | 1.24 | 112 | 22.4 | 21 | 6.17 | 8.52 | 2.25 | 9.09 | 8.35 | 6.08 | 3.16 | - | 3.36 | 4.16 | 89.8 | alea | 4.6e-14 / 4.8e-14 | 7.8e-06 / 8.2e-06 | 3.3e-07 / 3.4e-07 |  | 3.4e-14 / 3.5e-14 | 4.0e-14 / 4.2e-14 | 4.0e-14 / 4.2e-14 |  | 4.2e-14 / 4.4e-14 |  | 1.5e-13 / 1.6e-13 | 4.6e-14 / 4.8e-14 | 4.0e-14 / 4.2e-14 | 4.0e-14 / 4.2e-14 | 4.0e-14 / 4.2e-14 | 4.5e-14 / 4.7e-14 | 4.3e-14 / 4.5e-14 | 3.3e-07 / 3.4e-07 | 3.1e-13 / 3.3e-13 | 3.1e-13 / 3.3e-13 | 3.1e-13 / 3.3e-13 | 4.3e-14 / 4.5e-14 |  | 4.6e-14 / 4.8e-14 |
-| nodice_diamond-10000-p |  |  | 2.23 | wrong | 465 | err | err | - | - | - | >600 | - | 63.2 | 84.8 | - | - | - | 24.1 | wrong | err | >600 | 542 | 537 | - | - | - | - | oom | alea | 3.0e-14 / 5.0e-14 | 5.3e-05 / 8.8e-05 | 2.5e-07 / 4.1e-07 |  |  |  |  |  |  |  | 7.7e-13 / 1.3e-12 | 3.1e-14 / 5.1e-14 |  |  |  | 2.9e-14 / 4.9e-14 | inf / inf |  |  | 1.8e-13 / 3.0e-13 | 1.8e-13 / 3.0e-13 |  |  |  |
-| nodice_diamond-200-p |  |  | 0.037 | wrong | 0.165 | err | 0.028 | 13.3 | 10.6 | 23.6 | 3.5 | - | 0.371 | 0.367 | 5.58 | 3.24 | 3.18 | 2.83 | 3.18 | 0.223 | 0.627 | 2.55 | 0.366 | 0.71 | 247 | 0.126 | 0.83 | 2.03 | alea | 9.5e-15 / 9.6e-15 | 1.4e-06 / 1.4e-06 | 8.4e-08 / 8.5e-08 |  | 6.8e-15 / 6.8e-15 | 8.3e-15 / 8.4e-15 | 8.1e-15 / 8.2e-15 | 9.2e-15 / 9.3e-15 | 9.2e-15 / 9.3e-15 |  | 3.0e-14 / 3.0e-14 | 9.5e-15 / 9.6e-15 | 8.1e-15 / 8.2e-15 | 8.1e-15 / 8.2e-15 | 8.1e-15 / 8.2e-15 | 8.8e-15 / 8.9e-15 | 9.0e-15 / 9.1e-15 | 8.4e-08 / 8.5e-08 | 1.9e-13 / 1.9e-13 | 1.9e-13 / 1.9e-13 | 1.9e-13 / 1.9e-13 | 9.3e-15 / 9.4e-15 | 9.3e-15 / 9.4e-15 | 9.4e-15 / 9.5e-15 |
-| nodice_diamond-2000-p |  |  | 0.347 | wrong | 9.7 | err | 0.236 | 361 | 62.1 | - | 22.6 | - | 2.8 | 3.17 | 436 | 88.6 | 82.8 | 9.54 | wrong | 7.97 | 47.1 | 24.1 | 24.2 | >600 | - | 14.4 | 15.4 | oom | alea | 8.7e-14 / 9.6e-14 | 1.5e-05 / 1.7e-05 | 9.1e-07 / 1.0e-06 |  | 6.3e-14 / 7.0e-14 | 7.6e-14 / 8.4e-14 | 7.7e-14 / 8.5e-14 |  | 7.8e-14 / 8.6e-14 |  | 2.8e-13 / 3.1e-13 | 8.7e-14 / 9.6e-14 | 7.7e-14 / 8.5e-14 | 7.7e-14 / 8.5e-14 | 7.7e-14 / 8.5e-14 | 8.2e-14 / 9.0e-14 | inf / inf | 8.6e-08 / 9.5e-08 | 1.3e-13 / 1.4e-13 | 1.3e-13 / 1.4e-13 | 1.3e-13 / 1.4e-13 |  |  | 8.8e-14 / 9.7e-14 |
-| nodice_diamond-300-p |  |  | 0.066 | wrong | 0.281 | err | 0.04 | 20.7 | 11.3 | 106 | 3.95 | - | 0.418 | 0.468 | 11.9 | 4.19 | 4.07 | 3.25 | 3.67 | 0.329 | 1.02 | 2.89 | 0.665 | 1.49 | 357 | 0.268 | 1 | 4.65 | alea | 1.4e-14 / 1.4e-14 | 2.1e-06 / 2.1e-06 | 3.1e-07 / 3.2e-07 |  | 1.0e-14 / 1.0e-14 | 1.3e-14 / 1.3e-14 | 1.2e-14 / 1.2e-14 | 1.3e-14 / 1.3e-14 | 1.3e-14 / 1.3e-14 |  | 4.6e-14 / 4.6e-14 | 1.4e-14 / 1.4e-14 | 1.2e-14 / 1.2e-14 | 1.2e-14 / 1.2e-14 | 1.2e-14 / 1.2e-14 | 1.4e-14 / 1.4e-14 | 1.4e-14 / 1.4e-14 | 3.1e-07 / 3.2e-07 | 3.5e-13 / 3.5e-13 | 3.5e-13 / 3.5e-13 | 3.5e-13 / 3.5e-13 | 1.4e-14 / 1.4e-14 | 1.4e-14 / 1.4e-14 | 1.4e-14 / 1.4e-14 |
-| nodice_diamond-3000-p |  |  | 0.539 | wrong | 25 | err | err | >600 | 142 | - | 50 | - | 5.17 | 6.21 | >600 | 212 | 211 | 14.3 | wrong | 17.4 | 240 | 88.7 | 74.6 | - | - | 32.1 | 33.6 | oom | alea | 1.3e-13 / 1.5e-13 | 2.2e-05 / 2.6e-05 | 2.9e-07 / 3.3e-07 |  |  |  | 1.1e-13 / 1.3e-13 |  | 1.1e-13 / 1.3e-13 |  | 4.1e-13 / 4.8e-13 | 1.2e-13 / 1.4e-13 |  | 1.1e-13 / 1.3e-13 | 1.1e-13 / 1.3e-13 | 1.2e-13 / 1.4e-13 | inf / inf | 2.9e-07 / 3.3e-07 | 3.0e-13 / 3.4e-13 | 3.0e-13 / 3.4e-13 | 3.0e-13 / 3.4e-13 |  |  | 1.2e-13 / 1.4e-13 |
-| nodice_diamond-400-p |  |  | 0.07 | wrong | 0.415 | err | 0.05 | 30.5 | 12.6 | 340 | 4.49 | - | 0.506 | 0.523 | 18 | 5.11 | 5.3 | 3.74 | 4.63 | 0.51 | 1.61 | 3.26 | 1.1 | 0.995 | 475 | 0.465 | 1.2 | 9.08 | alea | 1.9e-14 / 1.9e-14 | 3.1e-06 / 3.1e-06 | 1.7e-07 / 1.8e-07 |  | 1.3e-14 / 1.3e-14 | 1.7e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.3e-14 / 1.3e-14 | 1.8e-14 / 1.8e-14 |  | 6.0e-14 / 6.1e-14 | 1.9e-14 / 1.9e-14 | 1.6e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.6e-14 / 1.7e-14 | 1.8e-14 / 1.8e-14 | 1.9e-14 / 1.9e-14 | 1.7e-07 / 1.8e-07 | 6.3e-14 / 6.4e-14 | 6.3e-14 / 6.4e-14 | 6.3e-14 / 6.4e-14 | 1.8e-14 / 1.9e-14 | 1.8e-14 / 1.9e-14 | 1.9e-14 / 1.9e-14 |
-| nodice_diamond-4000-p |  |  | 0.827 | wrong | 50.3 | err | err | - | 244 | - | 81.2 | - | 8.34 | 10.4 | - | 396 | 389 | 19 | wrong | 31.4 | 306 | 103 | 91.2 | - | - | 61.9 | 64.1 | oom | alea | 1.6e-13 / 1.9e-13 | 2.8e-05 / 3.4e-05 | 2.8e-07 / 3.4e-07 |  |  |  | 1.4e-13 / 1.7e-13 |  | 1.4e-13 / 1.7e-13 |  | 5.3e-13 / 6.4e-13 | 1.6e-13 / 1.9e-13 |  | 1.4e-13 / 1.7e-13 | 1.4e-13 / 1.7e-13 | 1.5e-13 / 1.9e-13 | inf / inf | 2.8e-07 / 3.4e-07 | 1.8e-13 / 2.2e-13 | 1.8e-13 / 2.2e-13 | 1.8e-13 / 2.2e-13 |  |  | 1.5e-13 / 1.9e-13 |
-| nodice_diamond-500-p |  |  | 0.084 | wrong | 0.573 | err | 0.061 | 40.9 | 13.4 | >600 | 5.01 | - | 0.601 | 0.584 | 28.1 | 7.05 | 7.09 | 4.05 | 5.19 | 0.697 | 2.39 | 3.85 | 1.63 | 1.29 | >600 | 0.766 | 1.5 | 15.3 | alea | 2.4e-14 / 2.4e-14 | 3.8e-06 / 3.9e-06 | 5.4e-07 / 5.5e-07 |  | 1.6e-14 / 1.7e-14 | 2.1e-14 / 2.1e-14 | 2.1e-14 / 2.1e-14 |  | 2.2e-14 / 2.3e-14 |  | 7.4e-14 / 7.6e-14 | 2.4e-14 / 2.4e-14 | 2.1e-14 / 2.1e-14 | 2.1e-14 / 2.1e-14 | 2.1e-14 / 2.1e-14 | 2.3e-14 / 2.4e-14 | 2.3e-14 / 2.3e-14 | 4.6e-07 / 4.7e-07 | 4.1e-13 / 4.2e-13 | 4.1e-13 / 4.2e-13 | 4.1e-13 / 4.2e-13 | 2.3e-14 / 2.3e-14 |  | 2.3e-14 / 2.4e-14 |
-| nodice_diamond-5000-p |  |  | 0.844 | wrong | 86.5 | err | err | - | err | - | 173 | - | 13.5 | 17.6 | - | >600 | >600 | 16.7 | wrong | 41.5 | 262 | 125 | 143 | - | - | oom | oom | oom | alea | 1.9e-13 / 2.4e-13 | 3.3e-05 / 4.3e-05 | 2.4e-08 / 3.1e-08 |  |  |  |  |  | 1.7e-13 / 2.2e-13 |  | 6.3e-13 / 8.1e-13 | 1.9e-13 / 2.4e-13 |  |  |  | 1.8e-13 / 2.4e-13 | inf / inf | 2.4e-08 / 3.1e-08 | 1.2e-13 / 1.5e-13 | 1.2e-13 / 1.5e-13 | 1.2e-13 / 1.5e-13 |  |  |  |
-| nodice_diamond-700-p |  |  | 0.111 | wrong | 1.06 | err | 0.085 | 68.7 | 16.5 | - | 6.38 | - | 0.817 | 0.832 | 55.7 | 11.2 | 11.7 | 5.02 | 7.12 | 1.21 | 4.54 | 5.1 | 3.07 | 1.94 | - | 1.61 | 2.35 | 36 | alea | 3.2e-14 / 3.4e-14 | 5.3e-06 / 5.5e-06 | 7.1e-07 / 7.3e-07 |  | 2.3e-14 / 2.4e-14 | 2.8e-14 / 2.9e-14 | 2.9e-14 / 3.0e-14 |  | 3.0e-14 / 3.1e-14 |  | 1.0e-13 / 1.1e-13 | 3.2e-14 / 3.4e-14 | 2.9e-14 / 3.0e-14 | 2.9e-14 / 3.0e-14 | 2.9e-14 / 3.0e-14 | 3.2e-14 / 3.3e-14 | 3.1e-14 / 3.2e-14 | 2.9e-07 / 3.0e-07 | 5.0e-13 / 5.2e-13 | 5.0e-13 / 5.2e-13 | 5.0e-13 / 5.2e-13 | 3.1e-14 / 3.2e-14 |  | 3.2e-14 / 3.3e-14 |
-| nodice_diamond-800-p |  |  | 0.131 | wrong | 1.41 | err | 0.116 | 80.3 | 19.7 | - | 7.22 | - | 0.878 | 0.923 | 70.6 | 14.3 | 14 | 5.37 | 6.76 | 1.47 | 5.74 | 5.9 | 3.93 | 2.32 | - | 1.99 | 2.74 | 51 | alea | 3.7e-14 / 3.8e-14 | 6.0e-06 / 6.3e-06 | 5.6e-07 / 5.8e-07 |  | 2.6e-14 / 2.7e-14 | 3.2e-14 / 3.4e-14 | 3.2e-14 / 3.4e-14 |  | 3.4e-14 / 3.5e-14 |  | 1.2e-13 / 1.2e-13 | 3.7e-14 / 3.8e-14 | 3.2e-14 / 3.4e-14 | 3.2e-14 / 3.4e-14 | 3.2e-14 / 3.4e-14 | 3.6e-14 / 3.8e-14 | 3.7e-14 / 3.8e-14 | 4.4e-07 / 4.6e-07 | 4.6e-13 / 4.8e-13 | 4.6e-13 / 4.8e-13 | 4.6e-13 / 4.8e-13 | 3.5e-14 / 3.7e-14 |  | 3.7e-14 / 3.8e-14 |
-| nodice_diamond-900-p |  |  | 0.131 | wrong | 1.69 | err | 0.108 | 90 | 21.6 | - | 8.04 | - | 1.04 | 1.1 | 90.5 | 17.8 | 17.9 | 5.73 | 8.03 | 1.94 | 7.97 | 7.43 | 5.01 | 2.6 | - | 2.46 | 3.19 | 69.4 | alea | 4.1e-14 / 4.3e-14 | 6.8e-06 / 7.1e-06 | 6.1e-07 / 6.3e-07 |  | 3.0e-14 / 3.1e-14 | 3.6e-14 / 3.8e-14 | 3.6e-14 / 3.8e-14 |  | 3.8e-14 / 3.9e-14 |  | 1.3e-13 / 1.4e-13 | 4.1e-14 / 4.3e-14 | 3.6e-14 / 3.8e-14 | 3.6e-14 / 3.8e-14 | 3.6e-14 / 3.8e-14 | 4.0e-14 / 4.2e-14 | 4.1e-14 / 4.3e-14 | 3.9e-07 / 4.1e-07 | 4.1e-13 / 4.3e-13 | 4.1e-13 / 4.3e-13 | 4.1e-13 / 4.3e-13 | 3.9e-14 / 4.1e-14 |  | 4.1e-14 / 4.3e-14 |
-| nodice_hepar2 |  |  | 0.077 | 0.146 | 0.654 | >600 | 0.266 | 5.28 | 8.8 | 3.55 | 181 | oom | 0.18 | 0.194 | 1.94 | 1.28 | 1.27 | 2.4 | 2.55 | 0.232 | 0.395 | 1.74 | 0.348 | 0.282 | 80.4 | 0.5 | 1.22 | 0.923 | alea | 1.1e-16 / 1.3e-16 | 2.7e-09 / 1.7e-08 | 6.8e-07 / 4.2e-06 |  | 1.1e-16 / 5.1e-16 | 5.6e-17 / 3.4e-16 | 1.1e-16 / 3.4e-16 | 1.1e-16 / 3.4e-16 | 2.2e-15 / 3.1e-15 |  | 7.8e-16 / 2.1e-15 | 1.1e-16 / 3.4e-16 | 3.3e-16 / 5.1e-16 | 1.1e-16 / 6.9e-16 | 1.1e-16 / 6.9e-16 | 5.6e-17 / 3.4e-16 | 3.3e-16 / 4.0e-16 | 3.2e-07 / 2.0e-06 | 3.1e-14 / 1.9e-13 | 3.1e-14 / 1.9e-13 | 3.1e-14 / 1.9e-13 | 1.1e-16 / 3.4e-16 | 1.1e-16 / 3.4e-16 | 1.1e-16 / 1.3e-16 |
-| nodice_insurance |  |  | 0.103 | 4.36 | 3.61 | oom | 4.07 | >600 | 42.8 | >600 | 30.3 | oom | 0.501 | 0.665 | 9.49 | 1.29 | 1.35 | 6.68 | 7.52 | 6.39 | 2.73 | 10.6 | 4.68 | 10.6 | 287 | 1.78 | 2.54 | 50.3 | alea | 1.7e-16 / 1.9e-15 | 9.8e-08 / 1.2e-06 | 7.0e-07 / 2.9e-05 |  | 2.2e-16 / 1.0e-15 |  | 1.1e-16 / 1.2e-15 |  | 6.7e-16 / 2.5e-15 |  | 2.2e-16 / 1.9e-15 | 1.1e-16 / 1.4e-15 | 2.2e-16 / 1.0e-15 | 1.1e-16 / 1.0e-15 | 1.1e-16 / 1.0e-15 | 2.2e-16 / 1.2e-15 | 5.6e-17 / 8.3e-16 | 4.8e-07 / 2.9e-05 | 4.5e-13 / 4.2e-12 | 4.5e-13 / 4.2e-12 | 4.5e-13 / 4.2e-12 | 1.1e-16 / 1.7e-15 | 5.6e-17 / 1.2e-15 | 1.1e-16 / 1.0e-15 |
-| nodice_ladder-1-p |  |  | 0.006 | 0.015 | 0.04 | err | 0.009 | 1.08 | 7.17 | 0.57 | 2.86 | 0.017 | 0.556 | 0.595 | 0.549 | 4.32 | 4.43 | 1.33 | 1.4 | 0.07 | 0.304 | 2.2 | 0.07 | 0.0684 | 2.24 | 0.003 | 0.718 | 0.144 | alea | 1.1e-16 / 2.2e-16 | 5.0e-08 / 1.0e-07 | 2.5e-07 / 5.0e-07 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.5e-07 / 5.0e-07 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.1e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| nodice_ladder-10-p |  |  | 0.011 | 0.033 | 0.042 | err | 0.019 | 1.69 | 10.5 | 0.679 | 2.86 | >600 | 0.564 | 0.586 | 0.911 | 4.71 | 4.81 | 1.75 | 1.79 | 0.082 | 0.243 | 2.28 | 0.083 | 0.105 | 18.6 | 0.007 | 0.713 | 0.171 | alea | 5.6e-17 / 1.1e-16 | 1.2e-08 / 2.4e-08 | 1.1e-07 / 2.3e-07 |  | 1.7e-16 / 3.4e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.2e-16 | 2.8e-16 / 5.6e-16 | 1.7e-16 / 3.4e-16 |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.1e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.7e-16 / 3.4e-16 | 1.1e-16 / 2.2e-16 | 1.1e-07 / 2.3e-07 | 5.2e-14 / 1.0e-13 | 5.2e-14 / 1.0e-13 | 5.2e-14 / 1.0e-13 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |
-| nodice_ladder-100-p |  |  | 0.079 | 0.116 | - | err | 0.112 | 8.59 | 11.2 | 42.9 | 3.76 | - | 0.616 | 0.597 | 8.29 | 5.76 | 5.82 | 2.81 | 3.28 | 0.271 | 0.667 | 2.98 | 0.413 | 0.725 | 218 | 0.084 | 0.768 | 1.29 | alea | 5.0e-16 / 1.1e-15 | 2.4e-07 / 5.1e-07 |  |  | 5.6e-16 / 1.2e-15 | 4.4e-16 / 9.3e-16 | 6.1e-16 / 1.3e-15 | 8.3e-16 / 1.8e-15 | 5.6e-16 / 1.2e-15 |  | 6.7e-16 / 1.4e-15 | 5.6e-16 / 1.2e-15 | 7.8e-16 / 1.6e-15 | 7.8e-16 / 1.6e-15 | 7.8e-16 / 1.6e-15 | 3.3e-16 / 7.0e-16 | 4.4e-16 / 9.3e-16 | 1.6e-07 / 3.3e-07 | 4.4e-14 / 9.2e-14 | 4.4e-14 / 9.2e-14 | 4.4e-14 / 9.2e-14 | 6.1e-16 / 1.3e-15 | 6.1e-16 / 1.3e-15 | 7.8e-16 / 1.6e-15 |
-| nodice_ladder-20-p |  |  | 0.015 | 0.034 | 0.278 | err | 0.028 | 2.55 | 10.9 | 0.662 | 2.9 | - | 0.636 | 0.533 | 1.39 | 4.62 | 4.69 | 2.13 | 2.21 | 0.093 | 0.268 | 2.32 | 0.094 | 0.232 | 39.6 | 0.01 | 0.713 | 0.241 | alea | 1.7e-16 / 3.4e-16 | 1.4e-07 / 2.9e-07 | 6.6e-07 / 1.3e-06 |  | 2.8e-16 / 5.6e-16 | 5.6e-17 / 1.1e-16 | 1.7e-16 / 3.4e-16 | 2.8e-16 / 5.6e-16 | 2.2e-16 / 4.5e-16 |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.8e-16 / 5.6e-16 | 2.2e-16 / 4.5e-16 | 3.4e-07 / 7.0e-07 | 2.6e-13 / 5.3e-13 | 2.6e-13 / 5.3e-13 | 2.6e-13 / 5.3e-13 | 1.1e-16 / 2.2e-16 | 1.7e-16 / 3.4e-16 | 1.1e-16 / 2.2e-16 |
-| nodice_ladder-30-p |  |  | 0.021 | 0.046 | 235 | err | 0.041 | 3.28 | 11.1 | 0.968 | 2.97 | - | 0.533 | 0.529 | 1.93 | 4.74 | 4.84 | 2.22 | 2.38 | 0.11 | 0.304 | 2.44 | 0.117 | 0.217 | 63 | 0.015 | 0.707 | 0.337 | alea | 2.2e-16 / 4.5e-16 | 1.3e-07 / 2.7e-07 | 5.7e-07 / 1.2e-06 |  | 2.2e-16 / 4.5e-16 | 1.1e-16 / 2.3e-16 | 2.2e-16 / 4.5e-16 | 1.1e-16 / 2.3e-16 | 3.3e-16 / 6.8e-16 |  | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 | 5.6e-17 / 1.1e-16 | 4.3e-07 / 8.8e-07 | 8.0e-14 / 1.6e-13 | 8.0e-14 / 1.6e-13 | 8.0e-14 / 1.6e-13 | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 |
-| nodice_ladder-40-p |  |  | 0.026 | 0.053 | >600 | err | 0.05 | 3.94 | 10.7 | 1.24 | 3.03 | - | 0.577 | 0.546 | 2.56 | 4.72 | 4.59 | 2.27 | 2.42 | 0.121 | 0.323 | 2.86 | 0.137 | 0.302 | 82.4 | 0.033 | 0.734 | 0.411 | alea | 2.2e-16 / 4.5e-16 | 1.1e-07 / 2.3e-07 |  |  | 2.2e-16 / 4.5e-16 | 1.7e-16 / 3.4e-16 | 2.2e-16 / 4.5e-16 | 6.7e-16 / 1.4e-15 | 4.4e-16 / 9.1e-16 |  | 2.2e-16 / 4.5e-16 | 2.2e-16 / 4.5e-16 | 2.2e-16 / 4.5e-16 | 2.2e-16 / 4.5e-16 | 2.2e-16 / 4.5e-16 | 5.6e-17 / 1.1e-16 | 1.1e-16 / 2.3e-16 | 2.1e-07 / 4.3e-07 | 3.4e-13 / 7.0e-13 | 3.4e-13 / 7.0e-13 | 3.4e-13 / 7.0e-13 | 2.2e-16 / 4.5e-16 | 1.7e-16 / 3.4e-16 | 2.2e-16 / 4.5e-16 |
-| nodice_ladder-50-p |  |  | 0.033 | 0.063 | - | err | 0.059 | 4.63 | 10.8 | 2.46 | 3.12 | - | 0.554 | 0.556 | 3.81 | 4.94 | 4.93 | 2.32 | 2.55 | 0.137 | 0.347 | 2.37 | 0.165 | 0.351 | 105 | 0.039 | 0.734 | 0.514 | alea | 1.7e-16 / 3.4e-16 | 1.4e-07 / 3.0e-07 |  |  | 2.8e-16 / 5.7e-16 | 1.7e-16 / 3.4e-16 | 2.8e-16 / 5.7e-16 | 5.6e-17 / 1.1e-16 | 4.4e-16 / 9.1e-16 |  | 2.8e-16 / 5.7e-16 | 2.8e-16 / 5.7e-16 | 2.8e-16 / 5.7e-16 | 2.8e-16 / 5.7e-16 | 2.8e-16 / 5.7e-16 | 1.7e-16 / 3.4e-16 | 1.7e-16 / 3.4e-16 | 2.6e-07 / 5.2e-07 | 2.7e-13 / 5.6e-13 | 2.7e-13 / 5.6e-13 | 2.7e-13 / 5.6e-13 | 3.3e-16 / 6.8e-16 | 3.3e-16 / 6.8e-16 | 3.9e-16 / 8.0e-16 |
-| nodice_ladder-60-p |  |  | 0.04 | 0.076 | - | err | 0.069 | 5.38 | 11.1 | 5.99 | 3.18 | - | 0.555 | 0.562 | 4.38 | 5.04 | 4.99 | 2.48 | 2.69 | 0.158 | 0.392 | 2.53 | 0.201 | 0.714 | 125 | 0.046 | 0.744 | 0.639 | alea | 2.8e-16 / 5.7e-16 | 1.9e-07 / 4.0e-07 |  |  | 3.3e-16 / 6.9e-16 | 2.2e-16 / 4.6e-16 | 3.9e-16 / 8.0e-16 | 1.7e-16 / 3.4e-16 | 3.9e-16 / 8.0e-16 |  | 4.4e-16 / 9.2e-16 | 3.3e-16 / 6.9e-16 | 4.4e-16 / 9.2e-16 | 4.4e-16 / 9.2e-16 | 4.4e-16 / 9.2e-16 | 3.3e-16 / 6.9e-16 | 2.2e-16 / 4.6e-16 | 9.3e-08 / 1.9e-07 | 2.4e-13 / 5.0e-13 | 2.4e-13 / 5.0e-13 | 2.4e-13 / 5.0e-13 | 3.3e-16 / 6.9e-16 | 3.3e-16 / 6.9e-16 | 5.6e-16 / 1.1e-15 |
-| nodice_ladder-70-p |  |  | 0.047 | 0.086 | - | err | 0.079 | 5.93 | 11.1 | 8.52 | 3.3 | - | 0.566 | 0.579 | 5.19 | 6.69 | 5.95 | 2.52 | 2.78 | 0.177 | 0.436 | 2.55 | 0.245 | 0.604 | 147 | 0.053 | 0.745 | 0.781 | alea | 3.3e-16 / 6.9e-16 | 2.2e-07 / 4.5e-07 |  |  | 4.4e-16 / 9.2e-16 | 2.8e-16 / 5.8e-16 | 4.4e-16 / 9.2e-16 | 3.3e-16 / 6.9e-16 | 3.9e-16 / 8.1e-16 |  | 5.6e-16 / 1.2e-15 | 3.3e-16 / 6.9e-16 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 | 4.4e-16 / 9.2e-16 | 4.4e-16 / 9.2e-16 | 3.2e-07 / 6.6e-07 | 3.4e-13 / 7.0e-13 | 3.4e-13 / 7.0e-13 | 3.4e-13 / 7.0e-13 | 3.9e-16 / 8.1e-16 | 3.9e-16 / 8.1e-16 | 5.6e-16 / 1.2e-15 |
-| nodice_ladder-80-p |  |  | 0.058 | 0.095 | - | err | 0.091 | 6.67 | 11 | 17.7 | 3.4 | - | 0.597 | 0.62 | 5.92 | 5.14 | 5.15 | 2.64 | 2.97 | 0.208 | 0.498 | 2.66 | 0.289 | 0.915 | 173 | 0.059 | 0.759 | 0.926 | alea | 5.0e-16 / 1.0e-15 | 2.8e-07 / 5.7e-07 |  |  | 4.4e-16 / 9.3e-16 | 2.8e-16 / 5.8e-16 | 5.6e-16 / 1.2e-15 | 1.7e-16 / 3.5e-16 | 5.0e-16 / 1.0e-15 |  | 6.7e-16 / 1.4e-15 | 4.4e-16 / 9.3e-16 | 6.7e-16 / 1.4e-15 | 6.7e-16 / 1.4e-15 | 6.7e-16 / 1.4e-15 | 3.3e-16 / 6.9e-16 | 3.3e-16 / 6.9e-16 | 4.8e-07 / 9.9e-07 | 3.4e-14 / 7.2e-14 | 3.4e-14 / 7.2e-14 | 3.4e-14 / 7.2e-14 | 4.4e-16 / 9.3e-16 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 |
-| nodice_ladder-90-p |  |  | 0.065 | 0.106 | - | err | 0.106 | 7.61 | 11 | 33.9 | 3.56 | - | 0.573 | 0.559 | 7.25 | 5.48 | 5.6 | 2.77 | 3.01 | 0.242 | 0.589 | 2.81 | 0.355 | 0.636 | 200 | 0.069 | 0.759 | 1.1 | alea | 3.9e-16 / 8.1e-16 | 2.3e-07 / 4.9e-07 |  |  | 4.4e-16 / 9.3e-16 | 3.9e-16 / 8.1e-16 | 5.0e-16 / 1.0e-15 | 2.8e-16 / 5.8e-16 | 5.0e-16 / 1.0e-15 |  | 6.1e-16 / 1.3e-15 | 5.0e-16 / 1.0e-15 | 6.7e-16 / 1.4e-15 | 6.7e-16 / 1.4e-15 | 6.7e-16 / 1.4e-15 | 4.4e-16 / 9.3e-16 | 3.3e-16 / 7.0e-16 | 3.7e-07 / 7.7e-07 | 1.5e-13 / 3.1e-13 | 1.5e-13 / 3.1e-13 | 1.5e-13 / 3.1e-13 | 5.6e-16 / 1.2e-15 | 5.6e-16 / 1.2e-15 | 6.1e-16 / 1.3e-15 |
-| nodice_survey |  |  | 0.005 | 0.014 | 0.031 | 1.59 | 0.032 | 1.4 | 6.11 | 0.498 | 2.7 | oom | 0.164 | 0.162 | 0.247 | 1.28 | 1.28 | 1.37 | 1.45 | 0.08 | 0.212 | 1.47 | 0.079 | 0.242 | 6.09 | 0.005 | 0.715 | 0.107 | alea | 1.1e-16 / 3.5e-16 | 3.2e-08 / 7.8e-08 | 7.5e-07 / 2.7e-06 | 1.1e-16 / 2.0e-16 | 2.8e-17 / 1.8e-16 | 8.3e-17 / 5.3e-16 | 1.1e-16 / 4.0e-16 | 1.1e-16 / 4.0e-16 | 2.8e-17 / 1.8e-16 |  | 1.1e-16 / 5.3e-16 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 | 2.8e-17 / 1.8e-16 | 1.1e-16 / 2.0e-16 | 2.5e-07 / 1.4e-06 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.0e-16 | 5.6e-17 / 3.5e-16 | 8.3e-17 / 5.3e-16 |
-| nodice_uf20-0990 |  |  | 0.025 | >600 | 0.083 | >600 | 32.3 | >600 | 10.1 | 0.744 | 3.02 | >600 | 28.8 | 45.3 | 2.64 | 4.96 | 4.6 | 8.78 | 13.8 | 9.59 | 1.26 | >600 | 5.43 | >600 | 122 | 0.013 | 0.725 | 25.4 | alea | 6.8e-21 / 7.1e-16 |  | 4.6e-07 / 4.9e-02 |  | 6.8e-21 / 7.1e-16 |  | 6.8e-21 / 7.1e-16 | 6.8e-21 / 7.1e-16 | 6.8e-21 / 7.1e-16 |  | 6.8e-21 / 7.1e-16 | 6.8e-21 / 7.1e-16 | 6.8e-21 / 7.1e-16 | 6.8e-21 / 7.1e-16 | 6.8e-21 / 7.1e-16 | 6.8e-21 / 7.1e-16 | 6.8e-21 / 7.1e-16 | 4.6e-07 / 4.9e-02 | 2.5e-18 / 2.6e-13 |  | 2.5e-18 / 2.6e-13 |  | 6.8e-21 / 7.1e-16 | 6.8e-21 / 7.1e-16 |
-| nodice_uf20-0991 |  |  | 0.027 | >600 | 0.087 | >600 | 23.3 | >600 | 10.1 | 0.745 | 3.03 | >600 | 27.8 | 43.5 | 2.81 | 4.91 | 4.57 | 15.9 | 11.8 | 24.7 | 2.81 | >600 | 16.2 | err | 112 | 0.014 | 0.721 | 25.6 | alea | 3.4e-21 / 1.6e-16 |  | 1.9e-08 / 9.1e-04 |  | 3.4e-21 / 1.6e-16 |  | 3.4e-21 / 1.6e-16 | 3.4e-21 / 1.6e-16 | 3.4e-21 / 1.6e-16 |  | 3.4e-21 / 1.6e-16 | 3.4e-21 / 1.6e-16 | 3.4e-21 / 1.6e-16 | 3.4e-21 / 1.6e-16 | 3.4e-21 / 1.6e-16 | 3.4e-21 / 1.6e-16 | 3.4e-21 / 1.6e-16 | 1.9e-08 / 9.1e-04 | 3.8e-17 / 1.8e-12 |  | 3.8e-17 / 1.8e-12 |  | 0.0e+00 / 0.0e+00 | 3.4e-21 / 1.6e-16 |
-| nodice_uf20-0992 |  |  | 0.026 | >600 | 0.089 | >600 | 24.9 | >600 | 10.3 | 0.823 | 2.15 | >600 | 25.2 | 38 | 2.72 | 4.95 | 4.59 | 10.3 | 18.7 | 13.4 | 1.91 | >600 | 8.15 | err | 108 | 0.014 | 0.713 | 21.1 | alea | 8.5e-22 / 2.2e-16 |  | 1.9e-07 / 4.9e-02 |  | 8.5e-22 / 2.2e-16 |  | 8.5e-22 / 2.2e-16 | 8.5e-22 / 2.2e-16 | 8.5e-22 / 2.2e-16 |  | 8.5e-22 / 2.2e-16 | 8.5e-22 / 2.2e-16 | 8.5e-22 / 2.2e-16 | 8.5e-22 / 2.2e-16 | 8.5e-22 / 2.2e-16 | 8.5e-22 / 2.2e-16 | 8.5e-22 / 2.2e-16 | 1.9e-07 / 4.9e-02 | 5.0e-18 / 1.3e-12 |  | 5.0e-18 / 1.3e-12 |  | 8.5e-22 / 2.2e-16 | 8.5e-22 / 2.2e-16 |
-| nodice_uf20-0993 |  |  | 0.025 | >600 | 0.076 | >600 | 35.7 | >600 | 10.5 | 0.928 | 2.13 | >600 | 22.3 | 36.1 | 2.5 | 4.44 | 4.12 | 11.6 | 11.4 | 23.9 | 2.33 | >600 | 15.2 | err | 110 | 0.011 | 0.715 | 21.4 | alea | 0.0e+00 / 0.0e+00 |  | 9.3e-08 / 4.9e-02 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 9.3e-08 / 4.9e-02 | 2.5e-18 / 1.3e-12 |  | 2.5e-18 / 1.3e-12 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| nodice_uf20-0994 |  |  | 0.027 | >600 | 0.083 | >600 | 25.2 | >600 | 10.2 | 0.77 | 3.12 | >600 | 23.5 | 38 | 2.59 | 4.83 | 4.66 | 9.47 | 15.3 | 13.4 | 1.62 | 278 | 6.89 | err | 119 | 0.011 | 0.728 | 15.5 | alea | 3.4e-21 / 2.5e-16 |  | 3.5e-07 / 2.6e-02 |  | 3.4e-21 / 2.5e-16 |  | 3.4e-21 / 2.5e-16 | 3.4e-21 / 2.5e-16 | 3.4e-21 / 2.5e-16 |  | 3.4e-21 / 2.5e-16 | 3.4e-21 / 2.5e-16 | 3.4e-21 / 2.5e-16 | 3.4e-21 / 2.5e-16 | 3.4e-21 / 2.5e-16 | 3.4e-21 / 2.5e-16 | 3.4e-21 / 2.5e-16 | 3.5e-07 / 2.6e-02 | 1.2e-17 / 9.4e-13 | 1.2e-17 / 9.4e-13 | 1.2e-17 / 9.4e-13 |  | 3.4e-21 / 2.5e-16 | 3.4e-21 / 2.5e-16 |
-| nodice_uf20-0995 |  |  | 0.028 | >600 | 0.092 | >600 | 30.2 | >600 | 10.8 | 0.788 | 3.15 | >600 | 26 | 41.3 | 2.77 | 4.91 | 4.47 | 9.91 | 41.6 | 14.1 | 1.49 | >600 | 11.4 | err | 120 | 0.014 | 0.741 | 25.7 | alea | 1.7e-21 / 5.9e-16 |  | 1.4e-07 / 4.9e-02 |  | 1.7e-21 / 5.9e-16 |  | 1.7e-21 / 5.9e-16 | 1.7e-21 / 5.9e-16 | 1.7e-21 / 5.9e-16 |  | 1.7e-21 / 5.9e-16 | 1.7e-21 / 5.9e-16 | 1.7e-21 / 5.9e-16 | 1.7e-21 / 5.9e-16 | 1.7e-21 / 5.9e-16 | 1.7e-21 / 5.9e-16 | 1.7e-21 / 5.9e-16 | 1.4e-07 / 4.9e-02 | 1.3e-18 / 4.4e-13 |  | 1.3e-18 / 4.4e-13 |  | 1.7e-21 / 5.9e-16 | 1.7e-21 / 5.9e-16 |
-| nodice_uf20-0996 |  |  | 0.027 | >600 | 0.101 | >600 | 30.1 | >600 | 10.1 | 0.747 | 2.96 | >600 | 22.4 | 34.9 | 2.74 | 4.71 | 4.45 | 7.86 | 21.9 | 6.27 | 0.869 | >600 | 5.08 | 417 | 116 | 0.013 | 0.733 | 35.7 | alea | 3.4e-21 / 7.1e-16 |  | 2.3e-07 / 4.9e-02 |  | 3.4e-21 / 7.1e-16 |  | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 |  | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 | 2.3e-07 / 4.9e-02 | 1.2e-18 / 2.6e-13 |  | 1.2e-18 / 2.6e-13 | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 | 3.4e-21 / 7.1e-16 |
-| nodice_uf20-0997 |  |  | 0.027 | >600 | 0.083 | >600 | 24.9 | >600 | 9.91 | 0.755 | 3.09 | >600 | 28.6 | 43.5 | 2.71 | 5.2 | 5.09 | 27.9 | 24 | 48.5 | 6.07 | >600 | 33.3 | err | 118 | 0.014 | 0.718 | 20.3 | alea | 5.1e-21 / 4.4e-16 |  | 4.4e-07 / 3.9e-02 |  | 5.1e-21 / 4.4e-16 |  | 5.1e-21 / 4.4e-16 | 5.1e-21 / 4.4e-16 | 5.1e-21 / 4.4e-16 |  | 5.1e-21 / 4.4e-16 | 5.1e-21 / 4.4e-16 | 5.1e-21 / 4.4e-16 | 5.1e-21 / 4.4e-16 | 5.1e-21 / 4.4e-16 | 5.1e-21 / 4.4e-16 | 5.1e-21 / 4.4e-16 | 4.4e-07 / 3.9e-02 | 2.5e-17 / 2.2e-12 |  | 2.5e-17 / 2.2e-12 |  | 5.1e-21 / 4.4e-16 | 5.1e-21 / 4.4e-16 |
-| nodice_uf20-0998 |  |  | 0.031 | >600 | 0.103 | >600 | 21.7 | >600 | 10.1 | 0.835 | 3.29 | >600 | 28.3 | 61.6 | 2.91 | 4.96 | 4.56 | 8.91 | 19.4 | 11 | 1.53 | >600 | 7.9 | >600 | 132 | 0.02 | 0.742 | 32.8 | alea | 8.5e-22 / 1.3e-16 |  | 3.2e-07 / 4.9e-02 |  | 8.5e-22 / 1.3e-16 |  | 8.5e-22 / 1.3e-16 | 8.5e-22 / 1.3e-16 | 8.5e-22 / 1.3e-16 |  | 8.5e-22 / 1.3e-16 | 8.5e-22 / 1.3e-16 | 8.5e-22 / 1.3e-16 | 8.5e-22 / 1.3e-16 | 8.5e-22 / 1.3e-16 | 8.5e-22 / 1.3e-16 | 8.5e-22 / 1.3e-16 | 3.2e-07 / 4.9e-02 | 3.8e-18 / 5.6e-13 |  | 3.8e-18 / 5.6e-13 |  | 1.7e-21 / 2.5e-16 | 8.5e-22 / 1.3e-16 |
-| nodice_uf20-0999 |  |  | 0.033 | >600 | 0.106 | >600 | 29.9 | >600 | 10.5 | 0.768 | 2.98 | >600 | 30.7 | 49.4 | 2.88 | 5.06 | 5 | 9.57 | 28.6 | 7.85 | 1.22 | >600 | 5.67 | err | 115 | 0.014 | 0.719 | 26.1 | alea | 3.7e-20 / 1.7e-15 |  | 6.5e-08 / 3.0e-03 |  | 3.7e-20 / 1.7e-15 |  | 3.7e-20 / 1.7e-15 | 3.7e-20 / 1.7e-15 | 3.7e-20 / 1.7e-15 |  | 3.7e-20 / 1.7e-15 | 3.7e-20 / 1.7e-15 | 3.7e-20 / 1.7e-15 | 3.7e-20 / 1.7e-15 | 3.7e-20 / 1.7e-15 | 3.7e-20 / 1.7e-15 | 3.7e-20 / 1.7e-15 | 6.5e-08 / 3.0e-03 | 4.4e-17 / 2.0e-12 |  | 4.4e-17 / 2.0e-12 |  | 3.7e-20 / 1.7e-15 | 3.7e-20 / 1.7e-15 |
+| nodice_coupon2-3-obs |  |  | 0.009 | 0.028 | 0.04 | err | 0.007 | 2.27 | 8.82 | 0.599 | 2.91 | >600 | 0.286 | 0.281 | 0.428 | 2.29 | 2.31 | 1.71 | 1.73 | 0.073 | 0.218 | 2.12 | 0.074 | 0.089 | 11.8 | 0.005 | 0.716 | 0.189 | storm-exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-07 / 1.3e-07 |  | 1.1e-16 / 1.2e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 2.5e-16 | 0.0e+00 / 0.0e+00 |  | 2.2e-16 / 2.5e-16 | ref | 2.2e-16 / 2.5e-16 | 2.2e-16 / 2.5e-16 | 2.2e-16 / 2.5e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-07 / 1.3e-07 | 1.1e-13 / 1.3e-13 | 1.1e-13 / 1.3e-13 | 1.1e-13 / 1.3e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_coupon2-4-obs |  |  | 0.01 | 0.087 | 0.052 | err | 0.156 | >600 | 10.8 | 0.614 | 2.98 | - | 0.277 | 0.317 | 0.591 | 2.42 | 2.42 | 1.92 | 2.04 | 0.102 | 0.23 | 2.09 | 0.092 | 0.184 | 25.4 | 0.005 | 0.705 | 1.42 | storm-exact | 0.0e+00 / 0.0e+00 | 2.0e-08 / 2.7e-08 | 3.7e-07 / 4.9e-07 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 3.7e-07 / 4.9e-07 | 3.7e-13 / 4.9e-13 | 3.7e-13 / 4.9e-13 | 3.7e-13 / 4.9e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_coupon2-5-obs |  |  | 0.015 | 1.72 | 0.101 | err | 34.7 | - | 10.3 | 0.653 | 3.27 | - | 0.289 | 0.372 | 0.865 | 2.42 | 2.3 | 2.35 | 2.44 | 0.237 | 0.253 | 2.08 | 0.13 | 0.199 | 52.2 | 0.011 | 0.702 | 189 | storm-exact | 0.0e+00 / 0.0e+00 | 8.5e-08 / 1.3e-07 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 3.3e-16 / 5.2e-16 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 8.9e-16 / 1.4e-15 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.7e-16 | 0.0e+00 / 0.0e+00 |
+| nodice_coupon2-6-obs |  |  | 0.018 | 5.53 | 0.191 | err | err | - | 10.6 | 0.692 | 3.54 | - | 0.351 | 0.52 | 1.08 | 2.49 | 2.35 | 3.01 | 3.26 | 0.693 | 1.34 | 2.23 | 0.204 | 0.429 | 67.5 | 0.018 | 0.719 | >600 | storm-exact | 1.1e-16 / 2.1e-16 | 8.3e-08 / 1.6e-07 | 3.5e-07 / 6.5e-07 |  |  |  | 0.0e+00 / 0.0e+00 | 4.4e-16 / 8.3e-16 | 2.2e-16 / 4.2e-16 |  | 0.0e+00 / 0.0e+00 | ref | 1.1e-16 / 2.1e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 3.5e-07 / 6.5e-07 | 1.2e-14 / 2.3e-14 | 1.2e-14 / 2.3e-14 | 1.2e-14 / 2.3e-14 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 |
+| nodice_coupon2-7-obs |  |  | 0.03 | 17.5 | 0.439 | err | - | - | 10.8 | 0.917 | 9.51 | - | 0.578 | 1.24 | 1.49 | 2.65 | 2.51 | 3.98 | 4.32 | 3.17 | 0.614 | 2.38 | 0.354 | 5.73 | 116 | 0.06 | 0.757 | - | storm-exact | 0.0e+00 / 0.0e+00 | 2.9e-07 / 6.4e-07 | 1.9e-07 / 4.2e-07 |  |  |  | 0.0e+00 / 0.0e+00 | 2.2e-16 / 5.0e-16 | 1.7e-16 / 3.7e-16 |  | 2.2e-16 / 5.0e-16 | ref | 0.0e+00 / 0.0e+00 | 2.2e-16 / 5.0e-16 | 2.2e-16 / 5.0e-16 | 0.0e+00 / 0.0e+00 | 3.9e-16 / 8.7e-16 | 1.9e-07 / 4.2e-07 | 4.0e-13 / 8.9e-13 | 4.0e-13 / 8.9e-13 | 4.0e-13 / 8.9e-13 | 5.6e-17 / 1.2e-16 | 1.7e-16 / 3.7e-16 | 5.6e-17 / 1.2e-16 |
+| nodice_coupon2-8-obs |  |  | 0.03 | 51 | 1.12 | err | - | - | 11.3 | 1.04 | 51.5 | - | 1.4 | 3.44 | 1.88 | 2.98 | 2.74 | 126 | >600 | err | err | 69.9 | err | oom | 159 | 0.132 | 0.834 | - | storm-exact | 0.0e+00 / 0.0e+00 | 2.7e-07 / 7.1e-07 | 5.8e-07 / 1.5e-06 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.5e-16 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  | 3.3e-13 / 8.9e-13 |  |  | 1.1e-16 / 3.0e-16 | 0.0e+00 / 0.0e+00 |
+| nodice_coupon2-9-obs |  |  | 0.058 | >600 | 3.52 | err | - | - | 13.7 | 1.71 | 304 | - | 4.21 | 12.2 | 2.62 | 4.08 | 3.31 | 14.1 | - | - | - | 3.04 | - | - | 206 | 0.413 | 1.11 | - | storm-exact | 5.6e-17 / 1.8e-16 |  | 1.1e-07 / 3.4e-07 |  |  |  | 1.1e-16 / 3.5e-16 | 1.6e-15 / 5.0e-15 | 1.7e-16 / 5.3e-16 |  | 5.6e-17 / 1.8e-16 | ref | 5.6e-17 / 1.8e-16 | 5.6e-17 / 1.8e-16 | 5.6e-17 / 1.8e-16 | 0.0e+00 / 0.0e+00 |  |  |  | 3.2e-13 / 1.0e-12 |  |  | 5.6e-17 / 1.8e-16 | 1.1e-16 / 3.5e-16 |
+| nodice_hepar2 |  |  | 0.077 | 0.146 | 0.654 | >600 | 0.266 | 5.28 | 8.8 | 3.55 | 181 | oom | 0.18 | 0.194 | 1.94 | 1.28 | 1.27 | 2.4 | 2.55 | 0.232 | 0.395 | 1.74 | 0.348 | 0.282 | 80.4 | 0.5 | 1.22 | 0.923 | storm-exact | 5.6e-17 / 3.4e-16 | 2.7e-09 / 1.7e-08 | 6.8e-07 / 4.2e-06 |  | 2.2e-16 / 2.6e-16 | 1.1e-16 / 1.3e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.3e-15 / 2.8e-15 |  | 8.9e-16 / 1.7e-15 | ref | 4.4e-16 / 5.3e-16 | 2.2e-16 / 3.4e-16 | 2.2e-16 / 3.4e-16 | 1.1e-16 / 1.3e-16 | 2.2e-16 / 5.1e-16 | 3.2e-07 / 2.0e-06 | 3.1e-14 / 1.9e-13 | 3.1e-14 / 1.9e-13 | 3.1e-14 / 1.9e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 3.4e-16 |
+| nodice_insurance |  |  | 0.103 | 4.36 | 3.61 | oom | 4.07 | >600 | 42.8 | >600 | 30.3 | oom | 0.501 | 0.665 | 9.49 | 1.29 | 1.35 | 6.68 | 7.52 | 6.39 | 2.73 | 10.6 | 4.68 | 10.6 | 287 | 1.78 | 2.54 | 50.3 | storm-exact | 2.2e-16 / 4.1e-16 | 9.8e-08 / 1.2e-06 | 7.0e-07 / 2.9e-05 |  | 1.1e-16 / 4.1e-16 |  | 5.6e-17 / 2.1e-16 |  | 7.8e-16 / 1.4e-15 |  | 2.2e-16 / 5.3e-16 | ref | 1.1e-16 / 4.1e-16 | 6.9e-18 / 4.1e-16 | 6.9e-18 / 4.1e-16 | 3.3e-16 / 5.9e-16 | 1.1e-16 / 6.2e-16 | 4.8e-07 / 2.9e-05 | 4.5e-13 / 4.2e-12 | 4.5e-13 / 4.2e-12 | 4.5e-13 / 4.2e-12 | 5.6e-17 / 5.3e-16 | 1.1e-16 / 2.1e-16 | 1.4e-17 / 4.1e-16 |
+| nodice_survey |  |  | 0.005 | 0.014 | 0.031 | 1.59 | 0.032 | 1.4 | 6.11 | 0.498 | 2.7 | oom | 0.164 | 0.162 | 0.247 | 1.28 | 1.28 | 1.37 | 1.45 | 0.08 | 0.212 | 1.47 | 0.079 | 0.242 | 6.09 | 0.005 | 0.715 | 0.107 | psi | 5.6e-17 / 2.0e-16 | 3.2e-08 / 7.8e-08 | 7.5e-07 / 2.7e-06 | ref | 1.1e-16 / 2.0e-16 | 1.1e-16 / 3.5e-16 | 1.1e-16 / 4.0e-16 | 1.1e-16 / 4.0e-16 | 1.1e-16 / 2.0e-16 |  | 5.6e-17 / 3.5e-16 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 3.5e-16 | 5.6e-17 / 3.5e-16 | 5.6e-17 / 3.5e-16 | 1.1e-16 / 2.0e-16 | 5.6e-17 / 2.0e-16 | 2.5e-07 / 1.4e-06 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 3.5e-16 |
+| nodice_uf20-0990 |  |  | 0.025 | >600 | 0.083 | >600 | 32.3 | >600 | 10.1 | 0.744 | 3.02 | >600 | 28.8 | 45.3 | 2.64 | 4.96 | 4.6 | 8.78 | 13.8 | 9.59 | 1.26 | >600 | 5.43 | >600 | 122 | 0.013 | 0.725 | 25.4 | storm-exact | 0.0e+00 / 0.0e+00 |  | 4.6e-07 / 4.9e-02 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 4.6e-07 / 4.9e-02 | 2.5e-18 / 2.6e-13 |  | 2.5e-18 / 2.6e-13 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_uf20-0991 |  |  | 0.027 | >600 | 0.087 | >600 | 23.3 | >600 | 10.1 | 0.745 | 3.03 | >600 | 27.8 | 43.5 | 2.81 | 4.91 | 4.57 | 15.9 | 11.8 | 24.7 | 2.81 | >600 | 16.2 | err | 112 | 0.014 | 0.721 | 25.6 | storm-exact | 0.0e+00 / 0.0e+00 |  | 1.9e-08 / 9.1e-04 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.9e-08 / 9.1e-04 | 3.7e-17 / 1.8e-12 |  | 3.7e-17 / 1.8e-12 |  | 3.4e-21 / 1.6e-16 | 0.0e+00 / 0.0e+00 |
+| nodice_uf20-0992 |  |  | 0.026 | >600 | 0.089 | >600 | 24.9 | >600 | 10.3 | 0.823 | 2.15 | >600 | 25.2 | 38 | 2.72 | 4.95 | 4.59 | 10.3 | 18.7 | 13.4 | 1.91 | >600 | 8.15 | err | 108 | 0.014 | 0.713 | 21.1 | storm-exact | 0.0e+00 / 0.0e+00 |  | 1.9e-07 / 4.9e-02 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.9e-07 / 4.9e-02 | 5.0e-18 / 1.3e-12 |  | 5.0e-18 / 1.3e-12 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_uf20-0993 |  |  | 0.025 | >600 | 0.076 | >600 | 35.7 | >600 | 10.5 | 0.928 | 2.13 | >600 | 22.3 | 36.1 | 2.5 | 4.44 | 4.12 | 11.6 | 11.4 | 23.9 | 2.33 | >600 | 15.2 | err | 110 | 0.011 | 0.715 | 21.4 | storm-exact | 0.0e+00 / 0.0e+00 |  | 9.3e-08 / 4.9e-02 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 9.3e-08 / 4.9e-02 | 2.5e-18 / 1.3e-12 |  | 2.5e-18 / 1.3e-12 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_uf20-0994 |  |  | 0.027 | >600 | 0.083 | >600 | 25.2 | >600 | 10.2 | 0.77 | 3.12 | >600 | 23.5 | 38 | 2.59 | 4.83 | 4.66 | 9.47 | 15.3 | 13.4 | 1.62 | 278 | 6.89 | err | 119 | 0.011 | 0.728 | 15.5 | storm-exact | 0.0e+00 / 0.0e+00 |  | 3.5e-07 / 2.6e-02 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 3.5e-07 / 2.6e-02 | 1.3e-17 / 9.4e-13 | 1.3e-17 / 9.4e-13 | 1.3e-17 / 9.4e-13 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_uf20-0995 |  |  | 0.028 | >600 | 0.092 | >600 | 30.2 | >600 | 10.8 | 0.788 | 3.15 | >600 | 26 | 41.3 | 2.77 | 4.91 | 4.47 | 9.91 | 41.6 | 14.1 | 1.49 | >600 | 11.4 | err | 120 | 0.014 | 0.741 | 25.7 | storm-exact | 0.0e+00 / 0.0e+00 |  | 1.4e-07 / 4.9e-02 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.4e-07 / 4.9e-02 | 1.2e-18 / 4.4e-13 |  | 1.2e-18 / 4.4e-13 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_uf20-0996 |  |  | 0.027 | >600 | 0.101 | >600 | 30.1 | >600 | 10.1 | 0.747 | 2.96 | >600 | 22.4 | 34.9 | 2.74 | 4.71 | 4.45 | 7.86 | 21.9 | 6.27 | 0.869 | >600 | 5.08 | 417 | 116 | 0.013 | 0.733 | 35.7 | storm-exact | 0.0e+00 / 0.0e+00 |  | 2.3e-07 / 4.9e-02 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.3e-07 / 4.9e-02 | 1.3e-18 / 2.6e-13 |  | 1.3e-18 / 2.6e-13 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_uf20-0997 |  |  | 0.027 | >600 | 0.083 | >600 | 24.9 | >600 | 9.91 | 0.755 | 3.09 | >600 | 28.6 | 43.5 | 2.71 | 5.2 | 5.09 | 27.9 | 24 | 48.5 | 6.07 | >600 | 33.3 | err | 118 | 0.014 | 0.718 | 20.3 | storm-exact | 0.0e+00 / 0.0e+00 |  | 4.4e-07 / 3.9e-02 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 4.4e-07 / 3.9e-02 | 2.5e-17 / 2.2e-12 |  | 2.5e-17 / 2.2e-12 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| nodice_uf20-0998 |  |  | 0.031 | >600 | 0.103 | >600 | 21.7 | >600 | 10.1 | 0.835 | 3.29 | >600 | 28.3 | 61.6 | 2.91 | 4.96 | 4.56 | 8.91 | 19.4 | 11 | 1.53 | >600 | 7.9 | >600 | 132 | 0.02 | 0.742 | 32.8 | storm-exact | 0.0e+00 / 0.0e+00 |  | 3.2e-07 / 4.9e-02 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 3.2e-07 / 4.9e-02 | 3.7e-18 / 5.6e-13 |  | 3.7e-18 / 5.6e-13 |  | 8.5e-22 / 1.3e-16 | 0.0e+00 / 0.0e+00 |
+| nodice_uf20-0999 |  |  | 0.033 | >600 | 0.106 | >600 | 29.9 | >600 | 10.5 | 0.768 | 2.98 | >600 | 30.7 | 49.4 | 2.88 | 5.06 | 5 | 9.57 | 28.6 | 7.85 | 1.22 | >600 | 5.67 | err | 115 | 0.014 | 0.719 | 26.1 | storm-exact | 0.0e+00 / 0.0e+00 |  | 6.5e-08 / 3.0e-03 |  | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 6.5e-08 / 3.0e-03 | 4.4e-17 / 2.0e-12 |  | 4.4e-17 / 2.0e-12 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
 | nodice_uf50-0999 |  |  | 13.8 | >600 | >600 | >600 | err | >600 | err | >600 | 3.09 | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | err | err | err | err | oom | oom | oom | oom | >600 | alea | 1.9e-27 / 4.0e-14 |  |  |  |  |  |  |  | 1.9e-27 / 4.0e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| nodice_water |  |  | 0.364 | 38.7 | 17.3 | oom | 50.3 | 148 | 9.62 | 16 | 62.3 | oom | 38.4 | 38.3 | 20.1 | 4.41 | 4.55 | 5.76 | 6.32 | oom | 18.1 | >600 | oom | err | 370 | 0.414 | 1.11 | 8.79 | alea | 1.1e-16 / 1.1e-15 | 5.2e-08 / 2.7e-06 | 7.4e-07 / 7.5e-05 |  | 1.1e-16 / 4.9e-16 | 2.8e-17 / 8.9e-16 | 3.5e-18 / 4.5e-16 | 1.7e-16 / 6.1e-15 | 2.8e-17 / 4.5e-16 |  | 2.2e-16 / 7.3e-16 | 6.9e-18 / 5.6e-16 | 2.2e-16 / 4.5e-16 | 2.8e-17 / 5.6e-16 | 2.8e-17 / 5.6e-16 | 3.3e-16 / 4.5e-16 | 2.2e-16 / 4.5e-16 |  | 4.6e-13 / 1.4e-12 |  |  |  | 2.8e-17 / 3.4e-16 | 2.8e-17 / 4.5e-16 |
-| pluck_hmm | 199 | 346 | 0.025 | >600 | oom | oom | oom | oom | 0.031 | 3.2 | 3.02 | oom | >600 | >600 | 8.59 | 3.06 | 3.19 | 1.78 | 2.01 | zero | 0.391 | 1.54 | 0.286 | 0.197 | 52.8 | 0.034 | 0.778 | >600 | alea | 5.6e-27 / 3.1e-14 |  |  |  |  |  | 5.7e-27 / 3.2e-14 | 1.2e-16 / 6.9e-04 | 6.3e-27 / 3.5e-14 |  |  |  | 5.6e-27 / 3.1e-14 | 6.2e-15 / 3.4e-02 | 6.2e-15 / 3.4e-02 | 5.7e-27 / 3.1e-14 | 5.6e-27 / 3.1e-14 |  | 6.2e-26 / 3.4e-13 | 6.2e-26 / 3.4e-13 | 6.2e-26 / 3.4e-13 | 5.5e-27 / 3.0e-14 | 5.4e-27 / 3.0e-14 | 5.7e-27 / 3.2e-14 |
-| pluck_pcfg | 12031 | 532827 | 105 | oom | oom | oom | >600 | err | wrong | >600 | >600 | >600 | oom | oom | oom | oom | oom | >600 | >600 | >600 | >600 | >600 | >600 | oom | >600 | 23 | 25.6 | >600 | alea | 9.3e-23 / 1.6e-15 |  |  |  |  |  | 3.0e-08 / 5.0e-01 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 9.3e-23 / 1.6e-15 |
-| pluck_sorted_list | 57 | 4056 | 5.83 | >600 | oom | >600 | oom | >600 | err | 2.2 | 5.09 | oom | >600 | oom | >600 | >600 | >600 | >600 | >600 | oom | oom | >600 | oom | oom | >600 | 14.3 | 15.3 | >600 | alea | 1.7e-25 / 2.3e-14 |  |  |  |  |  |  | 1.7e-25 / 2.3e-14 | 1.7e-25 / 2.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.7e-25 / 2.3e-14 |
-| pluck_string_editing | 130 | 1343 | 0.06 | >600 | zero | >600 | oom | >600 | wrong | 1.11 | 5.21 | oom | >600 | oom | err | oom | oom | >600 | >600 | oom | oom | >600 | oom | err | 265 | oom | oom | >600 | alea | 1.7e-26 / 7.4e-15 |  |  |  |  |  | 3.0e-08 / 1.3e+04 | 9.1e-17 / 4.0e-05 | 1.7e-26 / 7.4e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.1e-26 / 9.0e-15 |  |
+| nodice_water |  |  | 0.364 | 38.7 | 17.3 | oom | 50.3 | 148 | 9.62 | 16 | 62.3 | oom | 38.4 | 38.3 | 20.1 | 4.41 | 4.55 | 5.76 | 6.32 | oom | 18.1 | >600 | oom | err | 370 | 0.414 | 1.11 | 8.79 | storm-exact | 1.1e-16 / 1.3e-15 | 5.2e-08 / 2.7e-06 | 7.4e-07 / 7.5e-05 |  | 1.1e-16 / 2.4e-16 | 2.8e-17 / 1.5e-15 | 6.9e-18 / 2.4e-16 | 1.7e-16 / 5.9e-15 | 2.8e-17 / 1.9e-16 |  | 2.2e-16 / 6.7e-16 | ref | 2.2e-16 / 2.7e-16 | 2.8e-17 / 1.9e-16 | 2.8e-17 / 1.9e-16 | 3.3e-16 / 4.1e-16 | 2.2e-16 / 2.7e-16 |  | 4.6e-13 / 1.4e-12 |  |  |  | 2.8e-17 / 2.4e-16 | 2.8e-17 / 1.9e-16 |
+| pluck_hmm | 199 | 346 | 0.023 | >600 | oom | oom | oom | oom | 0.031 | 3.2 | 3.02 | oom | >600 | >600 | 8.59 | 3.06 | 3.19 | 1.77 | 2.01 | 0.265 | 0.389 | 1.54 | 0.284 | 0.195 | 52.8 | 0.032 | 0.776 | >600 | alea | 1.8e-13 / 0.0e+00 |  |  |  |  |  | 5.7e-27 / 3.2e-14 | 1.8e-13 / 0.0e+00 | 1.8e-13 / 0.0e+00 |  |  |  | 1.8e-13 / 0.0e+00 | 1.7e-13 / 0.0e+00 | 1.7e-13 / 0.0e+00 | 1.8e-13 / 0.0e+00 | 1.8e-13 / 0.0e+00 | ref | 1.8e-13 / 0.0e+00 | 1.8e-13 / 0.0e+00 | 1.8e-13 / 0.0e+00 | 1.8e-13 / 0.0e+00 | 1.8e-13 / 0.0e+00 | 1.8e-13 / 0.0e+00 |
+| pluck_pcfg | 12031 | 532827 | 98.1 | oom | oom | oom | >600 | err | wrong | >600 | >600 | >600 | oom | oom | oom | oom | oom | >600 | >600 | >600 | >600 | >600 | >600 | oom | >600 | 15.8 | 18.3 | >600 | alea | ref |  |  |  |  |  | 3.0e-08 / 5.0e-01 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| pluck_sorted_list | 57 | 4056 | 5.81 | >600 | oom | >600 | oom | >600 | err | 2.18 | 5.07 | oom | >600 | oom | >600 | >600 | >600 | >600 | >600 | oom | oom | >600 | oom | oom | >600 | 14.3 | 15.3 | >600 | alea | ref |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| pluck_string_editing | 130 | 1343 | 0.05 | >600 | zero | >600 | oom | >600 | wrong | 1.1 | 5.2 | oom | >600 | oom | err | oom | oom | >600 | >600 | oom | oom | >600 | oom | err | 265 | oom | oom | >600 | alea | ref |  |  |  |  |  | 3.0e-08 / 1.3e+04 | 9.1e-17 / 4.0e-05 | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.6e-27 / 1.6e-15 |  |
 
 Seconds per system, the median over the repetitions; a failure is `>600`
 (timeout), `oom`, `err` or `n/a`; each system's last columns are its
@@ -4092,7 +4049,7 @@ largest absolute and relative difference from the reference named in
 | bb_genes5 | 6 | 6 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 6 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 4 of 5 |
 | bb_genes | 11 | 11 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 11 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 11 | 0 of 11 |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
 | bb_laplace | 2 | 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 | 1 of 2 |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 |
-| bb_linreg | 8 | 6 | 0 of 1 | 0 of 1 | 2 of 8 | 0 of 1 | 0 of 1 | 1 of 2 | 0 of 2 | 3 of 4 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 5 of 6 | 5 of 6 |  | 2 of 3 | 2 of 3 | 1 of 2 | 2 of 3 | 1 of 2 | 1 of 1 | 4 of 5 |
+| bb_linreg | 8 | 6 | 0 of 1 | 0 of 1 | 8 of 8 | 0 of 1 | 0 of 1 | 1 of 2 | 0 of 2 | 3 of 4 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 5 of 6 | 5 of 6 |  | 2 of 3 | 2 of 3 | 1 of 2 | 2 of 3 | 1 of 2 | 1 of 1 | 4 of 5 |
 | bb_markov | 8 | 8 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 8 | 0 of 1 | 0 of 4 | 2 of 3 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 | 0 of 1 | 0 of 1 | 3 of 6 | 3 of 6 | 2 of 3 | 2 of 3 | 3 of 4 | 3 of 4 | 2 of 3 | 1 of 2 | 0 of 1 | 2 of 3 |
 | bb_multimodal | 1 | 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |  | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 |
 | bb_normal_mixture_mu1 | 5 | 2 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 5 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 2 | 0 of 2 | 1 of 3 | 1 of 2 | 1 of 2 | 1 of 2 | 1 of 2 | 0 of 1 | 0 of 1 | 1 of 2 |
@@ -4115,54 +4072,58 @@ largest absolute and relative difference from the reference named in
 **Geni.** Geni ran 38 instances and answered 0 (1 fail, 9 run out of
 memory, 28 time out). Over the 38 instances given to both that either
 answers, a run that does not answer counted at the 600 s limit, Geni
-takes 22800 s in all and tddlog 785 s. tddlog alone answers GPA_w19,
+takes 22800 s in all and tddlog 769 s. tddlog alone answers GPA_w19,
 addFun_max_p4, addFun_max_w17, addFun_sum_w17, altermu2_p4 and 33 more.
 
 **noDice.** noDice ran 45 instances and answered 7 (1 fail, 27 run out
 of memory, 10 time out). Its answers differ from the reference's by at
 most 1.5e-06 relative (7.4e-07 absolute, clinicalTrial2_w6) over 7
 instances. Over the 45 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, noDice takes 23343
-s in all and tddlog 793 s; over the 7 both answer, 543 s against
-tddlog's 3.12. noDice is faster on 1 (weekend_p64 1.88 s against 1.98).
+run that does not answer counted at the 600 s limit, noDice takes 23342
+s in all and tddlog 776 s; over the 7 both answer, 542 s against
+tddlog's 2.46. noDice is faster on 1 (weekend_p64 1.84 s against 1.95).
 tddlog alone answers GPA_w19, addFun_max_p4, addFun_max_w17,
 addFun_sum_w17, altermu2_p4 and 33 more.
 
-**Psi.** Psi ran 51 instances and answered 2 (13 fail, 2 run out of
-memory, 34 time out). Over the 50 instances given to both that either
-answers, a run that does not answer counted at the 600 s limit, Psi
-takes 29400 s in all and tddlog 1651 s. Only Psi answers linreg_w14.
-tddlog alone answers GPA_w19, addFun_max_p4, addFun_max_w17,
-addFun_sum_w17, altermu2_p4 and 44 more.
+**Psi.** Psi ran 51 instances and answered 8 (7 fail, 2 run out of
+memory, 34 time out). It is the reference on 8 instances. Over the 50
+instances given to both that either answers, a run that does not answer
+counted at the 600 s limit, Psi takes 25802 s in all and tddlog 1634 s;
+over the 6 both answer, 2.06 s against tddlog's 264. Psi is faster on 5
+(linreg_w9 0.37 s against 0.54, linreg_w10 0.33 s against 7.13,
+linreg_w11 0.34 s against 12.3 and linreg_w12 0.32 s against 35.9, the
+largest differences). Only Psi answers linreg_w14. tddlog alone answers
+GPA_w19, addFun_max_p4, addFun_max_w17, addFun_sum_w17, altermu2_p4 and
+38 more.
 
 **Genfer.** Genfer ran 55 instances and answered 12 (7 fail, 24 run out
 of memory, 12 time out). Its answers differ from the reference's by at
 most 3.5e+05 relative (6.4e-12 absolute, population_s4) over 12
 instances. Over the 51 instances given to both that either answers, a
 run that does not answer counted at the 600 s limit, Genfer takes 23403
-s in all and tddlog 1622 s; over the 12 both answer, 3.41 s against
-tddlog's 435. Genfer is faster on 12 (population_s1 0.009 s against
-0.84, population_s2 0.012 s against 11.6, population_s3 0.017 s against
-11.8 and population_s4 0.018 s against 13.4, the largest differences).
+s in all and tddlog 1560 s; over the 12 both answer, 3.41 s against
+tddlog's 389. Genfer is faster on 12 (population_s1 0.009 s against
+0.65, population_s2 0.012 s against 11.2, population_s3 0.017 s against
+11.2 and population_s4 0.018 s against 12.6, the largest differences).
 tddlog alone answers GPA_w19, addFun_max_p4, addFun_max_w17,
 addFun_sum_w17, altermu2_p4 and 34 more.
 
 **SPPL.** SPPL ran 87 instances and answered 1 (47 fail, 4 run out of
 memory, 31 time out, 4 answer wrongly). Its answers differ from the
-reference's by at most 5.5e-16 relative (3.3e-16 absolute,
+reference's by at most 3.1e-16 relative (2.2e-16 absolute,
 clickGraph_w4) over 1 instance. SPPL's answer is wrong, zero or
 underflowed on markov_n10, markov_n100, markov_n20 and markov_n50. Over
 the 78 instances given to both that either answers, a run that does not
 answer counted at the 600 s limit, SPPL takes 46688 s in all and tddlog
-2270 s; over the 1 both answer, 488 s against tddlog's 0.015. tddlog
+2103 s; over the 1 both answer, 488 s against tddlog's 0.01. tddlog
 alone answers GPA_w19, GPA_w21, GPA_w23, GPA_w25, GPA_w27 and 72 more.
 
 **Pluck.** Pluck ran 91 instances and answered 54 (27 fail, 10 time
 out). Its answers differ from the reference's by at most 2.8e-14
 relative (4.1e-15 absolute, linreg_w8) over 54 instances. Over the 91
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, Pluck takes 26117 s in all and tddlog 1723
-s; over the 54 both answer, 3917 s against tddlog's 504. tddlog alone
+counted at the 600 s limit, Pluck takes 26112 s in all and tddlog 1688
+s; over the 54 both answer, 3912 s against tddlog's 498. tddlog alone
 answers GPA_w19, addFun_max_p4, addFun_max_w17, addFun_sum_w17,
 altermu2_p4 and 32 more.
 
@@ -4171,8 +4132,8 @@ answer wrongly). Its answers differ from the reference's by at most
 1.0e+00 relative (1.4e-14 absolute, pedestrian_s4) over 61 instances.
 PITA's answer is wrong, zero or underflowed on linreg_w8. Over the 102
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, PITA takes 31074 s in all and tddlog 1109 s;
-over the 61 both answer, 6474 s against tddlog's 157. tddlog alone
+counted at the 600 s limit, PITA takes 31060 s in all and tddlog 1066 s;
+over the 61 both answer, 6460 s against tddlog's 143. tddlog alone
 answers GPA_w19, addFun_max_p64, addFun_max_w19, addFun_sum_w25,
 altermu2_p4 and 36 more.
 
@@ -4181,15 +4142,15 @@ zeros). Its answers differ from the reference's by at most 2.9e-14
 relative (5.9e-15 absolute, clinicalTrial1_w4) over 58 instances.
 aspmc's answer is wrong, zero or underflowed on clinicalTrial1_w6. Over
 the 93 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, aspmc takes 27200 s in all and tddlog
-1016 s; over the 58 both answer, 6200 s against tddlog's 54.6. tddlog
+answer counted at the 600 s limit, aspmc takes 27195 s in all and tddlog
+993 s; over the 58 both answer, 6195 s against tddlog's 49.3. tddlog
 alone answers GPA_w19, addFun_max_p16, addFun_max_w17, addFun_sum_w17,
 altermu2_p4 and 30 more.
 
 **Scallop.** Scallop ran 38 instances and answered 0 (24 run out of
 memory, 14 time out). Over the 38 instances given to both that either
 answers, a run that does not answer counted at the 600 s limit, Scallop
-takes 22800 s in all and tddlog 787 s. tddlog alone answers GPA_w19,
+takes 22800 s in all and tddlog 772 s. tddlog alone answers GPA_w19,
 addFun_max_p4, addFun_max_w17, addFun_sum_w17, altermu2_p4 and 33 more.
 
 **Storm sparse.** Storm sparse ran 52 instances and answered 9 (5 fail,
@@ -4197,25 +4158,23 @@ addFun_max_p4, addFun_max_w17, addFun_sum_w17, altermu2_p4 and 33 more.
 reference's by at most 2.4e-14 relative (4.1e-15 absolute, spacex_p4)
 over 9 instances. Over the 52 instances given to both that either
 answers, a run that does not answer counted at the 600 s limit, Storm
-sparse takes 26541 s in all and tddlog 1067 s; over the 9 both answer,
-741 s against tddlog's 1.37. tddlog alone answers GPA_w19, GPA_w21,
+sparse takes 26540 s in all and tddlog 1031 s; over the 9 both answer,
+740 s against tddlog's 1.02. tddlog alone answers GPA_w19, GPA_w21,
 GPA_w23, GPA_w25, GPA_w27 and 38 more.
 
 **Storm exact.** Storm exact ran 46 instances and answered 8 (38 time
-out). Its answers differ from the reference's by at most 1.5e-15
-relative (7.8e-16 absolute, zeroone_w1_w10) over 8 instances. Over the
-46 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, Storm exact takes 23346 s in all and
-tddlog 790 s; over the 8 both answer, 546 s against tddlog's 1.28.
-tddlog alone answers GPA_w19, addFun_max_p4, addFun_max_w17,
-addFun_sum_w17, altermu2_p4 and 33 more.
+out). It is the reference on 8 instances. Over the 46 instances given to
+both that either answers, a run that does not answer counted at the 600
+s limit, Storm exact takes 23346 s in all and tddlog 774 s; over the 8
+both answer, 546 s against tddlog's 0.94. tddlog alone answers GPA_w19,
+addFun_max_p4, addFun_max_w17, addFun_sum_w17, altermu2_p4 and 33 more.
 
 **Storm dd.** Storm dd ran 71 instances and answered 32 (1 fail, 38 time
 out). Its answers differ from the reference's by at most 6.4e-14
 relative (1.1e-14 absolute, clinicalTrial1_w6) over 32 instances. Over
 the 70 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, Storm dd takes 25200 s in all and
-tddlog 816 s; over the 32 both answer, 2400 s against tddlog's 16.
+answer counted at the 600 s limit, Storm dd takes 25198 s in all and
+tddlog 798 s; over the 32 both answer, 2398 s against tddlog's 14.1.
 tddlog alone answers GPA_w19, addFun_max_p4, addFun_max_w17,
 addFun_sum_w17, altermu2_p4 and 33 more.
 
@@ -4224,7 +4183,7 @@ addFun_sum_w17, altermu2_p4 and 33 more.
 relative (3.3e-14 absolute, wmi_star_n32) over 21 instances. Over the 63
 instances given to both that either answers, a run that does not answer
 counted at the 600 s limit, PRISM sparse takes 29602 s in all and tddlog
-905 s; over the 21 both answer, 4402 s against tddlog's 7.58. tddlog
+886 s; over the 21 both answer, 4402 s against tddlog's 7.13. tddlog
 alone answers GPA_w19, addFun_max_p4, addFun_max_w17, addFun_sum_w17,
 altermu2_p4 and 37 more.
 
@@ -4232,8 +4191,8 @@ altermu2_p4 and 37 more.
 36 time out). Its answers differ from the reference's by at most 6.3e-14
 relative (3.3e-14 absolute, wmi_star_n32) over 21 instances. Over the 63
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, PRISM hybrid takes 29593 s in all and tddlog
-905 s; over the 21 both answer, 4393 s against tddlog's 7.58. tddlog
+counted at the 600 s limit, PRISM hybrid takes 29592 s in all and tddlog
+886 s; over the 21 both answer, 4392 s against tddlog's 7.13. tddlog
 alone answers GPA_w19, addFun_max_p4, addFun_max_w17, addFun_sum_w17,
 altermu2_p4 and 37 more.
 
@@ -4241,8 +4200,8 @@ altermu2_p4 and 37 more.
 memory, 35 time out). Its answers differ from the reference's by at most
 1.0e+00 relative (1.1e-15 absolute, population_s1) over 64 instances.
 Over the 124 instances given to both that either answers, a run that
-does not answer counted at the 600 s limit, Ace takes 39691 s in all and
-tddlog 2541 s; over the 65 both answer, 4291 s against tddlog's 160.
+does not answer counted at the 600 s limit, Ace takes 39683 s in all and
+tddlog 2439 s; over the 65 both answer, 4283 s against tddlog's 152.
 tddlog alone answers GPA_w19, GPA_w21, GPA_w23, addFun_max_p4,
 addFun_max_w17 and 54 more.
 
@@ -4253,8 +4212,8 @@ population_s1) over 54 instances. Ace c2d's answer is wrong, zero or
 underflowed on clinicalTrial1_w10, clinicalTrial1_w12,
 clinicalTrial1_w14, clinicalTrial1_w6, clinicalTrial1_w8 and 3 more.
 Over the 119 instances given to both that either answers, a run that
-does not answer counted at the 600 s limit, Ace c2d takes 43062 s in all
-and tddlog 2614 s; over the 54 both answer, 4062 s against tddlog's 194.
+does not answer counted at the 600 s limit, Ace c2d takes 43058 s in all
+and tddlog 2520 s; over the 54 both answer, 4058 s against tddlog's 189.
 tddlog alone answers GPA_w19, GPA_w21, GPA_w23, GPA_w25, addFun_max_p4
 and 60 more.
 
@@ -4262,9 +4221,9 @@ and 60 more.
 fail, 2 time out). Its answers differ from the reference's by at most
 1.0e+00 relative (2.2e-14 absolute, population_s1) over 8 instances.
 Over the 15 instances given to both that either answers, a run that does
-not answer counted at the 600 s limit, Ace log space takes 2735 s in all
-and tddlog 621 s; over the 11 both answer, 335 s against tddlog's 118.
-Ace log space is faster on 1 (clinicalTrial1_w14 21.5 s against 25.7).
+not answer counted at the 600 s limit, Ace log space takes 2729 s in all
+and tddlog 604 s; over the 11 both answer, 329 s against tddlog's 112.
+Ace log space is faster on 1 (clinicalTrial1_w14 21.1 s against 25.4).
 tddlog alone answers markov_n500, normal_mixture_mu1_w9,
 normal_mixture_mu2_w9 and wmi_star_n4096.
 
@@ -4272,11 +4231,11 @@ normal_mixture_mu2_w9 and wmi_star_n4096.
 of memory, 11 time out). Its answers differ from the reference's by at
 most 1.0e+00 relative (4.2e-07 absolute, linreg_w8) over 47 instances.
 Over the 86 instances given to both that either answers, a run that does
-not answer counted at the 600 s limit, Merlin takes 23337 s in all and
-tddlog 1489 s; over the 49 both answer, 1137 s against tddlog's 62.9.
-Merlin is faster on 5 (clickGraph_w8 0.17 s against 0.39, clickGraph_w10
-0.23 s against 0.59, clickGraph_w12 0.3 s against 0.77 and
-clickGraph_w16 0.47 s against 0.97, the largest differences). tddlog
+not answer counted at the 600 s limit, Merlin takes 23333 s in all and
+tddlog 1464 s; over the 49 both answer, 1133 s against tddlog's 58.5.
+Merlin is faster on 5 (clickGraph_w8 0.17 s against 0.38, clickGraph_w10
+0.22 s against 0.58, clickGraph_w12 0.29 s against 0.76 and
+clickGraph_w16 0.46 s against 0.95, the largest differences). tddlog
 alone answers GPA_w19, GPA_w21, addFun_max_p4, addFun_max_w17,
 addFun_sum_w17 and 32 more.
 
@@ -4284,31 +4243,31 @@ addFun_sum_w17 and 32 more.
 out of memory, 16 time out). Its answers differ from the reference's by
 at most 1.0e+00 relative (4.3e-13 absolute, population_s1) over 46
 instances. Over the 82 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, pyAgrum takes 24818
-s in all and tddlog 1206 s; over the 46 both answer, 3218 s against
-tddlog's 80.1. pyAgrum is faster on 3 (clickGraph_w10 0.55 s against
-0.59, clickGraph_w12 0.71 s against 0.77 and clickGraph_w14 0.9 s
-against 1.16). tddlog alone answers GPA_w19, GPA_w21, addFun_max_p4,
+run that does not answer counted at the 600 s limit, pyAgrum takes 24813
+s in all and tddlog 1181 s; over the 46 both answer, 3213 s against
+tddlog's 75.1. pyAgrum is faster on 3 (clickGraph_w10 0.54 s against
+0.58, clickGraph_w12 0.7 s against 0.76 and clickGraph_w14 0.89 s
+against 1.15). tddlog alone answers GPA_w19, GPA_w21, addFun_max_p4,
 addFun_max_w17, addFun_sum_w17 and 31 more.
 
 **pgmpy.** pgmpy ran 79 instances and answered 43 (3 fail, 2 run out of
 memory, 31 time out). Its answers differ from the reference's by at most
 2.6e-06 relative (4.5e-07 absolute, clinicalTrial1_w12) over 43
 instances. Over the 79 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, pgmpy takes 24601 s
-in all and tddlog 1190 s; over the 43 both answer, 3001 s against
-tddlog's 82. tddlog alone answers GPA_w19, GPA_w21, addFun_max_p4,
+run that does not answer counted at the 600 s limit, pgmpy takes 24596 s
+in all and tddlog 1165 s; over the 43 both answer, 2996 s against
+tddlog's 77.1. tddlog alone answers GPA_w19, GPA_w21, addFun_max_p4,
 addFun_max_w17, addFun_sum_w17 and 31 more.
 
 **libDAI.** libDAI ran 80 instances and answered 44 (4 fail, 13 run out
 of memory, 19 time out). Its answers differ from the reference's by at
 most 1.0e+00 relative (4.3e-13 absolute, population_s1) over 44
 instances. Over the 80 instances given to both that either answers, a
-run that does not answer counted at the 600 s limit, libDAI takes 24101
-s in all and tddlog 1212 s; over the 44 both answer, 2501 s against
-tddlog's 35.4. libDAI is faster on 4 (clickGraph_w8 0.24 s against 0.39,
-clickGraph_w10 0.38 s against 0.59, clickGraph_w12 0.55 s against 0.77
-and clickGraph_w14 0.76 s against 1.16). tddlog alone answers GPA_w19,
+run that does not answer counted at the 600 s limit, libDAI takes 24098
+s in all and tddlog 1192 s; over the 44 both answer, 2498 s against
+tddlog's 32.5. libDAI is faster on 4 (clickGraph_w8 0.23 s against 0.38,
+clickGraph_w10 0.37 s against 0.58, clickGraph_w12 0.54 s against 0.76
+and clickGraph_w14 0.74 s against 1.15). tddlog alone answers GPA_w19,
 addFun_max_p4, addFun_max_w17, addFun_sum_w17, altermu2_p16 and 31 more.
 
 **TensorInference.jl greedy.** TensorInference.jl greedy ran 64
@@ -4316,11 +4275,11 @@ instances and answered 25 (12 fail, 12 run out of memory, 15 time out).
 Its answers differ from the reference's by at most 9.3e-07 relative
 (1.7e-16 absolute, spacex_w13) over 25 instances. Over the 64 instances
 given to both that either answers, a run that does not answer counted at
-the 600 s limit, TensorInference.jl greedy takes 23488 s in all and
-tddlog 899 s; over the 25 both answer, 87.9 s against tddlog's 8.82.
-TensorInference.jl greedy is faster on 4 (clickGraph_w10 0.31 s against
-0.59, clickGraph_w16 0.63 s against 0.97, clickGraph_w12 0.41 s against
-0.77 and clickGraph_w14 0.53 s against 1.16). tddlog alone answers
+the 600 s limit, TensorInference.jl greedy takes 23487 s in all and
+tddlog 880 s; over the 25 both answer, 87.5 s against tddlog's 8.37.
+TensorInference.jl greedy is faster on 4 (clickGraph_w10 0.3 s against
+0.58, clickGraph_w16 0.61 s against 0.95, clickGraph_w12 0.4 s against
+0.76 and clickGraph_w14 0.51 s against 1.15). tddlog alone answers
 GPA_w19, GPA_w21, addFun_max_p4, addFun_max_w17, addFun_sum_w17 and 34
 more.
 
@@ -4329,8 +4288,8 @@ instances and answered 32 (36 time out). Its answers differ from the
 reference's by at most 9.3e-07 relative (2.2e-16 absolute, spacex_w13)
 over 32 instances. Over the 67 instances given to both that either
 answers, a run that does not answer counted at the 600 s limit,
-TensorInference.jl treesa takes 25751 s in all and tddlog 940 s; over
-the 32 both answer, 4751 s against tddlog's 76.2. tddlog alone answers
+TensorInference.jl treesa takes 25750 s in all and tddlog 921 s; over
+the 32 both answer, 4750 s against tddlog's 75.5. tddlog alone answers
 GPA_w19, GPA_w21, addFun_max_p16, addFun_max_w17, addFun_sum_w17 and 30
 more.
 
@@ -4339,238 +4298,238 @@ out of memory, 15 time out). Its answers differ from the reference's by
 at most 1.1e-13 relative (1.2e-14 absolute, normal_mixture_mu2_w7) over
 97 instances. Over the 134 instances given to both that either answers,
 a run that does not answer counted at the 600 s limit, Roulette takes
-28448 s in all and tddlog 2467 s; over the 97 both answer, 6248 s
-against tddlog's 802. Roulette is faster on 22 (fair_dt44_w12 0.16 s
-against 0.36, fair_dt16_w12 0.14 s against 0.4, fair_dt44_w32 0.24 s
-against 0.55 and fair_dt44_w28 0.25 s against 0.6, the largest
+28390 s in all and tddlog 2342 s; over the 97 both answer, 6190 s
+against tddlog's 744. Roulette is faster on 22 (fair_dt44_w12 0.14 s
+against 0.34, fair_dt16_w12 0.12 s against 0.38, fair_dt44_w32 0.22 s
+against 0.53 and fair_dt44_w28 0.22 s against 0.58, the largest
 differences). tddlog alone answers GPA_w25, GPA_w29, GPA_w31,
 addFun_max_p4, addFun_max_w21 and 32 more.
 
 | instance | flips | gates | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Scallop | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Ace log space | Merlin | pyAgrum | pgmpy | libDAI | TI greedy | TI treesa | Roulette | Roulette process | ProbLog | ref | tddlog diff | Geni diff | noDice diff | Psi diff | Genfer diff | SPPL diff | Pluck diff | PITA diff | aspmc diff | Scallop diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Ace diff | Ace c2d diff | Ace log space diff | Merlin diff | pyAgrum diff | pgmpy diff | libDAI diff | TI greedy diff | TI treesa diff | Roulette diff |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| GPA_w19 | 45061 | 368680 | 31.2 | err | err | >600 | >600 | err | >600 | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | oom | oom |  | >600 | >600 | >600 | >600 | >600 | >600 | 33.9 | 36.8 | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| GPA_w21 | 61441 | 417832 | 34.8 | - | - | - | - | err | - | - | - | - | err | - | - | - | - | oom | oom |  | >600 | >600 | >600 | - | >600 | >600 | 34.3 | 37.4 | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| GPA_w23 | 77812 | 466966 | 38.9 | - | - | - | - | err | - | - | - | - | err | - | - | - | - | >600 | oom |  | - | - | - | - | - | - | 41.9 | 45.9 | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 1.8e-16 |
-| GPA_w25 | 94168 | 516070 | 44.5 | - | - | - | - | err | - | - | - | - | err | - | - | - | - | - | >600 |  | - | - | - | - | - | - | err | err | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| GPA_w27 | 110529 | 565184 | 49.6 | - | - | - | - | err | - | - | - | - | err | - | - | - | - | - | - |  | - | - | - | - | - | - | 42.7 | 46.7 | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 1.8e-16 |
-| GPA_w29 | 126871 | 614260 | 53.7 | - | - | - | - | err | - | - | - | - | oom | - | - | - | - | - | - |  | - | - | - | - | - | - | err | err | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| GPA_w31 | 143187 | 663285 | 58.3 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | err | err | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| addFun_max_w17 | 566 | 18099 | 18.4 | >600 | oom | >600 | oom | >600 | err | 555 | >600 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | oom | >600 | >600 | oom | >600 | 63.5 | 77.7 | >600 | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 2.2e-16 |
-| addFun_max_w19 | 580 | 21035 | 40.9 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 297 | 318 | - | alea | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |
-| addFun_max_w21 | 594 | 23603 | 30.9 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 5.6e-16 / 1.1e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| addFun_max_p16 | 196 | 3801 | 0.918 | - | - | - | - | - | - | 201 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | >600 | - | - | - | tddlog | ref |  |  |  |  |  |  | 3.3e-16 / 6.6e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| addFun_max_p4 | 168 | 1249 | 0.505 | >600 | oom | >600 | oom | >600 | err | 128 | 70 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | oom | >600 | err | err | 191 | oom | oom | oom | tddlog | ref |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.4e-16 / 8.9e-16 |  |
-| addFun_max_p64 | 366 | 13777 | 5.29 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| addFun_sum_w17 | 152 | 2800 | 0.813 | >600 | >600 | >600 | oom | >600 | err | 24.7 | >600 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | err | err | oom | oom | >600 | 16.5 | 29 | >600 | alea | 7.8e-16 / 1.6e-15 |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |
-| addFun_sum_w19 | 168 | 3212 | 0.926 | - | - | - | - | - | - | 74 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 72.8 | 88.1 | - | alea | 5.6e-16 / 1.1e-15 |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |
-| addFun_sum_w21 | 184 | 3624 | 1.08 | - | - | - | - | - | - | 87.1 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 326 | 345 | - | alea | 6.7e-16 / 1.3e-15 |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 2.2e-16 |
-| addFun_sum_w23 | 196 | 3820 | 1.21 | - | - | - | - | - | - | 113 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  |  | 4.4e-16 / 8.9e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| addFun_sum_w25 | 212 | 4208 | 1.36 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| altermu2_w11 | 20458 | 274380 | 23.1 | oom | oom | oom | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 175 | 193 | >600 | alea | 4.7e-14 / 9.4e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.7e-14 / 9.4e-14 |
-| altermu2_w13 | 40822 | 336280 | 36.1 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 3.4e-14 / 6.8e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| altermu2_w15 | 60746 | 397700 | 73.1 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea | 1.6e-14 / 3.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| GPA_w19 | 45061 | 368680 | 28.8 | err | err | >600 | >600 | err | >600 | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | oom | oom |  | >600 | >600 | >600 | >600 | >600 | >600 | 31.5 | 34.4 | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| GPA_w21 | 61441 | 417832 | 31.8 | - | - | - | - | err | - | - | - | - | err | - | - | - | - | oom | oom |  | >600 | >600 | >600 | - | >600 | >600 | 31.2 | 34.4 | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| GPA_w23 | 77812 | 466966 | 35 | - | - | - | - | err | - | - | - | - | err | - | - | - | - | >600 | oom |  | - | - | - | - | - | - | 38.1 | 42.1 | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 1.8e-16 |
+| GPA_w25 | 94168 | 516070 | 40.6 | - | - | - | - | err | - | - | - | - | err | - | - | - | - | - | >600 |  | - | - | - | - | - | - | err | err | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| GPA_w27 | 110529 | 565184 | 45.3 | - | - | - | - | err | - | - | - | - | err | - | - | - | - | - | - |  | - | - | - | - | - | - | 38.4 | 42.4 | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 1.8e-16 |
+| GPA_w29 | 126871 | 614260 | 49 | - | - | - | - | err | - | - | - | - | oom | - | - | - | - | - | - |  | - | - | - | - | - | - | err | err | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| GPA_w31 | 143187 | 663285 | 53.4 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | err | err | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| addFun_max_w17 | 566 | 18099 | 18.3 | >600 | oom | >600 | oom | >600 | err | 555 | >600 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | oom | >600 | >600 | oom | >600 | 63.5 | 77.7 | >600 | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 2.2e-16 |
+| addFun_max_w19 | 580 | 21035 | 40.8 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 297 | 317 | - | alea | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |
+| addFun_max_w21 | 594 | 23603 | 30.8 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 5.6e-16 / 1.1e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| addFun_max_p16 | 196 | 3801 | 0.905 | - | - | - | - | - | - | 201 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | >600 | - | - | - | tddlog | ref |  |  |  |  |  |  | 3.3e-16 / 6.6e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| addFun_max_p4 | 168 | 1249 | 0.5 | >600 | oom | >600 | oom | >600 | err | 128 | 70 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | oom | >600 | err | err | 191 | oom | oom | oom | tddlog | ref |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.4e-16 / 8.9e-16 |  |
+| addFun_max_p64 | 366 | 13777 | 5.24 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| addFun_sum_w17 | 152 | 2800 | 0.801 | >600 | >600 | >600 | oom | >600 | err | 24.7 | >600 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | err | err | oom | oom | >600 | 16.5 | 28.9 | >600 | alea | 7.8e-16 / 1.6e-15 |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |
+| addFun_sum_w19 | 168 | 3212 | 0.913 | - | - | - | - | - | - | 74 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 72.8 | 88.1 | - | alea | 5.6e-16 / 1.1e-15 |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |
+| addFun_sum_w21 | 184 | 3624 | 1.06 | - | - | - | - | - | - | 87.1 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 326 | 345 | - | alea | 6.7e-16 / 1.3e-15 |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 2.2e-16 |
+| addFun_sum_w23 | 196 | 3820 | 1.19 | - | - | - | - | - | - | 113 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  |  | 4.4e-16 / 8.9e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| addFun_sum_w25 | 212 | 4208 | 1.35 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| altermu2_w11 | 20458 | 274380 | 21.5 | oom | oom | oom | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 173 | 191 | >600 | alea | 4.7e-14 / 9.4e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.7e-14 / 9.4e-14 |
+| altermu2_w13 | 40822 | 336280 | 34 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 3.4e-14 / 6.8e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| altermu2_w15 | 60746 | 397700 | 70.4 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea | 1.6e-14 / 3.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | altermu2_w17 | 80350 | 457880 | oom | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | altermu2_w19 | 99554 | 517740 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | altermu2_w21 | 117438 | 574640 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | altermu2_w23 | 135402 | 631860 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| altermu2_p16 | 7670 | 35720 | 3.86 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | oom | oom | >600 | >600 | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| altermu2_p4 | 2230 | 13800 | 2.49 | >600 | oom | >600 | oom | >600 | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | 15.1 | 219 |  | 32.4 | 26.3 | 183 | 76.6 | oom | >600 | >600 | >600 | >600 | merlin | 4.9e-07 / 9.7e-07 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.9e-07 / 9.7e-07 | 4.9e-07 / 9.7e-07 |  | ref | 4.9e-07 / 9.7e-07 | 4.9e-07 / 9.7e-07 | 4.9e-07 / 9.7e-07 |  |  |  |
-| clickGraph_w4 | 52 | 135 | 0.015 | >600 | 161 | >600 | oom | 488 | 76.4 | 0.417 | 2.81 | oom | 0.348 | 0.348 | 2.26 | 2.65 | 2.57 | 2.1 | 2.13 |  | 0.094 | 0.264 | 2.24 | 0.095 | 0.0772 | 15.9 | 0.021 | 1.45 | 0.155 | alea | 2.2e-16 / 3.7e-16 |  | 8.2e-07 / 1.2e-06 |  |  | 3.3e-16 / 5.5e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 |  | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 |  | 1.9e-07 / 3.1e-07 | 3.5e-13 / 5.7e-13 | 3.5e-13 / 5.7e-13 | 3.5e-13 / 5.7e-13 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 | 2.2e-16 / 3.7e-16 |
-| clickGraph_w6 | 104 | 345 | 0.03 | - | >600 | - | - | >600 | err | 1.66 | 2.82 | - | 1.31 | 1.69 | 28.1 | 5.13 | 5.14 | 2.41 | 2.62 |  | 0.129 | 0.323 | 2.46 | 0.152 | 0.171 | 41.1 | 1.17 | 4.06 | 0.377 | alea | 2.2e-16 / 4.1e-16 |  |  |  |  |  |  | 5.7e-14 / 9.7e-14 | 1.1e-16 / 2.1e-16 |  | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 | 2.2e-16 / 4.2e-16 |  | 4.8e-07 / 8.1e-07 | 4.4e-13 / 8.4e-13 | 4.4e-13 / 8.4e-13 | 4.4e-13 / 8.4e-13 | 2.2e-16 / 4.1e-16 | 2.2e-16 / 4.1e-16 | 2.2e-16 / 4.2e-16 |
-| clickGraph_w8 | 156 | 555 | 0.389 | - | - | - | - | - | - | 5.21 | 3.32 | - | 23.7 | 36.3 | 178 | 16.5 | 14.8 | 2.64 | 2.89 |  | 0.174 | 0.417 | 3.03 | 0.241 | 0.43 | 68 | 172 | 179 | 1.53 | alea | 6.7e-16 / 9.9e-16 |  |  |  |  |  |  | 6.5e-14 / 1.3e-13 | 4.4e-16 / 8.7e-16 |  | 4.4e-16 / 6.6e-16 | 4.4e-16 / 8.5e-16 | 4.4e-16 / 6.6e-16 | 4.4e-16 / 6.6e-16 | 4.4e-16 / 6.6e-16 | 4.4e-16 / 8.5e-16 | 3.3e-16 / 6.5e-16 |  | 4.2e-07 / 8.0e-07 | 4.9e-13 / 9.7e-13 | 4.9e-13 / 9.7e-13 | 4.9e-13 / 9.7e-13 | 4.4e-16 / 8.5e-16 | 4.4e-16 / 6.6e-16 | 3.3e-16 / 6.5e-16 |
-| clickGraph_w10 | 208 | 765 | 0.58 | - | - | - | - | - | - | 597 (2/3) | 3.34 | - | >600 | >600 | >600 | 279 | 295 | 2.88 | 3.39 |  | 0.23 | 0.549 | 3.98 | 0.376 | 0.315 | 99.2 | oom | oom | 5.92 | Ganak | 5.2e-15 / 1.0e-14 |  |  |  |  |  |  | 3.5e-14 / 6.8e-14 | 3.3e-16 / 6.1e-16 |  |  |  |  | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 | 3.3e-16 / 6.6e-16 |  | 4.0e-07 / 8.0e-07 | 4.8e-13 / 9.2e-13 | 4.8e-13 / 9.2e-13 | 4.8e-13 / 9.2e-13 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 2.2e-16 |  |
-| clickGraph_w12 | 260 | 975 | 0.762 | - | - | - | - | - | - | 114 (2/3) | 4.57 | - | - | - | - | >600 | >600 | 3.45 | 3.95 |  | 0.3 | 0.711 | 5.38 | 0.548 | 0.406 | 133 | - | - | 30.9 | Ganak | 8.3e-15 / 1.4e-14 |  |  |  |  |  |  | 4.6e-14 / 7.8e-14 | 3.3e-16 / 6.1e-16 |  |  |  |  |  |  | 4.4e-16 / 8.9e-16 | 2.2e-16 / 4.3e-16 |  | 4.6e-07 / 9.2e-07 | 4.8e-13 / 9.6e-13 | 4.8e-13 / 9.6e-13 | 4.8e-13 / 9.6e-13 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 1.7e-16 |  |
-| clickGraph_w14 | 312 | 1185 | 1.16 | - | - | - | - | - | - | 431 (2/3) | 9.17 | - | - | - | - | - | - | 3.49 | 4.18 |  | 0.366 | 0.898 | 7.67 | 0.756 | 0.527 | 171 | - | - | wrong | Ganak | 1.2e-14 / 2.1e-14 |  |  |  |  |  |  | 3.3e-14 / 6.4e-14 | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  | 3.3e-16 / 5.0e-16 | 4.4e-16 / 8.2e-16 |  | 4.6e-07 / 9.1e-07 | 4.9e-13 / 9.8e-13 | 4.9e-13 / 9.8e-13 | 4.9e-13 / 9.8e-13 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  |
-| clickGraph_w16 | 364 | 1395 | 0.971 | - | - | - | - | - | - | >600 | 29.9 | - | - | - | - | - | - | 3.82 | 4.57 |  | 0.472 | 1.13 | 11 | 1.08 | 0.627 | 196 | - | - | oom | Ganak | 4.2e-15 / 8.4e-15 |  |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 | 3.3e-16 / 6.7e-16 |  | 4.7e-07 / 9.5e-07 | 4.6e-13 / 7.8e-13 | 4.6e-13 / 7.8e-13 | 4.6e-13 / 7.8e-13 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  |
-| clinicalTrial1_w4 | 807 | 3200 | 0.494 | >600 | >600 | >600 | oom | >600 | err | err | 166 | oom | >600 | >600 | 35.4 | err | err | 10.8 | 7.95 |  | 6.86 | 4.76 | 8.52 | 44.7 | oom | >600 | 0.719 | 1.42 | 1.51 | alea | 5.8e-15 / 2.9e-14 |  |  |  |  |  |  |  | 5.9e-15 / 2.9e-14 |  |  |  | 5.9e-15 / 2.9e-14 |  |  | 5.8e-15 / 2.9e-14 | 5.8e-15 / 2.9e-14 |  | 2.5e-07 / 1.2e-06 | 4.5e-13 / 2.2e-12 | 4.5e-13 / 2.2e-12 | 4.5e-13 / 2.2e-12 |  |  | 5.8e-15 / 2.9e-14 |
-| clinicalTrial1_w6 | 1613 | 8000 | 1 | - | - | - | - | - | - | >600 | zero | - | - | - | 178 | err | err | 13.6 | wrong |  | 20.5 | 29.4 | 28.5 | 242 | - | - | 14.3 | 15.3 | 5.19 | alea | 1.1e-14 / 6.4e-14 |  |  |  |  |  |  |  |  |  |  |  | 1.1e-14 / 6.4e-14 |  |  | 1.1e-14 / 6.4e-14 | inf / inf |  | 4.5e-07 / 2.6e-06 | 7.7e-14 / 4.5e-13 | 7.7e-14 / 4.5e-13 | 7.7e-14 / 4.5e-13 |  |  | 1.1e-14 / 6.4e-14 |
-| clinicalTrial1_w8 | 2419 | 12800 | 3.39 | - | - | - | - | - | - | - | 333 | - | - | - | >600 | err | err | 16.2 | wrong |  | 37.7 | 79.8 | 57.4 | 572 | - | - | oom | oom | 24.5 | alea | 4.4e-16 / 2.6e-15 |  |  |  |  |  |  |  | 5.6e-16 / 3.3e-15 |  |  |  |  |  |  | 4.7e-16 / 2.8e-15 | inf / inf |  | 4.5e-07 / 2.6e-06 | 2.5e-13 / 1.4e-12 | 2.5e-13 / 1.4e-12 | 2.5e-13 / 1.4e-12 |  |  |  |
-| clinicalTrial1_w10 | 3225 | 17600 | 8.53 | - | - | - | - | - | - | - | >600 | - | - | - | - | err | err | 20.7 | wrong |  | 55.8 | 167 | 118 | >600 | - | - | - | - | 121 | Ganak | 1.1e-16 / 6.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-17 / 1.6e-16 | inf / inf |  | 4.5e-07 / 2.6e-06 | 2.5e-13 / 1.4e-12 | 2.5e-13 / 1.4e-12 |  |  |  |  |
-| clinicalTrial1_w12 | 4031 | 22400 | 12.2 | - | - | - | - | - | - | - | - | - | - | - | - | err | err | 28.8 | wrong |  | 77.3 | 393 | 212 | - | - | - | - | - | oom | merlin | 4.5e-07 / 2.6e-06 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.5e-07 / 2.6e-06 | inf / inf |  | ref | 4.5e-07 / 2.6e-06 | 4.5e-07 / 2.6e-06 |  |  |  |  |
-| clinicalTrial1_w14 | 4837 | 27200 | 25.6 | - | - | - | - | - | - | - | - | - | - | - | - | err | err | err | wrong | 21.5 | oom | 495 | 268 | - | - | - | - | - | - | ace-Xlog | 4.4e-15 / 2.6e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | inf / inf |  |  | 2.5e-13 / 1.5e-12 | 2.5e-13 / 1.5e-12 |  |  |  |  |
-| clinicalTrial2_w6 | 89 | 412 | 0.019 | >600 | 9.32 | err | oom | >600 | 38.5 | 0.801 | 2.97 | oom | 3.01 | 4.12 | 12.9 | 5.17 | 5.13 | 1.86 | 1.96 |  | 0.088 | 1.38 | 21.1 | 0.09 | 0.249 | 10.1 | 0.223 | 3.01 | 0.398 | alea | 6.7e-16 / 1.3e-15 |  | 7.4e-07 / 1.5e-06 |  |  |  | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 |  | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 | 6.7e-16 / 1.3e-15 |  | 3.9e-07 / 1.5e-06 | 3.7e-13 / 7.4e-13 | 3.7e-13 / 7.4e-13 | 3.7e-13 / 7.4e-13 | 6.7e-16 / 1.3e-15 | 5.6e-16 / 1.1e-15 | 6.7e-16 / 1.3e-15 |
-| clinicalTrial2_w8 | 133 | 658 | 0.026 | - | >600 | err | - | - | 472 | 5.98 | 3.21 | - | 83.3 | 119 | 75.2 | 20.7 | 19.5 | 2.19 | 2.38 |  | 0.097 | 0.273 | 2.39 | 0.1 | 0.118 | 17.6 | 7.83 | 12.2 | 1.08 | alea | 5.6e-16 / 1.1e-15 |  |  |  |  |  | 5.6e-16 / 1.1e-15 | 1.2e-13 / 4.3e-13 | 6.7e-16 / 1.3e-15 |  | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |  | 4.7e-07 / 9.3e-07 | 4.7e-13 / 1.2e-12 | 4.7e-13 / 1.2e-12 | 4.7e-13 / 1.2e-12 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.3e-15 | 5.6e-16 / 1.1e-15 |
-| clinicalTrial2_w10 | 177 | 904 | 0.032 | - | - | err | - | - | err | 29.8 | 6.56 | - | >600 | >600 | >600 | 452 | 466 | 2.28 | 2.44 |  | 0.111 | 0.28 | 2.68 | 0.117 | 0.128 | 25.1 | 288 | 298 | 4.74 | alea | 1.1e-15 / 2.2e-15 |  |  |  |  |  |  | 1.1e-13 / 9.5e-13 | 1.0e-15 / 2.0e-15 |  |  |  |  | 1.0e-15 / 2.0e-15 | 1.0e-15 / 2.0e-15 | 1.1e-15 / 2.2e-15 | 1.1e-15 / 2.2e-15 |  | 4.7e-07 / 4.0e-06 | 4.5e-13 / 1.4e-12 | 4.5e-13 / 1.4e-12 | 4.5e-13 / 1.4e-12 | 1.1e-15 / 2.2e-15 | 1.1e-15 / 2.2e-15 | 1.0e-15 / 2.0e-15 |
-| clinicalTrial2_w12 | 221 | 1150 | 0.049 | - | - | err | - | - | - | 135 | 6.24 | - | - | - | - | >600 | >600 | 2.34 | 2.62 |  | 0.122 | 0.299 | 2.81 | 0.132 | 0.158 | 31.4 | oom | oom | 24 | alea | 3.6e-15 / 7.1e-15 |  |  |  |  |  |  | 1.0e-13 / 2.1e-13 | 4.4e-16 / 9.0e-16 |  |  |  |  |  |  | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |  | 4.7e-07 / 4.3e-06 | 4.5e-13 / 9.0e-13 | 4.5e-13 / 9.0e-13 | 4.5e-13 / 9.0e-13 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |  |
-| clinicalTrial2_w14 | 265 | 1396 | 0.052 | - | - | err | - | - | - | 339 | 11.8 | - | - | - | - | - | - | 2.45 | 2.77 |  | 0.142 | 0.334 | 3.13 | 0.16 | 0.167 | 39.7 | - | - | 118 | Ganak | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  | 1.7e-13 / 3.3e-13 | 2.2e-16 / 4.5e-16 |  |  |  |  |  |  | 6.7e-16 / 1.3e-15 | 2.2e-16 / 4.4e-16 |  | 4.9e-07 / 4.4e-06 | 4.8e-13 / 1.4e-12 | 4.8e-13 / 1.4e-12 | 4.8e-13 / 1.4e-12 | 1.1e-16 / 2.2e-16 | 5.6e-17 / 1.3e-16 |  |
-| clinicalTrial2_w16 | 309 | 1642 | 0.056 | - | - | err | - | - | - | 316 | 44.4 | - | - | - | - | - | - | 2.5 | 3.07 |  | 0.159 | 0.359 | 3.65 | 0.188 | 0.188 | 46.8 | - | - | oom | Ganak | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 1.9e-13 / 1.5e-12 | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 5.6e-16 / 1.1e-15 | 2.2e-16 / 4.4e-16 |  | 4.9e-07 / 3.5e-06 | 4.2e-13 / 3.4e-12 | 4.2e-13 / 3.4e-12 | 4.2e-13 / 3.4e-12 | 1.1e-16 / 2.5e-16 | 5.6e-17 / 1.3e-16 |  |
-| clinicalTrial2_w18 | 353 | 1888 | 0.06 | - | - | err | - | - | - | 219 | 142 | - | - | - | - | - | - | 2.67 | 3.22 |  | 0.173 | 0.406 | 4.76 | 0.211 | 0.398 | 54 | - | - | - | Ganak | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 1.5e-13 / 3.0e-13 | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 1.7e-16 / 3.9e-16 | 5.0e-16 / 1.0e-15 |  | 4.2e-07 / 1.4e-06 | 4.4e-13 / 1.7e-12 | 4.4e-13 / 1.7e-12 | 4.4e-13 / 1.7e-12 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.3e-16 |  |
-| coinBias_w16 | 12422 | 152450 | 14 | oom | oom | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 326 | 351 | oom | alea | 2.4e-15 / 5.3e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.1e-16 / 1.2e-15 |
-| coinBias_w18 | 20630 | 177156 | 23 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 3.8e-15 / 6.1e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| conjugate_ex3_w18 | 9147 | 239177 | 51.8 | oom | oom | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 317 | 349 | oom | alea | 5.6e-15 / 1.0e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-15 / 1.3e-14 |
-| conjugate_ex3_w20 | 9135 | 290908 | 84.3 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 6.4e-15 / 1.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| altermu2_p16 | 7670 | 35720 | 3.71 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | oom | oom | >600 | >600 | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| altermu2_p4 | 2230 | 13800 | 2.43 | >600 | oom | >600 | oom | >600 | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | 15 | 219 |  | 32.4 | 26.2 | 183 | 76.5 | oom | >600 | >600 | >600 | >600 | merlin | 4.9e-07 / 9.7e-07 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.9e-07 / 9.7e-07 | 4.9e-07 / 9.7e-07 |  | ref | 4.9e-07 / 9.7e-07 | 4.9e-07 / 9.7e-07 | 4.9e-07 / 9.7e-07 |  |  |  |
+| clickGraph_w4 | 52 | 135 | 0.01 | >600 | 161 | >600 | oom | 488 | 76.4 | 0.412 | 2.81 | oom | 0.343 | 0.343 | 2.25 | 2.64 | 2.56 | 2.09 | 2.13 |  | 0.089 | 0.259 | 2.24 | 0.09 | 0.0722 | 15.9 | 0.016 | 1.44 | 0.15 | storm-exact | 0.0e+00 / 0.0e+00 |  | 8.2e-07 / 1.2e-06 |  |  | 2.2e-16 / 3.1e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 1.9e-07 / 3.1e-07 | 3.5e-13 / 5.7e-13 | 3.5e-13 / 5.7e-13 | 3.5e-13 / 5.7e-13 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 |
+| clickGraph_w6 | 104 | 345 | 0.023 | - | >600 | - | - | >600 | err | 1.66 | 2.81 | - | 1.3 | 1.68 | 28.1 | 5.13 | 5.13 | 2.4 | 2.61 |  | 0.122 | 0.316 | 2.45 | 0.145 | 0.164 | 41.1 | 1.16 | 4.05 | 0.37 | storm-exact | 3.3e-16 / 6.4e-16 |  |  |  |  |  |  | 5.7e-14 / 9.7e-14 | 2.2e-16 / 4.1e-16 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 1.9e-16 |  | 4.8e-07 / 8.1e-07 | 4.4e-13 / 8.4e-13 | 4.4e-13 / 8.4e-13 | 4.4e-13 / 8.4e-13 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 1.6e-16 |
+| clickGraph_w8 | 156 | 555 | 0.381 | - | - | - | - | - | - | 5.2 | 3.31 | - | 23.7 | 36.3 | 178 | 16.5 | 14.8 | 2.64 | 2.89 |  | 0.166 | 0.409 | 3.02 | 0.233 | 0.422 | 67.9 | 172 | 179 | 1.52 | storm-exact | 3.3e-16 / 5.0e-16 |  |  |  |  |  |  | 6.6e-14 / 1.3e-13 | 3.3e-16 / 6.1e-16 |  | 1.1e-16 / 2.2e-16 | ref | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.1e-16 |  | 4.2e-07 / 8.0e-07 | 4.9e-13 / 9.7e-13 | 4.9e-13 / 9.7e-13 | 4.9e-13 / 9.7e-13 | 1.1e-16 / 1.9e-16 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 |
+| clickGraph_w10 | 208 | 765 | 0.57 | - | - | - | - | - | - | 597 (2/3) | 3.33 | - | >600 | >600 | >600 | 279 | 295 | 2.88 | 3.38 |  | 0.22 | 0.539 | 3.97 | 0.366 | 0.305 | 99.2 | oom | oom | 5.91 | Ganak | 5.2e-15 / 1.0e-14 |  |  |  |  |  |  | 3.5e-14 / 6.8e-14 | 3.3e-16 / 6.1e-16 |  |  |  |  | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 | 3.3e-16 / 6.6e-16 |  | 4.0e-07 / 8.0e-07 | 4.8e-13 / 9.2e-13 | 4.8e-13 / 9.2e-13 | 4.8e-13 / 9.2e-13 | 1.1e-16 / 1.7e-16 | 1.1e-16 / 2.2e-16 |  |
+| clickGraph_w12 | 260 | 975 | 0.751 | - | - | - | - | - | - | 114 (2/3) | 4.56 | - | - | - | - | >600 | >600 | 3.44 | 3.94 |  | 0.289 | 0.7 | 5.37 | 0.537 | 0.396 | 133 | - | - | 30.9 | Ganak | 8.3e-15 / 1.4e-14 |  |  |  |  |  |  | 4.6e-14 / 7.8e-14 | 3.3e-16 / 6.1e-16 |  |  |  |  |  |  | 4.4e-16 / 8.9e-16 | 2.2e-16 / 4.3e-16 |  | 4.6e-07 / 9.2e-07 | 4.8e-13 / 9.6e-13 | 4.8e-13 / 9.6e-13 | 4.8e-13 / 9.6e-13 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 1.7e-16 |  |
+| clickGraph_w14 | 312 | 1185 | 1.15 | - | - | - | - | - | - | 431 (2/3) | 9.15 | - | - | - | - | - | - | 3.47 | 4.17 |  | 0.353 | 0.885 | 7.66 | 0.743 | 0.514 | 171 | - | - | wrong | Ganak | 1.2e-14 / 2.1e-14 |  |  |  |  |  |  | 3.3e-14 / 6.4e-14 | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  | 3.3e-16 / 5.0e-16 | 4.4e-16 / 8.2e-16 |  | 4.6e-07 / 9.1e-07 | 4.9e-13 / 9.8e-13 | 4.9e-13 / 9.8e-13 | 4.9e-13 / 9.8e-13 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  |
+| clickGraph_w16 | 364 | 1395 | 0.957 | - | - | - | - | - | - | >600 | 29.9 | - | - | - | - | - | - | 3.81 | 4.55 |  | 0.458 | 1.11 | 10.9 | 1.06 | 0.614 | 196 | - | - | oom | Ganak | 4.2e-15 / 8.4e-15 |  |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 |  |  |  |  |  |  | 3.3e-16 / 6.7e-16 | 3.3e-16 / 6.7e-16 |  | 4.7e-07 / 9.5e-07 | 4.6e-13 / 7.8e-13 | 4.6e-13 / 7.8e-13 | 4.6e-13 / 7.8e-13 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  |
+| clinicalTrial1_w4 | 807 | 3200 | 0.108 | >600 | >600 | >600 | oom | >600 | err | err | 166 | oom | >600 | >600 | 35 | err | err | 10.4 | 7.56 |  | 6.48 | 4.38 | 8.14 | 44.4 | oom | >600 | 0.333 | 1.03 | 1.12 | alea | 5.8e-15 / 2.9e-14 |  |  |  |  |  |  |  | 5.9e-15 / 2.9e-14 |  |  |  | 5.9e-15 / 2.9e-14 |  |  | 5.8e-15 / 2.9e-14 | 5.8e-15 / 2.9e-14 |  | 2.5e-07 / 1.2e-06 | 4.5e-13 / 2.2e-12 | 4.5e-13 / 2.2e-12 | 4.5e-13 / 2.2e-12 |  |  | 5.8e-15 / 2.9e-14 |
+| clinicalTrial1_w6 | 1613 | 8000 | 0.588 | - | - | - | - | - | - | >600 | zero | - | - | - | 177 | err | err | 13.2 | wrong |  | 20.1 | 29 | 28.1 | 242 | - | - | 13.9 | 14.9 | 4.77 | alea | 1.1e-14 / 6.4e-14 |  |  |  |  |  |  |  |  |  |  |  | 1.1e-14 / 6.4e-14 |  |  | 1.1e-14 / 6.4e-14 | inf / inf |  | 4.5e-07 / 2.6e-06 | 7.7e-14 / 4.5e-13 | 7.7e-14 / 4.5e-13 | 7.7e-14 / 4.5e-13 |  |  | 1.1e-14 / 6.4e-14 |
+| clinicalTrial1_w8 | 2419 | 12800 | 2.91 | - | - | - | - | - | - | - | 333 | - | - | - | >600 | err | err | 15.8 | wrong |  | 37.2 | 79.3 | 56.9 | 571 | - | - | oom | oom | 24 | alea | 4.4e-16 / 2.6e-15 |  |  |  |  |  |  |  | 5.6e-16 / 3.3e-15 |  |  |  |  |  |  | 4.7e-16 / 2.8e-15 | inf / inf |  | 4.5e-07 / 2.6e-06 | 2.5e-13 / 1.4e-12 | 2.5e-13 / 1.4e-12 | 2.5e-13 / 1.4e-12 |  |  |  |
+| clinicalTrial1_w10 | 3225 | 17600 | 8.01 | - | - | - | - | - | - | - | >600 | - | - | - | - | err | err | 20.2 | wrong |  | 55.2 | 166 | 117 | >600 | - | - | - | - | 121 | Ganak | 1.1e-16 / 6.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-17 / 1.6e-16 | inf / inf |  | 4.5e-07 / 2.6e-06 | 2.5e-13 / 1.4e-12 | 2.5e-13 / 1.4e-12 |  |  |  |  |
+| clinicalTrial1_w12 | 4031 | 22400 | 11.6 | - | - | - | - | - | - | - | - | - | - | - | - | err | err | 28.3 | wrong |  | 76.8 | 392 | 212 | - | - | - | - | - | oom | merlin | 4.5e-07 / 2.6e-06 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.5e-07 / 2.6e-06 | inf / inf |  | ref | 4.5e-07 / 2.6e-06 | 4.5e-07 / 2.6e-06 |  |  |  |  |
+| clinicalTrial1_w14 | 4837 | 27200 | 25.2 | - | - | - | - | - | - | - | - | - | - | - | - | err | err | err | wrong | 21.1 | oom | 494 | 268 | - | - | - | - | - | - | ace-Xlog | 4.4e-15 / 2.6e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | inf / inf |  |  | 2.5e-13 / 1.5e-12 | 2.5e-13 / 1.5e-12 |  |  |  |  |
+| clinicalTrial2_w6 | 89 | 412 | 0.01 | >600 | 9.31 | err | oom | >600 | 38.5 | 0.792 | 2.96 | oom | 3 | 4.11 | 12.9 | 5.16 | 5.12 | 1.85 | 1.95 |  | 0.079 | 1.37 | 21 | 0.081 | 0.24 | 10.1 | 0.214 | 3 | 0.389 | storm-exact | 0.0e+00 / 0.0e+00 |  | 7.4e-07 / 1.5e-06 |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.3e-16 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 3.9e-07 / 1.5e-06 | 3.7e-13 / 7.4e-13 | 3.7e-13 / 7.4e-13 | 3.7e-13 / 7.4e-13 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.1e-16 | 0.0e+00 / 0.0e+00 |
+| clinicalTrial2_w8 | 133 | 658 | 0.015 | - | >600 | err | - | - | 472 | 5.97 | 3.2 | - | 83.2 | 119 | 75.2 | 20.7 | 19.5 | 2.17 | 2.36 |  | 0.086 | 0.262 | 2.38 | 0.089 | 0.107 | 17.6 | 7.82 | 12.2 | 1.07 | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 1.2e-13 / 4.3e-13 | 1.1e-16 / 2.2e-16 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 4.7e-07 / 9.3e-07 | 4.7e-13 / 1.2e-12 | 4.7e-13 / 1.2e-12 | 4.7e-13 / 1.2e-12 | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.3e-16 | 0.0e+00 / 0.0e+00 |
+| clinicalTrial2_w10 | 177 | 904 | 0.02 | - | - | err | - | - | err | 29.8 | 6.54 | - | >600 | >600 | >600 | 452 | 466 | 2.27 | 2.43 |  | 0.099 | 0.268 | 2.67 | 0.105 | 0.116 | 25.1 | 288 | 298 | 4.73 | alea | 1.1e-15 / 2.2e-15 |  |  |  |  |  |  | 1.1e-13 / 9.5e-13 | 1.0e-15 / 2.0e-15 |  |  |  |  | 1.0e-15 / 2.0e-15 | 1.0e-15 / 2.0e-15 | 1.1e-15 / 2.2e-15 | 1.1e-15 / 2.2e-15 |  | 4.7e-07 / 4.0e-06 | 4.5e-13 / 1.4e-12 | 4.5e-13 / 1.4e-12 | 4.5e-13 / 1.4e-12 | 1.1e-15 / 2.2e-15 | 1.1e-15 / 2.2e-15 | 1.0e-15 / 2.0e-15 |
+| clinicalTrial2_w12 | 221 | 1150 | 0.035 | - | - | err | - | - | - | 135 | 6.23 | - | - | - | - | >600 | >600 | 2.33 | 2.6 |  | 0.108 | 0.285 | 2.8 | 0.118 | 0.144 | 31.4 | oom | oom | 24 | alea | 3.6e-15 / 7.1e-15 |  |  |  |  |  |  | 1.0e-13 / 2.1e-13 | 4.4e-16 / 9.0e-16 |  |  |  |  |  |  | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |  | 4.7e-07 / 4.3e-06 | 4.5e-13 / 9.0e-13 | 4.5e-13 / 9.0e-13 | 4.5e-13 / 9.0e-13 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |  |
+| clinicalTrial2_w14 | 265 | 1396 | 0.036 | - | - | err | - | - | - | 339 | 11.8 | - | - | - | - | - | - | 2.43 | 2.76 |  | 0.126 | 0.318 | 3.12 | 0.144 | 0.151 | 39.7 | - | - | 118 | Ganak | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  | 1.7e-13 / 3.3e-13 | 2.2e-16 / 4.5e-16 |  |  |  |  |  |  | 6.7e-16 / 1.3e-15 | 2.2e-16 / 4.4e-16 |  | 4.9e-07 / 4.4e-06 | 4.8e-13 / 1.4e-12 | 4.8e-13 / 1.4e-12 | 4.8e-13 / 1.4e-12 | 1.1e-16 / 2.2e-16 | 5.6e-17 / 1.3e-16 |  |
+| clinicalTrial2_w16 | 309 | 1642 | 0.038 | - | - | err | - | - | - | 316 | 44.3 | - | - | - | - | - | - | 2.48 | 3.05 |  | 0.141 | 0.341 | 3.63 | 0.17 | 0.17 | 46.8 | - | - | oom | Ganak | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 1.9e-13 / 1.5e-12 | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 5.6e-16 / 1.1e-15 | 2.2e-16 / 4.4e-16 |  | 4.9e-07 / 3.5e-06 | 4.2e-13 / 3.4e-12 | 4.2e-13 / 3.4e-12 | 4.2e-13 / 3.4e-12 | 1.1e-16 / 2.5e-16 | 5.6e-17 / 1.3e-16 |  |
+| clinicalTrial2_w18 | 353 | 1888 | 0.041 | - | - | err | - | - | - | 219 | 142 | - | - | - | - | - | - | 2.65 | 3.2 |  | 0.154 | 0.387 | 4.74 | 0.192 | 0.379 | 54 | - | - | - | Ganak | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 1.5e-13 / 3.0e-13 | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  | 1.7e-16 / 3.9e-16 | 5.0e-16 / 1.0e-15 |  | 4.2e-07 / 1.4e-06 | 4.4e-13 / 1.7e-12 | 4.4e-13 / 1.7e-12 | 4.4e-13 / 1.7e-12 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.3e-16 |  |
+| coinBias_w16 | 12422 | 152450 | 13.2 | oom | oom | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 325 | 350 | oom | alea | 2.4e-15 / 5.3e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.1e-16 / 1.2e-15 |
+| coinBias_w18 | 20630 | 177156 | 22 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 3.8e-15 / 6.1e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| conjugate_ex3_w18 | 9147 | 239177 | 50.3 | oom | oom | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 316 | 347 | oom | alea | 5.6e-15 / 1.0e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-15 / 1.3e-14 |
+| conjugate_ex3_w20 | 9135 | 290908 | 82.5 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 6.4e-15 / 1.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | conjugate_ex3_w22 | 9135 | 342186 | >600 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | conjugate_ex3_w24 | 9117 | 392519 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | conjugate_ex3_w26 | 9105 | 442375 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | conjugate_ex3_w28 | 9087 | 490533 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | conjugate_ex3_w30 | 9066 | 538535 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| conjugate_gaussians_w17 | 177 | 2788 | 0.624 | >600 | oom | >600 | oom | >600 | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | err | >600 | oom | err | >600 | 63.9 | 76.6 | >600 | alea | 4.0e-15 / 2.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.9e-15 / 2.1e-14 |
-| conjugate_gaussians_w19 | 201 | 3258 | 0.849 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 414 | 434 | - | alea | 2.4e-15 / 5.8e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.1e-15 / 6.4e-15 |
-| conjugate_gaussians_w21 | 225 | 3728 | 1.1 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 4.3e-15 / 8.7e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| fair_dt14_w12 | 1795 | 9432 | 7.97 | >600 | oom | >600 | oom | >600 | 24.1 | 88.9 | 119 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | err | oom | >600 | oom | oom | >600 | 0.844 | 2.21 | oom | alea | 2.8e-17 / 5.6e-16 |  |  |  |  |  | 6.9e-18 / 2.2e-16 | 8.3e-17 / 1.3e-15 | 2.8e-17 / 4.3e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.5e-18 / 1.1e-16 |
-| fair_dt14_w16 | 3034 | 13225 | 14.6 | - | - | - | - | - | 37.2 | 538 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 5.05 | 6.59 | - | alea | 5.2e-17 / 1.7e-15 |  |  |  |  |  | 4.2e-17 / 6.5e-16 | 1.0e-17 / 3.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.2e-17 / 6.5e-16 |
-| fair_dt14_w20 | 4259 | 17021 | 30.4 | - | - | - | - | - | 58.7 | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 84.9 | 87.9 | - | alea | 5.6e-17 / 1.0e-15 |  |  |  |  |  | 1.4e-17 / 4.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.4e-17 / 4.5e-16 |
-| fair_dt14_w24 | 5272 | 20135 | 35.8 | - | - | - | - | - | 87.6 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  | 2.8e-17 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| fair_dt14_w28 | 6274 | 23227 | 51.2 | - | - | - | - | - | 128 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 1.4e-17 / 4.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| fair_dt14_w32 | 7263 | 26293 | 84.4 | - | - | - | - | - | 171 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 2.8e-17 / 4.3e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| fair_dt14_w36 | 8145 | 29141 | 86.4 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| fair_dt16_w12 | 420 | 2143 | 0.417 | >600 | oom | >600 | oom | >600 | 17.3 | 1.89 | 8.56 | oom | >600 | >600 | 48.3 | >600 | >600 | 16 | 8.29 |  | 39 | oom | oom | 15.2 | oom | >600 | 0.141 | 1.53 | 3.9 | alea | 2.8e-17 / 2.8e-16 |  |  |  |  |  | 2.8e-17 / 2.8e-16 | 8.3e-17 / 4.3e-16 | 8.3e-17 / 4.3e-16 |  |  |  | 1.7e-16 / 8.7e-16 |  |  | 2.8e-17 / 2.8e-16 | 5.6e-17 / 4.2e-16 |  | 7.0e-08 / 1.1e-06 |  |  | 4.0e-13 / 2.1e-12 |  |  | 3.5e-17 / 6.9e-16 |
-| fair_dt16_w16 | 638 | 2884 | 0.634 | - | - | - | - | - | 17.3 | 4.12 | 19.9 | - | - | - | 98.9 | - | - | >600 | 64.8 |  | oom | - | - | err | - | - | 0.185 | 1.63 | 3.92 | alea | 5.6e-17 / 2.9e-16 |  |  |  |  |  | 5.6e-17 / 2.9e-16 | 5.6e-17 / 2.9e-16 | 5.6e-17 / 2.9e-16 |  |  |  | 5.6e-17 / 2.9e-16 |  |  |  | 1.9e-16 / 1.4e-15 |  |  |  |  |  |  |  | 2.8e-17 / 2.8e-16 |
-| fair_dt16_w20 | 793 | 3420 | 0.804 | - | - | - | - | - | 17.3 | 6.43 | 43.1 | - | - | - | >600 | - | - | - | >600 |  | - | - | - | - | - | - | 0.21 | 1.68 | 9.19 | alea | 8.3e-17 / 5.6e-16 |  |  |  |  |  | 5.6e-17 / 7.0e-16 | 1.1e-16 / 5.8e-16 | 8.3e-17 / 5.6e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 8.3e-17 / 7.0e-16 |
-| fair_dt16_w24 | 780 | 3394 | 0.832 | - | - | - | - | - | 17.4 | 7.08 | 46.1 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 0.211 | 1.65 | 8.96 | alea | 5.6e-17 / 2.9e-16 |  |  |  |  |  | 4.9e-17 / 9.8e-16 | 5.6e-17 / 9.8e-16 | 1.4e-16 / 7.3e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 9.8e-16 |
-| fair_dt16_w28 | 754 | 3342 | 0.699 | - | - | - | - | - | 17.4 | 6.79 | 38 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 0.208 | 1.64 | 8.47 | alea | 2.8e-17 / 4.2e-16 |  |  |  |  |  | 3.5e-17 / 7.0e-16 | 1.4e-17 / 2.8e-16 | 2.8e-17 / 1.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.4e-17 / 2.8e-16 |
-| fair_dt16_w32 | 741 | 3316 | 0.694 | - | - | - | - | - | 17.2 | 5.22 | 57 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 0.201 | 1.59 | 8.2 | alea | 2.8e-17 / 4.2e-16 |  |  |  |  |  | 3.5e-17 / 7.0e-16 | 2.8e-17 / 5.6e-16 | 5.6e-17 / 4.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.5e-17 / 7.0e-16 |
-| fair_dt4_w12 | 1871 | 9632 | 4.54 | >600 | oom | >600 | oom | >600 | 22.6 | 123 | 173 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | oom | err | oom | oom | >600 | 0.789 | 2.2 | 263 | alea | 2.8e-17 / 1.8e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 8.3e-17 / 5.5e-16 | 2.8e-17 / 2.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-17 / 2.4e-16 |
-| fair_dt4_w16 | 3064 | 13311 | 15.3 | - | - | - | - | - | 32.2 | 253 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 4.29 | 5.79 | >600 | alea | 2.8e-17 / 1.9e-16 |  |  |  |  |  | 2.8e-17 / 1.9e-16 | 5.6e-17 / 3.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-17 / 1.9e-16 |
-| fair_dt4_w20 | 4349 | 17315 | 31.2 | - | - | - | - | - | 50.6 | 414 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 72.2 | 74.7 | - | alea | 2.8e-17 / 2.5e-16 |  |  |  |  |  | 5.6e-17 / 4.9e-16 | 2.8e-17 / 2.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 3.7e-16 |
-| fair_dt4_w24 | 5360 | 20425 | 38.3 | - | - | - | - | - | 70.7 | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  | 8.3e-17 / 6.1e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| fair_dt4_w28 | 6358 | 23509 | 54.9 | - | - | - | - | - | 106 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 2.8e-17 / 2.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| fair_dt4_w32 | 7345 | 26571 | 103 | - | - | - | - | - | 141 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 5.6e-17 / 3.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| conjugate_gaussians_w17 | 177 | 2788 | 0.613 | >600 | oom | >600 | oom | >600 | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | err | >600 | oom | err | >600 | 63.9 | 76.6 | >600 | alea | 4.0e-15 / 2.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.9e-15 / 2.1e-14 |
+| conjugate_gaussians_w19 | 201 | 3258 | 0.837 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 414 | 434 | - | alea | 2.4e-15 / 5.8e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.1e-15 / 6.4e-15 |
+| conjugate_gaussians_w21 | 225 | 3728 | 1.08 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 4.3e-15 / 8.7e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| fair_dt14_w12 | 1795 | 9432 | 7.93 | >600 | oom | >600 | oom | >600 | 24.1 | 88.8 | 119 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | err | oom | >600 | oom | oom | >600 | 0.804 | 2.17 | oom | alea | 2.8e-17 / 5.6e-16 |  |  |  |  |  | 6.9e-18 / 2.2e-16 | 8.3e-17 / 1.3e-15 | 2.8e-17 / 4.3e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.5e-18 / 1.1e-16 |
+| fair_dt14_w16 | 3034 | 13225 | 14.5 | - | - | - | - | - | 37.1 | 537 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 4.99 | 6.53 | - | alea | 5.2e-17 / 1.7e-15 |  |  |  |  |  | 4.2e-17 / 6.5e-16 | 1.0e-17 / 3.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.2e-17 / 6.5e-16 |
+| fair_dt14_w20 | 4259 | 17021 | 30.3 | - | - | - | - | - | 58.6 | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 84.8 | 87.8 | - | alea | 5.6e-17 / 1.0e-15 |  |  |  |  |  | 1.4e-17 / 4.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.4e-17 / 4.5e-16 |
+| fair_dt14_w24 | 5272 | 20135 | 35.6 | - | - | - | - | - | 87.4 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  | 2.8e-17 / 6.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| fair_dt14_w28 | 6274 | 23227 | 51.1 | - | - | - | - | - | 128 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 1.4e-17 / 4.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| fair_dt14_w32 | 7263 | 26293 | 84.2 | - | - | - | - | - | 171 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 2.8e-17 / 4.3e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| fair_dt14_w36 | 8145 | 29141 | 86.3 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| fair_dt16_w12 | 420 | 2143 | 0.401 | >600 | oom | >600 | oom | >600 | 17.2 | 1.88 | 8.54 | oom | >600 | >600 | 48.3 | >600 | >600 | 16 | 8.28 |  | 38.9 | oom | oom | 15.2 | oom | >600 | 0.125 | 1.52 | 3.88 | alea | 2.8e-17 / 2.8e-16 |  |  |  |  |  | 2.8e-17 / 2.8e-16 | 8.3e-17 / 4.3e-16 | 8.3e-17 / 4.3e-16 |  |  |  | 1.7e-16 / 8.7e-16 |  |  | 2.8e-17 / 2.8e-16 | 5.6e-17 / 4.2e-16 |  | 7.0e-08 / 1.1e-06 |  |  | 4.0e-13 / 2.1e-12 |  |  | 3.5e-17 / 6.9e-16 |
+| fair_dt16_w16 | 638 | 2884 | 0.614 | - | - | - | - | - | 17.3 | 4.1 | 19.9 | - | - | - | 98.8 | - | - | >600 | 64.7 |  | oom | - | - | err | - | - | 0.165 | 1.61 | 3.9 | alea | 5.6e-17 / 2.9e-16 |  |  |  |  |  | 5.6e-17 / 2.9e-16 | 5.6e-17 / 2.9e-16 | 5.6e-17 / 2.9e-16 |  |  |  | 5.6e-17 / 2.9e-16 |  |  |  | 1.9e-16 / 1.4e-15 |  |  |  |  |  |  |  | 2.8e-17 / 2.8e-16 |
+| fair_dt16_w20 | 793 | 3420 | 0.783 | - | - | - | - | - | 17.3 | 6.41 | 43 | - | - | - | >600 | - | - | - | >600 |  | - | - | - | - | - | - | 0.189 | 1.65 | 9.17 | alea | 8.3e-17 / 5.6e-16 |  |  |  |  |  | 5.6e-17 / 7.0e-16 | 1.1e-16 / 5.8e-16 | 8.3e-17 / 5.6e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 8.3e-17 / 7.0e-16 |
+| fair_dt16_w24 | 780 | 3394 | 0.81 | - | - | - | - | - | 17.4 | 7.05 | 46.1 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 0.189 | 1.63 | 8.94 | alea | 5.6e-17 / 2.9e-16 |  |  |  |  |  | 4.9e-17 / 9.8e-16 | 5.6e-17 / 9.8e-16 | 1.4e-16 / 7.3e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 9.8e-16 |
+| fair_dt16_w28 | 754 | 3342 | 0.675 | - | - | - | - | - | 17.3 | 6.76 | 38 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 0.184 | 1.62 | 8.45 | alea | 2.8e-17 / 4.2e-16 |  |  |  |  |  | 3.5e-17 / 7.0e-16 | 1.4e-17 / 2.8e-16 | 2.8e-17 / 1.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.4e-17 / 2.8e-16 |
+| fair_dt16_w32 | 741 | 3316 | 0.671 | - | - | - | - | - | 17.2 | 5.2 | 57 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 0.178 | 1.57 | 8.18 | alea | 2.8e-17 / 4.2e-16 |  |  |  |  |  | 3.5e-17 / 7.0e-16 | 2.8e-17 / 5.6e-16 | 5.6e-17 / 4.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.5e-17 / 7.0e-16 |
+| fair_dt4_w12 | 1871 | 9632 | 4.5 | >600 | oom | >600 | oom | >600 | 22.5 | 123 | 173 | oom | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | oom | err | oom | oom | >600 | 0.747 | 2.16 | 263 | alea | 2.8e-17 / 1.8e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 8.3e-17 / 5.5e-16 | 2.8e-17 / 2.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-17 / 2.4e-16 |
+| fair_dt4_w16 | 3064 | 13311 | 15.3 | - | - | - | - | - | 32.1 | 253 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 4.23 | 5.73 | >600 | alea | 2.8e-17 / 1.9e-16 |  |  |  |  |  | 2.8e-17 / 1.9e-16 | 5.6e-17 / 3.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-17 / 1.9e-16 |
+| fair_dt4_w20 | 4349 | 17315 | 31.1 | - | - | - | - | - | 50.5 | 414 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 72.1 | 74.7 | - | alea | 2.8e-17 / 2.5e-16 |  |  |  |  |  | 5.6e-17 / 4.9e-16 | 2.8e-17 / 2.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 3.7e-16 |
+| fair_dt4_w24 | 5360 | 20425 | 38.2 | - | - | - | - | - | 70.6 | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  | 8.3e-17 / 6.1e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| fair_dt4_w28 | 6358 | 23509 | 54.8 | - | - | - | - | - | 106 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 2.8e-17 / 2.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| fair_dt4_w32 | 7345 | 26571 | 102 | - | - | - | - | - | 141 | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 5.6e-17 / 3.7e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | fair_dt4_w36 | 8223 | 29411 | 131 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| fair_dt44_w12 | 478 | 2361 | 0.371 | >600 | >600 | >600 | oom | >600 | 17.3 | 2.78 | 10.6 | oom | >600 | >600 | 72.2 | >600 | >600 | 21.4 | 6.12 |  | 21.7 | oom | >600 | 12 | >600 | >600 | 0.16 | 1.62 | 2.06 | alea | 8.3e-17 / 5.8e-16 |  |  |  |  |  | 5.6e-17 / 4.6e-16 | 2.8e-17 / 4.6e-16 | 2.8e-17 / 4.6e-16 |  |  |  | 5.6e-17 / 3.2e-16 |  |  | 5.6e-17 / 3.2e-16 | 4.2e-17 / 6.9e-16 |  | 1.1e-07 / 7.5e-07 |  |  | 3.0e-13 / 1.7e-12 |  |  | 2.8e-17 / 4.6e-16 |
-| fair_dt44_w16 | 696 | 3090 | 0.541 | - | - | - | - | - | 17.2 | 4.45 | 21.6 | - | - | - | 126 | - | - | 63.9 | 81 |  | oom | - | - | oom | - | - | 0.201 | 1.7 | 4.69 | alea | 2.8e-17 / 1.6e-16 |  |  |  |  |  | 8.3e-17 / 4.8e-16 | 6.9e-17 / 1.2e-15 | 5.6e-17 / 3.2e-16 |  |  |  | 5.6e-17 / 3.5e-16 |  |  | 9.2e-16 / 1.2e-14 | 5.3e-16 / 4.2e-15 |  |  |  |  |  |  |  | 5.6e-17 / 4.6e-16 |
-| fair_dt44_w20 | 851 | 3614 | 0.723 | - | - | - | - | - | 17.5 | 7.06 | 61.6 | - | - | - | >600 | - | - | 342 | >600 |  | - | - | - | - | - | - | 0.255 | 1.72 | 8.11 | alea | 1.1e-16 / 6.4e-16 |  |  |  |  |  | 5.6e-17 / 8.1e-16 | 8.3e-17 / 4.8e-16 | 2.2e-16 / 1.3e-15 |  |  |  |  |  |  | 1.4e-15 / 2.3e-14 |  |  |  |  |  |  |  |  | 5.6e-17 / 4.6e-16 |
-| fair_dt44_w24 | 838 | 3588 | 0.679 | - | - | - | - | - | 17.6 | 4.06 | 55.4 | - | - | - | - | - | - | 396 | - |  | - | - | - | - | - | - | 0.257 | 1.75 | 7.82 | alea | 8.3e-17 / 5.8e-16 |  |  |  |  |  | 5.6e-17 / 4.6e-16 | 5.6e-17 / 6.9e-16 | 1.1e-16 / 6.4e-16 |  |  |  |  |  |  | 3.2e-15 / 5.4e-14 |  |  |  |  |  |  |  |  | 5.6e-17 / 4.6e-16 |
-| fair_dt44_w28 | 812 | 3536 | 0.662 | - | - | - | - | - | 17.4 | 7.96 | 52.7 | - | - | - | - | - | - | 426 | - |  | - | - | - | - | - | - | 0.247 | 1.72 | 7.58 | alea | 8.3e-17 / 4.8e-16 |  |  |  |  |  | 2.8e-17 / 2.3e-16 | 5.6e-17 / 3.2e-16 | 1.4e-16 / 8.0e-16 |  |  |  |  |  |  | 3.6e-16 / 2.1e-15 |  |  |  |  |  |  |  |  | 6.9e-18 / 1.2e-16 |
-| fair_dt44_w32 | 799 | 3510 | 0.602 | - | - | - | - | - | 17.4 | 5.91 | 51.9 | - | - | - | - | - | - | 278 | - |  | - | - | - | - | - | - | 0.245 | 1.71 | 6.97 | alea | 2.8e-17 / 2.3e-16 |  |  |  |  |  | 2.8e-17 / 3.5e-16 | 8.3e-17 / 4.8e-16 | 2.8e-17 / 2.3e-16 |  |  |  |  |  |  | 2.8e-16 / 3.1e-15 |  |  |  |  |  |  |  |  | 2.8e-17 / 1.6e-16 |
-| genes_t5 | 67284 | 308661 | 25.7 | oom | oom | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | err | err |  | >600 | >600 | >600 | >600 | >600 | >600 | oom | oom | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t10 | 67484 | 309241 | 25.2 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t15 | 67684 | 309821 | 25.2 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t20 | 67884 | 310401 | 25.4 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t25 | 68084 | 310981 | 25.2 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t30 | 68284 | 311561 | 25 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t40 | 68684 | 312721 | 25.3 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t50 | 69084 | 313881 | 26 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t60 | 69484 | 315041 | 25.8 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t80 | 70284 | 317361 | 27 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes_t100 | 71084 | 319681 | 26.2 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes5_w17 | 24148 | 173021 | 12.8 | oom | oom | oom | >600 | err | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 71.1 | 83.1 | oom | alea | 5.4e-15 / 1.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.4e-15 / 1.1e-14 |
-| genes5_w19 | 31844 | 196665 | 15.3 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 107 | 122 | - | alea | 7.5e-15 / 1.5e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.4e-15 / 1.5e-14 |
-| genes5_w21 | 39336 | 219821 | 17.1 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 197 | 218 | - | alea | 6.9e-15 / 1.4e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.8e-15 / 1.4e-14 |
-| genes5_w23 | 46572 | 242497 | 19.4 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 394 | 420 | - | alea | 3.7e-15 / 7.3e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.5e-15 / 7.0e-15 |
-| genes5_w25 | 53588 | 264781 | 21.1 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | alea | 3.9e-15 / 8.4e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| genes5_w27 | 60520 | 286833 | 24.2 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea | 2.9e-15 / 7.3e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| laplace_w13 | 4125 | 110955 | 10.2 | oom | oom | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | 486 | 465 |  | >600 | >600 | >600 | >600 | >600 | >600 | 246 | 264 | >600 | alea | 4.6e-15 / 9.1e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.5e-15 / 9.0e-15 | 4.6e-15 / 9.1e-15 |  |  |  |  |  |  |  | 4.6e-15 / 9.2e-15 |
+| fair_dt44_w12 | 478 | 2361 | 0.353 | >600 | >600 | >600 | oom | >600 | 17.3 | 2.76 | 10.6 | oom | >600 | >600 | 72.2 | >600 | >600 | 21.4 | 6.1 |  | 21.7 | oom | >600 | 12 | >600 | >600 | 0.142 | 1.6 | 2.04 | alea | 8.3e-17 / 5.8e-16 |  |  |  |  |  | 5.6e-17 / 4.6e-16 | 2.8e-17 / 4.6e-16 | 2.8e-17 / 4.6e-16 |  |  |  | 5.6e-17 / 3.2e-16 |  |  | 5.6e-17 / 3.2e-16 | 4.2e-17 / 6.9e-16 |  | 1.1e-07 / 7.5e-07 |  |  | 3.0e-13 / 1.7e-12 |  |  | 2.8e-17 / 4.6e-16 |
+| fair_dt44_w16 | 696 | 3090 | 0.52 | - | - | - | - | - | 17.2 | 4.43 | 21.5 | - | - | - | 126 | - | - | 63.9 | 81 |  | oom | - | - | oom | - | - | 0.18 | 1.68 | 4.67 | alea | 2.8e-17 / 1.6e-16 |  |  |  |  |  | 8.3e-17 / 4.8e-16 | 6.9e-17 / 1.2e-15 | 5.6e-17 / 3.2e-16 |  |  |  | 5.6e-17 / 3.5e-16 |  |  | 9.2e-16 / 1.2e-14 | 5.3e-16 / 4.2e-15 |  |  |  |  |  |  |  | 5.6e-17 / 4.6e-16 |
+| fair_dt44_w20 | 851 | 3614 | 0.7 | - | - | - | - | - | 17.4 | 7.04 | 61.6 | - | - | - | >600 | - | - | 342 | >600 |  | - | - | - | - | - | - | 0.232 | 1.7 | 8.09 | alea | 1.1e-16 / 6.4e-16 |  |  |  |  |  | 5.6e-17 / 8.1e-16 | 8.3e-17 / 4.8e-16 | 2.2e-16 / 1.3e-15 |  |  |  |  |  |  | 1.4e-15 / 2.3e-14 |  |  |  |  |  |  |  |  | 5.6e-17 / 4.6e-16 |
+| fair_dt44_w24 | 838 | 3588 | 0.656 | - | - | - | - | - | 17.6 | 4.04 | 55.4 | - | - | - | - | - | - | 396 | - |  | - | - | - | - | - | - | 0.234 | 1.72 | 7.79 | alea | 8.3e-17 / 5.8e-16 |  |  |  |  |  | 5.6e-17 / 4.6e-16 | 5.6e-17 / 6.9e-16 | 1.1e-16 / 6.4e-16 |  |  |  |  |  |  | 3.2e-15 / 5.4e-14 |  |  |  |  |  |  |  |  | 5.6e-17 / 4.6e-16 |
+| fair_dt44_w28 | 812 | 3536 | 0.639 | - | - | - | - | - | 17.3 | 7.93 | 52.7 | - | - | - | - | - | - | 426 | - |  | - | - | - | - | - | - | 0.224 | 1.7 | 7.56 | alea | 8.3e-17 / 4.8e-16 |  |  |  |  |  | 2.8e-17 / 2.3e-16 | 5.6e-17 / 3.2e-16 | 1.4e-16 / 8.0e-16 |  |  |  |  |  |  | 3.6e-16 / 2.1e-15 |  |  |  |  |  |  |  |  | 6.9e-18 / 1.2e-16 |
+| fair_dt44_w32 | 799 | 3510 | 0.578 | - | - | - | - | - | 17.4 | 5.89 | 51.9 | - | - | - | - | - | - | 278 | - |  | - | - | - | - | - | - | 0.221 | 1.69 | 6.94 | alea | 2.8e-17 / 2.3e-16 |  |  |  |  |  | 2.8e-17 / 3.5e-16 | 8.3e-17 / 4.8e-16 | 2.8e-17 / 2.3e-16 |  |  |  |  |  |  | 2.8e-16 / 3.1e-15 |  |  |  |  |  |  |  |  | 2.8e-17 / 1.6e-16 |
+| genes_t5 | 67284 | 308661 | 23.5 | oom | oom | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | err | err |  | >600 | >600 | >600 | >600 | >600 | >600 | oom | oom | oom | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t10 | 67484 | 309241 | 23 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t15 | 67684 | 309821 | 23.1 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t20 | 67884 | 310401 | 23.2 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t25 | 68084 | 310981 | 23 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t30 | 68284 | 311561 | 22.8 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t40 | 68684 | 312721 | 23 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t50 | 69084 | 313881 | 23.8 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t60 | 69484 | 315041 | 23.4 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t80 | 70284 | 317361 | 24.6 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes_t100 | 71084 | 319681 | 24 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes5_w17 | 24148 | 173021 | 11.9 | oom | oom | oom | >600 | err | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 70.2 | 82.2 | oom | alea | 5.4e-15 / 1.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.4e-15 / 1.1e-14 |
+| genes5_w19 | 31844 | 196665 | 14.1 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 106 | 121 | - | alea | 7.5e-15 / 1.5e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.4e-15 / 1.5e-14 |
+| genes5_w21 | 39336 | 219821 | 15.6 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 195 | 216 | - | alea | 6.9e-15 / 1.4e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.8e-15 / 1.4e-14 |
+| genes5_w23 | 46572 | 242497 | 17.8 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 392 | 418 | - | alea | 3.7e-15 / 7.3e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.5e-15 / 7.0e-15 |
+| genes5_w25 | 53588 | 264781 | 19.3 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | alea | 3.9e-15 / 8.4e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| genes5_w27 | 60520 | 286833 | 22 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea | 2.9e-15 / 7.3e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| laplace_w13 | 4125 | 110955 | 9.65 | oom | oom | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | 486 | 464 |  | >600 | >600 | >600 | >600 | >600 | >600 | 245 | 263 | >600 | alea | 4.6e-15 / 9.1e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.5e-15 / 9.0e-15 | 4.6e-15 / 9.1e-15 |  |  |  |  |  |  |  | 4.6e-15 / 9.2e-15 |
 | laplace_w15 | 8145 | 158877 | >600 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | oom | oom | - | alea |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| linreg_w8 | 372 | 5404 | 0.397 | >600 | oom | err | oom | >600 | 274 | wrong | 74.2 | >600 | >600 | >600 | >600 | >600 | >600 | 6.25 | 8.32 |  | 1.97 | 3.79 | 77 | 6.17 | 2.84 | 362 | 4.87 | 16.8 | >600 | alea | 3.9e-15 / 2.8e-14 |  |  |  |  |  | 4.1e-15 / 2.8e-14 | 9.5e-03 / 1.0e+00 | 3.9e-15 / 2.8e-14 |  |  |  |  |  |  | 4.1e-15 / 2.9e-14 | 4.1e-15 / 2.9e-14 |  | 4.2e-07 / 1.0e+00 | 3.7e-13 / 1.8e-12 | 3.7e-13 / 1.8e-12 | 3.7e-13 / 1.8e-12 | 4.2e-15 / 1.4e-12 | 4.2e-15 / 1.4e-12 | 4.1e-15 / 2.8e-14 |
-| linreg_w9 | 564 | 6754 | 0.702 | - | - | err | - | - | >600 | >600 | 143 | - | - | - | - | - | - | 12.8 | 13.8 |  | 27.8 | 80.9 | >600 | 21.9 | >600 | - | 18.5 | 32 | - | alea | 4.6e-15 / 1.6e-14 |  |  |  |  |  |  |  | 4.2e-15 / 1.5e-14 |  |  |  |  |  |  | 4.4e-15 / 1.4e-14 | 3.9e-15 / 1.5e-14 |  | 4.9e-07 / 1.0e+00 | 4.5e-13 / 2.1e-12 |  | 4.5e-13 / 2.1e-12 |  |  | 4.3e-15 / 1.5e-14 |
-| linreg_w10 | 756 | 8204 | 7.28 | - | - | err | - | - | - | - | 249 | - | - | - | - | - | - | 41.3 | 48.3 |  | oom | oom | - | oom | - | - | 85.8 | 102 | - | alea | 6.3e-15 / 2.4e-14 |  |  |  |  |  |  |  | 6.2e-15 / 2.3e-14 |  |  |  |  |  |  | 6.1e-15 / 2.3e-14 | 6.0e-15 / 2.3e-14 |  |  |  |  |  |  |  | 6.1e-15 / 2.3e-14 |
-| linreg_w11 | 948 | 9788 | 12.5 | - | - | err | - | - | - | - | >600 | - | - | - | - | - | - | 136 | 121 |  | - | - | - | - | - | - | 407 | 431 | - | alea | 6.3e-15 / 9.1e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.4e-15 / 1.0e-14 | 6.9e-15 / 1.0e-14 |  |  |  |  |  |  |  | 6.8e-15 / 9.3e-15 |
-| linreg_w12 | 1140 | 11532 | 36.1 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | 570 | 545 |  | - | - | - | - | - | - | >600 | >600 | - | alea | 4.9e-15 / 1.9e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.8e-15 / 1.8e-14 | 3.6e-15 / 1.8e-14 |  |  |  |  |  |  |  |  |
-| linreg_w13 | 1332 | 13436 | 208 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | - | - | - | alea | 8.0e-15 / 2.7e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| linreg_w14 | 1524 | 15500 | oom | - | - | 0.275 | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| linreg_w15 | 1716 | 17724 | - | - | - | 0.275 | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| markov_n10 | 2050 | 7887 | 1.28 | >600 | oom | >600 | oom | wrong | err | err | 155 | oom | >600 | >600 | 182 | >600 | >600 | 7.7 | 8.66 |  | 3.18 | 9.73 | 13.5 | 21 | 2.57 | >600 | 0.61 | 2.04 | 5.06 | alea | 1.7e-15 / 9.7e-15 |  |  |  |  | 6.7e-03 / 4.8e-02 |  |  | 1.7e-15 / 8.1e-15 |  |  |  | 1.7e-15 / 7.8e-15 |  |  | 1.7e-15 / 6.7e-15 | 1.7e-15 / 6.7e-15 |  | 2.8e-07 / 1.0e+00 | 2.3e-13 / 9.1e-13 | 2.3e-13 / 9.1e-13 | 2.3e-13 / 9.1e-13 | 1.5e-15 / 8.2e-15 |  | 1.4e-15 / 7.6e-15 |
-| markov_n100 | 20500 | 78897 | 10.7 | - | - | - | - | wrong | - | >600 | - | - | - | - | - | - | - | err | err | 24.9 | - | >600 | >600 | - | - | - | - | - | 302 | alea | 4.0e-15 / 2.7e-12 |  |  |  |  | 1.8e-03 / 2.4e-01 |  |  |  |  |  |  |  |  |  |  |  | 7.2e-15 / 3.1e-12 |  |  |  |  |  |  |  |
-| markov_n1000 | 205000 | 788997 | 99.5 | - | - | - | - | oom | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea | 4.1e-13 / 4.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| markov_n20 | 4100 | 15777 | 1.12 | - | - | - | - | wrong | - | err | 390 | - | - | - | >600 | - | - | 12.7 | 19 |  | 10.7 | 47.9 | 43.3 | 100 | >600 | - | 2.1 | 3.56 | 17 | alea | 1.2e-14 / 1.5e-14 |  |  |  |  | 6.9e-04 / 4.0e-02 |  |  | 1.2e-14 / 2.1e-14 |  |  |  |  |  |  | 1.2e-14 / 1.3e-14 | 1.2e-14 / 1.3e-14 |  | 4.4e-07 / 1.0e+00 | 5.2e-14 / 1.6e-12 | 5.2e-14 / 1.6e-12 | 5.2e-14 / 1.6e-12 |  |  | 1.2e-14 / 2.2e-14 |
-| markov_n200 | 41000 | 157797 | 22.8 | - | - | - | - | oom | - | - | - | - | - | - | - | - | - | err | err | 50.1 | - | - | - | - | - | - | - | - | >600 | alea | 1.3e-13 / 9.0e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-13 / 7.5e-12 |  |  |  |  |  |  |  |
-| markov_n2000 | 410000 | 1577997 | 212 | - | - | - | - | oom | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea | 4.8e-13 / 1.0e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| markov_n50 | 10250 | 39447 | 4.4 | - | - | - | - | wrong | - | err | >600 | - | - | - | - | - | - | 19.8 | 46.3 |  | oom | 461 | 354 | >600 | - | - | >600 | >600 | 84.3 | alea | 2.8e-14 / 2.8e-14 |  |  |  |  | 3.9e-04 / 2.0e-01 |  |  |  |  |  |  |  |  |  | 2.7e-14 / 4.7e-13 | 2.8e-14 / 4.8e-13 |  |  | 2.1e-13 / 2.1e-13 | 2.1e-13 / 2.1e-13 |  |  |  |  |
-| markov_n500 | 102500 | 394497 | 44.9 | - | - | - | - | oom | - | - | - | - | - | - | - | - | - | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | alea | 1.9e-13 / 4.6e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| multimodal_w11 | 4617 | 116721 | 501 | oom | oom | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | >600 | >600 | >600 | oom | >600 | >600 | >600 | >600 | alea | 9.1e-15 / 1.8e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| normal_mixture_mu1_w7 | 2583 | 25704 | 2.13 | >600 | oom | >600 | err | >600 | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | err | err | 11.9 | 31.2 | 119 | 301 | 353 | >600 | >600 | 31.5 | 37.6 | >600 | alea | 2.9e-15 / 2.5e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.4e-14 / 1.4e-14 | 2.0e-07 / 1.0e+00 | 4.8e-13 / 8.1e-13 | 4.8e-13 / 8.1e-13 | 4.8e-13 / 8.1e-13 |  |  | 2.9e-15 / 2.4e-14 |
+| linreg_w8 | 372 | 5404 | 0.306 | >600 | oom | 0.371 | oom | >600 | 274 | wrong | 74.1 | >600 | >600 | >600 | >600 | >600 | >600 | 6.16 | 8.23 |  | 1.88 | 3.7 | 76.9 | 6.07 | 2.75 | 361 | 4.78 | 16.7 | >600 | alea | 3.9e-15 / 2.8e-14 |  |  | ref |  |  | 4.1e-15 / 2.8e-14 | 9.5e-03 / 1.0e+00 | 3.9e-15 / 2.8e-14 |  |  |  |  |  |  | 4.1e-15 / 2.9e-14 | 4.1e-15 / 2.9e-14 |  | 4.2e-07 / 1.0e+00 | 3.7e-13 / 1.8e-12 | 3.7e-13 / 1.8e-12 | 3.7e-13 / 1.8e-12 | 4.2e-15 / 1.4e-12 | 4.2e-15 / 1.4e-12 | 4.1e-15 / 2.8e-14 |
+| linreg_w9 | 564 | 6754 | 0.544 | - | - | 0.374 | - | - | >600 | >600 | 143 | - | - | - | - | - | - | 12.6 | 13.7 |  | 27.7 | 80.8 | >600 | 21.7 | >600 | - | 18.4 | 31.9 | - | alea | 4.6e-15 / 1.6e-14 |  |  | ref |  |  |  |  | 4.2e-15 / 1.5e-14 |  |  |  |  |  |  | 4.4e-15 / 1.4e-14 | 3.9e-15 / 1.5e-14 |  | 4.9e-07 / 1.0e+00 | 4.5e-13 / 2.1e-12 |  | 4.5e-13 / 2.1e-12 |  |  | 4.3e-15 / 1.5e-14 |
+| linreg_w10 | 756 | 8204 | 7.13 | - | - | 0.329 | - | - | - | - | 249 | - | - | - | - | - | - | 41.1 | 48.2 |  | oom | oom | - | oom | - | - | 85.6 | 102 | - | alea | 6.3e-15 / 2.4e-14 |  |  | ref |  |  |  |  | 6.2e-15 / 2.3e-14 |  |  |  |  |  |  | 6.1e-15 / 2.3e-14 | 6.0e-15 / 2.3e-14 |  |  |  |  |  |  |  | 6.1e-15 / 2.3e-14 |
+| linreg_w11 | 948 | 9788 | 12.3 | - | - | 0.34 | - | - | - | - | >600 | - | - | - | - | - | - | 136 | 121 |  | - | - | - | - | - | - | 407 | 431 | - | alea | 6.3e-15 / 9.1e-15 |  |  | ref |  |  |  |  |  |  |  |  |  |  |  | 5.4e-15 / 1.0e-14 | 6.9e-15 / 1.0e-14 |  |  |  |  |  |  |  | 6.8e-15 / 9.3e-15 |
+| linreg_w12 | 1140 | 11532 | 35.9 | - | - | 0.322 | - | - | - | - | - | - | - | - | - | - | - | 570 | 545 |  | - | - | - | - | - | - | >600 | >600 | - | alea | 4.9e-15 / 1.9e-14 |  |  | ref |  |  |  |  |  |  |  |  |  |  |  | 5.8e-15 / 1.8e-14 | 3.6e-15 / 1.8e-14 |  |  |  |  |  |  |  |  |
+| linreg_w13 | 1332 | 13436 | 208 | - | - | 0.319 | - | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | - | - | - | alea | 8.0e-15 / 2.7e-14 |  |  | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| linreg_w14 | 1524 | 15500 | oom | - | - | 0.275 | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | psi |  |  |  | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| linreg_w15 | 1716 | 17724 | - | - | - | 0.275 | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | psi |  |  |  | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| markov_n10 | 2050 | 7887 | 1.2 | >600 | oom | >600 | oom | wrong | err | err | 155 | oom | >600 | >600 | 182 | >600 | >600 | 7.63 | 8.59 |  | 3.1 | 9.66 | 13.4 | 20.9 | 2.49 | >600 | 0.533 | 1.97 | 4.99 | alea | 1.7e-15 / 9.7e-15 |  |  |  |  | 6.7e-03 / 4.8e-02 |  |  | 1.7e-15 / 8.1e-15 |  |  |  | 1.7e-15 / 7.8e-15 |  |  | 1.7e-15 / 6.7e-15 | 1.7e-15 / 6.7e-15 |  | 2.8e-07 / 1.0e+00 | 2.3e-13 / 9.1e-13 | 2.3e-13 / 9.1e-13 | 2.3e-13 / 9.1e-13 | 1.5e-15 / 8.2e-15 |  | 1.4e-15 / 7.6e-15 |
+| markov_n100 | 20500 | 78897 | 9.78 | - | - | - | - | wrong | - | >600 | - | - | - | - | - | - | - | err | err | 24 | - | >600 | >600 | - | - | - | - | - | 301 | alea | 4.0e-15 / 2.7e-12 |  |  |  |  | 1.8e-03 / 2.4e-01 |  |  |  |  |  |  |  |  |  |  |  | 7.2e-15 / 3.1e-12 |  |  |  |  |  |  |  |
+| markov_n1000 | 205000 | 788997 | 84.9 | - | - | - | - | oom | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea | 4.1e-13 / 4.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| markov_n20 | 4100 | 15777 | 0.965 | - | - | - | - | wrong | - | err | 389 | - | - | - | >600 | - | - | 12.5 | 18.8 |  | 10.6 | 47.8 | 43.1 | 99.9 | >600 | - | 1.95 | 3.41 | 16.8 | alea | 1.2e-14 / 1.5e-14 |  |  |  |  | 6.9e-04 / 4.0e-02 |  |  | 1.2e-14 / 2.1e-14 |  |  |  |  |  |  | 1.2e-14 / 1.3e-14 | 1.2e-14 / 1.3e-14 |  | 4.4e-07 / 1.0e+00 | 5.2e-14 / 1.6e-12 | 5.2e-14 / 1.6e-12 | 5.2e-14 / 1.6e-12 |  |  | 1.2e-14 / 2.2e-14 |
+| markov_n200 | 41000 | 157797 | 20.9 | - | - | - | - | oom | - | - | - | - | - | - | - | - | - | err | err | 48.2 | - | - | - | - | - | - | - | - | >600 | alea | 1.3e-13 / 9.0e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.2e-13 / 7.5e-12 |  |  |  |  |  |  |  |
+| markov_n2000 | 410000 | 1577997 | 176 | - | - | - | - | oom | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | alea | 4.8e-13 / 1.0e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| markov_n50 | 10250 | 39447 | 3.98 | - | - | - | - | wrong | - | err | >600 | - | - | - | - | - | - | 19.4 | 45.9 |  | oom | 460 | 353 | >600 | - | - | >600 | >600 | 83.9 | alea | 2.8e-14 / 2.8e-14 |  |  |  |  | 3.9e-04 / 2.0e-01 |  |  |  |  |  |  |  |  |  | 2.7e-14 / 4.7e-13 | 2.8e-14 / 4.8e-13 |  |  | 2.1e-13 / 2.1e-13 | 2.1e-13 / 2.1e-13 |  |  |  |  |
+| markov_n500 | 102500 | 394497 | 39 | - | - | - | - | oom | - | - | - | - | - | - | - | - | - | >600 | >600 | >600 | - | - | - | - | - | - | - | - | - | alea | 1.9e-13 / 4.6e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| multimodal_w11 | 4617 | 116721 | 500 | oom | oom | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | >600 | >600 | >600 | oom | >600 | >600 | >600 | >600 | alea | 9.1e-15 / 1.8e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| normal_mixture_mu1_w7 | 2583 | 25704 | 2 | >600 | oom | >600 | err | >600 | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | err | err | 11.8 | 31 | 119 | 301 | 353 | >600 | >600 | 31.3 | 37.5 | >600 | alea | 2.9e-15 / 2.5e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.4e-14 / 1.4e-14 | 2.0e-07 / 1.0e+00 | 4.8e-13 / 8.1e-13 | 4.8e-13 / 8.1e-13 | 4.8e-13 / 8.1e-13 |  |  | 2.9e-15 / 2.4e-14 |
 | normal_mixture_mu1_w9 | 5289 | 35812 | 202 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | >600 | >600 | err | oom | >600 | >600 | >600 | - | - | oom | oom | - | alea | 1.3e-14 / 1.2e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | normal_mixture_mu1_w11 | 7995 | 45920 | >600 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | normal_mixture_mu1_w13 | 10701 | 56028 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | normal_mixture_mu1_w15 | 13407 | 66136 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| normal_mixture_mu2_w7 | 2583 | 45770 | 3.14 | >600 | oom | >600 | err | >600 | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | err | err | 17 | 49.2 | >600 | >600 | >600 | oom | >600 | 30.5 | 36.3 | >600 | alea | 1.3e-14 / 1.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.3e-14 / 8.2e-13 | 9.7e-08 / 1.0e+00 |  |  |  |  |  | 1.2e-14 / 1.1e-13 |
+| normal_mixture_mu2_w7 | 2583 | 45770 | 2.92 | >600 | oom | >600 | err | >600 | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | err | err | 16.8 | 49 | >600 | >600 | >600 | oom | >600 | 30.3 | 36.1 | >600 | alea | 1.3e-14 / 1.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.3e-14 / 8.2e-13 | 9.7e-08 / 1.0e+00 |  |  |  |  |  | 1.2e-14 / 1.1e-13 |
 | normal_mixture_mu2_w9 | 7913 | 63750 | 199 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | >600 | >600 | err | oom | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | normal_mixture_mu2_w11 | 13243 | 81730 | >600 | - | - | - | >600 | - | - | - | - | - | - | - | - | - | - | - | - | err | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| normal_mixture_theta_w9 | 10537 | 118560 | 40.8 | oom | oom | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | >600 | >600 | >600 | err | >600 | oom | oom | >600 | Ganak | 2.2e-16 / 5.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| pedestrian_s10 | 89 | 3176 | 2.19 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 71.2 | 74 |  | - | - | - | - | err | 330 | - | - | - | alea | 3.3e-16 / 4.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.7e-15 / 4.3e-14 | 6.1e-16 / 4.3e-14 |  |  |  |  |  |  | 2.2e-16 / 3.4e-10 |  |
-| pedestrian_s12 | 99 | 3784 | 6.06 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 53.9 | 56.1 |  | - | - | - | - | - | >600 | - | - | - | alea | 4.4e-16 / 4.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.3e-15 / 4.3e-14 | 1.9e-15 / 4.3e-14 |  |  |  |  |  |  |  |  |
+| normal_mixture_theta_w9 | 10537 | 118560 | 40.2 | oom | oom | >600 | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | oom | >600 | >600 | >600 | err | >600 | oom | oom | >600 | Ganak | 2.2e-16 / 5.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| pedestrian_s10 | 89 | 3176 | 2.17 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 71.2 | 73.9 |  | - | - | - | - | err | 330 | - | - | - | alea | 3.3e-16 / 4.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.7e-15 / 4.3e-14 | 6.1e-16 / 4.3e-14 |  |  |  |  |  |  | 2.2e-16 / 3.4e-10 |  |
+| pedestrian_s12 | 99 | 3784 | 6.04 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 53.9 | 56.1 |  | - | - | - | - | - | >600 | - | - | - | alea | 4.4e-16 / 4.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.3e-15 / 4.3e-14 | 1.9e-15 / 4.3e-14 |  |  |  |  |  |  |  |  |
 | pedestrian_s16 | 119 | 5000 | 12 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 166 | 317 |  | - | - | - | - | - | - | - | - | - | alea | 3.3e-16 / 4.2e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.3e-15 / 4.2e-14 | 6.7e-16 / 4.1e-14 |  |  |  |  |  |  |  |  |
-| pedestrian_s20 | 139 | 6216 | 79 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | >600 | 467 |  | - | - | - | - | - | - | - | - | - | alea | 8.9e-16 / 4.9e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.0e-15 / 5.1e-14 |  |  |  |  |  |  |  |  |
+| pedestrian_s20 | 139 | 6216 | 78.9 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | >600 | 467 |  | - | - | - | - | - | - | - | - | - | alea | 8.9e-16 / 4.9e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.0e-15 / 5.1e-14 |  |  |  |  |  |  |  |  |
 | pedestrian_s24 | 159 | 7432 | 145 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | >600 |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| pedestrian_s4 | 59 | 1393 | 0.352 | >600 | oom | >600 | oom | >600 | >600 | 51.3 | 54.5 | oom | >600 | >600 | >600 | >600 | >600 | 15.1 | 11.5 |  | 25.9 | 4.88 | 22.2 | 11.7 | 14.7 | 122 | 3.95 | 8.4 | >600 | alea | 6.7e-16 / 2.7e-14 |  |  |  |  |  |  | 1.4e-14 / 1.0e+00 | 6.7e-16 / 2.7e-14 |  |  |  |  |  |  | 6.7e-16 / 2.7e-14 | 1.3e-15 / 2.8e-14 |  | 4.5e-07 / 1.0e+00 | 2.5e-13 / 1.2e-12 | 2.5e-13 / 1.2e-12 | 2.5e-13 / 1.2e-12 | 5.0e-16 / 3.4e-10 | 5.0e-16 / 3.4e-10 | 5.0e-16 / 2.7e-14 |
-| pedestrian_s6 | 69 | 1968 | 0.516 | - | - | - | - | - | - | >600 | >600 | - | - | - | - | - | - | 41.6 | 18.1 |  | 94.7 | 149 | 96.1 | 41.1 | 48.5 | 182 | 260 | 265 | - | alea | 7.8e-16 / 4.0e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.1e-16 / 4.0e-14 | 6.7e-16 / 4.0e-14 |  | 2.6e-07 / 1.0e+00 | 5.0e-13 / 3.1e-12 | 5.0e-13 / 3.1e-12 | 5.0e-13 / 3.1e-12 | 2.8e-16 / 3.4e-10 | 3.3e-16 / 3.4e-10 | 3.1e-16 / 4.0e-14 |
-| pedestrian_s8 | 79 | 2568 | 2.23 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 25.2 | 24.6 |  | oom | oom | >600 | oom | err | 254 | >600 | >600 | - | alea | 6.7e-16 / 4.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.9e-15 / 4.1e-14 | 7.8e-16 / 4.1e-14 |  |  |  |  |  |  | 5.6e-16 / 3.4e-10 |  |
-| pi_w8 | 12 | 3759 | 0.168 | >600 | oom | >600 | >600 | >600 | 8.63 | 1.51 | 14.9 | oom | 6.85 | 8.06 | 15.2 | >600 | >600 | 4.23 | 3.73 |  | 0.91 | 0.561 | 79.1 | 0.962 | err | 67.7 | 0.101 | 0.78 | 2.39 | alea | 1.1e-16 / 2.4e-16 |  |  |  |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  | 4.7e-08 / 1.0e-07 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  | 1.7e-16 / 3.6e-16 | 1.1e-16 / 2.4e-16 |
-| pi_w10 | 16 | 6141 | 0.293 | - | - | - | - | - | 13.5 | 2.23 | 49.9 | - | 294 | 334 | 66.5 | - | - | 18.4 | 18.5 |  | 30.9 | 3.88 | >600 | 24.7 | err | 133 | 0.287 | 0.985 | 27.2 | alea | 5.6e-17 / 1.2e-16 |  |  |  |  |  | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  |  | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  | 3.7e-07 / 7.9e-07 | 6.2e-14 / 1.3e-13 |  | 6.2e-14 / 1.3e-13 |  | 1.1e-16 / 2.4e-16 | 5.6e-17 / 1.2e-16 |
-| pi_w12 | 20 | 9099 | 0.688 | - | - | - | - | - | 58.6 | 4.61 | 182 | - | >600 | >600 | err | - | - | 241 | 242 |  | oom | oom | - | err | - | >600 | 1.5 | 2.22 | wrong | alea | 1.1e-16 / 2.4e-16 |  |  |  |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  |  |  |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  |  |  |  |  |  | 1.1e-16 / 2.4e-16 |
-| pi_w14 | 24 | 12633 | 1.63 | - | - | - | - | - | err | 26.6 | 498 | - | - | - | >600 | - | - | >600 | >600 |  | - | - | - | - | - | - | 11.5 | 12.4 | >600 | alea | 5.6e-17 / 1.2e-16 |  |  |  |  |  |  | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 1.2e-16 |
-| pi_w16 | 28 | 16743 | 7.33 | - | - | - | - | - | - | >600 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 84.6 | 86.5 | - | alea | 1.1e-16 / 2.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 2.4e-16 |
-| pi_w18 | 32 | 21429 | 37.4 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| pedestrian_s4 | 59 | 1393 | 0.343 | >600 | oom | >600 | oom | >600 | >600 | 51.3 | 54.5 | oom | >600 | >600 | >600 | >600 | >600 | 15.1 | 11.5 |  | 25.9 | 4.87 | 22.2 | 11.7 | 14.7 | 122 | 3.94 | 8.39 | >600 | alea | 6.7e-16 / 2.7e-14 |  |  |  |  |  |  | 1.4e-14 / 1.0e+00 | 6.7e-16 / 2.7e-14 |  |  |  |  |  |  | 6.7e-16 / 2.7e-14 | 1.3e-15 / 2.8e-14 |  | 4.5e-07 / 1.0e+00 | 2.5e-13 / 1.2e-12 | 2.5e-13 / 1.2e-12 | 2.5e-13 / 1.2e-12 | 5.0e-16 / 3.4e-10 | 5.0e-16 / 3.4e-10 | 5.0e-16 / 2.7e-14 |
+| pedestrian_s6 | 69 | 1968 | 0.504 | - | - | - | - | - | - | >600 | >600 | - | - | - | - | - | - | 41.6 | 18.1 |  | 94.7 | 149 | 96.1 | 41.1 | 48.5 | 182 | 260 | 265 | - | alea | 7.8e-16 / 4.0e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.1e-16 / 4.0e-14 | 6.7e-16 / 4.0e-14 |  | 2.6e-07 / 1.0e+00 | 5.0e-13 / 3.1e-12 | 5.0e-13 / 3.1e-12 | 5.0e-13 / 3.1e-12 | 2.8e-16 / 3.4e-10 | 3.3e-16 / 3.4e-10 | 3.1e-16 / 4.0e-14 |
+| pedestrian_s8 | 79 | 2568 | 2.22 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 25.2 | 24.6 |  | oom | oom | >600 | oom | err | 254 | >600 | >600 | - | alea | 6.7e-16 / 4.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.9e-15 / 4.1e-14 | 7.8e-16 / 4.1e-14 |  |  |  |  |  |  | 5.6e-16 / 3.4e-10 |  |
+| pi_w8 | 12 | 3759 | 0.139 | >600 | oom | >600 | >600 | >600 | 8.6 | 1.48 | 14.9 | oom | 6.82 | 8.03 | 15.2 | >600 | >600 | 4.2 | 3.71 |  | 0.881 | 0.532 | 79 | 0.933 | err | 67.7 | 0.072 | 0.751 | 2.36 | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 4.7e-08 / 1.0e-07 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 5.6e-17 / 1.2e-16 | 0.0e+00 / 0.0e+00 |
+| pi_w10 | 16 | 6141 | 0.253 | - | - | - | - | - | 13.4 | 2.19 | 49.9 | - | 293 | 334 | 66.4 | - | - | 18.3 | 18.5 |  | 30.9 | 3.84 | >600 | 24.7 | err | 133 | 0.247 | 0.945 | 27.2 | storm-exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | ref | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 3.7e-07 / 7.9e-07 | 6.3e-14 / 1.4e-13 |  | 6.3e-14 / 1.4e-13 |  | 5.6e-17 / 1.2e-16 | 0.0e+00 / 0.0e+00 |
+| pi_w12 | 20 | 9099 | 0.634 | - | - | - | - | - | 58.6 | 4.55 | 182 | - | >600 | >600 | err | - | - | 241 | 242 |  | oom | oom | - | err | - | >600 | 1.44 | 2.17 | wrong | alea | 1.1e-16 / 2.4e-16 |  |  |  |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  |  |  |  |  | 1.1e-16 / 2.4e-16 | 1.1e-16 / 2.4e-16 |  |  |  |  |  |  |  | 1.1e-16 / 2.4e-16 |
+| pi_w14 | 24 | 12633 | 1.56 | - | - | - | - | - | err | 26.5 | 498 | - | - | - | >600 | - | - | >600 | >600 |  | - | - | - | - | - | - | 11.4 | 12.3 | >600 | alea | 5.6e-17 / 1.2e-16 |  |  |  |  |  |  | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 1.2e-16 |
+| pi_w16 | 28 | 16743 | 7.24 | - | - | - | - | - | - | >600 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 84.5 | 86.4 | - | alea | 1.1e-16 / 2.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 2.4e-16 |
+| pi_w18 | 32 | 21429 | 37.2 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | oom | oom | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | pi_w22 | 40 | 32529 | >600 | - | - | - | - | - | - | - | - | - | - | - | >600 | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s1 | 2540 | 8332 | 0.841 | >600 | >600 | >600 | 0.009 | err | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | 14.2 | 58.2 | 12.4 | 15.8 | 170 | >600 | 187 | oom | >600 | >600 | >600 | >600 | alea | 1.1e-15 / 9.2e-14 |  |  |  | 1.4e-14 / 3.9e-11 |  |  |  |  |  |  |  |  |  |  | 1.1e-15 / 1.0e+00 | 1.2e-15 / 1.0e+00 | 2.2e-14 / 1.0e+00 | 3.6e-07 / 1.0e+00 | 4.3e-13 / 1.0e+00 |  | 4.3e-13 / 1.0e+00 |  |  |  |
-| population_s12 | 34957 | 115507 | 26.1 | - | - | - | 0.06 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s16 | 46780 | 154582 | 47.2 | - | - | - | 0.093 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s2 | 5587 | 18373 | 11.6 | - | - | - | 0.012 | err | - | - | - | - | - | - | - | - | - | err | err | 14.8 | oom | oom | - | >600 | - | - | - | - | - | alea | 3.7e-15 / 6.6e-15 |  |  |  | 2.3e-14 / 1.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  | 6.7e-14 / 1.3e-13 |  |  |  |  |  |  |  |
-| population_s24 | 70426 | 232732 | 36 | - | - | - | 0.196 | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.2e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s3 | 8637 | 28421 | 11.8 | - | - | - | 0.017 | >600 | - | - | - | - | - | - | - | - | - | err | >600 | 23.7 | - | - | - | - | - | - | - | - | - | ace-Xlog | 5.6e-14 / 7.5e-13 |  |  |  | 8.0e-12 / 9.7e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s32 | 94072 | 310882 | 48.7 | - | - | - | 0.349 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.2e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s4 | 11311 | 37357 | 13.4 | - | - | - | 0.018 | - | - | - | - | - | - | - | - | - | - | err | - | 30.7 | - | - | - | - | - | - | - | - | - | ace-Xlog | 1.0e-13 / 3.5e+05 |  |  |  | 6.4e-12 / 3.5e+05 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s48 | 141364 | 467182 | 74.4 | - | - | - | 0.867 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.2e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s6 | 17410 | 57448 | 16.8 | - | - | - | 0.026 | - | - | - | - | - | - | - | - | - | - | >600 | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 1.2e-13 / 2.3e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s64 | 188656 | 623482 | 109 | - | - | - | 1.73 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.2e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| population_s8 | 23134 | 76432 | 38.8 | - | - | - | 0.034 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| spacex_w13 | 279 | 2037 | 0.716 | >600 | >600 | >600 | oom | >600 | err | >600 | 308 | oom | >600 | >600 | >600 | >600 | >600 | 13.1 | 314 |  | 15 | 171 | >600 | 4.24 | 3.87 | 195 | 3.37 | 12.3 | >600 | alea | 2.2e-16 / 9.4e-16 |  |  |  |  |  |  |  | 2.2e-16 / 1.1e-15 |  |  |  |  |  |  | 3.3e-16 / 7.5e-16 | 1.8e-15 / 2.6e-15 |  | 3.4e-07 / 1.0e+00 | 4.7e-13 / 9.7e-13 |  | 4.7e-13 / 9.7e-13 | 1.7e-16 / 9.3e-07 | 2.2e-16 / 9.3e-07 | 2.8e-16 / 9.4e-16 |
-| spacex_w15 | 357 | 2423 | 5.41 | - | - | - | - | - | - | - | >600 | - | - | - | - | - | - | >600 | >600 |  | 163 | oom | - | 281 | err | 255 | 18.4 | 28.8 | - | alea | 5.4e-15 / 8.7e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.7e-07 / 1.0e+00 |  |  | 5.0e-13 / 8.1e-13 |  | 6.1e-16 / 9.0e-07 | 2.2e-16 / 4.1e-15 |
+| population_s1 | 2540 | 8332 | 0.654 | >600 | >600 | >600 | 0.009 | err | err | >600 | >600 | oom | >600 | >600 | >600 | >600 | >600 | 14 | 58 | 12.2 | 15.7 | 169 | >600 | 187 | oom | >600 | >600 | >600 | >600 | alea | 1.1e-15 / 9.2e-14 |  |  |  | 1.4e-14 / 3.9e-11 |  |  |  |  |  |  |  |  |  |  | 1.1e-15 / 1.0e+00 | 1.2e-15 / 1.0e+00 | 2.2e-14 / 1.0e+00 | 3.6e-07 / 1.0e+00 | 4.3e-13 / 1.0e+00 |  | 4.3e-13 / 1.0e+00 |  |  |  |
+| population_s12 | 34957 | 115507 | 23.8 | - | - | - | 0.06 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| population_s16 | 46780 | 154582 | 43.9 | - | - | - | 0.093 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| population_s2 | 5587 | 18373 | 11.2 | - | - | - | 0.012 | err | - | - | - | - | - | - | - | - | - | err | err | 14.4 | oom | oom | - | >600 | - | - | - | - | - | alea | 3.7e-15 / 6.6e-15 |  |  |  | 2.3e-14 / 1.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  | 6.7e-14 / 1.3e-13 |  |  |  |  |  |  |  |
+| population_s24 | 70426 | 232732 | 31.3 | - | - | - | 0.196 | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.2e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| population_s3 | 8637 | 28421 | 11.2 | - | - | - | 0.017 | >600 | - | - | - | - | - | - | - | - | - | err | >600 | 23.2 | - | - | - | - | - | - | - | - | - | ace-Xlog | 5.6e-14 / 7.5e-13 |  |  |  | 8.0e-12 / 9.7e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| population_s32 | 94072 | 310882 | 41.9 | - | - | - | 0.349 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.2e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| population_s4 | 11311 | 37357 | 12.6 | - | - | - | 0.018 | - | - | - | - | - | - | - | - | - | - | err | - | 30 | - | - | - | - | - | - | - | - | - | ace-Xlog | 1.0e-13 / 3.5e+05 |  |  |  | 6.4e-12 / 3.5e+05 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| population_s48 | 141364 | 467182 | 64.2 | - | - | - | 0.867 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.2e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| population_s6 | 17410 | 57448 | 15.7 | - | - | - | 0.026 | - | - | - | - | - | - | - | - | - | - | >600 | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 1.2e-13 / 2.3e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| population_s64 | 188656 | 623482 | 95.6 | - | - | - | 1.73 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.2e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| population_s8 | 23134 | 76432 | 37.3 | - | - | - | 0.034 | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  | 6.1e-12 / 9.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| spacex_w13 | 279 | 2037 | 0.708 | >600 | >600 | >600 | oom | >600 | err | >600 | 308 | oom | >600 | >600 | >600 | >600 | >600 | 13 | 314 |  | 15 | 171 | >600 | 4.23 | 3.86 | 195 | 3.36 | 12.3 | >600 | alea | 2.2e-16 / 9.4e-16 |  |  |  |  |  |  |  | 2.2e-16 / 1.1e-15 |  |  |  |  |  |  | 3.3e-16 / 7.5e-16 | 1.8e-15 / 2.6e-15 |  | 3.4e-07 / 1.0e+00 | 4.7e-13 / 9.7e-13 |  | 4.7e-13 / 9.7e-13 | 1.7e-16 / 9.3e-07 | 2.2e-16 / 9.3e-07 | 2.8e-16 / 9.4e-16 |
+| spacex_w15 | 357 | 2423 | 5.4 | - | - | - | - | - | - | - | >600 | - | - | - | - | - | - | >600 | >600 |  | 163 | oom | - | 281 | err | 255 | 18.3 | 28.8 | - | alea | 5.4e-15 / 8.7e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.7e-07 / 1.0e+00 |  |  | 5.0e-13 / 8.1e-13 |  | 6.1e-16 / 9.0e-07 | 2.2e-16 / 4.1e-15 |
 | spacex_w17 | 435 | 2809 | 33.4 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | err | - | - | oom | - | >600 | 161 | 175 | - | alea | 2.8e-14 / 7.0e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.7e-16 / 8.5e-15 |
 | spacex_w19 | 513 | 3195 | 130 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 8.5e-14 / 2.2e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| spacex_p16 | 293 | 1752 | 57.7 | - | - | - | - | - | err | - | >600 | - | >600 | - | - | >600 | >600 | >600 | >600 |  | oom | oom | >600 | oom | err | 222 | - | - | - | alea | 6.2e-14 / 1.9e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-16 / 4.4e-07 |  |
-| spacex_p4 | 106 | 635 | 0.093 | >600 | oom | >600 | oom | >600 | 465 | >600 | 3.11 | oom | 300 | >600 | >600 | 94.7 | 74.5 | 2.05 | 2.44 |  | 0.298 | 0.415 | 18.9 | 0.34 | 0.522 | 61 | >600 | >600 | >600 | alea | 6.7e-16 / 1.6e-14 |  |  |  |  |  | 4.4e-16 / 1.7e-14 |  | 2.2e-16 / 1.7e-14 |  | 4.1e-15 / 2.4e-14 |  |  | 3.3e-16 / 1.7e-14 | 3.3e-16 / 1.7e-14 | 2.2e-16 / 1.7e-14 | 2.8e-16 / 1.7e-14 |  | 4.8e-07 / 1.0e+00 | 4.1e-13 / 8.2e-13 | 4.1e-13 / 8.2e-13 | 4.1e-13 / 8.2e-13 | 3.3e-16 / 2.1e-08 | 2.2e-16 / 2.1e-08 |  |
+| spacex_p16 | 293 | 1752 | 57.6 | - | - | - | - | - | err | - | >600 | - | >600 | - | - | >600 | >600 | >600 | >600 |  | oom | oom | >600 | oom | err | 222 | - | - | - | alea | 6.2e-14 / 1.9e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-16 / 4.4e-07 |  |
+| spacex_p4 | 106 | 635 | 0.089 | >600 | oom | >600 | oom | >600 | 465 | >600 | 3.11 | oom | 300 | >600 | >600 | 94.7 | 74.5 | 2.05 | 2.44 |  | 0.294 | 0.411 | 18.9 | 0.336 | 0.518 | 61 | >600 | >600 | >600 | alea | 6.7e-16 / 1.6e-14 |  |  |  |  |  | 4.4e-16 / 1.7e-14 |  | 2.2e-16 / 1.7e-14 |  | 4.1e-15 / 2.4e-14 |  |  | 3.3e-16 / 1.7e-14 | 3.3e-16 / 1.7e-14 | 2.2e-16 / 1.7e-14 | 2.8e-16 / 1.7e-14 |  | 4.8e-07 / 1.0e+00 | 4.1e-13 / 8.2e-13 | 4.1e-13 / 8.2e-13 | 4.1e-13 / 8.2e-13 | 3.3e-16 / 2.1e-08 | 2.2e-16 / 2.1e-08 |  |
 | spacex_p64 | 920 | 6092 | oom | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | >600 | - | - | - | alea |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| trueskill_w8 | 312 | 3868 | 3.24 | >600 | >600 | >600 | oom | >600 | err | >600 | 551 | oom | >600 | >600 | >600 | >600 | >600 | 22.5 | 256 |  | 12.1 | err | oom | 21.6 | err | >600 | 6.46 | 7.34 | >600 | alea | 1.7e-16 / 3.4e-16 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 2.2e-16 / 4.6e-16 | 7.2e-16 / 1.5e-15 |  | 5.6e-08 / 1.2e-07 |  |  | 1.4e-13 / 3.0e-13 |  |  | 2.2e-16 / 4.6e-16 |
+| trueskill_w8 | 312 | 3868 | 3.22 | >600 | >600 | >600 | oom | >600 | err | >600 | 551 | oom | >600 | >600 | >600 | >600 | >600 | 22.5 | 256 |  | 12.1 | err | oom | 21.6 | err | >600 | 6.45 | 7.32 | >600 | alea | 1.7e-16 / 3.4e-16 |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  | 2.2e-16 / 4.6e-16 | 7.2e-16 / 1.5e-15 |  | 5.6e-08 / 1.2e-07 |  |  | 1.4e-13 / 3.0e-13 |  |  | 2.2e-16 / 4.6e-16 |
 | trueskill_w10 | 376 | 5592 | 61.2 | - | - | - | - | - | - | - | >600 | - | - | - | - | - | - | >600 | >600 |  | oom | - | - | err | - | - | oom | oom | - | alea | 1.7e-16 / 3.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| tug_of_war_w16 | 392 | 2044 | 0.542 | >600 | >600 | >600 | oom | >600 | 10 | 10.3 | 386 | oom | >600 | >600 | 23.8 | 166 | 168 | >600 | >600 |  | >600 | oom | >600 | oom | >600 | >600 | 15.7 | 16.7 | >600 | alea | 1.1e-15 / 2.1e-15 |  |  |  |  |  | 1.0e-15 / 2.0e-15 | 4.3e-15 / 8.5e-15 | 1.1e-15 / 2.1e-15 |  |  |  | 1.1e-15 / 2.2e-15 | 2.1e-15 / 4.1e-15 | 2.1e-15 / 4.1e-15 |  |  |  |  |  |  |  |  |  | 8.9e-16 / 1.8e-15 |
-| tug_of_war_w18 | 456 | 2292 | 0.617 | - | - | - | - | - | 11.2 | >600 | >600 | - | - | - | 26.1 | 258 | 252 | - | - |  | - | - | - | - | - | - | 68.1 | 69.9 | - | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  | 6.7e-16 / 1.3e-15 |  |  |  |  |  | 7.2e-16 / 1.4e-15 | 7.8e-16 / 1.6e-15 | 7.8e-16 / 1.6e-15 |  |  |  |  |  |  |  |  |  | 6.7e-16 / 1.3e-15 |
-| tug_of_war_w20 | 520 | 2540 | 0.735 | - | - | - | - | - | 12.4 | - | - | - | - | - | 30.5 | 334 | 329 | - | - |  | - | - | - | - | - | - | oom | oom | - | alea | 8.3e-16 / 1.7e-15 |  |  |  |  |  | 7.8e-16 / 1.6e-15 |  |  |  |  |  | 6.7e-16 / 1.3e-15 | 6.1e-16 / 1.2e-15 | 6.1e-16 / 1.2e-15 |  |  |  |  |  |  |  |  |  |  |
-| tug_of_war_w22 | 550 | 2720 | 0.771 | - | - | - | - | - | 13.8 | - | - | - | - | - | 32.6 | 434 | 428 | - | - |  | - | - | - | - | - | - | - | - | - | Ganak | 5.0e-16 / 1.0e-15 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 |  |  |  |  |  |  |  |  |  |  |
-| tug_of_war_w24 | 610 | 2960 | 0.472 | - | - | - | - | - | 14.8 | - | - | - | - | - | 33.6 | 391 | 304 | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 5.6e-17 / 1.1e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 |  |  |  |  |  |  |  |  |  |  |
-| tug_of_war_w26 | 670 | 3200 | 0.945 | - | - | - | - | - | 16.3 | - | - | - | - | - | 30.7 | 349 | 346 | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 7.8e-16 / 1.6e-15 |  |  |  |  |  | 7.8e-16 / 1.6e-15 | 4.9e-15 / 9.9e-15 | 4.9e-15 / 9.9e-15 |  |  |  |  |  |  |  |  |  |  |
-| tug_of_war_w28 | 722 | 3416 | 1.02 | - | - | - | - | - | 17.5 | - | - | - | - | - | 34.7 | 479 | 482 | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 8.3e-16 / 1.7e-15 |  |  |  |  |  | 9.4e-16 / 1.9e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |  |  |  |  |  |  |  |  |  |  |
-| weekend_w18 | 49151 | 368566 | 25.2 | oom | oom | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 34.9 | 37.9 | oom | alea | 3.3e-16 / 8.9e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.9e-16 / 1.0e-15 |
-| weekend_w20 | 65535 | 417718 | 30 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 35.2 | 38.4 | - | alea | 2.8e-16 / 7.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-16 / 7.4e-16 |
-| weekend_w22 | 81919 | 466870 | 33.7 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 42.6 | 46.6 | - | alea | 5.6e-17 / 1.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.7e-16 / 4.5e-16 |
-| weekend_w24 | 98303 | 516022 | 37.5 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 44.8 | 48.8 | - | alea | 8.3e-16 / 2.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.8e-16 / 2.1e-15 |
-| weekend_w26 | 114687 | 565174 | 42.6 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 44.4 | 48.5 | - | alea | 9.4e-16 / 2.5e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 8.3e-16 / 2.2e-15 |
-| weekend_w28 | 131071 | 614326 | 44.7 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | err | err | - | alea | 6.1e-16 / 1.6e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| weekend_w30 | 147455 | 663478 | 49.2 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | err | err | - | alea | 1.6e-15 / 4.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| weekend_p1024 | 28671 | 131010 | 8.29 | - | - | - | - | - | 98.2 | 299 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 6.89 | 8.22 | oom | alea | 2.8e-16 / 7.4e-16 |  |  |  |  |  | 1.1e-16 / 3.0e-16 | 7.9e-11 / 2.1e-10 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 3.0e-16 |
-| weekend_p16 | 639 | 2118 | 0.134 | - | 0.429 | - | - | - | 8.38 | 1.19 | 6.34 | - | - | - | 13.8 | >600 | >600 | 35.8 | 3.69 |  | 45.3 | 15.3 | 201 | 46.3 | err | 358 | 0.075 | 0.798 | 1.05 | alea | 5.0e-16 / 1.3e-15 |  | 2.8e-07 / 7.5e-07 |  |  |  | 5.0e-16 / 1.3e-15 | 2.7e-10 / 7.2e-10 | 6.1e-16 / 1.6e-15 |  |  |  | 2.2e-16 / 5.9e-16 |  |  | 4.4e-16 / 1.2e-15 | 2.8e-16 / 7.4e-16 |  | 2.8e-07 / 7.5e-07 | 5.2e-14 / 1.4e-13 | 5.2e-14 / 1.4e-13 | 5.2e-14 / 1.4e-13 |  | 4.4e-16 / 1.2e-15 | 5.0e-16 / 1.3e-15 |
-| weekend_p16384 | 327679 | 2031530 | 196 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | >600 | - |  | - | - | - | - | - | - | err | err | - | alea | 6.1e-16 / 1.6e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| weekend_p256 | 8191 | 33230 | 4.67 | - | oom | - | - | - | 15.6 | 24.6 | - | - | - | - | >600 | - | - | - | - |  | - | - | - | - | - | - | 1.42 | 2.24 | 276 | alea | 1.4e-15 / 3.7e-15 |  |  |  |  |  | 1.3e-15 / 3.4e-15 | 5.5e-10 / 1.5e-09 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.3e-15 / 3.4e-15 |
-| weekend_p4 | 175 | 530 | 0.028 | >600 | 0.167 | >600 | oom | >600 | 6.98 | 0.675 | 2.81 | >600 | >600 | >600 | 4.41 | 220 | 210 | 2.06 | 2.21 |  | 0.352 | 1.55 | 19.1 | 0.613 | 1.16 | 70.1 | 0.031 | 0.743 | 0.283 | alea | 1.7e-15 / 4.4e-15 |  | 4.9e-07 / 1.3e-06 |  |  |  | 1.4e-15 / 3.7e-15 | 1.0e-09 / 2.7e-09 | 1.4e-15 / 3.7e-15 |  |  |  | 1.2e-15 / 3.1e-15 | 1.8e-15 / 4.9e-15 | 1.8e-15 / 4.9e-15 | 1.4e-15 / 3.7e-15 | 1.4e-15 / 3.7e-15 |  | 4.9e-07 / 1.3e-06 | 3.8e-13 / 1.0e-12 | 3.8e-13 / 1.0e-12 | 3.8e-13 / 1.0e-12 | 1.6e-15 / 4.2e-15 | 1.4e-15 / 3.7e-15 | 1.4e-15 / 3.7e-15 |
-| weekend_p4096 | 98303 | 516022 | 39.1 | - | - | - | - | - | >600 | >600 | - | - | - | - | - | - | - | oom | - |  | - | - | - | - | - | - | 43.2 | 47.1 | - | alea | 8.3e-16 / 2.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.8e-16 / 2.1e-15 |
-| weekend_p64 | 2303 | 8410 | 1.98 | - | 1.88 | - | - | - | 8.99 | 7.49 | >600 | - | - | - | 114 | - | - | >600 | >600 |  | oom | oom | >600 | oom | - | >600 | 0.321 | 1.05 | 10.9 | alea | 5.6e-17 / 1.5e-16 |  | 2.0e-07 / 5.3e-07 |  |  |  | 1.1e-16 / 3.0e-16 | 2.7e-11 / 7.2e-11 |  |  |  |  | 5.6e-17 / 1.5e-16 |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 3.0e-16 |
+| tug_of_war_w16 | 392 | 2044 | 0.532 | >600 | >600 | >600 | oom | >600 | 9.99 | 10.3 | 386 | oom | >600 | >600 | 23.8 | 166 | 168 | >600 | >600 |  | >600 | oom | >600 | oom | >600 | >600 | 15.7 | 16.7 | >600 | alea | 1.1e-15 / 2.1e-15 |  |  |  |  |  | 1.0e-15 / 2.0e-15 | 4.3e-15 / 8.5e-15 | 1.1e-15 / 2.1e-15 |  |  |  | 1.1e-15 / 2.2e-15 | 2.1e-15 / 4.1e-15 | 2.1e-15 / 4.1e-15 |  |  |  |  |  |  |  |  |  | 8.9e-16 / 1.8e-15 |
+| tug_of_war_w18 | 456 | 2292 | 0.607 | - | - | - | - | - | 11.2 | >600 | >600 | - | - | - | 26 | 258 | 252 | - | - |  | - | - | - | - | - | - | 68.1 | 69.9 | - | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  | 6.7e-16 / 1.3e-15 |  |  |  |  |  | 7.2e-16 / 1.4e-15 | 7.8e-16 / 1.6e-15 | 7.8e-16 / 1.6e-15 |  |  |  |  |  |  |  |  |  | 6.7e-16 / 1.3e-15 |
+| tug_of_war_w20 | 520 | 2540 | 0.722 | - | - | - | - | - | 12.4 | - | - | - | - | - | 30.5 | 334 | 329 | - | - |  | - | - | - | - | - | - | oom | oom | - | alea | 8.3e-16 / 1.7e-15 |  |  |  |  |  | 7.8e-16 / 1.6e-15 |  |  |  |  |  | 6.7e-16 / 1.3e-15 | 6.1e-16 / 1.2e-15 | 6.1e-16 / 1.2e-15 |  |  |  |  |  |  |  |  |  |  |
+| tug_of_war_w22 | 550 | 2720 | 0.758 | - | - | - | - | - | 13.7 | - | - | - | - | - | 32.6 | 434 | 428 | - | - |  | - | - | - | - | - | - | - | - | - | Ganak | 5.0e-16 / 1.0e-15 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 |  |  |  |  |  |  |  |  |  |  |
+| tug_of_war_w24 | 610 | 2960 | 0.459 | - | - | - | - | - | 14.8 | - | - | - | - | - | 33.6 | 391 | 304 | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 5.6e-17 / 1.1e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.1e-16 | 5.6e-17 / 1.1e-16 |  |  |  |  |  |  |  |  |  |  |
+| tug_of_war_w26 | 670 | 3200 | 0.93 | - | - | - | - | - | 16.3 | - | - | - | - | - | 30.7 | 349 | 346 | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 7.8e-16 / 1.6e-15 |  |  |  |  |  | 7.8e-16 / 1.6e-15 | 4.9e-15 / 9.9e-15 | 4.9e-15 / 9.9e-15 |  |  |  |  |  |  |  |  |  |  |
+| tug_of_war_w28 | 722 | 3416 | 1 | - | - | - | - | - | 17.5 | - | - | - | - | - | 34.6 | 479 | 482 | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  | 8.3e-16 / 1.7e-15 |  |  |  |  |  | 9.4e-16 / 1.9e-15 | 5.6e-16 / 1.1e-15 | 5.6e-16 / 1.1e-15 |  |  |  |  |  |  |  |  |  |  |
+| weekend_w18 | 49151 | 368566 | 22.6 | oom | oom | >600 | >600 | err | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 | >600 |  | >600 | >600 | >600 | >600 | >600 | >600 | 32.4 | 35.4 | oom | alea | 3.3e-16 / 8.9e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.9e-16 / 1.0e-15 |
+| weekend_w20 | 65535 | 417718 | 26.6 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 31.8 | 34.9 | - | alea | 2.8e-16 / 7.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.8e-16 / 7.4e-16 |
+| weekend_w22 | 81919 | 466870 | 29.7 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 38.5 | 42.6 | - | alea | 5.6e-17 / 1.5e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.7e-16 / 4.5e-16 |
+| weekend_w24 | 98303 | 516022 | 33 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 40.3 | 44.4 | - | alea | 8.3e-16 / 2.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.8e-16 / 2.1e-15 |
+| weekend_w26 | 114687 | 565174 | 37.9 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 39.8 | 43.9 | - | alea | 9.4e-16 / 2.5e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 8.3e-16 / 2.2e-15 |
+| weekend_w28 | 131071 | 614326 | 39 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | err | err | - | alea | 6.1e-16 / 1.6e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| weekend_w30 | 147455 | 663478 | 43.3 | - | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | err | err | - | alea | 1.6e-15 / 4.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| weekend_p1024 | 28671 | 131010 | 7.63 | - | - | - | - | - | 97.6 | 298 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 6.23 | 7.56 | oom | alea | 2.8e-16 / 7.4e-16 |  |  |  |  |  | 1.1e-16 / 3.0e-16 | 7.9e-11 / 2.1e-10 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 3.0e-16 |
+| weekend_p16 | 639 | 2118 | 0.125 | - | 0.42 | - | - | - | 8.37 | 1.18 | 6.33 | - | - | - | 13.8 | >600 | >600 | 35.8 | 3.68 |  | 45.3 | 15.3 | 201 | 46.3 | err | 358 | 0.066 | 0.789 | 1.04 | alea | 5.0e-16 / 1.3e-15 |  | 2.8e-07 / 7.5e-07 |  |  |  | 5.0e-16 / 1.3e-15 | 2.7e-10 / 7.2e-10 | 6.1e-16 / 1.6e-15 |  |  |  | 2.2e-16 / 5.9e-16 |  |  | 4.4e-16 / 1.2e-15 | 2.8e-16 / 7.4e-16 |  | 2.8e-07 / 7.5e-07 | 5.2e-14 / 1.4e-13 | 5.2e-14 / 1.4e-13 | 5.2e-14 / 1.4e-13 |  | 4.4e-16 / 1.2e-15 | 5.0e-16 / 1.3e-15 |
+| weekend_p16384 | 327679 | 2031530 | 170 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | >600 | - |  | - | - | - | - | - | - | err | err | - | alea | 6.1e-16 / 1.6e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| weekend_p256 | 8191 | 33230 | 4.54 | - | oom | - | - | - | 15.4 | 24.4 | - | - | - | - | >600 | - | - | - | - |  | - | - | - | - | - | - | 1.28 | 2.1 | 276 | alea | 1.4e-15 / 3.7e-15 |  |  |  |  |  | 1.3e-15 / 3.4e-15 | 5.5e-10 / 1.5e-09 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.3e-15 / 3.4e-15 |
+| weekend_p4 | 175 | 530 | 0.023 | >600 | 0.162 | >600 | oom | >600 | 6.97 | 0.67 | 2.81 | >600 | >600 | >600 | 4.41 | 220 | 210 | 2.06 | 2.21 |  | 0.347 | 1.54 | 19.1 | 0.608 | 1.16 | 70.1 | 0.026 | 0.738 | 0.278 | alea | 1.7e-15 / 4.4e-15 |  | 4.9e-07 / 1.3e-06 |  |  |  | 1.4e-15 / 3.7e-15 | 1.0e-09 / 2.7e-09 | 1.4e-15 / 3.7e-15 |  |  |  | 1.2e-15 / 3.1e-15 | 1.8e-15 / 4.9e-15 | 1.8e-15 / 4.9e-15 | 1.4e-15 / 3.7e-15 | 1.4e-15 / 3.7e-15 |  | 4.9e-07 / 1.3e-06 | 3.8e-13 / 1.0e-12 | 3.8e-13 / 1.0e-12 | 3.8e-13 / 1.0e-12 | 1.6e-15 / 4.2e-15 | 1.4e-15 / 3.7e-15 | 1.4e-15 / 3.7e-15 |
+| weekend_p4096 | 98303 | 516022 | 34.8 | - | - | - | - | - | >600 | >600 | - | - | - | - | - | - | - | oom | - |  | - | - | - | - | - | - | 38.8 | 42.8 | - | alea | 8.3e-16 / 2.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.8e-16 / 2.1e-15 |
+| weekend_p64 | 2303 | 8410 | 1.95 | - | 1.84 | - | - | - | 8.96 | 7.45 | >600 | - | - | - | 114 | - | - | >600 | >600 |  | oom | oom | >600 | oom | - | >600 | 0.289 | 1.02 | 10.9 | alea | 5.6e-17 / 1.5e-16 |  | 2.0e-07 / 5.3e-07 |  |  |  | 1.1e-16 / 3.0e-16 | 2.7e-11 / 7.2e-11 |  |  |  |  | 5.6e-17 / 1.5e-16 |  |  |  |  |  |  |  |  |  |  |  | 1.1e-16 / 3.0e-16 |
 | weekend_p65536 | 1048575 | 7995294 | oom | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | err | err | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| wmi_path_n1024 | 8192 | 91060 | 9.33 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 93.9 | - |  | - | - | >600 | - | - | - | - | - | - | ace-auto | 1.6e-15 / 2.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| wmi_path_n128 | 1024 | 11316 | 1.16 | - | - | - | - | - | - | - | - | - | - | - | >600 | - | - | 19 | err |  | 10.8 | 107 | 29.6 | 57 | >600 | - | 16.5 | 17.6 | - | alea | 1.0e-15 / 1.4e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.8e-16 / 1.1e-15 |  |  | 2.5e-08 / 3.5e-08 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 |  |  | 1.0e-15 / 1.4e-15 |
-| wmi_path_n16 | 128 | 1348 | 0.137 | >600 | >600 | >600 | oom | >600 | 39.4 | >600 | 51.4 | oom | >600 | >600 | 27.7 | 48.1 | 51.5 | 5.06 | 11.6 |  | 0.534 | 1.35 | 3.11 | 1.32 | 0.629 | 212 | 0.312 | 1.04 | >600 | alea | 1.1e-16 / 1.6e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  | 3.3e-16 / 4.7e-16 |  |  |  | 2.2e-16 / 3.1e-16 | 2.2e-16 / 3.1e-16 | 2.2e-16 / 3.1e-16 | 3.3e-16 / 4.7e-16 | 1.1e-16 / 1.6e-16 |  | 1.4e-08 / 2.0e-08 | 3.5e-13 / 5.0e-13 | 3.5e-13 / 5.0e-13 | 3.5e-13 / 5.0e-13 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 |
-| wmi_path_n16384 | 131072 | 1458100 | 172 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| wmi_path_n256 | 2048 | 22708 | 2.15 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 31.5 | err |  | 36.7 | 325 | 114 | 223 | - | - | 67.7 | 70.1 | - | alea | 5.0e-15 / 7.1e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.8e-15 / 8.2e-15 |  |  | 2.5e-08 / 3.5e-08 | 3.6e-13 / 5.0e-13 | 3.6e-13 / 5.0e-13 | 3.6e-13 / 5.0e-13 |  |  | 5.9e-15 / 8.3e-15 |
-| wmi_path_n32 | 256 | 2772 | 0.276 | - | - | - | - | - | 145 | - | >600 | - | - | - | 69.1 | 210 | 211 | 7.67 | 33.5 |  | 1.26 | 4.53 | 4.51 | 4.37 | 1.09 | 467 | 1.09 | 1.83 | - | alea | 3.3e-16 / 4.7e-16 |  |  |  |  |  | 1.1e-16 / 1.6e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 5.6e-16 / 7.8e-16 |  | 2.5e-08 / 3.5e-08 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 |
-| wmi_path_n4096 | 32768 | 364468 | 48.8 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | oom | oom |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| wmi_path_n512 | 4096 | 45492 | 4.46 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 62.9 | >600 |  | oom | >600 | 447 | >600 | - | - | oom | oom | - | alea | 1.6e-14 / 2.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.5e-14 / 2.1e-14 |  |  |  |  | 3.8e-13 / 5.3e-13 |  |  |  |  |
-| wmi_path_n64 | 512 | 5620 | 0.57 | - | - | - | - | - | err | - | - | - | - | - | 230 | >600 | >600 | 11.7 | 111 |  | 3.4 | 43 | 9.76 | 15.6 | 2.92 | >600 | 4.25 | 5.1 | - | alea | 5.6e-16 / 7.8e-16 |  |  |  |  |  |  |  |  |  |  |  | 8.9e-16 / 1.3e-15 |  |  | 1.0e-15 / 1.4e-15 | 8.9e-16 / 1.3e-15 |  | 2.5e-08 / 3.5e-08 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 1.0e-15 / 1.4e-15 |  | 8.9e-16 / 1.3e-15 |
-| wmi_star_n1024 | 8200 | 91149 | 10.7 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | err | >600 | 91.3 | - | - | - | - | - | - | - | - | - | ace-Xlog | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| wmi_star_n128 | 1032 | 11405 | 1.19 | - | - | - | - | - | - | - | 230 | - | - | - | >600 | - | - | 16.6 | wrong |  | 36 | 50.3 | 42 | >600 | - | - | 15.3 | 16.5 | 78.4 | alea | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  |  | 3.3e-16 / 6.6e-16 |  |  |  |  |  |  | 3.3e-16 / 6.6e-16 | inf / inf |  | 2.1e-08 / 4.1e-08 | 4.2e-13 / 8.3e-13 | 4.2e-13 / 8.3e-13 |  |  |  | 3.3e-16 / 6.6e-16 |
-| wmi_star_n16 | 136 | 1437 | 0.157 | >600 | oom | >600 | oom | >600 | 26.3 | >600 | 5.08 | oom | >600 | >600 | 19 | 69 | 68.6 | 4.39 | 6.27 |  | 0.607 | 1.14 | 3.42 | 2.52 | 5.14 | 220 | 0.334 | 1.07 | wrong | alea | 1.1e-16 / 2.1e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  | 1.1e-16 / 2.1e-16 |  |  |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.1e-16 |  | 5.7e-08 / 1.1e-07 | 4.1e-14 / 7.6e-14 | 4.1e-14 / 7.6e-14 | 4.1e-14 / 7.6e-14 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| wmi_star_n256 | 2056 | 22797 | 2.36 | - | - | - | - | - | - | - | >600 | - | - | - | - | - | - | err | wrong | 15.7 | 216 | 230 | 152 | - | - | - | 64.6 | 66.4 | 162 | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | inf / inf | 8.9e-16 / 1.8e-15 | 1.8e-07 / 3.6e-07 | 3.8e-13 / 7.5e-13 | 3.8e-13 / 7.5e-13 |  |  |  | 1.1e-16 / 2.2e-16 |
-| wmi_star_n32 | 264 | 2861 | 0.298 | - | - | - | - | - | 76.7 | - | 18.1 | - | - | - | 45.9 | 501 | 513 | 5.85 | 8.93 |  | 1.8 | 3.17 | 5.23 | 12.8 | oom | >600 | 1.06 | 1.8 | wrong | alea | 3.3e-16 / 6.4e-16 |  |  |  |  |  | 1.1e-16 / 2.1e-16 |  | 2.2e-16 / 4.3e-16 |  |  |  | 0.0e+00 / 0.0e+00 | 3.3e-14 / 6.3e-14 | 3.3e-14 / 6.3e-14 | 1.1e-16 / 2.1e-16 | 0.0e+00 / 0.0e+00 |  | 3.2e-07 / 6.1e-07 | 3.2e-13 / 6.1e-13 | 3.2e-13 / 6.1e-13 | 3.2e-13 / 6.1e-13 |  |  | 1.1e-16 / 2.1e-16 |
-| wmi_star_n4096 | 32776 | 364557 | 55.1 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | >600 | - | >600 | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| wmi_star_n512 | 4104 | 45581 | 5 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | err | wrong | 33.6 | >600 | >600 | >600 | - | - | - | oom | oom | oom | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | inf / inf | 4.4e-16 / 8.8e-16 |  |  |  |  |  |  |  |
-| wmi_star_n64 | 520 | 5709 | 0.606 | - | - | - | - | - | err | - | 152 | - | - | - | 179 | >600 | >600 | 9.69 | 17 |  | 7.35 | 12.3 | 13.7 | 94.3 | - | - | 3.84 | 4.67 | 37.8 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  | 4.6e-07 / 9.1e-07 | 9.1e-14 / 1.8e-13 | 9.1e-14 / 1.8e-13 | 9.1e-14 / 1.8e-13 |  |  | 1.1e-16 / 2.2e-16 |
-| zeroone_w1_w10 | 32 | 2511 | 0.338 | >600 | 22.6 | >600 | oom | >600 | 50.2 | 1.71 | 14.4 | >600 | 29 | 42.7 | 66.1 | 69.2 | 148 | 6.8 | 4.65 |  | oom | oom | err | oom | err | 101 | 0.547 | 5.06 | 3.2 | alea | 7.8e-16 / 1.5e-15 |  | 4.0e-07 / 7.9e-07 |  |  |  | 7.8e-16 / 1.5e-15 | 6.2e-13 / 1.5e-12 | 7.8e-16 / 1.5e-15 |  | 8.9e-16 / 1.8e-15 | 7.8e-16 / 1.5e-15 | 8.9e-16 / 1.8e-15 | 7.8e-16 / 1.5e-15 | 7.8e-16 / 1.5e-15 | 1.2e-14 / 2.4e-14 | 5.6e-16 / 1.1e-15 |  |  |  |  |  |  | 7.8e-16 / 1.5e-15 | 7.8e-16 / 1.5e-15 |
-| zeroone_w1_w12 | 36 | 4184 | 0.602 | - | 348 | - | - | - | 76.5 | 3.16 | 39 | - | >600 | >600 | 300 | >600 | >600 | 28.6 | 37.3 |  | - | - | - | - | - | >600 | 1.28 | 7.42 | 195 | alea | 7.8e-16 / 1.5e-15 |  | 7.8e-07 / 1.5e-06 |  |  |  | 7.8e-16 / 1.5e-15 | 2.9e-13 / 5.8e-13 | 4.4e-16 / 8.8e-16 |  |  |  | 6.7e-16 / 1.3e-15 |  |  | 3.8e-15 / 7.5e-15 | 1.4e-14 / 2.9e-14 |  |  |  |  |  |  |  | 7.8e-16 / 1.5e-15 |
-| zeroone_w1_w14 | 40 | 6254 | 0.826 | - | oom | - | - | - | 127 | 6.13 | 89.4 | - | - | - | >600 | - | - | >600 | >600 |  | - | - | - | - | - | - | 3.96 | 12 | >600 | alea | 1.9e-15 / 3.8e-15 |  |  |  |  |  | 1.0e-15 / 2.0e-15 | 2.3e-13 / 4.6e-13 | 1.1e-15 / 2.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.0e-15 / 2.0e-15 |
-| zeroone_w1_w16 | 44 | 8780 | 1.3 | - | - | - | - | - | 313 | 15.3 | 284 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 16.4 | 27.5 | - | alea | 3.9e-15 / 7.7e-15 |  |  |  |  |  | 8.9e-16 / 1.8e-15 | 3.2e-13 / 6.5e-13 | 1.0e-15 / 2.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 8.9e-16 / 1.8e-15 |
-| zeroone_w1_w18 | 48 | 11762 | 2.52 | - | - | - | - | - | >600 | 41.2 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 79.7 | 93.3 | - | alea | 1.6e-15 / 3.1e-15 |  |  |  |  |  |  | 6.4e-13 / 1.3e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.6e-15 / 3.1e-15 |
-| zeroone_w1_w20 | 52 | 15200 | 3.16 | - | - | - | - | - | - | 104 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 368 | 387 | - | alea | 4.2e-15 / 8.4e-15 |  |  |  |  |  |  | 4.3e-13 / 8.5e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.8e-16 / 1.6e-15 |
-| zeroone_w1_w22 | 56 | 19094 | 4.39 | - | - | - | - | - | - | 215 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 6.2e-15 / 1.2e-14 |  |  |  |  |  |  | 3.6e-13 / 7.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| zeroone_w1_w26 | 64 | 28250 | 6.52 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| zeroone_w1_w30 | 72 | 39230 | 12.7 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| wmi_path_n1024 | 8192 | 91060 | 8.62 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 93.1 | - |  | - | - | >600 | - | - | - | - | - | - | ace-auto | 1.6e-15 / 2.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| wmi_path_n128 | 1024 | 11316 | 0.987 | - | - | - | - | - | - | - | - | - | - | - | >600 | - | - | 18.8 | err |  | 10.6 | 107 | 29.5 | 56.8 | >600 | - | 16.3 | 17.5 | - | alea | 1.0e-15 / 1.4e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.8e-16 / 1.1e-15 |  |  | 2.5e-08 / 3.5e-08 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 |  |  | 1.0e-15 / 1.4e-15 |
+| wmi_path_n16 | 128 | 1348 | 0.128 | >600 | >600 | >600 | oom | >600 | 39.4 | >600 | 51.4 | oom | >600 | >600 | 27.7 | 48 | 51.4 | 5.05 | 11.6 |  | 0.525 | 1.34 | 3.1 | 1.31 | 0.62 | 212 | 0.303 | 1.03 | >600 | alea | 1.1e-16 / 1.6e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  | 3.3e-16 / 4.7e-16 |  |  |  | 2.2e-16 / 3.1e-16 | 2.2e-16 / 3.1e-16 | 2.2e-16 / 3.1e-16 | 3.3e-16 / 4.7e-16 | 1.1e-16 / 1.6e-16 |  | 1.4e-08 / 2.0e-08 | 3.5e-13 / 5.0e-13 | 3.5e-13 / 5.0e-13 | 3.5e-13 / 5.0e-13 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 0.0e+00 / 0.0e+00 |
+| wmi_path_n16384 | 131072 | 1458100 | 153 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| wmi_path_n256 | 2048 | 22708 | 2 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 31.4 | err |  | 36.5 | 324 | 114 | 223 | - | - | 67.6 | 69.9 | - | alea | 5.0e-15 / 7.1e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.8e-15 / 8.2e-15 |  |  | 2.5e-08 / 3.5e-08 | 3.6e-13 / 5.0e-13 | 3.6e-13 / 5.0e-13 | 3.6e-13 / 5.0e-13 |  |  | 5.9e-15 / 8.3e-15 |
+| wmi_path_n32 | 256 | 2772 | 0.258 | - | - | - | - | - | 145 | - | >600 | - | - | - | 69.1 | 210 | 211 | 7.66 | 33.5 |  | 1.24 | 4.51 | 4.5 | 4.35 | 1.07 | 467 | 1.07 | 1.82 | - | alea | 3.3e-16 / 4.7e-16 |  |  |  |  |  | 1.1e-16 / 1.6e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.6e-16 | 5.6e-16 / 7.8e-16 |  | 2.5e-08 / 3.5e-08 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 | 1.1e-16 / 1.6e-16 |
+| wmi_path_n4096 | 32768 | 364468 | 45 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | oom | oom |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| wmi_path_n512 | 4096 | 45492 | 4.1 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 62.6 | >600 |  | oom | >600 | 447 | >600 | - | - | oom | oom | - | alea | 1.6e-14 / 2.3e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.5e-14 / 2.1e-14 |  |  |  |  | 3.8e-13 / 5.3e-13 |  |  |  |  |
+| wmi_path_n64 | 512 | 5620 | 0.529 | - | - | - | - | - | err | - | - | - | - | - | 230 | >600 | >600 | 11.6 | 110 |  | 3.36 | 42.9 | 9.72 | 15.6 | 2.88 | >600 | 4.21 | 5.06 | - | alea | 5.6e-16 / 7.8e-16 |  |  |  |  |  |  |  |  |  |  |  | 8.9e-16 / 1.3e-15 |  |  | 1.0e-15 / 1.4e-15 | 8.9e-16 / 1.3e-15 |  | 2.5e-08 / 3.5e-08 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 3.6e-13 / 5.1e-13 | 1.0e-15 / 1.4e-15 |  | 8.9e-16 / 1.3e-15 |
+| wmi_star_n1024 | 8200 | 91149 | 10 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | err | >600 | 90.7 | - | - | - | - | - | - | - | - | - | ace-Xlog | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| wmi_star_n128 | 1032 | 11405 | 1.12 | - | - | - | - | - | - | - | 230 | - | - | - | >600 | - | - | 16.5 | wrong |  | 36 | 50.2 | 42 | >600 | - | - | 15.2 | 16.4 | 78.3 | alea | 1.1e-16 / 2.2e-16 |  |  |  |  |  |  |  | 3.3e-16 / 6.6e-16 |  |  |  |  |  |  | 3.3e-16 / 6.6e-16 | inf / inf |  | 2.1e-08 / 4.1e-08 | 4.2e-13 / 8.3e-13 | 4.2e-13 / 8.3e-13 |  |  |  | 3.3e-16 / 6.6e-16 |
+| wmi_star_n16 | 136 | 1437 | 0.147 | >600 | oom | >600 | oom | >600 | 26.3 | >600 | 5.08 | oom | >600 | >600 | 18.9 | 69 | 68.6 | 4.38 | 6.26 |  | 0.597 | 1.13 | 3.41 | 2.51 | 5.13 | 220 | 0.324 | 1.06 | wrong | alea | 1.1e-16 / 2.1e-16 |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  | 1.1e-16 / 2.1e-16 |  |  |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.1e-16 |  | 5.7e-08 / 1.1e-07 | 4.1e-14 / 7.6e-14 | 4.1e-14 / 7.6e-14 | 4.1e-14 / 7.6e-14 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| wmi_star_n256 | 2056 | 22797 | 2.21 | - | - | - | - | - | - | - | >600 | - | - | - | - | - | - | err | wrong | 15.5 | 216 | 230 | 152 | - | - | - | 64.5 | 66.2 | 162 | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | inf / inf | 8.9e-16 / 1.8e-15 | 1.8e-07 / 3.6e-07 | 3.8e-13 / 7.5e-13 | 3.8e-13 / 7.5e-13 |  |  |  | 1.1e-16 / 2.2e-16 |
+| wmi_star_n32 | 264 | 2861 | 0.28 | - | - | - | - | - | 76.7 | - | 18.1 | - | - | - | 45.9 | 501 | 513 | 5.83 | 8.91 |  | 1.79 | 3.15 | 5.21 | 12.7 | oom | >600 | 1.05 | 1.78 | wrong | alea | 3.3e-16 / 6.4e-16 |  |  |  |  |  | 1.1e-16 / 2.1e-16 |  | 2.2e-16 / 4.3e-16 |  |  |  | 0.0e+00 / 0.0e+00 | 3.3e-14 / 6.3e-14 | 3.3e-14 / 6.3e-14 | 1.1e-16 / 2.1e-16 | 0.0e+00 / 0.0e+00 |  | 3.2e-07 / 6.1e-07 | 3.2e-13 / 6.1e-13 | 3.2e-13 / 6.1e-13 | 3.2e-13 / 6.1e-13 |  |  | 1.1e-16 / 2.1e-16 |
+| wmi_star_n4096 | 32776 | 364557 | 51.2 | - | - | - | - | - | err | - | - | - | - | - | - | - | - | >600 | - | >600 | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| wmi_star_n512 | 4104 | 45581 | 4.64 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | err | wrong | 33.2 | >600 | >600 | >600 | - | - | - | oom | oom | oom | alea | 2.2e-16 / 4.4e-16 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | inf / inf | 4.4e-16 / 8.8e-16 |  |  |  |  |  |  |  |
+| wmi_star_n64 | 520 | 5709 | 0.571 | - | - | - | - | - | err | - | 152 | - | - | - | 179 | >600 | >600 | 9.65 | 17 |  | 7.32 | 12.2 | 13.7 | 94.3 | - | - | 3.81 | 4.64 | 37.8 | alea | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  | 2.2e-16 / 4.4e-16 |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 1.1e-16 / 2.2e-16 | 1.1e-16 / 2.2e-16 |  | 4.6e-07 / 9.1e-07 | 9.1e-14 / 1.8e-13 | 9.1e-14 / 1.8e-13 | 9.1e-14 / 1.8e-13 |  |  | 1.1e-16 / 2.2e-16 |
+| zeroone_w1_w10 | 32 | 2511 | 0.104 | >600 | 22.3 | >600 | oom | >600 | 50 | 1.47 | 14.2 | >600 | 28.7 | 42.4 | 65.9 | 69 | 148 | 6.57 | 4.42 |  | oom | oom | err | oom | err | 100 | 0.313 | 4.82 | 2.96 | storm-exact | 2.2e-16 / 4.1e-16 |  | 4.0e-07 / 7.9e-07 |  |  |  | 1.1e-16 / 2.1e-16 | 6.2e-13 / 1.5e-12 | 2.2e-16 / 4.2e-16 |  | 1.1e-16 / 2.7e-16 | ref | 1.1e-16 / 2.7e-16 | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 | 1.2e-14 / 2.4e-14 | 3.3e-16 / 6.6e-16 |  |  |  |  |  |  | 1.1e-16 / 2.1e-16 | 1.1e-16 / 2.1e-16 |
+| zeroone_w1_w12 | 36 | 4184 | 0.242 | - | 347 | - | - | - | 76.1 | 2.8 | 38.6 | - | >600 | >600 | 300 | >600 | >600 | 28.3 | 36.9 |  | - | - | - | - | - | >600 | 0.921 | 7.06 | 194 | alea | 7.8e-16 / 1.5e-15 |  | 7.8e-07 / 1.5e-06 |  |  |  | 7.8e-16 / 1.5e-15 | 2.9e-13 / 5.8e-13 | 4.4e-16 / 8.8e-16 |  |  |  | 6.7e-16 / 1.3e-15 |  |  | 3.8e-15 / 7.5e-15 | 1.4e-14 / 2.9e-14 |  |  |  |  |  |  |  | 7.8e-16 / 1.5e-15 |
+| zeroone_w1_w14 | 40 | 6254 | 0.288 | - | oom | - | - | - | 126 | 5.59 | 88.9 | - | - | - | >600 | - | - | >600 | >600 |  | - | - | - | - | - | - | 3.42 | 11.4 | >600 | alea | 1.9e-15 / 3.8e-15 |  |  |  |  |  | 1.0e-15 / 2.0e-15 | 2.3e-13 / 4.6e-13 | 1.1e-15 / 2.2e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.0e-15 / 2.0e-15 |
+| zeroone_w1_w16 | 44 | 8780 | 0.573 | - | - | - | - | - | 312 | 14.5 | 283 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 15.7 | 26.7 | - | alea | 3.9e-15 / 7.7e-15 |  |  |  |  |  | 8.9e-16 / 1.8e-15 | 3.2e-13 / 6.5e-13 | 1.0e-15 / 2.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 8.9e-16 / 1.8e-15 |
+| zeroone_w1_w18 | 48 | 11762 | 1.56 | - | - | - | - | - | >600 | 40.2 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 78.8 | 92.3 | - | alea | 1.6e-15 / 3.1e-15 |  |  |  |  |  |  | 6.4e-13 / 1.3e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.6e-15 / 3.1e-15 |
+| zeroone_w1_w20 | 52 | 15200 | 1.96 | - | - | - | - | - | - | 103 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 366 | 386 | - | alea | 4.2e-15 / 8.4e-15 |  |  |  |  |  |  | 4.3e-13 / 8.5e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.8e-16 / 1.6e-15 |
+| zeroone_w1_w22 | 56 | 19094 | 2.9 | - | - | - | - | - | - | 214 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 6.2e-15 / 1.2e-14 |  |  |  |  |  |  | 3.6e-13 / 7.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| zeroone_w1_w26 | 64 | 28250 | 4.34 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| zeroone_w1_w30 | 72 | 39230 | 9.68 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | zeroone_w1_w34 | 928 | 54788 | oom | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | zeroone_w1_w38 | 1136 | 70016 | - | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| zeroone_w2_w13 | 38 | 5230 | 0.66 | >600 | oom | >600 | oom | >600 | 94.2 | 4.31 | 79.6 | >600 | >600 | >600 | >600 | >600 | >600 | 284 | 258 |  | err | oom | >600 | oom | oom | >600 | 2.29 | 9.19 | >600 | alea | 2.0e-15 / 3.8e-15 |  |  |  |  |  | 8.9e-16 / 1.2e-15 | 5.0e-13 / 2.3e-12 | 7.8e-16 / 1.1e-15 |  |  |  |  |  |  | 3.2e-14 / 6.1e-14 | 9.1e-15 / 1.5e-14 |  |  |  |  |  |  |  | 8.9e-16 / 1.2e-15 |
-| zeroone_w2_w15 | 42 | 7560 | 1.05 | - | - | - | - | - | 191 | 9.87 | 570 | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | 10 | 23.1 | - | alea | 1.0e-14 / 1.4e-14 |  |  |  |  |  | 1.3e-15 / 2.7e-15 | 4.7e-13 / 1.5e-12 | 1.3e-15 / 2.7e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.3e-15 / 2.7e-15 |
-| zeroone_w2_w17 | 46 | 10346 | 1.91 | - | - | - | - | - | >600 | 27.3 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 39.4 | 50.4 | - | alea | 3.2e-14 / 5.8e-14 |  |  |  |  |  |  | 4.1e-13 / 2.2e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.4e-15 / 2.9e-15 |
-| zeroone_w2_w19 | 50 | 13588 | 3.6 | - | - | - | - | - | - | 98.6 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 189 | 204 | - | alea | 1.1e-13 / 1.6e-13 |  |  |  |  |  |  | 5.8e-13 / 1.7e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.7e-16 / 1.3e-15 |
-| zeroone_w2_w21 | 54 | 17286 | 4.43 | - | - | - | - | - | - | 182 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 4.0e-15 / 7.9e-15 |  |  |  |  |  |  | 2.4e-13 / 9.5e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| zeroone_w2_w23 | 58 | 21440 | 4.86 | - | - | - | - | - | - | 477 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  | 3.1e-13 / 6.3e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| zeroone_w2_w25 | 62 | 26050 | 11 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| zeroone_w2_w13 | 38 | 5230 | 0.215 | >600 | oom | >600 | oom | >600 | 93.7 | 3.86 | 79.2 | >600 | >600 | >600 | >600 | >600 | >600 | 283 | 257 |  | err | oom | >600 | oom | oom | >600 | 1.85 | 8.74 | >600 | alea | 2.0e-15 / 3.8e-15 |  |  |  |  |  | 8.9e-16 / 1.2e-15 | 5.0e-13 / 2.3e-12 | 7.8e-16 / 1.1e-15 |  |  |  |  |  |  | 3.2e-14 / 6.1e-14 | 9.1e-15 / 1.5e-14 |  |  |  |  |  |  |  | 8.9e-16 / 1.2e-15 |
+| zeroone_w2_w15 | 42 | 7560 | 0.443 | - | - | - | - | - | 190 | 9.26 | 569 | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | 9.41 | 22.5 | - | alea | 1.0e-14 / 1.4e-14 |  |  |  |  |  | 1.3e-15 / 2.7e-15 | 4.7e-13 / 1.5e-12 | 1.3e-15 / 2.7e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.3e-15 / 2.7e-15 |
+| zeroone_w2_w17 | 46 | 10346 | 1.11 | - | - | - | - | - | >600 | 26.5 | >600 | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 38.6 | 49.6 | - | alea | 3.2e-14 / 5.8e-14 |  |  |  |  |  |  | 4.1e-13 / 2.2e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.4e-15 / 2.9e-15 |
+| zeroone_w2_w19 | 50 | 13588 | 2.54 | - | - | - | - | - | - | 97.5 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 188 | 203 | - | alea | 1.1e-13 / 1.6e-13 |  |  |  |  |  |  | 5.8e-13 / 1.7e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.7e-16 / 1.3e-15 |
+| zeroone_w2_w21 | 54 | 17286 | 3.1 | - | - | - | - | - | - | 181 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | alea | 4.0e-15 / 7.9e-15 |  |  |  |  |  |  | 2.4e-13 / 9.5e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| zeroone_w2_w23 | 58 | 21440 | 3.25 | - | - | - | - | - | - | 476 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  | 3.1e-13 / 6.3e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| zeroone_w2_w25 | 62 | 26050 | 9.07 | - | - | - | - | - | - | >600 | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | tddlog | ref |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
 Seconds per system, the median over the repetitions; a failure is `>600`
 (timeout), `oom`, `err` or `n/a`; each system's last columns are its
@@ -4583,7 +4542,7 @@ largest absolute and relative difference from the reference named in
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | bn | 9 | 9 | 8 of 9 | 8 of 9 | 4 of 9 | 9 of 9 | 8 of 9 | 9 of 9 | 7 of 9 | 7 of 9 | 2 of 9 | 9 of 9 | 9 of 9 | 9 of 9 | 9 of 9 | 9 of 9 | 9 of 9 | 9 of 9 |  | 9 of 9 | 9 of 9 | 8 of 9 | 9 of 9 | 8 of 9 | 9 of 9 | 9 of 9 |
 | rl_caesar | 13 | 11 | 0 of 9 | 2 of 4 | 1 of 3 | 4 of 13 | 0 of 2 | 0 of 2 | 0 of 3 | 3 of 5 | 0 of 1 | 4 of 10 | 7 of 8 | 4 of 9 | 4 of 10 | 4 of 10 | 2 of 11 | 2 of 9 | 6 of 7 | 3 of 4 | 4 of 5 | 2 of 3 | 3 of 4 | 1 of 3 | 0 of 2 | 4 of 12 |
-| rl_diamond | 9 | 7 | 0 of 1 | 0 of 1 | 0 of 6 | 0 of 1 | 0 of 1 | 0 of 1 | 0 of 1 | 3 of 4 | 0 of 1 | 4 of 5 | 4 of 5 | 1 of 2 | 2 of 3 | 2 of 3 | 6 of 9 | 1 of 8 |  | 2 of 3 | 2 of 3 | 3 of 4 | 3 of 4 | 1 of 2 | 0 of 1 | 6 of 7 |
+| rl_diamond | 11 | 0 | 1 of 9 | 5 of 6 | 0 of 11 | 3 of 11 | 4 of 5 | 4 of 5 | 3 of 4 | 5 of 6 | 0 of 1 | 6 of 7 | 5 of 6 | 4 of 5 | 4 of 5 | 4 of 5 | 8 of 11 | 3 of 11 |  | 4 of 5 | 4 of 5 | 5 of 6 | 5 of 6 | 3 of 4 | 2 of 3 | 9 of 9 |
 | rl_hardware | 11 | 9 | 6 of 7 | 1 of 3 | 0 of 2 | 1 of 7 | 0 of 6 | 3 of 5 | 2 of 4 | 4 of 6 | 0 of 1 | 6 of 7 | 5 of 6 | 5 of 6 | 6 of 7 | 6 of 7 | 3 of 11 | 3 of 9 | 3 of 8 | 4 of 5 | 3 of 4 | 5 of 6 | 5 of 6 | 3 of 5 | 3 of 4 | 4 of 5 |
 | rl_hardware_bitwidth | 16 | 16 | 0 of 16 | 2 of 3 | 0 of 1 | 16 of 16 | 16 of 16 | 16 of 16 | 16 of 16 | 16 of 16 | 0 of 1 | 3 of 16 | 3 of 16 | 2 of 3 | 2 of 3 | 2 of 3 | 16 of 16 | 16 of 16 |  | 16 of 16 | 16 of 16 | 16 of 16 | 16 of 16 | 16 of 16 | 16 of 16 | 14 of 15 |
 | rl_hmm_filtering_joint | 10 | 8 | 0 of 1 | 0 of 4 | 0 of 10 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 | 2 of 4 | 0 of 1 | 0 of 1 | 0 of 1 | 2 of 3 | 0 of 7 | 0 of 7 | 2 of 8 | 2 of 8 | 5 of 6 | 0 of 4 | 2 of 5 | 2 of 6 | 4 of 5 | 2 of 3 | 2 of 3 | 3 of 5 |
@@ -4591,377 +4550,385 @@ largest absolute and relative difference from the reference named in
 | rl_hmm_marginal_likelihood | 4 | 4 | 0 of 1 | 0 of 4 | 0 of 4 | 0 of 1 | 0 of 1 | 0 of 1 | 3 of 4 | 4 of 4 | 0 of 1 | 0 of 1 | 0 of 1 | 3 of 4 | 0 of 4 | 0 of 4 | 4 of 4 | 4 of 4 |  | 0 of 4 | 4 of 4 | 4 of 4 | 4 of 4 | 3 of 4 | 2 of 3 | 4 of 4 |
 | rl_hmm_smoothing_joint | 10 | 8 | 0 of 1 | 0 of 4 | 0 of 10 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 | 2 of 4 | 0 of 1 | 0 of 1 | 0 of 1 | 2 of 3 | 0 of 7 | 0 of 7 | 2 of 9 | 2 of 9 | 5 of 7 | 0 of 4 | 2 of 7 | 2 of 8 | 4 of 5 | 2 of 3 | 2 of 3 | 3 of 5 |
 | rl_hmm_smoothing_marginal | 10 | 8 | 0 of 1 | 2 of 4 | 0 of 10 | 0 of 1 | 2 of 3 | 0 of 1 | 2 of 3 | 2 of 4 | 0 of 1 | 2 of 9 | 5 of 6 | 2 of 7 | 2 of 7 | 2 of 7 | 2 of 8 | 2 of 8 | 5 of 6 | 2 of 4 | 2 of 6 | 2 of 6 | 4 of 5 | 2 of 3 | 2 of 3 | 2 of 5 |
-| rl_ladder | 8 | 7 | 0 of 1 | 0 of 1 | 0 of 5 | 0 of 8 | 0 of 1 | 0 of 1 | 0 of 1 | 1 of 2 | 0 of 1 | 3 of 4 | 3 of 4 | 1 of 2 | 2 of 3 | 2 of 3 | 5 of 6 | 1 of 7 |  | 1 of 2 | 2 of 3 | 2 of 3 | 2 of 3 | 0 of 1 | 0 of 1 | 6 of 7 |
+| rl_ladder | 10 | 0 | 3 of 9 | 0 of 1 | 0 of 10 | 3 of 10 | 4 of 5 | 3 of 4 | 2 of 3 | 2 of 3 | 0 of 1 | 5 of 6 | 5 of 7 | 3 of 4 | 4 of 5 | 4 of 5 | 7 of 8 | 3 of 8 |  | 3 of 4 | 4 of 5 | 4 of 5 | 4 of 5 | 3 of 4 | 2 of 3 | 9 of 10 |
 | rl_motivating | 9 | 7 | 0 of 1 | 1 of 2 | 0 of 1 | 0 of 1 | 1 of 2 | 2 of 5 | 0 of 1 | 2 of 3 | 0 of 1 | 4 of 5 | 4 of 5 | 1 of 2 | 2 of 3 | 2 of 3 | 6 of 9 | 3 of 9 |  | 2 of 3 | 2 of 3 | 3 of 4 | 3 of 4 | 1 of 2 | 0 of 1 | 7 of 8 |
 | rl_network | 11 | 9 | 2 of 7 | 0 of 1 | 0 of 11 | 4 of 11 | 0 of 1 | 3 of 4 | 2 of 3 | 4 of 5 | 0 of 1 | 6 of 7 | 5 of 6 | 5 of 6 | 5 of 6 | 5 of 6 | 5 of 6 | 4 of 5 |  | 4 of 5 | 5 of 6 | 1 of 2 | 5 of 6 | 3 of 4 | 3 of 4 | 4 of 5 |
 
-**Geni.** Geni ran 56 instances and answered 16 (8 fail, 2 run out of
-memory, 9 time out, 21 answer wrongly). Its answers differ from the
+**Geni.** Geni ran 72 instances and answered 20 (8 fail, 4 run out of
+memory, 7 time out, 33 answer wrongly). Its answers differ from the
 reference's by at most 1.0e+00 relative (1.0e-07 absolute, hardware_10)
-over 16 instances. Geni's answer is wrong, zero or underflowed on
-bn_munin, hardware_bitwidth_10, hardware_bitwidth_100,
-hardware_bitwidth_1000, hardware_bitwidth_10000 and 16 more. Over the 54
-instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, Geni takes 23057 s in all and tddlog 33.1 s;
-over the 16 both answer, 257 s against tddlog's 4.82. tddlog alone
-answers bn_munin, caesar_100, caesar_1000, caesar_200, caesar_25 and 33
-more.
+over 20 instances. Geni's answer is wrong, zero or underflowed on
+bn_munin, diamond_1000, diamond_10000, diamond_100000, diamond_300 and
+28 more. Over the 52 instances given to both that either answers, a run
+that does not answer counted at the 600 s limit, Geni takes 21857 s in
+all and tddlog 33 s; over the 16 both answer, 257 s against tddlog's
+4.82. tddlog alone answers bn_munin, caesar_100, caesar_1000,
+caesar_200, caesar_25 and 31 more.
 
-**noDice.** noDice ran 44 instances and answered 18 (8 run out of
-memory, 6 time out, 1 underflow, 4 answer wrongly, 7 print zeros). Its
+**noDice.** noDice ran 49 instances and answered 23 (9 run out of
+memory, 5 time out, 1 underflow, 4 answer wrongly, 7 print zeros). Its
 answers differ from the reference's by at most 1.0e+00 relative (6.6e-07
-absolute, caesar_25) over 18 instances. noDice's answer is wrong, zero
+absolute, caesar_25) over 23 instances. noDice's answer is wrong, zero
 or underflowed on hmm_filtering_joint_100, hmm_filtering_joint_1000,
 hmm_filtering_joint_300, hmm_filtering_marginal_1000,
-hmm_marginal_likelihood_100 and 7 more. Over the 44 instances given to
+hmm_marginal_likelihood_100 and 7 more. Over the 42 instances given to
 both that either answers, a run that does not answer counted at the 600
-s limit, noDice takes 15853 s in all and tddlog 21.7 s; over the 18 both
+s limit, noDice takes 14653 s in all and tddlog 21.5 s; over the 18 both
 answer, 253 s against tddlog's 0.89. tddlog alone answers bn_hailfinder,
-caesar_100, caesar_300, diamond_1000, hardware_10000 and 21 more.
+caesar_100, caesar_300, hardware_10000, hardware_30 and 19 more.
 
-**Psi.** Psi ran 82 instances and answered 5 (60 fail, 7 run out of
-memory, 10 time out). Its answers differ from the reference's by at most
+**Psi.** Psi ran 92 instances and answered 5 (72 fail, 7 run out of
+memory, 8 time out). Its answers differ from the reference's by at most
 1.0e-13 relative (4.8e-15 absolute, caesar_25) over 5 instances. Over
-the 69 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, Psi takes 38693 s in all and tddlog
-474 s; over the 5 both answer, 293 s against tddlog's 0.19. tddlog alone
+the 61 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, Psi takes 33893 s in all and tddlog
+468 s; over the 5 both answer, 293 s against tddlog's 0.19. tddlog alone
 answers bn_hailfinder, bn_hepar2, bn_insurance, bn_munin, bn_water and
-59 more.
+51 more.
 
-**Genfer.** Genfer ran 71 instances and answered 34 (27 fail, 4 run out
+**Genfer.** Genfer ran 83 instances and answered 40 (32 fail, 5 run out
 of memory, 6 time out). Its answers differ from the reference's by at
-most 1.0e+00 relative (5.3e-26 absolute, caesar_100) over 34 instances.
-Over the 64 instances given to both that either answers, a run that does
-not answer counted at the 600 s limit, Genfer takes 18322 s in all and
-tddlog 732 s; over the 34 both answer, 322 s against tddlog's 2.52.
+most 1.0e+00 relative (5.3e-26 absolute, caesar_100) over 40 instances.
+Over the 56 instances given to both that either answers, a run that does
+not answer counted at the 600 s limit, Genfer takes 13522 s in all and
+tddlog 564 s; over the 34 both answer, 322 s against tddlog's 2.52.
 tddlog alone answers caesar_1000, caesar_10000, caesar_2000,
-caesar_20000, caesar_300 and 25 more.
+caesar_20000, caesar_300 and 17 more.
 
-**SPPL.** SPPL ran 47 instances and answered 29 (3 fail, 2 run out of
+**SPPL.** SPPL ran 55 instances and answered 37 (3 fail, 2 run out of
 memory, 13 time out). Its answers differ from the reference's by at most
-1.9e-14 relative (1.7e-16 absolute, bn_munin) over 29 instances. Over
-the 45 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, SPPL takes 11038 s in all and tddlog
+6.2e-14 relative (6.9e-15 absolute, ladder_3000) over 37 instances. Over
+the 43 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, SPPL takes 9838 s in all and tddlog
 242 s; over the 29 both answer, 1438 s against tddlog's 0.74. tddlog
-alone answers bn_insurance, caesar_25, caesar_300, diamond_1000,
-hardware_10 and 11 more.
+alone answers bn_insurance, caesar_25, caesar_300, hardware_10,
+hardware_10000 and 9 more.
 
-**Pluck.** Pluck ran 48 instances and answered 33 (14 fail, 1 run out of
+**Pluck.** Pluck ran 55 instances and answered 40 (12 fail, 3 run out of
 memory). Its answers differ from the reference's by at most 2.7e-11
-relative (1.5e-11 absolute, bn_insurance) over 33 instances. Over the 46
+relative (1.5e-11 absolute, bn_insurance) over 40 instances. Over the 44
 instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, Pluck takes 8171 s in all and tddlog 14.3 s;
+counted at the 600 s limit, Pluck takes 6971 s in all and tddlog 14.2 s;
 over the 33 both answer, 371 s against tddlog's 0.93. tddlog alone
-answers caesar_25, caesar_300, diamond_1000, hardware_10000,
-hardware_300 and 8 more.
+answers caesar_25, caesar_300, hardware_10000, hardware_300,
+hmm_filtering_joint_100 and 6 more.
 
-**PITA.** PITA ran 51 instances and answered 34 (1 fail, 15 time out, 1
+**PITA.** PITA ran 56 instances and answered 39 (1 fail, 15 time out, 1
 answer wrongly). Its answers differ from the reference's by at most
-1.0e+00 relative (2.2e-16 absolute, hardware_30) over 34 instances.
+1.0e+00 relative (2.2e-16 absolute, hardware_30) over 39 instances.
 PITA's answer is wrong, zero or underflowed on
-hmm_filtering_marginal_100. Over the 51 instances given to both that
+hmm_filtering_marginal_100. Over the 49 instances given to both that
 either answers, a run that does not answer counted at the 600 s limit,
-PITA takes 11483 s in all and tddlog 14.1 s; over the 34 both answer,
+PITA takes 10283 s in all and tddlog 13.9 s; over the 34 both answer,
 1283 s against tddlog's 0.74. tddlog alone answers bn_hailfinder,
-bn_insurance, caesar_25, caesar_300, caesar_50 and 12 more.
+bn_insurance, caesar_25, caesar_300, caesar_50 and 10 more.
 
-**aspmc.** aspmc ran 70 instances and answered 52 (14 time out, 4
+**aspmc.** aspmc ran 73 instances and answered 55 (14 time out, 4
 underflow). Its answers differ from the reference's by at most 1.0e+00
-relative (2.2e-16 absolute, caesar_100) over 52 instances. aspmc's
+relative (2.2e-16 absolute, caesar_100) over 55 instances. aspmc's
 answer is wrong, zero or underflowed on hmm_filtering_joint_1000,
 hmm_filtering_marginal_1000, hmm_smoothing_joint_1000 and
-hmm_smoothing_marginal_1000. Over the 70 instances given to both that
+hmm_smoothing_marginal_1000. Over the 64 instances given to both that
 either answers, a run that does not answer counted at the 600 s limit,
-aspmc takes 13691 s in all and tddlog 27.8 s; over the 52 both answer,
-2891 s against tddlog's 3.04. tddlog alone answers bn_munin, bn_pigs,
-caesar_200, caesar_300, diamond_30000 and 13 more.
+aspmc takes 12022 s in all and tddlog 25.3 s; over the 48 both answer,
+2422 s against tddlog's 2.35. tddlog alone answers bn_munin, bn_pigs,
+caesar_200, caesar_300, hardware_1000 and 11 more.
 
 **Scallop.** Scallop ran 21 instances and answered 2 (13 run out of
 memory, 6 time out). Its answers differ from the reference's by at most
 2.7e-16 relative (1.1e-16 absolute, bn_cancer) over 2 instances. Over
-the 21 instances given to both that either answers, a run that does not
-answer counted at the 600 s limit, Scallop takes 11402 s in all and
-tddlog 0.76 s; over the 2 both answer, 2.21 s against tddlog's 0.051.
+the 19 instances given to both that either answers, a run that does not
+answer counted at the 600 s limit, Scallop takes 10202 s in all and
+tddlog 0.65 s; over the 2 both answer, 2.21 s against tddlog's 0.051.
 tddlog alone answers bn_alarm, bn_hailfinder, bn_hepar2, bn_insurance,
-bn_munin and 14 more.
+bn_munin and 12 more.
 
-**Storm sparse.** Storm sparse ran 84 instances and answered 43 (28
-fail, 1 run out of memory, 12 time out). Its answers differ from the
-reference's by at most 1.0e+00 relative (1.1e-16 absolute, caesar_100)
-over 43 instances. Over the 78 instances given to both that either
-answers, a run that does not answer counted at the 600 s limit, Storm
-sparse takes 22807 s in all and tddlog 188 s; over the 43 both answer,
-1807 s against tddlog's 14.9. tddlog alone answers caesar_1000,
-caesar_2000, caesar_300, caesar_500, diamond_100000 and 30 more.
+**Storm sparse.** Storm sparse ran 88 instances and answered 47 (16
+fail, 1 run out of memory, 11 time out, 13 are refused). Its answers
+differ from the reference's by at most 1.0e+00 relative (1.1e-16
+absolute, caesar_100) over 47 instances. Over the 69 instances given to
+both that either answers, a run that does not answer counted at the 600
+s limit, Storm sparse takes 20968 s in all and tddlog 176 s; over the 36
+both answer, 1168 s against tddlog's 11.5. tddlog alone answers
+caesar_1000, caesar_2000, caesar_300, caesar_500, hardware_10000 and 28
+more.
 
-**Storm exact.** Storm exact ran 74 instances and answered 50 (13 fail,
-11 time out). Its answers differ from the reference's by at most 3.2e-11
-relative (1.3e-78 absolute, caesar_1000) over 50 instances. Over the 74
-instances given to both that either answers, a run that does not answer
-counted at the 600 s limit, Storm exact takes 16507 s in all and tddlog
-65.5 s; over the 50 both answer, 2107 s against tddlog's 27.7. tddlog
-alone answers caesar_2000, diamond_100000, hardware_3000,
-hardware_bitwidth_100, hardware_bitwidth_1000 and 19 more.
+**Storm exact.** Storm exact ran 78 instances and answered 53 (2 fail,
+10 time out, 13 are refused). Its answers differ from the reference's by
+at most 3.2e-11 relative (1.3e-78 absolute, caesar_1000) over 53
+instances. Over the 65 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Storm exact takes
+14436 s in all and tddlog 54.1 s; over the 43 both answer, 1236 s
+against tddlog's 24.2. tddlog alone answers caesar_2000, hardware_3000,
+hardware_bitwidth_100, hardware_bitwidth_1000, hardware_bitwidth_10000
+and 17 more.
 
-**Storm dd.** Storm dd ran 63 instances and answered 39 (10 fail, 2 run
+**Storm dd.** Storm dd ran 68 instances and answered 44 (10 fail, 2 run
 out of memory, 12 time out). Its answers differ from the reference's by
-at most 1.0e+00 relative (1.1e-16 absolute, caesar_100) over 39
-instances. Over the 57 instances given to both that either answers, a
+at most 1.0e+00 relative (1.1e-16 absolute, caesar_100) over 44
+instances. Over the 53 instances given to both that either answers, a
 run that does not answer counted at the 600 s limit, Storm dd takes
-13103 s in all and tddlog 126 s; over the 39 both answer, 2303 s against
-tddlog's 4.86. tddlog alone answers caesar_1000, caesar_300, caesar_500,
-diamond_3000, hardware_3000 and 13 more.
+11663 s in all and tddlog 125 s; over the 37 both answer, 2063 s against
+tddlog's 4.75. tddlog alone answers caesar_1000, caesar_300, caesar_500,
+hardware_3000, hardware_bitwidth_20 and 11 more.
 
-**PRISM sparse.** PRISM sparse ran 76 instances and answered 36 (24
+**PRISM sparse.** PRISM sparse ran 80 instances and answered 40 (24
 fail, 4 run out of memory, 12 time out). Its answers differ from the
 reference's by at most 1.0e+00 relative (1.1e-16 absolute, caesar_100)
-over 36 instances. Over the 66 instances given to both that either
+over 40 instances. Over the 60 instances given to both that either
 answers, a run that does not answer counted at the 600 s limit, PRISM
-sparse takes 19672 s in all and tddlog 258 s; over the 36 both answer,
-1672 s against tddlog's 8.05. tddlog alone answers caesar_1000,
-caesar_2000, caesar_300, caesar_500, diamond_10000 and 25 more.
+sparse takes 17901 s in all and tddlog 256 s; over the 32 both answer,
+1101 s against tddlog's 7.59. tddlog alone answers caesar_1000,
+caesar_2000, caesar_300, caesar_500, hardware_10000 and 23 more.
 
-**PRISM hybrid.** PRISM hybrid ran 76 instances and answered 36 (24
+**PRISM hybrid.** PRISM hybrid ran 80 instances and answered 40 (24
 fail, 4 run out of memory, 12 time out). Its answers differ from the
 reference's by at most 1.0e+00 relative (1.1e-16 absolute, caesar_100)
-over 36 instances. Over the 66 instances given to both that either
+over 40 instances. Over the 60 instances given to both that either
 answers, a run that does not answer counted at the 600 s limit, PRISM
-hybrid takes 19708 s in all and tddlog 258 s; over the 36 both answer,
-1708 s against tddlog's 8.05. tddlog alone answers caesar_1000,
-caesar_2000, caesar_300, caesar_500, diamond_10000 and 25 more.
+hybrid takes 17962 s in all and tddlog 256 s; over the 32 both answer,
+1162 s against tddlog's 7.59. tddlog alone answers caesar_1000,
+caesar_2000, caesar_300, caesar_500, hardware_10000 and 23 more.
 
-**Ace.** Ace ran 114 instances and answered 64 (25 fail, 18 run out of
-memory, 7 time out). Its answers differ from the reference's by at most
-2.7e-11 relative (1.5e-11 absolute, bn_insurance) over 64 instances.
-Over the 105 instances given to both that either answers, a run that
-does not answer counted at the 600 s limit, Ace takes 26579 s in all and
-tddlog 805 s; over the 64 both answer, 1979 s against tddlog's 68.
-tddlog alone answers caesar_100, caesar_1000, caesar_200, caesar_2000,
-caesar_300 and 36 more.
+**Ace.** Ace ran 118 instances and answered 68 (15 fail, 18 run out of
+memory, 7 time out, 10 are refused). Its answers differ from the
+reference's by at most 2.7e-11 relative (1.5e-11 absolute, bn_insurance)
+over 68 instances. Over the 92 instances given to both that either
+answers, a run that does not answer counted at the 600 s limit, Ace
+takes 24150 s in all and tddlog 669 s; over the 53 both answer, 750 s
+against tddlog's 27.4. tddlog alone answers caesar_100, caesar_1000,
+caesar_200, caesar_2000, caesar_300 and 34 more.
 
-**Ace c2d.** Ace c2d ran 109 instances and answered 51 (30 fail, 17 run
-out of memory, 9 time out, 2 answer wrongly). Its answers differ from
-the reference's by at most 9.8e-09 relative (9.8e-13 absolute,
-hardware_100) over 51 instances. Ace c2d's answer is wrong, zero or
-underflowed on diamond_3000 and ladder_3000. Over the 99 instances given
-to both that either answers, a run that does not answer counted at the
-600 s limit, Ace c2d takes 29235 s in all and tddlog 699 s; over the 51
-both answer, 435 s against tddlog's 2.47. tddlog alone answers
-caesar_100, caesar_1000, caesar_200, caesar_300, caesar_500 and 43 more.
+**Ace c2d.** Ace c2d ran 113 instances and answered 55 (19 fail, 17 run
+out of memory, 8 time out, 10 are refused, 4 answer wrongly). Its
+answers differ from the reference's by at most 9.8e-09 relative (9.8e-13
+absolute, hardware_100) over 55 instances. Ace c2d's answer is wrong,
+zero or underflowed on diamond_10000, diamond_3000, diamond_30000 and
+ladder_3000. Over the 87 instances given to both that either answers, a
+run that does not answer counted at the 600 s limit, Ace c2d takes 23215
+s in all and tddlog 624 s; over the 49 both answer, 415 s against
+tddlog's 2.36. tddlog alone answers caesar_100, caesar_1000, caesar_200,
+caesar_300, caesar_500 and 33 more.
 
-**Ace log space.** Ace log space ran 40 instances and answered 29 (5
-fail, 1 run out of memory, 5 time out). Its answers differ from the
-reference's by at most 8.6e-08 relative (5.4e-08 absolute,
-hmm_filtering_marginal_100000) over 29 instances. Over the 37 instances
-given to both that either answers, a run that does not answer counted at
-the 600 s limit, Ace log space takes 6827 s in all and tddlog 579 s;
-over the 29 both answer, 2027 s against tddlog's 107. tddlog alone
-answers caesar_5000, hardware_10000, hardware_100000, hardware_30000,
-hmm_filtering_joint_300000 and 3 more.
+**Ace log space.** Ace log space ran 40 instances and answered 29 (2
+fail, 1 run out of memory, 5 time out, 3 are refused). Its answers
+differ from the reference's by at most 8.6e-08 relative (5.4e-08
+absolute, hmm_filtering_marginal_100000) over 29 instances. Over the 37
+instances given to both that either answers, a run that does not answer
+counted at the 600 s limit, Ace log space takes 6827 s in all and tddlog
+579 s; over the 29 both answer, 2027 s against tddlog's 107. tddlog
+alone answers caesar_5000, hardware_10000, hardware_100000,
+hardware_30000, hmm_filtering_joint_300000 and 3 more.
 
-**Merlin.** Merlin ran 67 instances and answered 45 (2 fail, 8 run out
+**Merlin.** Merlin ran 71 instances and answered 49 (1 fail, 9 run out
 of memory, 5 underflow, 7 print zeros). Its answers differ from the
 reference's by at most 1.0e+00 relative (5.7e-13 absolute, caesar_100)
-over 45 instances. Merlin's answer is wrong, zero or underflowed on
+over 49 instances. Merlin's answer is wrong, zero or underflowed on
 hmm_filtering_joint_100, hmm_filtering_joint_1000,
 hmm_filtering_joint_300, hmm_filtering_marginal_1000,
-hmm_marginal_likelihood_100 and 7 more. Over the 67 instances given to
+hmm_marginal_likelihood_100 and 7 more. Over the 62 instances given to
 both that either answers, a run that does not answer counted at the 600
-s limit, Merlin takes 13296 s in all and tddlog 14.1 s; over the 45 both
-answer, 96 s against tddlog's 2.34. tddlog alone answers caesar_200,
-diamond_10000, hardware_1000, hmm_filtering_joint_100,
-hmm_filtering_joint_1000 and 17 more.
+s limit, Merlin takes 12073 s in all and tddlog 13.2 s; over the 42 both
+answer, 72.6 s against tddlog's 2.12. tddlog alone answers caesar_200,
+hardware_1000, hmm_filtering_joint_100, hmm_filtering_joint_1000,
+hmm_filtering_joint_300 and 15 more.
 
-**pyAgrum.** pyAgrum ran 77 instances and answered 55 (8 fail, 2 run out
-of memory, 12 time out). Its answers differ from the reference's by at
-most 1.0e+00 relative (4.3e-13 absolute, caesar_100) over 55 instances.
-Over the 75 instances given to both that either answers, a run that does
-not answer counted at the 600 s limit, pyAgrum takes 13366 s in all and
-tddlog 237 s; over the 55 both answer, 1366 s against tddlog's 4.36.
-tddlog alone answers caesar_300, diamond_10000, hardware_300,
-hmm_filtering_joint_1000, hmm_filtering_joint_3000 and 15 more.
+**pyAgrum.** pyAgrum ran 81 instances and answered 59 (7 fail, 2 run out
+of memory, 12 time out, 1 are refused). Its answers differ from the
+reference's by at most 1.0e+00 relative (4.3e-13 absolute, caesar_100)
+over 59 instances. Over the 69 instances given to both that either
+answers, a run that does not answer counted at the 600 s limit, pyAgrum
+takes 11785 s in all and tddlog 235 s; over the 51 both answer, 985 s
+against tddlog's 3.91. tddlog alone answers caesar_300, hardware_300,
+hmm_filtering_joint_1000, hmm_filtering_joint_3000,
+hmm_filtering_joint_300000 and 13 more.
 
-**pgmpy.** pgmpy ran 77 instances and answered 52 (10 fail, 1 run out of
-memory, 14 time out). Its answers differ from the reference's by at most
-2.4e-11 relative (1.3e-11 absolute, bn_insurance) over 52 instances.
-Over the 75 instances given to both that either answers, a run that does
-not answer counted at the 600 s limit, pgmpy takes 15678 s in all and
-tddlog 241 s; over the 52 both answer, 1878 s against tddlog's 4.17.
-tddlog alone answers bn_munin, caesar_100, diamond_30000, hardware_3000,
-hmm_filtering_joint_1000 and 18 more.
-
-**libDAI.** libDAI ran 76 instances and answered 66 (10 time out). Its
-answers differ from the reference's by at most 1.0e+00 relative (4.3e-13
-absolute, caesar_100) over 66 instances. Over the 76 instances given to
-both that either answers, a run that does not answer counted at the 600
-s limit, libDAI takes 8062 s in all and tddlog 32.9 s; over the 66 both
-answer, 2062 s against tddlog's 12.9. tddlog alone answers caesar_200,
-diamond_30000, hardware_3000, hmm_filtering_joint_10000,
-hmm_filtering_marginal_10000 and 5 more.
-
-**TensorInference.jl greedy.** TensorInference.jl greedy ran 58
-instances and answered 44 (1 run out of memory, 13 time out). Its
-answers differ from the reference's by at most 2.4e-11 relative (1.3e-11
-absolute, bn_insurance) over 44 instances. Over the 58 instances given
-to both that either answers, a run that does not answer counted at the
-600 s limit, TensorInference.jl greedy takes 8418 s in all and tddlog
-4.11 s; over the 44 both answer, 18.3 s against tddlog's 1.24. tddlog
-alone answers bn_munin, caesar_100, caesar_50, diamond_3000,
-hardware_1000 and 9 more.
-
-**TensorInference.jl treesa.** TensorInference.jl treesa ran 53
-instances and answered 41 (12 time out). Its answers differ from the
+**pgmpy.** pgmpy ran 81 instances and answered 56 (9 fail, 1 run out of
+memory, 14 time out, 1 are refused). Its answers differ from the
 reference's by at most 2.4e-11 relative (1.3e-11 absolute, bn_insurance)
-over 41 instances. Over the 53 instances given to both that either
+over 56 instances. Over the 68 instances given to both that either
+answers, a run that does not answer counted at the 600 s limit, pgmpy
+takes 13768 s in all and tddlog 238 s; over the 47 both answer, 1168 s
+against tddlog's 3.24. tddlog alone answers bn_munin, caesar_100,
+hardware_3000, hmm_filtering_joint_1000, hmm_filtering_joint_10000 and
+16 more.
+
+**libDAI.** libDAI ran 80 instances and answered 70 (10 time out). Its
+answers differ from the reference's by at most 1.0e+00 relative (4.3e-13
+absolute, caesar_100) over 70 instances. Over the 69 instances given to
+both that either answers, a run that does not answer counted at the 600
+s limit, libDAI takes 6245 s in all and tddlog 29.4 s; over the 61 both
+answer, 1445 s against tddlog's 12. tddlog alone answers caesar_200,
+hardware_3000, hmm_filtering_joint_10000, hmm_filtering_marginal_10000,
+hmm_smoothing_joint_10000 and 3 more.
+
+**TensorInference.jl greedy.** TensorInference.jl greedy ran 63
+instances and answered 49 (1 run out of memory, 13 time out). Its
+answers differ from the reference's by at most 2.4e-11 relative (1.3e-11
+absolute, bn_insurance) over 49 instances. Over the 55 instances given
+to both that either answers, a run that does not answer counted at the
+600 s limit, TensorInference.jl greedy takes 7217 s in all and tddlog
+3.88 s; over the 43 both answer, 16.6 s against tddlog's 1.2. tddlog
+alone answers bn_munin, caesar_100, caesar_50, hardware_1000,
+hardware_300 and 7 more.
+
+**TensorInference.jl treesa.** TensorInference.jl treesa ran 57
+instances and answered 45 (12 time out). Its answers differ from the
+reference's by at most 2.4e-11 relative (1.3e-11 absolute, bn_insurance)
+over 45 instances. Over the 51 instances given to both that either
 answers, a run that does not answer counted at the 600 s limit,
-TensorInference.jl treesa takes 10720 s in all and tddlog 2.5 s; over
+TensorInference.jl treesa takes 9520 s in all and tddlog 2.38 s; over
 the 41 both answer, 3520 s against tddlog's 1.1. tddlog alone answers
-caesar_25, caesar_50, diamond_1000, hardware_300,
-hmm_filtering_joint_1000 and 7 more.
+caesar_25, caesar_50, hardware_300, hmm_filtering_joint_1000,
+hmm_filtering_marginal_1000 and 5 more.
 
-**Roulette.** Roulette ran 92 instances and answered 68 (6 run out of
-memory, 5 time out, 13 underflow). Its answers differ from the
+**Roulette.** Roulette ran 97 instances and answered 74 (6 run out of
+memory, 4 time out, 13 underflow). Its answers differ from the
 reference's by at most 1.0e+00 relative (1.1e-16 absolute, caesar_100)
-over 68 instances. Roulette's answer is wrong, zero or underflowed on
+over 74 instances. Roulette's answer is wrong, zero or underflowed on
 caesar_1000, caesar_10000, caesar_2000, caesar_20000, caesar_300 and 8
-more. Over the 90 instances given to both that either answers, a run
-that does not answer counted at the 600 s limit, Roulette takes 14687 s
-in all and tddlog 778 s; over the 68 both answer, 1487 s against
-tddlog's 245. tddlog alone answers caesar_1000, caesar_10000,
-caesar_2000, caesar_20000, caesar_300 and 17 more.
+more. Over the 76 instances given to both that either answers, a run
+that does not answer counted at the 600 s limit, Roulette takes 12898 s
+in all and tddlog 429 s; over the 56 both answer, 898 s against tddlog's
+128. tddlog alone answers caesar_1000, caesar_10000, caesar_2000,
+caesar_20000, caesar_300 and 15 more.
 
-| instance | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Scallop | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Ace log space | Merlin | pyAgrum | pgmpy | libDAI | TI greedy | TI treesa | Roulette | Roulette process | ProbLog | ref | tddlog diff | Geni diff | noDice diff | Psi diff | Genfer diff | SPPL diff | Pluck diff | PITA diff | aspmc diff | Scallop diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Ace diff | Ace c2d diff | Ace log space diff | Merlin diff | pyAgrum diff | pgmpy diff | libDAI diff | TI greedy diff | TI treesa diff | Roulette diff |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| bn_alarm | 0.026 | 0.027 | 0.061 | 84.3 | 0.021 | 1.63 | 7.67 | 0.648 | 163 | oom | 0.228 | 0.222 | 0.486 | 1.73 | 1.75 | 1.3 | 1.41 |  | 0.007 | 0.129 | 1.79 | 0.006 | 0.0052 | 2.42 | 0.117 | 0.867 | 0.501 | exact | 6.7e-16 / 2.5e-14 | 4.6e-08 / 1.7e-06 | 5.5e-07 / 2.0e-05 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 2.6e-16 | 3.9e-16 / 1.5e-15 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 4.4e-16 | 5.6e-16 / 1.7e-15 |  | 1.1e-16 / 3.9e-16 | 1.1e-16 / 5.3e-16 | 2.2e-16 / 4.4e-16 | 1.1e-16 / 3.9e-16 | 1.1e-16 / 3.9e-16 | 1.1e-16 / 3.9e-16 | 5.6e-17 / 2.6e-16 |  | 4.5e-07 / 1.7e-05 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 | 8.3e-17 / 3.9e-16 | 8.3e-17 / 3.9e-16 | 1.1e-16 / 5.3e-16 |
-| bn_cancer | 0.026 | 0.012 | 0.044 | 0.544 | 0.008 | 0.762 | 5.13 | 0.553 | 2.72 | 1.32 | 0.208 | 0.21 | 0.252 | 1.69 | 1.71 | 1.45 | 1.25 |  | 0.004 | 0.13 | 1.94 | 0.004 | 0.001 | 0.187 | 0.009 | 0.754 | 0.282 | exact | 1.1e-16 / 5.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 1.1e-16 / 1.4e-16 | 2.8e-17 / 1.3e-16 | 5.6e-17 / 2.7e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 2.7e-16 | 2.2e-16 / 2.8e-16 | 2.8e-17 / 1.3e-16 | 1.1e-16 / 1.4e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 |  | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 0.0e+00 / 0.0e+00 |
-| bn_hailfinder | 0.063 | 19.4 | >600 | >600 | 132 | 408 | 58.5 | >600 | 268 | >600 | 3.55 | 3.96 | 15 | 4.02 | 4.06 | 1.62 | 2.35 |  | 0.009 | 0.164 | 1.87 | 0.009 | 0.0073 | 3.7 | 1.81 | 2.56 | >600 | exact | 5.0e-16 / 1.6e-15 | 1.6e-07 / 5.3e-07 |  |  | 2.2e-16 / 7.2e-16 | 1.7e-16 / 5.4e-16 | 1.1e-16 / 3.6e-16 |  | 2.1e-15 / 4.7e-15 |  | 4.4e-16 / 1.0e-15 | 2.2e-16 / 5.4e-16 | 1.7e-16 / 5.4e-16 | 2.8e-16 / 6.6e-16 | 2.8e-16 / 6.6e-16 | 2.2e-16 / 5.0e-16 | 2.2e-16 / 5.0e-16 |  | 4.8e-07 / 1.1e-06 | 4.9e-13 / 1.6e-12 | 4.9e-13 / 1.6e-12 | 4.9e-13 / 1.6e-12 | 1.7e-16 / 5.4e-16 | 1.7e-16 / 4.4e-16 | 2.2e-16 / 5.4e-16 |
-| bn_hepar2 | 0.034 | 0.056 | 0.129 | >600 | 0.092 | 6.53 | 7.77 | 24.5 | 200 | >600 | 0.256 | 0.284 | 1.48 | 1.96 | 1.92 | 1.59 | 2.16 |  | 0.009 | 0.136 | 1.69 | 0.009 | 0.0106 | 5.99 | 0.405 | 1.15 | 3.35 | exact | 2.8e-16 / 6.5e-16 | 1.2e-07 / 2.8e-07 | 1.7e-08 / 4.1e-08 |  | 0.0e+00 / 0.0e+00 | 2.2e-16 / 3.9e-16 | 1.1e-16 / 1.9e-16 | 1.1e-16 / 1.9e-16 | 3.4e-15 / 6.0e-15 |  | 1.1e-15 / 1.9e-15 | 0.0e+00 / 0.0e+00 | 3.3e-16 / 5.8e-16 | 3.3e-16 / 5.8e-16 | 3.3e-16 / 5.8e-16 | 1.1e-16 / 1.9e-16 | 2.2e-16 / 3.9e-16 |  | 1.7e-08 / 4.1e-08 | 4.7e-13 / 1.1e-12 | 4.7e-13 / 1.1e-12 | 4.7e-13 / 1.1e-12 | 1.1e-16 / 1.9e-16 | 5.6e-17 / 1.3e-16 | 2.5e-10 / 5.8e-10 |
-| bn_insurance | 0.043 | 14 | 7.19 | >600 | 30.8 | >600 | 20.3 | >600 | 205 | >600 | 3.12 | 3.66 | 10.9 | 2.92 | 3.33 | 1.64 | 1.97 |  | 0.01 | 0.134 | 1.73 | 0.008 | 0.005 | 3.07 | 1.18 | 1.95 | >600 | exact | 1.5e-11 / 2.7e-11 | 2.0e-08 / 1.2e-06 | 7.1e-07 / 2.9e-05 |  | 1.5e-11 / 2.7e-11 |  | 1.5e-11 / 2.7e-11 |  | 5.1e-08 / 1.3e-07 |  | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 |  | 4.8e-07 / 2.9e-05 | 1.3e-11 / 2.4e-11 | 1.3e-11 / 2.4e-11 | 1.3e-11 / 2.4e-11 | 1.3e-11 / 2.4e-11 | 1.3e-11 / 2.4e-11 | 2.4e-11 / 1.4e-09 |
-| bn_munin | 0.104 | wrong | 4.92 | >600 | 1.35 | 3.38 | 9.13 | 500 | >600 | >600 | 0.511 | 0.583 | 4.52 | 2.54 | 2.77 | 8.23 | 90 |  | 2.71 | 0.319 | >600 | 3.53 | oom | 96.6 | 8.66 | 9.4 | 64.3 | exact | 4.5e-16 / 1.9e-13 | 3.0e-04 / 1.1e-02 | 8.2e-07 / 2.0e-03 |  | 5.6e-17 / 1.7e-14 | 1.7e-16 / 1.9e-14 | 1.1e-16 / 1.7e-14 | 2.5e-16 / 2.7e-13 |  |  | 1.7e-16 / 1.8e-14 | 5.6e-17 / 1.7e-14 | 1.1e-16 / 1.7e-14 | 5.6e-17 / 1.7e-14 | 5.6e-17 / 1.7e-14 | 1.1e-16 / 1.4e-14 | 5.6e-17 / 1.3e-14 |  | 4.9e-07 / 2.0e-03 | 4.3e-13 / 2.1e-12 |  | 4.3e-13 / 2.1e-12 |  | 5.6e-17 / 1.6e-14 | 9.6e-09 / 3.5e-06 |
-| bn_pigs | 0.031 | 0.015 | 0.037 | 0.553 | 0.009 | 0.739 | 5.58 | 1.45 | >600 | 0.898 | 0.214 | 0.211 | 0.251 | 1.71 | 1.69 | 3.67 | 14.6 |  | 0.157 | 0.171 | 1.92 | 0.15 | 1.24 | 35.3 | 0.822 | 1.56 | 1.2 | exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
-| bn_survey | 0.027 | 0.014 | 0.05 | 1.55 | 0.009 | 0.868 | 5.42 | 0.502 | 2.78 | oom | 0.223 | 0.216 | 0.311 | 1.65 | 1.66 | 1.1 | 1.11 |  | 0.005 | 0.128 | 1.74 | 0.004 | 0.0012 | 0.645 | 0.011 | 0.753 | 0.153 | exact | 4.7e-16 / 3.0e-15 | 3.2e-08 / 7.8e-08 | 7.5e-07 / 2.7e-06 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 3.5e-16 | 1.1e-16 / 4.0e-16 | 1.4e-16 / 8.8e-16 | 0.0e+00 / 0.0e+00 |  | 1.1e-16 / 3.5e-16 | 0.0e+00 / 0.0e+00 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 |  | 2.5e-07 / 1.4e-06 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.0e-16 |
-| bn_water | 0.048 | 6.4 | 0.977 | >600 | 5.83 | 81.6 | 8.84 | 39.2 | 177 | >600 | 2.2 | 2.33 | 5.04 | 3.16 | 3.17 | 2 | 2.73 |  | 0.399 | 0.137 | 1.75 | 0.329 | 0.0452 | 5.61 | 0.559 | 1.3 | 18.9 | exact | 2.8e-16 / 2.7e-14 | 5.9e-08 / 2.6e-06 | 7.4e-07 / 7.5e-05 |  | 1.1e-16 / 1.4e-16 | 2.2e-16 / 5.6e-16 | 1.1e-16 / 3.7e-16 | 3.1e-16 / 1.3e-14 | 1.1e-16 / 4.5e-16 |  | 1.1e-16 / 3.9e-16 | 1.1e-16 / 3.4e-16 | 1.1e-16 / 2.2e-16 | 2.2e-16 / 4.9e-16 | 2.2e-16 / 4.9e-16 | 2.8e-17 / 1.9e-16 | 3.3e-16 / 4.1e-16 |  | 4.5e-07 / 5.4e-05 | 4.6e-13 / 1.4e-12 | 4.6e-13 / 1.4e-12 | 4.6e-13 / 1.4e-12 | 1.1e-16 / 3.4e-16 | 1.1e-16 / 2.2e-16 | 7.2e-09 / 9.6e-08 |
-| caesar_25 | 0.076 | err | 39.4 | 206 | 9.1 | >600 | err | err | 16.2 | oom | 0.418 | 0.754 | 6.3 | 2.16 | 2.18 | 4.28 | 5 |  | 1.73 | 3.29 | 60.4 | 7.12 | 1.44 | >600 | 0.291 | 0.999 | 28.8 | exact | 5.1e-15 / 1.0e-13 |  | 6.6e-07 / 1.0e+00 | 4.8e-15 / 1.0e-13 | 5.0e-15 / 1.1e-13 |  |  |  | 5.0e-15 / 1.0e-13 |  | 4.8e-15 / 1.1e-13 | 4.7e-15 / 1.0e-13 | 4.6e-15 / 1.1e-13 | 4.7e-15 / 1.1e-13 | 4.7e-15 / 1.1e-13 | 5.0e-15 / 1.0e-13 | 5.0e-15 / 1.1e-13 |  | 3.4e-07 / 1.0e+00 | 4.6e-13 / 4.4e-12 | 4.6e-13 / 4.4e-12 | 4.6e-13 / 4.4e-12 | 4.3e-15 / 1.1e-13 |  | 4.6e-15 / 1.1e-13 |
-| caesar_50 | 0.139 | err | 167 | >600 | 18.4 | - | - | >600 | 292 | - | 0.793 | 1.51 | 9.41 | 3.68 | 3.64 | 7.28 | 10.5 |  | 5.23 | 13.8 | 155 | 35.4 | >600 | >600 | 0.56 | 1.27 | 61.4 | exact | 2.3e-15 / 2.2e-13 |  | 4.1e-08 / 1.0e+00 |  | 2.3e-15 / 2.2e-13 |  |  |  | 2.6e-15 / 2.2e-13 |  | 2.2e-15 / 2.2e-13 | 2.2e-15 / 2.2e-13 | 2.2e-15 / 2.2e-13 | 2.2e-15 / 2.1e-13 | 2.2e-15 / 2.1e-13 | 2.2e-15 / 2.2e-13 | 2.3e-15 / 2.2e-13 |  | 4.1e-08 / 1.0e+00 | 4.8e-13 / 3.6e-12 | 4.8e-13 / 3.6e-12 | 4.8e-13 / 3.6e-12 |  |  | 2.3e-15 / 2.2e-13 |
-| caesar_100 | 0.294 | err | >600 | - | 31.2 | - | - | - | 388 | - | 1.93 | 3.57 | 17.7 | 7.81 | 7.53 | err | err | 9.81 | 28.6 | 67.6 | >600 | 258 | >600 | - | 1.19 | 1.91 | 113 | exact | 4.4e-16 / 4.8e-13 |  |  |  | 5.3e-26 / 1.0e+00 |  |  |  | 2.2e-16 / 1.0e+00 |  | 1.1e-16 / 1.0e+00 | 5.6e-26 / 4.7e-13 | 1.1e-16 / 1.0e+00 | 1.1e-16 / 1.0e+00 | 1.1e-16 / 1.0e+00 |  |  | 4.4e-15 / 6.8e-13 | 5.7e-13 / 1.0e+00 | 4.3e-13 / 1.0e+00 |  | 4.3e-13 / 1.0e+00 |  |  | 1.1e-16 / 1.0e+00 |
-| caesar_200 | 0.571 | err | - | - | 29.9 | - | - | - | >600 | - | 6.35 | 10.5 | 42 | 18.9 | 18.4 | err | err | 16.5 | oom | 368 | - | >600 | - | - | 2.44 | 3.15 | 253 | exact | 1.4e-29 / 1.5e-12 |  |  |  | 9.6e-18 / 1.0e+00 |  |  |  |  |  | 9.6e-18 / 1.0e+00 | 1.4e-29 / 1.5e-12 | 9.6e-18 / 1.0e+00 | 9.6e-18 / 1.0e+00 | 9.6e-18 / 1.0e+00 |  |  | 1.1e-30 / 2.7e-12 |  | 9.6e-18 / 1.0e+00 |  |  |  |  | 9.6e-18 / 1.0e+00 |
-| caesar_300 | 0.89 | err | oom | oom | err | >600 | err | >600 | >600 | - | err | 21.1 | err | err | err | err | err | 22.3 | - | >600 | - | - | - | - | underflow | underflow | 207 | exact | 3.6e-31 / 4.0e-12 |  |  |  |  |  |  |  |  |  |  | 3.6e-31 / 4.0e-12 |  |  |  |  |  | 2.3e-13 / 2.0e-12 |  |  |  |  |  |  |  |
-| caesar_500 | 1.53 | err | - | - | err | - | - | - | - | - | err | 51.4 | err | err | err | err | err | 39 | - | - | - | - | - | - | underflow | underflow | 448 | exact | 2.2e-16 / 2.5e-12 |  |  |  |  |  |  |  |  |  |  | 2.4e-34 / 2.5e-12 |  |  |  |  |  | 2.3e-13 / 9.1e-13 |  |  |  |  |  |  |  |
-| caesar_1000 | 3.22 | >600 | - | - | err | - | - | - | - | - | err | 296 | >600 | err | err | err | >600 | 91.3 | - | - | - | - | - | - | underflow | underflow | >600 | exact | 1.1e-16 / 3.2e-11 |  |  |  |  |  |  |  |  |  |  | 1.3e-78 / 3.2e-11 |  |  |  |  |  | 1.8e-79 / 4.5e-12 |  |  |  |  |  |  |  |
-| caesar_2000 | 7.01 | - | - | - | err | - | - | - | - | - | >600 | >600 | - | >600 | >600 | err | - | 246 | - | - | - | - | - | - | underflow | underflow | - | exact | 3.3e-16 / 6.4e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
-| caesar_5000 | 17.5 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | >600 | - | >600 | - | - | - | - | - | - | underflow | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| caesar_10000 | 38.2 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | underflow | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| caesar_20000 | 86.8 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | underflow | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| caesar_50000 | oom | oom | - | - | err | - | - | - | - | - | >600 | - | oom | oom | oom | err | err | - | - | - | - | - | - | - | >600 | >600 | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| caesar_100000 | oom | oom | - | - | err | - | - | - | - | - | oom | - | oom | oom | oom | err | err | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| diamond_1000 | 0.038 | >600 | >600 | err | oom | >600 | err | >600 | 5.47 | >600 | 0.564 | 0.639 | 53.6 | 9.98 | 10.1 | 4.25 | 9.06 |  | 2.19 | 5.47 | 5.13 | 3.46 | 1.74 | >600 | 0.352 | 1.19 | 17 | exact | 1.1e-16 / 1.2e-16 |  |  |  |  |  |  |  | 4.0e-15 / 4.2e-15 |  | 1.0e-13 / 1.1e-13 | 0.0e+00 / 0.0e+00 | 5.3e-15 / 5.6e-15 | 5.3e-15 / 5.6e-15 | 5.3e-15 / 5.6e-15 | 5.3e-15 / 5.6e-15 | 5.3e-15 / 5.6e-15 |  | 2.4e-07 / 2.5e-07 | 4.1e-14 / 4.3e-14 | 4.1e-14 / 4.3e-14 | 4.1e-14 / 4.3e-14 | 2.1e-15 / 2.2e-15 |  | 3.3e-16 / 3.5e-16 |
-| diamond_3000 | 0.11 | - | - | err | - | - | - | - | 23.1 | - | 3.32 | 3.87 | >600 | 118 | 117 | 7.8 | wrong |  | 14.5 | 61 | 28.7 | 28.8 | >600 | - | 1.02 | 1.84 | oom | exact | 1.1e-15 / 1.3e-15 |  |  |  |  |  |  |  | 1.3e-14 / 1.5e-14 |  | 2.9e-13 / 3.3e-13 | 0.0e+00 / 0.0e+00 |  | 1.3e-14 / 1.5e-14 | 1.3e-14 / 1.5e-14 | 1.3e-14 / 1.5e-14 | inf / inf |  | 2.5e-07 / 2.9e-07 | 3.9e-13 / 4.6e-13 | 3.9e-13 / 4.6e-13 | 3.9e-13 / 4.6e-13 |  |  | 3.0e-15 / 3.5e-15 |
-| diamond_10000 | 0.399 | - | - | err | - | - | - | - | 200 | - | 31.9 | 46.1 | - | >600 | >600 | 18.5 | err |  | oom | >600 | 354 | 344 | - | - | 4.14 | 4.87 | oom | exact | 7.7e-15 / 1.3e-14 |  |  |  |  |  |  |  | 2.7e-14 / 4.4e-14 |  | 7.4e-13 / 1.2e-12 | 0.0e+00 / 0.0e+00 |  |  |  | 3.3e-14 / 5.5e-14 |  |  |  |  | 4.5e-14 / 7.4e-14 | 4.5e-14 / 7.4e-14 |  |  | 1.8e-14 / 3.0e-14 |
-| diamond_30000 | 1.21 | - | - | >600 | - | - | - | - | >600 | - | 262 | 454 | - | - | - | 47.5 | err |  | - | - | >600 | >600 | - | - | 15 | 15.7 | oom | exact | 4.2e-14 / 1.9e-13 |  |  |  |  |  |  |  |  |  | 8.7e-13 / 3.9e-12 | 0.0e+00 / 0.0e+00 |  |  |  | 3.4e-14 / 1.5e-13 |  |  |  |  |  |  |  |  | 3.5e-14 / 1.6e-13 |
-| diamond_100000 | 4.46 | - | - | - | - | - | - | - | - | - | >600 | >600 | - | - | - | 154 | err |  | - | - | - | - | - | - | 49.7 | 50.5 | oom | exact | 9.1e-14 / 1.3e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 3.5e-15 / 5.3e-13 |  |  |  |  |  |  |  |  | 6.0e-15 / 9.0e-13 |
-| diamond_300000 | 17.9 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 520 | >600 |  | - | - | - | - | - | - | 178 | 179 | oom | exact | 5.1e-19 / 1.7e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.8e-19 / 1.6e-12 |  |  |  |  |  |  |  |  | 9.5e-19 / 3.1e-12 |
-| diamond_1000000 | 62 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | err | - |  | - | - | - | - | - | - | >600 | >600 | >600 | exact | 1.1e-33 / 5.5e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| diamond_3000000 | oom | - | - | err | - | - | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | >600 | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| diamond_6000000 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hardware_10 | 0.011 | 0.359 | 0.232 | oom | 6.56 | >600 | 8.62 | 0.75 | 3.48 | oom | 0.166 | 0.165 | 1.57 | 1.28 | 1.28 | 2.02 | 1.76 |  | 0.14 | 0.276 | 1.63 | 0.145 | 0.131 | 28.3 | 0.041 | 0.77 | err | exact | 1.2e-18 / 1.2e-14 | 1.0e-07 / 1.0e+00 | 1.0e-07 / 1.0e+00 |  | 1.1e-16 / 6.8e-16 |  | 2.2e-16 / 1.2e-15 | 1.2e-15 / 4.8e-06 | 3.3e-16 / 3.3e-16 |  | 5.6e-16 / 3.4e-15 | 1.1e-16 / 1.1e-15 | 2.2e-16 / 1.2e-15 | 2.2e-16 / 1.2e-15 | 2.2e-16 / 1.2e-15 | 4.4e-16 / 9.5e-16 | 1.1e-16 / 1.9e-15 |  | 1.0e-07 / 1.0e+00 | 1.8e-14 / 2.1e-12 | 1.8e-14 / 2.1e-12 | 1.8e-14 / 2.1e-12 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 8.1e-16 | 1.1e-16 / 3.3e-13 |
-| hardware_30 | 0.032 | 1.32 | >600 | - | >600 | - | 9.75 | 36.4 | 4.19 | - | 0.206 | 0.249 | 3.42 | 1.28 | 1.28 | 2.26 | 2.63 |  | 0.226 | 32.3 | 2.04 | 0.31 | 0.623 | 115 | 0.217 | 0.948 | >600 | exact | 2.2e-16 / 1.1e-14 | 1.0e-07 / 1.0e+00 |  |  |  |  | 1.1e-16 / 2.1e-15 | 2.2e-16 / 1.0e+00 | 1.2e-15 / 2.4e-15 |  | 4.4e-16 / 1.3e-14 | 2.2e-16 / 3.6e-15 | 1.1e-16 / 1.9e-15 | 1.1e-16 / 1.9e-15 | 1.1e-16 / 1.9e-15 | 3.3e-16 / 3.6e-15 | 1.1e-16 / 2.6e-15 |  | 1.0e-07 / 1.0e+00 | 1.7e-14 / 3.3e-12 | 1.7e-14 / 3.3e-12 | 1.7e-14 / 3.3e-12 | 1.1e-16 / 2.3e-15 | 1.1e-16 / 1.9e-15 | 1.1e-16 / 1.1e-12 |
-| hardware_100 | 0.091 | 4.02 | - | - | - | - | 19.5 | >600 | 24.9 | - | 0.499 | 0.831 | 5.94 | 1.65 | 1.64 | 4.31 | 6.22 |  | 0.83 | 185 | 6.14 | 2.28 | 1.38 | 465 | 2.3 | 3.09 | - | exact | 1.1e-16 / 1.1e-14 | 1.0e-07 / 1.0e+00 |  |  |  |  | 1.1e-16 / 7.5e-16 |  | 6.4e-15 / 7.5e-15 |  | 4.4e-16 / 4.1e-14 | 2.2e-16 / 3.5e-15 | 1.1e-16 / 7.5e-16 | 1.1e-16 / 7.5e-16 | 1.1e-16 / 7.5e-16 | 1.0e-15 / 2.0e-15 | 9.8e-13 / 9.8e-09 |  | 1.0e-07 / 1.0e+00 | 1.7e-14 / 3.2e-12 | 1.7e-14 / 3.2e-12 | 1.7e-14 / 3.2e-12 | 1.1e-16 / 1.0e-15 | 1.1e-16 / 3.0e-15 | 1.1e-16 / 3.7e-12 |
-| hardware_300 | 0.277 | 12.3 | - | - | - | - | err | - | 213 | - | 2.68 | 5.57 | 24.4 | 5.17 | 5 | err | err | 8.6 | 4.99 | err | 43.5 | 22.2 | >600 | >600 | 22 | 23.1 | - | exact | 3.3e-16 / 1.1e-14 | 1.0e-07 / 8.0e-04 |  |  |  |  |  |  | 2.2e-14 / 2.2e-14 |  | 4.4e-16 / 1.8e-15 | 2.2e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 |  |  | 2.9e-15 / 1.1e-14 | 1.0e-07 / 8.0e-04 |  | 1.7e-14 / 3.2e-12 | 1.7e-14 / 3.2e-12 |  |  | 1.1e-16 / 1.1e-13 |
-| hardware_1000 | 0.925 | 41.5 | - | - | - | - | - | - | >600 | - | 27.1 | 71.3 | 232 | 45.5 | 45.4 | err | >600 | 18.7 | oom | - | 424 | 217 | >600 | - | oom | oom | - | exact | 2.2e-16 / 1.1e-14 | 1.0e-07 / 8.0e-04 |  |  |  |  |  |  |  |  | 4.4e-16 / 1.8e-15 | 2.2e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 |  |  | 6.6e-15 / 7.1e-15 |  |  | 1.7e-14 / 3.2e-12 | 1.7e-14 / 3.2e-12 |  |  |  |
-| hardware_3000 | 2.95 | 122 | - | - | - | - | - | - | - | - | 317 | >600 | >600 | 524 | 595 | err | - | 52.5 | - | - | >600 | >600 | - | - | - | - | - | exact | 2.2e-16 / 1.1e-14 | 1.0e-07 / 8.0e-04 |  |  |  |  |  |  |  |  | 4.4e-16 / 1.8e-15 |  |  | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 |  |  | 8.3e-15 / 2.5e-14 |  |  |  |  |  |  |  |
-| hardware_10000 | 11 | err | oom | oom | err | err | err | >600 | >600 | - | >600 | - | - | >600 | >600 | oom | - | err | - | - | - | - | - | - | - | - | oom | exact | 1.1e-16 / 1.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hardware_30000 | 48 | - | - | - | err | err | - | - | - | - | - | - | - | - | - | oom | oom | oom | - | - | - | - | - | - | - | - | - | exact | 3.3e-16 / 1.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hardware_100000 | 180 | - | - | - | >600 | oom | - | - | - | - | - | - | - | - | - | err | err | err | - | - | - | - | - | - | - | - | - | exact | 1.1e-16 / 1.4e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hardware_300000 | oom | - | - | - | err | oom | - | - | - | - | - | - | - | - | - | err | err | err | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hardware_1000000 | oom | - | - | - | err | err | - | - | - | - | - | - | - | - | - | err | err | err | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hardware_bitwidth_5 | 0.008 | wrong | 3.55 | >600 | 0.03 | 1.5 | 7.68 | 0.502 | 2.7 | oom | 0.198 | 0.202 | 1.24 | 1.68 | 1.49 | 1.15 | 1.13 |  | 0.065 | 0.207 | 1.7 | 0.083 | 0.132 | 8.06 | 0.007 | 0.533 | 0.187 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 | 6.0e-08 / 1.0e+00 |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  | 7.8e-16 / 1.2e-15 | 3.3e-16 / 6.6e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 8.3e-16 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_10 | 0.009 | wrong | 2.88 | - | 0.028 | 1.36 | 7.33 | 0.53 | 2.76 | - | 0.209 | 0.21 | 516 | 120 | 115 | 1.13 | 1.17 |  | 0.062 | 0.18 | 1.52 | 0.074 | 0.0704 | 8.07 | 0.007 | 0.537 | 0.171 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 | 6.0e-08 / 1.0e+00 |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  | 7.8e-16 / 1.2e-15 | 3.3e-16 / 6.6e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_20 | 0.01 | wrong | oom | - | 0.028 | 1.37 | 7.26 | 0.513 | 2.75 | - | 0.194 | 0.198 | >600 | >600 | >600 | 1.15 | 1.23 |  | 0.054 | 0.148 | 1.5 | 0.058 | 0.12 | 8.21 | 0.008 | 0.541 | 0.16 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  | 7.8e-16 / 1.2e-15 | 3.3e-16 / 6.6e-16 |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_50 | 0.01 | wrong | - | - | 0.029 | 1.36 | 7.05 | 0.508 | 2.76 | - | err | err | - | - | - | 1.2 | 1.25 |  | 0.058 | 0.148 | 1.53 | 0.057 | 0.0693 | 7.48 | 0.009 | 0.536 | 0.162 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.2e-15 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_100 | 0.01 | wrong | - | - | 0.028 | 1.36 | 7.04 | 0.507 | 2.74 | - | err | err | - | - | - | 1.25 | 1.22 |  | 0.057 | 0.148 | 1.52 | 0.088 | 0.0675 | 7.9 | 0.02 | 0.547 | 0.162 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_300 | 0.01 | wrong | - | - | 0.028 | 1.38 | 7.02 | 0.52 | 2.75 | - | err | err | - | - | - | 1.24 | 1.29 |  | 0.084 | 0.153 | 1.51 | 0.058 | 0.0698 | 7.95 | 0.031 | 0.559 | 0.161 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_1000 | 0.009 | wrong | - | - | 0.029 | 1.38 | 7.05 | 0.519 | 2.72 | - | err | err | - | - | - | 1.22 | 1.25 |  | 0.061 | 0.15 | 1.51 | 0.055 | 0.0663 | 8.46 | 0.07 | 0.599 | 0.168 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_3000 | 0.01 | wrong | - | - | 0.027 | 1.36 | 7.01 | 0.52 | 2.73 | - | err | err | - | - | - | 1.24 | 1.25 |  | 0.056 | 0.148 | 1.52 | 0.059 | 0.105 | 6.34 | 0.197 | 0.726 | 0.167 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_10000 | 0.009 | wrong | - | - | 0.03 | 1.37 | 6.58 | 0.517 | 2.74 | - | err | err | - | - | - | 1.23 | 1.27 |  | 0.059 | 0.148 | 1.51 | 0.057 | 0.0633 | 7.26 | 0.574 | 1.11 | 0.166 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_30000 | 0.009 | wrong | - | - | 0.03 | 1.36 | 6.37 | 0.509 | 2.72 | - | err | err | - | - | - | 1.26 | 1.28 |  | 0.056 | 0.147 | 1.54 | 0.055 | 0.061 | 6.74 | 1.74 | 2.27 | 0.172 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.2e-15 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_100000 | 0.01 | wrong | - | - | 0.03 | 1.34 | 6.37 | 0.506 | 2.72 | - | err | err | - | - | - | 1.27 | 1.28 |  | 0.052 | 0.147 | 1.53 | 0.057 | 0.063 | 6.84 | 5.86 | 6.4 | 0.168 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_300000 | 0.009 | wrong | - | - | 0.03 | 1.38 | 6.4 | 0.512 | 2.72 | - | err | err | - | - | - | 1.22 | 1.29 |  | 0.055 | 0.149 | 1.54 | 0.056 | 0.062 | 6.24 | 18.5 | 19 | 0.17 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_1000000 | 0.008 | wrong | - | - | 0.03 | 1.36 | 6.39 | 0.512 | 2.73 | - | err | err | - | - | - | 1.27 | 1.3 |  | 0.053 | 0.151 | 1.53 | 0.055 | 0.0622 | 6.74 | 68.2 | 68.7 | 0.164 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_3000000 | 0.009 | wrong | - | - | 0.03 | 1.36 | 6.61 | 0.518 | 2.72 | - | err | err | - | - | - | 1.22 | 1.31 |  | 0.053 | 0.15 | 1.52 | 0.053 | 0.0612 | 6.68 | 263 | 263 | 0.166 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 8.3e-16 | 2.2e-16 / 2.2e-13 |
-| hardware_bitwidth_10000000 | 0.008 | wrong | - | - | 0.03 | 1.35 | 6.39 | 0.52 | 2.73 | - | err | err | - | - | - | 1.26 | 1.32 |  | 0.057 | 0.148 | 1.53 | 0.055 | 0.0611 | 7.06 | >600 | >600 | 0.165 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.2e-15 |  |
-| hardware_bitwidth_100000000 | 0.009 | wrong | - | - | 0.029 | 1.37 | 6.32 | 0.521 | 2.74 | - | err | err | - | - | - | 1.24 | 1.27 |  | 0.056 | 0.147 | 1.54 | 0.058 | 0.0609 | 6.94 | - | - | 0.164 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 |  |
-| hmm_filtering_joint_100 | 0.014 | >600 | zero | err | >600 | >600 | err | 55.3 | 3.39 | oom | >600 | >600 | 8.66 | err | err | 2.08 | 2.3 |  | zero | 2.79 | 27.5 | 0.355 | 0.277 | 87.1 | 0.057 | 0.773 | 0.635 | exact | 5.8e-32 / 1.5e-13 |  |  |  |  |  |  | 1.9e-19 / 5.2e-01 | 5.8e-32 / 1.6e-13 |  |  |  | 5.9e-32 / 1.6e-13 |  |  | 5.9e-32 / 1.6e-13 | 5.9e-32 / 1.6e-13 |  |  | 5.4e-31 / 1.4e-12 | 5.4e-31 / 1.4e-12 | 5.4e-31 / 1.4e-12 | 5.9e-32 / 1.6e-13 | 5.9e-32 / 1.6e-13 | 5.9e-32 / 1.6e-13 |
-| hmm_filtering_joint_300 | 0.046 | - | zero | err | - | - | - | >600 | 8.42 | - | - | - | 38.5 | err | err | 2.81 | 3.41 |  | zero | 1.45 | 2.17 | 0.916 | 0.703 | 324 | 0.348 | 1.06 | 2.05 | exact | 3.8e-69 / 2.8e-14 |  |  |  |  |  |  |  | 5.7e-69 / 4.2e-14 |  |  |  | 5.3e-69 / 3.8e-14 |  |  | 5.6e-69 / 4.1e-14 | 5.6e-69 / 4.1e-14 |  |  | 1.2e-67 / 8.9e-13 | 1.2e-67 / 8.9e-13 | 1.2e-67 / 8.9e-13 | 5.4e-69 / 3.9e-14 | 5.5e-69 / 4.0e-14 | 5.5e-69 / 4.0e-14 |
-| hmm_filtering_joint_1000 | 0.106 | - | wrong | err | - | - | - | - | underflow | - | - | - | >600 | err | err | err | err | 5.93 | underflow | err | err | 12 | >600 | >600 | underflow | underflow | 13 | exact | 5.5e-194 / 1.4e-11 |  | 5.0e-01 / 1.2e+182 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.4e-194 / 1.6e-11 |  |  |  | 5.9e-194 / 1.5e-11 |  |  |  |
-| hmm_filtering_joint_3000 | 0.351 | - | oom | err | - | - | - | - | >600 | - | - | - | - | >600 | >600 | oom | oom | 12.2 | oom | >600 | err | 97.7 | - | - | 40 | 41.5 | oom | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 |
-| hmm_filtering_joint_10000 | 1.21 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 31.3 | - | - | >600 | >600 | - | - | oom | oom | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
-| hmm_filtering_joint_30000 | 3.64 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 77.4 | - | - | - | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
-| hmm_filtering_joint_100000 | 13.2 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 264 | - | - | - | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
-| hmm_filtering_joint_300000 | 59.3 | - | - | err | - | - | - | - | - | - | - | - | - | err | err | >600 | >600 | >600 | - | >600 | >600 | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_filtering_joint_1000000 | oom | - | - | oom | - | - | - | - | - | - | - | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_filtering_joint_3000000 | - | - | - | oom | - | - | - | - | - | - | - | - | - | oom | oom | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_filtering_marginal_100 | 0.027 | >600 | 0.165 | err | >600 | 11.9 | err | wrong | 3.29 | oom | 0.181 | 0.189 | 3.9 | 1.3 | 1.31 | 2.13 | 2.26 |  | 0.297 | 0.472 | 25.9 | 0.34 | 0.498 | 76.1 | 0.056 | 0.843 | 0.531 | exact | 6.2e-15 / 1.0e-14 |  | 1.5e-07 / 2.4e-07 |  |  | 5.9e-15 / 9.5e-15 |  | 8.1e-01 / 1.3e+00 | 5.8e-15 / 9.3e-15 |  | 6.0e-15 / 9.6e-15 | 5.7e-15 / 9.1e-15 | 5.9e-15 / 9.5e-15 | 5.6e-15 / 8.9e-15 | 5.6e-15 / 8.9e-15 | 4.9e-15 / 7.8e-15 | 5.6e-15 / 8.9e-15 |  | 1.5e-07 / 2.4e-07 | 2.0e-13 / 3.2e-13 | 2.0e-13 / 3.2e-13 | 2.0e-13 / 3.2e-13 | 5.8e-15 / 9.3e-15 | 5.8e-15 / 9.3e-15 | 6.0e-15 / 9.6e-15 |
-| hmm_filtering_marginal_300 | 0.042 | - | 0.659 | err | - | 148 | - | >600 | 7.53 | - | 0.285 | 0.291 | 18 | 3.31 | 3.34 | 2.76 | 3.3 |  | 0.598 | 1.36 | 2.17 | 0.808 | 0.797 | 292 | 0.303 | 1.02 | 1.88 | exact | 6.0e-15 / 9.6e-15 |  | 1.5e-07 / 2.4e-07 |  |  | 5.7e-15 / 9.1e-15 |  |  | 5.6e-15 / 8.9e-15 |  | 6.0e-15 / 9.6e-15 | 5.7e-15 / 9.1e-15 | 6.6e-15 / 1.1e-14 | 6.6e-15 / 1.1e-14 | 6.6e-15 / 1.1e-14 | 6.3e-15 / 1.0e-14 | 5.7e-15 / 9.1e-15 |  | 1.5e-07 / 2.4e-07 | 2.0e-13 / 3.2e-13 | 2.0e-13 / 3.2e-13 | 2.0e-13 / 3.2e-13 | 5.8e-15 / 9.3e-15 | 5.8e-15 / 9.3e-15 | 6.2e-15 / 1.0e-14 |
-| hmm_filtering_marginal_1000 | 0.11 | - | wrong | err | - | >600 | - | - | underflow | - | err | 0.976 | err | err | err | err | err | 5.67 | underflow | err | err | 7.99 | >600 | >600 | underflow | underflow | 12.3 | exact | 3.0e-14 / 4.9e-14 |  | 1.2e-01 / 2.0e-01 |  |  |  |  |  |  |  |  | 3.0e-14 / 4.8e-14 |  |  |  |  |  | 2.1e-13 / 3.4e-13 |  |  |  | 1.7e-13 / 2.7e-13 |  |  |  |
-| hmm_filtering_marginal_3000 | 2.48 | - | oom | err | - | - | - | - | >600 | - | err | 7.98 | >600 | >600 | >600 | oom | oom | 11 | oom | err | err | 76.9 | - | - | underflow | underflow | oom | exact | 1.1e-13 / 1.8e-13 |  |  |  |  |  |  |  |  |  |  | 1.1e-13 / 1.8e-13 |  |  |  |  |  | 1.0e-10 / 1.6e-10 |  |  |  | 3.1e-13 / 4.9e-13 |  |  |  |
-| hmm_filtering_marginal_10000 | 3.02 | - | - | err | - | - | - | - | - | - | err | 82.9 | - | - | - | oom | oom | 26.4 | - | >600 | >600 | >600 | - | - | oom | oom | oom | exact | 4.0e-13 / 6.4e-13 |  |  |  |  |  |  |  |  |  |  | 3.9e-13 / 6.3e-13 |  |  |  |  |  | 7.7e-11 / 1.2e-10 |  |  |  |  |  |  |  |
-| hmm_filtering_marginal_30000 | 3.66 | - | - | err | - | - | - | - | - | - | >600 | >600 | - | - | - | oom | oom | 80.5 | - | - | - | - | - | - | - | - | oom | exact | 9.7e-13 / 1.6e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.8e-12 / 1.1e-11 |  |  |  |  |  |  |  |
-| hmm_filtering_marginal_100000 | 11.8 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 258 | - | - | - | - | - | - | - | - | oom | exact | 3.3e-12 / 5.2e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.4e-08 / 8.6e-08 |  |  |  |  |  |  |  |
-| hmm_filtering_marginal_300000 | 50.8 | - | - | err | - | - | - | - | - | - | err | - | err | err | err | >600 | >600 | >600 | - | >600 | >600 | - | - | - | - | - | oom | exact | 1.5e-11 / 2.4e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_filtering_marginal_1000000 | oom | - | - | err | - | - | - | - | - | - | err | - | err | err | err | - | - | - | - | - | - | - | - | - | - | - | >600 | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_filtering_marginal_3000000 | - | - | - | err | - | - | - | - | - | - | err | - | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_marginal_likelihood_100 | 0.016 | >600 | zero | err | >600 | >600 | err | 2.94 | 3.01 | oom | >600 | >600 | 11.6 | err | err | 2.1 | 2.39 |  | zero | 0.579 | 27.5 | 0.398 | 0.3 | 100 | 0.049 | 0.767 | oom | exact | 1.7e-48 / 6.1e-14 |  |  |  |  |  |  | 1.7e-48 / 6.1e-14 | 1.8e-48 / 6.3e-14 |  |  |  | 1.7e-48 / 6.1e-14 |  |  | 1.7e-48 / 6.1e-14 | 1.7e-48 / 6.1e-14 |  |  | 3.1e-47 / 1.1e-12 | 3.1e-47 / 1.1e-12 | 3.1e-47 / 1.1e-12 | 1.8e-48 / 6.4e-14 | 1.8e-48 / 6.5e-14 | 1.7e-48 / 6.0e-14 |
-| hmm_marginal_likelihood_300 | 0.038 | - | zero | err | - | - | - | 60.5 | 4.56 | - | - | - | 73.7 | err | err | 2.98 | 3.73 |  | zero | 1.65 | 2.38 | 1.15 | 0.785 | 369 | 0.257 | 0.996 | - | exact | 2.7e-116 / 1.2e-12 |  |  |  |  |  |  | 2.6e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 |  |  |  | 2.7e-116 / 1.2e-12 |  |  | 2.7e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 |  |  | 2.6e-116 / 1.2e-12 | 2.6e-116 / 1.2e-12 | 2.6e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 |
-| hmm_marginal_likelihood_600 | 0.098 | - | zero | err | - | - | - | 419 | 8.41 | - | - | - | 529 | err | err | 4.4 | 6.16 |  | zero | 6.25 | 5.42 | 4.34 | 2.05 | >600 | 0.995 | 1.77 | - | exact | 3.2e-219 / 7.0e-12 |  |  |  |  |  |  | 3.2e-219 / 7.0e-12 | 3.2e-219 / 7.0e-12 |  |  |  | 3.2e-219 / 7.0e-12 |  |  | 3.2e-219 / 7.0e-12 | 3.2e-219 / 7.0e-12 |  |  | 3.6e-219 / 7.8e-12 | 3.6e-219 / 7.8e-12 | 3.6e-219 / 7.8e-12 | 3.2e-219 / 7.0e-12 |  | 3.2e-219 / 7.0e-12 |
-| hmm_marginal_likelihood_900 | 0.13 | - | underflow | err | - | - | - | >600 | 14.2 | - | - | - | >600 | >600 | >600 | 12.3 | 15 |  | underflow | 22 | 15.9 | 15.6 | >600 | - | 2.27 | 3.07 | - | exact | 1.2e-322 / 1.3e-11 |  |  |  |  |  |  |  | 1.2e-322 / 1.3e-11 |  |  |  |  |  |  | 1.2e-322 / 1.2e-11 | 1.2e-322 / 1.2e-11 |  |  | 1.2e-322 / 1.3e-11 | 1.2e-322 / 1.3e-11 | 1.2e-322 / 1.3e-11 |  |  | 1.2e-322 / 1.3e-11 |
-| hmm_smoothing_joint_100 | 0.014 | >600 | zero | err | oom | >600 | err | 15.4 | 3.35 | oom | >600 | >600 | 8.88 | err | err | 2.05 | 2.26 |  | zero | 0.342 | 1.65 | 0.18 | 0.271 | 87 | 0.055 | 0.769 | 0.602 | exact | 1.3e-31 / 2.0e-13 |  |  |  |  |  |  | 6.3e-19 / 1.0e+00 | 1.3e-31 / 2.0e-13 |  |  |  | 1.3e-31 / 2.0e-13 |  |  | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 |  |  | 1.0e-31 / 1.6e-13 | 1.0e-31 / 1.6e-13 | 1.0e-31 / 1.6e-13 | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 |
-| hmm_smoothing_joint_300 | 0.036 | - | zero | err | - | - | - | >600 | 8.42 | - | - | - | 42.3 | err | err | 3.06 | 3.87 |  | zero | 1.49 | 2.28 | 0.922 | 0.661 | 324 | 0.326 | 1.03 | 2.4 | exact | 3.1e-67 / 1.3e-12 |  |  |  |  |  |  |  | 3.1e-67 / 1.4e-12 |  |  |  | 3.1e-67 / 1.3e-12 |  |  | 3.1e-67 / 1.4e-12 | 3.1e-67 / 1.4e-12 |  |  | 9.1e-68 / 4.0e-13 | 9.1e-68 / 4.0e-13 | 9.1e-68 / 4.0e-13 | 3.1e-67 / 1.4e-12 | 3.1e-67 / 1.3e-12 | 3.1e-67 / 1.4e-12 |
-| hmm_smoothing_joint_1000 | 0.123 | - | wrong | err | - | - | - | - | underflow | - | - | - | >600 | err | err | err | err | 6.05 | underflow | err | err | 8.88 | >600 | >600 | underflow | underflow | 16.9 | exact | 2.0e-193 / 2.9e-11 |  | 5.0e-01 / 7.4e+181 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 9.6e-194 / 1.4e-11 |  |  |  | 1.9e-193 / 2.9e-11 |  |  |  |
-| hmm_smoothing_joint_3000 | 0.313 | - | oom | err | - | - | - | - | >600 | - | - | - | - | >600 | >600 | oom | oom | 11.7 | err | >600 | err | 86.4 | - | - | 36.4 | 37.9 | oom | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 |
-| hmm_smoothing_joint_10000 | 1.12 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 30.4 | - | - | >600 | >600 | - | - | oom | oom | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
-| hmm_smoothing_joint_30000 | 3.54 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 78.9 | - | - | - | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
-| hmm_smoothing_joint_100000 | 12.8 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 258 | - | - | - | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
-| hmm_smoothing_joint_300000 | 47 | - | - | err | - | - | - | - | - | - | - | - | - | err | err | >600 | >600 | >600 | - | >600 | >600 | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_smoothing_joint_1000000 | oom | - | - | oom | - | - | - | - | - | - | - | - | - | err | err | err | err | err | - | err | err | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_smoothing_joint_3000000 | oom | - | - | oom | - | - | - | - | - | - | - | - | - | oom | oom | - | - | - | - | oom | oom | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_smoothing_marginal_100 | 0.027 | >600 | 0.165 | err | >600 | 11.8 | err | 2.96 | 3.31 | oom | 0.195 | 0.198 | 3.92 | 1.33 | 1.3 | 2.07 | 2.31 |  | 0.298 | 0.664 | 27.5 | 0.338 | 0.497 | 74.7 | 0.054 | 0.794 | 0.513 | exact | 5.6e-17 / 1.2e-16 |  | 3.5e-07 / 7.8e-07 |  |  | 3.3e-16 / 7.4e-16 |  | 2.2e-16 / 4.9e-16 | 5.6e-17 / 1.2e-16 |  | 5.6e-17 / 1.2e-16 | 1.1e-16 / 2.5e-16 | 1.1e-16 / 2.5e-16 | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 | 2.8e-16 / 6.2e-16 | 2.2e-16 / 4.9e-16 |  | 3.5e-07 / 7.8e-07 | 3.9e-13 / 8.7e-13 | 3.9e-13 / 8.7e-13 | 3.9e-13 / 8.7e-13 | 1.7e-16 / 3.7e-16 | 1.7e-16 / 3.7e-16 | 5.6e-17 / 1.2e-16 |
-| hmm_smoothing_marginal_300 | 0.066 | - | 0.666 | err | - | 147 | - | 64.3 | 7.6 | - | 0.323 | 0.322 | 18.3 | 3.34 | 3.39 | 2.75 | 3.32 |  | 0.45 | 1.37 | 2.03 | 0.768 | 0.766 | 290 | 0.298 | 1.02 | 1.78 | exact | 6.3e-15 / 1.4e-14 |  | 3.5e-07 / 7.8e-07 |  |  | 8.0e-15 / 1.8e-14 |  | 6.2e-15 / 1.4e-14 | 6.8e-15 / 1.5e-14 |  | 6.3e-15 / 1.4e-14 | 6.3e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 | 6.8e-15 / 1.5e-14 | 6.0e-15 / 1.3e-14 |  | 3.5e-07 / 7.8e-07 | 3.9e-13 / 8.6e-13 | 3.9e-13 / 8.6e-13 | 3.9e-13 / 8.6e-13 | 6.3e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 |
-| hmm_smoothing_marginal_1000 | 0.11 | - | wrong | err | - | >600 | - | >600 | underflow | - | err | 1.4 | err | err | err | err | err | 5.7 | underflow | err | err | 11.1 | >600 | >600 | underflow | underflow | 10.9 | exact | 3.2e-14 / 7.1e-14 |  | 5.0e-02 / 1.1e-01 |  |  |  |  |  |  |  |  | 3.2e-14 / 7.1e-14 |  |  |  |  |  | 2.0e-13 / 4.5e-13 |  |  |  | 3.6e-13 / 8.0e-13 |  |  |  |
-| hmm_smoothing_marginal_3000 | 0.315 | - | oom | err | - | - | - | - | >600 | - | err | 12 | >600 | >600 | >600 | oom | oom | 11.4 | oom | err | err | 72.9 | - | - | underflow | underflow | err | exact | 3.2e-14 / 7.1e-14 |  |  |  |  |  |  |  |  |  |  | 3.2e-14 / 7.1e-14 |  |  |  |  |  | 6.8e-12 / 1.5e-11 |  |  |  | 3.6e-13 / 8.0e-13 |  |  |  |
-| hmm_smoothing_marginal_10000 | 3.52 | - | - | err | - | - | - | - | - | - | err | 126 | - | - | - | oom | oom | 28.5 | - | >600 | >600 | >600 | - | - | oom | oom | - | exact | 1.7e-13 / 3.8e-13 |  |  |  |  |  |  |  |  |  |  | 1.7e-13 / 3.8e-13 |  |  |  |  |  | 1.9e-10 / 4.1e-10 |  |  |  |  |  |  |  |
-| hmm_smoothing_marginal_30000 | 6.18 | - | - | err | - | - | - | - | - | - | >600 | >600 | - | - | - | oom | oom | 74.6 | - | - | - | - | - | - | - | - | - | exact | 6.5e-13 / 1.4e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.4e-11 / 1.6e-10 |  |  |  |  |  |  |  |
-| hmm_smoothing_marginal_100000 | 12 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 245 | - | - | - | - | - | - | - | - | - | exact | 2.6e-12 / 5.8e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.0e-10 / 2.3e-10 |  |  |  |  |  |  |  |
-| hmm_smoothing_marginal_300000 | 54.8 | - | - | err | - | - | - | - | - | - | err | - | err | err | err | >600 | >600 | >600 | - | >600 | >600 | - | - | - | - | - | - | exact | 1.6e-11 / 3.5e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_smoothing_marginal_1000000 | oom | - | - | err | - | - | - | - | - | - | err | - | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| hmm_smoothing_marginal_3000000 | - | - | - | err | - | - | - | - | - | - | err | - | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| ladder_1000 | 0.073 | >600 | >600 | err | err | >600 | err | >600 | 241 | oom | 3.72 | 3.79 | 186 | 34.7 | 34.9 | 6.67 | 10.6 |  | 6.8 | 22.9 | 53.1 | 21.1 | >600 | >600 | 0.393 | 1.11 | >600 | exact | 4.4e-16 / 1.5e-15 |  |  |  |  |  |  |  | 3.3e-16 / 1.1e-15 |  | 2.8e-16 / 9.2e-16 | 8.3e-16 / 2.7e-15 | 2.8e-16 / 9.2e-16 | 2.8e-16 / 9.2e-16 | 2.8e-16 / 9.2e-16 | 6.1e-16 / 2.0e-15 | 6.1e-16 / 2.0e-15 |  | 2.8e-07 / 9.2e-07 | 4.6e-13 / 1.5e-12 | 4.6e-13 / 1.5e-12 | 4.6e-13 / 1.5e-12 |  |  | 7.8e-16 / 2.6e-15 |
-| ladder_3000 | 0.235 | - | - | err | err | - | - | - | >600 | - | 30 | 32.3 | >600 | 408 | 384 | 13.9 | wrong |  | err | 292 | 270 | 219 | - | - | 1.67 | 2.39 | - | exact | 1.4e-16 / 1.2e-15 |  |  |  |  |  |  |  |  |  | 2.9e-16 / 2.6e-15 | 2.4e-16 / 2.1e-15 |  | 2.9e-16 / 2.6e-15 | 2.9e-16 / 2.6e-15 | 1.2e-16 / 1.1e-15 | inf / inf |  |  | 3.0e-13 / 2.7e-12 | 3.0e-13 / 2.7e-12 | 3.0e-13 / 2.7e-12 |  |  | 6.2e-16 / 5.6e-15 |
-| ladder_10000 | 0.795 | - | - | err | err | - | - | - | - | - | 307 | 330 | - | >600 | >600 | 34.3 | err |  | - | >600 | >600 | >600 | - | - | 5.42 | 6.17 | - | exact | 1.3e-18 / 3.9e-16 |  |  |  |  |  |  |  |  |  | 1.4e-17 / 4.3e-15 | 1.1e-17 / 3.2e-15 |  |  |  | 2.2e-17 / 6.4e-15 |  |  |  |  |  |  |  |  | 3.9e-17 / 1.2e-14 |
-| ladder_30000 | 2.54 | - | - | >600 | err | - | - | - | - | - | >600 | >600 | - | - | - | 103 | err |  | - | - | - | - | - | - | 19.8 | 20.6 | - | exact | 1.4e-21 / 9.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-21 / 7.1e-15 |  |  |  |  |  |  |  |  | 3.5e-21 / 2.3e-14 |
-| ladder_100000 | 8.91 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | 319 | err |  | - | - | - | - | - | - | 81.4 | 82.2 | - | exact | 8.4e-36 / 8.8e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 8.4e-36 / 8.8e-14 |  |  |  |  |  |  |  |  | 8.1e-36 / 8.6e-14 |
-| ladder_300000 | 28.4 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | 233 | 234 | - | exact | 3.3e-79 / 9.6e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.6e-79 / 4.7e-14 |
-| ladder_1000000 | 119 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | exact | 2.8e-231 / 9.0e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| ladder_3000000 | oom | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | err |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| motivating_1000 | 0.037 | >600 | 24.3 | >600 | oom | 594 | 7.45 | >600 | 8.88 | oom | 0.608 | 0.647 | 53.9 | 9.96 | 9.96 | 3.45 | 4.33 |  | 1.35 | 3.65 | 20.5 | 2.45 | 1.27 | >600 | 0.136 | 0.922 | 5.51 | exact | 5.6e-16 / 2.0e-15 |  | 2.7e-07 / 1.0e-06 |  |  | 5.6e-17 / 2.0e-16 | 2.2e-16 / 8.1e-16 |  | 3.9e-16 / 1.4e-15 |  | 3.9e-16 / 1.4e-15 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-17 / 2.0e-16 |  | 2.7e-07 / 1.0e-06 | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 |
-| motivating_3000 | 0.103 | - | oom | - | - | >600 | 48.5 | - | 85.4 | - | 3.85 | 4.15 | >600 | 118 | 117 | 7.14 | 16.6 |  | 17 | 40.4 | 24.6 | 25 | >600 | - | 0.486 | 1.32 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  | 2.2e-16 / 8.1e-16 |  | 3.9e-16 / 1.4e-15 |  | 3.9e-16 / 1.4e-15 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-17 / 2.0e-16 |  | 2.7e-07 / 1.0e-06 | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 |  |  | 0.0e+00 / 0.0e+00 |
-| motivating_10000 | 0.401 | - | - | - | - | - | err | - | >600 | - | 39.6 | 41.5 | - | >600 | >600 | 17 | 48.2 |  | oom | oom | 246 | 268 | - | - | 1.74 | 2.49 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  | 3.9e-16 / 1.4e-15 | 0.0e+00 / 0.0e+00 |  |  |  | 5.6e-17 / 2.0e-16 | 5.6e-17 / 2.0e-16 |  |  |  | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 |  |  | 0.0e+00 / 0.0e+00 |
-| motivating_30000 | 1.18 | - | - | - | - | - | - | - | - | - | 338 | 356 | - | - | - | 36.7 | err |  | - | - | >600 | >600 | - | - | 5.49 | 6.24 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  | 3.9e-16 / 1.4e-15 | 0.0e+00 / 0.0e+00 |  |  |  | 5.6e-17 / 2.0e-16 |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| motivating_100000 | 4.22 | - | - | - | - | - | - | - | - | - | >600 | >600 | - | - | - | 127 | err |  | - | - | - | - | - | - | 22.4 | 23.2 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 2.0e-16 |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| motivating_300000 | 18.3 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 411 | err |  | - | - | - | - | - | - | 73.1 | 74.2 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 2.0e-16 |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| motivating_1000000 | 60.5 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | 287 | 288 | >600 | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
-| motivating_3000000 | >600 | - | - | - | - | - | oom | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | >600 | >600 | >600 | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| motivating_9000000 | - | - | - | - | - | - | err | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| network_10 | 0.008 | wrong | >600 | err | 1.9 | >600 | 8.5 | 1.66 | 3.15 | oom | 0.184 | 0.22 | 3.46 | 1.28 | 1.29 | 1.81 | 2.03 |  | 0.114 | 0.182 | 2.47 | 0.205 | 0.399 | 38.3 | 0.059 | 0.766 | err | exact | 1.2e-15 / 3.0e-14 | 3.7e-07 / 2.7e+01 |  |  | 1.1e-16 / 1.9e-15 |  | 3.3e-16 / 1.9e-15 | 3.3e-16 / 2.0e-08 | 3.3e-16 / 1.6e-15 |  | 5.6e-16 / 2.3e-15 | 2.2e-16 / 1.7e-15 | 5.6e-16 / 2.3e-15 | 5.6e-16 / 1.9e-15 | 5.6e-16 / 1.9e-15 | 6.9e-18 / 1.3e-15 | 3.3e-16 / 1.1e-15 |  | 3.8e-07 / 1.0e+00 | 2.3e-13 / 3.8e-12 | 2.3e-13 / 3.8e-12 | 2.3e-13 / 3.8e-12 | 3.3e-16 / 1.9e-15 | 3.3e-16 / 1.7e-15 | 4.4e-16 / 1.4e-15 |
-| network_30 | 0.019 | wrong | - | err | 4.39 | - | 9.78 | 48.3 | 5.3 | - | 0.254 | 0.423 | 6.43 | 1.57 | 1.44 | 2.55 | 3.28 |  | 0.25 | 0.396 | err | 0.604 | 0.32 | 122 | 0.279 | 0.989 | - | exact | 3.2e-15 / 5.9e-15 | 2.4e-07 / 1.9e-01 |  |  | 4.4e-16 / 1.4e-15 |  | 2.2e-16 / 8.0e-16 | 3.6e-16 / 1.1e-10 | 1.1e-16 / 8.6e-16 |  | 1.1e-16 / 1.4e-15 | 3.3e-16 / 4.5e-16 | 1.1e-16 / 1.4e-15 | 1.1e-16 / 1.0e-15 | 1.1e-16 / 1.0e-15 | 3.3e-16 / 6.8e-16 | 1.3e-15 / 1.8e-15 |  | 4.5e-07 / 1.9e-01 | 3.0e-13 / 3.4e-12 |  | 3.0e-13 / 3.4e-12 | 1.4e-16 / 1.1e-15 | 2.2e-16 / 9.9e-16 | 2.2e-16 / 1.6e-15 |
-| network_100 | 0.059 | 9.14 | - | err | 13 | - | 21.3 | >600 | 20.1 | - | 0.652 | 1.7 | 12.4 | 3.98 | 3.43 | 5.03 | 15.7 |  | 1.27 | 2.16 | - | 2.97 | 0.893 | 458 | 2.47 | 3.24 | - | exact | 1.7e-15 / 4.4e-15 | 6.0e-07 / 1.1e-03 |  |  | 1.7e-15 / 4.6e-15 |  | 1.4e-15 / 3.7e-15 |  | 6.7e-16 / 1.7e-15 |  | 7.2e-16 / 2.5e-15 | 8.9e-16 / 2.4e-15 | 7.2e-16 / 2.5e-15 | 5.6e-16 / 2.0e-15 | 5.6e-16 / 2.0e-15 | 1.8e-15 / 4.7e-15 | 1.4e-15 / 3.8e-15 |  | 4.9e-07 / 4.5e-03 | 2.7e-13 / 6.9e-13 |  | 2.7e-13 / 6.9e-13 | 8.9e-16 / 2.4e-15 | 8.9e-16 / 2.4e-15 | 7.2e-16 / 2.9e-15 |
-| network_300 | 0.159 | 27.1 | - | err | 36.3 | - | err | - | 220 | - | 3.06 | 10.6 | 36.4 | 20 | 17 | 9.69 | 111 |  | 4.94 | 18.3 | - | 18.8 | >600 | >600 | 22.8 | 24 | - | exact | 6.4e-15 / 1.2e-14 | 4.1e-07 / 6.8e-05 |  |  | 2.0e-15 / 4.1e-15 |  |  |  | 2.6e-15 / 5.1e-15 |  | 1.9e-15 / 4.0e-15 | 4.2e-16 / 6.4e-15 | 1.9e-15 / 4.0e-15 | 1.9e-15 / 2.9e-15 | 1.9e-15 / 2.9e-15 | 2.3e-15 / 6.6e-15 | 2.7e-15 / 9.0e-15 |  | 3.8e-07 / 2.1e-04 | 2.5e-13 / 1.4e-12 |  | 2.5e-13 / 1.4e-12 |  |  | 2.4e-15 / 1.1e-14 |
-| network_1000 | 0.559 | wrong | - | err | err | - | - | - | >600 | - | 30.1 | 112 | 296 | 182 | 182 | 24.6 | >600 |  | oom | 204 | - | 179 | - | - | oom | oom | - | exact | 3.0e-15 / 1.6e-14 | 1.4e-06 / 2.4e-03 |  |  |  |  |  |  |  |  | 3.2e-15 / 1.3e-14 | 5.3e-18 / 9.6e-15 | 3.2e-15 / 1.3e-14 | 2.4e-15 / 1.2e-14 | 2.4e-15 / 1.2e-14 | 1.3e-15 / 5.3e-15 |  |  |  | 1.7e-13 / 1.0e-12 |  | 1.7e-13 / 1.0e-12 |  |  |  |
-| network_3000 | 1.71 | wrong | - | err | err | - | - | - | - | - | 383 | >600 | >600 | >600 | >600 | >600 | - |  | - | >600 | - | >600 | - | - | - | - | - | exact | 1.0e-14 / 1.0e-14 | 2.7e-06 / 8.1e+01 |  |  |  |  |  |  |  |  | 4.0e-15 / 3.5e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| network_10000 | 5.89 | err | - | err | err | - | - | - | - | - | >600 | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact | 2.2e-16 / 3.0e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| network_30000 | 18.9 | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact | 4.6e-15 / 1.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| network_100000 | 129 | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact | 4.6e-15 / 5.9e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| network_300000 | oom | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| network_1000000 | - | - | - | err | oom | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| instance | flips | gates | tddlog | Geni | noDice | Psi | Genfer | SPPL | Pluck | PITA | aspmc | Scallop | Storm sparse | Storm exact | Storm dd | PRISM sparse | PRISM hybrid | Ace | Ace c2d | Ace log space | Merlin | pyAgrum | pgmpy | libDAI | TI greedy | TI treesa | Roulette | Roulette process | ProbLog | ref | tddlog diff | Geni diff | noDice diff | Psi diff | Genfer diff | SPPL diff | Pluck diff | PITA diff | aspmc diff | Scallop diff | Storm sparse diff | Storm exact diff | Storm dd diff | PRISM sparse diff | PRISM hybrid diff | Ace diff | Ace c2d diff | Ace log space diff | Merlin diff | pyAgrum diff | pgmpy diff | libDAI diff | TI greedy diff | TI treesa diff | Roulette diff |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| bn_alarm |  |  | 0.026 | 0.027 | 0.061 | 84.3 | 0.021 | 1.63 | 7.67 | 0.648 | 163 | oom | 0.228 | 0.222 | 0.486 | 1.73 | 1.75 | 1.3 | 1.41 |  | 0.007 | 0.129 | 1.79 | 0.006 | 0.0052 | 2.42 | 0.123 | 0.818 | 0.501 | exact | 6.7e-16 / 2.5e-14 | 4.6e-08 / 1.7e-06 | 5.5e-07 / 2.0e-05 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 2.6e-16 | 3.9e-16 / 1.5e-15 | 1.1e-16 / 2.2e-16 | 1.1e-16 / 4.4e-16 | 5.6e-16 / 1.7e-15 |  | 1.1e-16 / 3.9e-16 | 1.1e-16 / 5.3e-16 | 2.2e-16 / 4.4e-16 | 1.1e-16 / 3.9e-16 | 1.1e-16 / 3.9e-16 | 1.1e-16 / 3.9e-16 | 5.6e-17 / 2.6e-16 |  | 4.5e-07 / 1.7e-05 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 | 1.1e-16 / 5.3e-16 | 8.3e-17 / 3.9e-16 | 8.3e-17 / 3.9e-16 | 1.1e-16 / 5.3e-16 |
+| bn_cancer |  |  | 0.026 | 0.012 | 0.044 | 0.544 | 0.008 | 0.762 | 5.13 | 0.553 | 2.72 | 1.32 | 0.208 | 0.21 | 0.252 | 1.69 | 1.71 | 1.45 | 1.25 |  | 0.004 | 0.13 | 1.94 | 0.004 | 0.001 | 0.187 | 0.006 | 0.709 | 0.282 | exact | 1.1e-16 / 5.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 1.1e-16 / 1.4e-16 | 2.8e-17 / 1.3e-16 | 5.6e-17 / 2.7e-16 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 2.7e-16 | 2.2e-16 / 2.8e-16 | 2.8e-17 / 1.3e-16 | 1.1e-16 / 1.4e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 1.4e-16 | 1.1e-16 / 1.4e-16 |  | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 2.8e-17 / 1.3e-16 | 0.0e+00 / 0.0e+00 |
+| bn_hailfinder |  |  | 0.063 | 19.4 | >600 | >600 | 132 | 408 | 58.5 | >600 | 268 | >600 | 3.55 | 3.96 | 15 | 4.02 | 4.06 | 1.62 | 2.35 |  | 0.009 | 0.164 | 1.87 | 0.009 | 0.0073 | 3.7 | 1.8 | 2.53 | >600 | exact | 5.0e-16 / 1.6e-15 | 1.6e-07 / 5.3e-07 |  |  | 2.2e-16 / 7.2e-16 | 1.7e-16 / 5.4e-16 | 1.1e-16 / 3.6e-16 |  | 2.1e-15 / 4.7e-15 |  | 4.4e-16 / 1.0e-15 | 2.2e-16 / 5.4e-16 | 1.7e-16 / 5.4e-16 | 2.8e-16 / 6.6e-16 | 2.8e-16 / 6.6e-16 | 2.2e-16 / 5.0e-16 | 2.2e-16 / 5.0e-16 |  | 4.8e-07 / 1.1e-06 | 4.9e-13 / 1.6e-12 | 4.9e-13 / 1.6e-12 | 4.9e-13 / 1.6e-12 | 1.7e-16 / 5.4e-16 | 1.7e-16 / 4.4e-16 | 2.2e-16 / 5.4e-16 |
+| bn_hepar2 |  |  | 0.034 | 0.056 | 0.129 | >600 | 0.092 | 6.53 | 7.77 | 24.5 | 200 | >600 | 0.256 | 0.284 | 1.48 | 1.96 | 1.92 | 1.59 | 2.16 |  | 0.009 | 0.136 | 1.69 | 0.009 | 0.0106 | 5.99 | 0.424 | 1.11 | 3.35 | exact | 2.8e-16 / 6.5e-16 | 1.2e-07 / 2.8e-07 | 1.7e-08 / 4.1e-08 |  | 0.0e+00 / 0.0e+00 | 2.2e-16 / 3.9e-16 | 1.1e-16 / 1.9e-16 | 1.1e-16 / 1.9e-16 | 3.4e-15 / 6.0e-15 |  | 1.1e-15 / 1.9e-15 | 0.0e+00 / 0.0e+00 | 3.3e-16 / 5.8e-16 | 3.3e-16 / 5.8e-16 | 3.3e-16 / 5.8e-16 | 1.1e-16 / 1.9e-16 | 2.2e-16 / 3.9e-16 |  | 1.7e-08 / 4.1e-08 | 4.7e-13 / 1.1e-12 | 4.7e-13 / 1.1e-12 | 4.7e-13 / 1.1e-12 | 1.1e-16 / 1.9e-16 | 5.6e-17 / 1.3e-16 | 2.5e-10 / 5.8e-10 |
+| bn_insurance |  |  | 0.043 | 14 | 7.19 | >600 | 30.8 | >600 | 20.3 | >600 | 205 | >600 | 3.12 | 3.66 | 10.9 | 2.92 | 3.33 | 1.64 | 1.97 |  | 0.01 | 0.134 | 1.73 | 0.008 | 0.005 | 3.07 | 1.12 | 1.84 | >600 | exact | 1.5e-11 / 2.7e-11 | 2.0e-08 / 1.2e-06 | 7.1e-07 / 2.9e-05 |  | 1.5e-11 / 2.7e-11 |  | 1.5e-11 / 2.7e-11 |  | 5.1e-08 / 1.3e-07 |  | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 | 1.5e-11 / 2.7e-11 |  | 4.8e-07 / 2.9e-05 | 1.3e-11 / 2.4e-11 | 1.3e-11 / 2.4e-11 | 1.3e-11 / 2.4e-11 | 1.3e-11 / 2.4e-11 | 1.3e-11 / 2.4e-11 | 2.4e-11 / 1.4e-09 |
+| bn_munin |  |  | 0.104 | wrong | 4.92 | >600 | 1.35 | 3.38 | 9.13 | 500 | >600 | >600 | 0.511 | 0.583 | 4.52 | 2.54 | 2.77 | 8.23 | 90 |  | 2.71 | 0.319 | >600 | 3.53 | oom | 96.6 | 9.24 | 9.95 | 64.3 | exact | 4.5e-16 / 1.9e-13 | 3.0e-04 / 1.1e-02 | 8.2e-07 / 2.0e-03 |  | 5.6e-17 / 1.7e-14 | 1.7e-16 / 1.9e-14 | 1.1e-16 / 1.7e-14 | 2.5e-16 / 2.7e-13 |  |  | 1.7e-16 / 1.8e-14 | 5.6e-17 / 1.7e-14 | 1.1e-16 / 1.7e-14 | 5.6e-17 / 1.7e-14 | 5.6e-17 / 1.7e-14 | 1.1e-16 / 1.4e-14 | 5.6e-17 / 1.3e-14 |  | 4.9e-07 / 2.0e-03 | 4.3e-13 / 2.1e-12 |  | 4.3e-13 / 2.1e-12 |  | 5.6e-17 / 1.6e-14 | 9.6e-09 / 3.5e-06 |
+| bn_pigs |  |  | 0.031 | 0.015 | 0.037 | 0.553 | 0.009 | 0.739 | 5.58 | 1.45 | >600 | 0.898 | 0.214 | 0.211 | 0.251 | 1.71 | 1.69 | 3.67 | 14.6 |  | 0.157 | 0.171 | 1.92 | 0.15 | 1.24 | 35.3 | 0.727 | 1.38 | 1.2 | exact | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.2e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 |
+| bn_survey |  |  | 0.027 | 0.014 | 0.05 | 1.55 | 0.009 | 0.868 | 5.42 | 0.502 | 2.78 | oom | 0.223 | 0.216 | 0.311 | 1.65 | 1.66 | 1.1 | 1.11 |  | 0.005 | 0.128 | 1.74 | 0.004 | 0.0012 | 0.645 | 0.008 | 0.706 | 0.153 | exact | 4.7e-16 / 3.0e-15 | 3.2e-08 / 7.8e-08 | 7.5e-07 / 2.7e-06 | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 3.5e-16 | 1.1e-16 / 4.0e-16 | 1.4e-16 / 8.8e-16 | 0.0e+00 / 0.0e+00 |  | 1.1e-16 / 3.5e-16 | 0.0e+00 / 0.0e+00 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 | 2.8e-17 / 1.8e-16 |  | 2.5e-07 / 1.4e-06 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 1.1e-16 / 2.0e-16 | 1.1e-16 / 2.0e-16 |
+| bn_water |  |  | 0.048 | 6.4 | 0.977 | >600 | 5.83 | 81.6 | 8.84 | 39.2 | 177 | >600 | 2.2 | 2.33 | 5.04 | 3.16 | 3.17 | 2 | 2.73 |  | 0.399 | 0.137 | 1.75 | 0.329 | 0.0452 | 5.61 | 0.637 | 1.36 | 18.9 | exact | 2.8e-16 / 2.7e-14 | 5.9e-08 / 2.6e-06 | 7.4e-07 / 7.5e-05 |  | 1.1e-16 / 1.4e-16 | 2.2e-16 / 5.6e-16 | 1.1e-16 / 3.7e-16 | 3.1e-16 / 1.3e-14 | 1.1e-16 / 4.5e-16 |  | 1.1e-16 / 3.9e-16 | 1.1e-16 / 3.4e-16 | 1.1e-16 / 2.2e-16 | 2.2e-16 / 4.9e-16 | 2.2e-16 / 4.9e-16 | 2.8e-17 / 1.9e-16 | 3.3e-16 / 4.1e-16 |  | 4.5e-07 / 5.4e-05 | 4.6e-13 / 1.4e-12 | 4.6e-13 / 1.4e-12 | 4.6e-13 / 1.4e-12 | 1.1e-16 / 3.4e-16 | 1.1e-16 / 2.2e-16 | 7.2e-09 / 9.6e-08 |
+| caesar_25 |  |  | 0.076 | err | 39.4 | 206 | 9.1 | >600 | err | err | 16.2 | oom | 0.418 | 0.754 | 6.3 | 2.16 | 2.18 | 4.28 | 5 |  | 1.73 | 3.29 | 60.4 | 7.12 | 1.44 | >600 | 0.291 | 0.999 | 28.8 | exact | 5.1e-15 / 1.0e-13 |  | 6.6e-07 / 1.0e+00 | 4.8e-15 / 1.0e-13 | 5.0e-15 / 1.1e-13 |  |  |  | 5.0e-15 / 1.0e-13 |  | 4.8e-15 / 1.1e-13 | 4.7e-15 / 1.0e-13 | 4.6e-15 / 1.1e-13 | 4.7e-15 / 1.1e-13 | 4.7e-15 / 1.1e-13 | 5.0e-15 / 1.0e-13 | 5.0e-15 / 1.1e-13 |  | 3.4e-07 / 1.0e+00 | 4.6e-13 / 4.4e-12 | 4.6e-13 / 4.4e-12 | 4.6e-13 / 4.4e-12 | 4.3e-15 / 1.1e-13 |  | 4.6e-15 / 1.1e-13 |
+| caesar_50 |  |  | 0.139 | err | 167 | >600 | 18.4 | - | - | >600 | 292 | - | 0.793 | 1.51 | 9.41 | 3.68 | 3.64 | 7.28 | 10.5 |  | 5.23 | 13.8 | 155 | 35.4 | >600 | >600 | 0.56 | 1.27 | 61.4 | exact | 2.3e-15 / 2.2e-13 |  | 4.1e-08 / 1.0e+00 |  | 2.3e-15 / 2.2e-13 |  |  |  | 2.6e-15 / 2.2e-13 |  | 2.2e-15 / 2.2e-13 | 2.2e-15 / 2.2e-13 | 2.2e-15 / 2.2e-13 | 2.2e-15 / 2.1e-13 | 2.2e-15 / 2.1e-13 | 2.2e-15 / 2.2e-13 | 2.3e-15 / 2.2e-13 |  | 4.1e-08 / 1.0e+00 | 4.8e-13 / 3.6e-12 | 4.8e-13 / 3.6e-12 | 4.8e-13 / 3.6e-12 |  |  | 2.3e-15 / 2.2e-13 |
+| caesar_100 |  |  | 0.294 | err | >600 | - | 31.2 | - | - | - | 388 | - | 1.93 | 3.57 | 17.7 | 7.81 | 7.53 | err | err | 9.81 | 28.6 | 67.6 | >600 | 258 | >600 | - | 1.19 | 1.91 | 113 | exact | 4.4e-16 / 4.8e-13 |  |  |  | 5.3e-26 / 1.0e+00 |  |  |  | 2.2e-16 / 1.0e+00 |  | 1.1e-16 / 1.0e+00 | 5.6e-26 / 4.7e-13 | 1.1e-16 / 1.0e+00 | 1.1e-16 / 1.0e+00 | 1.1e-16 / 1.0e+00 |  |  | 4.4e-15 / 6.8e-13 | 5.7e-13 / 1.0e+00 | 4.3e-13 / 1.0e+00 |  | 4.3e-13 / 1.0e+00 |  |  | 1.1e-16 / 1.0e+00 |
+| caesar_200 |  |  | 0.571 | err | - | - | 29.9 | - | - | - | >600 | - | 6.35 | 10.5 | 42 | 18.9 | 18.4 | err | err | 16.5 | oom | 368 | - | >600 | - | - | 2.44 | 3.15 | 253 | exact | 1.4e-29 / 1.5e-12 |  |  |  | 9.6e-18 / 1.0e+00 |  |  |  |  |  | 9.6e-18 / 1.0e+00 | 1.4e-29 / 1.5e-12 | 9.6e-18 / 1.0e+00 | 9.6e-18 / 1.0e+00 | 9.6e-18 / 1.0e+00 |  |  | 1.1e-30 / 2.7e-12 |  | 9.6e-18 / 1.0e+00 |  |  |  |  | 9.6e-18 / 1.0e+00 |
+| caesar_300 |  |  | 0.89 | err | oom | oom | err | >600 | err | >600 | >600 | - | err | 21.1 | err | err | err | err | err | 22.3 | - | >600 | - | - | - | - | underflow | underflow | 207 | exact | 3.6e-31 / 4.0e-12 |  |  |  |  |  |  |  |  |  |  | 3.6e-31 / 4.0e-12 |  |  |  |  |  | 2.3e-13 / 2.0e-12 |  |  |  |  |  |  |  |
+| caesar_500 |  |  | 1.53 | err | - | - | err | - | - | - | - | - | err | 51.4 | err | err | err | err | err | 39 | - | - | - | - | - | - | underflow | underflow | 448 | exact | 2.2e-16 / 2.5e-12 |  |  |  |  |  |  |  |  |  |  | 2.4e-34 / 2.5e-12 |  |  |  |  |  | 2.3e-13 / 9.1e-13 |  |  |  |  |  |  |  |
+| caesar_1000 |  |  | 3.22 | >600 | - | - | err | - | - | - | - | - | err | 296 | >600 | err | err | err | >600 | 91.3 | - | - | - | - | - | - | underflow | underflow | >600 | exact | 1.1e-16 / 3.2e-11 |  |  |  |  |  |  |  |  |  |  | 1.3e-78 / 3.2e-11 |  |  |  |  |  | 1.8e-79 / 4.5e-12 |  |  |  |  |  |  |  |
+| caesar_2000 |  |  | 7.01 | - | - | - | err | - | - | - | - | - | >600 | >600 | - | >600 | >600 | err | - | 246 | - | - | - | - | - | - | underflow | underflow | - | exact | 3.3e-16 / 6.4e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| caesar_5000 |  |  | 17.5 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | >600 | - | >600 | - | - | - | - | - | - | underflow | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| caesar_10000 |  |  | 38.2 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | underflow | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| caesar_20000 |  |  | 86.8 | - | - | - | err | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | underflow | underflow | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| caesar_50000 |  |  | oom | oom | - | - | err | - | - | - | - | - | >600 | - | oom | oom | oom | n/a | n/a | - | - | - | - | - | - | - | >600 | >600 | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| caesar_100000 |  |  | oom | oom | - | - | err | - | - | - | - | - | oom | - | oom | oom | oom | n/a | n/a | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| diamond_100 | 200 | 398 |  | 0.03 | 0.09 | err | 0.026 | 3.63 | 5.31 | 1.41 | 2.86 | >600 | 0.326 | 0.613 | 2.03 | 2.13 | 2.49 | 1.55 | 2.14 |  | 0.089 | 0.288 | 2.25 | 0.09 | 0.393 | 54.2 | 0.036 | 0.684 | 2.39 | exact |  | 7.5e-07 / 7.6e-07 | 6.5e-07 / 6.5e-07 |  | 7.8e-16 / 7.8e-16 | 5.6e-16 / 5.6e-16 | 3.3e-16 / 3.3e-16 | 3.3e-16 / 3.3e-16 | 5.6e-16 / 5.6e-16 |  | 9.9e-15 / 9.9e-15 | 0.0e+00 / 0.0e+00 | 3.3e-16 / 3.3e-16 | 3.3e-16 / 3.3e-16 | 3.3e-16 / 3.3e-16 | 2.2e-16 / 2.2e-16 | 3.3e-16 / 3.3e-16 |  | 3.5e-07 / 3.6e-07 | 1.6e-14 / 1.6e-14 | 1.6e-14 / 1.6e-14 | 1.6e-14 / 1.6e-14 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 | 1.1e-16 / 1.1e-16 |
+| diamond_300 | 600 | 1198 |  | wrong | 0.156 | err | 0.021 | 9.89 | 5.87 | 27.9 | 2.71 | - | 0.357 | 0.353 | 10.3 | 2.66 | 2.65 | 2.27 | 2.53 |  | 0.221 | 0.553 | 1.54 | 0.355 | 0.765 | 168 | 0.071 | 0.676 | 13.8 | exact |  | 2.2e-06 / 2.2e-06 | 4.3e-07 / 4.4e-07 |  | 4.1e-15 / 4.2e-15 | 1.6e-15 / 1.6e-15 | 2.4e-15 / 2.5e-15 | 4.0e-15 / 4.1e-15 | 1.0e-15 / 1.0e-15 |  | 3.1e-14 / 3.2e-14 | 0.0e+00 / 0.0e+00 | 2.4e-15 / 2.5e-15 | 2.4e-15 / 2.5e-15 | 2.4e-15 / 2.5e-15 | 5.6e-16 / 5.6e-16 | 6.7e-16 / 6.8e-16 |  | 4.3e-07 / 4.4e-07 | 1.6e-13 / 1.6e-13 | 1.6e-13 / 1.6e-13 | 1.6e-13 / 1.6e-13 | 2.2e-16 / 2.3e-16 | 3.3e-16 / 3.4e-16 | 0.0e+00 / 0.0e+00 |
+| diamond_1000 | 2000 | 3998 |  | wrong | 1.28 | err | 0.067 | 48.1 | 12.3 | 575 | 4.1 | - | 0.656 | 0.693 | 85.5 | 15.4 | 15 | 4.39 | 5.74 |  | 1.58 | 5.02 | 4.45 | 3.29 | 2.82 | >600 | 0.266 | 0.906 | 157 | exact |  | 7.7e-06 / 8.1e-06 | 7.6e-07 / 8.0e-07 |  | 1.2e-14 / 1.3e-14 | 5.8e-15 / 6.1e-15 | 5.3e-15 / 5.6e-15 | 5.6e-15 / 5.8e-15 | 4.0e-15 / 4.2e-15 |  | 1.0e-13 / 1.1e-13 | 0.0e+00 / 0.0e+00 | 5.3e-15 / 5.6e-15 | 5.3e-15 / 5.6e-15 | 5.3e-15 / 5.6e-15 | 6.7e-16 / 7.0e-16 | 3.3e-15 / 3.5e-15 |  | 2.4e-07 / 2.5e-07 | 4.1e-14 / 4.3e-14 | 4.1e-14 / 4.3e-14 | 4.1e-14 / 4.3e-14 | 2.9e-15 / 3.0e-15 |  | 3.3e-16 / 3.5e-16 |
+| diamond_3000 | 6000 | 11998 |  | wrong | 16.1 | err | err | 335 | 88.3 | >600 | 13.9 | - | 4.26 | 4.73 | 597 | 195 | 216 | 8.09 | wrong |  | 11.9 | 47.8 | 26.6 | 28.6 | >600 | - | 0.95 | 1.53 | >600 | exact |  | 2.2e-05 / 2.6e-05 | 2.5e-07 / 2.9e-07 |  |  | 1.5e-14 / 1.7e-14 | 1.3e-14 / 1.5e-14 |  | 1.3e-14 / 1.5e-14 |  | 2.9e-13 / 3.3e-13 | 0.0e+00 / 0.0e+00 | 1.3e-14 / 1.5e-14 | 1.3e-14 / 1.5e-14 | 1.3e-14 / 1.5e-14 | 7.7e-15 / 8.9e-15 | inf / inf |  | 2.5e-07 / 2.9e-07 | 3.9e-13 / 4.6e-13 | 3.9e-13 / 4.6e-13 | 3.9e-13 / 4.6e-13 |  |  | 3.0e-15 / 3.5e-15 |
+| diamond_10000 | 20000 | 39998 |  | wrong | 287 | err | err | >600 | oom | - | 104 | - | 36.9 | 50.5 | >600 | >600 | >600 | 21.2 | wrong |  | oom | >600 | 297 | 318 | - | - | 3.53 | 4.14 | - | exact |  | 5.3e-05 / 8.8e-05 | 7.8e-08 / 1.3e-07 |  |  |  |  |  | 2.7e-14 / 4.4e-14 |  | 7.4e-13 / 1.2e-12 | 0.0e+00 / 0.0e+00 |  |  |  | 5.8e-15 / 9.5e-15 | inf / inf |  |  |  | 4.5e-14 / 7.4e-14 | 4.5e-14 / 7.4e-14 |  |  | 1.8e-14 / 3.0e-14 |
+| diamond_30000 | 60000 | 119998 |  | wrong | oom | err | err | - | - | - | >600 | - | 397 | >600 | - | - | - | 49.4 | wrong |  | - | - | >600 | >600 | - | - | 13.2 | 13.8 | - | exact |  | 5.7e-05 / 2.5e-04 |  |  |  |  |  |  |  |  | 8.7e-13 / 3.9e-12 |  |  |  |  | 3.5e-15 / 1.6e-14 | inf / inf |  |  |  |  |  |  |  | 3.5e-14 / 1.6e-13 |
+| diamond_100000 | 200000 | 399998 |  | wrong | - | err | err | - | - | - | - | - | >600 | - | - | - | - | 156 | err |  | - | - | - | - | - | - | 44.4 | 45.1 | - | exact |  | 6.7e-06 / 9.9e-04 |  |  |  |  |  |  |  |  |  |  |  |  |  | 4.6e-16 / 6.9e-14 |  |  |  |  |  |  |  |  | 6.0e-15 / 9.0e-13 |
+| diamond_300000 | 600000 | 1199998 |  | wrong | - | err | err | - | - | - | - | - | - | - | - | - | - | 473 | err |  | - | - | - | - | - | - | 157 | 158 | - | exact |  | 2.1e-03 / 6.8e+03 |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.6e-19 / 5.4e-13 |  |  |  |  |  |  |  |  | 9.5e-19 / 3.1e-12 |
+| diamond_1000000 | 2000000 | 3999998 |  | oom | - | err | err | - | - | - | - | - | - | - | - | - | - | n/a | n/a |  | - | - | - | - | - | - | 440 (2/3) | 441 (2/3) | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 2.5e-33 / 1.3e-11 |
+| diamond_3000000 |  |  |  | - | - | err | err | - | - | - | - | - | - | - | - | - | - | n/a | n/a |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| diamond_6000000 |  |  |  | - | - | err | oom | - | - | - | - | - | - | - | - | - | - | n/a | n/a |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hardware_10 |  |  | 0.011 | 0.359 | 0.232 | oom | 6.56 | >600 | 8.62 | 0.75 | 3.48 | oom | 0.166 | 0.165 | 1.57 | 1.28 | 1.28 | 2.02 | 1.76 |  | 0.14 | 0.276 | 1.63 | 0.145 | 0.131 | 28.3 | 0.041 | 0.77 | err | exact | 1.2e-18 / 1.2e-14 | 1.0e-07 / 1.0e+00 | 1.0e-07 / 1.0e+00 |  | 1.1e-16 / 6.8e-16 |  | 2.2e-16 / 1.2e-15 | 1.2e-15 / 4.8e-06 | 3.3e-16 / 3.3e-16 |  | 5.6e-16 / 3.4e-15 | 1.1e-16 / 1.1e-15 | 2.2e-16 / 1.2e-15 | 2.2e-16 / 1.2e-15 | 2.2e-16 / 1.2e-15 | 4.4e-16 / 9.5e-16 | 1.1e-16 / 1.9e-15 |  | 1.0e-07 / 1.0e+00 | 1.8e-14 / 2.1e-12 | 1.8e-14 / 2.1e-12 | 1.8e-14 / 2.1e-12 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 8.1e-16 | 1.1e-16 / 3.3e-13 |
+| hardware_30 |  |  | 0.032 | 1.32 | >600 | - | >600 | - | 9.75 | 36.4 | 4.19 | - | 0.206 | 0.249 | 3.42 | 1.28 | 1.28 | 2.26 | 2.63 |  | 0.226 | 32.3 | 2.04 | 0.31 | 0.623 | 115 | 0.217 | 0.948 | >600 | exact | 2.2e-16 / 1.1e-14 | 1.0e-07 / 1.0e+00 |  |  |  |  | 1.1e-16 / 2.1e-15 | 2.2e-16 / 1.0e+00 | 1.2e-15 / 2.4e-15 |  | 4.4e-16 / 1.3e-14 | 2.2e-16 / 3.6e-15 | 1.1e-16 / 1.9e-15 | 1.1e-16 / 1.9e-15 | 1.1e-16 / 1.9e-15 | 3.3e-16 / 3.6e-15 | 1.1e-16 / 2.6e-15 |  | 1.0e-07 / 1.0e+00 | 1.7e-14 / 3.3e-12 | 1.7e-14 / 3.3e-12 | 1.7e-14 / 3.3e-12 | 1.1e-16 / 2.3e-15 | 1.1e-16 / 1.9e-15 | 1.1e-16 / 1.1e-12 |
+| hardware_100 |  |  | 0.091 | 4.02 | - | - | - | - | 19.5 | >600 | 24.9 | - | 0.499 | 0.831 | 5.94 | 1.65 | 1.64 | 4.31 | 6.22 |  | 0.83 | 185 | 6.14 | 2.28 | 1.38 | 465 | 2.3 | 3.09 | - | exact | 1.1e-16 / 1.1e-14 | 1.0e-07 / 1.0e+00 |  |  |  |  | 1.1e-16 / 7.5e-16 |  | 6.4e-15 / 7.5e-15 |  | 4.4e-16 / 4.1e-14 | 2.2e-16 / 3.5e-15 | 1.1e-16 / 7.5e-16 | 1.1e-16 / 7.5e-16 | 1.1e-16 / 7.5e-16 | 1.0e-15 / 2.0e-15 | 9.8e-13 / 9.8e-09 |  | 1.0e-07 / 1.0e+00 | 1.7e-14 / 3.2e-12 | 1.7e-14 / 3.2e-12 | 1.7e-14 / 3.2e-12 | 1.1e-16 / 1.0e-15 | 1.1e-16 / 3.0e-15 | 1.1e-16 / 3.7e-12 |
+| hardware_300 |  |  | 0.277 | 12.3 | - | - | - | - | err | - | 213 | - | 2.68 | 5.57 | 24.4 | 5.17 | 5 | err | err | 8.6 | 4.99 | err | 43.5 | 22.2 | >600 | >600 | 22 | 23.1 | - | exact | 3.3e-16 / 1.1e-14 | 1.0e-07 / 8.0e-04 |  |  |  |  |  |  | 2.2e-14 / 2.2e-14 |  | 4.4e-16 / 1.8e-15 | 2.2e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 |  |  | 2.9e-15 / 1.1e-14 | 1.0e-07 / 8.0e-04 |  | 1.7e-14 / 3.2e-12 | 1.7e-14 / 3.2e-12 |  |  | 1.1e-16 / 1.1e-13 |
+| hardware_1000 |  |  | 0.925 | 41.5 | - | - | - | - | - | - | >600 | - | 27.1 | 71.3 | 232 | 45.5 | 45.4 | err | >600 | 18.7 | oom | - | 424 | 217 | >600 | - | oom | oom | - | exact | 2.2e-16 / 1.1e-14 | 1.0e-07 / 8.0e-04 |  |  |  |  |  |  |  |  | 4.4e-16 / 1.8e-15 | 2.2e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 |  |  | 6.6e-15 / 7.1e-15 |  |  | 1.7e-14 / 3.2e-12 | 1.7e-14 / 3.2e-12 |  |  |  |
+| hardware_3000 |  |  | 2.95 | 122 | - | - | - | - | - | - | - | - | 317 | >600 | >600 | 524 | 595 | err | - | 52.5 | - | - | >600 | >600 | - | - | - | - | - | exact | 2.2e-16 / 1.1e-14 | 1.0e-07 / 8.0e-04 |  |  |  |  |  |  |  |  | 4.4e-16 / 1.8e-15 |  |  | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 |  |  | 8.3e-15 / 2.5e-14 |  |  |  |  |  |  |  |
+| hardware_10000 |  |  | 11 | err | oom | oom | err | err | err | >600 | >600 | - | >600 | - | - | >600 | >600 | oom | - | err | - | - | - | - | - | - | - | - | oom | exact | 1.1e-16 / 1.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hardware_30000 |  |  | 48 | - | - | - | err | err | - | - | - | - | - | - | - | - | - | oom | oom | oom | - | - | - | - | - | - | - | - | - | exact | 3.3e-16 / 1.1e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hardware_100000 |  |  | 180 | - | - | - | >600 | oom | - | - | - | - | - | - | - | - | - | n/a | n/a | n/a | - | - | - | - | - | - | - | - | - | exact | 1.1e-16 / 1.4e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hardware_300000 |  |  | oom | - | - | - | err | oom | - | - | - | - | - | - | - | - | - | n/a | n/a | n/a | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hardware_1000000 |  |  | oom | - | - | - | err | err | - | - | - | - | - | - | - | - | - | err | err | err | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hardware_bitwidth_5 |  |  | 0.008 | wrong | 3.55 | >600 | 0.03 | 1.5 | 7.68 | 0.502 | 2.7 | oom | 0.198 | 0.202 | 1.24 | 1.68 | 1.49 | 1.15 | 1.13 |  | 0.065 | 0.207 | 1.7 | 0.083 | 0.132 | 8.06 | 0.007 | 0.533 | 0.187 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 | 6.0e-08 / 1.0e+00 |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  | 7.8e-16 / 1.2e-15 | 3.3e-16 / 6.6e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 8.3e-16 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_10 |  |  | 0.009 | wrong | 2.88 | - | 0.028 | 1.36 | 7.33 | 0.53 | 2.76 | - | 0.209 | 0.21 | 516 | 120 | 115 | 1.13 | 1.17 |  | 0.062 | 0.18 | 1.52 | 0.074 | 0.0704 | 8.07 | 0.007 | 0.537 | 0.171 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 | 6.0e-08 / 1.0e+00 |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  | 7.8e-16 / 1.2e-15 | 3.3e-16 / 6.6e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 1.1e-16 / 5.4e-16 | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_20 |  |  | 0.01 | wrong | oom | - | 0.028 | 1.37 | 7.26 | 0.513 | 2.75 | - | 0.194 | 0.198 | >600 | >600 | >600 | 1.15 | 1.23 |  | 0.054 | 0.148 | 1.5 | 0.058 | 0.12 | 8.21 | 0.008 | 0.541 | 0.16 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  | 7.8e-16 / 1.2e-15 | 3.3e-16 / 6.6e-16 |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_50 |  |  | 0.01 | wrong | - | - | 0.029 | 1.36 | 7.05 | 0.508 | 2.76 | - | n/a | n/a | - | - | - | 1.2 | 1.25 |  | 0.058 | 0.148 | 1.53 | 0.057 | 0.0693 | 7.48 | 0.009 | 0.536 | 0.162 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.2e-15 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_100 |  |  | 0.01 | wrong | - | - | 0.028 | 1.36 | 7.04 | 0.507 | 2.74 | - | n/a | n/a | - | - | - | 1.25 | 1.22 |  | 0.057 | 0.148 | 1.52 | 0.088 | 0.0675 | 7.9 | 0.02 | 0.547 | 0.162 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_300 |  |  | 0.01 | wrong | - | - | 0.028 | 1.38 | 7.02 | 0.52 | 2.75 | - | n/a | n/a | - | - | - | 1.24 | 1.29 |  | 0.084 | 0.153 | 1.51 | 0.058 | 0.0698 | 7.95 | 0.031 | 0.559 | 0.161 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_1000 |  |  | 0.009 | wrong | - | - | 0.029 | 1.38 | 7.05 | 0.519 | 2.72 | - | n/a | n/a | - | - | - | 1.22 | 1.25 |  | 0.061 | 0.15 | 1.51 | 0.055 | 0.0663 | 8.46 | 0.07 | 0.599 | 0.168 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_3000 |  |  | 0.01 | wrong | - | - | 0.027 | 1.36 | 7.01 | 0.52 | 2.73 | - | n/a | n/a | - | - | - | 1.24 | 1.25 |  | 0.056 | 0.148 | 1.52 | 0.059 | 0.105 | 6.34 | 0.197 | 0.726 | 0.167 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_10000 |  |  | 0.009 | wrong | - | - | 0.03 | 1.37 | 6.58 | 0.517 | 2.74 | - | n/a | n/a | - | - | - | 1.23 | 1.27 |  | 0.059 | 0.148 | 1.51 | 0.057 | 0.0633 | 7.26 | 0.574 | 1.11 | 0.166 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_30000 |  |  | 0.009 | wrong | - | - | 0.03 | 1.36 | 6.37 | 0.509 | 2.72 | - | n/a | n/a | - | - | - | 1.26 | 1.28 |  | 0.056 | 0.147 | 1.54 | 0.055 | 0.061 | 6.74 | 1.74 | 2.27 | 0.172 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.2e-15 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_100000 |  |  | 0.01 | wrong | - | - | 0.03 | 1.34 | 6.37 | 0.506 | 2.72 | - | n/a | n/a | - | - | - | 1.27 | 1.28 |  | 0.052 | 0.147 | 1.53 | 0.057 | 0.063 | 6.84 | 5.86 | 6.4 | 0.168 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_300000 |  |  | 0.009 | wrong | - | - | 0.03 | 1.38 | 6.4 | 0.512 | 2.72 | - | n/a | n/a | - | - | - | 1.22 | 1.29 |  | 0.055 | 0.149 | 1.54 | 0.056 | 0.062 | 6.24 | 18.5 | 19 | 0.17 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_1000000 |  |  | 0.008 | wrong | - | - | 0.03 | 1.36 | 6.39 | 0.512 | 2.73 | - | n/a | n/a | - | - | - | 1.27 | 1.3 |  | 0.053 | 0.151 | 1.53 | 0.055 | 0.0622 | 6.74 | 68.2 | 68.7 | 0.164 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 9.9e-16 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_3000000 |  |  | 0.009 | wrong | - | - | 0.03 | 1.36 | 6.61 | 0.518 | 2.72 | - | n/a | n/a | - | - | - | 1.22 | 1.31 |  | 0.053 | 0.15 | 1.52 | 0.053 | 0.0612 | 6.68 | 263 | 263 | 0.166 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 8.3e-16 | 2.2e-16 / 2.2e-13 |
+| hardware_bitwidth_10000000 |  |  | 0.008 | wrong | - | - | 0.03 | 1.35 | 6.39 | 0.52 | 2.73 | - | n/a | n/a | - | - | - | 1.26 | 1.32 |  | 0.057 | 0.148 | 1.53 | 0.055 | 0.0611 | 7.06 | >600 | >600 | 0.165 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.2e-15 |  |
+| hardware_bitwidth_100000000 |  |  | 0.009 | wrong | - | - | 0.029 | 1.37 | 6.32 | 0.521 | 2.74 | - | n/a | n/a | - | - | - | 1.24 | 1.27 |  | 0.056 | 0.147 | 1.54 | 0.058 | 0.0609 | 6.94 | - | - | 0.164 | exact | 3.3e-16 / 6.8e-16 | 1.3e-07 / 4.0e+00 |  |  | 1.1e-16 / 5.0e-16 | 3.3e-16 / 3.7e-15 | 2.2e-16 / 5.4e-16 | 3.3e-16 / 1.0e-08 | 1.1e-16 / 6.6e-16 |  |  |  |  |  |  | 2.2e-16 / 5.0e-16 | 2.2e-16 / 6.6e-16 |  | 6.0e-08 / 1.0e+00 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 5.0e-16 / 5.0e-12 | 3.3e-16 / 1.3e-15 | 3.3e-16 / 1.3e-15 |  |
+| hmm_filtering_joint_100 |  |  | 0.014 | >600 | zero | err | >600 | >600 | err | 55.3 | 3.39 | oom | >600 | >600 | 8.66 | err | err | 2.08 | 2.3 |  | zero | 2.79 | 27.5 | 0.355 | 0.277 | 87.1 | 0.057 | 0.773 | 0.635 | exact | 5.8e-32 / 1.5e-13 |  |  |  |  |  |  | 1.9e-19 / 5.2e-01 | 5.8e-32 / 1.6e-13 |  |  |  | 5.9e-32 / 1.6e-13 |  |  | 5.9e-32 / 1.6e-13 | 5.9e-32 / 1.6e-13 |  |  | 5.4e-31 / 1.4e-12 | 5.4e-31 / 1.4e-12 | 5.4e-31 / 1.4e-12 | 5.9e-32 / 1.6e-13 | 5.9e-32 / 1.6e-13 | 5.9e-32 / 1.6e-13 |
+| hmm_filtering_joint_300 |  |  | 0.046 | - | zero | err | - | - | - | >600 | 8.42 | - | - | - | 38.5 | err | err | 2.81 | 3.41 |  | zero | 1.45 | 2.17 | 0.916 | 0.703 | 324 | 0.348 | 1.06 | 2.05 | exact | 3.8e-69 / 2.8e-14 |  |  |  |  |  |  |  | 5.7e-69 / 4.2e-14 |  |  |  | 5.3e-69 / 3.8e-14 |  |  | 5.6e-69 / 4.1e-14 | 5.6e-69 / 4.1e-14 |  |  | 1.2e-67 / 8.9e-13 | 1.2e-67 / 8.9e-13 | 1.2e-67 / 8.9e-13 | 5.4e-69 / 3.9e-14 | 5.5e-69 / 4.0e-14 | 5.5e-69 / 4.0e-14 |
+| hmm_filtering_joint_1000 |  |  | 0.106 | - | wrong | err | - | - | - | - | underflow | - | - | - | >600 | err | err | err | err | 5.93 | underflow | err | err | 12 | >600 | >600 | underflow | underflow | 13 | exact | 5.5e-194 / 1.4e-11 |  | 5.0e-01 / 1.2e+182 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.4e-194 / 1.6e-11 |  |  |  | 5.9e-194 / 1.5e-11 |  |  |  |
+| hmm_filtering_joint_3000 |  |  | 0.351 | - | oom | err | - | - | - | - | >600 | - | - | - | - | >600 | >600 | oom | oom | 12.2 | oom | >600 | err | 97.7 | - | - | 40 | 41.5 | oom | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 |
+| hmm_filtering_joint_10000 |  |  | 1.21 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 31.3 | - | - | >600 | >600 | - | - | oom | oom | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| hmm_filtering_joint_30000 |  |  | 3.64 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 77.4 | - | - | - | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| hmm_filtering_joint_100000 |  |  | 13.2 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 264 | - | - | - | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| hmm_filtering_joint_300000 |  |  | 59.3 | - | - | err | - | - | - | - | - | - | - | - | - | err | err | >600 | >600 | >600 | - | >600 | >600 | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_filtering_joint_1000000 |  |  | oom | - | - | oom | - | - | - | - | - | - | - | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_filtering_joint_3000000 |  |  | - | - | - | oom | - | - | - | - | - | - | - | - | - | oom | oom | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_filtering_marginal_100 |  |  | 0.027 | >600 | 0.165 | err | >600 | 11.9 | err | wrong | 3.29 | oom | 0.181 | 0.189 | 3.9 | 1.3 | 1.31 | 2.13 | 2.26 |  | 0.297 | 0.472 | 25.9 | 0.34 | 0.498 | 76.1 | 0.056 | 0.843 | 0.531 | exact | 6.2e-15 / 1.0e-14 |  | 1.5e-07 / 2.4e-07 |  |  | 5.9e-15 / 9.5e-15 |  | 8.1e-01 / 1.3e+00 | 5.8e-15 / 9.3e-15 |  | 6.0e-15 / 9.6e-15 | 5.7e-15 / 9.1e-15 | 5.9e-15 / 9.5e-15 | 5.6e-15 / 8.9e-15 | 5.6e-15 / 8.9e-15 | 4.9e-15 / 7.8e-15 | 5.6e-15 / 8.9e-15 |  | 1.5e-07 / 2.4e-07 | 2.0e-13 / 3.2e-13 | 2.0e-13 / 3.2e-13 | 2.0e-13 / 3.2e-13 | 5.8e-15 / 9.3e-15 | 5.8e-15 / 9.3e-15 | 6.0e-15 / 9.6e-15 |
+| hmm_filtering_marginal_300 |  |  | 0.042 | - | 0.659 | err | - | 148 | - | >600 | 7.53 | - | 0.285 | 0.291 | 18 | 3.31 | 3.34 | 2.76 | 3.3 |  | 0.598 | 1.36 | 2.17 | 0.808 | 0.797 | 292 | 0.303 | 1.02 | 1.88 | exact | 6.0e-15 / 9.6e-15 |  | 1.5e-07 / 2.4e-07 |  |  | 5.7e-15 / 9.1e-15 |  |  | 5.6e-15 / 8.9e-15 |  | 6.0e-15 / 9.6e-15 | 5.7e-15 / 9.1e-15 | 6.6e-15 / 1.1e-14 | 6.6e-15 / 1.1e-14 | 6.6e-15 / 1.1e-14 | 6.3e-15 / 1.0e-14 | 5.7e-15 / 9.1e-15 |  | 1.5e-07 / 2.4e-07 | 2.0e-13 / 3.2e-13 | 2.0e-13 / 3.2e-13 | 2.0e-13 / 3.2e-13 | 5.8e-15 / 9.3e-15 | 5.8e-15 / 9.3e-15 | 6.2e-15 / 1.0e-14 |
+| hmm_filtering_marginal_1000 |  |  | 0.11 | - | wrong | err | - | >600 | - | - | underflow | - | err | 0.976 | err | err | err | err | err | 5.67 | underflow | err | err | 7.99 | >600 | >600 | underflow | underflow | 12.3 | exact | 3.0e-14 / 4.9e-14 |  | 1.2e-01 / 2.0e-01 |  |  |  |  |  |  |  |  | 3.0e-14 / 4.8e-14 |  |  |  |  |  | 2.1e-13 / 3.4e-13 |  |  |  | 1.7e-13 / 2.7e-13 |  |  |  |
+| hmm_filtering_marginal_3000 |  |  | 2.48 | - | oom | err | - | - | - | - | >600 | - | err | 7.98 | >600 | >600 | >600 | oom | oom | 11 | oom | err | err | 76.9 | - | - | underflow | underflow | oom | exact | 1.1e-13 / 1.8e-13 |  |  |  |  |  |  |  |  |  |  | 1.1e-13 / 1.8e-13 |  |  |  |  |  | 1.0e-10 / 1.6e-10 |  |  |  | 3.1e-13 / 4.9e-13 |  |  |  |
+| hmm_filtering_marginal_10000 |  |  | 3.02 | - | - | err | - | - | - | - | - | - | err | 82.9 | - | - | - | oom | oom | 26.4 | - | >600 | >600 | >600 | - | - | oom | oom | oom | exact | 4.0e-13 / 6.4e-13 |  |  |  |  |  |  |  |  |  |  | 3.9e-13 / 6.3e-13 |  |  |  |  |  | 7.7e-11 / 1.2e-10 |  |  |  |  |  |  |  |
+| hmm_filtering_marginal_30000 |  |  | 3.66 | - | - | err | - | - | - | - | - | - | >600 | >600 | - | - | - | oom | oom | 80.5 | - | - | - | - | - | - | - | - | oom | exact | 9.7e-13 / 1.6e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 6.8e-12 / 1.1e-11 |  |  |  |  |  |  |  |
+| hmm_filtering_marginal_100000 |  |  | 11.8 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 258 | - | - | - | - | - | - | - | - | oom | exact | 3.3e-12 / 5.2e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.4e-08 / 8.6e-08 |  |  |  |  |  |  |  |
+| hmm_filtering_marginal_300000 |  |  | 50.8 | - | - | err | - | - | - | - | - | - | err | - | err | err | err | >600 | >600 | >600 | - | >600 | >600 | - | - | - | - | - | oom | exact | 1.5e-11 / 2.4e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_filtering_marginal_1000000 |  |  | oom | - | - | err | - | - | - | - | - | - | err | - | err | err | err | - | - | - | - | - | - | - | - | - | - | - | >600 | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_filtering_marginal_3000000 |  |  | - | - | - | err | - | - | - | - | - | - | err | - | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_marginal_likelihood_100 |  |  | 0.016 | >600 | zero | err | >600 | >600 | err | 2.94 | 3.01 | oom | >600 | >600 | 11.6 | err | err | 2.1 | 2.39 |  | zero | 0.579 | 27.5 | 0.398 | 0.3 | 100 | 0.049 | 0.767 | oom | exact | 1.7e-48 / 6.1e-14 |  |  |  |  |  |  | 1.7e-48 / 6.1e-14 | 1.8e-48 / 6.3e-14 |  |  |  | 1.7e-48 / 6.1e-14 |  |  | 1.7e-48 / 6.1e-14 | 1.7e-48 / 6.1e-14 |  |  | 3.1e-47 / 1.1e-12 | 3.1e-47 / 1.1e-12 | 3.1e-47 / 1.1e-12 | 1.8e-48 / 6.4e-14 | 1.8e-48 / 6.5e-14 | 1.7e-48 / 6.0e-14 |
+| hmm_marginal_likelihood_300 |  |  | 0.038 | - | zero | err | - | - | - | 60.5 | 4.56 | - | - | - | 73.7 | err | err | 2.98 | 3.73 |  | zero | 1.65 | 2.38 | 1.15 | 0.785 | 369 | 0.257 | 0.996 | - | exact | 2.7e-116 / 1.2e-12 |  |  |  |  |  |  | 2.6e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 |  |  |  | 2.7e-116 / 1.2e-12 |  |  | 2.7e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 |  |  | 2.6e-116 / 1.2e-12 | 2.6e-116 / 1.2e-12 | 2.6e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 | 2.7e-116 / 1.2e-12 |
+| hmm_marginal_likelihood_600 |  |  | 0.098 | - | zero | err | - | - | - | 419 | 8.41 | - | - | - | 529 | err | err | 4.4 | 6.16 |  | zero | 6.25 | 5.42 | 4.34 | 2.05 | >600 | 0.995 | 1.77 | - | exact | 3.2e-219 / 7.0e-12 |  |  |  |  |  |  | 3.2e-219 / 7.0e-12 | 3.2e-219 / 7.0e-12 |  |  |  | 3.2e-219 / 7.0e-12 |  |  | 3.2e-219 / 7.0e-12 | 3.2e-219 / 7.0e-12 |  |  | 3.6e-219 / 7.8e-12 | 3.6e-219 / 7.8e-12 | 3.6e-219 / 7.8e-12 | 3.2e-219 / 7.0e-12 |  | 3.2e-219 / 7.0e-12 |
+| hmm_marginal_likelihood_900 |  |  | 0.13 | - | underflow | err | - | - | - | >600 | 14.2 | - | - | - | >600 | >600 | >600 | 12.3 | 15 |  | underflow | 22 | 15.9 | 15.6 | >600 | - | 2.27 | 3.07 | - | exact | 1.2e-322 / 1.3e-11 |  |  |  |  |  |  |  | 1.2e-322 / 1.3e-11 |  |  |  |  |  |  | 1.2e-322 / 1.2e-11 | 1.2e-322 / 1.2e-11 |  |  | 1.2e-322 / 1.3e-11 | 1.2e-322 / 1.3e-11 | 1.2e-322 / 1.3e-11 |  |  | 1.2e-322 / 1.3e-11 |
+| hmm_smoothing_joint_100 |  |  | 0.014 | >600 | zero | err | oom | >600 | err | 15.4 | 3.35 | oom | >600 | >600 | 8.88 | err | err | 2.05 | 2.26 |  | zero | 0.342 | 1.65 | 0.18 | 0.271 | 87 | 0.055 | 0.769 | 0.602 | exact | 1.3e-31 / 2.0e-13 |  |  |  |  |  |  | 6.3e-19 / 1.0e+00 | 1.3e-31 / 2.0e-13 |  |  |  | 1.3e-31 / 2.0e-13 |  |  | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 |  |  | 1.0e-31 / 1.6e-13 | 1.0e-31 / 1.6e-13 | 1.0e-31 / 1.6e-13 | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 | 1.3e-31 / 2.0e-13 |
+| hmm_smoothing_joint_300 |  |  | 0.036 | - | zero | err | - | - | - | >600 | 8.42 | - | - | - | 42.3 | err | err | 3.06 | 3.87 |  | zero | 1.49 | 2.28 | 0.922 | 0.661 | 324 | 0.326 | 1.03 | 2.4 | exact | 3.1e-67 / 1.3e-12 |  |  |  |  |  |  |  | 3.1e-67 / 1.4e-12 |  |  |  | 3.1e-67 / 1.3e-12 |  |  | 3.1e-67 / 1.4e-12 | 3.1e-67 / 1.4e-12 |  |  | 9.1e-68 / 4.0e-13 | 9.1e-68 / 4.0e-13 | 9.1e-68 / 4.0e-13 | 3.1e-67 / 1.4e-12 | 3.1e-67 / 1.3e-12 | 3.1e-67 / 1.4e-12 |
+| hmm_smoothing_joint_1000 |  |  | 0.123 | - | wrong | err | - | - | - | - | underflow | - | - | - | >600 | err | err | err | err | 6.05 | underflow | err | err | 8.88 | >600 | >600 | underflow | underflow | 16.9 | exact | 2.0e-193 / 2.9e-11 |  | 5.0e-01 / 7.4e+181 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 9.6e-194 / 1.4e-11 |  |  |  | 1.9e-193 / 2.9e-11 |  |  |  |
+| hmm_smoothing_joint_3000 |  |  | 0.313 | - | oom | err | - | - | - | - | >600 | - | - | - | - | >600 | >600 | oom | oom | 11.7 | err | >600 | err | 86.4 | - | - | 36.4 | 37.9 | oom | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  | 0.0e+00 / 0.0e+00 |  |  | 0.0e+00 / 0.0e+00 |
+| hmm_smoothing_joint_10000 |  |  | 1.12 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 30.4 | - | - | >600 | >600 | - | - | oom | oom | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| hmm_smoothing_joint_30000 |  |  | 3.54 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 78.9 | - | - | - | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| hmm_smoothing_joint_100000 |  |  | 12.8 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 258 | - | - | - | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |
+| hmm_smoothing_joint_300000 |  |  | 47 | - | - | err | - | - | - | - | - | - | - | - | - | err | err | >600 | >600 | >600 | - | >600 | >600 | - | - | - | - | - | - | exact | 0.0e+00 / 0.0e+00 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_smoothing_joint_1000000 |  |  | oom | - | - | oom | - | - | - | - | - | - | - | - | - | err | err | n/a | n/a | n/a | - | n/a | n/a | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_smoothing_joint_3000000 |  |  | oom | - | - | oom | - | - | - | - | - | - | - | - | - | oom | oom | - | - | - | - | oom | oom | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_smoothing_marginal_100 |  |  | 0.027 | >600 | 0.165 | err | >600 | 11.8 | err | 2.96 | 3.31 | oom | 0.195 | 0.198 | 3.92 | 1.33 | 1.3 | 2.07 | 2.31 |  | 0.298 | 0.664 | 27.5 | 0.338 | 0.497 | 74.7 | 0.054 | 0.794 | 0.513 | exact | 5.6e-17 / 1.2e-16 |  | 3.5e-07 / 7.8e-07 |  |  | 3.3e-16 / 7.4e-16 |  | 2.2e-16 / 4.9e-16 | 5.6e-17 / 1.2e-16 |  | 5.6e-17 / 1.2e-16 | 1.1e-16 / 2.5e-16 | 1.1e-16 / 2.5e-16 | 5.6e-17 / 1.2e-16 | 5.6e-17 / 1.2e-16 | 2.8e-16 / 6.2e-16 | 2.2e-16 / 4.9e-16 |  | 3.5e-07 / 7.8e-07 | 3.9e-13 / 8.7e-13 | 3.9e-13 / 8.7e-13 | 3.9e-13 / 8.7e-13 | 1.7e-16 / 3.7e-16 | 1.7e-16 / 3.7e-16 | 5.6e-17 / 1.2e-16 |
+| hmm_smoothing_marginal_300 |  |  | 0.066 | - | 0.666 | err | - | 147 | - | 64.3 | 7.6 | - | 0.323 | 0.322 | 18.3 | 3.34 | 3.39 | 2.75 | 3.32 |  | 0.45 | 1.37 | 2.03 | 0.768 | 0.766 | 290 | 0.298 | 1.02 | 1.78 | exact | 6.3e-15 / 1.4e-14 |  | 3.5e-07 / 7.8e-07 |  |  | 8.0e-15 / 1.8e-14 |  | 6.2e-15 / 1.4e-14 | 6.8e-15 / 1.5e-14 |  | 6.3e-15 / 1.4e-14 | 6.3e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 | 6.8e-15 / 1.5e-14 | 6.0e-15 / 1.3e-14 |  | 3.5e-07 / 7.8e-07 | 3.9e-13 / 8.6e-13 | 3.9e-13 / 8.6e-13 | 3.9e-13 / 8.6e-13 | 6.3e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 | 6.2e-15 / 1.4e-14 |
+| hmm_smoothing_marginal_1000 |  |  | 0.11 | - | wrong | err | - | >600 | - | >600 | underflow | - | err | 1.4 | err | err | err | err | err | 5.7 | underflow | err | err | 11.1 | >600 | >600 | underflow | underflow | 10.9 | exact | 3.2e-14 / 7.1e-14 |  | 5.0e-02 / 1.1e-01 |  |  |  |  |  |  |  |  | 3.2e-14 / 7.1e-14 |  |  |  |  |  | 2.0e-13 / 4.5e-13 |  |  |  | 3.6e-13 / 8.0e-13 |  |  |  |
+| hmm_smoothing_marginal_3000 |  |  | 0.315 | - | oom | err | - | - | - | - | >600 | - | err | 12 | >600 | >600 | >600 | oom | oom | 11.4 | oom | err | err | 72.9 | - | - | underflow | underflow | err | exact | 3.2e-14 / 7.1e-14 |  |  |  |  |  |  |  |  |  |  | 3.2e-14 / 7.1e-14 |  |  |  |  |  | 6.8e-12 / 1.5e-11 |  |  |  | 3.6e-13 / 8.0e-13 |  |  |  |
+| hmm_smoothing_marginal_10000 |  |  | 3.52 | - | - | err | - | - | - | - | - | - | err | 126 | - | - | - | oom | oom | 28.5 | - | >600 | >600 | >600 | - | - | oom | oom | - | exact | 1.7e-13 / 3.8e-13 |  |  |  |  |  |  |  |  |  |  | 1.7e-13 / 3.8e-13 |  |  |  |  |  | 1.9e-10 / 4.1e-10 |  |  |  |  |  |  |  |
+| hmm_smoothing_marginal_30000 |  |  | 6.18 | - | - | err | - | - | - | - | - | - | >600 | >600 | - | - | - | oom | oom | 74.6 | - | - | - | - | - | - | - | - | - | exact | 6.5e-13 / 1.4e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 7.4e-11 / 1.6e-10 |  |  |  |  |  |  |  |
+| hmm_smoothing_marginal_100000 |  |  | 12 | - | - | err | - | - | - | - | - | - | - | - | - | - | - | oom | oom | 245 | - | - | - | - | - | - | - | - | - | exact | 2.6e-12 / 5.8e-12 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.0e-10 / 2.3e-10 |  |  |  |  |  |  |  |
+| hmm_smoothing_marginal_300000 |  |  | 54.8 | - | - | err | - | - | - | - | - | - | err | - | err | err | err | >600 | >600 | >600 | - | >600 | >600 | - | - | - | - | - | - | exact | 1.6e-11 / 3.5e-11 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_smoothing_marginal_1000000 |  |  | oom | - | - | err | - | - | - | - | - | - | err | - | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| hmm_smoothing_marginal_3000000 |  |  | - | - | - | err | - | - | - | - | - | - | err | - | err | err | err | - | - | - | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| ladder_100 | 299 | 992 |  | 0.065 | >600 | err | 0.058 | 4.35 | 5.86 | 1.96 | 2.79 | oom | 0.444 | 0.371 | 9.84 | 3.56 | 3.38 | 1.79 | 2.17 |  | 0.128 | 0.314 | 1.5 | 0.211 | 0.3 | 121 | 0.022 | 0.432 | 15 | exact |  | 2.6e-07 / 5.4e-07 |  |  | 0.0e+00 / 0.0e+00 | 1.1e-16 / 2.3e-16 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 2.2e-16 / 4.7e-16 |  | 1.7e-16 / 3.5e-16 | 0.0e+00 / 0.0e+00 | 1.7e-16 / 3.5e-16 | 1.7e-16 / 3.5e-16 | 1.7e-16 / 3.5e-16 | 1.1e-16 / 2.3e-16 | 1.7e-16 / 3.5e-16 |  | 1.6e-07 / 3.3e-07 | 6.8e-14 / 1.4e-13 | 6.8e-14 / 1.4e-13 | 6.8e-14 / 1.4e-13 | 1.1e-16 / 2.3e-16 | 5.6e-17 / 1.2e-16 | 0.0e+00 / 0.0e+00 |
+| ladder_300 | 899 | 2992 |  | 0.183 | - | err | 0.166 | 14.7 | 10.8 | 44.9 | 7.82 | - | 0.593 | 0.649 | 48.8 | 6.06 | 6.06 | 2.78 | 4.36 |  | 0.593 | 1.55 | 3.07 | 1.41 | 0.789 | 343 | 0.061 | 0.471 | 420 | exact |  | 7.3e-07 / 1.7e-06 |  |  | 0.0e+00 / 0.0e+00 | 1.0e-15 / 2.3e-15 | 2.2e-16 / 5.2e-16 | 3.3e-16 / 7.7e-16 | 2.2e-16 / 5.2e-16 |  | 1.1e-16 / 2.6e-16 | 3.9e-16 / 9.0e-16 | 3.3e-16 / 7.7e-16 | 3.3e-16 / 7.7e-16 | 3.3e-16 / 7.7e-16 | 5.6e-17 / 1.3e-16 | 1.7e-16 / 3.9e-16 |  | 4.3e-07 / 1.0e-06 | 3.9e-13 / 9.1e-13 | 3.9e-13 / 9.1e-13 | 3.9e-13 / 9.1e-13 | 1.1e-16 / 2.6e-16 | 1.7e-16 / 3.9e-16 | 2.8e-16 / 6.5e-16 |
+| ladder_1000 | 2999 | 9992 |  | wrong | - | err | 0.565 | 80.2 | 84.9 | >600 | >600 | - | 1.74 | 1.83 | 502 | 46.2 | 46 | 6.42 | 21.6 |  | 5 | 17 | 20.9 | 14.8 | 4.37 | >600 | 0.208 | 0.612 | >600 | exact |  | 1.9e-06 / 6.2e-06 |  |  | 0.0e+00 / 0.0e+00 | 8.1e-15 / 2.7e-14 | 1.0e-15 / 3.3e-15 |  |  |  | 2.8e-16 / 9.2e-16 | 8.3e-16 / 2.7e-15 | 5.6e-17 / 1.8e-16 | 5.6e-17 / 1.8e-16 | 5.6e-17 / 1.8e-16 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 1.8e-16 |  | 2.8e-07 / 9.2e-07 | 4.6e-13 / 1.5e-12 | 4.6e-13 / 1.5e-12 | 4.6e-13 / 1.5e-12 | 3.1e-15 / 1.0e-14 |  | 7.8e-16 / 2.6e-15 |
+| ladder_3000 | 8999 | 29992 |  | wrong | - | err | err | 532 | oom | - | - | - | 9.58 | 13 | >600 | 571 | 508 | 11.8 | wrong |  | oom | 181 | 178 | 133 | >600 | - | 0.783 | 1.2 | - | exact |  | 2.1e-06 / 1.8e-05 |  |  |  | 6.9e-15 / 6.2e-14 |  |  |  |  | 2.9e-16 / 2.6e-15 | 2.4e-16 / 2.1e-15 |  | 6.2e-16 / 5.6e-15 | 6.2e-16 / 5.6e-15 | 2.8e-17 / 2.5e-16 | inf / inf |  |  | 3.0e-13 / 2.7e-12 | 3.0e-13 / 2.7e-12 | 3.0e-13 / 2.7e-12 |  |  | 6.2e-16 / 5.6e-15 |
+| ladder_10000 | 29999 | 99992 |  | 7 | - | err | err | >600 | - | - | - | - | 58.3 | 104 | - | >600 | >600 | 30.4 | err |  | - | >600 | >600 | >600 | - | - | 2.61 | 3.03 | - | exact |  | 3.2e-07 / 9.5e-05 |  |  |  |  |  |  |  |  | 1.4e-17 / 4.3e-15 | 1.1e-17 / 3.2e-15 |  |  |  | 4.3e-19 / 1.3e-16 |  |  |  |  |  |  |  |  | 3.9e-17 / 1.2e-14 |
+| ladder_30000 | 89999 | 299992 |  | wrong | - | err | err | - | - | - | - | - | err | err | - | - | - | 83.5 | err |  | - | - | - | - | - | - | 10.4 | 10.9 | - | exact |  | 3.0e-05 / 1.9e+02 |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.1e-22 / 7.0e-16 |  |  |  |  |  |  |  |  | 3.5e-21 / 2.3e-14 |
+| ladder_100000 | 299999 | 999992 |  | wrong | - | err | err | - | - | - | - | - | - | err | - | - | - | 258 | err |  | - | - | - | - | - | - | 42.9 | 43.5 | - | exact |  | 3.0e-05 / 3.1e+17 |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.8e-37 / 1.9e-15 |  |  |  |  |  |  |  |  | 8.1e-36 / 8.6e-14 |
+| ladder_300000 | 899999 | 2999992 |  | wrong | - | err | err | - | - | - | - | - | - | - | - | - | - | >600 | >600 |  | - | - | - | - | - | - | 125 | 125 | - | exact |  | 3.0e-05 / 8.6e+60 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.6e-79 / 4.7e-14 |
+| ladder_1000000 |  |  |  | oom | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | 524 | 525 | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1.2e-230 / 3.8e-13 |
+| ladder_3000000 |  |  |  | - | - | err | oom | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | >600 | >600 | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| motivating_1000 |  |  | 0.037 | >600 | 24.3 | >600 | oom | 594 | 7.45 | >600 | 8.88 | oom | 0.608 | 0.647 | 53.9 | 9.96 | 9.96 | 3.45 | 4.33 |  | 1.35 | 3.65 | 20.5 | 2.45 | 1.27 | >600 | 0.136 | 0.922 | 5.51 | exact | 5.6e-16 / 2.0e-15 |  | 2.7e-07 / 1.0e-06 |  |  | 5.6e-17 / 2.0e-16 | 2.2e-16 / 8.1e-16 |  | 3.9e-16 / 1.4e-15 |  | 3.9e-16 / 1.4e-15 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-17 / 2.0e-16 |  | 2.7e-07 / 1.0e-06 | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 |
+| motivating_3000 |  |  | 0.103 | - | oom | - | - | >600 | 48.5 | - | 85.4 | - | 3.85 | 4.15 | >600 | 118 | 117 | 7.14 | 16.6 |  | 17 | 40.4 | 24.6 | 25 | >600 | - | 0.486 | 1.32 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  | 2.2e-16 / 8.1e-16 |  | 3.9e-16 / 1.4e-15 |  | 3.9e-16 / 1.4e-15 | 0.0e+00 / 0.0e+00 |  | 0.0e+00 / 0.0e+00 | 0.0e+00 / 0.0e+00 | 5.6e-17 / 2.0e-16 | 5.6e-17 / 2.0e-16 |  | 2.7e-07 / 1.0e-06 | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 |  |  | 0.0e+00 / 0.0e+00 |
+| motivating_10000 |  |  | 0.401 | - | - | - | - | - | err | - | >600 | - | 39.6 | 41.5 | - | >600 | >600 | 17 | 48.2 |  | oom | oom | 246 | 268 | - | - | 1.74 | 2.49 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  | 3.9e-16 / 1.4e-15 | 0.0e+00 / 0.0e+00 |  |  |  | 5.6e-17 / 2.0e-16 | 5.6e-17 / 2.0e-16 |  |  |  | 2.7e-13 / 1.0e-12 | 2.7e-13 / 1.0e-12 |  |  | 0.0e+00 / 0.0e+00 |
+| motivating_30000 |  |  | 1.18 | - | - | - | - | - | - | - | - | - | 338 | 356 | - | - | - | 36.7 | err |  | - | - | >600 | >600 | - | - | 5.49 | 6.24 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  | 3.9e-16 / 1.4e-15 | 0.0e+00 / 0.0e+00 |  |  |  | 5.6e-17 / 2.0e-16 |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| motivating_100000 |  |  | 4.22 | - | - | - | - | - | - | - | - | - | >600 | >600 | - | - | - | 127 | err |  | - | - | - | - | - | - | 22.4 | 23.2 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 2.0e-16 |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| motivating_300000 |  |  | 18.3 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | 411 | err |  | - | - | - | - | - | - | 73.1 | 74.2 | oom | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 5.6e-17 / 2.0e-16 |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| motivating_1000000 |  |  | 60.5 | - | - | - | - | - | - | - | - | - | - | - | - | - | - | n/a | n/a |  | - | - | - | - | - | - | 287 | 288 | >600 | exact | 5.6e-16 / 2.0e-15 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 0.0e+00 / 0.0e+00 |
+| motivating_3000000 |  |  | >600 | - | - | - | - | - | oom | - | - | - | - | - | - | - | - | n/a | n/a |  | - | - | - | - | - | - | >600 | >600 | >600 | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| motivating_9000000 |  |  | - | - | - | - | - | - | err | - | - | - | - | - | - | - | - | err | err |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| network_10 |  |  | 0.008 | wrong | >600 | err | 1.9 | >600 | 8.5 | 1.66 | 3.15 | oom | 0.184 | 0.22 | 3.46 | 1.28 | 1.29 | 1.81 | 2.03 |  | 0.114 | 0.182 | 2.47 | 0.205 | 0.399 | 38.3 | 0.059 | 0.766 | err | exact | 1.2e-15 / 3.0e-14 | 3.7e-07 / 2.7e+01 |  |  | 1.1e-16 / 1.9e-15 |  | 3.3e-16 / 1.9e-15 | 3.3e-16 / 2.0e-08 | 3.3e-16 / 1.6e-15 |  | 5.6e-16 / 2.3e-15 | 2.2e-16 / 1.7e-15 | 5.6e-16 / 2.3e-15 | 5.6e-16 / 1.9e-15 | 5.6e-16 / 1.9e-15 | 6.9e-18 / 1.3e-15 | 3.3e-16 / 1.1e-15 |  | 3.8e-07 / 1.0e+00 | 2.3e-13 / 3.8e-12 | 2.3e-13 / 3.8e-12 | 2.3e-13 / 3.8e-12 | 3.3e-16 / 1.9e-15 | 3.3e-16 / 1.7e-15 | 4.4e-16 / 1.4e-15 |
+| network_30 |  |  | 0.019 | wrong | - | err | 4.39 | - | 9.78 | 48.3 | 5.3 | - | 0.254 | 0.423 | 6.43 | 1.57 | 1.44 | 2.55 | 3.28 |  | 0.25 | 0.396 | err | 0.604 | 0.32 | 122 | 0.279 | 0.989 | - | exact | 3.2e-15 / 5.9e-15 | 2.4e-07 / 1.9e-01 |  |  | 4.4e-16 / 1.4e-15 |  | 2.2e-16 / 8.0e-16 | 3.6e-16 / 1.1e-10 | 1.1e-16 / 8.6e-16 |  | 1.1e-16 / 1.4e-15 | 3.3e-16 / 4.5e-16 | 1.1e-16 / 1.4e-15 | 1.1e-16 / 1.0e-15 | 1.1e-16 / 1.0e-15 | 3.3e-16 / 6.8e-16 | 1.3e-15 / 1.8e-15 |  | 4.5e-07 / 1.9e-01 | 3.0e-13 / 3.4e-12 |  | 3.0e-13 / 3.4e-12 | 1.4e-16 / 1.1e-15 | 2.2e-16 / 9.9e-16 | 2.2e-16 / 1.6e-15 |
+| network_100 |  |  | 0.059 | 9.14 | - | err | 13 | - | 21.3 | >600 | 20.1 | - | 0.652 | 1.7 | 12.4 | 3.98 | 3.43 | 5.03 | 15.7 |  | 1.27 | 2.16 | - | 2.97 | 0.893 | 458 | 2.47 | 3.24 | - | exact | 1.7e-15 / 4.4e-15 | 6.0e-07 / 1.1e-03 |  |  | 1.7e-15 / 4.6e-15 |  | 1.4e-15 / 3.7e-15 |  | 6.7e-16 / 1.7e-15 |  | 7.2e-16 / 2.5e-15 | 8.9e-16 / 2.4e-15 | 7.2e-16 / 2.5e-15 | 5.6e-16 / 2.0e-15 | 5.6e-16 / 2.0e-15 | 1.8e-15 / 4.7e-15 | 1.4e-15 / 3.8e-15 |  | 4.9e-07 / 4.5e-03 | 2.7e-13 / 6.9e-13 |  | 2.7e-13 / 6.9e-13 | 8.9e-16 / 2.4e-15 | 8.9e-16 / 2.4e-15 | 7.2e-16 / 2.9e-15 |
+| network_300 |  |  | 0.159 | 27.1 | - | err | 36.3 | - | err | - | 220 | - | 3.06 | 10.6 | 36.4 | 20 | 17 | 9.69 | 111 |  | 4.94 | 18.3 | - | 18.8 | >600 | >600 | 22.8 | 24 | - | exact | 6.4e-15 / 1.2e-14 | 4.1e-07 / 6.8e-05 |  |  | 2.0e-15 / 4.1e-15 |  |  |  | 2.6e-15 / 5.1e-15 |  | 1.9e-15 / 4.0e-15 | 4.2e-16 / 6.4e-15 | 1.9e-15 / 4.0e-15 | 1.9e-15 / 2.9e-15 | 1.9e-15 / 2.9e-15 | 2.3e-15 / 6.6e-15 | 2.7e-15 / 9.0e-15 |  | 3.8e-07 / 2.1e-04 | 2.5e-13 / 1.4e-12 |  | 2.5e-13 / 1.4e-12 |  |  | 2.4e-15 / 1.1e-14 |
+| network_1000 |  |  | 0.559 | wrong | - | err | err | - | - | - | >600 | - | 30.1 | 112 | 296 | 182 | 182 | 24.6 | >600 |  | oom | 204 | - | 179 | - | - | oom | oom | - | exact | 3.0e-15 / 1.6e-14 | 1.4e-06 / 2.4e-03 |  |  |  |  |  |  |  |  | 3.2e-15 / 1.3e-14 | 5.3e-18 / 9.6e-15 | 3.2e-15 / 1.3e-14 | 2.4e-15 / 1.2e-14 | 2.4e-15 / 1.2e-14 | 1.3e-15 / 5.3e-15 |  |  |  | 1.7e-13 / 1.0e-12 |  | 1.7e-13 / 1.0e-12 |  |  |  |
+| network_3000 |  |  | 1.71 | wrong | - | err | err | - | - | - | - | - | 383 | >600 | >600 | >600 | >600 | >600 | - |  | - | >600 | - | >600 | - | - | - | - | - | exact | 1.0e-14 / 1.0e-14 | 2.7e-06 / 8.1e+01 |  |  |  |  |  |  |  |  | 4.0e-15 / 3.5e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| network_10000 |  |  | 5.89 | err | - | err | err | - | - | - | - | - | >600 | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact | 2.2e-16 / 3.0e-14 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| network_30000 |  |  | 18.9 | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact | 4.6e-15 / 1.1e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| network_100000 |  |  | 129 | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact | 4.6e-15 / 5.9e-13 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| network_300000 |  |  | oom | - | - | err | err | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| network_1000000 |  |  | - | - | - | err | oom | - | - | - | - | - | - | - | - | - | - | - | - |  | - | - | - | - | - | - | - | - | - | exact |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
 Seconds per system, the median over the repetitions; a failure is `>600`
 (timeout), `oom`, `err` or `n/a`; each system's last columns are its

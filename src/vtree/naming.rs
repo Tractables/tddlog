@@ -83,18 +83,20 @@ pub(super) struct Laid {
 
 /// Lays `gp` out along the file's order, or with `fan_in` along the fan-in
 /// walk's ([`positions`]), naming the atoms that cross its narrow cuts.
-pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
+/// `Err` where the allocator refuses the named program room
+/// ([`super::refused`]).
+pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Result<Laid, String> {
     let order = positions(gp, fan_in);
     let facts: Vec<AtomId> = order.iter().copied().filter(|&a| gp.is_fact(a)).collect();
     // A program that reads atoms through indicators already is compiled as
     // it is (`crate::indicators`, `Prepared::of`).
     if !gp.encoding.is_empty() {
-        return Laid { facts, named: None };
+        return Ok(Laid { facts, named: None });
     }
     let (at, boundaries, last) = profile(gp, &order);
     let cuts = hiding(gp, deps, &at, &last, &cuts(&boundaries));
     if cuts.is_empty() {
-        return Laid { facts, named: None };
+        return Ok(Laid { facts, named: None });
     }
     // Each derived atom's unit is its segment, and a cyclic component's
     // atoms share their first's, since the link is between components.
@@ -121,9 +123,9 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
             unit_of[a as usize] = u;
         }
     }
-    let (mut named, units) = indicators::name(gp, unit_of);
+    let (mut named, units) = indicators::name(gp, unit_of).map_err(super::refused)?;
     if named.encoding.is_empty() {
-        return Laid { facts, named: None };
+        return Ok(Laid { facts, named: None });
     }
     // The copies at the start of their segments, each segment's in the
     // order of the atoms they stand for.
@@ -164,10 +166,10 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Laid {
         named.encoding.indicators.len(),
         atoms.len()
     );
-    Laid {
+    Ok(Laid {
         facts: laid,
         named: Some((named, note)),
-    }
+    })
 }
 
 /// `gp` with each body that reads more atoms than [`WIDEST`] written as a
@@ -727,7 +729,7 @@ mod tests {
             .into_iter()
             .map(|facts| {
                 let gp = grounded(&chain_written(8, facts));
-                let laid = lay_out(&gp, &Deps::of(&gp), false);
+                let laid = lay_out(&gp, &Deps::of(&gp), false).unwrap();
                 laid.named.expect("named").1
             })
             .collect();
@@ -799,7 +801,7 @@ mod tests {
                 let gp = chained(gp);
                 assert_eq!(gp.stats.links, 28, "{joint:?}");
                 [false, true].map(|fan_in| {
-                    let laid = lay_out(&gp, &Deps::of(&gp), fan_in);
+                    let laid = lay_out(&gp, &Deps::of(&gp), fan_in).unwrap();
                     laid.named.expect("named").1
                 })
             })
@@ -838,7 +840,7 @@ mod tests {
                 cuts.iter().all(|c| c.width == 1),
                 "fan_in {fan_in}: {cuts:?}"
             );
-            let laid = lay_out(&gp, &Deps::of(&gp), fan_in);
+            let laid = lay_out(&gp, &Deps::of(&gp), fan_in).unwrap();
             let (named, note) = laid.named.expect("named");
             assert!(note.contains("widest 1"), "{note}");
             // Every fact of the rewrite is laid out once.
@@ -963,7 +965,7 @@ mod tests {
             "0.5::a. 0.5::b. 0.5::c. x :- a, b. x :- \\+c. y :- b, c. z :- \\+a, c. query(x). query(y). query(z).",
         );
         for fan_in in [false, true] {
-            let laid = lay_out(&gp, &Deps::of(&gp), fan_in);
+            let laid = lay_out(&gp, &Deps::of(&gp), fan_in).unwrap();
             assert!(laid.named.is_none());
             // The facts in the order's own order.
             let mut facts: Vec<AtomId> = gp.facts().map(|(a, _)| a).collect();

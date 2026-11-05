@@ -170,6 +170,19 @@ class TranslateTests(unittest.TestCase):
             with self.subTest(text=text), self.assertRaisesRegex(Refused, reason):
                 translate(text)
 
+    def test_a_query_with_a_body_of_certain_rules_and_comparisons(self):
+        # the Circulette reader's program: gate/1 a rule over the gates' facts, and the
+        # pairs of gates ordered by a comparison
+        text = ('gate_and(1, 7, 8).\ngate_xor(2, 7, 8).\ngate(G) :- gate_and(G, _, _).\n'
+                'gate(G) :- gate_xor(G, _, _).\n0.01::fault(G) :- gate(G).\n'
+                'faults(A, B) :- fault(A), fault(B).\n'
+                'query(fault(G)) :- gate(G).\nquery(faults(A, B)) :- gate(A), gate(B), A < B.\n')
+        _, _, _, _, asked = translate(text)
+        self.assertEqual(asked, ['fault(1)', 'fault(2)', 'faults(1,2)'])
+        # a body over a relation that is not certain is refused
+        with self.assertRaisesRegex(Refused, 'not a relation of certain facts|has no facts'):
+            translate('0.5::e(1).\nr(X) :- e(X).\n0.5::p(X) :- r(X).\nquery(p(X)) :- r(X).\n')
+
     def test_quoted_atoms_are_symbols(self):
         _, rows, _, _, _ = translate("0.5::f('Hello world').\nquery(f(_)).\n")
         self.assertEqual(rows['f'], ['Hello world'])

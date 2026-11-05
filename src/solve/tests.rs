@@ -222,7 +222,7 @@ fn a_part_is_what_its_queries_and_the_evidence_depend_on() {
         );
     }
     // A program read through indicators is not split.
-    let indicated = crate::indicators::introduce(&gp);
+    let indicated = crate::indicators::introduce(&gp).unwrap();
     if !indicated.encoding.is_empty() {
         assert!(query_parts(&indicated, &SplitBounds::EVERY_GROUP, || true).is_none());
     }

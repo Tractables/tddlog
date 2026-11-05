@@ -149,6 +149,18 @@ class BaselineTests(unittest.TestCase):
                             self.assertAlmostEqual(p, q, places=8)
 
 
+    def test_impossible_evidence_with_nothing_else_asked(self):
+        # one node observed at a value of probability 0, as ground2net.py writes Circulette's
+        # ct_ALU_Controller: a system asked the marginals finds the evidence inconsistent
+        for system, cmd in systems().items():
+            with self.subTest(system=system), tempfile.TemporaryDirectory() as d:
+                model, evid, out = Path(d, 'm.uai'), Path(d, 'm.evid'), Path(d, 'out.MAR')
+                model.write_text('BAYES\n1\n2\n1\n1 0\n2\n1.0 0.0\n')
+                evid.write_text('1 0 1\n')
+                run(cmd + [str(model), str(evid), str(out), 'MAR'])
+                self.assertIsNone(bench.parse_merlin_marginals(out.read_text()))
+
+
 for _name, _cmd in systems().items():
     setattr(BaselineTests, f'test_{_name}', lambda self, n=_name, c=_cmd: self.check(n, c))
 

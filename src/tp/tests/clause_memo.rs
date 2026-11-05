@@ -23,6 +23,7 @@ fn indicated(source: &str) -> crate::GroundProgram {
     crate::indicators::introduce(
         &crate::ground::ground(&program, &crate::GroundOptions::default()).unwrap(),
     )
+    .unwrap()
 }
 
 const BLOCKS: usize = 5;

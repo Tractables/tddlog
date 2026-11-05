@@ -388,7 +388,7 @@ fn bad_and_inert_options_exit_with_status_two() {
         ),
         (
             &["tests/dice/steps.dice", "0.5"],
-            "argument 1, `0.5`, is not a count, which is all a Dice program's places hold",
+            "argument 1, `0.5`, is not a natural number, which is all a Dice program's places hold",
         ),
         (
             &["tests/networks/asia.net", "3"],

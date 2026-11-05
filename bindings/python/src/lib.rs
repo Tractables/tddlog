@@ -148,13 +148,13 @@ impl Solution {
 /// the program's file: each the text of a term that takes the places
 /// ``$1``, ``$2``, ... of the program, as in
 /// ``solve("$1::a. query(a).", arguments=["0.3"])``; in a Dice program a
-/// place is the count of an ``iterate``, and its argument a count.
+/// place stands for an integer, and its argument is a natural number.
 ///
 /// An unknown ``format`` or ``vtree``, ``evidence`` for a program that is
 /// not a network, ``arguments`` for a network, an argument that is not a
-/// term (for a Dice program, not a count) or that no place takes, or
-/// options that ask for nothing raise ``ValueError``; a place without an
-/// argument raises ``tddlog.ParseError``; a
+/// term (for a Dice program, not a natural number) or that no place
+/// takes, or options that ask for nothing raise ``ValueError``; a place
+/// without an argument raises ``tddlog.ParseError``; a
 /// program tddlog cannot answer raises a subclass of ``tddlog.Error``. The
 /// interpreter lock is released for the whole run.
 #[pyfunction]

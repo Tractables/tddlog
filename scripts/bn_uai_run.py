@@ -113,14 +113,19 @@ def run_agrum(kind, sizes, scopes, tables, evid, factors, qvars, want_z):
         ie = gum.LazyPropagation(bn)
         t0 = time.time()
         ie.setEvidence({name[v]: int(u) for v, u in evid.items()})
-        for v in qvars:
-            if v not in evid:
-                ie.addTarget(name[v])
+        targets = [v for v in qvars if v not in evid]
+        for v in targets:
+            ie.addTarget(name[v])
         ie.makeInference()
-        log_z = math.log(ie.evidenceProbability()) if want_z and ie.evidenceProbability() > 0 else (-math.inf if want_z else 0.0)
-        for v in qvars:
-            if v not in evid:
-                marg[v] = np.asarray(ie.posterior(name[v]).toarray(), dtype=float).reshape(-1)
+        log_z = 0.0
+        # without a target (every variable asked is observed: Circulette's ct_ALU_Controller,
+        # whose one node is observed false) the answer is the evidence's probability, 0 where
+        # it is inconsistent, as the other systems find it
+        if want_z or not targets:
+            pe = ie.evidenceProbability()
+            log_z = math.log(pe) if pe > 0 else -math.inf
+        for v in targets:
+            marg[v] = np.asarray(ie.posterior(name[v]).toarray(), dtype=float).reshape(-1)
         return log_z, marg, time.time() - t0
     mrf = gum.MarkovRandomField()
     for v in present:

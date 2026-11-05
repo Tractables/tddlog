@@ -1777,7 +1777,7 @@ fn auto_compiles_an_already_rewritten_program_as_it_is() {
     };
     let gp =
         crate::ground::ground(&crate::syntax::parse_program(source).unwrap(), &options).unwrap();
-    let gp = crate::indicators::introduce(&gp);
+    let gp = crate::indicators::introduce(&gp).unwrap();
     assert!(!gp.encoding.is_empty());
     let run = run(gp, Projection::default(), Ready::default(), false).unwrap();
     assert!(!run.ground.encoding.is_empty());

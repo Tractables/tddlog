@@ -14,8 +14,10 @@
 //   #/integrations         by integration: tddlog alone, and in a pipeline after another system's own code
 //   #/integrations/KEY     one of them: tddlog alone's answers by type; X+tddlog against X on X's programs
 //   #/types                by program type: the five types and all programs, against the systems native to each
+//   #/circuits             the circuits Alea.jl exports, every system on them (results.js's view of a category)
 //   #/coverage             the programs each system's sources hold that tddlog does not run, and why
 //   #/how[/WALK[/N]]       how a program is answered: a run's stages, a walkthrough at its step N
+//   #/methods              how the runs were made and the results counted, a table
 // #/tools/... and #/system/... are the addresses these pages once had. A
 // type of program is results.js's view (#/category/C), with its comparisons
 // head-to-head and translated before the rest; a suite, a family and an
@@ -85,7 +87,7 @@ function versusCells(v, name, n) {
   const side = (who, ...items) => element("div", { class: "side" }, element("span", { class: "who" }, who), cells(...items));
   return element("div", { class: "versus" }, side("", ["instances", count(n ?? v.given)]),
     side(name, ["answers", count(v.answers)], [`total (PAR-${data.measure.par})`, duration(v.total), over]),
-    side(me, ["answers", count(v.tddlog_answers)], [`total (PAR-${data.measure.par})`, duration(v.tddlog_total), over], ["speed-up", speedCell(v), speedup(v, true)]));
+    side(me, ["answers", count(v.tddlog_answers)], [`total (PAR-${data.measure.par})`, duration(v.tddlog_total), over], [speedName("speed-up"), speedCell(v), speedup(v, true)]));
 }
 
 // The cactus plot of x and the members it is with over rows (kindRows' me,
@@ -153,16 +155,17 @@ function draftHome() {
   });
   return [
     element("section", { class: "intro" },
-      element("p", { class: "big" }, "tddlog computes exact probabilities for probabilistic logic programs, Bayesian and Markov networks, "
-        + "and probabilistic functional programs, by compiling them into tree decision diagrams."),
-      element("p", { class: "lede" }, `In its release run it answers ${count(all.answers.tddlog ?? 0)} of ${count(all.instances)} instances of `
-        + `${inWords(data.types.length)} types of program, against ${count(others)} baselines run on the same machines. `,
-        element("a", { href: "playground/" }, "The playground"), " runs it in the browser.")),
+      element("p", { class: "big" }, "tddlog computes exact probabilities for probabilistic logic programs, probabilistic databases, "
+        + "Bayesian and Markov networks, and probabilistic functional programs, by compiling them into tree decision diagrams."),
+      element("p", { class: "lede" }, `It answers ${count(all.answers.tddlog ?? 0)} of ${count(all.instances)} instances of `
+        + `${inWords(data.types.length)} types of program, against ${count(others)} baselines. `,
+        element("a", { href: "playground/" }, "The playground"), " runs it in the browser."),
+      stampLine()),
     element("h2", { class: "home-h" }, "Each type of program against its best baselines"),
     scroller(stacked(element("table", { class: "board home-t" }, element("thead", {}, element("tr", {},
       element("th", { scope: "col" }, "type of program"), element("th", { scope: "col", class: "num" }, "instances"),
       element("th", { scope: "col", class: "num" }, "tddlog answers"),
-      element("th", { scope: "col", title: "the baselines that answer most, each with tddlog's speed-up over it" }, "its best baselines, and tddlog's speed-up"))),
+      element("th", { scope: "col", title: "the baselines that answer most, each with tddlog's speed-up over it" }, "its best baselines, and tddlog's ", speedName("speed-up")))),
     body)), "whole"),
     ...(lines.length ? [element("h2", { class: "home-h" }, "tddlog after another system's own code"), element("ul", { class: "home-int" }, ...lines)] : []),
     note(measureLine()),
@@ -237,13 +240,13 @@ function translatedTable(v, name, rows) {
   return [scroller(stacked(element("table", { class: "board fams-tr" },
     head2(["family", "each family's page shows the programs both read"], ["instances", null, "num"],
       { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
-      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], ["faster", `${me}'s speed-up`, "num"]] }), body)), "whole"),
+      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up`, "num"]] }), body)), "whole"),
   note(`${name} read `, ...whatRead(v.read.system), `; ${me} read `, ...whatRead(v.read.mine), ". Each family's page shows both.")];
 }
 
 // The sections of a baseline's page, by the ids a link names (#/baselines/X/AT).
 const BASELINE_AT = [["head", "Head-to-head"], ["translated", "Translated"], ["language", "Its own language"], ["types", "In each type"],
-  ["own", "Its own benchmarks"], ["exports", "Through an export"], ["coverage", "Coverage"], ["run", "How it was run"]];
+  ["own", "Its own benchmarks"], ["coverage", "Coverage"], ["run", "How it was run"]];
 
 // tddlog against one baseline: head-to-head, translated, in each type of
 // program, its own benchmarks, coverage, how it was run.
@@ -254,7 +257,7 @@ function baselineView(route) {
   const site = s.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
   const head = rows.filter((r) => r.kind === "h"), tr = rows.filter((r) => "smb".includes(r.kind));
   // a section with no instances is left out, with its entry in the nav
-  const has = { head: head.length, translated: tr.length, own: parts.own.length, language: parts.languages.length, exports: s.exports?.length ?? 0 };
+  const has = { head: head.length, translated: tr.length, own: parts.own.length, language: parts.languages.length };
   const at = BASELINE_AT.filter(([id]) => has[id] ?? true);
   const out = [crumbs(HOME, inSection("baselines"), [name]),
     element("h2", { class: "solver" }, swatch(x), `tddlog against ${name}`),
@@ -285,19 +288,6 @@ function baselineView(route) {
   }
   out.push(element("section", { class: "panel", id: "types" }, element("h3", {}, "In each type of program it was given"), ...parts.types));
   if (parts.own.length) out.push(element("section", { class: "panel", id: "own" }, element("h3", {}, "Its own benchmarks"), ...parts.own.slice(1)));
-  // its records on another system's export (Roulette+X): an integration's, apart from its own
-  if (s.exports?.length) {
-    const num = (text) => element("td", { class: "num" }, text);
-    const par = `PAR-${data.measure.par}, over the instances it is given and either answers`;
-    out.push(element("section", { class: "panel", id: "exports" }, element("h3", {}, "Through an export"),
-      note(`Where ${name} read what another system's code exported, as an inference behind that system's front end.`),
-      scroller(stacked(element("table", { class: "board" }, head2(["as"], ["given", null, "num"], ["answers", null, "num"],
-        ["total", par, "num"], ["against", null], ["its total", par, "num"], ["speed-up", null, "num"]),
-      element("tbody", {}, ...s.exports.map((e) => element("tr", {},
-        element("th", { scope: "row" }, link({ view: "integration", key: e.integration }, swatch(e.key), data.names[e.key])),
-        num(count(e.given)), num(count(e.answers)), num(duration(e.vs.total)), element("td", {}, data.names[e.pipeline]),
-        num(duration(e.vs.tddlog_total)), num(speedup(e.vs))))))), "whole")));
-  }
   // coverage: what it answers that tddlog does not, what tddlog answers that it cannot be given, each in a cell;
   // then the programs of its own sources that tddlog does not run, and why
   const p3 = element("section", { class: "panel", id: "coverage" }, element("h3", {}, "Coverage"));
@@ -389,12 +379,12 @@ function integrationView(route) {
   out.push(element("h2", { class: "solver", title: i.about ?? null }, swatch(me), `${i.title} against ${name}`),
     note(`${name}'s own code, then tddlog's inference; the time includes ${name}'s after its warm-up.`,
       ...(i.code ? [" The integration's code: ", element("a", { href: i.code }, i.code.replace("https://github.com/", ""))] : [])),
-    versusCells(v, name, i.instances), note(measureLine()), integrationPlot(i, rows, `int-${k}`));
+    versusCells(v, name, i.instances), note(measureLine()), integrationPlot(i, rows, `int-${k}`), ...whereWins(i, rows, x, me));
   if (alone) {
     out.push(note(`Plain tddlog read another program of each model than ${name} did, with its own front ends; `
       + `it counts as unanswered on the ${plural(i.classes.tddlog.unread, "instance")} it does not read.`));
   }
-  out.push(...engines(i));
+  out.push(...othersOf(i));
   // the families
   const fams = element("tbody");
   const answers = [me, x, ...(alone ? ["tddlog"] : [])];
@@ -411,6 +401,25 @@ function integrationView(route) {
   return out;
 }
 
+// The families most named where an integration's system x is faster than
+// the pipeline me.
+const WINS_NAMED = 5;
+
+// Where an integration's system x is faster than the pipeline me, in one
+// line: its families by the instances x is faster on, as a scatter counts
+// them (results.js's scatter: x answers and me does not, or me answers
+// slower, an instance both answer in under FLOOR left out); [] where none.
+function whereWins(i, rows, x, me) {
+  const faster = (r) => r.t[x] !== null
+    && (r.t[me] === null || (Math.max(r.t[me], r.t[x]) >= FLOOR && Math.max(r.t[me], FLOOR) > Math.max(r.t[x], FLOOR)));
+  const by = i.groups.map((g) => [g, g.rows.filter((j) => faster(rows[j])).length]).filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].title.localeCompare(b[0].title));
+  if (!by.length) return [];
+  const named = by.slice(0, WINS_NAMED).map(([g, n]) => `${g.title} (${count(n)} of ${count(g.rows.length)})`);
+  const more = by.length - named.length;
+  return [note(`Where ${data.names[x]} is faster: ${and([...named, ...(more ? [`${more} more ${more === 1 ? "family" : "families"}`] : [])])}.`)];
+}
+
 // An integration's cactus plot and scatter: the pipeline against its
 // system, and plain tddlog a third line where it read its own program of
 // some of the models.
@@ -423,32 +432,30 @@ function integrationPlot(i, rows, key) {
     scatter(rows, ["tddlog", x], x, false, (r) => r.me));
 }
 
-// The other inference engines behind the exporter's front end (Roulette+ProbLog
-// and the rest): each one's answers and total against the pipeline's, and the
-// time of its answers split into the export's (the exporter's run up to the
-// file it writes) and its own inference's.
-function engines(i) {
-  const xs = i.systems.filter((y) => !isMine(y) && y !== i.system).sort((a, b) => i.answers[b] - i.answers[a]);
-  if (!xs.length) return [];
+// The pipeline's answered time split into the export's (the exporter's run up
+// to what it hands tddlog) and tddlog's inference's, in cells; and, in an
+// integration that is `ported` (Alea.jl+tddlog's), each other system on a
+// program of its own of the model: its answers and total against the
+// pipeline's.
+function othersOf(i) {
   const me = i.pipeline, exporter = data.names[i.system];
   const num = (text) => element("td", { class: "num" }, text);
-  const split = (y) => {
-    const s = i.splits?.[y];
-    return s ? [num(duration(s.seconds)), num(duration(s.export)), num(duration(s.seconds - s.export))] : [num(""), num(""), num("")];
-  };
-  const body = element("tbody", {}, element("tr", { class: "mine" }, element("th", { scope: "row" }, swatch(me), data.names[me]),
-    num(count(i.splits?.[me]?.answers ?? i.answers[me])), ...split(me), num(""), num(""), num("")));
-  for (const y of xs) {
-    const w = i.vs[y];
-    body.append(element("tr", {}, element("th", { scope: "row" }, systemLink(y)), num(count(i.splits?.[y]?.answers ?? i.answers[y])), ...split(y),
-      num(duration(w.total)), num(duration(w.tddlog_total)), num(speedup(w))));
+  const out = [];
+  const s = i.splits?.[me];
+  if (s) {
+    out.push(cells([`${data.names[me]}'s answered time`, duration(s.seconds), `over the ${count(s.answers)} instances it answers`],
+      [`${exporter}'s export`, duration(s.export), `${exporter}'s run up to what it hands tddlog`],
+      ["tddlog's inference", duration(s.seconds - s.export)]));
   }
+  const xs = i.systems.filter((y) => !isMine(y) && y !== i.system).sort((a, b) => i.answers[b] - i.answers[a]);
+  if (!xs.length) return out;
   const par = `PAR-${data.measure.par}, over the instances the system is given and either answers`;
-  return [element("h3", {}, `Behind ${exporter}'s front end`),
-    scroller(stacked(element("table", { class: "board" }, head2(["inference"], ["answers", null, "num"],
-      { group: "its answers' time", cols: [["all", `${exporter}'s export and the inference, over the instances it answers`, "num"],
-        ["export", `${exporter}'s run up to the file it writes`, "num"], ["inference", "the system's own time on the export", "num"]] },
-      { group: "against " + data.names[me], cols: [["total", par, "num"], [data.names[me], par, "num"], ["speed-up", null, "num"]] }), body)), "whole")];
+  const body = element("tbody", {}, ...xs.map((y) => element("tr", {}, element("th", { scope: "row" }, systemLink(y)),
+    num(count(i.given[y])), num(count(i.answers[y])), num(duration(i.vs[y].total)), num(duration(i.vs[y].tddlog_total)), num(speedup(i.vs[y])))));
+  out.push(element("h3", {}, "On a program of their own of the model"),
+    scroller(stacked(element("table", { class: "board" }, head2(["system"], ["given", null, "num"], ["answers", null, "num"],
+      { group: "against " + data.names[me], cols: [["total", par, "num"], [data.names[me], par, "num"], [speedName("speed-up"), null, "num"]] }), body)), "whole"));
+  return out;
 }
 
 // ------------------------------------------------------------- by program type
@@ -486,7 +493,7 @@ function typeSplit(c, route) {
         ...(keep === "h" ? [] : [{ group: "translated for", cols: [["it", "a translation for the system", "num"],
           ["tddlog", "a translation for tddlog", "num"], ["both", "a translation of the original for both", "num"]] }]),
         { group: "the system", cols: [["answers", null, "num"], ["total", par, "num"]] },
-        { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], ["faster", "tddlog's speed-up", "num"]] }), body)), "whole"));
+        { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), "tddlog's speed-up", "num"]] }), body)), "whole"));
       const x = have.includes(route.vs) ? route.vs : have[0];
       const rows = kindRows(c, x).filter((r) => keep.includes(r.kind));
       sec.append(element("p", { class: "small" }, `tddlog against ${data.names[x]} on ${plural(rows.length, "instance")}:`),
@@ -514,10 +521,10 @@ function typesView() {
     element("p", { class: "small" }, element("a", { href: "#/coverage" }, COVERAGE), ": from the systems' own tutorials, tests, papers and repositories, and why."),
     scroller(stacked(element("table", { class: "board types-t" }, element("thead", {}, element("tr", {},
       element("th", { scope: "col" }, "type"), element("th", { scope: "col", class: "num" }, "instances"),
-      element("th", { scope: "col", class: "num", title: "by each instance's subject: tddlog, or the pipeline that ran it" }, "tddlog answers"),
+      element("th", { scope: "col", class: "num", title: "an instance only another system's front end reads counts as unanswered" }, "tddlog answers"),
       element("th", { scope: "col" }, "native systems"),
-      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "head\u2011to\u2011head"),
-      element("th", { scope: "col", class: "num", title: "the systems compared through a translation on some instance" }, "translated"))),
+      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "systems head\u2011to\u2011head"),
+      element("th", { scope: "col", class: "num", title: "the systems compared through a translation on some instance" }, "systems translated"))),
     body)), "whole"),
     element("div", { class: "fig-head" }, element("h3", {}, "Each type against the systems native to it"),
       element("span", { class: "dots" }, element("i", { class: "me" }), "tddlog", element("i", { class: "you" }), "a native system")),
@@ -564,9 +571,10 @@ function coverageView() {
     const v = draft.views.systems[s.key];
     if (!v) continue;
     const [refused, missing] = sums(v);
+    // a count opens the system's coverage, which lists those instances
+    const cell = (n) => element("td", { class: "num" }, n ? link({ view: "baseline", system: s.key, at: "coverage" }, count(n)) : count(n));
     body.append(element("tr", {}, element("th", { scope: "row" }, systemLink(s.key)),
-      element("td", { class: "num" }, count(v.beyond.length)), ...(refusals ? [element("td", { class: "num" }, count(refused))] : []),
-      element("td", { class: "num" }, count(missing))));
+      cell(v.beyond.length), ...(refusals ? [cell(refused)] : []), cell(missing)));
   }
   out.push(element("h3", {}, "In the release run"), note(`Over the ${inWords(data.types.length)} types: what a system answers that tddlog does not, `
     + "and what tddlog answers that the system cannot express or was not given."),
@@ -793,7 +801,7 @@ function howView(route) {
       element("a", { href: `#/how/${x.key}`, title: x.what, "aria-current": x === w ? "page" : null }, x.title)))];
   showMarked(out[out.length - 1]);
   const walk = element("div", { class: "walk" }, note("Loading the trace…"));
-  out.push(walk, counted());
+  out.push(walk, note("How the runs were made and the results counted: ", link({ view: "methods" }, METHODS), "."));
   walkTrace(w.key).then((trace) => {
     const steps = tddlogTrace.steps(trace);
     const i = Math.min(Math.max(route.step ?? 0, 0), steps.length - 1);
@@ -818,18 +826,32 @@ function howView(route) {
   return out;
 }
 
-// How the results are counted (rule 16), the one place that says it whole:
-// under a table, the views say it in one line (measureLine).
-function counted() {
+// The methods table (#/methods), the one place that says how the runs were
+// made and how the results are counted (rules 16 and 20): a row a fact, the
+// runs' from the data (data/systems.json's `methods`), each type's time
+// limits from its rows, the measure from data.measure and the data's stamp.
+// Under a table, the views say the measure in one line (measureLine), and
+// every speed-up's header links here (results.js's speedName).
+function methodsView() {
   const { floor, par, common } = data.measure;
-  const items = [["answers", "Over all of a type's instances: a run out of time or memory, wrong, refused or not given counts as unanswered."],
-    ["total", `Over the instances a system is given and either answers: an unanswered run counts as ${twice(par)} its time limit `
-      + `(PAR-${par}), a time under ${floor} s as ${floor} s.`],
-    ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s), with tddlog's unanswered `
-      + `runs at its limit and the other's where that bound is at least the ratio; none under ${common} in common.`],
-    ["X+tddlog", "X's own code, then tddlog's inference; its time includes X's after its warm-up, so that against X it differs only in the inference."]];
-  return element("section", { class: "counted" }, element("h3", {}, "How the results are counted"),
-    element("dl", { class: "classes" }, ...items.flatMap(([k, text]) => [element("dt", {}, k), element("dd", {}, text)])));
+  const limits = data.categories.filter((c) => c.key !== ALL).map((c) =>
+    `${c.title} ${[...new Set(c.rows.map((r) => r[2]))].sort((a, b) => a - b).join(" or ")} s`);
+  const { date, source } = data.stamp;
+  const group = (title, rows) => element("tbody", {}, element("tr", { class: "group" }, element("th", { scope: "colgroup", colspan: 2 }, title)),
+    ...rows.map(([what, fact]) => element("tr", {}, element("th", { scope: "row" }, what), element("td", {}, fact))));
+  return [crumbs(HOME, inSection("how"), [METHODS]), element("h2", {}, METHODS),
+    element("table", { class: "board methods" },
+      group("How the runs were made", data.methods.flatMap((row) => (row[0] === "memory" ? [row, ["time limits", limits.join("; ")]] : [row]))),
+      group("How the results are counted", [
+        ["answers", "Over all of a type's instances: a run out of time or memory, wrong, refused or not given is unanswered"],
+        [`total (PAR-${par})`, `Over the instances a system is given and either answers: an unanswered run at ${twice(par)} its time limit, `
+          + `a time under ${floor} s at ${floor} s`],
+        ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s), with tddlog's unanswered `
+          + `runs at its limit and the other's where that bound is at least the ratio; none with fewer than ${common} in common`],
+        ["X+tddlog", "X's own code, then tddlog's inference; its time includes X's after its warm-up, so that against X it differs only in the inference"],
+        ["circuits", "Every circuit Alea.jl exports, read by every system and timed without its export; the functional programs among them are also in their type"],
+        ["data", element("span", {}, `Processed ${date}, on public main `,
+          element("a", { href: `https://github.com/Tractables/tddlog/commit/${source}` }, element("code", {}, source)))]]))];
 }
 
 // ------------------------------------------------------------- the routes
@@ -854,7 +876,7 @@ const staleNote = (stale) => note(`These views (views.json) were written from ot
   + "views.py writes them again from the results page's data.");
 
 const DRAFT_VIEWS = { "draft-home": draftHome, baselines: baselinesView, baseline: baselineView, integrations: integrationsView,
-  integration: integrationView, types: typesView, coverage: coverageView, how: howView };
+  integration: integrationView, types: typesView, coverage: coverageView, how: howView, methods: methodsView };
 
 Object.assign(extend, {
   load: async () => {
@@ -875,7 +897,7 @@ Object.assign(extend, {
       return route && parts.length === 3 && BASELINE_AT.some(([id]) => id === at) ? { ...route, at } : null;
     }
     if (first === "system" && parts.length === 2) {
-      return isMine(key) || viaOf(key) ? (data.integrations?.[integrationOf(key)] ? { view: "integration", key: integrationOf(key) } : { view: "integrations" }) : baseline(key);
+      return isMine(key) ? (data.integrations?.[integrationOf(key)] ? { view: "integration", key: integrationOf(key) } : { view: "integrations" }) : baseline(key);
     }
     if (first === "integrations") {
       if (parts.length === 1) return { view: "integrations" };
@@ -883,7 +905,7 @@ Object.assign(extend, {
       // an integration the data does not have yet opens their page
       return data.integrations?.[key] ? { view: "integration", key } : { view: "integrations" };
     }
-    if (parts.length === 1 && (first === "types" || first === "coverage" || first === "how")) return { view: first };
+    if (parts.length === 1 && ["types", "coverage", "how", "methods"].includes(first)) return { view: first };
     if (first === "how" && WALKS.some((w) => w.key === key)) {
       if (parts.length === 2) return { view: "how", walk: key, step: 0 };
       if (parts.length === 3 && /^[1-9]\d{0,2}$/.test(at)) return { view: "how", walk: key, step: Number(at) - 1 };
@@ -892,18 +914,19 @@ Object.assign(extend, {
   },
   href: (route) => ({ "draft-home": "#/", baselines: "#/baselines",
     baseline: `#/baselines/${encodeURIComponent(route.system)}${route.at ? `/${route.at}` : ""}`,
-    integrations: "#/integrations", integration: `#/integrations/${route.key}`, types: "#/types", coverage: "#/coverage",
+    integrations: "#/integrations", integration: `#/integrations/${route.key}`, types: "#/types", coverage: "#/coverage", methods: "#/methods",
     how: route.walk ? `#/how/${route.walk}${route.step ? `/${route.step + 1}` : ""}` : "#/how" })[route.view] ?? null,
   draw: (route) => {
     if (!(route.view in DRAFT_VIEWS)) return null;
     const stale = staleViews();
-    if (stale.length && route.view !== "draft-home" && route.view !== "how" && !route.view.startsWith("integration")) return [staleNote(stale)];
+    if (stale.length && !["draft-home", "how", "methods"].includes(route.view) && !route.view.startsWith("integration")) return [staleNote(stale)];
     return DRAFT_VIEWS[route.view](route);
   },
   title: (route) => ({ "draft-home": null, baselines: sectionName("baselines"), baseline: `tddlog against ${data.names[route.system]}`,
     integrations: sectionName("integrations"), integration: data.integrations?.[route.key]?.title, types: sectionName("types"),
-    coverage: COVERAGE, how: route.walk ? `${sectionName("how")}: ${WALKS.find((w) => w.key === route.walk).title}` : sectionName("how") })[route.view] ?? null,
-  category: (c, route, rows) => (staleViews().length ? [staleNote(staleViews())] : typeSplit(c, route, rows)),
+    coverage: COVERAGE, methods: METHODS, how: route.walk ? `${sectionName("how")}: ${WALKS.find((w) => w.key === route.walk).title}` : sectionName("how") })[route.view] ?? null,
+  // the circuits are no type: views.json splits only the types
+  category: (c, route, rows) => (c.key === APART ? [] : staleViews().length ? [staleNote(staleViews())] : typeSplit(c, route, rows)),
   // a translator's or generator's name in a line on how a file was made, as a link to its source
   made: (html) => html.replace(/<code>([\w-]+\.(?:py|jl|rkt))(\b[^<]*)<\/code>/g, (whole, name, rest) =>
     (draft.views?.scripts.includes(name) ? `<a href="${BRANCH}baselines/scripts/${name}"><code>${name}${rest}</code></a>` : whole)),

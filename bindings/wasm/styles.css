@@ -800,9 +800,7 @@ footer {
 .s-storm { --s: var(--s-storm); }
 .s-prism { --s: var(--s-prism); --d: 6 3; --sws: dashed; }
 .s-provsql { --s: var(--s-provsql); }
-/* a system on another system's export (Roulette+ProbLog): its colour, dotted, or dashed where its own line is dotted */
-.via { --d: 1.5 2.5; --sws: dotted; }
-.s-sppl.via, .s-geni.via { --d: 6 3; --sws: dashed; }
+
 
 /* The results page: a rail to browse its categories, suites and families beside
    one view, and a system's runs of an instance in a drawer at the right.
@@ -1043,6 +1041,9 @@ table.board thead th { position: sticky; top: 0; background: var(--card); white-
 table.board thead tr + tr th { position: static; }
 table.board thead th.group { color: var(--ink); font-weight: 600; text-align: center; border-bottom: 1px solid var(--line); }
 table.h2h td.ratio { font-weight: 600; }
+/* A speed-up's name, a link to the methods table that defines it (speedName). */
+a.defined { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
+svg a.defined text { text-decoration: underline dotted; }
 table.h2h tr.words td { white-space: normal; background: var(--bg); font-size: 14px; }
 table.h2h tr.words p { max-width: 80ch; }
 .finding-text { max-width: 80ch; font-size: 14px; }
@@ -1085,6 +1086,7 @@ div.facts dd { max-width: 80ch; min-width: 0; overflow-wrap: anywhere; }
 /* The type open, its families under it; the baselines past the first ten
    folded under their control, which reads as the entries' link it is. */
 .tree li.cat:has(> ul) > a { color: var(--ink); font-weight: 600; }
+.tree li.legend { padding: 0 0.5rem; color: var(--muted); font-size: 11px; text-align: right; }
 .tree ul.baselines li.more { display: none; }
 .tree ul.baselines.all li.more { display: block; }
 .tree li.toggle button { width: auto; padding: 0.15rem 0.6rem; border: 0; background: none; color: var(--accent); font-size: 12.5px; text-align: left; cursor: pointer; }

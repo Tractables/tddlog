@@ -1,5 +1,15 @@
 {
-  "about": "Each system of the results: what it is, the version and settings the release run used, what it is not given and why, its paper and its link. release/results/rel/panels.py copies it into the results page's categories.json, and each system's page shows it. The facts come from docs/baselines.md and scripts/bench.py; each citation from the system's own repository, site or artifact.",
+  "about": "Each system of the results: what it is, the version and settings the release run used, what it is not given and why, its paper and its link. release/results/rel/panels.py copies it into the results page's categories.json, and each system's page shows it. The facts come from docs/baselines.md and scripts/bench.py; each citation from the system's own repository, site or artifact. `methods` is the rows of the site's methods table (#/methods), how the runs were made, from docs/benchmarks.md and docs/baselines.md, each [what, the fact] ({version} tddlog's); the site adds the time limits and the measure from the data. tests/test_panels.py holds its builds to bl2/version.py's and its answer check to bench.py's.",
+  "methods": [
+    ["machines", "Lab and cloud machines with 16 to 96 physical cores and 125 to 1 488 GB of memory"],
+    ["lanes", "Every run single-threaded and pinned to a physical core of its own, beside other runs in lanes; a suite's systems in one job, tddlog in that job or a later one"],
+    ["memory", "Each process capped at its lane's share of the machine's memory, the same for every system: its address space before 2026-10-28, its memory (a cgroup without swap) since"],
+    ["runs", "2026-10-12 to 2026-11-04"],
+    ["tddlog", "tddlog {version} with its default strategy (auto), linked statically: builds of 2026-10-20 to 2026-11-04, each table's named on the baselines branch; the release's main has every solver change they have"],
+    ["baselines", "Each one's version and settings on its page"],
+    ["reference", "An exact method written for the suite where one answers, else a system in exact arithmetic (Psi, Storm's exact engine, Genfer's rationals), else Alea.jl, ProbLog, Merlin or Ace, in doubles; each instance's page names it"],
+    ["tolerance", "A marginal within 1e-9 of the reference, absolute (the UAI MAR convention), or within both 1e-6 and 0.1% of it beyond the digits either prints; log10 Z within 1e-6 of it, relative to max(1, |log10 Z|)"]
+  ],
   "systems": {
     "tddlog": {
       "about": "Exact inference for probabilistic logic programs by Tp-compilation into tree decision diagrams, built bottom-up.",
@@ -11,24 +21,24 @@
     },
     "alea-tddlog": {
       "about": "Alea.jl's front end with tddlog's inference: Alea.jl runs the program up to the Boolean circuit it builds, and tddlog compiles that circuit, written as a ProbLog program by Alea.jl's tddlog backend, in place of Alea.jl's BDDs. Against Alea.jl it differs only in the inference.",
-      "version": "Alea.jl at revision cf5e5b8 on Julia 1.11.9, then tddlog {version}, linked statically",
+      "version": "The branch tddlog of Tractables/Alea.jl at [12fe923](https://github.com/Tractables/Alea.jl/commit/12fe923acde5fb635badff5136cd94e74d3c5971), Alea.jl's cf5e5b8 with a tddlog backend, on Julia 1.11.9; then tddlog {version}, linked statically",
       "settings": "tddlog's default strategy (auto) on the circuit. Its time is Alea.jl's run up to the circuit and the circuit's writing, timed warm as Alea.jl's own record is, and tddlog's on the circuit. Every other system that reads the circuit, or a translation of it, pays the same time for it.",
       "notgiven": "",
       "cite": null,
-      "link": "https://github.com/Tractables/tddlog"
+      "link": "https://github.com/Tractables/Alea.jl/tree/tddlog"
     },
     "roulette-tddlog": {
       "about": "Roulette's front end with tddlog's inference: Roulette runs the program up to the formulas of its queries, and tddlog compiles them, written as a ProbLog program by Roulette's tddlog engine, in place of Roulette's BDDs. Against Roulette it differs only in the inference.",
-      "version": "Roulette's upstream roulette-lib at revision 60f77cb on Racket 9.3, then tddlog {version}, linked statically",
+      "version": "The branch tddlog of Tractables/roulette at [d86c46c](https://github.com/Tractables/roulette/commit/d86c46c91d0a1a0fd164b3a7f3cf02b6cfd0f0c2), neuppl/roulette's 60f77cb with a tddlog engine, on Racket 9.3; then tddlog {version}, linked statically",
       "settings": "tddlog's default strategy (auto) on the exported program. Its time is Roulette's run up to the export, timed after its warm-up as Roulette's own record is, and tddlog's on the program.",
       "notgiven": "",
       "cite": null,
-      "link": "https://github.com/Tractables/tddlog"
+      "link": "https://github.com/Tractables/roulette/tree/tddlog"
     },
     "problog": {
       "about": "The reference implementation of ProbLog: it grounds the program and compiles it into a d-DNNF or an SDD.",
       "version": "ProbLog 2.3.0",
-      "settings": "Three compilers: d-DNNF (-k ddnnf), SDD (-k sdd) and forward SDD (-k fsdd); each instance counts the fastest. On the Dice paper's loops it is scored on the loops unrolled step by step, the form on which it answers more of them.",
+      "settings": "Three compilers: d-DNNF (-k ddnnf), SDD (-k sdd) and forward SDD (-k fsdd); each instance counts the fastest.",
       "notgiven": "",
       "cite": {"authors": "Daan Fierens, Guy Van den Broeck, Joris Renkens, Dimitar Shterionov, Bernd Gutmann, Ingo Thon, Gerda Janssens and Luc De Raedt", "title": "Inference and learning in probabilistic logic programs using weighted Boolean formulas", "venue": "Theory and Practice of Logic Programming", "year": 2015, "doi": "10.1017/S1471068414000076"},
       "link": "https://github.com/ML-KULeuven/problog"
@@ -36,7 +46,7 @@
     "pita": {
       "about": "Probabilistic Inference with Tabling and Answer subsumption, part of cplint: it tables the program with answer subsumption and builds BDDs with CUDD.",
       "version": "PITA (cplint) on SWI-Prolog 9.2.9",
-      "settings": "The ProbLog program in cplint's syntax (problog2pita.py). On the Dice paper's loops it is scored on the recursion, the form on which it answers more of them.",
+      "settings": "The ProbLog program in cplint's syntax (problog2pita.py).",
       "notgiven": "",
       "cite": {"authors": "Fabrizio Riguzzi and Terrance Swift", "title": "The PITA system: Tabling and answer subsumption for reasoning under uncertainty", "venue": "Theory and Practice of Logic Programming", "year": 2011, "doi": "10.1017/S147106841100010X"},
       "link": "https://friguzzi.github.io/cplint/"
@@ -44,7 +54,7 @@
     "aspmc": {
       "about": "Algebraic answer set counting: it reads ProbLog, breaks cycles by Tp-unfolding and counts a Clark completion guided by a tree decomposition.",
       "version": "aspmc 1.1.1 with sharpSAT-TD",
-      "settings": "The ProbLog program (-m problog), counted by the knowledge compiler sharpSAT-TD. On the Dice paper's loops it is scored on the loops unrolled step by step, the form on which it answers more of them.",
+      "settings": "The ProbLog program (-m problog), counted by the knowledge compiler sharpSAT-TD.",
       "notgiven": "",
       "cite": {"authors": "Thomas Eiter, Markus Hecher and Rafael Kiesel", "title": "Treewidth-aware cycle breaking for algebraic answer set counting", "venue": "KR", "year": 2021},
       "link": "https://github.com/raki123/aspmc"
@@ -115,11 +125,11 @@
     },
     "roulette": {
       "about": "A discrete probabilistic language embedded in Racket, compiled into BDDs through Rosette's symbolic evaluation.",
-      "version": "neuppl/roulette's main (revision 60f77cb) on Racket 9.3",
+      "version": "neuppl/roulette's main at [60f77cb](https://github.com/neuppl/roulette/commit/60f77cb13839cccafd018f4a8281758355492483), on Racket 9.3",
       "settings": "Its PLDI 2025 artifact's programs in its current language (only the #lang line and the query forms change); every Bayesian network in its own BN language (roulette/example/bn) from a BIF file, asked the network tools' questions; other Dice programs through dice2roulette.py. Its time is its program's run once Racket and the program's modules are loaded.",
       "notgiven": "",
       "cite": {"authors": "Cameron Moy, Jack Czenszak, John M. Li, Brianna Marshall and Steven Holtzen", "title": "Roulette: A language for expressive, exact, and efficient discrete probabilistic programming", "venue": "PLDI", "year": 2025, "doi": "10.1145/3729334"},
-      "link": "https://doi.org/10.5281/zenodo.15253254"
+      "link": "https://github.com/neuppl/roulette"
     },
     "nodice": {
       "about": "Exact inference for discrete probabilistic programs with nondeterminism and conditioning, in Dice's syntax.",

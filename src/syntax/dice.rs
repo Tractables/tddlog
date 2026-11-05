@@ -35,12 +35,18 @@
 //! and bits, `s(0)` the initial state's and `s(T + 1)` the body's at step
 //! `T`; the state after the loop is read at the count, `s(k)`; the
 //! body's observations hold at every step, `failed` where one does not,
-//! and the evidence is that it is false (`Translator::iterate`). The
-//! count may be a place `$1`, `$2`, ..., which the program's arguments
-//! fill as they fill a ProbLog program's: the program written holds the
-//! place in its fact `steps($1)` and where it reads the state after the
-//! loop, `s($1)`, so that one program serves every count. A place
-//! stands for nothing else in a Dice program. A function that calls itself is
+//! and the evidence is that it is false (`Translator::iterate`). An
+//! iterate inside a loop's step is expanded as Dice expands every iterate
+//! (its `lib/Passes.ml`): k calls of f in a row, within the step.
+//!
+//! A place `$1`, `$2`, ... stands for an integer of the program (a width,
+//! a value, a bound, a shift or a count), which the program's arguments
+//! give ([`read_with`]), so that one program serves every size. Without
+//! arguments, a place may stand only for an iterate's count, which the
+//! program written then holds in its fact `steps($1)` and where it reads
+//! the state after the loop, `s($1)`, so that one ProbLog program serves
+//! every count, its arguments filling its places as they fill any ProbLog
+//! program's. A function that calls itself is
 //! inlined up to Dice's recursion limit, 10: a call past it is
 //! unreachable, an observation of false on its path, and returns its
 //! declared type's default. The program's return value is queried: every
@@ -88,9 +94,71 @@ use crate::network::rows::fsum;
 /// read at: a syntax error, an unbound variable, a type error, or a
 /// construct the reader does not support.
 pub fn read(source: &str) -> Result<String, ParseError> {
-    let tokens = tokenize(source)?;
+    translate(tokenize(source)?)
+}
+
+/// [`read`] of `source` with its places `$1`, `$2`, ... the integers
+/// `arguments`, each digits, which take the places before the program is
+/// read. Without arguments, it is [`read`]. The errors are [`read`]'s, an
+/// argument that is not a natural number or that no place takes, and a
+/// place without an argument.
+pub fn read_with(source: &str, arguments: &[String]) -> Result<String, crate::Error> {
+    let mut tokens = tokenize(source)?;
+    fill(&mut tokens, arguments)?;
+    Ok(translate(tokens)?)
+}
+
+fn translate(tokens: Vec<Token<'_>>) -> Result<String, ParseError> {
     let program = Parser { toks: tokens, i: 0 }.program()?;
     Translator::new(&program).translate(&program.body)
+}
+
+/// `tokens` with each place `$N` the number `arguments[N - 1]`, where any
+/// are given.
+fn fill<'a>(tokens: &mut [Token<'a>], arguments: &'a [String]) -> Result<(), crate::Error> {
+    if arguments.is_empty() {
+        return Ok(());
+    }
+    let arguments: Vec<&str> = arguments.iter().map(|a| a.trim()).collect();
+    let natural = |a: &str| !a.is_empty() && a.bytes().all(|c| c.is_ascii_digit());
+    if let Some((k, a)) = arguments.iter().enumerate().find(|(_, a)| !natural(a)) {
+        return Err(crate::Error::Options(format!(
+            "argument {}, `{a}`, is not a natural number, which is all a Dice program's places hold",
+            k + 1
+        )));
+    }
+    let mut taken = vec![false; arguments.len()];
+    for t in tokens.iter_mut().filter(|t| t.kind == Tk::Place) {
+        let k = t.text[1..]
+            .parse::<usize>()
+            .ok()
+            .filter(|k| (1..=arguments.len()).contains(k))
+            .ok_or_else(|| {
+                fail(
+                    t.line,
+                    format!(
+                        "`{}` has no argument: the program is given {}",
+                        t.text,
+                        arguments.len()
+                    ),
+                )
+            })?;
+        taken[k - 1] = true;
+        *t = Token {
+            kind: Tk::Num,
+            text: arguments[k - 1],
+            line: t.line,
+        };
+    }
+    if let Some(k) = taken.iter().position(|&t| !t) {
+        return Err(crate::Error::Options(format!(
+            "argument {}, `{}`, is given, and the program has no `${}`",
+            k + 1,
+            arguments[k],
+            k + 1
+        )));
+    }
+    Ok(())
 }
 
 /// Dice's recursion limit (its `lib/Passes.ml`): a function that calls
@@ -132,7 +200,7 @@ enum Tk {
     Id,
     Num,
     Op,
-    /// A place `$N`, which an argument fills: the count of an `iterate`.
+    /// A place `$N` that no argument filled: the count of an `iterate`.
     Place,
     Eof,
 }
@@ -238,12 +306,13 @@ fn cannot(text: &str, pos: usize, line: usize) -> ParseError {
     fail(line, format!("cannot read a Dice token at `{at}`"))
 }
 
-/// A place where the program takes none: a place is an `iterate`'s count.
+/// A place without an argument where the program needs a number: a place
+/// waits for its argument only as an `iterate`'s count.
 fn misplaced(t: Token<'_>) -> ParseError {
     fail(
         t.line,
         format!(
-            "a place `{}` stands only for the count of an iterate",
+            "`{}` has no argument: a place other than an iterate's count needs one",
             t.text
         ),
     )
@@ -295,8 +364,8 @@ enum Kind<'a> {
     Tuple(Box<Expr<'a>>, Box<Expr<'a>>),
 }
 
-/// The count of an `iterate`: a number, or a place `$N` that an argument
-/// fills, written as it stands in the program.
+/// The count of an `iterate`: a number, or a place `$N` that no argument
+/// filled, written as it stands in the program.
 #[derive(Clone, Copy)]
 enum Count<'a> {
     Number(u64),
@@ -364,18 +433,16 @@ const UNSUPPORTED: [&str; 1] = ["sample"];
 ///       | 'iterate' '(' id ',' expr ',' (num | place) ')'
 ///       | 'binomial' '(' num ',' num ',' num ')'
 ///       | 'nth_bit' '(' 'int' '(' num ',' num ')' ',' expr ')'
-///       | 'fst' atom | 'snd' atom | ('head' | 'tail' | 'length') expr7
+///       | ('fst' | 'snd' | 'head' | 'tail' | 'length') expr
 ///       | 'true' | 'false' | id ['(' args ')']
 ///       | '(' expr [',' expr] ')' | '[' expr {',' expr} ']' | '[' ']' ':' type
 /// ```
 ///
-/// `let`, `if` and `observe` extend as far right as they can, as Dice's
-/// parser resolves those conflicts by shifting. Dice's `fst e` and `snd e`
-/// also take the longest `e`, which a well-typed program never uses (no
-/// binary operator returns a tuple), so here they take an atom. `head e`,
-/// `tail e` and `length e` take the longest `e` too, of which a well-typed
-/// program uses `::` alone (`tail xs :: ys` is `tail (xs :: ys)`), so here
-/// they take the operators from `::` up (`expr7`). A chain of
+/// `let`, `if`, `observe`, `fst`, `snd`, `head`, `tail` and `length`
+/// extend as far right as they can, as Dice's parser resolves those
+/// conflicts by shifting: `fst s == x` is `fst (s == x)` and `snd s << 1`
+/// is `snd (s << 1)`, each a type error, as Dice reads them, and
+/// `tail xs :: ys` is `tail (xs :: ys)`. A chain of
 /// `let`s and a chain of `else if`s are read in a loop and held as one
 /// node: programs have thousands.
 struct Parser<'a> {
@@ -637,7 +704,7 @@ impl<'a> Parser<'a> {
         Ok(Expr { line, kind })
     }
 
-    /// An `iterate`'s count: a number or a place.
+    /// An `iterate`'s count: a number or a place without an argument.
     fn count(&mut self) -> Res<Count<'a>> {
         if self.peek().kind == Tk::Place {
             return Ok(Count::Place(self.take().text));
@@ -719,11 +786,11 @@ impl<'a> Parser<'a> {
                 self.op(")")?;
                 Kind::NthBit(w, i, Box::new(x))
             }
-            "fst" => Kind::Fst(Box::new(self.atom()?)),
-            "snd" => Kind::Snd(Box::new(self.atom()?)),
-            op @ ("head" | "tail" | "length") => {
-                let x = Box::new(self.expr(precedence("::").expect("a level"))?);
+            op @ ("fst" | "snd" | "head" | "tail" | "length") => {
+                let x = Box::new(self.expr(0)?);
                 match op {
+                    "fst" => Kind::Fst(x),
+                    "snd" => Kind::Snd(x),
                     "head" => Kind::Head(x),
                     "tail" => Kind::Tail(x),
                     _ => Kind::Length(x),
@@ -2186,6 +2253,42 @@ impl<'a> Translator<'a> {
         self.memos = mark.memos;
     }
 
+    /// `iterate(fname, init, k)` inside a loop's step, as Dice expands it
+    /// (its `lib/Passes.ml`, `expand_iter`): `fname` called k times in a
+    /// row, from `init`, within the step. Each call returns a value of
+    /// the state's type.
+    fn expand(
+        &mut self,
+        fname: &'a str,
+        init: Value,
+        k: &Count<'_>,
+        path: &[Lit],
+        name: &str,
+        line: usize,
+    ) -> Res<Value> {
+        let &Count::Number(k) = k else {
+            return Err(fail(
+                line,
+                format!("an iterate inside a loop needs its count `{k}` given as an argument"),
+            ));
+        };
+        let fun = self.fun(fname, 1, line)?;
+        let t = type_of(&init);
+        let mut value = init;
+        for _ in 0..k {
+            value = self.call(fun, vec![value], path, name, line)?;
+            if type_of(&value) != t {
+                return Err(fail(
+                    line,
+                    format!(
+                        "{fname}: the loop step returns a value of another type than its state"
+                    ),
+                ));
+            }
+        }
+        Ok(value)
+    }
+
     /// `iterate(fname, init, k)` as recursion over a step index, which the
     /// grounder unrolls: the count k a fact `steps(k)` (k a number or a
     /// place, which an argument fills), fname's body once, under `step(T)`
@@ -2219,7 +2322,7 @@ impl<'a> Translator<'a> {
         line: usize,
     ) -> Res<Value> {
         if self.in_loop.is_some() {
-            return Err(fail(line, "iterate inside a loop is not supported"));
+            return self.expand(fname, init, k, path, name, line);
         }
         let start = init.flat();
         let mut state = Loop {
@@ -2971,6 +3074,51 @@ mod tests {
         assert_eq!(program.matches('$').count(), 2, "{program}");
     }
 
+    /// With arguments, a place stands for any integer the program reads,
+    /// and the program is the one written with the integers in their
+    /// places.
+    #[test]
+    fn the_arguments_take_every_place() {
+        let arguments = |a: &[&str]| a.iter().map(|a| a.to_string()).collect::<Vec<_>>();
+        let placed = "fun f(x: int($1)) { x + uniform($1, 0, $2) }\n\
+                      let y = iterate(f, int($1, $3), $4) in nth_bit(int($1, $5), y << $5)";
+        let literal = "fun f(x: int(3)) { x + uniform(3, 0, 5) }\n\
+                       let y = iterate(f, int(3, 2), 2) in nth_bit(int(3, 1), y << 1)";
+        assert_eq!(
+            read_with(placed, &arguments(&["3", "5", "2", " 2", "1"])).unwrap(),
+            read(literal).unwrap()
+        );
+        let error = |a: &[&str]| read_with(placed, &arguments(a)).unwrap_err().to_string();
+        assert_eq!(
+            error(&["3", "5", "2", "2"]),
+            "parse error: line 2: `$5` has no argument: the program is given 4"
+        );
+        assert_eq!(
+            error(&["3", "5", "2", "2", "1", "7"]),
+            "options error: argument 6, `7`, is given, and the program has no `$6`"
+        );
+        assert_eq!(
+            error(&["3", "0.5", "2", "2", "1"]),
+            "options error: argument 2, `0.5`, is not a natural number, which is all a Dice \
+             program's places hold"
+        );
+    }
+
+    /// An iterate inside a loop's step is expanded, as Dice expands it:
+    /// one loop, the outer, whose step holds the inner calls in a row
+    /// (their answers: tests/it/examples.rs).
+    #[test]
+    fn an_iterate_inside_a_loop_is_expanded() {
+        let program = read(
+            "fun g(x: int(3)) { x + int(3, 1) }\n\
+             fun f(x: int(3)) { if flip 0.5 then iterate(g, x, 2) else x }\n\
+             iterate(f, int(3, 0), 3)",
+        )
+        .unwrap();
+        let counts: Vec<&str> = program.lines().filter(|l| l.starts_with("steps")).collect();
+        assert_eq!(counts, ["steps(3)."], "{program}");
+    }
+
     /// Dice accepts a list within 1e-4 of one and normalizes it (each bit
     /// a ratio of sums); noDice's networks print thirds as 0.333333.
     #[test]
@@ -3084,13 +3232,52 @@ mod tests {
             ),
             ("uniform(2, 3, 3)", "empty or out of range"),
             ("flip 0.5 + int(2, 1)", "an integer is expected"),
-            ("flip $1", "stands only for the count of an iterate"),
-            ("int(3, $1)", "stands only for the count of an iterate"),
-            ("let x = $1 in x", "stands only for the count of an iterate"),
+            ("flip $1", "`$1` has no argument: a place other than"),
+            ("int(3, $1)", "`$1` has no argument: a place other than"),
+            (
+                "let x = $1 in x",
+                "`$1` has no argument: a place other than",
+            ),
+            (
+                "fun g(x: bool) { !x }\nfun f(x: bool) { iterate(g, x, $1) }\niterate(f, true, 2)",
+                "an iterate inside a loop needs its count `$1` given as an argument",
+            ),
+            (
+                "fun g(x: bool) { int(2, 1) }\nfun f(x: bool) { iterate(g, x, 2) }\niterate(f, true, 2)",
+                "g: the loop step returns a value of another type than its state",
+            ),
             ("let x = flip 0.5 in $x", "cannot read a Dice token at `$x"),
         ] {
             let e = read(program).expect_err(program);
             assert!(e.msg.contains(error), "{program}: {e}");
+        }
+    }
+
+    #[test]
+    fn projections_take_the_longest_expression_as_dices_do() {
+        // Dice's parser shifts after `fst`, `snd`, `head`, `tail` and
+        // `length`: `fst s == x` is `fst (s == x)` and `snd s << 1` is
+        // `snd (s << 1)`, which Dice refuses as type errors, as here.
+        for (program, error) in [
+            (
+                "let s = (int(2, 1), int(2, 1)) in fst s == int(2, 1)",
+                "== on a tuple",
+            ),
+            (
+                "let s = (int(2, 1), int(2, 1)) in snd s << 1",
+                "an integer is expected",
+            ),
+        ] {
+            let e = read(program).expect_err(program);
+            assert!(e.msg.contains(error), "{program}: {e}");
+        }
+        for program in [
+            "let s = (int(2, 1), int(2, 1)) in (fst s) == int(2, 1)",
+            "let s = (int(2, 1), int(2, 1)) in (snd s) << 1",
+            "let s = (flip 0.5, int(2, 1)) in (fst s, snd s)",
+            "let s = (int(2, 1), (true, int(2, 3))) in if fst (snd s) then snd (snd s) else fst s",
+        ] {
+            read(program).expect(program);
         }
     }
 }

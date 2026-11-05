@@ -165,7 +165,9 @@ fn ground(source: &str, guards: bool) -> tddlog::GroundProgram {
         return tddlog::ground::ground(&program, &GroundOptions::default()).unwrap();
     }
     let options = tddlog::Options::with(Strategy::Trial(Kind::Decision)).ground_options();
-    Kind::Decision.rewrite(tddlog::ground::ground(&program, &options).unwrap())
+    Kind::Decision
+        .rewrite(tddlog::ground::ground(&program, &options).unwrap())
+        .unwrap()
 }
 
 #[test]
@@ -392,7 +394,9 @@ fn branches_lose_the_selector_they_read() {
         views: false,
         ..GroundOptions::default()
     };
-    let gp = Kind::Decision.rewrite(tddlog::ground::ground(&program, &options).unwrap());
+    let gp = Kind::Decision
+        .rewrite(tddlog::ground::ground(&program, &options).unwrap())
+        .unwrap();
     // n under s and under not s, each over a and c or b and c.
     assert_eq!(gp.stats.guarded, 2, "{gp}");
     let text = gp.to_string();

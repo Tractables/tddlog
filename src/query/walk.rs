@@ -224,6 +224,14 @@ impl Join {
         }
     }
 
+    /// The join's operands.
+    fn arity(&self) -> usize {
+        match self {
+            Join::Two(..) => 2,
+            Join::Smallest(items, _) => items.len(),
+        }
+    }
+
     /// Whether `slot` is one of the join's operands.
     fn reads(&self, slot: usize) -> bool {
         match self {
@@ -380,6 +388,9 @@ impl Union {
 /// Planning a node cannot stop; executing its conjunction queue can. A
 /// successful conjunction replaces its two operands, so checkpoints retain
 /// the frontier of the walk rather than its entire computation history.
+/// Each step takes room for the slots and joins it can make before it
+/// changes anything ([`EvidenceWalk::room`]), so that the allocator's
+/// refusal stops the walk where it can resume.
 pub(super) struct EvidenceWalk {
     observed: Vec<(AtomId, bool)>,
     next_observed: usize,
@@ -458,6 +469,16 @@ pub(super) struct EvidenceWalk {
     /// Every batch is given up at its first join.
     #[cfg(test)]
     pub(super) give_up_batches: bool,
+    /// Every third room the walk asks for ([`EvidenceWalk::room`]) is
+    /// refused, so that a step, which asks twice at most, is refused at
+    /// most once before it is taken; the rooms asked for, and those refused
+    /// to [`EvidenceWalk::unbatch`].
+    #[cfg(test)]
+    pub(super) refuse_rooms: bool,
+    #[cfg(test)]
+    pub(super) rooms: usize,
+    #[cfg(test)]
+    pub(super) refused_unbatches: usize,
 }
 
 impl EvidenceWalk {
@@ -507,6 +528,12 @@ impl EvidenceWalk {
             ended_steps: 0,
             #[cfg(test)]
             give_up_batches: false,
+            #[cfg(test)]
+            refuse_rooms: false,
+            #[cfg(test)]
+            rooms: 0,
+            #[cfg(test)]
+            refused_unbatches: 0,
         }
     }
 
@@ -567,6 +594,41 @@ impl EvidenceWalk {
             },
             joins,
         )
+    }
+
+    /// Room for `more` slots and joins, or `OverBudget` where the allocator
+    /// refuses it. The slots of a large evidence take gigabytes, and the
+    /// push that grew them past what the allocator would give aborted the
+    /// run (rl_caesar at 100000 under 40 GiB asked for 1.3 GB), where a
+    /// refusal retires the trial.
+    fn room(&mut self, more: usize) -> Result<(), CompileError> {
+        #[cfg(test)]
+        {
+            self.rooms += 1;
+            if self.refuse_rooms && self.rooms % 3 == 1 {
+                return Err(CompileError::Tdd(OperationError::OverBudget));
+            }
+        }
+        let refused = |_| CompileError::Tdd(OperationError::OverBudget);
+        self.slots.try_reserve(more).map_err(refused)?;
+        self.slot_pairs.try_reserve(more).map_err(refused)?;
+        self.joins.try_reserve(more).map_err(refused)
+    }
+
+    /// The items [`EvidenceWalk::plan_node`] conjoins at `node`, its own
+    /// factors, its children's results and what they put off, and one
+    /// more: each join it plans makes one item of two, and a slot.
+    fn plan_room(&self, tree: &tididi::Vtree, node: VtreeIdx) -> usize {
+        let mut items = self.at[node.idx()].len() + 1;
+        if !tree.node(node).is_leaf() {
+            let (l, r) = tree.children(node);
+            for c in [l, r] {
+                if let Some(b) = &self.built[c.idx()] {
+                    items += 1 + b.put_off.len();
+                }
+            }
+        }
+        items
     }
 
     /// A new slot, empty or holding a formula of `pairs` pairs.
@@ -802,8 +864,23 @@ impl EvidenceWalk {
     /// items, their product goes into the target first, so that the chain
     /// ends the node's step. The chain's last result is minimized in full
     /// (see the module documentation).
-    fn unbatch(&mut self, id: usize) {
+    ///
+    /// The chain makes a slot and a join per operand of the batch's joins
+    /// to come and one more, for which it takes room first.
+    fn unbatch(&mut self, id: usize) -> Result<(), CompileError> {
         let Batch { target, product } = self.batches[id];
+        let operands: usize = self
+            .joins
+            .iter()
+            .filter(|join| self.batch_of.get(&join.out()) == Some(&id))
+            .map(Join::arity)
+            .sum();
+        let room = self.room(operands + 2);
+        #[cfg(test)]
+        {
+            self.refused_unbatches += usize::from(room.is_err());
+        }
+        room?;
         self.in_full.remove(&product);
         let (mut operands, mut outs) = (Vec::new(), Vec::new());
         let batch_of = &self.batch_of;
@@ -886,6 +963,7 @@ impl EvidenceWalk {
         {
             self.unbatched += 1;
         }
+        Ok(())
     }
 
     /// An empty slot for a join's result, built on the scope over `shared`
@@ -1005,6 +1083,7 @@ impl EvidenceWalk {
         let tree = &backend.vtree();
         while self.next_observed < self.observed.len() {
             backend.pause()?;
+            self.room(1)?;
             self.observe_next(backend, compiled, scopes, sizes)?;
         }
         loop {
@@ -1013,12 +1092,18 @@ impl EvidenceWalk {
                 let (a, b, out) = match *join {
                     Join::Two(a, b, out) => (a, b, out),
                     Join::Smallest(..) => {
+                        self.room(1)?;
                         self.split_smallest();
                         continue;
                     }
                 };
-                if self.pending.is_none() && !self.try_join(a, b, out, backend, scopes)? {
-                    continue;
+                if self.pending.is_none() {
+                    // A join rescheduled makes a slot; a batch given up
+                    // takes its own room (`EvidenceWalk::unbatch`).
+                    self.room(1)?;
+                    if !self.try_join(a, b, out, backend, scopes)? {
+                        continue;
+                    }
                 }
                 self.finish_join(a, b, out, backend, sizes, watch)?;
             }
@@ -1049,6 +1134,7 @@ impl EvidenceWalk {
                     continue;
                 }
             }
+            self.room(self.plan_room(tree, node))?;
             self.next_node += 1;
             self.plan_node(tree, node, backend);
         }
@@ -1185,7 +1271,7 @@ impl EvidenceWalk {
         let floor = match batch {
             #[cfg(test)]
             Some(id) if self.give_up_batches => {
-                self.unbatch(id);
+                self.unbatch(id)?;
                 return Ok(false);
             }
             Some(id) => floor.max(self.charged(self.batches[id].target) as u64),
@@ -1275,7 +1361,7 @@ impl EvidenceWalk {
                 self.restore_operands(a, b, fa, fb, backend)?;
                 backend.kept();
                 if let Some(id) = batch {
-                    self.unbatch(id);
+                    self.unbatch(id)?;
                     return Ok(false);
                 }
                 self.slot_pairs[out] = usize::try_from(floor).unwrap_or(usize::MAX);

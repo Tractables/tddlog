@@ -23,7 +23,8 @@ html_css_files = ["site.css"]
 # page's name not a link; on a phone's width the bar wraps between links),
 # and its colours.
 SITE = [("tddlog", "../"), ("By baseline", "../#/baselines"), ("By integration", "../#/integrations"),
-        ("By program type", "../#/types"), ("How it works", "../#/how"), ("Playground", "../playground/"), ("Guide", "../guide/"),
+        ("By program type", "../#/types"), ("Circuits", "../#/circuits"),
+        ("How it works", "../#/how"), ("Playground", "../playground/"), ("Guide", "../guide/"),
         ("Rust API", "../api/"), ("Python", "../python/"), ("C", None), ("GitHub", "https://github.com/Tractables/tddlog")]
 LINKS = [f'<a href="{href}">{name}</a>' if href else f"<b>{name}</b>" for name, href in SITE]
 html_theme_options = {

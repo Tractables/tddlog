@@ -5,8 +5,9 @@
 
 use std::collections::BTreeMap;
 
+use crate::common;
 use tddlog::network::ReadOptions;
-use tddlog::{Format, Options};
+use tddlog::{Format, Kind, Options, Projection, Strategy};
 
 /// A fault's probability, `1 - p-clean` in floating point.
 const FAULT: f64 = 1.0 - 0.99;
@@ -122,6 +123,102 @@ fn a_two_bit_adder() {
             s0 | s1 | c1
         },
     );
+}
+
+/// A `bits`-bit ripple-carry adder in the netlist format, its sum's bits
+/// and the carry out concatenated low bit first or high bit first. The
+/// failure is any bit that is one, so the order of the concatenation is a
+/// writing of the circuit and not a different circuit.
+fn ripple_adder(bits: usize, high_first: bool) -> String {
+    let (a, b) = (|i: usize| 3 + i, |i: usize| 3 + bits + i);
+    let mut lines = Vec::new();
+    for i in 0..bits {
+        lines.push(format!("  ({} (ws 0 (list {i})))", a(i)));
+        lines.push(format!("  ({} (ws 1 (list {i})))", b(i)));
+    }
+    let mut next = 3 + 2 * bits;
+    let mut wire = |lines: &mut Vec<String>, gate: String| {
+        lines.push(format!("  ({next} ({gate}))"));
+        next += 1;
+        next - 1
+    };
+    let mut out = Vec::new();
+    let mut carry = None;
+    for i in 0..bits {
+        let half = wire(&mut lines, format!("w^ {} {}", a(i), b(i)));
+        let both = wire(&mut lines, format!("w& {} {}", a(i), b(i)));
+        carry = Some(match carry {
+            None => {
+                out.push(half);
+                both
+            }
+            Some(c) => {
+                out.push(wire(&mut lines, format!("w^ {half} {c}")));
+                let through = wire(&mut lines, format!("w& {half} {c}"));
+                wire(&mut lines, format!("w|| {both} {through}"))
+            }
+        });
+    }
+    out.extend(carry);
+    if high_first {
+        out.reverse();
+    }
+    let out: Vec<String> = out.iter().map(|w| w.to_string()).collect();
+    format!(
+        "(def-netlist adder\n  #hash((0 . {bits}) (1 . {bits}))\n  #hash((2 . {}))\n  #hash()\n{}\n  (2 (wc (list {}))))\n\n\
+         (define p-clean 0.99)\n(define expected-output (list{}))\n",
+        bits + 1,
+        lines.join("\n"),
+        out.join(" "),
+        " #f".repeat(bits + 1),
+    )
+}
+
+/// The largest formula of `text`'s compile under `strategy`, and its
+/// answers.
+fn compiled(text: &str, strategy: Strategy) -> (usize, Vec<(String, f64)>) {
+    let input = tddlog::read(text.as_bytes(), Format::Circulette, &ReadOptions::default()).unwrap();
+    let options = common::options(strategy, Projection::default());
+    let run = common::run(&input.program, &options).unwrap();
+    let answers = (run.results.as_deref().expect("consistent evidence").iter())
+        .map(|r| (r.to_string(), r.probability))
+        .collect();
+    (run.stats.max_pairs, answers)
+}
+
+/// One adder written with its sum high bit first and low bit first
+/// compiles alike, and small. The pairs and triples of faults the queries
+/// ask tied every two faults together, which made one bag of every fault in
+/// `td`'s decomposition and one block in `closed`'s; and the queries of
+/// the faults kept the gates' atoms that the aliasing removes, numbered in
+/// the order the grounder met them. At six bits the largest formulas were
+/// of 2203 to 8328 pairs, and `td`'s two writings differed 3.8 times; at
+/// eight bits one writing took 1.5 s and the other over 300 s. The queried
+/// cubes now shape no layout and keep no atom (`QueriedCubes` in
+/// `src/ground/shape.rs`, and the aliasing). `td` still breaks the ties of
+/// its elimination by the atoms' numbers, and its two writings differ 1.5
+/// times here.
+#[test]
+fn an_adder_compiles_alike_whichever_way_its_sum_is_listed() {
+    let bounds = [
+        (Strategy::Auto, (6, 5)),
+        (Strategy::Trial(Kind::Closed), (6, 5)),
+        (Strategy::Trial(Kind::Td), (2, 1)),
+    ];
+    for (strategy, (num, den)) in bounds {
+        let (low, low_answers) = compiled(&ripple_adder(6, false), strategy);
+        let (high, high_answers) = compiled(&ripple_adder(6, true), strategy);
+        assert_eq!(low_answers.len(), high_answers.len(), "{strategy:?}");
+        for ((a, p), (b, q)) in low_answers.iter().zip(&high_answers) {
+            assert_eq!(a, b, "{strategy:?}");
+            assert!((p - q).abs() < 1e-9, "{strategy:?}: {a} = {p} against {q}");
+        }
+        let (least, most) = (low.min(high), low.max(high));
+        assert!(
+            most <= 2000 && most * den <= least * num,
+            "{strategy:?}: largest formulas of {low} and {high} pairs"
+        );
+    }
 }
 
 /// A counter: the register's next value, the count up where the enable

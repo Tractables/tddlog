@@ -224,7 +224,7 @@ def test_arguments_take_their_places():
         tddlog.solve(chain, arguments=["10", "0.9", "f("])
     with pytest.raises(ValueError, match="the program has no `\\$1`"):
         tddlog.solve("let x = flip 0.5 in x", format="dice", arguments=["1"])
-    with pytest.raises(ValueError, match="is not a count"):
+    with pytest.raises(ValueError, match="is not a natural number"):
         tddlog.solve("iterate(f, true, $1)", format="dice", arguments=["0.5"])
     # A Dice program's count as its argument: three steps that each flip x
     # with probability 0.5 leave it true with probability 0.5.

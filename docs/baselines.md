@@ -117,7 +117,11 @@ example the ProbLog family, PITA, aspmc, Scallop and PSouffle; Ace, Merlin
 and the network tools on the
 ground networks of a converted program; and the Dice family on the Dice
 programs written from it. A run that passes
-the limit with it counts as a timeout. A system that reads the
+the limit with it counts as a timeout. A circuit is its content past the
+first line, the exporter's comment naming the program file: the export of
+caesar (one program, `caesar.jl`, its length an argument) keeps the
+timing of the four files it replaced (0.02 s warm, under the cutoff), since the circuits
+are the same. A system that reads the
 benchmark's original program pays nothing (Dice and the systems that
 translate a Dice program themselves, Alea.jl on its own programs, Ace,
 Merlin and the network tools on a network's own file), and neither does
@@ -471,8 +475,8 @@ rule, its programs captured in the same job:
 - the standard suite's programs and networks, the
   literature suite, TPC-H, Biomine, Ace's and the large networks, the
   UAI MAR set (marginals and partition function) and the two PR sets
-  (P(e)), as the ProbLog family's tables give them (rd1_docs.py's
-  `SC_TABLES`, cross tables of every kind);
+  (P(e)), as the ProbLog family's tables give them (cross tables of
+  every kind);
 - the PPL suites: the Dice paper's programs, networks and loops,
   the scaled loops, Alea.jl's circuits and noDice's programs, Roulette's
   programs, the bit-blasted circuits and Geni's programs, each as the
@@ -498,7 +502,7 @@ Until 2026-10-29 the harness ran it at k = 1000 (and 10), as an
 approximation (`--approx`) left out of the public tables, where the
 error reached zero only on the smallest programs; the release run's
 records of those k (the standard, literature and network suites, TPC-H
-and Biomine) are dropped by the processing (`rel/rerun.py`).
+and Biomine) are dropped by the processing.
 
 Scallop stratifies negation by relation and refuses a program whose
 relation reads its own negation, even where the ground atoms do not
@@ -641,7 +645,7 @@ backend writes as evidence on an atom defined false
 (`false_observation :- fail.`) and the script wrote on an atom without
 clauses, which tddlog refused; no run's program has one. A run installs
 it with `ALEA_COMMIT=12fe923acde5fb635badff5136cd94e74d3c5971
-install_alea.sh`; the baseline's records run cf5e5b8.
+install_alea.sh`; the baseline's records run cf5e5b8. The four arith_caesar records of Alea.jl (caesar.jl) ran at 12fe923a, cf5e5b8 plus src/inference/tddlog.jl, its test, an include and the README: Alea.jl's own path is cf5e5b8's.
 
 `PYTHON` is the interpreter PyCall builds against, for Alea's SymPy
 dependency; it needs `sympy` (1.9 was used). Julia takes 1 GB and the
@@ -941,9 +945,31 @@ in exponent notation, in which the network programs write a small one
 programs, nearly all for it. bench.py writes such a probability out in positional
 notation, the same double (`aspmc_numbers`). The grammar has no `is`
 either, which the Dice loops' step rules use (`T1 is T + 1`): bench.py
-writes it as clingo's `=` (`aspmc_is`). It still rejects some
+writes it as clingo's `=` (`aspmc_is`). clingo projects an anonymous
+variable out of a body of two or more literals into an atom without a symbol,
+and aspmc looks up every ground rule's head by its symbol, so that
+`0.5::b(1,1). 0.5::b(1,2). o(1). c :- o(W), b(W, _). query(c).` stops it with
+`KeyError` in `_process_grounding` (aspmc 1.1.1, clingo 5.5.2 to 5.8.2, every
+option of aspmc's): bench.py names each `_` (`V1`, `V2`...; `aspmc_variables`),
+which means the same. aspmc's grammar reads only `[A-Z][a-zA-Z0-9]*` as a
+variable and any other (`_V1`, `_X`, `A_b`) as a constant, so that a
+probabilistic rule's groundings that differ only there share one choice
+(`_V1` gave cplint's eruption 0.42 for ProbLog's 0.588): bench.py gives each
+such variable a name of that form too, one wherever it occurs. It still rejects some
 programs with a parser error (bn_insurance); check the coverage on the
 installation a run uses.
+
+On the program the Circulette reader writes of a netlist with gates
+(`tddlog --program NAME.cql`), which writes `_` in seven rules (`failure :-
+output(W), bit(W, _).`), aspmc stopped so on 38 of the 42 netlists
+(2026-11-04); the same KeyError stopped it on 157 TPC-H instances and on
+cplint_epidemic and cplint_eruption. With each `_` named it reads them
+(ct_fullAdder: P(fault(29) | failure) = 0.2032715, as tddlog), and those
+records are replaced by a run on the named program. A
+KeyError that remains is aspmc failing on a program its language
+expresses: an error, given and unanswered, not a refusal, and no ground
+program is asked for. It looks like a bug of aspmc's ProbLog front end,
+reportable with the program above; nothing has been filed.
 
 ---
 
@@ -1225,8 +1251,11 @@ six decimals, noDice six with its last unrounded, Geni seven, ProbLog and
 PSouffle eight significant digits, the network tools' drivers twelve),
 or when it is within 1e-9 of it: differences under 1e-9 count as
 floating-point noise. The reference is
-the exact record, else Alea.jl's, ProbLog's, Merlin's or Ace's (whose
-answers of 0 or NaN, its underflow in doubles, are never a reference),
+the exact record, else a system's that computes in exact arithmetic
+(Psi's rationals, Storm's exact engine, Genfer's rational runs on its own
+Dice programs), else Alea.jl's, ProbLog's, Merlin's or Ace's, which
+compute in doubles (Ace's answers of 0 or NaN, its underflow, are never a
+reference),
 and tddlog's only where none of them answers (the page then says checked
 against tddlog only); the reference itself is checked against none. log10 Z is
 checked against the clique tree's (else Merlin's PR task, Ganak's or
@@ -1451,8 +1480,8 @@ scripts/roulette2problog.rkt until 2026-11-03 and writes the same
 programs, but for evidence that is false, which it writes as evidence on
 an atom defined false and which no run's program has. It is installed apart, under `$HOME/local/roulette-tddlog`, on
 the same Racket, Rosette and roulette-x86_64-linux, with a copy of
-Circulette compiled by its Racket, which `bench.py gen
---circulette-racket` runs (`install_roulette_tddlog.sh`).
+Circulette compiled by its Racket, which `bench.py run
+--circulette-tddlog` runs (`install_roulette_tddlog.sh`).
 
 The paper's artifact (Zenodo 10.5281/zenodo.15253254, CC-BY-4.0, a
 2.6 GB Docker image whose Roulette is camoy/roulette at
@@ -1758,30 +1787,63 @@ sizes, `ct_fulladder` (`adder/fullAdder8.v`'s ripple-carry adder at N bits,
 and 4 the files `openfpga_mac_2.v` and `openfpga_mac_4.v`, which differ in
 comments alone). Every netlist expects all-false outputs.
 
+tddlog reads a netlist itself (`tddlog --evidence-probability NAME.cql`,
+its Circulette reader): its program has a fact `gate_K(G, ...)` per live
+logic gate, in Circulette's order of the faults, the failure as its
+evidence and the queries `fault(G)`, `faults(A,B)` and `faults(A,B,C)`
+(A < B < C), every single, pair and triple; P(fail) is the evidence's
+probability. Where no fault makes the outputs differ, the evidence is
+inconsistent and there is no posterior (`inconsistent`, as Roulette's
+P(fail) 0). gen writes NAME.pl, the program `tddlog --program NAME.cql`
+prints of it, beside the netlist (`gen_circulette`), and every answer is
+keyed as its queries.
+
 Roulette (`roulette:rsdd`) runs `racket circulette.rkt NAME.cql` as the
 Makefile does, `raco make` before the clock, under `scripts/roulette_timer.rkt`,
 which loads Racket, Roulette and the program's imports, then runs the
 program and reports its run's seconds: Roulette's time after its warm-up
-(`inproc_seconds`), the process's beside it. Its
-printed posteriors are keyed as the program's queries (`run_circulette`)
-and P(fail) is kept as `p_fail`. circulette.rkt computes every posterior
-and prints a single's above 0, a pair's above 2e-4 and a triple's above
-1e-8, so a posterior it leaves out counts as answered where the reference
-puts it at or below that threshold, and as left out otherwise
-(`printed_answers`). Roulette+tddlog is tddlog on the ProbLog program that
-Roulette's tddlog engine writes from circulette.rkt's own run with
-Roulette's engine replaced by one that records each `infer`:
-P(fail) is the evidence's probability, which tddlog prints under
-`--evidence-probability`, and each posterior a query's answer. The export
-is charged to Roulette+tddlog and every other system that reads the
-program, timed over three pinned runs: the exporter's own seconds,
-circulette.rkt's run up to the hand-off (`program_s`, the span
-roulette_timer.rkt times Roulette by) and the program's writing
-(`circuit_s`), without Racket's start and the modules' load, which the
-records keep as the runs' wall times.
-An export past 1.5 times the limit leaves no program, and its readers are
-out of time. The ProbLog family reads the same program, and the network
-tools its ground program (section 23).
+(`inproc_seconds`), the process's beside it. Its printed posteriors, by
+Circulette's fault indices, are keyed by the gates of NAME.pl
+(`run_circulette`) and P(fail) is kept as `p_fail`. circulette.rkt computes
+every posterior and prints a single's above 0, a pair's above 2e-4 and a
+triple's above 1e-8, so a posterior it leaves out counts as answered where
+the reference puts it at or below that threshold, and as left out otherwise
+(`printed_answers`). Roulette+tddlog (`--roulette-tddlog` with
+`--circulette-tddlog`, the Circulette compiled by the engine's Racket) runs
+circulette.rkt with Roulette's engine replaced by one that records each
+`infer`, up to the ProbLog program of its calls, and tddlog on that
+program under `--evidence-probability`; its time is circulette.rkt's run
+up to the hand-off (`program_s`), the program's writing (`circuit_s`) and
+tddlog's, in the process, and its answers are keyed by the gates
+(`circulette_circuit_answers`).
+
+The ProbLog family reads NAME.pl (PITA through `problog2pita.py`, PSouffle
+through `problog2souffle.py`) and the network tools and Scallop its ground
+program (section 23), each charged the time of `tddlog --program NAME.cql`,
+timed over three pinned runs. On
+`ct_ALU_Controller`, which has no live gate and so asks no query and fails
+under no fault, the answer is the inconsistent evidence: each system's way
+of saying P(e) = 0 is read as it (ProbLog's InconsistentEvidenceError,
+PSouffle's `Inconsistent evidence`, aspmc's and Scallop's P(e) of 0 or no
+proof of it, PITA's driver asking P(e) where there is no query, the network
+tools' `STATUS false`); these records are the reference, so a record that
+answers no query and does not say so is wrong, and one that stops with an
+error a failure. PSouffle and Scallop do not support the netlists with
+gates: their `bit/2` and `value/1` read each other through negation, which
+neither's stratified negation expresses, and a system whose language has
+first-order rules is not given the ground program. The netlists' run
+(2026-11) gave both the ground program there, and the processing counts
+those records as their refusals; it drops Scallop's record on
+`ct_ALU_Controller`, made on the ground program, and the capture's calls
+of the two on it. That run ran tddlog, Roulette, Roulette+tddlog and these
+systems in the same lanes on Roulette's upstream 60f77cb. In the run before
+it (2026-11-01) every system but Roulette read the program Roulette's
+tddlog engine writes: tddlog's records there are Roulette+tddlog's,
+charged that export, which the run timed, with their answers, keyed by the
+calls of Roulette's `infer`, keyed as the queries of the program tddlog's
+reader writes; the other systems' records there are dropped, since an
+integration is X+tddlog alone and the plain systems read the program
+tddlog's reader writes.
 
 The Dice family (Dice, Alea.jl, noDice, Psi, Genfer, SPPL, Geni, Pluck)
 is not given these programs: Circulette's question is all 1 + n + C(n,2)
@@ -2644,6 +2706,13 @@ the same model) has the class of the program it is written from.
 | pita | std | `uwcse` | own | cplint's UW-CSE grown in students, as PITA's evaluation grows it (ICLP 2010) |
 | problog | lit | `(sickness\|mastermind)` | own | the dynamic ProbLog programs of Vlasselaer et al. (IJAR 2016) |
 | problog | lit | `pgrid` | own | the probabilistic grid of ProbLog2's evaluation (Fierens et al., TPLP 2015) |
+| tddlog, problog, aspmc | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | native | the circuit Alea.jl exports of the program, as the ProbLog program its tddlog backend writes |
+| dice, nodice | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | native | the circuit Alea.jl exports of the program, as the Dice programs of its gates (alea_bench.jl) |
+| pita | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | translated | the circuit's ProbLog program translated by problog2pita.py |
+| psouffle | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | translated | a Soufflé program written rule for rule from the circuit's ProbLog program (problog2souffle.py) |
+| scallop | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | translated | the ground program of the circuit's ProbLog program, as Scallop relations and rules (ground2scallop.py) |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | translated | a network of Boolean variables built from the ground program of the circuit's ProbLog program (ground2net.py) |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, storm, prism | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | translated | the Dice programs of the circuit's gates (alea_bench.jl), translated into the system's language (dice2roulette.py and the like) |
 | tddlog | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | native | the network itself, read by tddlog's network reader (BIF, Hugin, GeNIe, UAI) |
 | tddlog | roulette | `rl_bn_` | native | the Roulette paper's Bayesian networks, read by tddlog's network reader |
 | ace | std_bn, large | all | native | a Hugin network, Ace's own input (a + in a number dropped where Ace's reader refuses one) |
@@ -2680,9 +2749,17 @@ the same model) has the class of the program it is written from.
 | dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
 | nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
 | alea | ppl | `pluck_` | translated | the Dice.jl versions of Pluck's sequence models in the paper's artifact, ported to Alea.jl (Pluck's own programs are the models) |
-| alea-tddlog | ppl | `pluck_` | translated | the Alea.jl port of Pluck's sequence model (Pluck's own programs are the models), whose circuit Alea.jl hands to tddlog, and to each other system X of Alea.jl+X as Alea.jl+tddlog's circuit row says |
-| alea-tddlog | ppl, bitblast | `(bb\|arith\|pluck)_` | native | the Alea.jl program, which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog as ProbLog (Alea.jl's tddlog backend), and to each other system X of Alea.jl+X as that ProbLog program, its ground program's network (ground2net.py) or the Dice programs of its gates, translated into X's language where X reads another (dice2roulette.py and the like) |
-| roulette-tddlog | circulette | all | native | the netlist, which circulette.rkt runs on Roulette's package roulette-lib up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine), and to each other system X of Roulette+X as that ProbLog program, a Soufflé program of it (problog2souffle.py), Scallop relations of its ground program (ground2scallop.py) or a network of its ground program (ground2net.py) |
+| alea-tddlog | ppl | `pluck_` | translated | the Alea.jl port of Pluck's sequence model (Pluck's own programs are the models), which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog as ProbLog (Alea.jl's tddlog backend) |
+| alea, alea-tddlog | roulette | `rl_diamond_` | native | the diamond of Alea.jl's tour at the instance's size (data/alea/verification/diamond.jl), which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog by Alea.jl+tddlog |
+| alea, alea-tddlog | roulette | `rl_ladder_` | translated | the Dice paper's ladder ported to Alea.jl, which has none (data/alea/verification/ladder.jl), which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog by Alea.jl+tddlog |
+| alea-tddlog | ppl, bitblast | `(bb\|arith\|pluck)_` | native | the Alea.jl program, which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog as ProbLog (Alea.jl's tddlog backend) |
+| roulette-tddlog | circulette | all | native | the netlist, which circulette.rkt runs on Roulette's package roulette-lib up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
+| tddlog | circulette | all | native | the netlist, read by tddlog's Circulette reader |
+| problog, aspmc | circulette | all | translated | the ProbLog program tddlog --program writes of the netlist |
+| pita | circulette | all | translated | the ProbLog program tddlog --program writes of the netlist, translated by problog2pita.py |
+| psouffle | circulette | all | translated | a Soufflé program written rule for rule from the ProbLog program tddlog --program writes of the netlist (problog2souffle.py) |
+| scallop | circulette | all | translated | the ground program of the ProbLog program tddlog --program writes of the netlist, as Scallop relations and rules (ground2scallop.py) |
+| ace, merlin, agrum, pgmpy, libdai, tensorinference | circulette | all | translated | a network of Boolean variables built from the ground program of the ProbLog program tddlog --program writes of the netlist (ground2net.py) |
 | roulette-tddlog | roulette | all | native | the Roulette paper's program, which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
 | roulette-tddlog | dice, ppl, geni | all | translated | a Dice program translated for Roulette (dice2roulette.py), which Roulette runs up to the formulas of its queries, handed to tddlog as ProbLog (Roulette's tddlog engine) |
 | tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
@@ -2828,8 +2905,10 @@ variables the clauses share, is an integer, and a symbol otherwise.
   second one does not compile): a second ground atom of a relation is
   asked through a relation of no arguments of its own (`q__0() :- p(1,
   2).`), and several queries with variables of one relation are one
-  query of every tuple of it. A query with a body over certain facts
-  (smokers' `query(smokes(X)) :- person(X).`) is its ground queries.
+  query of every tuple of it. A query with a body over certain relations
+  and comparisons (smokers' `query(smokes(X)) :- person(X).`, the
+  Circulette reader's `query(faults(A, B)) :- gate(A), gate(B), A < B.`
+  over `gate(G) :- gate_and(G, _, _).`) is its ground queries.
   `queries.txt` lists the queries as tddlog prints their atoms.
 
 It refuses (exit 3, `unsupported`) lists, function symbols, a disjunction
@@ -2838,7 +2917,15 @@ variable no positive literal binds and arithmetic on symbols. An
 annotated disjunction inside a recursion (pedigree's and bloodtype's
 inheritance) is refused too: the k-th head negates the earlier choices,
 whose rules read the recursion, and Soufflé stratifies negation by
-relation only.
+relation only. The Circulette reader's programs of netlists with gates are
+refused so: `bit/2` and `value/1` read each other through negation over a
+circuit's DAG of gates, and PSouffle does not support them. It is not
+given their ground program, since a system whose language has first-order
+rules reads a first-order program, never `tddlog --ground`'s output; the
+netlists' run's records of that route (`psouffle_route: ground`) count as unsupported, for
+a negation through recursion (section Circulette). Evidence that PSouffle reports inconsistent
+(`Inconsistent evidence: A is deterministically false`) is its answer, as
+ProbLog's InconsistentEvidenceError is.
 
 `bench.py run --psouffle SOUFFLE` translates the instance, compiles the
 program with `souffle --full-only compute.dl -o compute` and runs

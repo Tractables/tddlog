@@ -292,14 +292,16 @@ def recursive(rules):
 
 
 def translate(text):
-    """(clauses, queries, evidence) of a ProbLog program, as PITA wants them.
+    """(clauses, queries, evidence, certain) of a ProbLog program, as PITA wants them.
 
     `clauses` are LPAD clauses without the `begin_lpad` markers, led by a
     `table` declaration for every predicate that can reach itself, `queries`
     the query terms in program order, `evidence` a list of goals to
-    conjoin."""
+    conjoin, followed by the certain clauses the queries' bodies may read
+    (`certain_clauses`)."""
     clauses, queries, evidence, rules, facts = [], [], [], [], {}
     _, negated = defined(text)
+    plain, uncertain = {}, set(negated)   # the rules without a probability; the predicates of probabilistic clauses
     for clause in split_clauses(strip_comments(text)):
         clause = ' '.join(clause.split())
         if clause.startswith(':-'):
@@ -311,8 +313,8 @@ def translate(text):
         if m:
             # `query(Q) :- Body.` asks Q for every solution of Body over the
             # deterministic part. PITA has no such directive, so the driver
-            # enumerates the body itself over a plain copy of the facts it
-            # reads (`generators` below).
+            # enumerates the body itself over a plain copy of the certain
+            # clauses it reads (`generator` below).
             queries.append((m.group(1).strip(), body.strip() if body else None))
             continue
         m = re.fullmatch(r'evidence\((.*)\)', clause)
@@ -334,6 +336,14 @@ def translate(text):
             f = functor(head)
             if f:
                 facts.setdefault(f.split('/')[0], []).append(head.strip())
+        disjuncts = split_top(head, ';')
+        for d in disjuncts:
+            parts = split_top(d, ':')
+            f = functor(parts[2] if len(parts) == 3 and parts[1] == '' else parts[0])
+            if f and (len(disjuncts) > 1 or len(parts) > 1):
+                uncertain.add(f)
+            elif f and body is not None:
+                plain.setdefault(f, []).append((d.strip(), body.strip()))
         head = head_disjuncts(head).strip()
         if body is None:
             head = certain_fact(head)
@@ -346,31 +356,63 @@ def translate(text):
         clauses.append(f'{name}{args} :- {POS}{name}{args}, \\+ {NEG}{name}{args}.')
         rules.append((f, [POS + f, NEG + f]))
     tables = [f':- table {p}.' for p in sorted(recursive(rules))]
-    return tables + clauses, queries, evidence, facts
+    return tables + clauses, queries, evidence, certain_clauses(facts, plain, uncertain)
 
 
 GEN = 'query_gen_'
 
 
-def generator(body, facts):
-    """(renamed body, copies of the facts it reads) for the body of a
-    `query(Q) :- Body.` directive. The copies sit outside the LPAD under a
-    prefixed name: PITA rewrites every predicate inside the block, arguments
-    and all, and the driver only needs to enumerate ground facts."""
-    copies, renamed = [], body
-    for f in dict.fromkeys(body_functors(body)):
-        name = f.split('/')[0]
-        if name not in facts:
+def certain_clauses(facts, plain, uncertain):
+    """{name: [(clause, body)]}: the certain facts of each predicate (body
+    None), and the rules without a probability of each predicate the program
+    states for certain: one with no probabilistic clause whose rules read
+    only such predicates and builtins (`plain`: {name/arity: [(head,
+    body)]}; `uncertain`: the predicates of probabilistic clauses)."""
+    known = set(plain) | uncertain | {functor(c) for cs in facts.values() for c in cs}
+    sure = (known - uncertain) - {None}
+    changed = True
+    while changed:
+        changed = False
+        for f in sorted(sure):
+            if any(g in known and g not in sure for _, body in plain.get(f, ()) for g in body_functors(body)):
+                sure.discard(f)
+                changed = True
+    out = {name: [(c, None) for c in cs] for name, cs in facts.items()}
+    for f in sorted(sure & set(plain)):
+        if not f.endswith('/0'):
+            out.setdefault(f.split('/')[0], []).extend((f'{h} :- {b}', b) for h, b in plain[f])
+    return out
+
+
+def generator(body, certain):
+    """(renamed body, copies of the clauses it reads) for the body of a
+    `query(Q) :- Body.` directive: the certain facts of its predicates, and
+    the rules and facts of the certain predicates it reads (`certain_clauses`),
+    each once. The copies sit outside the LPAD under a prefixed name: PITA
+    rewrites every predicate inside the block, arguments and all, and the
+    driver only enumerates the deterministic part (the Circulette reader's
+    `query(fault(G)) :- gate(G).` over `gate(G) :- gate_and(G, _, _).`)."""
+    names, todo = [], [f.split('/')[0] for f in body_functors(body)]
+    while todo:
+        name = todo.pop(0)
+        if name in names or name not in certain:
             continue
-        copies += [re.sub(rf'^{re.escape(name)}\b', GEN + name, fact) + '.' for fact in facts[name]]
-        renamed = re.sub(rf'\b{re.escape(name)}\s*\(', GEN + name + '(', renamed)
-    return renamed, copies
+        names.append(name)
+        todo += [g.split('/')[0] for _, b in certain[name] if b is not None for g in body_functors(b)]
+    if not names:
+        return body, []
+    call = re.compile(r'\b(' + '|'.join(map(re.escape, names)) + r')\s*\(')
+    gen = lambda text: call.sub(lambda m: GEN + m.group(1) + '(', text)   # noqa: E731
+    copies = [(re.sub(rf'^{re.escape(name)}\b', GEN + name, c) if b is None else gen(c)) + '.'
+              for name in names for c, b in certain[name]]
+    return gen(body), copies
 
 
-def main_lines(queries, evidence, renamed, facts):
-    """main/0, which asks every query, after the copies of the facts its
-    queries' bodies enumerate (`generator`), as lines."""
-    lines = []
+def main_lines(queries, evidence, renamed, certain):
+    """main/0, which asks every query, after the copies of the clauses its
+    queries' bodies enumerate (`generator`), each once, as lines; without a
+    query, it asks the evidence."""
+    lines, seen = [], set()
     goal = 'prob(Q, P)' if not evidence else f"prob(Q, ({', '.join(evidence)}), P)"
     show = 'format("~q:\\t~w~n", [Q, P])'
     if renamed:
@@ -382,9 +424,18 @@ def main_lines(queries, evidence, renamed, facts):
         if body is None:
             enumerators.append(f'Q = {term}')
         else:
-            gen, copies = generator(body, facts)
-            lines += copies
+            gen, copies = generator(body, certain)
+            # once: a copy given twice gives each solution twice, and each its prob/3 again
+            new = [c for c in dict.fromkeys(copies) if c not in seen]
+            seen.update(new)
+            lines += new
             enumerators.append(f'{gen}, Q = {term}')
+    if not enumerators and evidence:
+        # no query: the answer is the evidence's probability, as tddlog's
+        # `evidence is inconsistent` where it is 0 (bench.parse_answers)
+        lines += ['main :-', f"    prob(({', '.join(evidence)}), P),",
+                  '    (P =:= 0 -> format("evidence is inconsistent~n") ; format("P(e):\\t~w~n", [P])).']
+        return lines
     lines.append('main :-')
     # prob/2 backtracks over the instances of a query with variables:
     # each is printed, as ProbLog asks every instance of such a query.

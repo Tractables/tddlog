@@ -55,7 +55,7 @@ const extend = { parse: () => null, href: () => null, draw: () => null, title: (
 // The site's sections, in the order of the bar at the top of every page and
 // of the menu, by their front page's address: their names are these, here
 // only (the pages' bars, which tests/next.cjs holds to them, name them too).
-const SECTIONS = [["baselines", "By baseline"], ["integrations", "By integration"], ["types", "By program type"], ["how", "How it works"]];
+const SECTIONS = [["baselines", "By baseline"], ["integrations", "By integration"], ["types", "By program type"], ["circuits", "Circuits"], ["how", "How it works"]];
 const sectionName = (key) => SECTIONS.find(([k]) => k === key)[1];
 // The first crumbs of a view: the front page, and the section the view is in.
 const HOME = ["Home", { view: "section", key: "" }];
@@ -72,16 +72,9 @@ const WALK_TITLES = [["reach", "Reachability with cycles"], ["gears", "Negation 
 // menu's order, and the integration a member of tddlog's is.
 const INTEGRATIONS = ["tddlog", "alea", "roulette"];
 const integrationsOf = () => INTEGRATIONS.filter((k) => data.integrations?.[k]);
-const integrationOf = (x) => (x === "tddlog" ? "tddlog" : viaOf(x)?.[0] ?? x.replace(/-tddlog$/, ""));
-// A system on another system's export (Roulette+ProbLog: ProbLog on what
-// Roulette's code exported, categories.json's `via`): [the exporter, the
-// system]; null for any other key. Its line and swatch take the system's
-// colour, dotted (`tint`), and its address is its integration's.
-const viaOf = (x) => data.via?.[x.replace(/-process$/, "")] ?? null;
-const tint = (key) => {
-  const v = isMine(key) ? null : viaOf(key);
-  return v ? `s-${v[1]} via` : `s-${base(key)}`;
-};
+const integrationOf = (x) => (x === "tddlog" ? "tddlog" : x.replace(/-tddlog$/, ""));
+// A system's colour, its line's and its swatch's.
+const tint = (key) => `s-${base(key)}`;
 
 // The time axis starts at 0.2 s: runs under 0.2 s are not told apart.
 const FLOOR = 0.2;
@@ -90,11 +83,11 @@ const FLOOR = 0.2;
 // form before the colon, the whole in a cell's title.
 const FAILURES = {
   timeout: [(limit) => `>${limit}`, "the time limit ran out"],
-  memout: [() => "memory", "out of memory: the address space a run gets, or the Java heap"],
+  memout: [() => "memory", "over the memory limit: the memory each run may take (its resident memory, or in the earlier runs its address space; Methods gives them), or the Java heap"],
   error: [() => "error", "the system stopped with an error"],
   unsupported: [() => "n/a", "the system cannot express the program: a translator refuses what its target language lacks (lists, division and recursion in a Dice program's translation; negation through recursion, or more than two million conjunctions, in a ground program's network), as aspmc's harness refuses an observation with a body"],
-  skipped: [() => "skipped", "not run: the system had run out of time or memory on a smaller size of the same program"],
-  wrong: [() => "wrong", "a wrong answer: off the reference by more than 1e-9 and either by more than 1e-6 or by more than 1e-3 of it, beyond the last digit either of the two prints"],
+  skipped: [() => "skipped", "after a smaller size failed: not run, since the system had run out of time or memory on a smaller size of the same program in the same run"],
+  wrong: [() => "wrong", "off the reference: an answer off it by more than 1e-9 and either by more than 1e-6 or by more than 1e-3 of it, beyond the last digit either of the two prints"],
   zero: [() => "zero", "every answer 0: printed as 0 where the reference's are positive"],
   underflow: [() => "underflow", "every answer 0, underflowing: printed as 0 where the probability of the evidence is below the smallest double"],
   unread: [() => "not read", "not read by tddlog: only another system's front end reads the program, so tddlog counts as unanswered"],
@@ -104,6 +97,12 @@ const failureKey = (v, limit) => element("span", { title: FAILURES[v][1] }, `${F
 // All programs: the union of the types of program, every system on every
 // program it is given (categories.json's last category).
 const ALL = "all-programs";
+// The circuits: every circuit Alea.jl exports, which every system reads under
+// its plain name (categories.json's `circuits`, a category's entry), a
+// section of its own apart from the types.
+const APART = "circuits";
+// A category's entry by its key: a type's, all programs', or the circuits'.
+const categoryOf = (key) => data.categories.find((c) => c.key === key) ?? (data.circuits?.key === key ? data.circuits : undefined);
 
 // A time in a table is shaded by how many times slower it is than its
 // instance's fastest, up to this many.
@@ -252,10 +251,6 @@ const isMine = (key) => key === "tddlog" || key.endsWith("-tddlog");
 // and its time there.
 const myKey = (r) => Object.keys(r.v).find((x) => isMine(x) && r.v[x] !== null);
 const myTime = (r) => r.t[myKey(r)] ?? null;
-// The one of them system x is compared with on a row on x's own page: its own
-// pipeline (X+tddlog, which differs from x only in the inference) where it ran,
-// else the row's subject.
-const pairKey = (x) => (r) => ((r.v[`${x}-tddlog`] ?? null) !== null ? `${x}-tddlog` : myKey(r));
 // The subjects of rows (tddlog first), and how many of the rows they answer.
 const subjectsOf = (rows, key = myKey) => [...new Set(rows.map(key))].filter(Boolean)
   .sort((a, b) => (b === "tddlog") - (a === "tddlog") || a.localeCompare(b));
@@ -352,6 +347,10 @@ function head2(...items) {
   }
   return element("thead", {}, top, below);
 }
+
+// A speed-up's name in a header or a cell's label, a link to the methods
+// table that defines it (rule 20) on the front page.
+const speedName = (label) => element("a", { href: `${front}#/methods`, class: "defined" }, label);
 
 // A <details> whose body is built when it is first opened.
 function lazy(attributes, summary, build) {
@@ -721,26 +720,46 @@ const totals = (v, name) => `the ${plural(v.either, "instance")} ${name} is give
 
 // A category's headline, in cells: the answers of the rows' subjects (tal,
 // tally's), and with several of tddlog and its pipelines each one's of the
-// instances it was given; the best native system's (the most answers, then
-// the least speed-up; on all programs the best other system's) and tddlog's
-// speed-up over it.
+// instances it was given (headMembers); the best native system's (the most
+// answers, then the least speed-up; on all programs the best other system's)
+// and tddlog's speed-up over it.
 function headline(c, rows, tal, only) {
-  const ms = c.systems.filter((x) => isMine(x) && tal[x].given > 0);
   const best = ranked(c, c.native.filter((x) => tal[x]?.given > 0), tal, only)[0];
   const v = best && versus(c, best, only);
   const which = c.key === ALL ? "other" : "native";
   const box = cells([`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(rows.length)}`],
-    ...(ms.length < 2 ? [] : ms.map((x) => [data.names[x], `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`])),
+    ...headMembers(c, rows, tal).map(([x, label]) => [label, `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`]),
     ...(v ? [[`best ${which}: ${data.names[best]}`, count(tal[best].answers), `the ${which} system with the most answers`],
-      ["speed-up over it", speedup(v), `${subject(v.me)}'s speed-up over ${data.names[best]}`]] : []));
+      [speedName("speed-up over it"), speedup(v), `${subject(v.me)}'s speed-up over ${data.names[best]}`]] : []));
   box.classList.add("headline");
   return box;
+}
+
+// With several of tddlog and its pipelines in a category, the members its
+// headline gives a cell of their own after the subjects' answers, each with
+// its label: a pipeline's answers, and a subject's of those it reads where it
+// does not read every instance; a subject given every one repeats the first
+// cell and has none.
+function headMembers(c, rows, tal) {
+  const ms = c.systems.filter((x) => isMine(x) && tal[x].given > 0), subjects = subjectsOf(rows);
+  if (ms.length < 2) return [];
+  return ms.filter((x) => !subjects.includes(x) || tal[x].given < rows.length)
+    .map((x) => [x, subjects.includes(x) ? `${data.names[x]} answers, of those it reads` : `${data.names[x]} answers`]);
 }
 
 // How the totals and the speed-up are counted, in one line under a table
 // (rule 16), from the data's parameters of the measure (data.measure,
 // panels.py's); How it works holds the whole definition.
 const twice = (par) => (par === 2 ? "twice" : `${par} times`);
+// When and on which commit of the source tree the data were processed
+// (categories.json's stamp), the one data every headline is from: the
+// README's quote the same.
+function stampLine() {
+  const { date, source } = data.stamp;
+  return element("p", { class: "muted small stamp" }, `Results as of ${date}, public main `,
+    element("a", { href: `https://github.com/Tractables/tddlog/commit/${source}` }, element("code", {}, source)), ".");
+}
+
 function measureLine() {
   const { floor, par, common } = data.measure;
   return `An unanswered run counts as ${twice(par)} its time limit (PAR-${par}) and a time under ${floor} s as ${floor} s; `
@@ -803,7 +822,10 @@ function drawOverview(box) {
     for (const y of clear ? [top - 12, height - 10] : [height - 10]) plot.append(svg("text", { class: "tick", x: lx(t), y, "text-anchor": "middle" }, label));
   }
   plot.append(svg("text", { class: "col", x: answersRight, y: top - 12, "text-anchor": "end" }, "answers"));
-  plot.append(svg("text", { class: "col", x: ratio, y: top - 25 }, "tddlog"), svg("text", { class: "col", x: ratio, y: top - 12 }, "faster"));
+  // the speed-up's header, a link to the methods table that defines it (speedName)
+  const faster = svg("a", { href: `${front}#/methods`, class: "defined" });
+  faster.append(svg("text", { class: "col", x: ratio, y: top - 25 }, "tddlog"), svg("text", { class: "col", x: ratio, y: top - 12 }, "faster"));
+  plot.append(faster);
   let y = top;
   // A row: its name and answers, its marks, and the whole row a link.
   const line = (to, label, cls, name, answers, ...marks) => {
@@ -848,13 +870,15 @@ function drawOverview(box) {
     if (others.systems.length) {
       const who = others.systems.map((x) => data.names[x]);
       const several = who.length > 1;
-      // their names where they fit (about 6.5 px a letter), on hover in any case
-      const tail = `${several ? "each more than " : ""}${atLeast(others.total)} in total`;
-      const text = [`${and(who)}: ${tail}`, tail, `${several ? "each over " : ""}${atLeast(others.total)}`].find((t) => t.length * 6.5 <= x1 - x0)
-        ?? `${several ? "each over " : ""}${atLeast(others.total)}`;
+      // their names where they fit (about 6.5 px a letter), on hover in any case; a bound on
+      // their totals only where each has an instance it or tddlog answers (a total above 0)
+      const bound = others.total ? atLeast(others.total) : null;
+      const tail = bound ? `${several ? "each more than " : ""}${bound} in total` : "";
+      const short = bound ? `${several ? "each over " : ""}${bound}` : "";
+      const text = [bound ? `${and(who)}: ${tail}` : and(who), tail, short].find((t) => t.length * 6.5 <= x1 - x0) ?? short;
       const r = others.speedup;
-      line(to, `${and(who)}: ${several ? "each " : ""}more than ${atLeast(others.total)} in total over the instances `
-        + `${several ? "each" : "it"} is given and either answers (PAR-${data.measure.par})`
+      line(to, `${and(who)}` + (bound ? `: ${several ? "each " : ""}more than ${bound} in total over the instances `
+        + `${several ? "each" : "it"} is given and either answers (PAR-${data.measure.par})` : "")
         + (r === null ? "" : `; ${subject(ms)}'s speed-up ${r >= 1 ? `at least ${times(r, 1, true)}` : `at most ${times(1, r)} slower`}`),
       "others", several ? `${who.length} others` : who[0], null,
       svg("text", { class: "both", x: x0, y: y + row / 2 + 4 }, text), mark(r, true));
@@ -1001,8 +1025,10 @@ const data = {
   suiteVs: {},      // a suite's key: tddlog against each other system of the suite (categories.json's `suites`)
   systems: [],      // each solver, by the instances it answers: what it is, its totals, how it was given the instances
   integrations: null,  // tddlog alone, and X+tddlog against X on X's programs (categories.json's `integrations`)
-  via: {},          // a system on another system's export (Roulette+ProbLog): [the exporter, the system]
+  circuits: null,   // the circuits' entry, as a category's (categories.json's `circuits`), with `suites` and `perSuite`
   splits: {},       // a suite's key: each system's answered time on its export, {answers, seconds, export}
+  stamp: null,      // categories.json's `stamp`: the data's date and public main's commit (stampLine)
+  methods: [],      // categories.json's `methods`: the methods table's rows on the runs (next.js's methodsView)
   suites: new Map(),   // a suite's key: the suite, with `home`, the data's family that holds it, and `file`
   bench: null,      // benchmarks/index.json: every suite's families, where the site has them
   families: new Map(), // `${suite}/${family}`: the promise of that family's data
@@ -1061,11 +1087,11 @@ function against(suite) {
 // The kinds of problems of the page before this one, and the category each
 // one's address opens now; and the categories the pages once had, with where
 // their addresses go now, where the data no longer has them: the
-// bit-blasted circuits are Alea.jl+tddlog's integration's.
+// bit-blasted circuits are the circuits'.
 const OLD_KINDS = { programs: "logic-programs", networks: "bayesian-networks", ppl: "functional-programs",
   circuits: "bit-blasted", databases: "database-queries" };
-const GONE = { "bit-blasted": { view: "system", system: "alea-tddlog" } };
-const gone = (key) => (data.categories.some((c) => c.key === key) ? undefined : GONE[key]);
+const GONE = { "bit-blasted": { view: "category", category: APART } };
+const gone = (key) => (categoryOf(key) ? undefined : GONE[key]);
 
 // The view an address names, or what it names that the data does not have.
 function parse(hash) {
@@ -1094,8 +1120,9 @@ function parse(hash) {
     if (!c || parts.length > 3) return missing;
     return { view: "category", category: c.key, vs: c.systems.includes(parts[2]) && !isMine(parts[2]) ? parts[2] : undefined };
   }
+  if (parts[0] === APART && parts.length === 1 && data.circuits) return { view: "category", category: APART };
   if (parts[0] === "category") {
-    const c = data.categories.find((x) => x.key === parts[1]);
+    const c = categoryOf(parts[1]);
     if (!c) return missing;
     const route = { view: "category", category: c.key };
     for (let i = 2; i < parts.length; i += 2) {
@@ -1135,9 +1162,11 @@ function parse(hash) {
 
 function href(route) {
   switch (route.view) {
-    case "category": return `#/category/${route.category}${route.only ? `/in/${encodeURIComponent(route.only)}` : ""}`
+    // the circuits at the address of their section, a family of theirs as a category's
+    case "category": return route.category === APART && !route.only && !route.vs ? `#/${APART}`
+      : `#/category/${route.category}${route.only ? `/in/${encodeURIComponent(route.only)}` : ""}`
       + `${route.vs ? `/vs/${encodeURIComponent(route.vs)}` : ""}`;
-    case "system": return `${front}#/${isMine(route.system) || viaOf(route.system) ? `integrations/${integrationOf(route.system)}` : `baselines/${encodeURIComponent(route.system)}`}`
+    case "system": return `${front}#/${isMine(route.system) ? `integrations/${integrationOf(route.system)}` : `baselines/${encodeURIComponent(route.system)}`}`
       + `${route.at ? `/${route.at}` : ""}`;
     case "suite": return `#/${route.suite}`;
     case "family": {
@@ -1171,10 +1200,11 @@ function categoryFor(suite) {
 }
 
 // Where a suite's views sit in the crumbs: under its category, or, for a
-// suite in no type (the circuits, which only an integration compares),
-// under the integration whose rows hold it.
+// suite in no type, under the circuits where it holds circuits (an
+// evaluation of their own), else under the integration whose rows hold it.
 function suiteHome(suite, c) {
   if (c) return [inSection("types"), [c.title, { view: "category", category: c.key }]];
+  if (data.circuits?.perSuite.has(suite)) return [[data.circuits.title, { view: "category", category: APART }]];
   const k = integrationsOf().find((key) => data.integrations[key].rows?.some((row) => row[0] === suite));
   if (k === undefined) throw new Error(`the suite ${suite} is in no type and no integration`);
   const g = data.integrations[k];
@@ -1200,7 +1230,7 @@ function home() {
   const out = [element("div", { class: "fig-head" }, element("h2", {}, "Each type of program against the systems native to it"),
     element("span", { class: "dots" }, element("i", { class: "me" }), subject(subjectsOf(data.types.flatMap((c) => catRows(c)))),
       element("i", { class: "you" }), "a native system")),
-  overview()];
+  overview(), stampLine()];
   for (const c of data.categories) {
     const to = { view: "category", category: c.key };
     const rows = catRows(c);
@@ -1242,7 +1272,7 @@ function ownTable(list = data.own, head = "Each system on its own benchmarks") {
   return [element("h3", { class: "own-head" }, head), scroller(stacked(element("table", { class: "board own" },
     head2(["system"], ["its benchmarks"], ["instances", null, "num"],
       { group: "the system", cols: [["answers", null, "num"], ["total", par, "num"]] },
-      { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], ["faster", "tddlog's speed-up", "num"]] }), body)), "whole")];
+      { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), "tddlog's speed-up", "num"]] }), body)), "whole")];
 }
 
 // A category's systems by their answers, then tddlog's speed-up over them,
@@ -1293,7 +1323,7 @@ function cannot(suite) {
 }
 
 function categoryView(route) {
-  const c = data.categories.find((x) => x.key === route.category);
+  const c = categoryOf(route.category);
   lastCategory = c.key;
   const only = route.only;
   const g = groupOf(c, only);
@@ -1301,7 +1331,8 @@ function categoryView(route) {
   const tal = tally(c, rows, only);
   const drawn = drawnOf(c, rows, only);
   const whole = catSuite(c, rows, drawn, tal, only);
-  const out = [crumbs(HOME, inSection("types"), g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
+  // the circuits' entry is their section's page (#/circuits): one crumb for both
+  const out = [crumbs(HOME, ...(c.key === APART ? [] : [inSection("types")]), g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
     element("h2", {}, g ? g.title : c.title)];
   // a family: what it is and where it comes from
   if (g && !g.source) out.push(prose("p", g.about, { class: "lede" }), note("The type on its own, against the systems native to it: ",
@@ -1405,9 +1436,9 @@ function solverParts(x) {
     return { c, rows, tal: tally(c, rows) };
   });
   // the members of tddlog and its pipelines it is compared with over these
-  // categories (its own pipeline where it ran)
+  // categories: each row's subject
   const all = parts.flatMap((p) => p.rows);
-  const ms = subjectsOf(all, pairKey(x));
+  const ms = subjectsOf(all);
   // in its own language and translated for it
   const sets = [["on", "in its own language", s.native], ["t", "translated for it", s.translated]].map(([letters, label, v]) => {
     const rows = parts.flatMap(({ c, rows: rs }) => rs.filter((r) => letters.includes(r.cls[c.systems.indexOf(x)])));
@@ -1417,7 +1448,7 @@ function solverParts(x) {
   const num = (text) => element("td", { class: "num" }, text);
   const par = `over the instances it is given and either answers (PAR-${data.measure.par})`;
   const sides = (me) => [{ group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
-    { group: subject(me), cols: [["answers", null, "num"], ["total", par, "num"], ["faster", `${subject(me)}'s speed-up`, "num"]] }];
+    { group: subject(me), cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${subject(me)}'s speed-up`, "num"]] }];
   const languages = sets.length ? [scroller(stacked(element("table", { class: "board languages" },
     head2(["programs"], ["instances", null, "num"], ["its own", "from its own papers, benchmarks or distribution", "num"], ...sides(ms)),
     element("tbody", {}, ...sets.map((w) => element("tr", {}, element("th", { scope: "row" }, w.label), num(count(w.rows.length)),
@@ -1427,7 +1458,7 @@ function solverParts(x) {
     plotted({ key: `${x}-${w.letters}`, title: `${name} and ${subject(w.v.me)}, ${w.label}`, noun: "instances", systems: [...w.v.me, x],
       instances: w.rows.map((r) => [r.name, ...w.v.me.map((m) => r.v[m]), r.v[x]]), limit: Math.max(...w.rows.map((r) => r.limit)),
       faster: { [x]: w.v.speedup === null ? "too few in common" : `${subject(w.v.me)} ${speedup(w.v, true)}` } }, data.names, { all: true }),
-    scatter(w.rows, [...w.v.me, x], x, false, pairKey(x)))))] : [];
+    scatter(w.rows, [...w.v.me, x], x, false))))] : [];
   // each category's numbers, then its plot among the others, x's line and tddlog's coloured
   const body = element("tbody");
   for (const { c, rows, tal } of parts) {
@@ -1459,7 +1490,7 @@ function solverParts(x) {
   if (short.length || s.notgiven) {
     facts.append(element("dt", {}, "Not given"), prose("dd", `${short.length ? `${and(short)}. ` : ""}${s.notgiven}`.trim()));
   }
-  facts.append(element("dt", {}, "Compared"), element("dd", {}, `Against ${subject(ms)}, on the same machine in the same lanes.`));
+  facts.append(element("dt", {}, "Compared"), element("dd", {}, `Against ${subject(ms)}.`));
   if (s.cite) {
     const c = s.cite;
     facts.append(element("dt", {}, "Paper"), element("dd", {}, `${c.authors}. `,
@@ -1505,7 +1536,7 @@ function suiteView(route) {
         if (m) paras.set(m[1] + (m[2] ? ` (${m[2]})` : ""), para);
       }
     }
-    out.push(element("h3", {}, `${subject(s.systems.filter(isMine))} against each system`), headToHead(s, rows, paras));
+    out.push(element("h3", {}, `${subject(rowsMe(rows))} against each system`), headToHead(s, rows, paras));
   }
   for (const card of (s.home.findings ?? []).filter((c) => c.suite === s.key)) {
     out.push(element("h3", {}, card.title), ...card.paras.map((para) => prose("p", para, { class: "finding-text" })));
@@ -1537,8 +1568,11 @@ function familyTable(s, fams) {
   return scroller(element("table", { class: "grid counts" }, element("thead", {}, head), body));
 }
 
+// The members of tddlog and its pipelines a suite's rows (against) compare with.
+const rowsMe = (rows) => [...new Set(rows.flatMap(({ v }) => v.me))];
+
 function headToHead(s, rows, paras) {
-  const me = subject(s.systems.filter(isMine));
+  const me = subject(rowsMe(rows));
   const body = element("tbody");
   for (const { key, v } of rows) {
     const name = data.names[key];
@@ -1752,10 +1786,11 @@ const mineReader = (inst) => (inst.runs ?? []).map(runName).find((n) => n === "t
 
 // The systems that ran an instance but read none of its files on show, nor
 // translated any: their files were not captured. A run whose grounding
-// failed (`ungrounded`) was handed no file.
+// failed (`ungrounded`), that was never handed a program (`unhanded`: every
+// repetition skipped or refused) or that was skipped was handed no file.
 function uncaptured(inst) {
   const readers = (inst.tabs ?? []).flatMap((t) => [...t.readers, ...(t.translations ?? []).map(([who]) => who)]);
-  return [...new Set((inst.runs ?? []).filter((r) => !r.ungrounded).map(runName))]
+  return [...new Set((inst.runs ?? []).filter((r) => !r.ungrounded && !r.unhanded && !r.skipped).map(runName))]
     .filter((name) => !readers.some(readsAs(name)));
 }
 
@@ -2055,7 +2090,7 @@ function answers(a) {
     const body = element("tbody", {}, ...a.rows.map(([q, ...cells]) => element("tr", {}, element("th", { scope: "row" }, q),
       ...cells.map((c) => element("td", { class: "num" }, c)))));
     const notes = [];
-    if (a.ref) notes.push(`The reference is ${a.ref}. Each system's answers of its first repetition that answered.`);
+    if (a.ref) notes.push(`${a.ref_note} Each system's answers of its first repetition that answered.`);
     if (a.queries > a.rows.length) notes.push(`The first ${a.rows.length} of ${count(a.queries)} queries; the largest difference over all of them is in each run's "from the reference".`);
     return [scroller(element("table", { class: "times" }, element("thead", {}, head), body)), notes.length ? note(notes.join(" ")) : null];
   });
@@ -2117,7 +2152,10 @@ async function runs(route) {
   const about = [];
   if (dashed(key)) about.push("The whole process's time, with the language's start and compilation; the other time of the same system leaves them out, as its paper times it.");
   if (inst?.reps > 1) about.push("A time is the median of the repetitions, a failed one counted as infinite.");
-  if (new Set(mine.map((r) => r.label)).size > 1) about.push("A system run in several forms has the time of its fastest form.");
+  if (new Set(mine.map((r) => r.label)).size > 1) {
+    about.push(isMine(key) ? `The table has ${data.names[key]}'s default, auto; its other forms are diagnostics, in no total.`
+      : "A system run in several forms has the time of its fastest form.");
+  }
   if (inst?.notes?.[rec]) about.push(inst.notes[rec]);
   if (about.length) parts.push(note(about.join(" ")));
   const name0 = isMine(key) ? data.names[key] : data.names[rec] ?? data.names[key];
@@ -2133,7 +2171,7 @@ async function runs(route) {
         opener = document.querySelector("#programs select.version");
         go({ ...now, runs: undefined, file: fileRoute(inst, ti, fi) });
       } }, file.name.split("/").pop(), element("small", {}, t.lang)))));
-  } else if (mine.some((r) => !r.ungrounded)) {
+  } else if (mine.some((r) => !r.ungrounded && !r.unhanded && !r.skipped)) {
     parts.push(note(`The command and the files ${name0} was given were not captured.`));
   }
   const tryIt = rec === "tddlog" && inst ? playground(s, f, inst, name0) : null;
@@ -2158,6 +2196,7 @@ async function runs(route) {
   if (answered(v)) {
     let gap = Infinity;
     for (const e of shown) {
+      if (e.r.label.endsWith(", diagnostic)")) continue;   // a form of tddlog no table counts
       const m = med(e.r);
       if (m !== null && Math.abs(m - v) < gap) [gap, inTable] = [Math.abs(m - v), e];
     }
@@ -2177,7 +2216,7 @@ async function runs(route) {
       note(r.later ? "A later run, in lanes of its own." : "The release run."));
     if (r.later && rec !== "tddlog") {
       const t = tddlogIn(r.later).map(med).filter((x) => x !== null);
-      if (t.length) block.append(note(`tddlog in the same lanes: ${seconds(t[0])} s.`));
+      if (t.length) block.append(note(`tddlog in the same job: ${seconds(t[0])} s.`));
     }
     if (r.skipped) block.append(note(r.queued ? "Not yet run: a rerun is queued." : `Not run in any repetition: ${FAILURES.skipped[1]}.`));
     else {
@@ -2206,15 +2245,19 @@ async function runs(route) {
 // choice the viewer keeps; By integration, tddlog alone and its pipelines;
 // By program type, the types and all programs, the one on show (or that
 // holds the family or instance on show) with its families, then the
-// programs tddlog does not run; How it works, its walkthroughs. The
-// results page's own overview is under By program type; the logo above is
-// the front page.
+// programs tddlog does not run; How it works, its walkthroughs and the
+// methods table. The results page's own overview is under By program
+// type; the logo above is the front page.
 const MENU_TOP = 10;
 // The page of the programs tddlog does not run, the last entry under By program type.
 const COVERAGE = "Programs tddlog does not run";
+// The methods table (next.js's), the last entry under How it works; every
+// speed-up's header links to it (speedName).
+const METHODS = "Methods";
 // The section each view is in, which the bar marks.
 const SECTION_OF = { baselines: "baselines", baseline: "baselines", coverage: "types", integrations: "integrations",
-  integration: "integrations", types: "types", category: "types", suite: "types", family: "types", how: "how" };
+  integration: "integrations", types: "types", category: "types", suite: "types", family: "types", how: "how", methods: "how" };
+const sectionOf = (route) => (route.view === "category" && route.category === APART ? APART : SECTION_OF[route.view]);
 const MENU_KEY = "tddlog-baselines";
 function rail(route) {
   const tree = element("ul", { class: "tree" });
@@ -2232,7 +2275,9 @@ function rail(route) {
     // no storage: the ten alone
   }
   const more = others.length - MENU_TOP;
-  const list = element("ul", { class: `baselines${open ? " all" : ""}` }, ...others.map((s, i) => {
+  // a list's counts say what they count, in a line over them
+  const legend = (text) => element("li", { class: "legend", "aria-hidden": "true" }, text);
+  const list = element("ul", { class: `baselines${open ? " all" : ""}` }, legend("instances answered"), ...others.map((s, i) => {
     const li = entry(`#/baselines/${encodeURIComponent(s.key)}`, data.names[s.key], count(s.answers), s.key);
     li.firstChild.title = `${data.names[s.key]} answers ${count(s.answers)} of the ${count(s.given)} instances it was given`;
     if (i >= MENU_TOP) li.classList.add("more");
@@ -2260,7 +2305,7 @@ function rail(route) {
   // by program type: a benchmark's page is in the category and the family
   // of its instance, and the menu marks that family as it marks a category
   // narrowed to it
-  const types = element("ul");
+  const types = element("ul", {}, legend("instances"));
   if (front) types.append(element("li", {}, link({ view: "home" }, "Overview")));
   const at = route.view === "family" ? data.place.get(`${route.suite}/${route.instance}`) : undefined;
   const current = route.view === "category" ? route.category : at ? at.c.key : route.suite ? categoryFor(route.suite)?.key : undefined;
@@ -2279,12 +2324,23 @@ function rail(route) {
   }
   types.append(entry("#/coverage", COVERAGE));
   tree.append(group("types", types));
+  // the circuits, where the data has them (and the bar's link to them with it): their families
+  if (data.circuits) {
+    const c = data.circuits;
+    const here = route.view === "category" && route.category === APART;
+    tree.append(group(APART, element("ul", {}, legend("instances"), ...c.groups.map((g) => {
+      const li = element("li", {}, link({ view: "category", category: APART, only: g.key }, g.title, element("span", { class: "n" }, count(g.rows.length))));
+      if (here && route.only === g.key) li.firstChild.setAttribute("aria-current", "page");
+      return li;
+    }))));
+  }
+  for (const a of document.querySelectorAll(`.site-nav a[href$="#/${APART}"]`)) a.hidden = !data.circuits;
   // how it works
-  tree.append(group("how", element("ul", {}, ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)))));
+  tree.append(group("how", element("ul", {}, ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)), entry("#/methods", METHODS))));
   // on the front page, the bar's section the view is in, and the menu's entry on show: its view, else the entry it is in
   if (!front) {
     for (const a of document.querySelectorAll(".site-nav a[data-section]")) {
-      if (a.dataset.section === `#/${SECTION_OF[route.view]}`) a.setAttribute("aria-current", "page");
+      if (a.dataset.section === `#/${sectionOf(route)}`) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     }
   }
@@ -2396,7 +2452,7 @@ function remember(change) {
 
 function title(route) {
   switch (route.view) {
-    case "category": return data.categories.find((c) => c.key === route.category).title;
+    case "category": return categoryOf(route.category).title;
     case "suite": return data.suites.get(route.suite).title;
     case "family": return `${route.instance} · ${route.suite}/${route.family}`;
     case "missing": return "Not found";
@@ -2491,14 +2547,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     data.suiteVs = cats.suites;
     data.systems = cats.systems;
     data.integrations = cats.integrations ?? null;
-    data.via = cats.via ?? {};
     data.splits = cats.splits ?? {};
+    for (const k of ["stamp", "methods"]) if (!cats[k]) throw new Error(`categories.json has no ${k}`);
+    data.stamp = cats.stamp;
+    data.methods = cats.methods;
     for (const s of data.systems) if (!data.names[s.key]) throw new Error(`the solver ${s.key} has no name`);
     data.categories = [...cats.categories].sort((a, b) => a.order - b.order);
     data.types = data.categories.filter((c) => c.key !== ALL);
+    data.circuits = cats.circuits ?? null;
     // Each category's suites, its rows' and then its copies', with how many
-    // of its instances each holds.
-    for (const c of data.categories) {
+    // of its instances each holds; the circuits' too, whose instances are in
+    // their types (data.place) where they are of one
+    for (const c of [...data.categories, ...(data.circuits ? [data.circuits] : [])]) {
       c.perSuite = new Map();
       const add = (key) => c.perSuite.set(key, (c.perSuite.get(key) ?? 0) + 1);
       for (const row of c.rows) add(row[0]);
@@ -2510,7 +2570,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       c.suites = [...c.perSuite.keys()];
       for (const key of c.suites) if (!data.suites.has(key)) throw new Error(`the category ${c.key} has no suite ${key}`);
-      if (c.key === ALL) continue;
+      if (c.key === ALL || c.key === APART) continue;
       for (const g of c.groups) {
         for (const i of g.rows) {
           const key = `${c.rows[i][0]}/${c.rows[i][1]}`;

@@ -23,8 +23,11 @@ paper's gcd on 8, 10 and 12 bits). The port is mechanical: `using Dice`
 becomes `using Alea`, `@dice` `@alea`, the BenchmarkTools harness
 (`function fun() ... end`, `@benchmark`, `println`) is dropped, the block
 `c = @dice begin ... end` becomes `model() = @alea begin ... end`, and
-`pr(c)` becomes `QUERY = :pr`. caesar_huge, disease_large and plankton
-are in the directory but not in the table. The directory's
+`pr(c)` becomes `QUERY = :pr`. caesar-small, -medium, -large and -huge
+differ only in their text, each a prefix of the next, and are one program,
+`arith/caesar.jl`, whose `LENGTH` (10, 50, 100 and 250) takes the text's
+first letters. caesar-huge (`LENGTH` 250), disease_large and plankton
+are not in the paper's table. The directory's
 `disease_*_modified.jl` variants are left out.
 
 A program that returns a tuple (luhn, ranking, linext) is answered here
@@ -103,6 +106,17 @@ pieces; `bench.py --suite bitblast` runs those ladders too (`bb_NAME_p`).
 The artifact's other experiments are left out too: each builds one
 distribution (Figure 12's normal of 8 pieces at up to 15 bits, the gamma
 densities' observations at up to 14 bits), with no program around it.
+
+## verification: the Dice paper's diamond and ladder
+
+The diamond and the ladder of the Dice paper's network verification
+benchmark (Holtzen, Van den Broeck and Millstein, OOPSLA 2020), the
+roulette suite's families rl_diamond and rl_ladder, N their argument
+(`alea_bench.jl --set N=...`). `diamond.jl` is Alea.jl's own, from its
+tour (`tutorial/tour_1_core.jl` at cf5e5b8, Apache License 2.0), N
+diamonds where the tour runs 5. Alea.jl has no ladder: `ladder.jl` is a
+port of the Dice paper's, its flips made before the rungs, the last
+rung's first, as Roulette's artifact makes them (its header says why).
 
 ## Programs of other papers, written in Alea.jl
 

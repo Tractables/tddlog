@@ -256,10 +256,12 @@ mod tests {
         // name, and `s` reads `q` alone, so that the order search does not
         // merge `p` and `q` as one variable's values. Six facts bound any
         // compile below what a search costs, so the components keep the
-        // grounder's order (`order::search`), `r` before `s`.
+        // grounder's order (`order::search`), `r` before `s`. `t`, of
+        // two rules, is asked, so that none of them is a queried cube of
+        // facts, which would shape no layout.
         let src = "0.5::a. 0.5::b. 0.5::c. 0.5::d. 0.5::e. 0.5::f.
                    p :- a, d. q :- b, e. r :- p, q, c. s :- q, f.
-                   query(r). query(s).";
+                   t :- r. t :- s. query(t).";
         let gp = as_written(src);
         let (Layout { vtree, order, .. }, _) =
             build(&gp, &Deps::of(&gp), Kind::Closed).expect("builds");
@@ -282,8 +284,9 @@ mod tests {
         assert_eq!(facts_under(&vtree, &order, left, &gp), ["c"]);
         // A chain, each atom reading the one before: nothing to join, and
         // the vtree is right-linear over the searched order, leaf for leaf.
-        let src = "0.5::a. 0.5::b. 0.5::c.
-                   p :- a. q :- p, b. r :- q, c.
+        // `r` reads `d` too, so that it is not a queried cube.
+        let src = "0.5::a. 0.5::b. 0.5::c. 0.5::d.
+                   p :- a. q :- p, b. r :- q, c. r :- d.
                    query(r).";
         let gp = as_written(src);
         let (

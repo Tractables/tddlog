@@ -340,7 +340,9 @@ def main():
     except Refused as x:
         print(f'ground2net.py: {x}', file=sys.stderr)
         sys.exit(REFUSED)
-    if not asked:
+    # without a query, the evidence is still asked: its probability, 0 where
+    # it is inconsistent
+    if not asked and not observed:
         sys.exit('ground2net.py: the program asks no query')
     net, evidence, cells = network(g, observed, asked)
     with open(a.out + '.json', 'w') as f:

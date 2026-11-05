@@ -20,12 +20,48 @@ pub(crate) fn facts_by_use(gp: &GroundProgram, deps: &Deps) -> Vec<AtomId> {
     facts_at_first_use(gp, &deps.by_head, &deps.sccs)
 }
 
+/// Fact atoms in the order the compiler consumes them, up to the order of
+/// components that do not depend on each other: [`facts_at_first_use`]
+/// over the components level by level, a component's level the longest
+/// chain of components it reads, and within a level in dependency order.
+///
+/// The dependency order is a depth-first search's, started from the atoms
+/// in the order the grounder numbered them, and so it follows how the
+/// program is written. Two netlists of one circuit that list one output
+/// word's bits in opposite orders use the gates of its carry chain first
+/// in different orders, while each gate's level is the same in both.
+pub(crate) fn facts_by_level(gp: &GroundProgram, deps: &Deps) -> Vec<AtomId> {
+    let mut component = vec![usize::MAX; gp.num_atoms()];
+    for (c, scc) in deps.sccs.iter().enumerate() {
+        for &a in scc {
+            component[a as usize] = c;
+        }
+    }
+    // The components come after those they read, so one pass in their
+    // order sets every level.
+    let mut level = vec![0usize; deps.sccs.len()];
+    for (c, scc) in deps.sccs.iter().enumerate() {
+        let above = scc
+            .iter()
+            .flat_map(|&h| &deps.by_head[h as usize])
+            .flat_map(|&ri| &gp.rules[ri].body)
+            .map(|l| component[l.atom() as usize])
+            .filter(|&d| d != usize::MAX && d != c)
+            .map(|d| level[d] + 1)
+            .max();
+        level[c] = above.unwrap_or(0);
+    }
+    let mut order: Vec<usize> = (0..deps.sccs.len()).collect();
+    order.sort_by_key(|&c| level[c]);
+    facts_at_first_use(gp, &deps.by_head, order.iter().map(|&c| &deps.sccs[c]))
+}
+
 /// Fact atoms at their first use by the components taken in the given
 /// order; unused facts last, in program order.
-pub(super) fn facts_at_first_use(
+pub(super) fn facts_at_first_use<'a>(
     gp: &GroundProgram,
     by_head: &RulesByHead,
-    components: &[Vec<AtomId>],
+    components: impl IntoIterator<Item = &'a Vec<AtomId>>,
 ) -> Vec<AtomId> {
     // Derived atoms count as seen, so that one byte per literal tells a
     // fact not seen yet.
@@ -929,6 +965,7 @@ fn pre_order(order: &[u32], parent: &[u32]) -> Vec<AtomId> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ground::shape::QueriedCubes;
     use crate::vtree::tests::ground_smokers;
 
     #[test]
@@ -1417,6 +1454,38 @@ mod tests {
             edges.contains(&edge(f, d1)) && edges.contains(&edge(f, d2)),
             "{edges:?}"
         );
+    }
+
+    /// In the model the layouts read ([`QueriedCubes`]), a query of a cube of
+    /// facts that nothing else reads ties none of its facts to another,
+    /// however the cube is written: in one rule, through a helper atom, over
+    /// a negated fact or at another arity. Observed, or read by a rule that
+    /// is not such a cube, it keeps its clique.
+    #[test]
+    fn a_queried_cube_ties_no_fact_to_another() {
+        // The evidence reads x, y and z without tying them to each other.
+        let facts = "0.3::a. 0.4::b. 0.5::c. 0.6::d. 0.2::x. 0.7::y. 0.8::z. \
+                     e :- a, x. e :- b, y. e :- c, z. e :- d. evidence(e).";
+        let tied = |rules: &str| {
+            let gp = ground_source(&format!("{facts} {rules}"));
+            let gp = QueriedCubes::split(&gp).map_or(gp, |(_, model, _)| model);
+            let edges: FxHashSet<(u32, u32)> = interaction_edges(&gp).into_iter().collect();
+            let (x, y, z) = (atom(&gp, "x"), atom(&gp, "y"), atom(&gp, "z"));
+            [edge(x, y), edge(x, z), edge(y, z)].map(|e| edges.contains(&e))
+        };
+        for rules in [
+            "q :- x, y, z. query(q).",
+            "q :- h, z. h :- x, \\+y. query(q).",
+            "q(1, X) :- p(X), z. p(2) :- x, y. query(q(1, 2)).",
+        ] {
+            assert_eq!(tied(rules), [false; 3], "{rules}");
+        }
+        for rules in [
+            "q :- x, y. query(q). evidence(q, false).",
+            "q :- x, y. r :- q, z. r :- d. query(r).",
+        ] {
+            assert!(tied(rules)[0], "{rules}");
+        }
     }
 
     /// The elimination tree's parent of a vertex is the first of its

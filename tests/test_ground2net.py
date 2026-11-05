@@ -224,6 +224,22 @@ class TranslationTests(unittest.TestCase):
                 ground2net.main()
             self.assertEqual(stop.exception.code, ground2net.REFUSED)
 
+    def test_evidence_without_a_query_is_a_network(self):
+        # Circulette's ct_ALU_Controller as tddlog --ground prints it: no query, and a
+        # failure no fault causes; the network's evidence has probability 0
+        with tempfile.TemporaryDirectory() as d:
+            ground = os.path.join(d, 'p.ground.pl')
+            Path(ground).write_text('failure :- fail.\nevidence(failure,true).\n')
+            stem = os.path.join(d, 'p.hugin')
+            with patch.object(sys, 'argv', ['ground2net.py', ground, stem, '--format', 'hugin']):
+                ground2net.main()
+            self.assertEqual(json.loads(Path(stem + '.json').read_text()), {'order': ['n1'], 'queries': {}})
+            self.assertEqual(ground2net.build(Path(ground).read_text())[1], [(ground2net.TRUE, False)])
+            Path(ground).write_text('0.5::a.\n')
+            with patch.object(sys, 'argv', ['ground2net.py', ground, stem, '--format', 'hugin']), \
+                    self.assertRaisesRegex(SystemExit, 'asks no query'):
+                ground2net.main()
+
 
 class BenchTests(unittest.TestCase):
     """bench.py's ground route on a program that is neither a network nor a
