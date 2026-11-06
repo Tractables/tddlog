@@ -980,6 +980,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    (Dice's `iterate` as the Dice reader writes it) the dead branches
    of each step are never grounded, and the program grounds fewer atoms
    than the loop unrolled.
+   The sweep's solver at a level is given the cones of that level's
+   gates and the level's before alone, the older nodes inputs of its
+   calls, and a new level takes a new solver: a call costs as much at a
+   loop's last step as at its first, and every step is swept alike.
 5. **Simplify** (`simplify.rs`): propagate certain atoms; merge each atom
    the grounder introduced into another atom with the same rule bodies
    (atoms the program writes wait for the exclusive sets, below;

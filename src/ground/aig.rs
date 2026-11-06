@@ -38,6 +38,19 @@
 //! recursion: 1 088 gates proved where the search stopped at 770, 3 256
 //! atoms left of 9 220). What it proved by then stands.
 //!
+//! Grounding level by level ([`Pruner`]), the solver is given the cones
+//! of the gates of the level at hand and of the level before it alone: a
+//! node built before those is an input of its calls, and each level
+//! takes a new solver. What a call proves holds whatever those nodes are,
+//! and a call costs about as much at a loop's thousandth step as at its
+//! tenth. Over the cones down to the facts, in one solver, each step's
+//! calls cost more than the last's until the steps ran out midway, and
+//! the loop's later steps were left unswept: Geni's weather written with
+//! `iterate` builds a tautology at each step, and at 1 000 days the sweep
+//! proved 4 059 gates over those cones against 51 011 over each level's,
+//! which leaves a ground program of 505 497 atoms rather than 743 872.
+//! A gate equal to one of an older level is not proved so.
+//!
 //! The atoms of a cyclic component are inputs here, so gates proved equal
 //! are equal however those atoms come out, and the facts are free,
 //! whatever exclusive sets they are in: what is proved holds in every
@@ -239,10 +252,14 @@ struct Sweep {
     stats: SweepStats,
     /// The solver, over the clauses of the nodes encoded so far and what
     /// the calls proved; each node's positive literal there, [`NONE`]
-    /// before it is encoded; and the input nodes encoded.
+    /// before it is encoded; and the input nodes encoded, with the nodes
+    /// below the floor.
     solver: Solver,
     var: Vec<SatLit>,
     inputs: Vec<usize>,
+    /// The first node whose clauses the solver is given: a node before it
+    /// is an input there ([`Pruner::level`]).
+    floor: usize,
 }
 
 /// No variable yet.
@@ -263,9 +280,19 @@ impl Sweep {
             solver: Solver::new(0),
             var: Vec::new(),
             inputs: Vec::new(),
+            floor: 0,
         };
         sweep.add(g, 0);
         sweep
+    }
+
+    /// A new solver, given the clauses of node `floor` and the nodes after
+    /// it only: the nodes before it are inputs of its calls.
+    fn window(&mut self, floor: usize) {
+        self.solver = Solver::new(0);
+        self.var.clear();
+        self.inputs.clear();
+        self.floor = floor;
     }
 
     /// Adds node `n` as a candidate for the nodes after it.
@@ -287,7 +314,11 @@ impl Sweep {
             .get(&h)?
             .iter()
             .copied()
-            .filter(|&c| c != n && g.alike(n, c))
+            // A gate below the floor is an input of the calls: a gate is
+            // seldom proved equal to it, and each call that fails costs a
+            // counterexample.
+            .filter(|&c| c != n && (c == 0 || c >= self.floor || g.fanins[c][0] == NO))
+            .filter(|&c| g.alike(n, c))
             .take(TRIES)
             .collect();
         for c in tries {
@@ -344,9 +375,12 @@ impl Sweep {
             }
             Outcome::Unknown => None,
             Outcome::Sat => {
+                // The graph's inputs: a node below the floor is simulated
+                // over them.
                 let pattern = self
                     .inputs
                     .iter()
+                    .filter(|&&x| g.fanins[x][0] == NO)
                     .map(|&x| (x, self.solver.holds(self.var[x])))
                     .collect();
                 self.counterexample(g, pattern);
@@ -378,7 +412,7 @@ impl Sweep {
                     clauses.push([v ^ 1, NONE, NONE]);
                     continue;
                 }
-                if a == NO {
+                if a == NO || n < self.floor {
                     self.inputs.push(n);
                     continue;
                 }
@@ -782,6 +816,9 @@ pub(super) struct Pruner {
     lit: Vec<Lit>,
     /// The nodes the sweep has as candidates.
     added: FxHashSet<usize>,
+    /// The level whose gates are built, and its first node.
+    level: Option<i64>,
+    start: usize,
 }
 
 impl Pruner {
@@ -793,6 +830,8 @@ impl Pruner {
             sweep,
             lit: Vec::new(),
             added: FxHashSet::default(),
+            level: None,
+            start: 0,
         }
     }
 
@@ -807,6 +846,18 @@ impl Pruner {
             self.lit.resize(a + 1, NO);
         }
         &mut self.lit[a]
+    }
+
+    /// The gates built next are of level `level`. At a new level the sweep
+    /// takes a new solver, given the cones of this level's gates and the
+    /// level's before alone: a node built before them is an input of its
+    /// calls.
+    pub(super) fn level(&mut self, level: i64) {
+        if self.level != Some(level) {
+            self.level = Some(level);
+            self.sweep.window(self.start);
+            self.start = self.g.fanins.len();
+        }
     }
 
     /// Atom `a` an input of its own.
@@ -872,7 +923,8 @@ impl Pruner {
 
 #[cfg(test)]
 mod tests {
-    use super::{Graph, Sweep, WORDS};
+    use super::{AtomId, GLit, Graph, Pruner, Sweep, WORDS};
+    use GLit::{Neg, Pos};
 
     /// A cone the steps cannot pay for stays unencoded, so that a call
     /// after the steps grow, as the pruner grows them with each gate it
@@ -894,5 +946,29 @@ mod tests {
         assert_eq!(sweep.prove(&mut g, a, b), Some(true));
         let c = g.and(x, y);
         assert_eq!(sweep.prove(&mut g, a, c), Some(false));
+    }
+
+    /// Grounding level by level, a gate is proved over the cones of its
+    /// level and the level before: facts f 0, g 1, h 2; x 3 = f and g at
+    /// level 0; y 4 = x and f at level 1, x over the level before, merged
+    /// into x. At level 3, z 5 = (x and h) or (not x and h) is h whatever x
+    /// is, and merged into h, x an input there; w 6 = x and f is x only
+    /// through x's cone, two levels back, and stays.
+    #[test]
+    fn a_level_proves_over_its_cones_and_the_level_before() {
+        let mut p = Pruner::new();
+        let none = |_: AtomId| None;
+        p.level(0);
+        assert_eq!(p.gate(3, &[&[Pos(0), Pos(1)]], &none), None);
+        p.level(1);
+        assert_eq!(p.gate(4, &[&[Pos(3), Pos(0)]], &none), None);
+        assert_eq!(p.lit[4], p.lit[3]);
+        p.level(2);
+        p.level(3);
+        p.gate(5, &[&[Pos(3), Pos(2)], &[Neg(3), Pos(2)]], &none);
+        assert_eq!(p.lit[5], p.lit[2]);
+        p.gate(6, &[&[Pos(3), Pos(0)]], &none);
+        assert_ne!(p.lit[6], p.lit[3]);
+        assert_eq!(p.stats().proved, 2);
     }
 }
