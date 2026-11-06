@@ -32,9 +32,10 @@
 //!
 //! The pass applies to an acyclic program in which a rule reads a fact
 //! within the range of one of its derived literals, and leaves the program
-//! as it was where it would make it more than [`GROWTH`] times larger, or
+//! as it was where it would make it more than [`GROWTH`] times larger,
 //! spend more than [`SPEND`] literal visits or copy more than [`COPIED`]
-//! cube literals per literal of it.
+//! cube literals per literal of it, or spend more than [`IDLE`] visits per
+//! literal ([`IDLE_LEAST`] at least) without making a definition.
 //!
 //! What the pass read as guards also gives a vtree ([`Decisions`]): a
 //! fact sits at the set of literals that most of the cubes it decides
@@ -84,6 +85,20 @@ const GROWTH: usize = 8;
 
 /// The most literal visits the pass may spend, per literal of the program.
 const SPEND: usize = 64;
+
+/// The most literal visits the pass may spend, per literal of the program,
+/// without making a definition, in [`applies`] as in the pass itself.
+/// Where the pass completes (the circuits of the bit-blasting suite, caesar,
+/// pmc1's tests) it makes one within at most 0.27 visits per literal; where
+/// it gives up on its budgets above (Dice's pmc1 at k = 150 to 600,
+/// gcd_medium, after 1 to 28 s), it goes 1.3 to 22 visits per literal
+/// without making one.
+const IDLE: usize = 1;
+
+/// The least that [`IDLE`] allows, in literal visits, a few milliseconds:
+/// each definition of a small program walks much of it (29 visits for the
+/// first and 21 more for the second, in a test of 18 literals).
+const IDLE_LEAST: usize = 1 << 16;
 
 /// The most cube literals the pass may copy and look up, per literal of
 /// the program. A cube restricted to an atom's cover ([`Cover`]) holds
@@ -568,6 +583,9 @@ struct Pass<'a> {
     frames: Vec<Frame>,
     spent: usize,
     budget: usize,
+    /// `spent` when the pass last made a definition.
+    made_at: usize,
+    idle_budget: usize,
     copied: usize,
     copy_budget: usize,
     out_budget: usize,
@@ -724,7 +742,8 @@ pub(super) fn condition(gp: &mut GroundProgram) -> Option<()> {
 
 impl<'a> Pass<'a> {
     /// The pass on `gp` where it applies ([`applicable`]), its budgets on
-    /// visits and cube literals divided by `part`.
+    /// visits and cube literals divided by `part`, the visits between two
+    /// definitions not.
     fn new(gp: &'a GroundProgram, part: usize) -> Option<Self> {
         let (by_head, cover) = applicable(gp)?;
         let size = gp.size();
@@ -761,6 +780,8 @@ impl<'a> Pass<'a> {
             frames: Vec::new(),
             spent: 0,
             budget: SPEND * size / part,
+            made_at: 0,
+            idle_budget: (IDLE * size).max(IDLE_LEAST),
             copied: 0,
             copy_budget: COPIED * size / part,
             out_budget: GROWTH * size,
@@ -819,6 +840,7 @@ impl<'a> Pass<'a> {
                 }
             }
             if self.spent > self.budget
+                || self.spent - self.made_at > self.idle_budget
                 || self.copied > self.copy_budget
                 || self.lits.len() > self.out_budget
                 || self.made >= self.target
@@ -1111,6 +1133,7 @@ impl<'a> Pass<'a> {
             self.body_ends.push(self.lits.len());
         }
         let d = self.defs.len() as u32;
+        self.made_at = self.spent;
         self.defs.push(Def {
             atom,
             bodies: start..self.body_ends.len(),

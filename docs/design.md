@@ -1927,8 +1927,8 @@ bit-blasted circuits evaluated an atom again to a value an earlier frame
 had found under a fact the support does not reach. A definition under a
 cube other than the empty one is an atom of its own (`$gd`). The pass
 leaves the program
-as it was past `GROWTH` times its size or `SPEND` literal visits per
-literal. Chains of steps, a decision list folding a sequence of tests
+as it was past `GROWTH` times its size, `SPEND` literal visits per
+literal, or `IDLE` visits per literal without a definition made. Chains of steps, a decision list folding a sequence of tests
 into one value, are then written as balanced trees of their compositions
 (`src/ground/steps.rs`), so that a chain costs its length times the
 tree's depth rather than its square. What the conditioning read as
