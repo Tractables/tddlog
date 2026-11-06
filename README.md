@@ -39,7 +39,7 @@ command-line tool with Python, C and WebAssembly bindings, and it
 </p>
 
 <!-- results:overview -->
-<sub>Results as of 2026-11-05, public main [53709e77](https://github.com/Tractables/tddlog/commit/53709e77). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given and either answers, and how many times faster tddlog is ([how it is counted](#performance)).</sub>
+<sub>Results as of 2026-11-05, public main [3103b20b](https://github.com/Tractables/tddlog/commit/3103b20b). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given and either answers, and how many times faster tddlog is ([how it is counted](#performance)).</sub>
 <!-- /results:overview -->
 
 On every type of program, tddlog answers more instances than each
@@ -228,8 +228,8 @@ given and either answers, and how many times faster tddlog is. The
 instance, time and program, and a page for each system.
 
 <!-- results:setup -->
-<!-- written from bindings/wasm/results/categories.json, sha256 4b03715cf6e481981ba000a40ee2fe9b86bd051e6eb1cecb72ad6d268a5f5da8 -->
-Results as of 2026-11-05, public main [53709e77](https://github.com/Tractables/tddlog/commit/53709e77). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
+<!-- written from bindings/wasm/results/categories.json, sha256 2f68c9fe0f199b22295fe38d477cd6c3986ca920a434f7f3c40b2a366279e8e8 -->
+Results as of 2026-11-05, public main [3103b20b](https://github.com/Tractables/tddlog/commit/3103b20b). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
 <!-- /results:setup -->
 
 The results page says how the speed-up is counted, and the
@@ -244,7 +244,7 @@ how each system was run.
 </p>
 
 <!-- results:logic-programs -->
-tddlog answers **334 of 357** programs, of 24 families.
+tddlog answers **335 of 362** programs, of 25 families.
 <!-- /results:logic-programs -->
 
 The ProbLog programs: paths in random graphs and grids, Biomine's paths,
@@ -257,11 +257,11 @@ ProbLog's and cplint's examples.
 <!-- results:logic-programs-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| ProbLog | 255 | 15 h | 40 min | 48× |
-| PITA | 218 | 21 h | 30 min | 176× |
-| aspmc | 211 | 22 h | 30 min | 103× |
-| Scallop | 153 | 31 h | 29 min | too few in common |
-| PSouffle | 108 | 41 h | 30 min | 666× |
+| ProbLog | 255 | 15 h | 38 min | 51× |
+| PITA | 226 | 20 h | 28 min | 185× |
+| PSouffle | 110 | 41 h | 28 min | 698× |
+| aspmc | 86 | 43 h | 28 min | 341× |
+| Scallop | 65 | 47 h | 28 min | too few in common |
 <!-- /results:logic-programs-table -->
 
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
@@ -288,12 +288,12 @@ paths of two edges in random graphs.
 <!-- results:database-queries-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| ProvSQL | 268 | 16 h | 41 min | 22× |
-| ProbLog | 203 | 39 h | 41 min | 126× |
-| PSouffle | 189 | 41 h | 41 min | 117× |
-| PITA | 123 | 62 h | 41 min | 411× |
-| Scallop | 30 | 90 h | 41 min | too few in common |
-| aspmc | 22 | 95 h | 41 min | 520× |
+| ProvSQL | 283 | 9.3 h | 20 min | 25× |
+| ProbLog | 202 | 39 h | 20 min | 273× |
+| PSouffle | 193 | 40 h | 20 min | 206× |
+| PITA | 123 | 62 h | 20 min | 522× |
+| aspmc | 114 | 66 h | 20 min | 901× |
+| Scallop | 30 | 90 h | 20 min | 470× |
 <!-- /results:database-queries-table -->
 
 - Where others win: ProbLog on the paths of two edges in random graphs
@@ -324,7 +324,7 @@ blockmap, Mastermind and fs networks, and the classic networks).
 | Merlin | 292 | 57 h | 1.5 h | 34× |
 | libDAI | 290 | 58 h | 1.5 h | 33× |
 | pyAgrum | 261 | 63 h | 1.5 h | 37× |
-| 14 others: PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, ProbLog, Dice, Genfer, SPPL, noDice, Scallop, Psi, Geni | 41 to 236 | over 19 h each | 2 min to 1.5 h | at least 42× |
+| 15 others: PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, ProbLog, Dice, Genfer, SPPL, noDice, Psi, Geni, WebPPL, Scallop | 12 to 236 | over 19 h each | 2 min to 1.5 h | at least 42× |
 
 PSouffle was given 11 of the networks and answers 6.
 <!-- /results:bayesian-networks-table -->
@@ -374,7 +374,7 @@ and pedigree and diagnosis networks.
 </p>
 
 <!-- results:functional-programs -->
-tddlog answers **249 of 335** programs, of 25 families.
+tddlog answers **297 of 335** programs, of 25 families.
 <!-- /results:functional-programs -->
 
 The programs are over discrete values with conditionals and loops: the
@@ -392,12 +392,12 @@ circuits are [below](#circuits) too.
 <!-- results:functional-programs-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Alea.jl | 191 | 21 h | 14 h | 1.4× |
-| Roulette | 168 | 34 h | 7.0 h | 4.6× |
-| Dice | 129 | 34 h | 6.2 h | 5.2× |
-| Pluck | 99 | 40 h | 3.5 h | 9.9× |
-| Geni | 76 | 47 h | 2.2 h | 22× |
-| 4 others: Genfer, noDice, SPPL, Psi | 7 to 75 | over 47 h each | 50 min to 3.5 h | at least 13× |
+| Roulette | 195 | 35 h | 1.3 h | 19× |
+| Alea.jl | 191 | 24 h | 1.2 h | 13× |
+| Dice | 137 | 42 h | 1.2 h | 44× |
+| Pluck | 123 | 46 h | 1.2 h | 34× |
+| Genfer | 83 | 59 h | 1.2 h | 428× |
+| 5 others: Geni, noDice, SPPL, WebPPL, Psi | 19 to 78 | over 57 h each | 1.2 h to 1.4 h | at least 24× |
 <!-- /results:functional-programs-table -->
 
 ### All programs
@@ -408,7 +408,7 @@ circuits are [below](#circuits) too.
 </p>
 
 <!-- results:all-programs -->
-tddlog answers **1741 of 1936** programs.
+tddlog answers **1790 of 1941** programs.
 <!-- /results:all-programs -->
 
 All programs are the five types together, every system on every program
@@ -417,12 +417,12 @@ it is given, natively or through a translation.
 <!-- results:all-programs-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 952 | 130 h | 4.7 h | 30× |
-| libDAI | 857 | 162 h | 8.1 h | 21× |
-| TensorInference.jl | 839 | 174 h | 6.1 h | 29× |
-| pyAgrum | 808 | 169 h | 7.7 h | 23× |
-| Merlin | 800 | 175 h | 7.6 h | 23× |
-| 18 others: ProbLog, PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, Storm, Dice, PSouffle, ProvSQL, PRISM, Scallop, noDice, Genfer, Geni, SPPL, Psi | 84 to 701 | over 16 h each | 41 min to 16 h | at least 9.8× |
+| Ace | 954 | 146 h | 4.7 h | 38× |
+| libDAI | 877 | 169 h | 5.0 h | 43× |
+| TensorInference.jl | 866 | 182 h | 6.0 h | 33× |
+| pyAgrum | 826 | 177 h | 5.0 h | 43× |
+| Merlin | 809 | 186 h | 5.2 h | 39× |
+| 19 others: PITA, ProbLog, pgmpy, aspmc, Alea.jl, Roulette, Pluck, Storm, Dice, PSouffle, ProvSQL, PRISM, noDice, Genfer, Geni, SPPL, WebPPL, Scallop, Psi | 95 to 723 | over 9.6 h each | 21 min to 5.2 h | at least 25× |
 <!-- /results:all-programs-table -->
 
 - Where others win: pgmpy answers grid25, a logic program's path query
@@ -458,7 +458,7 @@ its language, and no one pays for its export.
 | PITA | 82 | 60 h | 2.3 h | 110× |
 | aspmc | 81 | 60 h | 2.3 h | 189× |
 | Pluck | 73 | 61 h | 2.2 h | 33× |
-| 15 others: Merlin, pyAgrum, libDAI, pgmpy, Storm, ProbLog, TensorInference.jl, Dice, PRISM, noDice, Genfer, SPPL, Scallop, Geni, Psi | 1 to 64 | over 63 h each | 2.2 h to 2.3 h | at least 45× |
+| 16 others: Merlin, pyAgrum, libDAI, pgmpy, Storm, ProbLog, TensorInference.jl, Dice, PRISM, noDice, Genfer, SPPL, Scallop, Geni, WebPPL, Psi | 0 to 64 | over 63 h each | 2.1 h to 2.3 h | at least 45× |
 <!-- /results:circuits-table -->
 
 ### Integrations
@@ -477,7 +477,7 @@ fork of neuppl/roulette.
 <!-- results:integrations -->
 | Integration | Instances | Answers | Total time | Faster |
 |---|--:|--:|--:|--:|
-| Alea.jl+tddlog against Alea.jl | 310 | 271 (Alea.jl 172) | 3.7 h (Alea.jl 37 h) | 7.0× |
+| Alea.jl+tddlog against Alea.jl | 310 | 271 (Alea.jl 178) | 3.7 h (Alea.jl 35 h) | 6.7× |
 | Roulette+tddlog against Roulette | 578 | 443 (Roulette 320) | 7.1 h (Roulette 38 h) | 3.9× |
 <!-- /results:integrations -->
 
