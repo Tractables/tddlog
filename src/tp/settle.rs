@@ -625,7 +625,7 @@ fn pairs(backend: &TddBackend, compiled: &Compiled, a: AtomId) -> usize {
 
 /// The pairs of `readers`' formulas, summed, and then those of `cut`'s
 /// links, summed.
-fn links_and_readers_pairs(
+fn readers_and_links_pairs(
     backend: &TddBackend,
     compiled: &Compiled,
     cut: &Cut,
@@ -655,7 +655,7 @@ fn others_composed(
     if others.is_empty() {
         return Ok(Some((Vec::new(), false)));
     }
-    let (held, l) = links_and_readers_pairs(backend, compiled, cut, others);
+    let (held, l) = readers_and_links_pairs(backend, compiled, cut, others);
     let settled = backend.within(work, || {
         let Some(links) = Links::new(backend, compiled, cut, negations)? else {
             return Ok(None);
@@ -694,7 +694,7 @@ fn asked_composed(
     work: u64,
     negations: &mut Negations,
 ) -> Result<Option<Composed>, CompileError> {
-    let (held, l) = links_and_readers_pairs(backend, compiled, cut, asked);
+    let (held, l) = readers_and_links_pairs(backend, compiled, cut, asked);
     let bound =
         (l as u128 * evidence as u128 / held.max(1) as u128).min(usize::MAX as u128) as usize;
     let settled = backend.within(work, || {
