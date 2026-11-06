@@ -945,3 +945,92 @@ fn wide_integers_read_by_comparisons_stay_as_bits() {
         }
     }
 }
+
+/// A program `--ground` printed, read again with its lines in another
+/// order, has the answers of the program it was printed from: the printed
+/// program names the switches of its probabilistic rules, and the switches
+/// it makes of its own (those of a predicate's facts beside its rules,
+/// named after the clauses' places) take no name it already has. By hand:
+/// `s(1)` holds with probability 0.4 × 0.6 = 0.24, and `s(2)` with 0.5 ×
+/// (1 - 0.24) = 0.38.
+#[test]
+fn a_printed_ground_program_read_in_another_order_keeps_its_answers() {
+    let source =
+        "0.4::s(0).\n0.6::s(1) :- s(0).\n0.5::s(2) :- \\+s(1).\nquery(s(1)).\nquery(s(2)).\n";
+    let options = common::options(Strategy::Auto, Projection::default());
+    let printed = common::ground(source, Rows::Classes, false).to_string();
+    assert!(printed.contains("'$sws_"), "{printed}");
+    let lines: Vec<&str> = printed.lines().collect();
+    for k in 0..lines.len() {
+        let rotated = [&lines[k..], &lines[..k]].concat().join("\n");
+        let run = common::run(&rotated, &options).unwrap_or_else(|e| panic!("{rotated}: {e}"));
+        // The queries come in the order the rotation put them in.
+        let mut got: Vec<(String, f64)> = run
+            .results
+            .expect("no evidence")
+            .iter()
+            .map(|r| (r.to_string(), r.probability))
+            .collect();
+        got.sort_by(|a, b| a.0.cmp(&b.0));
+        common::assert_close(&rotated, &got, &[("s(1)", 0.24), ("s(2)", 0.38)], 1e-12);
+    }
+}
+
+/// Geni's weather factory written first-order (the suites' weather.pl, two
+/// factories over three days), with `sun/1` renamed into the names the
+/// switches of its probabilistic rules take (`$sw`, the head's name, the
+/// clause's place, the head's place), keeps its answers whatever the
+/// place in the name: under the earlier switch names, the switch of
+/// `sunny`'s first rule took the renamed predicate's name and merged the
+/// two.
+#[test]
+fn the_weather_factory_keeps_its_answers_with_a_predicate_named_as_a_switch() {
+    let source = "\
+factory(1).
+factory(2).
+0.3::strikes(1, T, on, sun) :- step(T).
+0.5::strikes(1, T, on, rain) :- step(T).
+0.1::strikes(1, T, off, sun) :- step(T).
+0.4::strikes(1, T, off, rain) :- step(T).
+0.6::strikes(2, T, on, sun) :- step(T).
+0.8::strikes(2, T, on, rain) :- step(T).
+0.2::strikes(2, T, off, sun) :- step(T).
+0.7::strikes(2, T, off, rain) :- step(T).
+days(3).
+step(0) :- days(H), H > 0.
+step(T1) :- step(T), days(H), T1 is T + 1, T1 < H.
+time(0).
+time(T1) :- step(T), T1 is T + 1.
+sun(0).
+0.7::sunny(T, sun) :- step(T).
+0.6::sunny(T, rain) :- step(T).
+sky(T, sun) :- sun(T).
+sky(T, rain) :- time(T), \\+sun(T).
+sun(T1) :- step(T), T1 is T + 1, sky(T, W), sunny(T, W).
+state(I, T, on) :- strike(I, T).
+state(I, T, off) :- factory(I), time(T), \\+strike(I, T).
+strike(I, T1) :- step(T), T1 is T + 1, state(I, T, S), sky(T, W), strikes(I, T, S, W).
+some_off(T) :- state(_, T, off).
+reached :- time(T), \\+some_off(T).
+query(reached).
+query(strike(1, 3)).
+";
+    let options = common::options(Strategy::Auto, Projection::default());
+    let answers = |text: &str| {
+        let run = common::run(text, &options).unwrap_or_else(|e| panic!("{text}: {e}"));
+        let mut got: Vec<(String, f64)> = run
+            .results
+            .expect("no evidence")
+            .iter()
+            .map(|r| (r.to_string(), r.probability))
+            .collect();
+        got.sort_by(|a, b| a.0.cmp(&b.0));
+        got
+    };
+    let original = answers(source);
+    let expected: Vec<(&str, f64)> = original.iter().map(|(q, p)| (q.as_str(), *p)).collect();
+    for place in 0..source.lines().count() {
+        let renamed = source.replace("sun(", &format!("'$swsunny_{place}_0'("));
+        common::assert_close(&renamed, &answers(&renamed), &expected, 1e-12);
+    }
+}
