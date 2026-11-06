@@ -706,6 +706,7 @@ footer {
   --s-sppl: #9b6fd0;
   --s-geni: #d0569f;
   --s-pluck: #5c3a9e;
+  --s-webppl: #8e3fa8;
   --s-storm: #1a7f37;
   --s-prism: #3f9a50;
   --s-provsql: #8a6a12;
@@ -736,6 +737,7 @@ footer {
     --s-sppl: #dcc8fa;
     --s-geni: #f7b0d6;
     --s-pluck: #9c80e6;
+    --s-webppl: #d08ae8;
     --s-storm: #3fb950;
     --s-prism: #86dc96;
     --s-provsql: #d2b04a;
@@ -766,6 +768,7 @@ footer {
   --s-sppl: #dcc8fa;
   --s-geni: #f7b0d6;
   --s-pluck: #9c80e6;
+  --s-webppl: #d08ae8;
   --s-storm: #3fb950;
   --s-prism: #86dc96;
   --s-provsql: #d2b04a;
@@ -797,6 +800,7 @@ footer {
 .s-sppl { --s: var(--s-sppl); --d: 1.5 2.5; --sws: dotted; }
 .s-geni { --s: var(--s-geni); --d: 1.5 2.5; --sws: dotted; }
 .s-pluck { --s: var(--s-pluck); --d: 7 3 2 3; --sws: dashed; }
+.s-webppl { --s: var(--s-webppl); --d: 1.5 2.5; --sws: dotted; }
 .s-storm { --s: var(--s-storm); }
 .s-prism { --s: var(--s-prism); --d: 6 3; --sws: dashed; }
 .s-provsql { --s: var(--s-provsql); }
