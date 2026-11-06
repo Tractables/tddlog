@@ -1,9 +1,15 @@
-// Syntax highlighting for the guide: each <pre data-lang="..."> is split
-// into tokens by its language's rules, and each token is wrapped in a span
-// whose class (t-com, t-str, ...) the stylesheet colours. The text itself
-// is unchanged. The languages are the guide's: problog, shell (a session,
-// "$ " before each command and the output under it, or commands alone),
-// rust, python, c and toml.
+// The programs the site shows, for every page that shows them (the guide,
+// the playground and the results page).
+//
+// Syntax highlighting: each <pre data-lang="..."> is split into tokens by
+// its language's rules, and each token is wrapped in a span whose class
+// (t-com, t-str, ...) the stylesheet colours. The text itself is unchanged.
+// The languages are the guide's: problog, shell (a session, "$ " before
+// each command and the output under it, or commands alone), rust, python,
+// c and toml.
+//
+// filledFile: the file of a benchmark's programs that the playground opens,
+// which the results page's link to it names.
 const tddlogCode = (() => {
   const plainWord = ["", /[A-Za-z_]\w*/y];
   const number = ["num", /\d+(?:\.\d+)?(?:[eE][-+]?\d+)?/y];
@@ -137,7 +143,23 @@ const tddlogCode = (() => {
       pre.innerHTML = highlight(pre.dataset.lang, pre.textContent);
     }
   }
-  return { highlight, languages: ["shell", ...Object.keys(languages)] };
+
+  // A family that is one program takes each instance's arguments in its
+  // places ($1, $2, ...) and consults its data, which the playground cannot
+  // give. For tddlog's file `file` of instance `inst` (in its tab `tab`, the
+  // family's texts `texts`) that has places: the instance's program of its
+  // own name in another ProbLog tab, the same program with its arguments in
+  // their places and its consults inlined, as the ProbLog systems read it
+  // (the one they read where there are several), as { tab, file }. Null
+  // where `file` has no places or the results show no such program.
+  function filledFile(inst, tab, file, texts) {
+    if (!/\$[1-9]/.test(texts[file.sha] ?? "")) return null;
+    const filled = (inst.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
+      .flatMap((t) => t.files.filter((x) => x.name === `${inst.name}.pl`).map((x) => ({ tab: t, file: x })));
+    return filled.find(({ tab: t, file: x }) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0] ?? null;
+  }
+
+  return { highlight, languages: ["shell", ...Object.keys(languages)], filledFile };
 })();
 
 if (typeof module !== "undefined") module.exports = tddlogCode;

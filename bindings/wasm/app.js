@@ -300,19 +300,6 @@ function tddlogFile(instance) {
   };
 }
 
-// The program of a family whose places ($1, $2, ...) take each instance's
-// arguments, which the playground cannot give: the instance's program of its
-// own name, the same program with its arguments in their places and its
-// consults inlined, as the ProbLog systems read it (the one they read where
-// there are several). Null where `file` (in `tab`, its text in `texts`) has
-// no places, or where the results show no such program.
-function filledFile(instance, tab, file, texts) {
-  if (!/\$[1-9]/.test(texts[file.sha] ?? "")) return null;
-  const filled = (instance.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
-    .flatMap((t) => t.files.filter((x) => x.name === `${instance.name}.pl`).map((x) => ({ tab: t, file: x })));
-  return filled.find(({ tab: t, file: x }) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0] ?? null;
-}
-
 // Why a benchmark does not run as it opens, or "" where it does. `native`
 // is tddlog's time in the release run, why it has none ("timeout", ...), or
 // undefined where the records do not have it.
@@ -365,7 +352,8 @@ async function benchmark([suite, family, instance]) {
   if (inst === undefined) return { refused: "the results have no such benchmark." };
   const chosen = tddlogFile(inst);
   if (chosen.refused) return chosen;
-  const filled = filledFile(inst, chosen.tab, chosen.file, fam.texts);
+  // a family's program with places opens as the instance's program (code.js)
+  const filled = tddlogCode.filledFile(inst, chosen.tab, chosen.file, fam.texts);
   const { tab, file } = filled ?? chosen;
   if (file.held) return { refused: file.held };
   if (file.part) {

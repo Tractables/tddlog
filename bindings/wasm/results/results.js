@@ -1800,27 +1800,15 @@ function uncaptured(inst) {
     .filter((name) => !readers.some(readsAs(name)));
 }
 
-// The program of a family whose places ($1, $2, ...) take each instance's
-// arguments, as the playground opens it (app.js's filledFile): the
-// instance's program of its own name, with its arguments in their places and
-// its consults inlined, the one the ProbLog systems read where there are
-// several. Null where `file` has no places or there is no such program.
-function filledFile(inst, tab, file, texts) {
-  if (!/\$[1-9]/.test(texts[file.sha] ?? "")) return null;
-  const filled = (inst.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
-    .flatMap((t) => t.files.filter((x) => x.name === `${inst.name}.pl`).map((x) => ({ tab: t, file: x })));
-  return filled.find(({ tab: t, file: x }) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0] ?? null;
-}
-
 // The program tddlog read, for the playground: the one ProbLog file of the
-// language tddlog reads (filled in where it has places), as a link, or why
-// the playground cannot open it.
+// language tddlog reads (filled in where it has places: code.js), as a link,
+// or why the playground cannot open it.
 function playground(s, f, fam, inst, name) {
   const read = (inst.tabs ?? []).find((t) => t.readers.includes(name) && t.files.some((file) => /\.pl$/.test(file.name)));
   // files of one name (a loop's two forms) each name their readers
   const pl = read?.files.filter((file) => /\.pl$/.test(file.name) && mayRead(file, (r) => r === name)) ?? [];
   if (pl.length !== 1) return null;
-  const filled = filledFile(inst, read, pl[0], fam.texts);
+  const filled = tddlogCode.filledFile(inst, read, pl[0], fam.texts);
   const { tab, file } = filled ?? { tab: read, file: pl[0] };
   if (file.held) return element("span", { class: "no-try" }, "Not in the playground: the site does not show this program; its file says why.");
   if (file.part) return element("span", { class: "no-try" }, `Not in the playground: the site keeps the first ${size(file.part)} of this ${size(file.bytes)} program.`);
