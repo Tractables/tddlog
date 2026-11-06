@@ -762,6 +762,7 @@ function benchmarksOf(root) {
     };
     // A category's instances: each one's limit and every system's record.
     const rowsOf = (c) => c.rows.map((r) => ({ suite: r[0], name: r[1], limit: r[2], cls: r[3],
+      foreign: new Set(c.systems.filter((x, j) => r[3][j] === "x")),
       v: Object.fromEntries(c.systems.map((x, j) => [x, r[4 + j]])) }));
     // How many rows the fastest of xs answers.
     const virtual = (rows, xs) => rows.filter((r) => xs.some((x) => number(r.v[x]))).length;
@@ -810,8 +811,11 @@ function benchmarksOf(root) {
         if (w[k] !== null) assert.ok(Math.abs(v[k] / w[k] - 1) < 1e-3, `${what}: ${k}, ${v[k]} against ${w[k]}`);
       }
     };
-    // Each row's subject (key) against x over rows, those that give x a run.
-    const versus = (rows, x, key = myKey) => compare(rows.filter((r) => r.v[x] !== null).map((r) => [r.limit, r.v[key(r)], r.v[x]]));
+    // Each row's subject (key) against x over rows, those that give x a run of a program idiomatic
+    // for it unless every: a translation that is not (the letter x) is in its answers and out of a
+    // type's comparison, in a family's and all programs'.
+    const versus = (rows, x, every = false, key = myKey) => compare(rows.filter((r) => r.v[x] !== null && (every || !r.foreign.has(x)))
+      .map((r) => [r.limit, r.v[key(r)], r.v[x]]));
     // The circuits' places (the instances whose circuit an exporter's code
     // exports) and, on each, the systems that read the circuit
     // (categories.json's circuits).
@@ -865,7 +869,7 @@ function benchmarksOf(root) {
       for (const x of c.systems) {
         assert.equal(c.answers[x], virtual(rows, [x]), `${what}: ${x}'s answers`);
         assert.equal(c.given[x], rows.filter((r) => given(r, x)).length, `${what}: the instances ${x} was given`);
-        if (!isMine(x)) same(c.vs[x], versus(rows, x), `${what}: tddlog against ${x}`);
+        if (!isMine(x)) same(c.vs[x], versus(rows, x, c.key === ALL), `${what}: tddlog against ${x}`);
       }
       const parts = [...c.groups.map((g) => [g.key, g.rows.map((i) => rows[i])]),
         ...c.systems.map((x, j) => [`own:${x}`, rows.filter((r) => r.cls[j] === "o")]).filter(([, sub]) => sub.length)];
@@ -873,7 +877,7 @@ function benchmarksOf(root) {
       for (const [key, sub] of parts) {
         const given = c.systems.filter((x) => !isMine(x) && sub.some((r) => r.v[x] !== null));
         assert.deepEqual(Object.keys(c.narrowed[key]).sort(), [...given].sort(), `${what} narrowed to ${key}: its systems`);
-        for (const x of given) same(c.narrowed[key][x], versus(sub, x), `${what} narrowed to ${key}: tddlog against ${x}`);
+        for (const x of given) same(c.narrowed[key][x], versus(sub, x, true), `${what} narrowed to ${key}: tddlog against ${x}`);
       }
       assert.deepEqual(c.native, ranked(c, c.native), `${what}: the native systems by their answers, then speed-up`);
       if (c.key === ALL) assert.deepEqual([...c.native].sort(), c.systems.filter((x) => !isMine(x)).sort(), `${what}: every system`);
@@ -1078,13 +1082,11 @@ function benchmarksOf(root) {
       console.log(`ok tddlog against ${x} on ${c.key}, from the scatter plot's menu and back`);
     }
     // Each solver: its answers over every instance of the categories it was
-    // given, and against tddlog (rule 16) on the instances in its own
-    // language and on those translated for it. A baseline's page (the front
-    // page's #/baselines/KEY; #/system/KEY here opens it): a row for each of
-    // those two with the comparison's speed-up, their plots against tddlog;
-    // a row for each category, and its plot of the systems drawn and this
-    // one, tddlog's line and its own in colour; how it was given the
-    // instances, every one of them counted; its paper and its link.
+    // given, each instance in one class. A baseline's page (the front page's
+    // #/baselines/KEY; #/system/KEY here opens it): a row for each category,
+    // and its plot of the systems drawn and this one, tddlog's line and its
+    // own in colour; how it was given the instances, every one of them
+    // counted; its paper and its link.
     for (const s of cats.systems) {
       const what = `the solver ${s.key}`;
       const me = isMine(s.key);
@@ -1093,33 +1095,22 @@ function benchmarksOf(root) {
       const rows = cs.flatMap(rowsOf);
       assert.equal(s.answers, virtual(rows, [s.key]), `${what}: its answers`);
       assert.equal(s.given, cs.reduce((n, c) => n + c.given[s.key], 0), `${what}: the instances it was given`);
-      // the instances in its own language (its own among them) and those translated for it
-      const ways = [["on", "native"], ["t", "translated"]].map(([letters, key]) => ({ key,
-        rows: cs.flatMap((c) => rowsOf(c).filter((r) => letters.includes(r.cls[c.systems.indexOf(s.key)]))) }));
-      assert.equal(ways.reduce((n, w) => n + w.rows.length, 0), s.given, `${what}: each instance it was given in its own language or translated`);
-      for (const { key, rows: w } of ways) {
-        if (me || !w.length) assert.equal(s[key], null, `${what}: no comparison of its ${key} instances`);
-        else same(s[key], versus(w, s.key), `${what}: against tddlog on its ${key} instances`);
-      }
+      // own, native, translated, or translated but not idiomatic
+      assert.equal(cs.reduce((n, c) => n + rowsOf(c).filter((r) => "ontx".includes(r.cls[c.systems.indexOf(s.key)])).length, 0), s.given,
+        `${what}: each instance it was given in one class`);
       if (me) continue;
       const hash = `#/baselines/${s.key}`;
       await page.goto(`${base}results/#/system/${s.key}`);
       await page.waitForSelector(`#view[data-route="${hash}"] section#types table.board`);
       assert.equal(new URL(page.url()).hash, hash, `${what}: its old address opens its page`);
-      const given = ways.filter((w) => w.rows.length);
-      assert.deepEqual(await page.$$eval("#view table.languages tbody tr", (trs) => trs.map((tr) => [tr.cells[1].textContent, tr.cells[tr.cells.length - 1].textContent])),
-        given.map((w) => [count(w.rows.length), s[w.key].speedup === null ? "too few in common" : speed(s[w.key].speedup)]), `${what}: its own language and translated`);
-      for (const fold of ["lang-figs", "cat-figs-fold"]) await page.click(`#view details.${fold} > summary`);
-      // its plots in its own language, translated for it, and in each type (the page's other panels have theirs)
-      const figs = (await plots("#view #language figure.plot, #view #types figure.plot")).map((f) => [f.systems.join(" "), f.instances, [...f.coloured].sort().join(" ")]);
-      assert.deepEqual(figs, [...given.map((w) => [[...s[w.key].me, s.key].join(" "), w.rows.length, [...s[w.key].me, s.key].sort().join(" ")]),
-        ...cs.map((c) => {
-          const drawn = [...new Set([...c.drawn, s.key])];
-          return [[...drawn.filter(isMine), ...ranked(c, drawn)].join(" "), c.instances, [...new Set([...c.mine, s.key])].sort().join(" ")];
-        })], `${what}: its plots`);
+      await page.click("#view details.cat-figs-fold > summary");
+      // its plot in each type (the page's other panels have theirs)
+      const figs = (await plots("#view #types figure.plot")).map((f) => [f.systems.join(" "), f.instances, [...f.coloured].sort().join(" ")]);
+      assert.deepEqual(figs, cs.map((c) => {
+        const drawn = [...new Set([...c.drawn, s.key])];
+        return [[...drawn.filter(isMine), ...ranked(c, drawn)].join(" "), c.instances, [...new Set([...c.mine, s.key])].sort().join(" ")];
+      }), `${what}: its plots`);
       for (const fig of await plots()) linear(fig, what);
-      assert.deepEqual(await page.$$eval("#view details.lang-figs figure.scatter", (fs) => fs.map((f) => [f.dataset.faster, f.dataset.slower])),
-        given.map((w) => sides(w.rows, [s.key])), `${what}: tddlog against it`);
       assert.equal(await page.$$eval("#view section#types > div table.board tbody tr", (trs) => trs.length), cs.length, `${what}: a row for each category`);
       assert.equal(await page.getAttribute("#view p.lede a", "href"), s.link, `${what}: its link`);
       if (s.cite) assert.ok((await page.textContent("#view div.facts")).includes(s.cite.title), `${what}: its paper`);
