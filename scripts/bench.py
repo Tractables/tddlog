@@ -2,7 +2,7 @@
 """Benchmark tddlog against ProbLog on generated instance families.
 
     bench.py gen  [--dir bench] [--cnf] [--pr] [--alea CMD] [--tddlog BIN]
-                  [--circulette-python PY] [SELECTION]
+                  [--circulette-netlists DIR] [SELECTION]
     bench.py run  [--dir bench] [--out results.jsonl] [--tddlog BIN] [--problog BIN]
                   [--strategies s1,s2] [--kbs ddnnf,sdd,fsdd] [--dice CMD] [--alea CMD] [--timeout S]
                   [--pita SWIPL] [--pita-packs DIR] [--aspmc PYTHON] [--scallop SCLI]
@@ -608,12 +608,16 @@ for _h in GENI_WEATHER_H:
 # authors wrote it, and two of them grown into families of sizes:
 # fullAdder8.v's adder by its bits (ct_fulladder, 8 the file as written)
 # and openfpga_mac_2.v's multiply-accumulate by DATA_WIDTH (ct_mac, 2 and
-# 4 openfpga_mac_2.v and openfpga_mac_4.v). gen_circulette.py writes the
-# netlist NAME.cql, which tddlog reads itself (`original`) and gen writes
-# the program of (`tddlog --program`, NAME.pl) for the systems that read
-# ProbLog programs; Roulette runs circulette.rkt itself on the netlist
-# (`run_circulette`). The other netlists are no sizes of one another
-# (COLLECTIONS).
+# 4 openfpga_mac_2.v and openfpga_mac_4.v). gen_circulette.py wrote each
+# netlist NAME.cql once, with the arguments below; rkt_of_verilog.py then
+# numbered a design's ports in an order that changed between runs, so the
+# netlists every system reads are those files, kept apart from the
+# repository as Circulette's (`--circulette-netlists DIR`), and gen copies
+# each and checks its SHA-256 (CT_SHA256). tddlog reads the netlist itself
+# (`original`), and gen writes the program of it (`tddlog --program`, NAME.pl)
+# for the systems that read ProbLog programs; Roulette runs circulette.rkt
+# itself on the netlist (`run_circulette`). The other netlists are no sizes
+# of one another (COLLECTIONS).
 CT_ROOT = ['1-bit-mux', '4-bit-comparator', 'adder8', 'exp']
 CT_DESIGNS = {'halfAdder': 'adder/halfAdder.v', 'fullAdder': 'adder/halfAdder.v,adder/fullAdder.v',
               'ALU': 'alu/ALU.v', 'ALU_Controller': 'alu/ALU.v,alu/ALU_Controller.v', 'FIFO': 'alu/FIFO.v',
@@ -632,6 +636,51 @@ for _n, _files in CT_DESIGNS.items():
 for _family, _sizes in CT_SIZES.items():
     for _n in _sizes:
         CIRCULETTE[f'ct_{_family}{_n}'] = (f'ct_{_family}', ['gen_circulette.py', _family, str(_n)])
+# The SHA-256 of each netlist of CIRCULETTE, which gen checks (gen_circulette).
+CT_SHA256 = {
+    'ct_1-bit-mux': 'fb57af80b9032bb45fc368c62b95f6754113d7bd93b1e00c179f28bdb4b83ea9',
+    'ct_2bit-adder': '0874bf0def916032a2efbf2981e8d1460eacb00952adc4f9616c86b4f20d1ddc',
+    'ct_4-bit-comparator': '6b73588b6c0b98173be13cc25367fd6a5ea11635a5be6aa67246fd21a06327a2',
+    'ct_4bit-multiplier': 'e307b556cb2be02aeb317a3f4e25cd45c25d5661b82c817552febd20e5df799a',
+    'ct_8bit-adder': '224e24765c08ddf83158ad3a50e4a10060ba3601ebf576b3bf16276e3941f6f4',
+    'ct_ALU': '1eac4e5ef4a436caabba3c462b50e509a8d4f67140cd162043ec40659dec2c87',
+    'ct_ALU_Controller': '21b6652bebb3612edcb35317b5370018f6e5e853fde4a21ca59b0d385cab60ef',
+    'ct_ALU_Top': '1f237cf36d81b163be798715b64dee8e18d9c93357d1408436cac21b10bd9383',
+    'ct_FIFO': '2d0cbe0a07c00e282643d1921a99a349ccfe7da708a6bce4b6daf0b507987971',
+    'ct_adder8': '2578694384a99da86db6f9a2ed6b47240c75e76a84f9c2a4bf05b4d7335b62f5',
+    'ct_exp': 'a4807aba10fb084d4c40b76d562d44447c0c8b44623425ddab5a77e37e5ba6f1',
+    'ct_fullAdder': '49aae82314f8b12f89f7f459c2ca906dfece5a11e6725f46a48ba8cf0e563bc4',
+    'ct_fulladder10': '5e34a82b70461493f010e26d29b688a7e075b14d43e2954c1e1ca62f29689300',
+    'ct_fulladder12': 'adbe428660a3795711b6ef9392a5916d63d4c325ec1d4ba1a262851f790cfd22',
+    'ct_fulladder16': '66f450bf6e3a51053c7f4ba6f0f62d6ff3ba5aaedbb94d4b79efe1fb6a65bd04',
+    'ct_fulladder18': 'f413fc645e2ba97091a5d55f0d06a1b5f8b3e070371d60a37fe6a99c985356c7',
+    'ct_fulladder2': 'd9eb29d68c659bcf44f88a21d812e1fc2daeb018d895cdea00ccb387486d2fa8',
+    'ct_fulladder20': '7585d494a2cfa3d1d9c50524fc674d03a6ea568fa7e31c6b41adcbc1efd5e268',
+    'ct_fulladder24': '7ce25d5b026ea8ca4991b0027d2cc86b43f1f05252954002459a7752a3710ab3',
+    'ct_fulladder32': 'c805ddb84b8680658d292f35a3c5b03bb90d8ca9ca8e7425bde97fbd464ec26c',
+    'ct_fulladder4': 'f3aafa9246ba4c6a107acebda563437f5589f0eb9902e3bb36df532f95fb662b',
+    'ct_fulladder48': '27c2a3f07273657b1d3a7f4e3158ad3ac92ad836fd5b2ce98240cd2caae0abdb',
+    'ct_fulladder6': '8ffe96dfe818caada9b4e5f1fc939e096b26a75df612368ef90e17c8dea8ca2d',
+    'ct_fulladder8': '6b067bf7d6baaf9ff1018d9e4634e31281e75796372af7387f462cd6629cc04c',
+    'ct_halfAdder': '595396658680161ced8df8fda20ade3d67ab3931643e6d983b0481a143a0290a',
+    'ct_jsrflipflop': '1fe8eddec8150f45032c5bf1deba786477000628f012063e4dce1263d626ed7a',
+    'ct_mac1': '96fa245184a30a2bbdc21e464d005769ed5c2c3a702428d446553745a555898b',
+    'ct_mac2': '3555f8c298c4f654aa21cd46132639fde639d4e112878593644216a010ba294e',
+    'ct_mac3': '1f91281cf34cc4ab256656bdb3d813b21d12335c12dba51f2511f09c501a2ca0',
+    'ct_mac4': '0cdaaa061320dc11ced20a1d7a5e09df0832159a91aaddb2e781e20c65dfea57',
+    'ct_mac5': '1dc97466bd2d49954ae622c229cf017ef82ffdd810d6ffca2dd2b75307d907f2',
+    'ct_mac6': '686538b8cdab75ddf33f64d85c92c7b9c5a38f3be831480955b983e40d90246d',
+    'ct_mux2': '9ebd0d5ff8c6c101add5de0325c178de908c1801be85d42d8ce3f79cba4a303d',
+    'ct_openfpga_and4': '5ec141d7948c8c94a6091de0c438a9dc16cb2534300abf14a50676f1d21b8c2c',
+    'ct_openfpga_and4_tmrg': '63d6dc561e340dfe2326530e74738f2d2e055ac8cf7e5553b56bd2233c103eb2',
+    'ct_openfpga_asyn_spram_4x1': 'a2833c128ffa661b1b857893dc928bcb617dabd1d7952f4a79270aaf15a2e273',
+    'ct_openfpga_clock_divider': '1d16ee4d736c0533c8420c60619e52f38e7927283b9fe2ecc55e18610930d827',
+    'ct_openfpga_dual_port_ram_1k': '736deda101a949c9e23a33afa412efa558a8a2ccc4d705470ed227126429da2a',
+    'ct_openfpga_pulse_generator': '6945b17670d41883f34e6a094a6793add552b24454451e62d653defdec62975f',
+    'ct_openfpga_syn_spram_4x1': '50d047bbfa9d97dbba7be0fde1a1119594375357fdcd9cafa4bc6c39f6422706',
+    'ct_openfpga_syn_spram_4x1_tmr': '3525c1023a37cdfc4f99a043e4f1ea4300da0c653923965df6ed3cb0d16452c6',
+    'ct_serial-crc': '01a17fb1695a3762aaea32a742489b2d58598674c2edd0f6c55808f415dbc6e0',
+}
 
 
 # The networks the flip-hoisting evaluation adds (data/bn-large, gzipped,
@@ -1522,9 +1571,12 @@ def gen(args):
     if getattr(args, 'pr', False) and args.suite != 'uai':
         raise SystemExit('--pr writes the uai suite\'s programs for the partition function alone, and the suite is '
                          + args.suite)
-    if getattr(args, 'circulette_python', 'python3') != 'python3' and \
-            not any(e[1][0] == 'gen_circulette.py' for e in spec.values()):
-        raise SystemExit("--circulette-python converts Circulette's Verilog designs, and no netlist is selected")
+    netlists = [n for n, e in spec.items() if e[1][0] == 'gen_circulette.py']
+    if getattr(args, 'circulette_netlists', '') and not netlists:
+        raise SystemExit("--circulette-netlists gives the Circulette instances' netlists, and none is selected")
+    if netlists and not getattr(args, 'circulette_netlists', ''):
+        raise SystemExit(f"{netlists[0]} is a Circulette netlist, which gen copies from --circulette-netlists DIR "
+                         f'({len(netlists)} instances)')
     tddlog = getattr(args, 'tddlog', None) or str(source_tree.BINARY)
     os.environ['TDDLOG'] = tddlog   # the generators that convert an LPAD (--template of gen_uwcse.py, gen_pedigree.py)
     if any(e[1][0] in PROGRAM_OF_TDDLOG or fold_of(e[1]) for e in spec.values()) and not os.access(tddlog, os.X_OK):
@@ -1582,15 +1634,26 @@ def gen(args):
 
 
 def gen_circulette(args, name, gargs):
-    """Writes a Circulette instance's netlist NAME.cql (gen_circulette.py)
-    and the program tddlog's reader writes of it, NAME.pl (`write_program`);
-    a netlist that does not convert, or that the reader refuses, stops gen."""
+    """Writes a Circulette instance's netlist NAME.cql, a copy of
+    --circulette-netlists' NAME.cql whose SHA-256 is CT_SHA256's, and the
+    program tddlog's reader writes of it, NAME.pl (`write_program`); a
+    netlist that is missing or another file, or that the reader refuses,
+    stops gen."""
+    src = os.path.join(args.circulette_netlists, name + '.cql')
+    if name not in CT_SHA256:
+        raise SystemExit(f'{name}: no SHA-256 in CT_SHA256 for its netlist')
+    try:
+        with open(src, 'rb') as f:
+            data = f.read()
+    except OSError as e:
+        raise SystemExit(f'{name}: {e}')
+    got = hashlib.sha256(data).hexdigest()
+    if got != CT_SHA256[name]:
+        raise SystemExit(f'{src}: SHA-256 {got}, not {CT_SHA256[name]}, the netlist the records read')
     cql = original(gargs, '', os.path.join(args.dir, name))
-    p = subprocess.run([sys.executable, str(source_tree.script('gen_circulette.py')), *gargs[1:],
-                        '--circulette', args.circulette_benchmarks, '--cql', cql, '--python', args.circulette_python],
-                       capture_output=True, text=True)
-    if p.returncode != 0:
-        raise SystemExit(f'{name}: ' + p.stderr.strip()[-2000:])
+    with open(cql + '.part', 'wb') as f:
+        f.write(data)
+    os.replace(cql + '.part', cql)
     write_program(args, name, [cql])
 
 
@@ -1817,9 +1880,11 @@ def left_out(rec, ref):
     that answer is right where the reference's is 0 to the check's noise and
     its printed digits. A query left out where the reference's answer is not
     0 is an answer dropped (a translator's empty relation, a truncated
-    output). Answers of rec's that are not a dict answer no query; none is
-    left out of a reference whose answers are not a dict."""
-    a, b = rec.get('answers'), ref.get('answers')
+    output). Roulette on a Circulette instance answers a posterior at or
+    below Circulette's printing threshold by leaving it out (printed_answers).
+    Answers of rec's that are not a dict answer no query; none is left out
+    of a reference whose answers are not a dict."""
+    a, b = printed_answers(rec, ref), ref.get('answers')
     if not isinstance(b, dict):
         return []
     a = a if isinstance(a, dict) else {}
@@ -7123,8 +7188,9 @@ def main():
     g.add_argument('--pr', action='store_true',
                    help="the uai suite's programs for the partition function alone, for run --pr: no queries, and "
                    "a Potts network's colour symmetry broken (gen_bn.py --query none)")
-    g.add_argument('--circulette-python', default='python3',
-                   help="the Python with pyrtl that runs Circulette's rkt_of_verilog.py, yosys on PATH")
+    g.add_argument('--circulette-netlists', default='',
+                   help="the directory of the Circulette instances' netlists, NAME.cql, which gen copies and checks "
+                   'against their SHA-256 (CT_SHA256)')
     g.add_argument('--tddlog', default=str(source_tree.BINARY),
                    help="the tddlog that writes the program of a network, a Dice program, an LPAD or a Circulette "
                    "netlist (`tddlog --program`), which the systems that read ProbLog programs are given")

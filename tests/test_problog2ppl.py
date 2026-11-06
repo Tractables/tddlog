@@ -1,0 +1,270 @@
+"""problog2ppl.py writes ProbLog programs over their facts in Alea.jl,
+Roulette, WebPPL, Psi, Pluck and SPPL: the program's text, its facts file (Psi's,
+Pluck's and SPPL's programs hold their facts) and the queries it answers, in order, and the
+programs it refuses. The answers are checked
+on each run against the instance's reference (bench.py's checks)."""
+import ast
+import itertools
+import math
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+root = Path(__file__).resolve().parents[1]
+scripts = root / 'scripts'
+sys.path.insert(0, str(scripts))
+import problog2ppl  # noqa: E402
+from problog2ppl import Refused, translate  # noqa: E402
+
+PATHS = """0.6::edge(a, b). 0.7::edge(b, c). 0.5::edge(a, c).
+path(X, Y) :- edge(X, Y).
+path(X, Y) :- edge(X, Z), path(Z, Y).
+query(path(a, c)). query(path(b, c)).
+"""
+
+
+class Event:
+    """An SPPL event in one world: whether it holds."""
+    def __init__(self, holds):
+        self.holds = holds
+
+    def __and__(self, other):
+        return Event(self.holds and other.holds)
+
+    def __or__(self, other):
+        return Event(self.holds or other.holds)
+
+    def __bool__(self):
+        return self.holds
+
+
+class Value:
+    """An SPPL variable's value in one world: `x << {v, ...}` its event."""
+    def __init__(self, v):
+        self.v = v
+
+    def __lshift__(self, values):
+        return Event(self.v in values)
+
+
+def sppl_world(text, world):
+    """The names of an SPPL program problog2ppl.py wrote, run as Python in
+    one world, as SPPL's compiler reads it (`~=` an assignment), each coin
+    drawing the next value of WORLD, an `if` reading the event of the world;
+    and whether its evidence holds there."""
+    draws, evidence = iter(world), []
+    names = {'atomic': lambda loc: Value(loc), 'discrete': lambda d: Value(next(draws)),
+             'array': lambda n: [None] * n,
+             'condition': evidence.append}
+    exec(text.replace('~=', '='), names)
+    return names, all(evidence)
+
+
+def sppl_answers(text):
+    """The probabilities of the queries of an SPPL program problog2ppl.py
+    wrote, given its evidence, from its worlds, once for each value of each
+    coin."""
+    dists = sppl_world(text, iter(lambda: 1, None))[0]['coin_d_']
+    total, mass = 0.0, None
+    for world in itertools.product(*[sorted(d) for d in dists]):
+        weight = math.prod(d[v] for d, v in zip(dists, world))
+        names, observed = sppl_world(text, world)
+        if observed:
+            total += weight
+            holds = [bool(e) for e in names['queries_']()]
+            mass = [m + weight * h for m, h in zip(mass or [0.0] * len(holds), holds)]
+    return [m / total for m in mass]
+
+
+class Translation(unittest.TestCase):
+    def test_every_language_reads_the_facts_from_a_file(self):
+        for lang in problog2ppl.LANGS:
+            text, rows, queries = translate(lang, PATHS, 'paths.pl')
+            self.assertEqual(queries, ['path(a,c)', 'path(b,c)'], lang)
+            if lang in problog2ppl.INLINE:   # Psi, Pluck and SPPL: the facts are in the program
+                self.assertEqual(rows, [], lang)
+                continue
+            self.assertEqual(sorted(rows), sorted(['edge/2\t0.6\ta\tb', 'edge/2\t0.7\tb\tc', 'edge/2\t0.5\ta\tc']), lang)
+
+    def test_psi_programs_hold_their_facts_and_return_their_queries(self):
+        text, _, _ = translate('psi', PATHS, 'paths.pl')
+        self.assertTrue(text.startswith('// paths.pl: a ProbLog program written in Psi'))
+        self.assertEqual(text.count('return queries;'), 1)   # bench.py asks queries[K] a run
+        # a, b and c as numbers past every integer of the program, in order
+        self.assertIn('edge_facts_1 := [1000000, 1000001, 1000000]: ℤ[];', text)
+        self.assertIn('edge_facts_p := [0.6, 0.7, 0.5]: ℝ[];', text)
+        self.assertIn('while stage', text)   # path/2 is recursive
+        self.assertNotIn('readCSV', text)
+        for program, why in [('0.5::p(1.5). query(p(1.5)).', 'not an integer'),
+                             ('0.5::e(4). p(Y) :- e(X), Y is X // 2. query(p(2)).', 'integer operation //')]:
+            with self.assertRaises(Refused) as e:
+                translate('psi', program)
+            self.assertIn(why, str(e.exception))
+
+    def test_pluck_programs_hold_their_facts_as_lists_and_ask_their_queries(self):
+        text, _, _ = translate('pluck', PATHS, 'paths.pl')
+        self.assertTrue(text.startswith(';; paths.pl: a ProbLog program written in Pluck'))
+        # one s-expression after another, balanced once the comments are left out
+        depth = 0
+        for line in text.splitlines():
+            for ch in line.split(';', 1)[0]:
+                depth += {'(': 1, ')': -1}.get(ch, 0)
+                self.assertGreaterEqual(depth, 0, line)
+        self.assertEqual(depth, 0)
+        self.assertIn('(define-type sym (c_a) (c_b) (c_c))', text)   # the symbols as constructors
+        self.assertIn('(Pair (T2 (c_a) (c_b)) (Chance 0.6))', text)
+        self.assertIn('(Y (lambda rec rels stage before ->', text)   # path/2 is recursive
+        self.assertIn('(query c0 (let ((m (program))) (Marginal (index 0 (snd m)))))', text)
+        self.assertIn('(query c1 ', text)
+        self.assertIn('(Posterior (index 0 (snd m)) (fst m))',
+                      translate('pluck', PATHS + 'evidence(edge(a, b), true).\n')[0])
+        for program, why in [('0.5::p(1.5). query(p(1.5)).', 'not an integer'),
+                             ('0.5::e(4). p(Y) :- e(X), Y is X // 2. query(p(2)).', 'integer operation //'),
+                             ('0.5::e(a). 0.5::e(1). query(e(a)).', 'both symbols and integers'),
+                             ('0.5::e(20000). query(e(20000)).', 'above 10000')]:
+            with self.assertRaises(Refused) as e:
+                translate('pluck', program)
+            self.assertIn(why, str(e.exception))
+
+    def test_sppl_programs_compute_their_joins_before_their_samples(self):
+        text, _, _ = translate('sppl', PATHS, 'paths.pl')
+        self.assertTrue(text.startswith('# paths.pl: a ProbLog program written in SPPL'))
+        # sppl_dice.py's plan: the queries are the events of queries_()
+        self.assertIn('\n# queries\n# component 0 bool query0\n# component 1 bool query1\n', text)
+        constants, commands = text.split('\ntrue_ ~= atomic(loc=1)\n')
+        self.assertNotIn('~=', constants)   # SPPL takes a constant only before the first sample
+        self.assertIn("edge_ft = [('a', 'b'), ('b', 'c'), ('a', 'c')]", constants)
+        self.assertIn('comp2_t = fix_(lambda ts_: ', constants)   # path/2 is recursive
+        self.assertIn('for k_ in range(len(comp2_steps)):', commands)
+        # path(a, b) is not read, and no tuple of path/2 reads one of its own cycle: three instances, a stage each
+        steps = sppl_world(text, iter(lambda: 1, None))[0]['comp2_steps']
+        self.assertEqual([(q, s) for q, _, s, _ in steps], [('path', 1)] * 3)
+        self.assertNotIn('\ndef ', text)   # no statement SPPL's compiler drops
+        for got, want in [(sppl_answers(text), [0.5 + 0.5 * 0.42, 0.7]),
+                          (sppl_answers(translate('sppl', PATHS + 'evidence(edge(a, b), true).\n')[0]),
+                           [0.5 + 0.5 * 0.7, 0.7])]:
+            for g, w in zip(got, want):
+                self.assertAlmostEqual(g, w)
+        # a probabilistic rule, an annotated disjunction, a negation, a cycle, a symbol with `~=`
+        program = PATHS + ("0.3::edge(c, a).\n0.7::reach(X) :- path(a, X).\npick(b).\n"
+                           "0.2::color(X, red) ; 0.5::color(X, blue) :- pick(X).\n"
+                           "node(a). node(b). node(c).\nlonely(X) :- node(X), \\+ path(X, _).\n"
+                           "0.5::s('x ~= y').\nquery(reach(c)). query(color(b, blue)). query(lonely(b)).\n"
+                           "query(path(c, b)). query(s('x ~= y')).\n")
+        pc = 0.5 + 0.5 * 0.42
+        got = sppl_answers(translate('sppl', program)[0])
+        for g, want in zip(got, [pc, 0.7, 0.7 * pc, 0.5, 0.3, 0.3 * 0.6, 0.5]):
+            self.assertAlmostEqual(g, want)
+        # with edge(c, a), the nine tuples of path/2 go in three cycles of three, each in three stages: its 16
+        # instances in each stage
+        names = sppl_world(translate('sppl', program)[0], iter(lambda: 1, None))[0]
+        self.assertEqual(sorted(s for k, v in names.items() if k.endswith('_steps') for q, _, s, _ in v if q == 'path'),
+                         sorted([1, 2, 3] * 16))
+        # the demand: weather(sun,T) for the T its callers ask
+        weather = ('0.5::weather(sun,0) ; 0.5::weather(rain,0) <- true.\n'
+                   '0.6::weather(sun,T) ; 0.4::weather(rain,T) <- T>0, Tprev is T-1, weather(sun,Tprev).\n'
+                   '0.2::weather(sun,T) ; 0.8::weather(rain,T) <- T>0, Tprev is T-1, weather(rain,Tprev).\n'
+                   'query(weather(sun,2)).\n')
+        sun1 = 0.5 * 0.6 + 0.5 * 0.2
+        self.assertAlmostEqual(sppl_answers(translate('sppl', weather)[0])[0], sun1 * 0.6 + (1 - sun1) * 0.2)
+
+    def test_sppl_programs_nest_few_sums(self):
+        # SPPL's compiler writes each binary operation back in a parenthesis of its own, and Python's parser
+        # refuses more than 200 nested: cora's sametitle/2 has 559 rules, each a list of matches
+        program = '0.5::c.\n' + ''.join(f'e{i}.\nq :- c, e{i}.\n' for i in range(300)) + 'query(q).\n'
+        text = translate('sppl', program)[0]
+
+        def depth(node):
+            return isinstance(node, ast.BinOp) + max([depth(c) for c in ast.iter_child_nodes(node)], default=0)
+        self.assertLess(depth(ast.parse(text.replace('~=', '='))), 200)
+        self.assertAlmostEqual(sppl_answers(text)[0], 0.5)
+
+    def test_alea_programs_are_in_the_form_alea_bench_reads(self):
+        text, _, _ = translate('alea', PATHS, 'paths.pl')
+        self.assertIn('const QUERY = :pr\n', text)
+        self.assertEqual(text.count('\nconst FACTS = '), 1)   # alea_bench.jl --file FACTS PATH
+        self.assertIn('\nfunction model()\n', text)
+        self.assertIn('observe(ev)', text)
+        self.assertNotIn('\nmodule ', text)   # alea_bench.jl evaluates it in a module of its own
+        self.assertIn('queries = (holds(path, (:a, :c)), holds(path, (:b, :c)))', text)
+
+    def test_the_other_neck_reads_as_the_usual_one(self):
+        program = "0.3::a. 0.2::r <- a.\nh <- r. q('x <- y') :- h. % a <- b\nquery(h). query(q('x <- y')).\n"
+        for lang in problog2ppl.LANGS:
+            _, _, queries = translate(lang, program)
+            self.assertEqual(queries, ['h', "q('x <- y')"], lang)
+
+    def test_a_clause_its_callers_bind_is_evaluated_for_their_arguments(self):
+        # ProbLog's tutorial HMM: T is bound by the query and by the call, not by the body
+        weather = ('0.5::weather(sun,0) ; 0.5::weather(rain,0) <- true.\n'
+                   '0.6::weather(sun,T) ; 0.4::weather(rain,T) <- T>0, Tprev is T-1, weather(sun,Tprev).\n'
+                   '0.2::weather(sun,T) ; 0.8::weather(rain,T) <- T>0, Tprev is T-1, weather(rain,Tprev).\n'
+                   'query(weather(sun,3)).\n')
+        prog = problog2ppl.read(weather)
+        demand = [r for r in prog.rules if r.demand]
+        self.assertEqual(sorted({r.heads[0][0] for r in demand}), [('demand_2', 1), ('demand_3', 1)])
+        # the query's argument, and each call's from each of the two clauses that call it
+        self.assertEqual(len(demand), 2 + 2 * 2)
+        guarded = [r for r in prog.rules if r.probs and len(r.probs) == 2 and r.steps]
+        self.assertTrue(all(isinstance(r.steps[0], problog2ppl.Atom) and r.steps[0].pred[0].startswith('demand_')
+                            for r in guarded))
+        self.assertTrue(all(r.heads[0][0] != r.steps[0].pred for r in guarded))
+        # and cplint's coin: an annotated disjunction of facts with a variable, called with it bound
+        for lang in problog2ppl.LANGS:
+            for program in (weather, '0.9::fair(C) ; 0.1::biased(C).\n0.5::toss(coin).\n'
+                            'h(C) :- toss(C), biased(C).\nquery(h(coin)).\n'):
+                text, _, queries = translate(lang, program)
+                self.assertIn('demand_', text, lang)
+        with self.assertRaises(Refused) as e:
+            translate('alea', '0.5::p(X) :- X > 1.\nq :- p(_).\nquery(q).\n')
+        self.assertIn('leaves an argument', str(e.exception))
+
+    def test_refusals(self):
+        for program, why in [('p([1, 2]). query(p(_)).', ''),
+                             ('0.5::e(1, 2). p(X) :- e(X, _). query(p(Y)).', 'translator: a query that is not ground')]:
+            for lang in problog2ppl.LANGS:
+                with self.assertRaises(Refused, msg=lang) as e:
+                    translate(lang, program)
+                self.assertIn(why, str(e.exception))
+
+    def test_the_command_line_writes_the_program_and_its_facts(self):
+        with tempfile.TemporaryDirectory() as d:
+            pl, out, facts = (os.path.join(d, f) for f in ('p.pl', 'p.jl', 'p.facts'))
+            Path(pl).write_text(PATHS)
+            r = subprocess.run([sys.executable, str(scripts / 'problog2ppl.py'), 'alea', pl, out, facts],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual(r.stdout.split(), ['path(a,c)', 'path(b,c)'])
+            self.assertEqual(len(Path(facts).read_text().splitlines()), 3)
+            self.assertTrue(Path(out).read_text().startswith('# p.pl: a ProbLog program'))
+            Path(pl).write_text('p([1]). query(p(_)).')
+            r = subprocess.run([sys.executable, str(scripts / 'problog2ppl.py'), 'webppl', pl, out, facts],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, problog2ppl.REFUSED, r.stderr)
+            # Psi's program holds its facts: no facts file
+            Path(pl).write_text(PATHS)
+            psi = os.path.join(d, 'p.psi')
+            r = subprocess.run([sys.executable, str(scripts / 'problog2ppl.py'), 'psi', pl, psi],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual(r.stdout.split(), ['path(a,c)', 'path(b,c)'])
+            self.assertIn('def main() {', Path(psi).read_text())
+            pluck = os.path.join(d, 'p.pluck')
+            r = subprocess.run([sys.executable, str(scripts / 'problog2ppl.py'), 'pluck', pl, pluck],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual(r.stdout.split(), ['path(a,c)', 'path(b,c)'])
+            self.assertIn('(define (program)', Path(pluck).read_text())
+            sppl = os.path.join(d, 'p.sppl')
+            r = subprocess.run([sys.executable, str(scripts / 'problog2ppl.py'), 'sppl', pl, sppl],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual(r.stdout.split(), ['path(a,c)', 'path(b,c)'])
+            self.assertIn('\nqueries_ = lambda: [', Path(sppl).read_text())
+
+
+if __name__ == '__main__':
+    unittest.main()

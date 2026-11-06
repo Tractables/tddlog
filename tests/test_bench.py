@@ -1321,6 +1321,20 @@ class CirculetteTests(unittest.TestCase):
         for other in (dict(rec, system='tddlog'), dict(rec, instance='rl_hmm_8'), dict(rec, answers='inconsistent')):
             self.assertIs(bench.printed_answers(other, ref), other['answers'])
 
+    def test_the_check_takes_a_posterior_circulette_does_not_print_below_its_threshold_as_answered(self):
+        # ct_fulladder2: Roulette prints 166 of the 175 posteriors, the 9 it
+        # leaves out pairs at 7e-5 to 8e-5, under Circulette's 2e-4
+        ref = {'system': 'merlin', 'variant': 'bte',
+               'answers': {'fault(5)': 0.5, 'fault(9)': 0.5, 'faults(5,9)': 7.1e-5, 'faults(5,7,9)': 1e-9}}
+        rec = {'instance': 'ct_exp', 'system': 'roulette', 'variant': 'rsdd',
+               'answers': {'fault(5)': 0.5, 'fault(9)': 0.5}}
+        self.assertEqual(bench.left_out(rec, ref), [])
+        self.assertEqual(bench.answers_check(rec, ref), (True, 0.0, 2))
+        # one above its threshold is dropped, and the record is wrong
+        high = dict(ref, answers=dict(ref['answers'], **{'faults(5,9)': 3e-4}))
+        self.assertEqual(bench.left_out(rec, high), ['faults(5,9)'])
+        self.assertEqual(bench.answers_check(rec, high)[:2], (False, math.inf))
+
     def args(self, **kw):
         base = dict(suite='circulette', only=[], families=[], dir='bench', timeout=30,
                     circulette_benchmarks='cb', roulette='racket {file}', roulette_variants=['rsdd'])
@@ -1342,6 +1356,38 @@ class CirculetteTests(unittest.TestCase):
                          os.path.abspath('d/ct_1-bit-mux.cql'))
         with self.assertRaises(ValueError):
             bench.original(['gen_circulette.py', 'root', '1-bit-mux'], '')
+        # every netlist has the SHA-256 gen checks
+        self.assertEqual(set(bench.CT_SHA256), set(spec))
+        self.assertTrue(all(re.fullmatch('[0-9a-f]{64}', h) for h in bench.CT_SHA256.values()))
+
+    def test_gen_copies_each_netlist_and_checks_its_sha256(self):
+        text = b'(def-netlist x\n(hash 0 1)\n(hash 1 1)\n(hash)\n(1 (w~ 0))\n)\n'
+        gargs = ['gen_circulette.py', 'root', '1-bit-mux']
+        with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as d, \
+                patch.dict(bench.CT_SHA256, {'ct_1-bit-mux': bench.hashlib.sha256(text).hexdigest()}), \
+                patch.object(bench, 'write_program') as wp:
+            Path(src, 'ct_1-bit-mux.cql').write_bytes(text)
+            a = self.args(dir=d, circulette_netlists=src)
+            bench.gen_circulette(a, 'ct_1-bit-mux', gargs)
+            self.assertEqual(Path(d, 'ct_1-bit-mux.cql').read_bytes(), text)
+            wp.assert_called_once_with(a, 'ct_1-bit-mux', [os.path.abspath(os.path.join(d, 'ct_1-bit-mux.cql'))])
+            Path(d, 'ct_1-bit-mux.cql').unlink()
+            # gen stops, writing nothing, on another file, a missing one, an instance without a SHA-256
+            Path(src, 'ct_1-bit-mux.cql').write_bytes(text.replace(b'w~', b'w&'))
+            for name, why in (('ct_1-bit-mux', 'SHA-256'), ('ct_exp', 'ct_exp.cql'), ('ct_new', 'no SHA-256')):
+                with self.subTest(name=name), self.assertRaises(SystemExit) as e:
+                    bench.gen_circulette(a, name, gargs)
+                self.assertIn(why, str(e.exception))
+            self.assertEqual(os.listdir(d), [])
+            self.assertEqual(wp.call_count, 1)
+
+    def test_gen_needs_the_netlists_for_a_circulette_instance_and_them_only(self):
+        with tempfile.TemporaryDirectory() as d:
+            for kw, why in ((dict(), '--circulette-netlists DIR'),
+                            (dict(suite='ppl', only=['nodice_survey'], circulette_netlists=d), 'none is selected')):
+                with self.subTest(kw=kw), self.assertRaises(SystemExit) as e:
+                    bench.gen(self.args(dir=d, cnf=False, alea='', pr=False, **kw))
+                self.assertIn(why, str(e.exception))
 
     def run_circulette(self, out, err='roulette_timer: program 2.25 s\n', program=None):
         with tempfile.TemporaryDirectory() as d:

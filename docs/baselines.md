@@ -1991,6 +1991,18 @@ sizes, `ct_fulladder` (`adder/fullAdder8.v`'s ripple-carry adder at N bits,
 and 4 the files `openfpga_mac_2.v` and `openfpga_mac_4.v`, which differ in
 comments alone). Every netlist expects all-false outputs.
 
+`rkt_of_verilog.py` at 1397f52c numbers a design's inputs and outputs in
+the order of pyrtl's sets, which follows object ids, so two conversions of
+one design can number its ports and the wires sliced from them otherwise.
+The netlists every system read are therefore one conversion of each
+design, kept as files: `bench.py gen --circulette-netlists DIR` copies
+DIR/NAME.cql and stops on a file whose SHA-256 is not the one `CT_SHA256`
+gives. install_circulette.sh patches `netlist_to_ast` in
+`rkt_of_verilog.py` to sort the inputs and outputs by name, the memory
+writes by memory id and the constants by text, so that a design converted
+from now on gives the same bytes every time; those bytes differ from the
+kept files'.
+
 tddlog reads a netlist itself (`tddlog --evidence-probability NAME.cql`,
 its Circulette reader): its program has a fact `gate_K(G, ...)` per live
 logic gate, in Circulette's order of the faults, the failure as its
