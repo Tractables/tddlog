@@ -151,10 +151,22 @@ async function noSidewaysScroll(page, what) {
   assert.ok(scroll <= width, `${what}: the page is ${scroll} px wide in a window of ${width} (${out.join(", ")})`);
 }
 
+// The file the playground opens for tddlog's file `file` (in `tab`) of an
+// instance: where it has places ($1, $2, ...), the instance's program of its
+// own name in another ProbLog tab, with its arguments in their places, the
+// one a ProbLog system read where there are several; else `file`.
+function opensAs(inst, tab, file, texts) {
+  if (!/\$[1-9]/.test(texts[file.sha] ?? "")) return file;
+  const filled = (inst.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
+    .flatMap((t) => t.files.filter((x) => x.name === `${inst.name}.pl`).map((x) => [t, x]));
+  const read = filled.find(([t, x]) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0];
+  return read ? read[1] : file;
+}
+
 // The benchmarks of the results the playground can open, where the site
-// has their data: for each instance, the one .pl file tddlog read, whether
-// the site keeps it whole and its text, and tddlog's time in the release
-// run.
+// has their data: for each instance, the one .pl file tddlog read (filled
+// in where it has places), whether the site keeps it whole and its text,
+// and tddlog's time in the release run.
 function benchmarksOf(root) {
   const dir = path.join(root, "results", "benchmarks");
   if (!fs.existsSync(path.join(dir, "index.json"))) return [];
@@ -172,9 +184,10 @@ function benchmarksOf(root) {
       const famFile = path.join(dir, suite, `${f.key}.json`);
       const fam = JSON.parse(fs.readFileSync(famFile, "utf8"));
       for (const inst of fam.instances) {
-        const files = (inst.tabs ?? []).filter((t) => t.readers.includes("tddlog")).flatMap((t) => t.files.filter((x) => x.name.endsWith(".pl")));
+        const files = (inst.tabs ?? []).filter((t) => t.readers.includes("tddlog"))
+          .flatMap((t) => t.files.filter((x) => x.name.endsWith(".pl")).map((x) => [t, x]));
         if (files.length !== 1) continue;
-        const [file] = files;
+        const file = opensAs(inst, files[0][0], files[0][1], fam.texts);
         const inline = fam.texts[file.sha];
         const readable = !file.held && !file.part && (inline !== undefined || Boolean(file.src));
         const text = () => {
@@ -1279,7 +1292,8 @@ function benchmarksOf(root) {
             const ti = inst.tabs.findIndex((t) => !t.readers.some(readsAs("tddlog")) && t.files.length > 1
               && observed(t.files[0].name) && t.files.some((x) => !observed(x.name)));
             if (!multi && ti >= 0) multi = { ...at, ti, inst };
-            const pl = inst.tabs.find((t) => t.readers.includes("tddlog"))?.files.filter((file) => file.name.endsWith(".pl")) ?? [];
+            const mine = inst.tabs.find((t) => t.readers.includes("tddlog"));
+            const pl = (mine?.files.filter((file) => file.name.endsWith(".pl")) ?? []).map((file) => opensAs(inst, mine, file, fam.texts));
             if (pl.length === 1 && !pl[0].held && !pl[0].part && !tried) tried = at;
             if (pl.length === 1 && (pl[0].held || pl[0].part) && !kept) kept = at;
           }

@@ -300,6 +300,19 @@ function tddlogFile(instance) {
   };
 }
 
+// The program of a family whose places ($1, $2, ...) take each instance's
+// arguments, which the playground cannot give: the instance's program of its
+// own name, the same program with its arguments in their places and its
+// consults inlined, as the ProbLog systems read it (the one they read where
+// there are several). Null where `file` (in `tab`, its text in `texts`) has
+// no places, or where the results show no such program.
+function filledFile(instance, tab, file, texts) {
+  if (!/\$[1-9]/.test(texts[file.sha] ?? "")) return null;
+  const filled = (instance.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
+    .flatMap((t) => t.files.filter((x) => x.name === `${instance.name}.pl`).map((x) => ({ tab: t, file: x })));
+  return filled.find(({ tab: t, file: x }) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0] ?? null;
+}
+
 // Why a benchmark does not run as it opens, or "" where it does. `native`
 // is tddlog's time in the release run, why it has none ("timeout", ...), or
 // undefined where the records do not have it.
@@ -352,7 +365,8 @@ async function benchmark([suite, family, instance]) {
   if (inst === undefined) return { refused: "the results have no such benchmark." };
   const chosen = tddlogFile(inst);
   if (chosen.refused) return chosen;
-  const { tab, file } = chosen;
+  const filled = filledFile(inst, chosen.tab, chosen.file, fam.texts);
+  const { tab, file } = filled ?? chosen;
   if (file.held) return { refused: file.held };
   if (file.part) {
     return { refused: `the site keeps the first ${count(file.part)} of its ${count(file.bytes)} bytes, which do not run on their own.` };
@@ -360,7 +374,7 @@ async function benchmark([suite, family, instance]) {
   if (fam.texts[file.sha] === undefined && !file.src) return { refused: "the results do not keep its text." };
   const text = fam.texts[file.sha] ?? await keptText(file.src);
   if (!(await holdsFile(text, file))) return { refused: "the text the site keeps does not match the file's SHA-256." };
-  return { tab, file, text, reference: benchReference(inst.answers), log10z: inst.answers?.log10z === true };
+  return { tab, file, text, filled: filled !== null, reference: benchReference(inst.answers), log10z: inst.answers?.log10z === true };
 }
 
 // ------------------------------------------------------- the results at a glance
@@ -569,7 +583,8 @@ if (typeof document !== "undefined") {
     setProgram(bench.text, { bench: path.join("/"), reference: bench.reference }, bench.file.name);
     if (bench.log10z) element("evidence").checked = true;
     const wait = holdBack(bench.file.bytes, native);
-    showSource(`${name}the program tddlog was given in the release run (${escapeHtml(bench.tab.lang)}, ${count(bench.file.bytes)} bytes). `
+    const places = bench.filled ? ", with this instance's arguments in its places" : "";
+    showSource(`${name}the program tddlog was given in the release run${places} (${escapeHtml(bench.tab.lang)}, ${count(bench.file.bytes)} bytes). `
       + `<a href="${back}">Back to its results</a>.${wait ? ` ${escapeHtml(wait)}` : ""}`);
     if (!wait) requestRun();
   }
