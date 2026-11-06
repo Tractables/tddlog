@@ -334,6 +334,7 @@ fn co_read(
     let mut atoms: Vec<AtomId> = Vec::new();
     let mut found: Vec<(usize, usize)> = Vec::new();
     let mut set: Vec<AtomId> = Vec::new();
+    let mut steps: Vec<u32> = Vec::new();
     let mut signs = vec![0u8; gp.num_atoms()];
     let distinct = |rs: &[u32]| rs.len() - rs.windows(2).filter(|w| w[0] == w[1]).count();
     for a in 0..gp.num_atoms() {
@@ -358,17 +359,25 @@ fn co_read(
         );
         set.sort_unstable();
         set.dedup();
-        for (k, &r) in rs.iter().enumerate() {
-            if set.is_empty() {
-                break;
-            }
-            if r == first || (k > 0 && rs[k - 1] == r) {
-                continue;
-            }
-            if !work.add(set.len()) {
-                return None;
-            }
-            set.retain(|&x| readers[x as usize].binary_search(&r).is_ok());
+        // The atoms every other reader reads, each atom's readers merged
+        // with them once ([`first_missing`]). A step of the readers is
+        // charged the atoms left before it, as when the set is cut one
+        // reader at a time.
+        steps.clear();
+        steps.extend(
+            rs.iter()
+                .enumerate()
+                .filter(|&(k, &r)| r != first && (k == 0 || rs[k - 1] != r))
+                .map(|(_, &r)| r),
+        );
+        let mut charge = 0;
+        set.retain(|&x| {
+            let missing = first_missing(&steps, &readers[x as usize]);
+            charge += (missing + 1).min(steps.len());
+            missing == steps.len()
+        });
+        if !work.add(charge) {
+            return None;
         }
         // A fact that only these rules read owns nothing that would join
         // it to the others: it is a variable of its own.
@@ -427,6 +436,26 @@ fn co_read(
         kept.push(c.to_vec());
     }
     Some(kept)
+}
+
+/// Where the first of `steps`, sorted and distinct, that `list`, sorted,
+/// does not hold is: its index, or the length of `steps` where `list` holds
+/// them all. Each step gallops from where the last one matched, so that a
+/// list as long as the steps is read once.
+fn first_missing(steps: &[u32], list: &[u32]) -> usize {
+    let mut rest = list;
+    for (t, &r) in steps.iter().enumerate() {
+        let mut bound = 1;
+        while bound < rest.len() && rest[bound] < r {
+            bound *= 2;
+        }
+        let at = rest[..(bound + 1).min(rest.len())].partition_point(|&y| y < r);
+        if at == rest.len() || rest[at] != r {
+            return t;
+        }
+        rest = &rest[at + 1..];
+    }
+    steps.len()
 }
 
 /// The units of a program as the module says: the variables, of one bit
@@ -1766,5 +1795,42 @@ mod tests {
         let mut gp = crate::ground::ground(&program, &GroundOptions::default()).expect("grounds");
         assert!(gp.stats.values > 0, "{gp}");
         assert_eq!(super::bits_as_values(&mut gp), 0, "{gp}");
+    }
+
+    /// The first step a list misses is the first a binary search for each
+    /// step in turn misses, on lists with repeats, gaps and long tails.
+    #[test]
+    fn the_first_missing_step_is_the_searches_first_miss() {
+        let lists: Vec<Vec<u32>> = vec![
+            vec![],
+            vec![3],
+            vec![1, 1, 2, 3, 3, 3, 7, 9, 9],
+            (0..200).collect(),
+            (0..200).filter(|x| x % 7 != 5).collect(),
+            (0..400).map(|x| x / 2).collect(),
+        ];
+        let steps: Vec<Vec<u32>> = vec![
+            vec![],
+            vec![3],
+            vec![1, 2, 3, 9],
+            vec![1, 2, 4],
+            (0..200).collect(),
+            (0..200).step_by(3).collect(),
+            vec![0, 150, 199],
+            vec![5, 12, 19],
+        ];
+        for list in &lists {
+            for steps in &steps {
+                let searched = steps
+                    .iter()
+                    .position(|r| list.binary_search(r).is_err())
+                    .unwrap_or(steps.len());
+                assert_eq!(
+                    super::first_missing(steps, list),
+                    searched,
+                    "{steps:?} in {list:?}"
+                );
+            }
+        }
     }
 }
