@@ -398,8 +398,9 @@ function integrationView(route) {
       ...(i.code ? [" The integration's code: ", element("a", { href: i.code }, i.code.replace("https://github.com/", ""))] : [])),
     versusCells(v, name, i.instances), note(measureLine()), integrationPlot(i, rows, `int-${k}`), ...whereWins(i, rows, x, me));
   if (alone) {
-    out.push(note(`Plain tddlog read another program of each model than ${name} did, with its own front ends; `
-      + `it counts as unanswered on the ${plural(i.classes.tddlog.unread, "instance")} it does not read.`));
+    const unread = i.classes.tddlog.unread;
+    out.push(note(`Plain tddlog read another program of each model than ${name} did, with its own front ends`
+      + (unread ? `; it counts as unanswered on the ${plural(unread, "instance")} it does not read.` : ".")));
   }
   out.push(...othersOf(i));
   // the families
