@@ -2188,23 +2188,18 @@ async function runs(route) {
   // the column's own runs where the instance has them (an integration that ran on the program
   // itself), else its records' system's (Alea.jl's for alea-process)
   const rec = (inst?.runs ?? []).some((r) => r.system === key) ? key : recorded(key);
-  // tddlog's other forms are diagnostics no table counts, and stay out of the drawer too
-  const diagnostic = (label) => label.endsWith(", diagnostic)");
-  const mine = (inst?.runs ?? []).filter((r) => r.system === rec && !diagnostic(r.label));
+  const mine = (inst?.runs ?? []).filter((r) => r.system === rec);
   const parts = [];
   const about = [];
   if (dashed(key)) about.push("The whole process's time, with the language's start and compilation; the other time of the same system leaves them out, as its paper times it.");
   if (inst?.reps > 1) about.push("A time is the median of the repetitions, a failed one counted as infinite.");
-  if (new Set(mine.map((r) => r.label)).size > 1) {
-    about.push(isMine(key) ? `The table has ${data.names[key]}'s default, auto; its other forms are diagnostics, in no total.`
-      : "A system run in several forms has the time of its fastest form.");
-  }
+  if (new Set(mine.map((r) => r.label)).size > 1) about.push("A system run in several forms has the time of its fastest form.");
   if (inst?.notes?.[rec]) about.push(inst.notes[rec]);
   if (about.length) parts.push(note(about.join(" ")));
   const name0 = isMine(key) ? data.names[key] : data.names[rec] ?? data.names[key];
   // its job's commands: the translations it reads first, then its own
   const cmds = [...new Map((inst?.tabs ?? []).flatMap((t) => [...(t.translations ?? []), ...t.cmds])
-    .filter(([who]) => readsAs(name0)(who) && !diagnostic(who)).map(([who, cmd]) => [cmd, who])).keys()].map((cmd) => [name0, cmd]);
+    .filter(([who]) => readsAs(name0)(who)).map(([who, cmd]) => [cmd, who])).keys()].map((cmd) => [name0, cmd]);
   if (cmds.length) parts.push(element("h4", {}, "Commands"), ...cmds.map(([, cmd]) => element("code", { class: "cmd" }, cmd)));
   const read = (inst?.tabs ?? []).flatMap((t, ti) => (t.readers.some(readsAs(name0)) ? t.files.map((file, fi) => [t, file, ti, fi]) : []));
   if (read.length) {
