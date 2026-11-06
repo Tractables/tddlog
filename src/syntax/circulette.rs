@@ -74,20 +74,13 @@
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::fmt::Write;
 
-use super::{ParseError, float_repr};
+use super::{ParseError, fail, float_repr};
 
 /// The ProbLog program the netlist `source` is read as. The error names
 /// the line of the form or of the gate the netlist cannot be read at.
 pub fn read(source: &str) -> Result<String, ParseError> {
     let forms = parse(&tokenize(source)?)?;
     Netlist::of(&forms)?.program()
-}
-
-fn fail(line: usize, msg: impl Into<String>) -> ParseError {
-    ParseError {
-        line,
-        msg: msg.into(),
-    }
 }
 
 type Res<T> = Result<T, ParseError>;

@@ -38,7 +38,9 @@ use crate::syntax::{Atom, Clause, Literal, Term};
 /// or `None` when no predicate qualifies.
 pub(crate) fn linearize(norm: &NormProgram) -> Option<NormProgram> {
     let rules_of = norm.rules_by_sig();
-    let mut chains: Vec<(usize, Vec<usize>, bool)> = Vec::new();
+    // Each predicate's chain rules, its exits and whether only its second
+    // argument is bound.
+    let mut chains: Vec<(Vec<usize>, Vec<usize>, bool)> = Vec::new();
     for (sig, rules) in &rules_of {
         if sig.1 != 2 {
             continue;
@@ -55,22 +57,19 @@ pub(crate) fn linearize(norm: &NormProgram) -> Option<NormProgram> {
             continue;
         }
         let left = bound_second_only(norm, rules, sig);
-        chains.extend(chain.into_iter().map(|ri| (ri, exits.clone(), left)));
+        chains.push((chain, exits, left));
     }
     if chains.is_empty() {
         return None;
     }
     let mut out = norm.clone();
     let mut replaced = vec![false; norm.rules.len()];
-    for (ri, _, _) in &chains {
-        replaced[*ri] = true;
+    for &ri in chains.iter().flat_map(|(chain, _, _)| chain) {
+        replaced[ri] = true;
     }
     out.retain_rules(|i, _| !replaced[i]);
-    for (ri, exits, left) in &chains {
-        // One set of steps for the predicate, however many chain rules it has.
-        if chains.iter().any(|(rj, e, _)| rj < ri && e == exits) {
-            continue;
-        }
+    // One set of steps for each predicate, however many chain rules it has.
+    for (_, exits, left) in &chains {
         for &ei in exits {
             out.rules.push(step(&norm.rules[ei], *left));
         }

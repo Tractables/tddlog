@@ -32,7 +32,7 @@ mod parser;
 
 pub(crate) use arguments::bind;
 pub use parser::{Consult, ParseError, consults, parse_program};
-pub(crate) use parser::{construct, goal_literal};
+pub(crate) use parser::{construct, fail, goal_literal};
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -660,6 +660,10 @@ fn write_const(f: &mut fmt::Formatter<'_>, s: &str) -> fmt::Result {
     f.write_str("'")
 }
 
+/// Prolog's symbol characters, of which names such as `\+` and `:-` are
+/// made.
+pub(crate) const SYMBOL_CHARS: &str = "+-*/\\^<>=~:.?@#&$";
+
 fn needs_quotes(s: &str) -> bool {
     let mut chars = s.chars();
     match chars.next() {
@@ -670,9 +674,7 @@ fn needs_quotes(s: &str) -> bool {
             !(s == NIL
                 || s == ";"
                 || s == "!"
-                || (!s.is_empty()
-                    && s != "."
-                    && s.chars().all(|c| "+-*/\\^<>=~:.?@#&$".contains(c))))
+                || (!s.is_empty() && s != "." && s.chars().all(|c| SYMBOL_CHARS.contains(c))))
         }
     }
 }

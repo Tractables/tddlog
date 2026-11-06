@@ -149,6 +149,13 @@ impl Facts {
 pub(super) type Sig<'a> = (&'a str, usize);
 
 impl NormProgram {
+    /// The atoms the program asks about: each query's and observation's,
+    /// and each query rule's atom and pattern.
+    pub(super) fn asked(&self) -> impl Iterator<Item = &Atom> {
+        let asked = self.queries.iter().chain(&self.evidence).map(|(a, _)| a);
+        asked.chain(self.drivers.iter().flat_map(|d| [&d.atom, &d.pattern]))
+    }
+
     /// The rules of each predicate, as indices into `rules` in their order.
     pub(super) fn rules_by_sig(&self) -> FxHashMap<Sig<'_>, Vec<usize>> {
         let mut rules_of: FxHashMap<Sig, Vec<usize>> = FxHashMap::default();

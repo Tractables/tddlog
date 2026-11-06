@@ -22,6 +22,14 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
+/// An error on `line`, for the readers of the other languages.
+pub(crate) fn fail(line: usize, msg: impl Into<String>) -> ParseError {
+    ParseError {
+        line,
+        msg: msg.into(),
+    }
+}
+
 impl From<LexError> for ParseError {
     fn from(e: LexError) -> Self {
         ParseError {

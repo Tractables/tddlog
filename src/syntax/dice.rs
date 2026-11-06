@@ -86,7 +86,7 @@ use num_traits::ToPrimitive;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::lpad::space;
-use super::{ParseError, float_repr};
+use super::{ParseError, fail, float_repr};
 use crate::network::rows::fsum;
 
 /// The ProbLog program the Dice program `source` is read as. The error
@@ -182,13 +182,6 @@ const MAX_UNIFORM_WIDTH: u64 = 24;
 
 /// The suffix of an atom of a loop's step.
 const STEP: &str = "(T)";
-
-fn fail(line: usize, msg: impl Into<String>) -> ParseError {
-    ParseError {
-        line,
-        msg: msg.into(),
-    }
-}
 
 type Res<T> = Result<T, ParseError>;
 
