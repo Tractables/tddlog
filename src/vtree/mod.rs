@@ -608,6 +608,32 @@ mod tests {
         }
     }
 
+    /// A query that reads copies is no queried cube: rewritten through
+    /// indicators for `families`, the last rolls of the ProbLog tutorial's
+    /// dice read the roll before and the die's values through copies alone,
+    /// and the copies stand for atoms of the model, tied to them by links.
+    /// The queries keep their families, and the copies they read their
+    /// place beside those links.
+    #[test]
+    fn a_query_over_copies_shapes_the_layout() {
+        let source = "
+            1/3::dice(1,D,ID); 1/3::dice(2,D,ID); 1/3::dice(3,D,ID) :- die(D).
+            die(X) :- between(1,3,X).
+            roll([1]).
+            roll([H,F|L]) :- roll([F|L]), dice(H,F,L).
+            seen(L) :- reverse(L,[],R), roll(R).
+            reverse([],L,L).
+            reverse([H|T],A,L) :- reverse(T,[H|A],L).
+            query(seen([_,_,_,_,_])).
+        ";
+        let program = parse_program(source).expect("parses");
+        let gp = ground(&program, &GroundOptions::default()).expect("grounds");
+        let kind = Kind::Families { search: false };
+        let rewritten = kind.rewrite(gp).expect("room");
+        assert!(!rewritten.encoding.is_empty());
+        assert!(QueriedCubes::split(&rewritten).is_none());
+    }
+
     /// `program` reads the facts in program order, and `program:fanin` in
     /// the interleaved fan-in order: each vtree is right-linear over its
     /// order's reverse, the copies of the atoms crossing its narrow cuts
