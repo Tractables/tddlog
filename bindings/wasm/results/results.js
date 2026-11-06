@@ -1306,7 +1306,7 @@ function scoreboard(c, rows, tal, n, vs, only) {
       element("th", { scope: "col" }, `answers, of ${count(n)}`),
       element("th", { scope: "col", class: "num", title: `over the instances the system is given and either it or ${me} answers (PAR-${data.measure.par})` }, "its total time"),
       element("th", { scope: "col", class: "num", title: `over the same instances (PAR-${data.measure.par})` }, `${me}'s total time`),
-      element("th", { scope: "col", class: "num" }, `${me} faster`),
+      element("th", { scope: "col", class: "num" }, speedName(`${me} faster`)),
       element("th", { scope: "col", class: "num", title: "instances from the system's own papers, benchmarks or distribution" }, "own"),
       element("th", { scope: "col", class: "num", title: "instances whose program is in the system's own language" }, "native"),
       element("th", { scope: "col", class: "num", title: "instances whose program a translator wrote from another language" }, "translated"))),

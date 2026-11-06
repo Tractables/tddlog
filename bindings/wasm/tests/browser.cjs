@@ -514,7 +514,8 @@ function benchmarksOf(root) {
         p.on("pageerror", (error) => errors.push(String(error)));
         await p.route(`**/results/benchmarks/${whole.suite}/${whole.family}.json*`, (route) => {
           const fam = structuredClone(family);
-          const file = fam.instances.find((i) => i.name === whole.name).tabs.find((t) => t.readers.includes("tddlog")).files.find((f) => f.sha === whole.file.sha);
+          // (the file the playground opens: tddlog's, or the instance's program filled in for it)
+          const file = fam.instances.find((i) => i.name === whole.name).tabs.flatMap((t) => t.files).find((f) => f.sha === whole.file.sha);
           delete fam.texts[file.sha];
           file.src = "files/routed.txt.gz";
           return route.fulfill({ json: fam });
