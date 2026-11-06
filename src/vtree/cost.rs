@@ -247,19 +247,33 @@ impl Interfaces<'_> {
                 pair[i][j] = key(self.join_cost(&a.1, &b.1), a.2 + b.2);
             }
         }
-        for _ in 1..n {
-            let (mut best, mut at) = ((i64::MAX, usize::MAX), (0, 0));
-            for i in 0..n {
-                if slots[i].is_none() {
-                    continue;
-                }
-                for j in i + 1..n {
-                    if slots[j].is_some() && pair[i][j] < best {
-                        (best, at) = (pair[i][j], (i, j));
-                    }
+        // The cheapest pair is the least key, then the least `i`, then the
+        // least `j`. Each row keeps its least entry over the live `j > i`
+        // (the least `j` among equal keys), so that a round reads the rows'
+        // and not every pair: about n² for the pairing instead of n³.
+        const NONE: ((i64, usize), usize) = ((i64::MAX, usize::MAX), usize::MAX);
+        let row_least = |pair: &[Vec<(i64, usize)>], slots: &[Option<_>], i: usize| {
+            let mut least = NONE;
+            for j in i + 1..n {
+                if slots[j].is_some() && pair[i][j] < least.0 {
+                    least = (pair[i][j], j);
                 }
             }
-            let (i, j) = at;
+            least
+        };
+        let mut least: Vec<((i64, usize), usize)> =
+            (0..n).map(|i| row_least(&pair, &slots, i)).collect();
+        for _ in 1..n {
+            let mut i = usize::MAX;
+            for k in 0..n {
+                if slots[k].is_some()
+                    && least[k].1 != usize::MAX
+                    && (i == usize::MAX || least[k].0 < least[i].0)
+                {
+                    i = k;
+                }
+            }
+            let j = least[i].1;
             let (b, bo, bs) = slots[j].take().expect("a live slot");
             let (a, ao, as_) = slots[i].take().expect("a live slot");
             let merged = (forest.join(a, b), self.join(ao, bo), as_ + bs);
@@ -274,6 +288,19 @@ impl Interfaces<'_> {
                 }
             }
             slots[i] = Some(merged);
+            least[j] = NONE;
+            least[i] = row_least(&pair, &slots, i);
+            for k in 0..n {
+                if k == i || slots[k].is_none() {
+                    continue;
+                }
+                let at = least[k].1;
+                if at == j || (k < i && at == i) {
+                    least[k] = row_least(&pair, &slots, k);
+                } else if k < i && (pair[k][i], i) < (least[k].0, at) {
+                    least[k] = (pair[k][i], i);
+                }
+            }
         }
         slots
             .into_iter()
