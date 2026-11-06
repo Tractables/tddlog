@@ -398,11 +398,7 @@ impl Factoring<'_> {
         match self.gp.kinds[l.atom() as usize] {
             AtomKind::Fact(_) => {
                 let v = self.var_of[l.atom() as usize].unwrap();
-                Some(if l.is_positive() {
-                    tididi::Literal::pos(v)
-                } else {
-                    tididi::Literal::neg(v)
-                })
+                Some(tididi::Literal::new(v, l.is_positive()))
             }
             AtomKind::Derived => None,
         }

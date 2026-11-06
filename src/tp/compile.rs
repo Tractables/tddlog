@@ -199,14 +199,7 @@ impl Compiled {
             }
             None => {
                 let v = self.var_of[a as usize].ok_or(CompileError::UnmappedFact(a))?;
-                backend.literal(
-                    scope,
-                    if positive {
-                        tididi::Literal::pos(v)
-                    } else {
-                        tididi::Literal::neg(v)
-                    },
-                )
+                backend.literal(scope, tididi::Literal::new(v, positive))
             }
         }
     }
@@ -1634,11 +1627,7 @@ impl Compilation {
                 match gp.kinds[b] {
                     AtomKind::Fact(_) => {
                         let v = var_of[b].unwrap();
-                        let lit = if l.is_positive() {
-                            tididi::Literal::pos(v)
-                        } else {
-                            tididi::Literal::neg(v)
-                        };
+                        let lit = tididi::Literal::new(v, l.is_positive());
                         Ok(Part(Read::from(backend.literal(on, lit)?), on.clone()))
                     }
                     AtomKind::Derived => Ok(Part(
