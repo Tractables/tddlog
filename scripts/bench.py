@@ -1719,7 +1719,8 @@ CHECK_TEXT = ('off the reference by more than 1e-9 and either by more than 1e-6 
               'the last digit either of the two prints')
 # What a system prints of a probability: ('dec', d) d decimals, ('sig', k) k
 # significant digits, ('unit', u) answers good to u; any other in full. Geni
-# prints seven decimals of float32 masses (run_geni), noDice six decimals
+# printed seven decimals of its masses before its build printed them in full
+# (run_geni; kept while records of the earlier build stand), noDice six decimals
 # whose last is not rounded, Merlin six (its MAR file), ProbLog and PSouffle
 # eight significant digits, the network tools' drivers twelve, the exact
 # references written for the evaluation 17 decimals.
@@ -3612,8 +3613,8 @@ GENI_MASSES = by_component('geni', 'dice2geni.py', 'gir', lambda n: [], lambda o
 
 def run_geni(args, name, path):
     """Geni on the instance's program in the artifact's language. It prints
-    the distribution of the program's value, `Pr(V) = P` to seven decimals
-    (its probabilities are f32). The grids return a Boolean, which it prints as
+    the distribution of the program's value, `Pr(V) = P` (the artifact to seven decimals of
+    f32 numbers, the build run here in full, of f64 ones). The grids return a Boolean, which it prints as
     1 or 0, answering their one query with Pr(1); the weather factory returns 1 when the strikes
     have not all happened by the horizon and 0 when they have, so the first
     query (all strike within H days) is Pr(0) and the second, the constant

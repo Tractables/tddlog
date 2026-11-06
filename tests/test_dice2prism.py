@@ -32,7 +32,7 @@ import dice2prism  # noqa: E402
 import dice2problog  # noqa: E402
 import dice_ir  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
-from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y, check_each  # noqa: E402
+from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y, check_each, program_text  # noqa: E402
 
 STORM = os.environ.get('STORM_PYTHON', '')
 PRISM = os.environ.get('PRISM_DIR', '')
@@ -43,10 +43,6 @@ FUNCTION = ('fun f(x: bool) { let y = flip 0.3 in x || y } '
 LOOP = ('fun step(s: (int(3), bool)) { let n = fst s in let t = snd s in '
         'let d = flip 0.3 in (if d then n + int(3, 1) else n, t ^ d) } '
         'let r = iterate(step, (int(3, 0), false), 7) in let o = observe (snd r) in fst r')
-
-
-def program_text(name):
-    return (data / 'dice' / f'{name}.dice').read_text()
 
 
 def commands(model):

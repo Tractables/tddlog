@@ -672,7 +672,8 @@ def blocks(data, numbers, names, digest):
     limits = sorted({r[2] for c in written(data) for r in c['rows']})
     out = {
         'overview': (f"<sub>{stamp_text(data)} Each row: a native system's answers of the type's instances, its "
-                     f"total time (its colour) and tddlog's (teal) over the instances it is given and either answers, "
+                     f"total time (its colour) and tddlog's (teal) over the instances it is given as its users would "
+                     f"write them and either answers, "
                      f"and how many times faster tddlog is ([how it is counted](#performance)).</sub>"),
         'setup': (f"<!-- written from bindings/wasm/results/categories.json, sha256 {digest} -->\n"
                   f"{stamp_text(data)} Runs are single-threaded, under a time limit of {in_words(limits)} s by "

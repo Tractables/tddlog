@@ -9,12 +9,14 @@
 //! `\+h :- body.`; disjunctions and parentheses in bodies; negation as
 //! failure (`\+` or `not`); unification `=` and the comparisons of terms;
 //! `is` and the arithmetic comparisons with ProbLog's arithmetic; the
-//! predicates of ProbLog's `library(lists)` and `library(apply)`,
-//! `between/3`, `call/N` and `findall/3` over a deterministic goal;
-//! `query/1` and `evidence/1,2`, and their patterns `query(p(X)) :-
-//! body.` and `evidence(p(X)) :- body.`. No cut or `assert`. The grounder
-//! grounds a program to the Datalog fragment the rest of the crate reads
-//! ([`crate::ground`]). docs/design.md, "Language", gives the details.
+//! predicates of ProbLog's `library(lists)`, `library(apply)`,
+//! `library(aggregate)` and `library(collect)`, `between/3`, `call/N`,
+//! `clause/2,3`, `subquery/2,3`; `findall/3`, `all/3`, `all_or_none/3` and
+//! `forall/2`, over probabilistic goals too; `query/1` and
+//! `evidence/1,2`, and their patterns `query(p(X)) :- body.` and
+//! `evidence(p(X), v) :- body.`. No cut, if-then-else or `assert`. The
+//! grounder grounds a program to the Datalog fragment the rest of the crate
+//! reads ([`crate::ground`]). docs/design.md, "Language", gives the details.
 //!
 //! A place `$N` (`$1`, `$2`, ...) outside comments and quoted atoms takes
 //! the program's argument N, a term, before the program is read:
@@ -30,7 +32,7 @@ mod parser;
 
 pub(crate) use arguments::bind;
 pub use parser::{Consult, ParseError, consults, parse_program};
-pub(crate) use parser::{construct, goal_literal};
+pub(crate) use parser::{construct, fail, goal_literal};
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -658,6 +660,10 @@ fn write_const(f: &mut fmt::Formatter<'_>, s: &str) -> fmt::Result {
     f.write_str("'")
 }
 
+/// Prolog's symbol characters, of which names such as `\+` and `:-` are
+/// made.
+pub(crate) const SYMBOL_CHARS: &str = "+-*/\\^<>=~:.?@#&$";
+
 fn needs_quotes(s: &str) -> bool {
     let mut chars = s.chars();
     match chars.next() {
@@ -668,9 +674,7 @@ fn needs_quotes(s: &str) -> bool {
             !(s == NIL
                 || s == ";"
                 || s == "!"
-                || (!s.is_empty()
-                    && s != "."
-                    && s.chars().all(|c| "+-*/\\^<>=~:.?@#&$".contains(c))))
+                || (!s.is_empty() && s != "." && s.chars().all(|c| SYMBOL_CHARS.contains(c))))
         }
     }
 }

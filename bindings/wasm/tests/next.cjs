@@ -1,5 +1,6 @@
 // The site's front page in headless Chromium: each of its views (the home
-// page, by baseline and a baseline's page, by integration and each
+// page, by baseline and a baseline's page over its idiomatic programs and
+// limited to its original ones, by integration and each
 // integration's page, by program type and a type's page with its
 // head-to-head and translated parts, the coverage, the methods table, how
 // it works, its strip of stages a trace's steps, each a link to its step,
@@ -103,36 +104,45 @@ function drawn(page) {
     ["#/baselines", "baselines", async () => {
       assert.equal(await page.locator("table.baselines-t tbody tr").count(), systems.length);
     }],
-    ...["dice", "alea", "problog", "ace", "roulette", "prism"].filter((x) => systems.includes(x)).map((x) => [`#/baselines/${x}`, "baseline", async () => {
-      const v = views.systems[x], given = { head: v.n.h, translated: v.n.s + v.n.m + v.n.b };
-      for (const id of ["head", "translated", "types", "coverage", "run"]) {
-        // a section with no instances is left out, with its entry in the nav
-        const n = (given[id] ?? 1) ? 1 : 0;
-        assert.equal(await page.locator(`section.panel#${id}`).count(), n, `${x}: ${id}`);
-        assert.equal(await page.locator(`.panels-nav a[href="#/baselines/${x}/${id}"]`).count(), n, `${x}: ${id} in the nav`);
+    ...["dice", "alea", "problog", "ace", "roulette", "prism", "pluck"].filter((x) => systems.includes(x)).map((x) => [`#/baselines/${x}`, "baseline", async () => {
+      const v = views.systems[x], idiomatic = v.n.h + v.n.s + v.n.m + v.n.b + v.n.u;
+      for (const id of ["idiomatic", "types", "coverage", "run"]) {
+        assert.equal(await page.locator(`section.panel#${id}`).count(), 1, `${x}: ${id}`);
+        assert.equal(await page.locator(`.panels-nav a[href="#/baselines/${x}/${id}"]`).count(), id === "idiomatic" ? 0 : 1, `${x}: ${id} in the nav, the first section after it at once`);
       }
-      if (given.translated) {
+      // its original programs one click away, where it has some; its translations that are not idiomatic counted, in no total
+      assert.equal(await page.locator(`nav.filters a[href="#/baselines/${x}/original"]`).count(), v.original ? 1 : 0, `${x}: its original programs`);
+      if (v.original) assert.equal(Number((await page.locator(`nav.filters a[href="#/baselines/${x}/original"] .n`).textContent()).replace(/,/g, "")),
+        v.original.given, `${x}: its original programs, counted`);
+      assert.equal(await page.locator(".cells .cell", { hasText: "not idiomatic" }).count(), v.n.x ? 1 : 0, `${x}: not idiomatic`);
+      if (idiomatic) {
         // a row a family, each named as its type names it and opening its page, those of few instances one row
-        const rows = page.locator("#translated table.fams-tr tbody tr");
+        const rows = page.locator("#idiomatic table.fams-tr tbody tr");
         assert.equal(await rows.count(), v.families.length, `${x}: a row a family`);
         const folded = v.families.filter((f) => f.families).length;
-        assert.equal(await page.locator("#translated table.fams-tr tbody th a").count(), v.families.length - folded, `${x}: each family a link`);
-        const names = await page.locator("#translated table.fams-tr tbody th a").allTextContents();
+        assert.equal(await page.locator("#idiomatic table.fams-tr tbody th a").count(), v.families.length - folded, `${x}: each family a link`);
+        const names = await page.locator("#idiomatic table.fams-tr tbody th a").allTextContents();
         assert.equal(new Set(names).size, names.length, `${x}: each family named once`);
-        assert.equal(await page.locator("#translated table.fams-tr tbody th[title]").count(), folded, `${x}: the folded families' names on hover`);
-        assert.equal(await page.locator("#translated table.fams-tr tbody tr").first().locator("td").count(), 6, `${x}: the instances, two sides' answers and totals, the speed-up`);
+        assert.equal(await page.locator("#idiomatic table.fams-tr tbody th[title]").count(), folded, `${x}: the folded families' names on hover`);
+        assert.equal(await page.locator("#idiomatic table.fams-tr tbody tr").first().locator("td").count(), 6, `${x}: the instances, two sides' answers and totals, the speed-up`);
         // one line under it, no reasons or routes
-        assert.equal(await page.locator("#translated p.note", { hasText: "Each family's page shows both." }).count(), 1, `${x}: what each side read, once`);
-        assert.ok(!/other routes/.test(await page.locator("#translated").textContent()), `${x}: no routes`);
-        assert.ok(!/written by/.test(await page.locator("#translated table.fams-tr thead").textContent()), `${x}: no scripts in the table`);
-      }
-      if (v.n.h) {
-        await page.waitForSelector("#head figure svg");
-        const line = await page.locator("#head .versus").first().textContent();
-        for (const m of v.head.me) assert.ok(line.includes(cats.names[m]), `${x}: head-to-head names ${m}`);
+        assert.equal(await page.locator("#idiomatic p.note", { hasText: "Each family's page shows both." }).count(), 1, `${x}: what each side read, once`);
+        assert.ok(!/other routes/.test(await page.locator("#idiomatic").textContent()), `${x}: no routes`);
+        assert.ok(!/written by/.test(await page.locator("#idiomatic table.fams-tr thead").textContent()), `${x}: no scripts in the table`);
+        await page.waitForSelector("#idiomatic figure svg");
+        const line = await page.locator("#idiomatic .versus").first().textContent();
+        for (const m of v.idiomatic.me) assert.ok(line.includes(cats.names[m]), `${x}: the idiomatic programs name ${m}`);
       }
       assert.equal(await page.locator(`.panels-nav a[href="#/baselines/${x}/run"]`).count(), 1, `${x}: a link to how it was run`);
       assert.equal(await page.getByText(/its time limit \(PAR-/).count(), 1, `${x}: how the totals are counted, once`);
+    }]),
+    // a baseline's page limited to its original programs
+    ...["dice", "problog", "ace", "roulette"].filter((x) => views.systems[x]?.original).map((x) => [`#/baselines/${x}/original`, "baseline", async () => {
+      await page.waitForSelector("#original figure svg");
+      const line = await page.locator("#original .versus").first().textContent();
+      for (const m of views.systems[x].original.me) assert.ok(line.includes(cats.names[m]), `${x}: its original programs name ${m}`);
+      assert.equal(await page.locator("nav.filters a[aria-current]").getAttribute("href"), `#/baselines/${x}/original`, `${x}: on show`);
+      assert.equal(await page.locator("section.panel").count(), 1, `${x}: its original programs alone`);
     }]),
     ["#/integrations", "integrations", async () => assert.equal(await page.locator("table.board tbody tr").count(), integrations.length)],
     ...integrations.map((k) => [`#/integrations/${k}`, "integration", async () => {

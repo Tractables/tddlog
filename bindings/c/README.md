@@ -16,8 +16,8 @@
 **Exact probabilistic inference from C and C++.**
 
 tddlog computes exact probabilities for ProbLog programs, LPADs, Dice
-programs and Bayesian and Markov networks, by compiling them into tree
-decision diagrams. This library exposes the
+programs, Circulette netlists and Bayesian and Markov networks, by
+compiling them into tree decision diagrams. This library exposes the
 same Rust implementation as the
 [command line and Rust crate](https://github.com/Tractables/tddlog) and
 the [Python package](https://tractables.github.io/tddlog/python/)
@@ -152,7 +152,7 @@ language, with worked examples that open in the
 `python bindings/c/check.py` builds, tests and installs the package with
 CMake, then builds and runs the example against the installed package,
 moved to another prefix, through both CMake and pkg-config (which it
-needs on PATH). `tests/answers.c` checks a dozen of ProbLog's system
+needs on PATH). `tests/answers.c` checks 14 of ProbLog's system
 tests against ProbLog's answers under several vtree strategies, and a
 Dice program and networks read in their formats.
 

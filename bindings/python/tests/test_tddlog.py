@@ -20,7 +20,7 @@ HERE = Path(__file__).resolve().parent
 REPOSITORY = HERE.parents[2]
 PROBLOG = REPOSITORY / "tests" / "problog"
 
-# A varied dozen of ProbLog's system tests, all small: conjunction,
+# Fourteen of ProbLog's system tests, varied and all small: conjunction,
 # disjunction, negation, probabilistic rules, annotated disjunctions,
 # evidence, recursion, and a negative query.
 PROGRAMS = [

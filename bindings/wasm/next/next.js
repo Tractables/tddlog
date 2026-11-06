@@ -8,9 +8,9 @@
 //   #/                     the home page: what tddlog is, each type of program against its best baselines, the integrations
 //   #/baselines            by baseline: every other system, what it is native to and what it answers
 //   #/baselines/SYSTEM[/AT]
-//                          tddlog against SYSTEM: head-to-head, translated (by family), in
-//                          each type of program, its own benchmarks, coverage, and how it was run; AT names
-//                          one of these, which the page scrolls to
+//                          tddlog against SYSTEM over its idiomatic programs (by family), in each type of
+//                          program, coverage, and how it was run; AT names one of these, which the page
+//                          scrolls to, or `original`: the page limited to its original programs
 //   #/integrations         by integration: tddlog alone, and in a pipeline after another system's own code
 //   #/integrations/KEY     one of them: tddlog alone's answers by type; X+tddlog against X on X's programs
 //   #/types                by program type: the five types and all programs, against the systems native to each
@@ -24,8 +24,9 @@
 // instance are results.js's views as they are.
 //
 // The data is views.json (release/results/rel/views.py): each system's kind
-// of comparison on each instance of each type (head-to-head, or translated
-// for it, for tddlog or for both), and the comparisons over each kind, which
+// of comparison on each instance of each type (head-to-head, translated for
+// it, for tddlog or for both, or a translation not idiomatic for it, out of
+// a type's comparisons and in all programs'), and the comparisons over each kind, which
 // are panels.py's (rule 16), and the census of the programs tddlog does not
 // run; and categories.json's integrations (panels.py's). A system is
 // compared on each instance with tddlog or one of its pipelines (views.json's
@@ -39,16 +40,17 @@ const draft = { views: null };
 
 // ------------------------------------------------------------- the data
 
-// The rows of category c (catRows) that system x was given, each with the
-// kind of their comparison (h, s, m or b) and `me`, the member of mine it is
-// with: as the type compares them, or with own as x's page does.
+// The rows of category c (catRows) that system x was given, each with its
+// index in the category (i), the kind of their comparison (h, s, m, b, u or
+// x) and `me`, the member of mine it is with: as the type compares them, or
+// with own as x's page does.
 function kindRows(c, x, own = false) {
   const v = own ? draft.views.systems[x] : draft.views.categories[c.key];
   const kinds = own ? v?.kinds?.[c.key] : v?.kinds?.[x];
   if (!kinds) return [];
   const ms = own ? v.with[c.key] : v.with;
-  return catRows(c).map((r, i) => [r, kinds[i], ms[i]]).filter(([, kind]) => kind !== "-")
-    .map(([r, kind, m]) => ({ ...r, kind, me: draft.views.mine[Number(m)] }));
+  return catRows(c).map((r, i) => [r, kinds[i], ms[i], i]).filter(([, kind]) => kind !== "-")
+    .map(([r, kind, m, i]) => ({ ...r, i, kind, me: draft.views.mine[Number(m)] }));
 }
 
 
@@ -197,25 +199,25 @@ function baselinesView() {
 // A list of nodes in prose: "A", "A and B", "A, B and C".
 const andNodes = (items) => items.flatMap((x, i) => [i === 0 ? "" : i === items.length - 1 ? " and " : ", ", x]);
 
-// What one side read on a baseline's translated instances (views.json's
-// read), in a few words: the original programs, those the scripts wrote,
+// What one side read on a baseline's idiomatic instances (views.json's
+// read), in a few words: the programs as written, those the scripts wrote,
 // other translations.
 function whatRead(side) {
   const out = [];
-  if (side.original) out.push(["the original programs"]);
+  if (side.original) out.push(["the programs as their sources wrote them"]);
   if (side.by.length) out.push(["programs written by ", ...andNodes(side.by.map(([n, path]) => scriptLink(n, path)))]);
   if (side.other) out.push([side.by.length ? "other translations" : "translations"]);
   return out.flatMap((part, i) => [i ? " or " : "", ...part]);
 }
 
-// A baseline's translated instances by family (views.json's families, as
+// A baseline's idiomatic instances by family (views.json's families, as
 // the types name them, most first; those of few instances in one row, their
 // names its title): the instances, each side's answers and total, and
 // tddlog's speed-up; a family opens on its program's page, where its type
 // has several, on the type's view of it. Under it, one line on what each
 // side read.
-function translatedTable(v, name, rows) {
-  const me = subject(v.translated.me), par = `over the instances ${name} is given and either answers (PAR-${data.measure.par})`;
+function familyTable(v, name, rows) {
+  const me = subject(v.idiomatic.me), par = `over the instances ${name} is given and either answers (PAR-${data.measure.par})`;
   const num = (text) => element("td", { class: "num" }, text);
   const group = ([c, key]) => data.categories.find((y) => y.key === c).groups.find((g) => g.key === key);
   const of = new Map();
@@ -244,50 +246,53 @@ function translatedTable(v, name, rows) {
   note(`${name} read `, ...whatRead(v.read.system), `; ${me} read `, ...whatRead(v.read.mine), ". Each family's page shows both.")];
 }
 
-// The sections of a baseline's page, by the ids a link names (#/baselines/X/AT).
-const BASELINE_AT = [["head", "Head-to-head"], ["translated", "Translated"], ["language", "Its own language"], ["types", "In each type"],
-  ["own", "Its own benchmarks"], ["coverage", "Coverage"], ["run", "How it was run"]];
+// The sections of a baseline's page, by the ids a link names (#/baselines/X/AT);
+// ORIGINAL (#/baselines/X/original) is the page limited to its original programs.
+const BASELINE_AT = [["idiomatic", "Idiomatic programs"], ["types", "In each type"], ["coverage", "Coverage"], ["run", "How it was run"]];
+const ORIGINAL = "original";
+const IDIOMS_HREF = `${BRANCH}baselines/docs/baselines.md`;
 
-// tddlog against one baseline: head-to-head, translated, in each type of
-// program, its own benchmarks, coverage, how it was run.
+// tddlog against one baseline: over every idiomatic program it was given
+// (its own language's, and the translations its users would write), in each
+// type of program, coverage, how it was run; or limited to its original
+// programs (route.at ORIGINAL): those its authors wrote, and the others in
+// its language that it read as their sources wrote them (views.json's originals).
 function baselineView(route) {
   const x = route.system, s = data.systems.find((y) => y.key === x), v = draft.views.systems[x], name = data.names[x];
-  const rows = systemRows(x);
+  const original = route.at === ORIGINAL;
+  const rows = systemRows(x).filter((r) => r.kind !== "x");
+  const originals = new Set(Object.entries(v.originals ?? {}).flatMap(([c, is]) => is.map((i) => `${c}/${i}`)));
+  const own = rows.filter((r) => originals.has(`${r.c.key}/${r.i}`));
   const parts = solverParts(x);
   const site = s.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
-  const head = rows.filter((r) => r.kind === "h"), tr = rows.filter((r) => "smb".includes(r.kind));
-  // a section with no instances is left out, with its entry in the nav
-  const has = { head: head.length, translated: tr.length, own: parts.own.length, language: parts.languages.length };
-  const at = BASELINE_AT.filter(([id]) => has[id] ?? true);
-  const out = [crumbs(HOME, inSection("baselines"), [name]),
+  const page = { view: "baseline", system: x };
+  const pill = (on, to, text, n) => {
+    const a = link(to, text, element("span", { class: "n" }, count(n)));
+    if (on) a.setAttribute("aria-current", "page");
+    return a;
+  };
+  const out = [crumbs(HOME, inSection("baselines"), ...(original ? [[name, page], ["original programs"]] : [[name]])),
     element("h2", { class: "solver" }, swatch(x), `tddlog against ${name}`),
     element("p", { class: "lede" }, `${s.about} `, element("a", { href: s.link }, site)),
     cells(["given", count(s.given), `instances of ${and(typesOf(x).map((c) => lower(c.title)))}`], ["answers", count(s.answers)],
-      ["answers tddlog misses", count(v.beyond.length), `instances ${name} answers that tddlog does not`]),
-    element("nav", { class: "panels-nav", "aria-label": "Sections" }, ...at.map(([id, text]) => link({ view: "baseline", system: x, at: id }, text)))];
-  // head-to-head, its own benchmarks among them
-  if (head.length) {
-    const own = head.filter((r) => r.cls[r.c.systems.indexOf(x)] === "o").length;
-    out.push(element("section", { class: "panel", id: "head" }, element("h3", {}, "Head-to-head"),
-      note("Both read the same program: the benchmark's own, or the same network in another network format",
-        own ? `; ${count(own)} of them are ${name}'s own benchmarks.` : "."),
-      versusCells(v.head, name, head.length), pairPlot(head, x, v.head, "h"), familyCounts(head)));
+      ["answers tddlog misses", count(v.beyond.length), `instances ${name} answers that tddlog does not`],
+      ...(v.n.x ? [["not idiomatic", count(v.n.x), `translations a user of ${name}'s language would not write: in its answers, in no total`]] : [])),
+    ...(own.length ? [element("nav", { class: "filters", "aria-label": "Programs" }, pill(!original, page, "idiomatic programs", rows.length),
+      pill(original, { ...page, at: ORIGINAL }, "original programs", own.length))] : [])];
+  if (original) {
+    out.push(element("section", { class: "panel", id: ORIGINAL }, element("h3", {}, "Original programs"),
+      note(`Programs by ${name}'s authors, and others written in its language, read as written.`),
+      versusCells(v.original, name, own.length), ...(own.length ? [pairPlot(own, x, v.original, "o"), familyCounts(own)] : [])));
+    return out;
   }
-  // translated, by family
-  if (tr.length) {
-    out.push(element("section", { class: "panel", id: "translated" }, element("h3", {}, "Translated"),
-      note(head.length ? "One of them, or both, read a translation" : `Every instance ${name} was given is a translation for one of them or both`,
-        "; tddlog's own readers (of Dice programs, LPADs and networks) are front ends, not translations."),
-      versusCells(v.translated, name, tr.length), ...translatedTable(v, name, tr), pairPlot(tr, x, v.translated, "t")));
-  }
-  // in its own language and translated for it, then in each type of program it was given
-  if (parts.languages.length) {
-    out.push(element("section", { class: "panel", id: "language" }, element("h3", {}, "In its own language and translated for it"),
-      note("Its own language: the program it read is the benchmark's, or the network in another network format; translated: a translator wrote it."),
-      ...parts.languages));
-  }
+  // the sections after the first, which follows at once
+  out.push(element("nav", { class: "panels-nav", "aria-label": "Sections" }, ...BASELINE_AT.slice(1).map(([id, text]) => link({ ...page, at: id }, text))));
+  // every idiomatic program, by family
+  out.push(element("section", { class: "panel", id: "idiomatic" }, element("h3", {}, "Idiomatic programs"),
+    note("Its own language's programs and the translations its users would write (",
+      element("a", { href: IDIOMS_HREF }, "docs/baselines.md"), ", Idiomatic translations)."),
+    versusCells(v.idiomatic, name, rows.length), ...(rows.length ? [pairPlot(rows, x, v.idiomatic, "i"), ...familyTable(v, name, rows)] : [])));
   out.push(element("section", { class: "panel", id: "types" }, element("h3", {}, "In each type of program it was given"), ...parts.types));
-  if (parts.own.length) out.push(element("section", { class: "panel", id: "own" }, element("h3", {}, "Its own benchmarks"), ...parts.own.slice(1)));
   // coverage: what it answers that tddlog does not, what tddlog answers that it cannot be given, each in a cell;
   // then the programs of its own sources that tddlog does not run, and why
   const p3 = element("section", { class: "panel", id: "coverage" }, element("h3", {}, "Coverage"));
@@ -471,16 +476,18 @@ function typeSplit(c, route) {
   const v = draft.views.categories[c.key];
   const xs = (c.key === ALL ? c.systems : c.native).filter((x) => x !== "tddlog" && v.kinds[x]);
   const n = (x, keep) => [...v.kinds[x]].filter((k) => keep.includes(k)).length;
+  const every = c.key === ALL;   // all programs: how every program was written, those of kind x too
   const out = [];
   for (const [id, title, keep, field, text] of [
     ["head", "Head-to-head", "h", "head", "both read the benchmark's program as its authors or its generator wrote it, or the same network in another network format"],
-    ["translated", "Translated", "smb", "translated", "one of them, or both, read a translation (for the system, for tddlog, or for both)"]]) {
-    const have = xs.filter((x) => n(x, keep) > 0);
+    ["translated", "Translated", every ? "smbx" : "smb", "translated", "one of them, or both, read a translation (for the system, for tddlog, or for both)"]]) {
+    // a translation not idiomatic for the system is counted beside the translated ones, in the totals of all programs only
+    const have = xs.filter((x) => n(x, keep) > 0 || (keep !== "h" && n(x, "x") > 0));
     const body = element("tbody");
     for (const x of have) {
       const w = v[field][x];
       const num = (text) => element("td", { class: "num" }, text);
-      const dirs = keep === "h" ? [] : ["s", "m", "b"].map((k) => num(count(n(x, k))));
+      const dirs = keep === "h" ? [] : ["s", "m", "b", "x"].map((k) => num(count(n(x, k))));
       body.append(element("tr", { class: x === route.vs ? "vs" : null }, element("th", { scope: "row" }, systemLink(x)),
         num(count(n(x, keep))), ...dirs,
         num(w ? count(w.answers) : ""), num(w ? duration(w.total) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.tddlog_total) : ""),
@@ -491,13 +498,16 @@ function typeSplit(c, route) {
       const par = `PAR-${data.measure.par}, over the instances the system is given and either answers`;
       sec.append(scroller(stacked(element("table", { class: "board" }, head2(["system"], ["instances", null, "num"],
         ...(keep === "h" ? [] : [{ group: "translated for", cols: [["it", "a translation for the system", "num"],
-          ["tddlog", "a translation for tddlog", "num"], ["both", "a translation of the original for both", "num"]] }]),
+          ["tddlog", "a translation for tddlog", "num"], ["both", "a translation of the original for both", "num"]] },
+          ["not idiomatic", `a translation its users would not write: ${every ? "in these totals" : "in its answers, in no total"}`, "num"]]),
         { group: "the system", cols: [["answers", null, "num"], ["total", par, "num"]] },
         { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), "tddlog's speed-up", "num"]] }), body)), "whole"));
-      const x = have.includes(route.vs) ? route.vs : have[0];
-      const rows = kindRows(c, x).filter((r) => keep.includes(r.kind));
-      sec.append(element("p", { class: "small" }, `tddlog against ${data.names[x]} on ${plural(rows.length, "instance")}:`),
-        pairPlot(rows, x, v[field][x], id));
+      const x = have.includes(route.vs) && n(route.vs, keep) ? route.vs : have.find((y) => n(y, keep) > 0);
+      const rows = x ? kindRows(c, x).filter((r) => keep.includes(r.kind)) : [];
+      if (rows.length) {
+        sec.append(element("p", { class: "small" }, `tddlog against ${data.names[x]} on ${plural(rows.length, "instance")}:`),
+          pairPlot(rows, x, v[field][x], id));
+      }
     } else sec.append(note("No system here."));
     out.push(sec);
   }
@@ -894,7 +904,7 @@ Object.assign(extend, {
       if (parts.length === 1) return { view: "baselines" };
       const route = baseline(key);
       if (route && parts.length === 2) return route;
-      return route && parts.length === 3 && BASELINE_AT.some(([id]) => id === at) ? { ...route, at } : null;
+      return route && parts.length === 3 && (at === ORIGINAL || BASELINE_AT.some(([id]) => id === at)) ? { ...route, at } : null;
     }
     if (first === "system" && parts.length === 2) {
       return isMine(key) ? (data.integrations?.[integrationOf(key)] ? { view: "integration", key: integrationOf(key) } : { view: "integrations" }) : baseline(key);

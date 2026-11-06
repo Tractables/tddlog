@@ -6,7 +6,7 @@
 
 use std::borrow::Cow;
 
-use super::{ParseError, lexer, parser};
+use super::{ParseError, SYMBOL_CHARS, lexer, parser};
 use crate::Error;
 
 /// `text`, a ProbLog program or an LPAD, with each place `$N` (`$` and
@@ -90,7 +90,7 @@ pub(crate) fn bind<'a>(text: &'a str, arguments: &[String]) -> Result<Cow<'a, st
 /// `--` and `3`.
 fn joins(a: Option<&u8>, b: Option<&u8>) -> bool {
     let word = |c: u8| c.is_ascii_alphanumeric() || c == b'_' || c >= 0x80;
-    let symbol = |c: u8| b"+-*/\\^<>=~:.?@#&$".contains(&c);
+    let symbol = |c: u8| SYMBOL_CHARS.as_bytes().contains(&c);
     match (a, b) {
         (Some(&a), Some(&b)) => (word(a) && word(b)) || (symbol(a) && symbol(b)),
         _ => false,

@@ -49,9 +49,9 @@ use crate::ground::{AtomId, AtomKind, GroundProgram, RulesByHead, deps};
 use super::Rng;
 
 /// Components beyond which the search is skipped.
-pub(crate) const MAX_UNITS: usize = 4000;
+const MAX_UNITS: usize = 4000;
 /// Facts beyond which the search is skipped.
-pub(crate) const MAX_FACTS: usize = 50_000;
+const MAX_FACTS: usize = 50_000;
 /// Components whose proxies are summed: those with the most ancestors.
 const SCORED: usize = 32;
 /// Graph steps the search may spend evaluating orders: per evaluation, one
@@ -519,7 +519,7 @@ fn by_roots(gp: &GroundProgram, by_head: &RulesByHead, sccs: Vec<Vec<AtomId>>) -
 /// search, still a dependency order; `note` tells what the search did.
 /// The order the search starts from, and keeps where it is skipped, is
 /// `sccs` taken root by root ([`by_roots`]).
-pub(crate) fn search(
+pub(super) fn search(
     gp: &GroundProgram,
     by_head: &RulesByHead,
     sccs: Vec<Vec<AtomId>>,

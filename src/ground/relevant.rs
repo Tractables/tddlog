@@ -32,9 +32,7 @@ pub(crate) fn keep_relevant(norm: &mut NormProgram) -> usize {
         let rules_of = norm.rules_by_sig();
         let mut read: FxHashSet<Sig> = FxHashSet::default();
         let mut stack: Vec<Sig> = Vec::new();
-        let asked = norm.queries.iter().chain(&norm.evidence).map(|(a, _)| a);
-        let drivers = norm.drivers.iter().flat_map(|d| [&d.atom, &d.pattern]);
-        for a in asked.chain(drivers) {
+        for a in norm.asked() {
             note(a.signature(), &mut read, &mut stack);
         }
         while let Some(sig) = stack.pop() {

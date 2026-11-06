@@ -5,6 +5,10 @@
 //! leaves for those after it:
 //!
 //! 1. The front end, from the program to a ground program:
+//!    - `terms` (with `library`): compound terms, lists, findalls and the
+//!      library predicates the program calls lowered to Datalog with three
+//!      built-in literals; `normalize::ordered_heads` then puts the heads
+//!      of each distribution in one order.
 //!    - `table`: a program each of whose clauses is one row of a table is
 //!      ground from its rows, its noisy-or tables first written as
 //!      noisy-ors (`noisy_or`), and goes on at `finish`. Any other program
@@ -12,13 +16,21 @@
 //!    - `normalize`: annotated disjunctions and probabilistic rules become
 //!      *switch* facts and deterministic rules.
 //!    - `relevant`: the rules and facts of the predicates that no query or
-//!      observation reads dropped.
+//!      observation reads dropped; `unread`: the arguments no clause reads
+//!      dropped.
 //!    - `chain`: doubly recursive transitive closures written linear.
-//!    - `magic` and `schedule`: the magic-set rewrite, after which only
-//!      what the queries and the evidence demand is ground.
+//!    - The route (`ground_norm`): a program without variables is ground as
+//!      it stands; one whose queries reach a test before its variables are
+//!      bound is resolved top-down from its queries (`modes`,
+//!      `engine::topdown`); any other is ground bottom-up by levels where
+//!      its recursion has them (`engine::ground_by_levels`), else after the
+//!      magic-set rewrite (`magic`), after which only what the queries and
+//!      the evidence demand is ground, with the program as it stands, or
+//!      top-down, where the rewrite cannot be ground.
 //!    - `engine`: stratified semi-naive bottom-up evaluation with every
 //!      switch assumed true, which emits every ground rule whose positive
-//!      body atoms are all possible.
+//!      body atoms are all possible; `schedule` orders the bodies for it
+//!      and for the rewrites.
 //!    - `linear`: the program with its right-linear recursion evaluated
 //!      from its bound end is ground too, and kept where it is smaller.
 //! 2. `finish`, after the front end and after each layout rewrite:
@@ -38,8 +50,8 @@
 //!      head, components and exclusive sets), which each of these passes
 //!      reads and hands on, updated or found anew where the pass changed
 //!      the program: `negation` (negated atoms unfolded under their
-//!      rules), `inline` (views, then atoms with equal rules merged,
-//!      `simplify`), `contexts` (choices read through a fact per context),
+//!      rules), `inline` (views), `aig` (equal gates merged),
+//!      `contexts` (choices read through a fact per context),
 //!      `classes` (row classes), `share` (switch sharing), `cover` (atoms
 //!      certain by cover) and `condition` (what the evidence implies, with
 //!      `preprocess`'s backbones, in an acyclic program). The program
@@ -141,30 +153,34 @@ pub struct GroundOptions {
     pub views: bool,
     /// Write a table of two values whose one value is a noisy-or of its
     /// parents as that noisy-or, where nothing reads, asks or observes its
-    /// other value (`noisy_or`). On by default; off where the program's
-    /// tables are wanted as written.
+    /// other value (`noisy_or`). On by default; off only in the tests that
+    /// check that the rewrite keeps the answers.
     pub noisy_or: bool,
     /// Let the conditioning fix the facts that every model of the clauses
     /// its propagation leaves agrees on, which a SAT solver finds, and
     /// merge the facts that the clauses of two literals the solver learns
     /// make equal (`backbone`). On by default; it applies to every program
     /// that the conditioning leaves clauses over facts, and does nothing
-    /// elsewhere.
+    /// elsewhere. Off only in the tests that check that it keeps the
+    /// answers.
     pub backbones: bool,
     /// Eliminate the facts of probability one half that an independent
     /// support of the clauses over facts, which a SAT solver finds,
     /// leaves out, by resolution, after the conditioning (`defined`). On
     /// by default; it applies to a program that is a CNF over its facts
-    /// with such facts, and does nothing elsewhere.
+    /// with such facts, and does nothing elsewhere. Off only in the tests
+    /// that check that it keeps the answers.
     pub defined: bool,
     /// Read a choice that rules read under exclusive contexts through a
-    /// fact per rule (`contexts`). On by default; off where the program's
-    /// derived atoms are wanted as written.
+    /// fact per rule (`contexts`). On by default; off only in tests: those
+    /// that check that the pass keeps the answers, and those of the
+    /// compile and the layouts that read the derived atoms as written, with
+    /// [`GroundOptions::views`] off.
     pub contexts: bool,
     /// Renormalize each row of a table that the conditioning leaves some
-    /// heads false over the heads it keeps (`renormalize`). On
-    /// by default; off where the program's tables are wanted as the
-    /// conditioning's rewrite leaves them.
+    /// heads false over the heads it keeps (`renormalize`). On by default;
+    /// off only in the tests that check that the renormalization keeps the
+    /// answers and the probability of the evidence.
     pub renormalize: bool,
     /// Condition on the program's one query where it observes nothing, and
     /// answer the query by the probability of that evidence where the

@@ -95,12 +95,50 @@ pub(super) const FAMILIES_WEIGHT: u64 = 8;
 /// Their formulas need not reach the watch, which grows with the target.
 pub(super) const WORK_PER_ESTIMATED_PAIR: u64 = 64;
 
+/// The work `t`, a families trial, may spend on its layout's estimate
+/// ([`WORK_PER_ESTIMATED_PAIR`]); `None` for another trial or before its
+/// layout is built.
+pub(super) fn estimated_work(t: &Trial) -> Option<u64> {
+    if !matches!(t.kind, Kind::Families { .. }) {
+        return None;
+    }
+    t.estimate
+        .map(|e| (e.pairs * WORK_PER_ESTIMATED_PAIR as f64).min(u64::MAX as f64) as u64)
+}
+
 /// Whether `t`, a families trial, has spent past its layout's estimate
-/// ([`WORK_PER_ESTIMATED_PAIR`]).
+/// ([`estimated_work`]).
 pub(super) fn overspent_estimate(t: &Trial) -> bool {
-    matches!(t.kind, Kind::Families { .. })
-        && t.estimate
-            .is_some_and(|e| t.spent as f64 > e.pairs * WORK_PER_ESTIMATED_PAIR as f64)
+    estimated_work(t).is_some_and(|w| t.spent > w)
+}
+
+/// The work of `left`, what its turn leaves it, that `t`'s next attempt
+/// may spend: where `t` holds the weight on its layout's estimate, no more
+/// than it takes to spend the estimate ([`estimated_work`]), past which it
+/// loses the weight ([`overspent_estimate`]). The bet costs what the
+/// estimate says, not a weighted turn: on Roulette's caesar, whose
+/// `families:0` layout is estimated at 2.2e4 pairs and builds formulas
+/// exponential in the key's copies, its first attempt otherwise spent up
+/// to its whole weighted turn, 2^31 units and 6 to 13 s, where `closed`
+/// answers in 0.03 to 0.5 s.
+pub(super) fn bet_left(t: &Trial, left: u64) -> u64 {
+    match estimated_work(t) {
+        Some(w) if t.weight > 1 && t.spent <= w => left.min((w - t.spent).max(1)),
+        _ => left,
+    }
+}
+
+/// The base-2 logarithm of the work past which `t`'s projected finish
+/// stops its compile between components (`tp::Horizon`):
+/// [`PROJECTED_DOUBLINGS`] past its target over its weight, the level
+/// its turns are taken at ([`Trial::key`]). The weight buys a trial a
+/// larger share of the turns, not a farther projection. On Roulette's
+/// hardware, which `families:0` wins in 2^25 to 2^29 units, the weighted
+/// `decision` trial, projected at 2^31 to 2^34, otherwise ran on in its
+/// first turn until it had spent its weighted target or projected past
+/// 2^34, and at 3 000 steps ran out of memory.
+pub(super) fn horizon(t: &Trial) -> f64 {
+    (t.target.max(1) as f64).log2() - (t.weight.max(1) as f64).log2() + PROJECTED_DOUBLINGS
 }
 
 /// How much smaller the searched `families` layout must be estimated than

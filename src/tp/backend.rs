@@ -714,39 +714,39 @@ impl TddBackend<'_> {
         }
         Ok(self.engine.cube(scope.vtree(), renamed)?)
     }
-    /// That exactly one of `lits` holds, or at most one, on `scope`, whose
-    /// variables are those of `lits`, each once.
+    /// That exactly one of `vars` holds, or at most one, on `scope`, whose
+    /// variables are `vars`, each once.
     ///
     /// Built level by level rather than applied: at each node of the
-    /// scope's vtree, none of its leaves' literals holds where none holds on
-    /// either side, and exactly one where exactly one holds on one side and
-    /// none on the other. From the halves by `and` and `or`, each operation
-    /// would pay for every level of its scope. Only
+    /// scope's vtree, none of its leaves' variables holds where none holds
+    /// on either side, and exactly one where exactly one holds on one side
+    /// and none on the other. From the halves by `and` and `or`, each
+    /// operation would pay for every level of its scope. Only
     /// the diagram asked for is built, and at most one is the root's pairs
     /// of both, which the nodes of one level, being disjoint, allow nowhere
     /// below.
     pub(crate) fn one_of(
         &self,
         scope: &VtreeScope,
-        lits: &[Literal],
+        vars: &[VarId],
         exactly: bool,
     ) -> Result<Tdd, CompileError> {
         let vtree = scope.vtree();
-        if let [l] = *lits {
+        if let [v] = *vars {
             return if exactly {
-                self.literal(scope, l)
+                self.literal(scope, Literal::pos(v))
             } else {
                 Ok(self.one(scope))
             };
         }
-        let mut sign: Vec<Option<bool>> = vec![None; vtree.num_nodes()];
-        for &l in lits {
-            let local = Self::renamed(scope, l)?;
+        let mut read = vec![false; vtree.num_nodes()];
+        for &v in vars {
+            let local = Self::renamed(scope, Literal::pos(v))?;
             let leaf = vtree
                 .leaf_of(local.var)
                 .expect("a scope's variables are its leaves");
-            debug_assert!(sign[leaf.idx()].is_none(), "each variable once");
-            sign[leaf.idx()] = Some(local.sign);
+            debug_assert!(!read[leaf.idx()], "each variable once");
+            read[leaf.idx()] = true;
         }
         let mut b = Tdd::builder(self.engine, vtree)?;
         // Per vtree node, its node for none and for exactly one.
@@ -755,9 +755,7 @@ impl TddBackend<'_> {
         let root = vtree.root();
         for t in vtree.bottomup() {
             if vtree.node(t).is_leaf() {
-                if !sign[t.idx()].expect("every variable of the scope is one of the literals") {
-                    (none[t.idx()], one[t.idx()]) = (POS_LEAF_IDX, NEG_LEAF_IDX);
-                }
+                assert!(read[t.idx()], "every scope variable is one of `vars`");
                 continue;
             }
             let (l, r) = vtree.children(t);
@@ -1541,16 +1539,14 @@ mod tests {
     }
 
     /// `one_of` builds the diagram of exactly one and of at most one of
-    /// literals of either sign that `or` of their cubes reduces to, on
-    /// random trees.
+    /// the variables that `or` of their cubes reduces to, on random trees.
     #[test]
     fn one_of_is_the_applied_disjunction_of_cubes() {
         for seed in 0..80u64 {
             let n = 1 + (seed % 12) as u32;
             let tree = Arc::new(Vtree::random(n, seed));
-            let lits: Vec<Literal> = (1..=n)
-                .map(|v| Literal::new(VarId(v), (seed >> (v % 7)) & 1 == 0))
-                .collect();
+            let vars: Vec<VarId> = (1..=n).map(VarId).collect();
+            let lits: Vec<Literal> = vars.iter().map(|&v| Literal::pos(v)).collect();
             tree.context().run(|engine| {
                 let backend = TddBackend::new(engine, tree.clone());
                 let scope = backend.global();
@@ -1572,7 +1568,7 @@ mod tests {
                 backend.minimize(&mut exactly, Reduce::Settled).unwrap();
                 backend.minimize(&mut most, Reduce::Settled).unwrap();
                 for (applied, flag) in [(exactly, true), (most, false)] {
-                    let built = backend.one_of(&scope, &lits, flag).unwrap();
+                    let built = backend.one_of(&scope, &vars, flag).unwrap();
                     assert!(
                         backend.equivalent(&built, &applied).unwrap(),
                         "seed {seed} exactly {flag}"

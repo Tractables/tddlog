@@ -166,7 +166,8 @@ class AleaBenchTests(unittest.TestCase):
             # Timed, it writes that circuit too, and times it twice.
             out = julia('export', '--warm-below', 'Inf', programs / f'{name}.jl', Path(d, 'timed'))
             self.assertEqual(Path(d, 'timed.pl').read_text(), text)
-            times = dict(line.split() for line in out.splitlines())
+            # (and names the worlds' values, `alea_value` lines, untimed)
+            times = dict(f for f in (line.split() for line in out.splitlines()) if f[0] != 'alea_value')
             self.assertEqual(set(times), {'alea_seconds', 'alea_compile_seconds', 'alea_warm_seconds'})
             self.assertLess(float(times['alea_warm_seconds']), float(times['alea_seconds']))
             self.assertEqual((programs / f'{name}.pl').read_text(), text)

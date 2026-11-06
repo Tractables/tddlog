@@ -138,11 +138,24 @@ pub(crate) fn observed_false_alone(gp: &GroundProgram) -> Vec<bool> {
 /// any other rule reads, is not. The formula of such an atom holds
 /// a node per level of its cone on any vtree, and the query phase counts a
 /// query of one against the evidence without conjoining the two.
+///
+/// A copy of a rewrite through indicators ([`crate::indicators`]) is a fact
+/// of the encoding, not of the model: it stands for a derived atom, tied to
+/// it by a link the query phase conjoins, so a rule that reads one is no
+/// cube. Under `families` the top rolls of the ProbLog tutorial's dice
+/// (`seen([_,_,_,_,_])`) read copies alone, of the roll before and of the
+/// die's values. Taken for cubes, they left 81 of those copies in no
+/// family, and the layout placed them apart from their links: 211 million
+/// pairs of evidence where the queries' own families make 1366.
 pub(crate) fn queried_cubes(gp: &GroundProgram) -> Vec<bool> {
     let n = gp.num_atoms();
     let by_head = gp.rules_by_head();
     let readers = gp.readers(|rule, _| rule);
     let derived = |a: AtomId| !gp.is_fact(a);
+    let mut copy = vec![false; n];
+    for ind in &gp.encoding.indicators {
+        copy[ind.var as usize] = true;
+    }
     // The candidates, by their own rule.
     let mut cube: Vec<bool> = (0..n)
         .map(|a| match &by_head[a] {
@@ -150,7 +163,10 @@ pub(crate) fn queried_cubes(gp: &GroundProgram) -> Vec<bool> {
                 let r = &gp.rules[*ri];
                 r.body.len() > 1
                     && !r.pairs
-                    && r.body.iter().all(|l| !derived(l.atom()) || l.is_positive())
+                    && r.body.iter().all(|l| {
+                        let b = l.atom();
+                        !copy[b as usize] && (!derived(b) || l.is_positive())
+                    })
             }
             _ => false,
         })

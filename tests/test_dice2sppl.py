@@ -29,7 +29,7 @@ from test_nodice import dice_programs  # noqa: E402
 import dice2problog  # noqa: E402
 import dice2sppl  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
-from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y  # noqa: E402
+from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y, program_text  # noqa: E402
 
 SPPL = os.environ.get('SPPL', '')
 # an observed conjunction of 250 flips, past the 200 parentheses Python
@@ -48,10 +48,6 @@ LOOPS = ('fun step(x: bool) { let y = flip 0.3 in x || y }\n'
 # the reference's program of LOOPS: the loop in a loop unrolled, which
 # dice2problog.py refuses
 REFERENCE = {LOOPS: LOOPS.replace('iterate(step, x, 2)', 'step(step(x))')}
-
-def program_text(name):
-    return (data / 'dice' / f'{name}.dice').read_text()
-
 
 def sppl_answers(text, qs):
     """bench.py's reading of sppl_dice.py's run."""

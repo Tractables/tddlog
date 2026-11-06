@@ -53,3 +53,50 @@ fn a_body_of_20000_literals() {
         );
     }
 }
+
+/// Three conjunctions of the same 30 derived atoms, each with a fact of its
+/// own last, and their disjunction, under every layout. The chains of the
+/// three bodies share their links (`vtree::chained`). Each `d(k)` holds
+/// with probability 0.9 * 0.8, so `q(i)` with 0.72^30 * 0.5 and `any` with
+/// 0.72^30 * (1 - 0.5^3).
+#[test]
+fn bodies_that_start_alike() {
+    let mut source = String::new();
+    for k in 1..=30 {
+        source += &format!("0.9::f({k}). 0.8::e({k}). d({k}) :- f({k}), e({k}).\n");
+    }
+    let reads: Vec<String> = (1..=30).map(|k| format!("d({k})")).collect();
+    for i in 1..=3 {
+        source += &format!(
+            "0.5::g({i}).\nq({i}) :- {}, g({i}).\nany :- q({i}).\n",
+            reads.join(", ")
+        );
+    }
+    source += "query(q(1)).\nquery(any).\n";
+    let all = 0.72f64.powi(30);
+    let expected = [("q(1)", all * 0.5), ("any", all * (1.0 - 0.125))];
+    for layout in [
+        "program",
+        "program:fanin",
+        "families:0",
+        "closed",
+        "td",
+        "auto",
+    ] {
+        let options = Options {
+            strategy: layout.parse().unwrap(),
+            ..Options::default()
+        };
+        let run = common::run(&source, &options).unwrap();
+        let results = run.results.expect("no evidence");
+        let got: Vec<(String, f64)> = results
+            .iter()
+            .map(|r| (r.to_string(), r.probability))
+            .collect();
+        assert_eq!(got.len(), 2, "{layout}: {got:?}");
+        for ((a, p), (b, q)) in got.iter().zip(expected) {
+            assert_eq!(a, b, "{layout}");
+            assert!((p - q).abs() < 1e-12 * q, "{layout}: {a}: {p} against {q}");
+        }
+    }
+}

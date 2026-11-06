@@ -39,10 +39,13 @@ pub(crate) struct Compiled {
     /// Per atom, whether its stored formula is its formula (`true`) or its
     /// negation (`false`).
     pub(crate) positive: Vec<bool>,
-    /// The scope each component's formulas live on. Without projection every
-    /// entry is the one global scope.
+    /// The scopes the formulas live on: one per component, then one per
+    /// reader that settling the names composed ([`fn@super::settle`]), the
+    /// scope its composed formula lives on. Without projection each
+    /// component's entry is the one global scope.
     pub(crate) scopes: Vec<VtreeScope>,
-    /// Component of each derived atom, `u32::MAX` for a fact.
+    /// Each derived atom's index into `scopes`: its component's entry, or
+    /// its own once settling composed it; `u32::MAX` for a fact.
     pub(crate) comp_of: Vec<u32>,
     /// What the compilation projected to, which the query phase follows: with
     /// projection off it keeps every formula on the global vtree.
@@ -196,14 +199,7 @@ impl Compiled {
             }
             None => {
                 let v = self.var_of[a as usize].ok_or(CompileError::UnmappedFact(a))?;
-                backend.literal(
-                    scope,
-                    if positive {
-                        tididi::Literal::pos(v)
-                    } else {
-                        tididi::Literal::neg(v)
-                    },
-                )
+                backend.literal(scope, tididi::Literal::new(v, positive))
             }
         }
     }
@@ -1631,11 +1627,7 @@ impl Compilation {
                 match gp.kinds[b] {
                     AtomKind::Fact(_) => {
                         let v = var_of[b].unwrap();
-                        let lit = if l.is_positive() {
-                            tididi::Literal::pos(v)
-                        } else {
-                            tididi::Literal::neg(v)
-                        };
+                        let lit = tididi::Literal::new(v, l.is_positive());
                         Ok(Part(Read::from(backend.literal(on, lit)?), on.clone()))
                     }
                     AtomKind::Derived => Ok(Part(

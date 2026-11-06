@@ -104,6 +104,13 @@ class Dice2PsiTests(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             dice2psi.translate(program_text('geometric'), 0)
 
+    def test_a_modulus_past_4300_digits_is_written(self):
+        # int(15000)'s modulus 2^15000 has 4516 digits, past Python's default limit
+        text = 'let x = if flip 0.5 then int(15000, 1) else int(15000, 2) in x + x'
+        code = dice2psi.translate(text, 0)[0]
+        self.assertIn(str(2 ** 15000), code)
+        self.assertGreater(len(str(2 ** 15000)), 4300)
+
     def test_psis_distribution_is_read(self):
         self.assertEqual(bench.parse_psi('p(x) = 3/10·δ(1)[x]+7/10·δ(0)[x]\n'), {1: 0.3, 0: 0.7})
         self.assertEqual(bench.parse_psi('p(r) = δ(2)[r]\n'), {2: 1.0})

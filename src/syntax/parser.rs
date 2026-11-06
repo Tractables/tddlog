@@ -22,6 +22,14 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
+/// An error on `line`, for the readers of the other languages.
+pub(crate) fn fail(line: usize, msg: impl Into<String>) -> ParseError {
+    ParseError {
+        line,
+        msg: msg.into(),
+    }
+}
+
 impl From<LexError> for ParseError {
     fn from(e: LexError) -> Self {
         ParseError {
@@ -871,7 +879,6 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// An atom or `\+ atom`, as `(atom, positive)`.
     /// The atom and sign that `query(A)`, `evidence(A)` or `evidence(A, V)`
     /// asks, its arguments on [`Parser::args`] from `start`, taken from
     /// there: the sign of `\+` in `A`, and for evidence its value `V`.

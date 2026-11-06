@@ -591,7 +591,8 @@ function plotted(suite, names, { also, bare, all, colour } = {}) {
 
 // A category's instances (the data's rows), narrowed to `only`: each with
 // its suite, its time limit, its systems' classes (a letter each: o own, n
-// native, t translated, - not given), each system's record `v` and its time
+// native, t translated, x translated but not idiomatic, u unread, - not
+// given), each system's record `v` and its time
 // `t`, null where it does not answer or was not given the instance.
 function catRows(c, only) {
   const keep = narrowing(c, only);
@@ -651,7 +652,7 @@ function codeCell(rows) {
   return element("td", { class: "code-links" }, ...pages.flatMap((p, i) => [i ? ", " : "", link(p.route, pages.length > 1 ? p.label : "code")]));
 }
 
-const LETTERS = { o: "own", n: "native", t: "translated", u: "unread" };
+const LETTERS = { o: "own", n: "native", t: "translated", u: "unread", x: "not idiomatic" };
 
 // Each system's instances given, answers and classes over rows: the data's
 // where rows are the whole category, else counted from the rows.
@@ -662,7 +663,7 @@ function tally(c, rows, only) {
       out[x] = { given: c.given[x], answers: c.answers[x], classes: c.classes[x] };
       return;
     }
-    const classes = { own: 0, native: 0, translated: 0, unread: 0 };
+    const classes = Object.fromEntries(Object.values(LETTERS).map((k) => [k, 0]));
     for (const r of rows) if (r.cls[j] !== "-") classes[LETTERS[r.cls[j]]]++;
     out[x] = { given: rows.filter((r) => r.v[x] !== null && r.v[x] !== "unread").length, answers: rows.filter((r) => r.t[x] !== null).length, classes };
   });
@@ -1290,16 +1291,16 @@ function scoreboard(c, rows, tal, n, vs, only) {
     const v = isMine(x) ? null : versus(c, x, only);
     const page = { view: "system", system: x };
     const cls = (k) => (!t.classes[k] ? "" : k === "own" && data.own.some((o) => o.system === x)
-      ? link({ ...page, at: "own" }, count(t.classes[k])) : count(t.classes[k]));
+      ? link({ ...page, at: "original" }, count(t.classes[k])) : count(t.classes[k]));
     body.append(element("tr", { class: isMine(x) ? "mine" : x === vs ? "vs" : null },
       element("th", { scope: "row" }, swatch(x), link(page, data.names[x])),
       element("td", {}, element("span", { class: "bar" }, element("i", { style: `width:${(100 * t.answers / Math.max(1, n)).toFixed(1)}%` })),
         ` ${count(t.answers)}`),
       element("td", { class: "num" }, v ? duration(v.total) : ""),
       element("td", { class: "num" }, v ? duration(v.tddlog_total) : ""),
-      element("td", { class: "num" }, v ? speedup(v) : ""),
+      element("td", { class: v && (v.speedup ?? null) === null ? "num few" : "num" }, v ? speedup(v) : ""),
       element("td", { class: "num" }, cls("own")), element("td", { class: "num" }, cls("native")),
-      element("td", { class: "num" }, cls("translated"))));
+      element("td", { class: "num" }, cls("translated")), element("td", { class: "num" }, cls("not idiomatic"))));
   }
   return scroller(stacked(element("table", { class: "board" },
     element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "system"),
@@ -1309,7 +1310,8 @@ function scoreboard(c, rows, tal, n, vs, only) {
       element("th", { scope: "col", class: "num" }, speedName(`${me} faster`)),
       element("th", { scope: "col", class: "num", title: "instances from the system's own papers, benchmarks or distribution" }, "own"),
       element("th", { scope: "col", class: "num", title: "instances whose program is in the system's own language" }, "native"),
-      element("th", { scope: "col", class: "num", title: "instances whose program a translator wrote from another language" }, "translated"))),
+      element("th", { scope: "col", class: "num", title: "instances whose program a translator wrote, as its users would write it" }, "translated"),
+      element("th", { scope: "col", class: "num", title: `instances translated as its users would not write them: ${only !== undefined || c.key === ALL ? "in these totals" : "in no total"}` }, "not idiomatic"))),
     body)), "whole");
 }
 
@@ -1421,10 +1423,7 @@ function categoryView(route) {
 }
 
 // A baseline's parts, which the front page's page of it shows after tddlog
-// against it head-to-head and translated: `languages`, on the instances
-// whose program is in its own language (its own benchmarks among them) and
-// on those a translator wrote for it, its answers, its total time, tddlog's
-// and tddlog's speed-up, and a fold of their plots; `types`, in each category it was
+// against it over its idiomatic programs: `types`, in each category it was
 // given, its answers, its total time, tddlog's and tddlog's speed-up, and a
 // fold of its plot among the others there; `own`, its own benchmarks; and
 // `facts`, its version, settings, what it was not given, how it is
@@ -1440,43 +1439,27 @@ function solverParts(x) {
   // categories: each row's subject
   const all = parts.flatMap((p) => p.rows);
   const ms = subjectsOf(all);
-  // in its own language and translated for it
-  const sets = [["on", "in its own language", s.native], ["t", "translated for it", s.translated]].map(([letters, label, v]) => {
-    const rows = parts.flatMap(({ c, rows: rs }) => rs.filter((r) => letters.includes(r.cls[c.systems.indexOf(x)])));
-    const own = parts.reduce((n, { c, rows: rs }) => n + rs.filter((r) => r.cls[c.systems.indexOf(x)] === "o").length, 0);
-    return { letters, label, v, rows, own: letters === "on" ? own : 0 };
-  }).filter((w) => w.rows.length && w.v);
-  const num = (text) => element("td", { class: "num" }, text);
   const par = `over the instances it is given and either answers (PAR-${data.measure.par})`;
   const sides = (me) => [{ group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
     { group: subject(me), cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${subject(me)}'s speed-up`, "num"]] }];
-  const languages = sets.length ? [scroller(stacked(element("table", { class: "board languages" },
-    head2(["programs"], ["instances", null, "num"], ["its own", "from its own papers, benchmarks or distribution", "num"], ...sides(ms)),
-    element("tbody", {}, ...sets.map((w) => element("tr", {}, element("th", { scope: "row" }, w.label), num(count(w.rows.length)),
-      num(w.own ? count(w.own) : ""), num(count(w.v.answers)), num(duration(w.v.total)), num(count(w.v.tddlog_answers)),
-      num(duration(w.v.tddlog_total)), num(speedup(w.v))))))), "whole"),
-  lazy({ class: "lang-figs" }, "Their plots", () => sets.map((w) => element("div", { class: "pair" },
-    plotted({ key: `${x}-${w.letters}`, title: `${name} and ${subject(w.v.me)}, ${w.label}`, noun: "instances", systems: [...w.v.me, x],
-      instances: w.rows.map((r) => [r.name, ...w.v.me.map((m) => r.v[m]), r.v[x]]), limit: Math.max(...w.rows.map((r) => r.limit)),
-      faster: { [x]: w.v.speedup === null ? "too few in common" : `${subject(w.v.me)} ${speedup(w.v, true)}` } }, data.names, { all: true }),
-    scatter(w.rows, [...w.v.me, x], x, false))))] : [];
   // each category's numbers, then its plot among the others, x's line and tddlog's coloured
   const body = element("tbody");
-  for (const { c, rows, tal } of parts) {
+  for (const { c, tal } of parts) {
     const t = tal[x], v = c.vs[x];
     const k = (key) => count(t.classes[key]);
     body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: c.key, vs: x }, c.title)),
       element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(t.given)),
-      ...["own", "native", "translated"].map((key) => element("td", { class: "num" }, k(key))),
-      element("td", { class: "num" }, count(t.answers)), element("td", { class: "num" }, duration(v.total)),
-      element("td", { class: "num" }, count(answeredBy(rows))), element("td", { class: "num" }, duration(v.tddlog_total)),
+      ...["own", "native", "translated", "not idiomatic"].map((key) => element("td", { class: "num" }, k(key))),
+      element("td", { class: "num" }, count(v.answers)), element("td", { class: "num" }, duration(v.total)),
+      element("td", { class: "num" }, count(v.tddlog_answers)), element("td", { class: "num" }, duration(v.tddlog_total)),
       element("td", { class: "num" }, speedup(v))));
   }
   const cms = subjectsOf(all);
   const types = [scroller(stacked(element("table", { class: "board" },
     head2(["type"], ["instances", null, "num"],
       { group: "given", cols: [["all", null, "num"], ["own", "from its own papers, benchmarks or distribution", "num"],
-        ["native", "in its own language", "num"], ["translated", "translated for it", "num"]] },
+        ["native", "in its own language", "num"], ["translated", "translated for it as its users would write it", "num"],
+        ["not idiomatic", "translated for it as its users would not write it: in no total", "num"]] },
       ...sides(cms)),
     body)), "whole"),
   lazy({ class: "cat-figs-fold" }, `Its plot in each type, among the other systems there`, () => [element("div", { class: "cat-figs" },
@@ -1498,7 +1481,7 @@ function solverParts(x) {
       c.doi ? element("a", { href: `https://doi.org/${c.doi}` }, c.title) : c.title, `. ${c.venue}, ${c.year}.`));
   }
   facts.append(element("dt", {}, "Site"), element("dd", {}, element("a", { href: s.link }, s.link)));
-  return { s, languages, types, own, facts };
+  return { s, types, own, facts };
 }
 
 function findings(list) {

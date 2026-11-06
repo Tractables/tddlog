@@ -161,14 +161,14 @@ the formulation and the projection besides its vtree. The modules, in
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
-| `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes; `circulette.rs`, a Circulette netlist read as its gates' rules with a fault on each logic gate |
+| `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice/`, a Dice program read as the program its symbolic evaluation writes (`tokens.rs`, `syntax.rs`, `values.rs`, `translate.rs`); `circulette.rs`, a Circulette netlist read as its gates' rules with a fault on each logic gate |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
-| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls; `topdown.rs`, top-down grounding; and `schedule.rs`, body order), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
+| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
-| `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
+| `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, its eliminations (min-fill, weighted min-fill, in a given order), an elimination order annealed, the minor-min-width bound, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies, tested in `tests/copies.rs`), `closed.rs` with `order.rs`, `families.rs` with `nest.rs` (a group's block), `decision.rs` (with the names of its tree's contexts, of the atoms read outside it and of the atoms read beside those): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them, and `chained`, the wide bodies written as chains along `program`'s order |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `trace.rs`: `CompileTrace`, each component's compile as a trace records it; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
 | `query/` | `mod.rs`: `QueryEvaluation`, the query counts; `walk.rs`: the evidence walk; `sum_out.rs`: its finished subtrees summed out where only P(e) is wanted |
-| `eval/` | `mod.rs`: `Value`; `number.rs`: `Count`; `weights.rs`: the weights of facts and indicators; `count.rs`: a count's two passes, the count of a conjunction; `grid.rs` and `kernel.rs`: count passes over levels read as grids, and their vector kernels |
+| `eval/` | `mod.rs`: the module's exports; `number.rs`: `Value`, `Count`, `Range`, `Scaled`; `weights.rs`: the weights of facts and indicators; `count.rs`: a count's two passes; `conjunction.rs`: the count of a conjunction without building it; `grid.rs` and `kernel.rs`: count passes over levels read as grids, and their vector kernels; `tests.rs`: `count.rs`'s tests, the passes over grids and in `Count`s against those over pairs |
 | `by_hash.rs` | entries numbered as they come and found by a hash, kept in their owner's arrays: the lists, tuples, rules and rows of the modules below and of `ground` |
 | `cubes.rs` | cubes merged on complementary literals |
 | `cnf.rs` | `WeightedCnf`: the ground program as a weighted CNF (`tddlog --cnf`), for a weighted model counter |
@@ -310,7 +310,7 @@ none. The example queries of an LPAD sit in a comment and take no
 arguments. In a Dice program a place stands for an integer, `int($1)`,
 `uniform($1, 0, $2)` or `iterate(step, x, $3)`, and its argument is a
 natural number, which takes its place before the program is read
-(`syntax/dice.rs`). Without arguments a place may stand only for an
+(`syntax/dice/`). Without arguments a place may stand only for an
 `iterate`'s count: the Dice reader writes the count as a fact,
 `steps($1).`, which the recursion over the steps reads, and reads the
 state after the loop at it, `s($1)`, so that `tddlog --program` prints
@@ -378,7 +378,7 @@ quotes that start with a lower-case letter, and the probabilities are
 written as Python writes a float (tests/lpad holds LPADs and the
 script's programs for them).
 
-A file with the extension `.dice` is a Dice program, and `syntax/dice.rs`
+A file with the extension `.dice` is a Dice program, and `syntax/dice/`
 reads it as the ProbLog program its symbolic evaluation writes, which the
 parser then reads and `tddlog --program` prints. Every `let` binds a
 Boolean literal, an integer, a tuple or a list; an integer of type
@@ -527,8 +527,10 @@ against the script's programs for the files of `tests/networks/`,
 are tables; another kind of node is refused) and UAI (`.uai`). BIF and
 Hugin are read as the script's regular expressions read them, GeNIe's
 XML into a tree (`xml.rs`: the encoding the declaration names, comments,
-entities). A file that is not UTF-8 is read as ISO-8859-1, as Ace's
-water, pigs and mildew are written. A compressed file is refused.
+entities). A BIF, Hugin or UAI file that is not UTF-8 is read as
+ISO-8859-1, as Ace's water, pigs and mildew are written; an XML file (GeNIe's,
+Ace's `.inst`) is read as ISO-8859-1 where its declaration names it, and
+as UTF-8 otherwise. A compressed file is refused.
 
 Each variable gets one annotated disjunction per row of its table,
 `p1::x(v1); ...; pk::x(vk) :- p1(u1), ..., pm(um).`, in the order of a
@@ -707,7 +709,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
    cycle among its predicates, is a Bayesian network written one
    annotated disjunction per row (`tddlog --program` of a network;
    `examples/bn_cancer.pl`). What steps 1 to 4 make of it is known from
-   the rows, so `table::ground_rows` builds that output directly, the
+   the rows, so `table::Shape::ground` builds that output directly, the
    same atoms in the same order, and simplification onward is shared
    (`finish`). The shape (`Shape`) is decided before anything is built;
    any other program takes the generic steps. Equality with the generic
@@ -1054,11 +1056,12 @@ are skipped. Several steps have a program in `examples/` that shows them.
    noisy-ors.
 6. **Exclusive sets** (`exclusive.rs`). Two derived atoms are exclusive
    when every pair of their rules has clashing bodies. The sets are the
-   values of a network variable; row classes, the cover, the indicators
-   and the families layout read them. Where the cover leaves the program as
-   it is, the grounder keeps them with it, with the rules by head, the
-   derived components and the units (`GroundProgram::structure`), for the
-   indicators and `auto`'s `nothing_to_order` to read.
+   values of a network variable; the rest of steps 6 to 10, the weighted
+   CNF, the indicators and the families layout read them. Where the cover
+   leaves the program as it is, the grounder keeps them with it, with the
+   rules by head, the derived components and the units
+   (`GroundProgram::structure`), for the indicators and `auto`'s
+   `nothing_to_order` to read.
 
    Two rules keep the comparisons few. An atom is compared only with the
    sets that no body of its rules rules out: a set rules out the bodies of
@@ -1314,7 +1317,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
    weight `θ_h` shared by the rows of one `θ_h`, since `h` holds where the
    context does through that row alone; elsewhere the row stays as it is.
    The renormalization pays on Ace's networks, whose zeros make values
-   false; `GroundOptions::renormalize` turns it off.
+   false; `GroundOptions::renormalize`, a control for the tests, turns
+   it off.
 10. **Dropping detached evidence** (`detach.rs`). The components of the
     graph of rule heads and body atoms share no fact, so the count of a
     component holding observations and no query is a factor of `P(q, e)`
@@ -1379,13 +1383,16 @@ are skipped. Several steps have a program in `examples/` that shows them.
     their names (a label of several bodies becomes an atom `$e(n)`). The
     order is greedy on fill, the atoms read outside the component last;
     past `MAX_PRODUCTS` label products the rest stays recursive. Steps 5
-    and 8 to 11 then run again. This is Gaussian elimination for the
-    algebraic path problem (Tarjan, JACM 1981) used as cycle breaking, for
-    linear positive recursion only: unlike Janhunen's translation of
-    normal programs (ECAI 2004) it adds no rank variables, and unlike
-    ProbLog 2's proof-based cycle breaking no per-context copies. It is
-    faster than the compile's Tp iteration on the same program on the
-    random graphs and grids, which the iteration can run out of memory on.
+    to 11 then run again, without step 6's views and equal gates
+    (`finish` with `inline` false): the elimination keeps its atoms apart
+    on purpose, and inlining would multiply them out. This is Gaussian
+    elimination for the algebraic path problem (Tarjan, JACM 1981) used
+    as cycle breaking, for linear positive recursion only: unlike
+    Janhunen's translation of normal programs (ECAI 2004) it adds no rank
+    variables, and unlike ProbLog 2's proof-based cycle breaking no
+    per-context copies. It is faster than the compile's Tp iteration on
+    the same program on the random graphs and grids, which the iteration
+    can run out of memory on.
     `tddlog --ground --vtree closed examples/cycle_graph.pl` prints the
     acyclic program.
 
@@ -1663,12 +1670,14 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   elimination order (`annealed`), from the better of the two min-fills by
   their states, the sum over the eliminations of the product of the
   clique's values. The layout with the least `Interfaces::layout_cost` is
-  kept. `families:0` lays out the min-fill decompositions alone. Within a
-  block (`nest`) the copies every row reads go at the bottom, the rows
-  split into parts by shared facts, and where every head reads a part's
-  facts under one context, as a row's switches, those facts go in a
-  balanced tree beside the copies. The layout cost doubles as an estimate
-  of the evidence's pairs (`Estimate`), which `auto` reads.
+  kept. `families:0` runs neither the portfolio nor the annealing: it lays
+  out the min-fill decompositions, the eliminations in numbering order and
+  the weighted min-fill. Within a block (`nest`) the copies every row
+  reads go at the bottom, the rows split into parts by shared facts, and
+  where every head reads a part's facts under one context, as a row's
+  switches, those facts go in a balanced tree beside the copies. The
+  layout cost doubles as an estimate of the evidence's pairs
+  (`Estimate`), which `auto` reads.
 - **`dynamic`**, or `dynamic:minfill` (`facts_by_minfill`,
   `Compilation::dynamic`, tididi `Engine::pool_search`): right-linear over
   a pre-order of the min-fill elimination tree of the interaction graph (a
@@ -1794,24 +1803,30 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   right, in the fan-in order of the shallowest roots first
   (`deps::fan_in`, above): a data point's facts then stay together on the
   spine, where deepest first put the data points' noises beside the mean
-  at every bit. A program the grounder read no fact of as a guard has no
-  such tree, and the layout fails.
+  at every bit. A fact the tree leaves out that its readers read beside
+  one part of the tree only goes above the lowest node holding that part
+  instead, below the names there (`Tree::homes`). A program the grounder
+  read no fact of as a guard has no such tree, and the layout fails.
 
-  The layout names two kinds of atoms, each read through a variable of its
-  own tied to it by an observed link, as `program`'s names are: each
-  context of the tree that a rule body holds the cube of, and the contexts
-  above it, `c_S :- c_S', l`, its name at the top of its subtree, read in
-  place of the cube; and the atoms of the tree that atoms reading facts
-  outside it read (the bits a mux tree selects), their names above the
-  lowest node holding their cones. Without the context names an
-  if-then-else over two values in disjoint subtrees holds their product,
-  `4^k` pairs for a mux tree over `k` selector bits. The names of the
-  tree's atoms above each node are a cut, which settling keeps or composes
-  away (below); the contexts keep their names. Where nothing outside the
-  tree reads it, nothing is named: the names are then variables the
-  compile holds apart until the evidence conjoins their links. Alea.jl's
-  caesar is such a program, its key and letters trees of decisions that
-  only their sums read.
+  The layout names three kinds of atoms (`Tree::name`), each read through
+  a variable of its own tied to it by an observed link, as `program`'s
+  names are: each context of the tree that a rule body holds the cube of,
+  and the contexts above it, `c_S :- c_S', l`, its name at the top of its
+  subtree, read in place of the cube; the atoms of the tree that atoms
+  reading facts outside it read (the bits a mux tree selects), their
+  names above the lowest node holding their cones; and the derived atoms
+  outside the tree whose cones hold no fact of it, read beside a name of
+  the tree by its readers (`Tree::beside`), named on the spine, but for
+  those whose cones share an atom with another's (the bits of a sum).
+  Without the context names an if-then-else over two values in disjoint
+  subtrees holds their product, `4^k` pairs for a mux tree over `k`
+  selector bits. The names of the tree's atoms above each node are a cut,
+  and the names beside the tree one more, settled first; settling keeps
+  or composes each away (below), and the contexts keep their names. Where
+  nothing outside the tree reads it, nothing is named: the names would be
+  variables the compile holds apart until the evidence conjoins their
+  links. Alea.jl's caesar is such a program, its key and letters trees of
+  decisions that only their sums read.
 
 `ground::shape::nothing_to_order` holds where the derived atoms are one
 merged component, or one recursive component reads at least half the
@@ -2049,10 +2064,12 @@ would go ahead of a winner that has reached its query phase.
 **Turns that end on their projection.** Within a turn, a trial's compile
 reads its projection at the end of each component (`tp::Horizon`): the
 work the trial has spent times all the components for each one finished.
-Where that is past `PROJECTED_DOUBLINGS` (three) doublings of its target,
+Where that is past `PROJECTED_DOUBLINGS` (three) doublings of its target
+over its weight, the level its turns are taken at (`policy::horizon`),
 the turn cannot finish the compile, and it ends there as one that spent
 its target: the target doubles, and the other trials take their turns
-before it goes on. A stop between components loses nothing that the next
+before it goes on. The weight buys a trial a larger share of the turns,
+not a farther projection. A stop between components loses nothing that the next
 attempt builds again. The projection is read once the trial has spent
 the work of its first watch, 2^24 units, about a tenth of a second:
 before it the components done are too few to project from. This
@@ -2089,7 +2106,10 @@ are won by `closed` or `td`.
 layout's estimate loses its weight, tested after each attempt: the
 weight bets on the estimate, and the families trials that win spend far
 fewer units a pair than those that lose. Their formulas need not reach
-the watch, which grows with the target.
+the watch, which grows with the target. The bet costs what the estimate
+says, not a weighted turn: an attempt of a families trial that holds the
+weight spends no more than the estimate leaves it (`bet_left`), and the
+test then takes the weight before its next turn.
 
 **Refusals.** A walk that sums out and is refused starts over first,
 once, putting nothing off (`Evaluation::walk_again`, under Put-offs
@@ -2183,27 +2203,31 @@ applies `μ_a' = μ_a ∧ ⋀_r ¬body_r`: one negation per body with a derived
 literal, none for a body of facts alone. Nothing is negated back: a query
 counts `μ_q` and complements the count. A positive derived literal reads
 `λ_b`, built on `b`'s own scope once per version of `b`. An acyclic atom
-of one rule is stored as `λ_a`, its body's conjunction, under either
-formulation (`conjoined`, `Compiled::positive`): stored as `μ_a`, it cost
-a negation of the conjunction and one back for each positive read; stored
-so, only a negative read negates it, once, into the same cache. A body of
-one derived literal reads the literal of the other sign as stored or
-cached rather than negating the literal's formula. On a bit-blasted
-circuit, two thirds of whose atoms are gates of one rule, the two cut the
-negations by almost three quarters. A read is a copy of the stored or
-cached formula, since the operations consume their operands. In a run
-without a watch (a single layout, or `auto`'s trial left alone) the last
-read of a formula, in the last component that reads it, takes it and its
-cached negation instead (`last_reads`): the reads are counted per body of
-that component's rules, and a read for several bodies at once (a factored
-literal) counts for each; the copies for the earlier readers remain.
+of one rule of literals (not of pairs) that is not an indicator's link is
+stored as `λ_a`, its body's conjunction, under either formulation
+(`conjoined`, `Compiled::positive`): stored as `μ_a`, it cost a negation
+of the conjunction and one back for each positive read; stored so, only
+a negative read negates it, once, into the same cache. A body of one
+derived literal reads the literal of the other sign as stored or cached
+rather than negating the literal's formula. On a bit-blasted circuit,
+two thirds of whose atoms are gates of one rule, the two cut the
+negations by almost three quarters. A read shares the stored or cached
+formula (`Read::shared`): a conjunction or a negation reads it in place,
+and an embed or any other operation reads a copy (`Read::owned`). In a
+run without a watch (a single layout, or `auto`'s trial left alone) the
+last read of a formula takes it and its cached negation instead, where
+the last component that reads it is one acyclic atom's (`last_reads`):
+the reads are counted per body of that atom's rules, and a read for
+several bodies at once (a factored literal) counts for each.
 
 The primal is the default under `dynamic` (`Kind::formulation`), where the
 search ends on smaller vtrees; it applies `λ_a' = λ_a ∨ ¬⋀_r ¬body_r` as
 `¬(¬λ_a ∧ ⋀_r ¬body_r)`, keeping the conjunction as `¬λ_a'` for the next
 update. tididi's overlay `or` would disjoin the bodies without negation;
-the compile does not use it, since the work clock charges it below its
-cost and it is slower on the graphs.
+the update does not use it, since the work clock charges it below its
+cost and it is slower on the graphs. The well-founded compile of a
+component that negates its own atoms (`aft.rs`, below) disjoins its
+bodies with it.
 
 **Rule application.** An atom's changed rules are applied together
 (`Factoring`, `factoring.rs`):
@@ -2302,9 +2326,12 @@ operands itself.
 **Negations by source** (`NegationSource`). Every negation is counted by
 source: `Lambda`, `Term` and `Disjunction` (the two of a factored term),
 `LinkTerm`, `Primal` and `WellFounded` in the compile, `Evidence` and
-`Query` in the query phase. `--stats` prints calls, operand pairs and work
-units per source; `tests/it/negations.rs` checks the counts in both
-formulations.
+`Query` in the query phase, and also `Query` where the compile counts a
+query before it drops the query's formula (`drop_dying`) and `Evidence`
+where the names are settled on the compiled program (`settle.rs`, a
+cut's links held as the evidence observes them). `--stats` prints calls,
+operand pairs and work units per source; `tests/it/negations.rs` checks
+the counts in both formulations.
 
 **Negation through recursion** (`aft.rs`). A component whose negative
 literals stay inside it is compiled with the approximation fixpoint of
@@ -2435,8 +2462,9 @@ joins ran out of memory: nine partition functions of the UAI 2022 PR set
 answer with it, 1bxv and 1jer at a peak of 2.1 and 4.3 GB. Programs with
 queries keep the walk above.
 
-**Queries.** A query on an atom with an indicator in the evidence's scope
-is a literal of the evidence formula, and one backward pass
+**Queries.** A query on a fact, or on an atom with an indicator, whose
+variable is in the evidence's scope is a literal of the evidence formula
+(`Answers::literal`), and one backward pass
 (`Counted::down`, `Counted::with_literal`) gives all of them. Any other
 query is counted against the evidence without a product
 (`eval::conjunction_count`): the evidence formula is counted once, up and
@@ -2500,15 +2528,14 @@ cannot fit takes the count over in `Count`s from the float counts up
 (`Counts::widen`); every later query reads that count
 (`QuerySizes::recounts`). With queries, the evidence's mass is the pass
 up; without them (`--no-queries`) it is the walk's last result's
-weighted value (Summing out, below). Neither is charged to the engine's
-work clock,
-so a trial that has built its evidence formula within its bounds counts it;
-a formula counted without evidence is the engine's evaluation
-(`eval::mass`), one range for the whole diagram, which the work clock is
-charged for. Only what a count reads is checked: a query formula's other
-levels overflow with many indicators and are not read. The exponent is per
-value, not per level: a cause observed 2 200 times for and 2 199 against
-has two nodes at one level 2^2200 apart.
+weighted value (Summing out, above). Neither is charged to the engine's
+work clock, so a trial that has built its evidence formula within its
+bounds counts it; a formula counted without evidence is the engine's
+evaluation (`eval::mass`), one range for the whole diagram, which the
+work clock is charged for. Only what a count reads is checked: a query
+formula's other levels overflow with many indicators and are not read.
+The exponent is per value, not per level: a cause observed 2 200 times
+for and 2 199 against has two nodes at one level 2^2200 apart.
 
 **Grids** (`eval/grid.rs`, `eval/kernel.rs`). A level of `GRID_MIN_PAIRS`
 pairs or more whose nodes each hold their first pair shifted by one list of
@@ -2588,10 +2615,11 @@ process's exit rather than free it (`std::mem::forget`).
 ## The browser build (`bindings/wasm`)
 
 The playground at tractables.github.io/tddlog runs the library in the
-browser. `bindings/wasm` is a crate of its own that calls `tddlog::solve`
-and writes the answers, `P(e)` and what each part's run did as JSON;
-nothing else of the library is wrapped, and the page's examples are
-programs the repository tests against ProbLog. It is built for
+browser. `bindings/wasm` is a crate of its own that reads the program with
+`tddlog::read`, answers it with `tddlog::solve` and writes the answers,
+`P(e)`, what each part's run did and, where asked, the run's `Trace` as
+JSON; the page's examples are programs the repository tests against
+ProbLog. It is built for
 `wasm32-unknown-emscripten`, as goatd's page is, because goatd's vendored
 FlowCutter is C++ that throws and catches: Emscripten compiles it with its
 libc++ and links it with the Rust code, whose standard library has a clock
@@ -2607,14 +2635,16 @@ worker, which Cancel ends.
 
 `bindings/python` (PyO3, built with maturin) and `bindings/c` (a C ABI,
 its header generated by cbindgen) are crates of their own, each over
-`solve` and nothing else: they take the program's text and the command
-line's options (`--vtree`, `--evidence-probability`, `--no-queries`),
-copy the answers and `P(e)` out of the `Solution`, and free it at once.
-The query's text is `QueryResult`'s `Display`, as the binary prints it.
-`Error`'s variants become exceptions or status codes: `Options` the
-caller's mistake (`ValueError`, `TDDLOG_ERROR_INVALID_INPUT`), `Parse`,
-`Ground`, and `Vtree`, `Compile` and `Trials` together as a compile
-error. They run under the host's allocator: the binary's jemalloc set-up
+`read` and `solve`: they take the program's text, its format by name, a
+network's evidence file and the program's arguments as `read` does, and
+the command line's options (`--vtree`, `--evidence-probability`,
+`--no-queries`), copy the answers and `P(e)` out of the `Solution`, and
+free it at once. The query's text is `QueryResult`'s `Display`, as the
+binary prints it. `Error`'s variants become exceptions or status codes:
+`Options` the caller's mistake (`ValueError`,
+`TDDLOG_ERROR_INVALID_INPUT`), `Parse` and `Network` a parse error,
+`Ground` (and `Cnf`, which only `weighted_cnf` gives) a grounding error,
+and `Vtree`, `Compile` and `Trials` together a compile error. They run under the host's allocator: the binary's jemalloc set-up
 (above) is not theirs.
 
 ## Testing
@@ -2817,6 +2847,12 @@ compare only within the run they come from.
   the 1.7 GB of `program` alone). Over the three benchmark sets the two
   take about the same time (0.84, 1.03 and 1.00 of the rounds' time by
   suite).
+  Where `program` leads, `families:0` weighted once its estimate fits a
+  weighted first turn won noDice's brp sooner (brp4096 2.7 s to 1.7,
+  brp16384 10.5 s to 6.6) but lost more where the estimate failed and
+  the trial, past it, was projected ahead: Alea.jl's circuit of
+  arith_gcd_small 9.8 s to 14.7, and Dice's caesar-iter at 10 000 to
+  100 000 steps 1.1 to 1.6 times its time. It is not kept.
 - **Turns by projected finish.** With every compile record dropped as the
   query phase starts, trueskill_w10's `program` stopped with its compile
   done and two of its four query steps, then the four other trials took
@@ -2857,6 +2893,12 @@ compare only within the run they come from.
   components per doubling of work (the separated flag decides between
   every step's emission trees), at 2^34.3 to 2^38.7 at 2^24.9 units:
   their first turn of 2^31 units, 15 to 17 s, ends after 0.2 s.
+  With the horizon three doublings past the target rather than the target
+  over the weight, Roulette's hardware written first-order, whose
+  weighted `decision` is projected at 2^31 to 2^34 where `families:0`
+  wins in 2^25 to 2^29 units, ran on in its first turn: at 1 000 steps in
+  45.6 s against 28.2, at 10 000 in 43.1 s against 18.9, and at 3 000 out
+  of memory in 9 GB where it now answers in 15.1 s.
 - **The searched layout.** On GeNI's weather_n7 and n8, which `program`
   wins, a searched layout estimated about as large that bet at weight 8
   spent 2.1 G units in its first attempt. GeNI's link_12, at a gap of
@@ -2873,6 +2915,14 @@ compare only within the run they come from.
   they finish in their first turn (mnist_sum96); those that lose have
   spent 300 and more (GeNI's links and weather networks) or never finish
   (Dice's simpleCaesar).
+  Roulette's caesar written first-order has a `families:0` layout
+  estimated at 2.2e4 pairs whose formulas grow exponentially in the key's
+  copies; before the estimate bounded its attempt it spent its weighted
+  first turn, 2^31 units, where `closed` answers in 0.04 to 0.5 s: caesar_25
+  in 6.8 s against 0.04, caesar_300 in 7.0 s against 0.46, and
+  caesar_10000 ran out of memory in 9 GB, where it now answers in 24 s.
+  Held to its estimate, mnist_sum64's `families:0`, which wins at about
+  150 units a pair, takes 1.2 times its work.
 - **Refusals.** Freed for whichever trial was refused, the others paid
   for an early refusal of a cheap trial: on bb_spacex_w17 `program`,
   freed for `families:0`, did its 2 G units again (195 s against 124),

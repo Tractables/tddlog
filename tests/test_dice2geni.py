@@ -29,13 +29,9 @@ import dice2geni  # noqa: E402
 import dice2problog  # noqa: E402
 import dice_ir  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
-from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y, check_each  # noqa: E402
+from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y, check_each, program_text  # noqa: E402
 
 GENI = os.environ.get('GENI', '')
-
-
-def program_text(name):
-    return (data / 'dice' / f'{name}.dice').read_text()
 
 
 def geni_answers(text, qs):

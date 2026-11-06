@@ -40,7 +40,7 @@ builds:
 | Ganak | yes, exact rationals | weighted CNFs | `--ganak` |
 | sharpSAT-TD | yes, 53-bit MPFR floats | weighted CNFs | `--sharpsat-td`, `--sharpsat-td-decot` |
 | Roulette (Racket 9.3) | yes | its own programs (`--suite roulette`); Dice programs and circuits through `dice2roulette.py`; logic programs over their facts, through `problog2ppl.py` (section 30) | `--roulette`, `--roulette-variants` |
-| Geni (gennifer) | yes, f32 | its own `.gir` programs (`--suite geni`) and the other Dice programs, through `dice2geni.py` | `--geni`, `--geni-benchmarks` |
+| Geni (gennifer) | yes, f64 printed in full (built so; the artifact has f32 and seven decimals) | its own `.gir` programs (`--suite geni`) and the other Dice programs, through `dice2geni.py` | `--geni`, `--geni-benchmarks` |
 | noDice | yes | Dice programs without `nflip`, the circuits' included | `--nodice` |
 | Psi (ef8a9e5) | yes, symbolic | Dice programs, the circuits' included, through `dice2psi.py`; logic programs with their facts, through `problog2ppl.py` (section 30); and its linear regression | `--psi` |
 | Pluck | yes | its four sequence models (`--suite ppl`, family `pluck`); the other Dice programs, through `dice2pluck.py`; and logic programs with their facts, through `problog2ppl.py` (section 30) | `--pluck` |
@@ -657,7 +657,12 @@ would print the joint).
   program (`iterate`, a chain of calls, the steps inline), with the
   posterior at 5, 10 and 15 steps. Its zeros count as its wrong
   answers. The image has no option against the cutoff; a build of a later
-  driver (exact zero test, log space) would avoid it.
+  driver (exact zero test, log space) would avoid it. Dice's master
+  (1d8a277, 2025-03-15), whose default `-wmc-type 0` computes in log space,
+  answers the caesar ports and Roulette's HMM marginals (where 1.0 prints 0
+  too) right, but took 6.7
+  times as long as 1.0 in total over a sample of the Dice programs, and 16
+  of them were answered within 300 s by 1.0 alone; the runs use 1.0.
 - Dice 1.0 also drops small values of a `discrete`. It encodes the
   value in bits, each a flip whose probability is the mass of the
   values with that bit set, among those that agree on the bits before
@@ -2064,7 +2069,7 @@ systems for probabilistic programs, 2026-10-19:
 
 | system | exact | available | decision |
 |---|---|---|---|
-| Geni (gennifer), ICFP 2025 | yes (generating functions, f32) | github.com/geni-icfp25-ae/geni-icfp25-ae, MIT | run on `--suite geni` and, translated, on every Dice program: `--geni` |
+| Geni (gennifer), ICFP 2025 | yes (generating functions; f32 and seven decimals, run built with f64 printed in full) | github.com/geni-icfp25-ae/geni-icfp25-ae, MIT | run on `--suite geni` and, translated, on every Dice program: `--geni` |
 | Genfer, NeurIPS 2023 | yes (generating functions; rational arithmetic where the program allows) | github.com/fzaiser/genfer, MIT | run on its own programs and, translated, on every other Dice program: `--genfer` |
 | noDice, OOPSLA 2026 | yes | Zenodo 10.5281/zenodo.18739789, code Apache-2.0 | run: `--nodice` |
 | Psi | yes (symbolic, imperative) | eth-sri/psi, Boost | run on Dice programs, on logic programs through `problog2ppl.py` (section 30) and on its own linear regression: `--psi` |
@@ -2112,7 +2117,10 @@ the same lowering, one Julia run for all the components, by
 `scripts/dice2webppl.py` (its own translator, one enumeration for all the
 components, by `scripts/webppl_dice.js`; see WebPPL below), and noDice reads them as they are, as Dice does. It inlines the functions (recursion is
 refused), resolves tuples, folds constants, and gives each variable the
-values it can take; `iterate` stays a loop. `nth_bit(int(w, i), x)`, bit
+values it can take; `iterate` stays a loop. Every translator prints
+integers at any length: the parser they share lifts Python's limit of
+4300 digits, which an int(w)'s modulus 2^w passes at about 14000 bits
+(Psi's programs of rl_hardware_bitwidth_30000 and up). `nth_bit(int(w, i), x)`, bit
 i of x from the most significant, is `x << i` compared with 2^(w-1), a
 shift each language writes as it writes `<<` (a product modulo 2^w in
 SGCL and PRISM, the bits moved in Geni's IR and Pluck, a table over the
@@ -2250,31 +2258,35 @@ The same commands as shell, in a clone of the artifact:
     git apply data/geni/geni-no-genfer.patch
     cargo build --release --bin gennifer
 
-It runs `gennifer -l -i FILE`; answers are f32, printed with 7 decimals
-(`Pr(1) = 0.1234567`), so they differ from the exact reference by up to
-5e-8 on the instances tried. `bench.py table` prints the maximum
+It runs `gennifer -l -i FILE`, built with `pub type Precision = f64;` in
+place of the artifact's `f32` (`src/numbers.rs`, the type alias of all of
+Geni's numbers): the f32 build answered rl_diamond_1000 7.7e-6 off,
+rl_hardware_10 and rl_hardware_bitwidth_5 2.5e-7 to 4.2e-7 off, and
+printed -3e-7 for a probability of rl_network_10 (1.2e-8); elsewhere it agrees
+with the f64 build to 5e-7, in the same time (f64 over f32 0.99 in median).
+The artifact's driver (`src/main.rs`; gennifer is a library, `src/lib.rs`)
+prints each mass of the table its interpreter returns
+(`Interpreter::populate_table`) with seven decimals (`{:.7}`,
+`Pr(1) = 0.1234567`) and has no option for more. The build run here prints
+them in full, `{:e}` in that line (the shortest decimal that reads back as
+the same f64), its one change to the driver. Seven decimals are too few
+where the evidence has a small probability, since each answer is a mass
+over P(e): on uai_promedus_24, P(e) = 1.37e-6, they gave `Pr(1) = 0.0000013`,
+a log10 Z 0.024 off the reference and marginals 0.034 off; on ace_alarm a
+marginal 1.5e-6 off; and on the port of caesar_small
+(`data/alea/arith/caesar_small.dice`, P(e) = 4.6e-15 at ten letters) and on
+rl_caesar_25 every mass printed as 0.0000000. Printed in full, Geni's
+answers agree with the reference on these and on rl_caesar_50. Where P(e)
+is below the smallest f64 every mass is still 0, and bench.py records the
+run as an error, a failure of Geni's own. `bench.py table` prints the maximum
 difference to the reference and applies no tolerance; read 1e-6 as agreement for Geni. One
 exception is open: on Roulette's Munin network (rl_bn_munin, the marginal of
 L_SUR_CV_CA) Geni's answers differ from the reference by up to 3e-4, while
 Genfer, SPPL and tddlog agree with it and Geni agrees with it on the other
-networks it answers. Geni rebuilt with `Precision = f64` prints the same answers,
+networks it answers. The f32 and f64 builds print the same answers,
 and every `discrete` of the Dice program sums to one, so neither rounding
 nor a table short of one explains the difference; whether Geni or the
-program `dice2geni.py` writes is at fault is not known. On a network whose
-evidence has a small probability the seven decimals are too few: on
-uai_promedus_24, P(e) = 1.37e-6, Geni prints `Pr(1) = 0.0000013`, and its
-log10 Z differs from the reference by 0.024 and its marginals (each over
-P(e)) by 0.034, while Dice, Alea.jl, Roulette, Genfer, SPPL, Pluck, Storm
-and PRISM agree with it to 1e-12 on the same programs. On the port of
-caesar_small (`data/alea/arith/caesar_small.dice`, P(e) = 4.6e-15 at ten
-letters) Geni prints 0.0000000 for every key, below its f32's seven
-decimals, and bench.py records the run as an error. On Roulette's
-hardware and network models (rl_hardware_10, rl_hardware_bitwidth_5,
-rl_network_10) Geni's answers near 1e-4 differ from the reference by
-2.5e-7 to 4.2e-7, beyond its seven decimals, and one is negative (-3e-7
-against 1.2e-8): its f32 sums lose these digits, and it has no option for
-more precision at run time. Such answers are
-wrong answers of Geni's own and count as failures. A Boolean's two answers are `Pr(1)` (true) and
+program `dice2geni.py` writes is at fault is not known. A Boolean's two answers are `Pr(1)` (true) and
 `Pr(0)`. `scripts/gen_geni.py --gir` writes the `.gir` program of an
 instance (link, router and weather-factory families; the weather programs
 equal the artifact's files byte for byte); the weather query is Pr(0) (the
@@ -2553,7 +2565,8 @@ int(N) whose bits its Booleans are.
 
 Refused (exit 3, `unsupported`): `/`, `%`, `::` and lists, as for the
 others; an int wider than 52 bits, and a product or a left shift whose
-value can pass 2^53, past which a JavaScript number drops low bits.
+value can pass 2^53: a JavaScript number is a double, exact to 2^53, so
+these are not expressible.
 Recursion is not refused, but Dice cuts it at ten nested calls (the
 deepest call unreachable, an observation of false) and WebPPL recurses
 as deep as the program does: a program that recurses past the limit is
@@ -2839,10 +2852,15 @@ without unbounded loops is such a chain:
   back as the program's double, a discrete's outcomes summing to one in
   rationals (the largest takes up the rounding), a uniform's as fractions.
 - Refused (exit 3, `unsupported`): what every translator of section 12
-  refuses (lists, `/`, `%`, `::`, recursion), an int wider than 30
-  bits or a product beyond 2^31, past PRISM's 32-bit integers, and a step
-  of more than 4096 commands (`BRANCHES`: data/dice/wide_uniform's
-  65536-way uniform held the unit tests past their time limit).
+  refuses (lists, `/`, `%`, `::`, recursion) and a step of more than
+  4096 commands (`BRANCHES`: data/dice/wide_uniform's 65536-way uniform
+  held the unit tests past their time limit).
+- Not expressible: the PRISM language's integers are 32 bits (PRISM's
+  parser stops at a larger literal with a syntax error), and Storm reads
+  the same file, so for both an int wider than 30 bits, a product
+  beyond 2^31 and a probability whose fraction needs a larger
+  denominator are refused (exit 3, `unsupported`):
+  rl_hardware_bitwidth_50 and up.
 
 The installation (in a prefix, `$HOME/local/code/modelcheckers` in the
 release run): stormpy 1.14.0 in a venv, PRISM 4.8.1 (sha256 checked;
@@ -3057,15 +3075,26 @@ before as `dice2problog.py`'s and `lpad2problog.py`'s translations; it is
 given translations of the Roulette and Geni programs (`gen_roulette.py`,
 `gen_geni.py`). It reads no file of the programs that exist only as
 Alea.jl source (the bit-blasted and integer programs, and Pluck's
-sequence models as ported to Alea.jl) or of Circulette's netlists: the
-runs there are Alea.jl+tddlog's and Roulette+tddlog's, each a system of
-its own, and tddlog counts as unanswered on them in their type (class
-`u`, not read). On those instances every other system reads the
-exporter's export too and is named after both, Alea.jl+ProbLog or
-Roulette+Ace, classified by the exporter's tddlog row: the same front end
-read the same program, and only the inference differs. Each system's page on the results page
-evaluates it separately on the instances native to it, its own among
-them, and on those translated for it.
+sequence models as ported to Alea.jl) where it reads no port of them:
+the runs there are Alea.jl+tddlog's, a system of its own, and tddlog
+counts as unanswered on them in their type (class `u`, not read). Every
+other system that reads the circuit Alea.jl exports of one of them is
+named by its own name: that reading is the circuits' (`ppl_circuits`,
+`bitblast`), an evaluation of its own that starts from the circuit,
+classified by the circuit rows below. tddlog reads Circulette's netlists
+itself (section 11), and the ProbLog family reads the program `tddlog
+--program` writes of each, under their own names, with Roulette+tddlog
+beside them. Only the integrations, Alea.jl+tddlog and Roulette+tddlog,
+are named after two systems: the same front end read the same program,
+and only the inference differs. Each system's page on the results page
+leads with tddlog's speed-up over the system's idiomatic programs: those
+native to it, its own among them, and those translated for it as its
+users would write them (section 29). A second view limits the page to its
+original programs: its own, and the native programs its authors wrote,
+ran or ship, or that were written for it. A native row of the table below
+whose programs are not original says why after its class: a change of
+format (a network converted to the format a tool reads), or written for
+other systems (the UAI sets, for a tool whose authors do not run them).
 
 Every system that reads a Dice loop's ProbLog program reads the loop as
 recursion over a step index, the form tddlog reads (the owner,
@@ -3147,8 +3176,8 @@ the same model) has the class of the program it is written from.
 | pita | std | `uwcse` | own | cplint's UW-CSE grown in students, as PITA's evaluation grows it (ICLP 2010) |
 | problog | lit | `(sickness\|mastermind)` | own | the dynamic ProbLog programs of Vlasselaer et al. (IJAR 2016) |
 | problog | lit | `pgrid` | own | the probabilistic grid of ProbLog2's evaluation (Fierens et al., TPLP 2015) |
-| tddlog, problog, aspmc | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | native | the circuit Alea.jl exports of the program, as the ProbLog program its tddlog backend writes |
-| dice, nodice | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | native | the circuit Alea.jl exports of the program, as the Dice programs of its gates (alea_bench.jl) |
+| tddlog, problog, aspmc | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | native, a change of format | the circuit Alea.jl exports of the program, as the ProbLog program its tddlog backend writes |
+| dice, nodice | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | native, a change of format | the circuit Alea.jl exports of the program, as the Dice programs of its gates (alea_bench.jl) |
 | pita | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | translated | the circuit's ProbLog program translated by problog2pita.py |
 | psouffle | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | translated | a Soufflé program written rule for rule from the circuit's ProbLog program (problog2souffle.py) |
 | scallop | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | translated | the ground program of the circuit's ProbLog program, as Scallop relations and rules (ground2scallop.py) |
@@ -3156,23 +3185,26 @@ the same model) has the class of the program it is written from.
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | ppl_circuits, bitblast | `(bb\|arith\|pluck)_` | translated | the Dice programs of the circuit's gates (alea_bench.jl), translated into the system's language (dice2roulette.py and the like) |
 | tddlog | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | native | the network itself, read by tddlog's network reader (BIF, Hugin, GeNIe, UAI) |
 | tddlog | roulette | `rl_bn_` | native | the Roulette paper's Bayesian networks, read by tddlog's network reader |
-| ace | std_bn, large | all | native | a Hugin network, Ace's own input (a + in a number dropped where Ace's reader refuses one) |
-| ace | dice | `bn_` | native | the Dice paper's Bayesian networks, as Hugin networks |
+| ace | std_bn, large | all | native, a change of format | a Hugin network, Ace's own input (a + in a number dropped where Ace's reader refuses one) |
+| ace | dice | `bn_` | native, a change of format | the Dice paper's Bayesian networks, as Hugin networks |
 | ace | uaiihler | `uai_bn_(1[68]\|2[02468]\|3[02468]\|40\|7[0-35-7])$` | translated | a Bayesian network by its structure, whose tables sum to one within the rounding of their entries (data/uai_types.tsv) but not within 1e-9, so gen_bn.py wrote it for Ace as a Markov network, a node per factor, observed |
 | ace | uai, uai_pr, uaipr, uaitpr | `uai_bn_31$` | translated | a Bayesian network by its structure, whose tables sum to one within the rounding of their entries (data/uai_types.tsv) but not within 1e-9, so gen_bn.py wrote it for Ace as a Markov network, a node per factor, observed |
-| ace | uai, uai_pr, uaipr, uaitpr, uaiihler | bayesian (`data/uai_types.tsv`) | native | a Bayesian network of the UAI sets converted to a Hugin file (gen_bn.py), the same variables and tables, as Ace reads a UAI file only as a Bayesian network |
+| ace | uai, uai_pr, uaipr, uaitpr, uaiihler | bayesian (`data/uai_types.tsv`) | native, a change of format | a Bayesian network of the UAI sets converted to a Hugin file (gen_bn.py), the same variables and tables, as Ace reads a UAI file only as a Bayesian network |
 | ace | uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a Markov network written as a Bayesian network for Ace (gen_bn.py write_hugin): a node per factor, observed |
-| ace | roulette | `rl_bn_` | native | the Roulette paper's BIF networks converted to Hugin files (gen_bn.py), the same variables and tables, as Ace reads no BIF file |
-| merlin, agrum, pgmpy, libdai, tensorinference | uai, uai_pr, uaipr, uaitpr, uaiihler | all | native | a UAI network, the tool's own input |
-| merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large | all | native | the network converted to a UAI file (gen_bn.py --uai), the same variables and tables |
-| merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | native | the Dice and Roulette papers' Bayesian networks converted to UAI files (gen_bn.py --uai), the same variables and tables |
+| ace | roulette | `rl_bn_` | native, a change of format | the Roulette paper's BIF networks converted to Hugin files (gen_bn.py), the same variables and tables, as Ace reads no BIF file |
+| merlin, libdai, tensorinference | uai, uai_pr, uaipr, uaitpr, uaiihler | all | native | a UAI network, the tool's own input, from the UAI competitions' sets its authors run (Merlin's benchmarks/uai, libDAI's examples/uai2010-aie-solver.cpp, TensorInference.jl's uai2014 artifact) |
+| agrum, pgmpy | uai, uai_pr, uaipr, uaitpr, uaiihler | all | native, written for other systems | a UAI network, a format the tool reads |
+| merlin, agrum, pgmpy, libdai, tensorinference | std_bn, ace, large | all | native, a change of format | the network converted to a UAI file (gen_bn.py --uai), the same variables and tables |
+| merlin, agrum, pgmpy, libdai, tensorinference | dice, roulette | `(rl_)?bn_` | native, a change of format | the Dice and Roulette papers' Bayesian networks converted to UAI files (gen_bn.py --uai), the same variables and tables |
 | ace, merlin, agrum, pgmpy, libdai, tensorinference | std, lit, tpch, biomine, dice, ppl, bitblast, roulette, geni | all | translated | a network of Boolean variables built from the ground program (ground2net.py) |
 | problog, pita, aspmc | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
-| tddlog, problog, pita, aspmc | dice | `bn_` | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
+| tddlog, problog, pita, aspmc | dice, roulette | `(rl_)?bn_` | translated | a ProbLog program written from the network, one annotated disjunction per row of a table (gen_bn.py, or tddlog --program, the same program, in the runs since tddlog reads networks itself) |
 | roulette | uai, uai_pr, uaipr, uaitpr | `uai_bn_31$` | translated | a Bayesian network by its structure, whose tables sum to one within the rounding of their entries (data/uai_types.tsv) but not within 1e-9, so gen_bn.py wrote it as a Markov network: a Dice program of its factors (gen_bn.py), translated for Roulette (dice2roulette.py) |
-| roulette, roulette-tddlog | std_bn, ace, large | all | native | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine |
-| roulette, roulette-tddlog | dice | `bn_` | native | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine |
-| roulette, roulette-tddlog | uai, uai_pr, uaipr, uaitpr | bayesian (`data/uai_types.tsv`) | native | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine |
+| roulette, roulette-tddlog | std_bn | `bn_(alarm\|cancer\|hailfinder\|hepar2\|insurance\|munin\|pigs\|survey\|water)(_ev)?$` | native | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine: one of the nine bnlearn networks Roulette's repository ships and tests (neuppl/roulette 60f77cb1, roulette/test/bn), with its evidence or without |
+| roulette, roulette-tddlog | std_bn, large | all | native, written for other systems | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine: a bnlearn network Roulette's repository does not ship |
+| roulette, roulette-tddlog | ace | all | native, a change of format | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine |
+| roulette, roulette-tddlog | dice | `bn_` | native, a change of format | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine |
+| roulette, roulette-tddlog | uai, uai_pr, uaipr, uaitpr | bayesian (`data/uai_types.tsv`) | native, a change of format | the network as a BIF file (gen_bn.py), the same variables and tables, read in Roulette's own BN language (roulette/example/bn), by Roulette+tddlog under Roulette's tddlog engine |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | a Dice program of nested conditionals over discretes written from the network, as the Dice paper writes networks (gen_bn.py), translated line for line for the systems that read another language |
 | tddlog, problog, pita, aspmc | std | `bloodtype$` | translated | cplint's LPAD translated by lpad2problog.py, or tddlog --program, the same program, in the runs since tddlog reads LPADs itself |
 | tddlog | lit | `cplint_` | native | cplint's example, an LPAD, read by tddlog's LPAD reader |
@@ -3185,9 +3217,12 @@ the same model) has the class of the program it is written from.
 | tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
 | provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
 | psouffle | std, lit, tpch, biomine | all | translated | a Soufflé program written rule for rule from the ProbLog program (problog2souffle.py) |
-| scallop | std, lit, tpch, biomine, std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | the ProbLog program (under --pr, its P(e) program) written first order as Scallop relations and rules (problog2scallop.py) |
+| scallop | std, lit, tpch, biomine | all | translated | the ProbLog program (under --pr, its P(e) program) written first order as Scallop relations and rules (problog2scallop.py) |
+| scallop | std_bn, ace, large, uai, uai_pr, uaipr, uaitpr, uaiihler | all | translated | the ProbLog program (under --pr, its P(e) program) written first order as Scallop relations and rules (problog2scallop.py) |
+| scallop | roulette | `rl_(caesar\|hardware\|hmm\|motivating\|network)_` | translated | the paper's model as a first-order ProbLog program (gen_roulette.py), written first order as Scallop relations and rules (problog2scallop.py) |
+| scallop | geni | all | translated | the paper's model as a first-order ProbLog program (gen_geni.py), written first order as Scallop relations and rules (problog2scallop.py) |
 | scallop | dice, ppl, bitblast, roulette, geni | all | translated | the ground program tddlog --ground prints of the ProbLog program, as Scallop relations and rules (ground2scallop.py) |
-| alea, alea-tddlog, roulette, roulette-tddlog, webppl | std, lit, tpch, biomine | all | translated | the ProbLog program written first order in the system's language over its facts, relations as tables, rules as loops and recursion as a loop of stages to its fixpoint (problog2ppl.py) |
+| alea, alea-tddlog, roulette, roulette-tddlog, webppl, sppl | std, lit, tpch, biomine | all | translated | the ProbLog program written first order in the system's language over its facts, relations as tables, rules as loops and recursion as a loop of stages to its fixpoint (problog2ppl.py) |
 | psi, pluck | std, lit, biomine | all | translated | the ProbLog program written first order in the system's language over its facts, relations as tables, rules as loops and recursion as a loop of stages to its fixpoint (problog2ppl.py) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | std, lit, tpch, biomine | all | translated | Dice programs of the ground program (ground2net.py) |
 | dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
@@ -3214,9 +3249,14 @@ the same model) has the class of the program it is written from.
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | ppl | `pluck_hmm$` | translated | a port of Pluck's model to Dice, written by hand, translated into the system's language where it reads another |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | ppl | `pluck_` | translated | Dice programs of the ground program of the ProbLog port (ground2net.py) |
 | tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
-| tddlog, problog, pita, aspmc | roulette | all | translated | the paper's model written as a ProbLog program (gen_roulette.py) |
+| tddlog, problog, pita, aspmc | roulette | `rl_(diamond\|ladder)_` | translated | the Dice paper's model ported to ProbLog by hand, a recursion over the step, its size an argument (data/dice/diamond.pl, data/dice/ladder.pl) |
+| tddlog, problog, pita, aspmc | roulette | all | translated | the paper's model as a first-order ProbLog program, its sizes arguments (gen_roulette.py) |
+| tddlog, problog, pita, aspmc | geni | all | translated | the paper's model as a first-order ProbLog program, its sizes arguments (gen_geni.py) |
 | tddlog, problog, pita, aspmc | dice, ppl, bitblast, roulette, geni | all | translated | a loop-free Dice program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | storm, prism | geni | `geni_weather_` | native | Rubicon's PRISM model of the weather factory (CAV 2021) |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | roulette | `rl_bn_` | translated | a Dice program, translated into the system's language where it reads another (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | roulette | all | translated | a Dice program, translated into the system's language where it reads another (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
+| alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | geni | all | translated | a Dice program, translated into the system's language where it reads another (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | dice, ppl, bitblast, roulette, geni | all | translated | a Dice program, translated into the system's language where it reads another (dice2alea.py, dice2roulette.py, dice2prism.py and the like), its loops kept as loops |
 
 ## 25. What this release does not run
@@ -3614,7 +3654,7 @@ Three sets of instances recur in the table:
   and `uaiihler`;
 - the Dice programs with integers or categoricals:
   `dice_digitRecognition` and the loops (`caesar-iter`, `pmc1`, `pmc2`,
-  `simpleCaesar`) of `dice`, `nodice_(alarm|hepar2|insurance|brp|coupon2)`
+  `simpleCaesar`) of `dice`, `nodice_(alarm|hepar2|insurance|survey|water|brp|coupon2)`
   and the Dice ports of Alea.jl's arithmetic programs (`arith_`) of `ppl`,
   and `rl_(caesar|hardware|network)` of `roulette`;
 - the Boolean Dice programs: the other programs of `dice`,
@@ -3628,9 +3668,9 @@ Three sets of instances recur in the table:
 | `tddlog --program` (network reader) | ProbLog, aspmc | the network suites; `roulette`: `rl_bn_` | yes | an annotated disjunction per row of each conditional table; a Markov network's unary factors as priors and every other factor as a probabilistic rule into an observed `f(ok)`, its Bayesian network encoding |
 | `tddlog --program` (LPAD reader) | ProbLog, aspmc | `lit`: `cplint_`; `std`: `bloodtype` | yes | the same clauses, an LPAD head `h:p` written `p::h`: a change of syntax |
 | `tddlog --program` (Circulette reader, through `gen_circulette.py`) | ProbLog, aspmc | `circulette` | yes | first order: the netlist as facts (`gate_and(G, A, B)`, `wire(W, I, A, J)`, ...), a rule per kind of gate for its bits, a probabilistic rule for each gate's `fault(G)`, and the failure observed |
-| `gen_roulette.py` | ProbLog, aspmc | `roulette`: `rl_(caesar\|hardware\|hmm\|motivating\|network)` | no | each step of the model written out as ground clauses (`h(1)`, `h(2)`, ...) and a categorical as bisection bits; a ProbLog user writes rules over a step index and an annotated disjunction over the values, as the ports of diamond and ladder do |
+| `gen_roulette.py` | ProbLog, aspmc | `roulette`: `rl_(caesar\|hardware\|hmm\|motivating\|network)` | yes | one first-order program per model: a step's rules over the step index (`h(T1) :- step(T), T1 is T + 1, h(T), t1(T)`), a categorical an annotated disjunction over its values, the size and parameters arguments and the observations a data file it consults |
 | hand ports (`data/dice/diamond.pl`, `data/dice/ladder.pl`) | ProbLog, aspmc | `roulette`: `rl_(diamond\|ladder)` | yes | written by hand: a recursion over the step, the size given as a program argument |
-| `gen_geni.py` | ProbLog, aspmc | `geni` | no | the grids written out cell by cell as propositional clauses with helper atoms; a ProbLog user writes rules over a cell and its neighbours |
+| `gen_geni.py` | ProbLog, aspmc | `geni` | yes | one first-order program per model: rules over a cell and its neighbours (`conn(X, Y) :- left(X, Y), Y0 is Y - 1, conn(X, Y0)`) or a day and the day before, the size an argument and the weather factory's factories a data file it consults |
 | `bench.py`'s aspmc program (`run_aspmc`) | aspmc | every suite aspmc is given a ProbLog program on | yes, as its source | the same program: the evidence asked as queries, anonymous variables named, `T1 = T + 1` for `T1 is T + 1` |
 | `tddlog --ground` (aspmc's fallback where its parser or grounder refuses the program) | aspmc | the programs of `lit`, `tpch` and `circulette` aspmc refuses | no | the ground program, a clause per ground instance of a rule, where aspmc's language has first-order rules |
 | `problog2pita.py` | PITA | every suite PITA is given a ProbLog program on | yes, as its source | line for line: `:- begin_lpad.`, `p::h` written `h:p`, and a driver that asks each query |
@@ -3645,10 +3685,10 @@ Three sets of instances recur in the table:
 | `gen_bn.py --format dice` | Dice, noDice | the network suites; `roulette`: `rl_bn_` | yes | every variable a `discrete` under nested conditionals on its parents, the encoding of Dice's own network generator; a Markov network's factor a `flip` of its weight, observed |
 | `gen_roulette.py --dice` | Dice, noDice | `roulette` | yes | the paper's models as Dice functions and `let`s, in the order of Roulette's programs |
 | `gen_geni.py --dice`, `--gir` | Dice, noDice; Geni | `geni` | yes | Geni's own programs: its surface programs in Dice's syntax, and its intermediate language |
-| `ground2net.py --format dice`, `--format dicemap` | Dice, noDice | `lit`, `std`, `tpch`, `biomine` | yes | Dice has no relations and no recursion over data: the ground program as a `let` per gate (`let n92 = n2 && n62 in`), one program per query, what a Dice user writes out for a ground program |
-| `ground2net.py --format dice`, then `dice2geni.py`, `dice2genfer.py`, `dice2prism.py` | Geni, Genfer, Storm, PRISM | `lit`, `std`, `tpch`, `biomine` | yes | Geni's intermediate language, Genfer's language and a PRISM module have no relations or recursion over data either: the gates written out |
-| `ground2net.py --format dice`, then `dice2pluck.py`, `dice2psi.py`, `dice2sppl.py` | Pluck, Psi, SPPL | `tpch` for Pluck and Psi; `lit`, `std`, `tpch`, `biomine` for SPPL | no | each language has loops or recursion over data (Pluck's recursive functions over lists, Psi's arrays and `for` loops, SPPL's `for` over arrays): a user writes the model over the program's facts, not a list of anonymous gates |
-| `problog2ppl.py` | Alea.jl, Roulette, WebPPL, Pluck, Psi | `lit`, `std`, `tpch`, `biomine` for Alea.jl, Roulette and WebPPL; `lit`, `std`, `biomine` for Pluck and Psi | yes | the program first order over its facts (section 30): a relation a table of the rows of a facts file, a rule a loop over the relations its body joins, a recursive component a loop of stages to its fixpoint (in Pluck and Psi the rows held in the program), as a user of these languages writes a Datalog program over a database |
+| `ground2net.py --format dice`, `--format dicemap` | Dice, noDice | `lit`, `std`, `tpch`, `biomine`; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` | yes | Dice has no relations and no recursion over data: the ground program as a `let` per gate (`let n92 = n2 && n62 in`), one program per query, what a Dice user writes out for a ground program |
+| `ground2net.py --format dice`, then `dice2geni.py`, `dice2genfer.py`, `dice2prism.py` | Geni, Genfer, Storm, PRISM | `lit`, `std`, `tpch`, `biomine`; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` | yes | Geni's intermediate language, Genfer's language and a PRISM module have no relations or recursion over data either: the gates written out |
+| `ground2net.py --format dice`, then `dice2pluck.py`, `dice2psi.py`, `dice2roulette.py`, `dice2sppl.py` | Pluck, Psi, Roulette, SPPL | `tpch` for Pluck and Psi; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` for Psi, Roulette and SPPL | no | each language has loops or recursion over data (Pluck's recursive functions over lists, Psi's arrays and `for` loops, Roulette's `for/fold` and recursion, SPPL's `for`): a user writes the model over the program's facts, not a list of anonymous gates |
+| `problog2ppl.py` | Alea.jl, Roulette, WebPPL, SPPL, Pluck, Psi | `lit`, `std`, `tpch`, `biomine` for Alea.jl, Roulette, WebPPL and SPPL; `lit`, `std`, `biomine` for Pluck and Psi | yes | the program first order over its facts (section 30): a relation a table of the rows of a facts file, a rule a loop over the relations its body joins, a recursive component a loop of stages to its fixpoint (in Pluck and Psi the rows held in the program), as a user of these languages writes a Datalog program over a database |
 | `dice2alea.py` | Alea.jl | `dice`, `ppl`, `geni`, `roulette`, the network suites | yes, as its source | integers as `DistUInt`, Dice's iterations as `for` loops, `ifelse`: the form of Alea.jl's own programs |
 | `dice2roulette.py` | Roulette | `dice`, `ppl`, `geni`, the Markov networks of the network suites | yes, as its source | an integer as a list of Booleans with a ripple-carry adder, as Roulette's own caesar and network programs hold their bit vectors, and iterations as `for/fold` |
 | `dice2psi.py` | Psi | `dice`, `ppl`, `geni`, `roulette`, the network suites | yes, as its source | functions, `categorical`, `for` loops and integer arithmetic; one program per component of the value |

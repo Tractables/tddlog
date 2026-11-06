@@ -3,8 +3,8 @@
 //! query order, are ProbLog's for the whole program (tests/it/examples.rs),
 //! or by hand, and P(e) is the program's.
 
-use super::split::{Split, SplitBounds, query_parts};
-use super::{Answering, Options, Progress, Strategy, solve_ground, solve_split, split_check};
+use super::split::{Answering, Split, SplitBounds, query_parts, split_check};
+use super::{Options, Progress, Strategy, solve_ground, solve_split};
 use crate::eval::Count;
 use crate::ground::{GroundOptions, GroundProgram};
 use crate::query::assert_answers;

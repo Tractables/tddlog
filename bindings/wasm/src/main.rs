@@ -17,8 +17,8 @@ use tddlog::{Format, Options, Progress, Strategy};
 fn main() {}
 
 /// Answer the queries of `program`, text in the format named `format`
-/// (as `Format` parses it: `problog`, `dice`, `bif`, `hugin`, `xdsl` or
-/// `uai`), a network's with `evidence` the text of its evidence file (null
+/// (as `Format` parses it: `problog`, `dice`, `circulette`, `bif`, `hugin`,
+/// `xdsl` or `uai`), a network's with `evidence` the text of its evidence file (null
 /// for none), under the vtree strategy named `strategy` (as `--vtree`
 /// takes it; `auto` is the default), with `P(e)` where
 /// `evidence_probability` is 1, a ProbLog program's, an LPAD's or a

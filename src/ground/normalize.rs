@@ -9,12 +9,14 @@
 //! ```
 //!
 //! where `sw_k_i/|V|` is a switch predicate with probability
-//! `q_i = p_i / (1 - p_1 - ... - p_{i-1})` (stick breaking): the switches of a
-//! ground instance are independent and exactly one head, or none if the
-//! probabilities sum below one, is selected per ground instance. A single
-//! probabilistic head `p::h :- body` is the case `n = 1`, with `q_1 = p`.
-//! A head whose probability is what remains, to a relative 10⁻⁹, gets
-//! `q_i = 1`, and its switch is a certain fact that grounding removes.
+//! `q_i = p_i / (p_i + ... + p_n + r)`, `r` the mass of no head (stick
+//! breaking, its sums taken from the end, [`chain_weights`]): the switches
+//! of a ground instance are independent and exactly one head, or none if
+//! the probabilities sum below one, is selected per ground instance. A
+//! single probabilistic head `p::h :- body` is the case `n = 1`, with
+//! `q_1 = p`. Probabilities that sum to one within [`SUM_TOLERANCE`] leave
+//! no mass of no head, so the last head gets `q_n = 1`, and its switch is a
+//! certain fact that grounding removes.
 //! Clauses sharing a `group` (one source clause split on a body disjunction)
 //! share their switches.
 //!
@@ -147,6 +149,13 @@ impl Facts {
 pub(super) type Sig<'a> = (&'a str, usize);
 
 impl NormProgram {
+    /// The atoms the program asks about: each query's and observation's,
+    /// and each query rule's atom and pattern.
+    pub(super) fn asked(&self) -> impl Iterator<Item = &Atom> {
+        let asked = self.queries.iter().chain(&self.evidence).map(|(a, _)| a);
+        asked.chain(self.drivers.iter().flat_map(|d| [&d.atom, &d.pattern]))
+    }
+
     /// The rules of each predicate, as indices into `rules` in their order.
     pub(super) fn rules_by_sig(&self) -> FxHashMap<Sig<'_>, Vec<usize>> {
         let mut rules_of: FxHashMap<Sig, Vec<usize>> = FxHashMap::default();

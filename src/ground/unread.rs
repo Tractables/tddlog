@@ -92,9 +92,7 @@ fn unread(norm: &NormProgram) -> FxHashMap<(Name, usize), Vec<bool>> {
         return drops;
     }
     let mut fixed: FxHashSet<Sig> = norm.switches.keys().map(|(n, k)| (&**n, *k)).collect();
-    let asked = norm.queries.iter().chain(&norm.evidence).map(|(a, _)| a);
-    let drivers = norm.drivers.iter().flat_map(|d| [&d.atom, &d.pattern]);
-    fixed.extend(asked.chain(drivers).map(Atom::signature));
+    fixed.extend(norm.asked().map(Atom::signature));
     fixed.extend(norm.counted.iter().map(|(n, k)| (&**n, *k)));
     for rule in &norm.rules {
         for l in &rule.body {
@@ -132,9 +130,7 @@ fn signatures(norm: &NormProgram) -> FxHashSet<Sig<'_>> {
             }
         }
     }
-    let asked = norm.queries.iter().chain(&norm.evidence).map(|(a, _)| a);
-    let drivers = norm.drivers.iter().flat_map(|d| [&d.atom, &d.pattern]);
-    used.extend(asked.chain(drivers).map(Atom::signature));
+    used.extend(norm.asked().map(Atom::signature));
     used
 }
 

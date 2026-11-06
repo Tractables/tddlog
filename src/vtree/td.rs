@@ -31,7 +31,7 @@ use super::separators::{self, Atop, CopyRule};
 /// A higher ceiling bought the graphs that reach it (the large pedigrees)
 /// almost no narrower decomposition, and the programs `td` wins are given
 /// less.
-pub(crate) const MAX_TD_BUDGET_UNITS: u64 = 100_000_000;
+const MAX_TD_BUDGET_UNITS: u64 = 100_000_000;
 
 /// The floor under a scaled budget.
 ///

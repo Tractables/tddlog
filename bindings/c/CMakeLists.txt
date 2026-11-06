@@ -41,7 +41,7 @@ if(TDDLOG_BUILD_TESTS)
   enable_testing()
   tddlog_consumer(alarm examples/alarm.c)
   add_test(NAME example_alarm COMMAND alarm)
-  # A varied dozen of ProbLog's system tests, whose expected outcomes the
+  # Fourteen of ProbLog's system tests, whose expected outcomes the
   # test reads from their comments.
   set(PROBLOG "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/problog")
   set(PROGRAMS 00_trivial_and 00_trivial_not 00_trivial_or 10_cards 11_ads_numerical

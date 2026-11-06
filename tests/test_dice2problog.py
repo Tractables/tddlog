@@ -13,6 +13,7 @@ a program with scripts/dice2problog.py's parser.
 from fractions import Fraction
 from pathlib import Path
 import re
+import subprocess
 import sys
 import unittest
 from unittest import mock
@@ -265,6 +266,18 @@ def shallow(fn, limit=1000):
 
 
 class DiceTests(unittest.TestCase):
+    @unittest.skipUnless(hasattr(sys, 'get_int_max_str_digits'), "this Python's integers print at any length")
+    def test_every_translator_prints_integers_of_any_length(self):
+        # each translator bench.py runs imports this parser, which lifts Python's limit of 4300 digits
+        # (named, not globbed: a box's copy of the tree can keep a script the tree removed)
+        for name in ('dice2alea', 'dice2genfer', 'dice2geni', 'dice2pluck', 'dice2prism', 'dice2problog', 'dice2psi',
+                     'dice2roulette', 'dice2sppl', 'dice2webppl'):
+            with self.subTest(translator=name):
+                r = subprocess.run([sys.executable, '-c', f'import sys; sys.path.insert(0, {str(root / "scripts")!r}); '
+                                    f'import {name}; print(sys.get_int_max_str_digits())'],
+                                   capture_output=True, text=True)
+                self.assertEqual((r.returncode, r.stdout), (0, '0\n'), r.stderr)
+
     def test_exact_gives_dices_answers(self):
         for name, expected in DICE.items():
             with self.subTest(name=name):

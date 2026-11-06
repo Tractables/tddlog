@@ -1,6 +1,15 @@
-//! The interaction graph of a ground program, its min-fill elimination,
-//! and the fact orders read off the program: the order the compiler
-//! consumes the facts in and the reverse of a min-fill elimination.
+//! The interaction graph of a ground program and its eliminations, and the
+//! fact orders read off the program.
+//!
+//! The eliminations: min-fill, plain ([`min_fill_cliques`],
+//! [`min_fill_elimination`] with its elimination tree) or over weighted
+//! vertices ([`weighted_min_fill`]); an elimination in a given order
+//! ([`eliminated_in_order`]); an order improved by simulated annealing on
+//! its cliques' states ([`annealed`]); and the minor-min-width lower bound
+//! on the treewidth ([`minor_min_width`]). The fact orders: the order the
+//! compiler consumes the facts in ([`facts_by_use`], [`facts_by_level`])
+//! and a pre-order of the min-fill elimination tree
+//! ([`facts_by_minfill`]).
 
 use std::cmp::Reverse;
 use std::collections::{BTreeSet, BinaryHeap};

@@ -172,6 +172,9 @@ pub(crate) fn settle(
     compiled: &mut Compiled,
 ) -> Result<(), CompileError> {
     let encoding = &gp.encoding;
+    // Without projection every formula is on the whole program's scope,
+    // which `readers` lists as a reader of every cut: the cuts keep their
+    // names.
     if encoding.segments.is_empty() || compiled.projection == Projection::Off {
         return Ok(());
     }
@@ -620,11 +623,9 @@ fn pairs(backend: &TddBackend, compiled: &Compiled, a: AtomId) -> usize {
     )
 }
 
-/// `others`, the readers of `cut` that are not queries, composed with its
-/// links where they gain no more than the links' joint (`K - R <= J`),
-/// and whether that joint is larger than [`GROWTH`] times the links;
-/// `None` where the names pay for them.
-fn links_and_readers_pairs(
+/// The pairs of `readers`' formulas, summed, and then those of `cut`'s
+/// links, summed.
+fn readers_and_links_pairs(
     backend: &TddBackend,
     compiled: &Compiled,
     cut: &Cut,
@@ -639,6 +640,10 @@ fn links_and_readers_pairs(
     (held, l)
 }
 
+/// `others`, the readers of `cut` that are not queries, composed with its
+/// links where they gain no more than the links' joint (`K - R <= J`),
+/// and whether that joint is larger than [`GROWTH`] times the links;
+/// `None` where the names pay for them.
 fn others_composed(
     backend: &TddBackend,
     compiled: &Compiled,
@@ -650,7 +655,7 @@ fn others_composed(
     if others.is_empty() {
         return Ok(Some((Vec::new(), false)));
     }
-    let (held, l) = links_and_readers_pairs(backend, compiled, cut, others);
+    let (held, l) = readers_and_links_pairs(backend, compiled, cut, others);
     let settled = backend.within(work, || {
         let Some(links) = Links::new(backend, compiled, cut, negations)? else {
             return Ok(None);
@@ -689,7 +694,7 @@ fn asked_composed(
     work: u64,
     negations: &mut Negations,
 ) -> Result<Option<Composed>, CompileError> {
-    let (held, l) = links_and_readers_pairs(backend, compiled, cut, asked);
+    let (held, l) = readers_and_links_pairs(backend, compiled, cut, asked);
     let bound =
         (l as u128 * evidence as u128 / held.max(1) as u128).min(usize::MAX as u128) as usize;
     let settled = backend.within(work, || {

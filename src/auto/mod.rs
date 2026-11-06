@@ -29,7 +29,12 @@
 //! calls for it, the searched families layout is built once `families:0`
 //! has spent what the search costs ([`policy::search_rent`]), and
 //! otherwise at its own turn; either way it may take `families:0`'s place
-//! and the weight ([`weigh_searched`]).
+//! and the weight ([`weigh_searched`]). A families trial's weight is a bet
+//! on its layout's estimate: its attempts spend no more than the estimate
+//! allows while it holds the weight, and it loses the weight past that
+//! ([`policy::bet_left`]). A weighted trial's compile is stopped by a
+//! projected finish as an unweighted one at its level is
+//! ([`policy::horizon`]).
 //! The trial resumes where it stopped: finished components survive a
 //! stopped compile, and completed evidence conjunctions and query answers
 //! a stopped query phase. The first trial
@@ -75,8 +80,8 @@ use tididi::limits::{LimitConfig, StopAt, StopRules};
 
 use policy::{
     FAMILIES_WEIGHT, FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR,
-    candidates, families_weighted, overspent_estimate, projected_from, search_due, search_rent,
-    weight,
+    bet_left, candidates, families_weighted, horizon, overspent_estimate, projected_from,
+    search_due, search_rent, weight,
 };
 use trial::Trial;
 
@@ -663,9 +668,9 @@ fn run_within(
         let rent = if weighed { None } else { search_rent(t, left) };
         let bounds = Bounds {
             pairs: t.watch(first_pairs),
-            work: rent.unwrap_or(left),
+            work: bet_left(t, rent.unwrap_or(left)),
             projected_from: projected_from(first_pairs),
-            horizon: (t.target.max(1) as f64).log2() + PROJECTED_DOUBLINGS,
+            horizon: horizon(t),
         };
         let result = attempt(
             t,
@@ -850,8 +855,8 @@ struct Bounds {
 enum Stop {
     /// It spent its work.
     Work,
-    /// Its compile was projected, between components, to finish past
-    /// [`PROJECTED_DOUBLINGS`] doublings of its target ([`tp::Horizon`]).
+    /// Its compile was projected, between components, to finish past its
+    /// horizon ([`policy::horizon`], [`tp::Horizon`]).
     Projected,
     /// It needs a watch of these pairs: a formula it completed was past
     /// the watch, or an operation in flight past its nodes or pairs.
@@ -886,11 +891,11 @@ impl Stop {
 /// twice the work is stopped, and lost. A formula it completes past the
 /// watch stops it by size; an operation in flight past twice the watch in
 /// nodes, or sixteen times it in pairs, is lost and built again in a later
-/// turn. Its compile stops between components where
-/// it is projected to finish more than [`PROJECTED_DOUBLINGS`] doublings
-/// past its target ([`Bounds`], [`tp::Horizon`]): the turn cannot finish
-/// it, and the other trials take theirs before it goes on. Records the
-/// attempt in `ledger`.
+/// turn. Its compile stops between components where it is projected to
+/// finish more than [`PROJECTED_DOUBLINGS`] doublings past its target over
+/// its weight ([`policy::horizon`], [`tp::Horizon`]): the turn cannot
+/// finish it, and the other trials take theirs before it goes on. Records
+/// the attempt in `ledger`.
 ///
 /// Without bounds the attempt runs to its end, held only to
 /// `memory_bytes`: the trial left alone, whose stops would only make it

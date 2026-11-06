@@ -456,28 +456,28 @@ pub(super) struct EvidenceWalk {
     /// walk makes one of the observed factors in one fewer.
     pub(super) completed_joins: usize,
     #[cfg(test)]
+    pub(super) probe: Probe,
+}
+
+/// What the tests count of a walk's steps, and the switches that force
+/// its rarer paths.
+#[cfg(test)]
+#[derive(Default)]
+pub(super) struct Probe {
     pub(super) reassociated: usize,
-    #[cfg(test)]
     pub(super) unbatched: usize,
-    #[cfg(test)]
     pub(super) grouped: usize,
     /// Batches grouped by part.
-    #[cfg(test)]
     pub(super) by_part: usize,
-    #[cfg(test)]
     pub(super) ended_steps: usize,
     /// Every batch is given up at its first join.
-    #[cfg(test)]
     pub(super) give_up_batches: bool,
     /// Every third room the walk asks for ([`EvidenceWalk::room`]) is
     /// refused, so that a step, which asks twice at most, is refused at
     /// most once before it is taken; the rooms asked for, and those refused
     /// to [`EvidenceWalk::unbatch`].
-    #[cfg(test)]
     pub(super) refuse_rooms: bool,
-    #[cfg(test)]
     pub(super) rooms: usize,
-    #[cfg(test)]
     pub(super) refused_unbatches: usize,
 }
 
@@ -517,23 +517,7 @@ impl EvidenceWalk {
             put_offs: 0,
             completed_joins: 0,
             #[cfg(test)]
-            reassociated: 0,
-            #[cfg(test)]
-            unbatched: 0,
-            #[cfg(test)]
-            grouped: 0,
-            #[cfg(test)]
-            by_part: 0,
-            #[cfg(test)]
-            ended_steps: 0,
-            #[cfg(test)]
-            give_up_batches: false,
-            #[cfg(test)]
-            refuse_rooms: false,
-            #[cfg(test)]
-            rooms: 0,
-            #[cfg(test)]
-            refused_unbatches: 0,
+            probe: Probe::default(),
         }
     }
 
@@ -604,8 +588,8 @@ impl EvidenceWalk {
     fn room(&mut self, more: usize) -> Result<(), CompileError> {
         #[cfg(test)]
         {
-            self.rooms += 1;
-            if self.refuse_rooms && self.rooms % 3 == 1 {
+            self.probe.rooms += 1;
+            if self.probe.refuse_rooms && self.probe.rooms % 3 == 1 {
                 return Err(CompileError::Tdd(OperationError::OverBudget));
             }
         }
@@ -732,7 +716,7 @@ impl EvidenceWalk {
             .collect();
         #[cfg(test)]
         {
-            self.grouped += usize::from(groups.len() > 1);
+            self.probe.grouped += usize::from(groups.len() > 1);
         }
         let from = self.joins.len();
         let product = self.conjoin_groups(groups);
@@ -831,7 +815,7 @@ impl EvidenceWalk {
         }
         #[cfg(test)]
         {
-            self.by_part += 1;
+            self.probe.by_part += 1;
         }
         let mut rank: FxHashMap<Option<VtreeIdx>, usize> = FxHashMap::default();
         let ranks: Vec<usize> = lowest
@@ -878,7 +862,7 @@ impl EvidenceWalk {
         let room = self.room(operands + 2);
         #[cfg(test)]
         {
-            self.refused_unbatches += usize::from(room.is_err());
+            self.probe.refused_unbatches += usize::from(room.is_err());
         }
         room?;
         self.in_full.remove(&product);
@@ -923,7 +907,7 @@ impl EvidenceWalk {
                     .collect();
                 #[cfg(test)]
                 {
-                    self.ended_steps += 1;
+                    self.probe.ended_steps += 1;
                 }
                 match others[..] {
                     [] => {}
@@ -961,7 +945,7 @@ impl EvidenceWalk {
         }
         #[cfg(test)]
         {
-            self.unbatched += 1;
+            self.probe.unbatched += 1;
         }
         Ok(())
     }
@@ -1270,7 +1254,7 @@ impl EvidenceWalk {
             .filter(|&id| self.slots[self.batches[id].target].is_some());
         let floor = match batch {
             #[cfg(test)]
-            Some(id) if self.give_up_batches => {
+            Some(id) if self.probe.give_up_batches => {
                 self.unbatch(id)?;
                 return Ok(false);
             }
@@ -1407,7 +1391,7 @@ impl EvidenceWalk {
             self.joins.push_front(Join::Two(other, larger, t));
             #[cfg(test)]
             {
-                self.reassociated += 1;
+                self.probe.reassociated += 1;
             }
         } else {
             self.joins.push_front(Join::Two(x, y, wait));

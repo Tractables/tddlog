@@ -5,8 +5,9 @@
 //! `λ_a` over the probabilistic facts such that the weighted model count of
 //! `λ_a` is `P(a)` (Vlasselaer et al. 2015/2016). The formula is stored as
 //! its negation, the dual (`Formulation::Dual`), but for an acyclic atom of
-//! one rule, stored as its body's conjunction; `dynamic` stores `λ_a`
-//! itself (`Formulation::Primal`).
+//! one rule of literals that is not an indicator's link, stored as its
+//! body's conjunction; `dynamic` stores `λ_a` itself
+//! (`Formulation::Primal`).
 //!
 //! The derived atoms' strongly connected components (`ground::deps`) are
 //! compiled in dependency order (`compile`), each, where the strategy
@@ -22,9 +23,9 @@ mod aft;
 pub(crate) mod backend;
 mod clauses;
 mod compile;
-pub(crate) mod cone;
+mod cone;
 mod factoring;
-pub(crate) mod none_of;
+mod none_of;
 mod projector;
 mod rows;
 mod scope;
@@ -216,11 +217,14 @@ impl fmt::Display for Projection {
 
 /// Which polarity of each atom's formula the fixpoint maintains.
 ///
-/// `or` on TDDs is implemented as three negations around a conjunction, while
-/// `and`, `and_clause` and `negate` are primitive. The primal operator is a
-/// disjunction over rules; the dual maintains `μ_a = ¬λ_a`, for which the
-/// operator is `μ_a = ⋀_r ¬body_r`, a conjunction over rules with one negation
-/// per rule that mentions a derived atom.
+/// The primal maintains `λ_a`, and its operator is a disjunction over
+/// rules; the dual maintains `μ_a = ¬λ_a`, for which the operator is
+/// `μ_a = ⋀_r ¬body_r`, a conjunction over rules with one negation per rule
+/// that mentions a derived atom and none for a body of facts alone, which
+/// goes in as a clause. The dual is the default: the indicators and the
+/// clause tables were tuned under it, and the primal is chosen only under
+/// a dynamic vtree, where the search ends on smaller vtrees under it
+/// ([`crate::Kind::formulation`]).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum Formulation {
     Primal,

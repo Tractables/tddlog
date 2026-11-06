@@ -57,7 +57,13 @@ import sys
 import threading
 from fractions import Fraction
 
-TOKEN = re.compile(r'\s*(?:(//[^\n]*|\(\*.*?\*\))|([A-Za-z_][A-Za-z0-9_\']*)'
+# an int(w)'s modulus 2^w is written in full: past 4300 digits (w past
+# about 14000 bits) Python refuses to print an integer unless told not to,
+# and every translator of a Dice program imports this module
+if hasattr(sys, 'set_int_max_str_digits'):
+    sys.set_int_max_str_digits(0)
+
+TOKEN =re.compile(r'\s*(?:(//[^\n]*|\(\*.*?\*\))|([A-Za-z_][A-Za-z0-9_\']*)'
                    r'|([0-9]*\.[0-9]+(?:[eE][-+]?[0-9]+)?|[0-9]+\.?[0-9]*(?:[eE][-+]?[0-9]+)?)'
                    r'|(<=>|==|!=|<=|>=|<<|>>|&&|\|\||::|->|[-+*/%<>^(){}\[\],=!:]))', re.S)
 

@@ -46,10 +46,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dice_ir import BOOL, Const, Var, decimal, deep, kind, lowered, prune, refuse, written  # noqa: E402
 
-# a discrete over more values is refused: its chain of Bernoullis has a
-# leaf for each value
-MAX_DISCRETE_BITS = 16
-
 
 def neg(a):
     """The negation of an atom: a Python bool, or (name, negated)."""
@@ -206,8 +202,6 @@ class Emitter:
         """The bits of a categorical over 0 .. 2^w - 1 (ps, padded with 0):
         each bit, the most significant first, a Bernoulli conditioned on the
         bits before it."""
-        if w > MAX_DISCRETE_BITS:
-            raise NotImplementedError(f'a discrete of {w} bits')
         ps = list(ps) + [0.0] * (2 ** w - len(ps))
         top = []                      # sampled bits, most significant first
 

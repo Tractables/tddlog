@@ -23,8 +23,9 @@
 //!   cross a narrow cut of that order (`naming`).
 //! - [`Kind::Decision`] reads no graph either: it lays out the
 //!   decisions the grounder read the facts as guards in
-//!   ([`crate::ground::Decisions`]), and names the contexts of their tree
-//!   and the atoms of the tree that atoms outside it read (`decision`).
+//!   ([`crate::ground::Decisions`]), and names the contexts of their tree,
+//!   the atoms of the tree that atoms outside it read, and the atoms read
+//!   beside those (`decision`).
 //!
 //! Derived atoms take part in every construction and become no leaves: only
 //! the probabilistic facts are variables of the diagram. Every strategy
@@ -39,7 +40,7 @@ mod forest;
 mod graph;
 mod naming;
 mod nest;
-pub(crate) mod order;
+mod order;
 mod separators;
 mod td;
 
@@ -101,10 +102,12 @@ pub enum Kind {
     Td,
     /// For a program that reads atoms through indicators: a tree
     /// decomposition of the indicators, with each group's private facts on
-    /// a spine above its indicators (`families_forest`). With `search`
-    /// the decomposer searches, under `td`'s budget, where min-fill leaves
-    /// a wide decomposition; without it (named `families:0`) the min-fill
-    /// decompositions are laid out alone.
+    /// a spine above its indicators (`families_forest`), the cheapest of
+    /// those of min-fill, of the elimination in numbering order and of the
+    /// weighted min-fill. With `search` the decomposer also searches, under
+    /// `td`'s budget, where min-fill leaves a wide decomposition, and the
+    /// elimination order is annealed where that pays; without it (named
+    /// `families:0`) neither runs.
     Families { search: bool },
     /// Bushy where the program's dependencies let it be, right-linear
     /// everywhere else (`closed_forest`): every subtree holds a set of
@@ -152,14 +155,14 @@ pub enum Kind {
     Decision,
 }
 
-/// Every layout's name, for the error message: the trials `auto` runs,
-/// under the names its trial lines print, `program` and `decision`.
+/// Every layout's name, for the error message, as `auto`'s trial lines
+/// print it: each layout is one of the trials `auto` may run.
 pub(crate) const KIND_NAMES: &str =
     "td, closed, families, families:0, dynamic[:minfill], program, program:fanin, decision";
 
 impl Kind {
     /// Whether the compile searches for a better vtree as it goes.
-    pub fn is_dynamic(self) -> bool {
+    pub(crate) fn is_dynamic(self) -> bool {
         matches!(self, Kind::Dynamic)
     }
 }
@@ -197,7 +200,7 @@ impl fmt::Display for Kind {
 }
 
 /// Fact atoms in program order.
-pub fn facts_in_order(gp: &GroundProgram) -> Vec<AtomId> {
+pub(crate) fn facts_in_order(gp: &GroundProgram) -> Vec<AtomId> {
     gp.facts().map(|(a, _)| a).collect()
 }
 
@@ -291,9 +294,10 @@ fn variables(order: &[AtomId]) -> Vec<VarId> {
 /// decomposition or tree covering one, lays the facts out balanced in
 /// program order. `deps` are `gp`'s ([`Deps::of`]). `Err` where the layout
 /// cannot be built, or cannot help: `decision` on a program the grounder
-/// read no fact of as a guard, `td` where no elimination of the graph
-/// finishes within its budget ([`td_forest`]), and a layout whose lists
-/// the allocator refuses ([`refused`]).
+/// read no fact of as a guard, `families` on a program that reads no atom
+/// through an indicator (`families_forest`), `td` where no elimination of
+/// the graph finishes within its budget ([`td_forest`]), and a layout
+/// whose lists the allocator refuses ([`refused`]).
 ///
 /// Every layout is of the program's model, without its queried cubes
 /// ([`QueriedCubes`]), and a program a layout builds gets the cubes back.
@@ -482,7 +486,8 @@ mod tests {
             "families:0".parse::<Kind>().expect("no search"),
             Kind::Families { search: false }
         );
-        // Only the trials `auto` runs, `program` and `decision` have names.
+        // Only the layouts have names, each a trial `auto` may run; `auto`
+        // itself is none.
         for name in ["auto", "nope"] {
             assert!(name.parse::<Kind>().is_err(), "{name}");
         }
@@ -601,6 +606,32 @@ mod tests {
                 "{kind}"
             );
         }
+    }
+
+    /// A query that reads copies is no queried cube: rewritten through
+    /// indicators for `families`, the last rolls of the ProbLog tutorial's
+    /// dice read the roll before and the die's values through copies alone,
+    /// and the copies stand for atoms of the model, tied to them by links.
+    /// The queries keep their families, and the copies they read their
+    /// place beside those links.
+    #[test]
+    fn a_query_over_copies_shapes_the_layout() {
+        let source = "
+            1/3::dice(1,D,ID); 1/3::dice(2,D,ID); 1/3::dice(3,D,ID) :- die(D).
+            die(X) :- between(1,3,X).
+            roll([1]).
+            roll([H,F|L]) :- roll([F|L]), dice(H,F,L).
+            seen(L) :- reverse(L,[],R), roll(R).
+            reverse([],L,L).
+            reverse([H|T],A,L) :- reverse(T,[H|A],L).
+            query(seen([_,_,_,_,_])).
+        ";
+        let program = parse_program(source).expect("parses");
+        let gp = ground(&program, &GroundOptions::default()).expect("grounds");
+        let kind = Kind::Families { search: false };
+        let rewritten = kind.rewrite(gp).expect("room");
+        assert!(!rewritten.encoding.is_empty());
+        assert!(QueriedCubes::split(&rewritten).is_none());
     }
 
     /// `program` reads the facts in program order, and `program:fanin` in

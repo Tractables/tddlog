@@ -34,8 +34,8 @@
 //!
 //! The lists are bounded so that a large program's trace stays small: a
 //! text keeps its first [`LINES`] lines, the compile its first
-//! [`tp::trace::COMPONENTS`] components, and the vtree its top
-//! [`TREE_LEAVES`] subtrees; what is left out is counted.
+//! [`tp::trace::COMPONENTS`] components, and the vtree its top 64
+//! subtrees (`TREE_LEAVES`); what is left out is counted.
 
 use std::fmt::{self, Write};
 
@@ -49,7 +49,7 @@ use crate::{Error, Run, Strategy, tp};
 pub const LINES: usize = 200;
 /// The subtrees a trace's vtree is drawn down to: past them, a subtree is
 /// given by its number of leaves.
-pub const TREE_LEAVES: usize = 64;
+const TREE_LEAVES: usize = 64;
 /// The trace's format, which a page checks before it draws one.
 pub const VERSION: u32 = 1;
 
@@ -430,7 +430,7 @@ fn operations_json(ops: &[usize; 5]) -> String {
 
 /// The vtree as a tree a page can draw: an inner node as the array of its
 /// two children, a leaf as its fact's name (`names`), and a subtree below
-/// the top [`TREE_LEAVES`] as `{"leaves": n}`; with its variables and
+/// the top `TREE_LEAVES` as `{"leaves": n}`; with its variables and
 /// depth.
 fn vtree_json(vtree: &tididi::Vtree, names: &dyn Fn(&tididi::vtree::VarId) -> String) -> String {
     use tididi::vtree::VtreeIdx;
