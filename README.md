@@ -266,9 +266,6 @@ ProbLog's and cplint's examples.
 
 - On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
   ProbLog 4.
-- Where others win: ProbLog answers 1 of its tutorial's 115 programs
-  that tddlog does not: numberguessing_1, which uses ProbLog's
-  `subquery/3`.
 
 ### Probabilistic databases
 
