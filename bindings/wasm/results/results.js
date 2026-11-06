@@ -93,8 +93,8 @@ const FAILURES = {
   underflow: [() => "underflow", "every answer 0, underflowing: printed as 0 where the probability of the evidence is below the smallest double"],
   unread: [() => "not read", "not read by tddlog: only another system's front end reads the program, so tddlog counts as unanswered"],
 };
-// A failure in a key: its cell and its short meaning, the whole as its title.
-const failureKey = (v, limit) => element("span", { title: FAILURES[v][1] }, `${FAILURES[v][0](limit)}: ${FAILURES[v][1].split(":")[0]}`);
+// A failure in a key: its cell (with its shade, where it has one of its own) and its short meaning, the whole as its title.
+const failureKey = (v, limit, shade) => element("span", { title: FAILURES[v][1] }, shade, `${FAILURES[v][0](limit)}: ${FAILURES[v][1].split(":")[0]}`);
 // All programs: the union of the types of program, every system on every
 // program it is given (categories.json's last category).
 const ALL = "all-programs";
@@ -285,7 +285,7 @@ function shades(na) {
   return [element("span", {}, element("i", { class: "heat best" }), `the fastest (under ${FLOOR} s, a tie)`),
     element("span", {}, element("i", { class: "heat slow" }), `slower, up to ${SLOWEST}× the fastest's time`),
     element("span", {}, element("i", { class: "heat fail" }), "no answer"),
-    na ? element("span", {}, element("i", { class: "heat na" }), "cannot express it") : null].filter(Boolean);
+    na ? failureKey("unsupported", 0, element("i", { class: "heat na" })) : null].filter(Boolean);
 }
 
 // A system's sample of line: in its colour, dashed for a process's time, or
@@ -761,12 +761,13 @@ const totals = (v, name) => `the ${plural(v.either, "instance")} ${name} is give
 // A category's headline, in cells: the answers of the rows' subjects (tal,
 // tally's), and with several of tddlog and its pipelines each one's of the
 // instances it was given (headMembers); the best native system's (the most
-// answers, then the least speed-up; on all programs the best other system's)
+// answers, then the least speed-up; on all programs and the circuits the best other system's)
 // and tddlog's speed-up over it.
 function headline(c, rows, tal, only) {
   const best = ranked(c, c.native.filter((x) => tal[x]?.given > 0), tal, only)[0];
   const v = best && versus(c, best, only);
-  const which = c.key === ALL ? "other" : "native";
+  // the circuits are no type: no system is native to them, every system on them is another
+  const which = c.key === ALL || c.key === APART ? "other" : "native";
   const box = cells([`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(rows.length)}`],
     ...headMembers(c, rows, tal).map(([x, label]) => [label, `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`]),
     ...(v ? [[`best ${which}: ${data.names[best]}`, count(tal[best].answers), `the ${which} system with the most answers`],
@@ -1414,7 +1415,7 @@ function categoryView(route) {
     out.push(element("p", { class: "pages" }, "Programs and runs: ", ...pagesOf(rows).flatMap((p, i) => [i ? ", " : "",
       link(p.route, p.label), ` (${me} answers ${count(p.a ?? 0)} of ${count(p.n)})`]), "."));
   }
-  out.push(element("h3", {}, c.key === ALL ? `Each system's answers, and its total time against ${me}'s`
+  out.push(element("h3", {}, c.key === ALL || c.key === APART ? `Each system's answers, and its total time against ${me}'s`
     : `The native systems' answers, and their total times against ${me}'s`), scoreboard(c, rows, tal, rows.length, route.vs, only),
     note(measureLine()),
     ...(hidden.length ? [note(`Not on the plots, given fewer than ${data.measure.drawn} of the ${c.noun}: `
@@ -1703,7 +1704,7 @@ function table(suite) {
       ` Hide the ${count(nquick)} instances every system that ran finishes in under ${FLOOR} s`));
   }
   parts.push(scroller(grid), element("p", { class: "key" }, ...shades(seen.has("unsupported")),
-    ...Object.keys(FAILURES).filter((v) => seen.has(v)).map((v) => failureKey(v, suite.limit)),
+    ...Object.keys(FAILURES).filter((v) => v !== "unsupported" && seen.has(v)).map((v) => failureKey(v, suite.limit)),
     ...(suite.instances.some((row) => row.slice(1).includes(null)) ? [element("span", {}, "empty: not given")] : [])));
   const notes = ["Seconds; a header sorts by its column."];
   if (familiesOf(suite.key)) notes.push("An instance's name opens its family, with its programs.");
@@ -1739,8 +1740,9 @@ function familyView(route, view) {
     ...(at ? [[at.g.title, { view: "category", category: c.key, only: at.g.key }]]
       : ct ? [[ct.title, { view: "category", category: APART, only: ct.key }]] : [[s.title, { view: "suite", suite: s.key }], [f.title]])),
     element("h2", {}, f.title),
+    // the suite that gathered the instances is no group of the site's (its crumbs name it where no type does)
     element("div", { class: "chips" }, element("span", { class: "chip" }, plural(f.instances.length, "instance")),
-      element("span", { class: "chip" }, `${s.limit} s a run`), Object.assign(link({ view: "suite", suite: s.key }, s.title), { className: "chip" }))];
+      element("span", { class: "chip" }, `${s.limit} s a run`))];
   const programs = element("section", { class: "programs", id: "programs" }, note("Loading the programs and the runs…"));
   out.push(programs, element("h3", {}, "Times"), timesGrid(s, f, rows, short, route), raw(`benchmarks/${s.key}/${f.key}.json`, s.file));
   familyData(s.key, f.key).then((fam) => {
@@ -1800,7 +1802,7 @@ function timesGrid(s, f, rows, short, route) {
     body.append(tr);
   }
   const key = shades(seen.has("unsupported"));
-  for (const v of Object.keys(FAILURES)) if (seen.has(v)) key.push(failureKey(v, s.limit));
+  for (const v of Object.keys(FAILURES)) if (v !== "unsupported" && seen.has(v)) key.push(failureKey(v, s.limit));
   key.push(element("span", {}, "a time opens its runs"));
   const hidden = s.systems.length - given.length;
   const box = element("div", { class: "times-box" }, scroller(element("table", { class: "grid" }, element("thead", {}, head), body)),
@@ -1898,7 +1900,9 @@ function twinLabel(tab, k) {
 // ProbLog file, where its tab has others), else the original's first.
 function firstFile(inst) {
   const tddlog = (r) => readsAs("tddlog")(r) || /^\S+\+tddlog\b/.test(r);
-  const reads = inst.tabs.map((t, i) => [t, i]).filter(([t]) => t.readers.some(tddlog));
+  // the program tddlog itself read before a pipeline's (the circuit Alea.jl+tddlog read beside it)
+  const tabs = inst.tabs.map((t, i) => [t, i]);
+  const reads = [readsAs("tddlog"), tddlog].map((who) => tabs.filter(([t]) => t.readers.some(who))).find((r) => r.length) ?? [];
   const ti = (reads.find(([t]) => t.files.some((file) => /\.pl$/.test(file.name))) ?? reads[0] ?? [null, -1])[1];
   if (ti < 0) return [0, shownFiles(inst.tabs[0])[0]];
   // of a loop's two forms (files of one name, each with its readers), the one tddlog read
@@ -2374,7 +2378,9 @@ function rail(route) {
   types.append(entry("#/coverage", COVERAGE));
   tree.append(group("types", types));
   // the circuits, where the data has them (and the bar's link to them with it): their families
-  if (data.circuits) {
+  // where the view is among the circuits, as a type's families under the type on show
+  if (data.circuits && sectionOf(route) !== APART) tree.append(group(APART));
+  else if (data.circuits) {
     const c = data.circuits;
     // a circuit's page marks its family, as a category narrowed to it does
     const here = route.view === "category" && route.category === APART ? route.only

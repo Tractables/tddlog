@@ -969,13 +969,19 @@ function benchmarksOf(root) {
       "the menu: the integrations");
     assert.deepEqual(menu[2].slice(1), [...categories.map((c) => `#/category/${c.key}`), "../#/coverage"],
       "the menu: the categories and the programs tddlog does not run");
-    assert.deepEqual(menu[3].slice(1), (cats.circuits?.groups ?? []).map((g) => `#/category/circuits/in/${encodeURIComponent(g.key)}`),
-      "the menu: the circuits' families");
+    // the circuits' families only where the view is among the circuits, as a type's under the type on show
+    assert.deepEqual(menu[3].slice(1), [], "the menu: the circuits, without their families on the overview");
     const walks = fs.readdirSync(path.join(site, "next", "walk")).filter((f) => f.endsWith(".json")).map((f) => `../#/how/${f.slice(0, -5)}`);
     assert.deepEqual(menu[4].slice(-1), ["../#/methods"], "the menu: the methods table, last");
     assert.deepEqual(menu[4].slice(1, -1).sort(), walks.sort(), "the menu: every walkthrough");
     assert.deepEqual(await page.$$eval("#tree li.legend", (ls) => ls.map((l) => l.textContent)),
-      ["instances answered", "instances", ...(cats.circuits ? ["instances"] : [])], "the menu: what its counts count");
+      ["instances answered", "instances"], "the menu: what its counts count");
+    if (cats.circuits) {
+      await visit("#/circuits", "figure.plot svg.cactus path.line");
+      const circuits = await page.$$eval("#tree .tree > li.group", (lis) => [...lis.find((li) => li.querySelector(":scope > a").dataset.section === "#/circuits")
+        .querySelectorAll(":scope > ul > li > a")].map((a) => a.getAttribute("href")));
+      assert.deepEqual(circuits, cats.circuits.groups.map((g) => `#/category/circuits/in/${encodeURIComponent(g.key)}`), "the menu: the circuits' families among the circuits");
+    }
     for (const c of categories) {
       const what = `the category ${c.key}`;
       await visit(`#/category/${c.key}`, "figure.plot svg.cactus path.line");
