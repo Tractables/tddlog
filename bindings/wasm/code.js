@@ -152,8 +152,15 @@ const tddlogCode = (() => {
   // their places and its consults inlined, as the ProbLog systems read it
   // (the one they read where there are several), as { tab, file }. Null
   // where `file` has no places or the results show no such program.
+  // Whether it has places: its text, where the family's texts hold it, else
+  // tddlog's command in `tab`, which gives such a program arguments after
+  // it (tddlog refuses an argument that no place takes).
   function filledFile(inst, tab, file, texts) {
-    if (!/\$[1-9]/.test(texts[file.sha] ?? "")) return null;
+    const text = texts[file.sha];
+    const name = file.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const given = new RegExp(`(^|\\s)${name}\\s+\\S`);
+    const places = text !== undefined ? /\$[1-9]/.test(text) : (tab.cmds ?? []).some(([who, line]) => who === "tddlog" && given.test(line));
+    if (!places) return null;
     const filled = (inst.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
       .flatMap((t) => t.files.filter((x) => x.name === `${inst.name}.pl`).map((x) => ({ tab: t, file: x })));
     return filled.find(({ tab: t, file: x }) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0] ?? null;

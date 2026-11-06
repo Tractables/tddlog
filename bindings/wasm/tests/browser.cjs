@@ -1284,6 +1284,10 @@ function benchmarksOf(root) {
             // the file the playground opens: the instance's program where the family's has places (code.js)
             const read = mine?.files.filter((file) => file.name.endsWith(".pl")) ?? [];
             const filled = read.map((file) => filledFile(inst, mine, file, fam.texts));
+            // tddlog's command says what the text says of its places, for a text the site keeps on its own
+            for (const [k, file] of read.entries()) {
+              if (file.sha in fam.texts) assert.deepEqual(filledFile(inst, mine, file, {}), filled[k], `${suite}/${inst.name}: the places of ${file.name}`);
+            }
             const pl = read.map((file, k) => filled[k]?.file ?? file);
             if (pl.length === 1 && !pl[0].held && !pl[0].part && !tried) tried = { ...at, filled: filled[0] !== null };
             if (pl.length === 1 && (pl[0].held || pl[0].part) && !kept) kept = at;
