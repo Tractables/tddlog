@@ -23,6 +23,7 @@
 //! and over the variables the evidence does not hold, and not those of its
 //! other levels, which overflow where a formula has many indicators.
 
+mod conjunction;
 mod count;
 mod grid;
 mod kernel;
@@ -34,8 +35,9 @@ use count::*;
 use grid::Grid;
 use number::*;
 
+pub(crate) use conjunction::conjunction_count;
 pub use count::{Counted, Routes, count};
-pub(crate) use count::{Counts, conjunction_count, count_exact, spans};
+pub(crate) use count::{Counts, count_exact, spans};
 pub use number::{Count, Range, Scaled, Value};
 pub use weights::{Probabilities, Weighing};
 pub(crate) use weights::{complement, mass};
