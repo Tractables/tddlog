@@ -120,6 +120,23 @@ impl Trial {
         self.held = watch;
     }
 
+    /// Takes its weight away, once it has spent past its layout's estimate
+    /// ([`super::policy::overspent_estimate`]). A trial whose attempt the
+    /// bet paused at a step it kept ([`Self::lost`] 0) resumes at its
+    /// level, its target over its weight and past what it has spent; one
+    /// whose operation the guard cut short, an operation that outgrew the
+    /// whole bet, has nothing to resume and keeps its target, its weighted
+    /// turn counted as spent.
+    pub(super) fn lose_weight(&mut self) {
+        if self.lost == 0 {
+            self.target /= self.weight.max(1);
+            while self.target <= self.spent {
+                self.target = self.target.max(1).saturating_mul(2);
+            }
+        }
+        self.weight = 1;
+    }
+
     /// Records the share of its phase finished after an attempt that did
     /// not finish it ([`Evaluation::progress`]), at the attempt's target,
     /// in place of an earlier record at that target. A compile that passed

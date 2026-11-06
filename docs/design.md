@@ -2109,7 +2109,10 @@ fewer units a pair than those that lose. Their formulas need not reach
 the watch, which grows with the target. The bet costs what the estimate
 says, not a weighted turn: an attempt of a families trial that holds the
 weight spends no more than the estimate leaves it (`bet_left`), and the
-test then takes the weight before its next turn.
+test then takes the weight before its next turn. A trial the bet paused
+at a step it kept resumes at its level, its target over its weight;
+one whose operation the guard cut short has nothing to resume and keeps
+its target (`Trial::lose_weight`).
 
 **Refusals.** A walk that sums out and is refused starts over first,
 once, putting nothing off (`Evaluation::walk_again`, under Put-offs
@@ -2923,6 +2926,19 @@ compare only within the run they come from.
   caesar_10000 ran out of memory in 9 GB, where it now answers in 24 s.
   Held to its estimate, mnist_sum64's `families:0`, which wins at about
   150 units a pair, takes 1.2 times its work.
+  On Circulette's netlists the `families:0` layouts are estimated at a
+  few thousand pairs, and the work goes to atom updates and query
+  products, which the estimate does not count: the bet pauses the first
+  attempt early, at a step it kept. With the weighted target kept, the
+  trial fell three doublings behind: `closed` took mac5 at 5.6e9 units
+  against 2.7e8 and 4bit-multiplier at 1.4e9 against 8.8e7, and the trial
+  won ALU only at 2.6e9 against 3.3e8. Resumed at its level, it wins
+  those runs at the lower work. The fulladders up to 32 bits, which
+  `closed` and `td` win, pay one more `families:0` turn of 2^24 to 2^25
+  units. On caesar the guard cuts the first attempt's operation
+  short, and the target kept leaves the run as it was; resumed at its
+  level there too, caesar_25 to caesar_500 spent 3.0e8 to 5.4e8 units
+  against 4.9e6 to 1.0e8.
 - **Refusals.** Freed for whichever trial was refused, the others paid
   for an early refusal of a cheap trial: on bb_spacex_w17 `program`,
   freed for `families:0`, did its 2 G units again (195 s against 124),

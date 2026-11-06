@@ -780,7 +780,7 @@ fn run_within(
                 t.kind,
                 t.kind.indicators_name()
             ));
-            t.weight = 1;
+            t.lose_weight();
         }
         if !weighed && search_due(&trials[i]) {
             weighed = true;
