@@ -470,12 +470,6 @@ impl WeightedCnf {
         self.log10_scale += log10;
     }
 
-    /// The literals of each query, in the program's order, with the
-    /// query as tddlog prints its answer.
-    pub fn queries(&self) -> &[(i32, String)] {
-        &self.queries
-    }
-
     /// A new variable.
     fn variable(&mut self) -> i32 {
         self.variables += 1;
