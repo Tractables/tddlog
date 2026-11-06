@@ -134,7 +134,7 @@ function drawn(page) {
         assert.equal(await page.locator("#idiomatic table.fams-tr tbody th[title]").count(), folded, `${x}: the folded families' names on hover`);
         assert.equal(await page.locator("#idiomatic table.fams-tr tbody tr").first().locator("td").count(), 6, `${x}: the instances, two sides' answers and totals, the speed-up`);
         // one line under it, no reasons or routes
-        assert.equal(await page.locator("#idiomatic p.note", { hasText: "Each family's page shows both." }).count(), 1, `${x}: what each side read, once`);
+        assert.equal(await page.locator("#idiomatic p.note", { hasText: "Each family's page shows" }).count(), 1, `${x}: what each side read, once`);
         assert.ok(!/other routes/.test(await page.locator("#idiomatic").textContent()), `${x}: no routes`);
         assert.ok(!/written by/.test(await page.locator("#idiomatic table.fams-tr thead").textContent()), `${x}: no scripts in the table`);
         await page.waitForSelector("#idiomatic figure svg");

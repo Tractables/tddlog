@@ -76,8 +76,10 @@ function scriptLink(name, path) {
 
 // ------------------------------------------------------------- the parts
 
-// tddlog's speed-up in a cell: "too few" where too few instances both answer.
-const speedCell = (v) => (v?.speedup == null ? "too few" : speedup(v));
+// tddlog's speed-up in a table's cell: a dash, its title saying why, where too few instances both
+// answer.
+const speedCell = (v) => (v?.speedup == null
+  ? element("span", { class: "few", title: `fewer than ${data.measure.common} instances both answer` }, "–") : speedup(v));
 
 // A comparison in cells, each side's under its name: the instances; the
 // system's answers and its PAR-2 total over the instances it is given and
@@ -89,7 +91,7 @@ function versusCells(v, name, n) {
   const side = (who, ...items) => element("div", { class: "side" }, element("span", { class: "who" }, who), cells(...items));
   return element("div", { class: "versus" }, side("", ["instances", count(n ?? v.given)]),
     side(name, ["answers", count(v.answers)], [`total (PAR-${data.measure.par})`, duration(v.total), over]),
-    side(me, ["answers", count(v.tddlog_answers)], [`total (PAR-${data.measure.par})`, duration(v.tddlog_total), over], [speedName("speed-up"), speedCell(v), speedup(v, true)]));
+    side(me, ["answers", count(v.tddlog_answers)], [`total (PAR-${data.measure.par})`, duration(v.tddlog_total), over], [speedName("speed-up"), speedup(v), speedup(v, true)]));
 }
 
 // The cactus plot of x and the members it is with over rows (kindRows' me,
@@ -199,15 +201,16 @@ function baselinesView() {
 // A list of nodes in prose: "A", "A and B", "A, B and C".
 const andNodes = (items) => items.flatMap((x, i) => [i === 0 ? "" : i === items.length - 1 ? " and " : ", ", x]);
 
-// What one side read on a baseline's idiomatic instances (views.json's
-// read), in a few words: the programs as written, those the scripts wrote,
-// other translations.
-function whatRead(side) {
-  const out = [];
-  if (side.original) out.push(["the programs as their sources wrote them"]);
-  if (side.by.length) out.push(["programs written by ", ...andNodes(side.by.map(([n, path]) => scriptLink(n, path)))]);
-  if (side.other) out.push([side.by.length ? "other translations" : "translations"]);
-  return out.flatMap((part, i) => [i ? " or " : "", ...part]);
+// One line on what the two sides read on a baseline's idiomatic instances
+// (views.json's read): the scripts that wrote their translations, and where
+// each family's are shown.
+function readLine(read) {
+  const by = new Map([...read.system.by, ...read.mine.by]);
+  const other = read.system.other || read.mine.other;
+  if (!by.size && !other) return note("Both read the programs as their sources wrote them. Each family's page shows them.");
+  const scripts = [...by].map(([n, path]) => scriptLink(n, path));
+  return note(...(by.size ? ["Translations by ", ...andNodes(other ? [...scripts, "others"] : scripts)] : ["Some of the programs are translations"]),
+    ". Each family's page shows what each side read.");
 }
 
 // A baseline's idiomatic instances by family (views.json's families, as
@@ -244,7 +247,7 @@ function familyTable(v, name, rows) {
   const table = element("table", { class: `board fams-tr${v.families.length > FAMILY_ROWS ? " folded" : ""}` },
     head2(["family", "each family's page shows the programs both read"], ["instances", null, "num"],
       { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
-      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up`, "num"]] }), body);
+      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up, a dash where fewer than ${data.measure.common} instances both answer`, "num"]] }), body);
   // past the first rows, the rest on asking
   const more = v.families.length > FAMILY_ROWS ? element("button", { type: "button", class: "plain more-rows", "aria-expanded": "false", onclick: () => {
     const open = table.classList.toggle("folded") === false;
@@ -252,7 +255,7 @@ function familyTable(v, name, rows) {
     more.textContent = open ? `Only the first ${FAMILY_ROWS} families` : `All ${count(v.families.length)} families`;
   } }, `All ${count(v.families.length)} families`) : null;
   return [scroller(stacked(table), "whole"), more,
-    note(`${name} read `, ...whatRead(v.read.system), `; ${me} read `, ...whatRead(v.read.mine), ". Each family's page shows both.")];
+    readLine(v.read)];
 }
 
 // The tabs of a baseline's page, by the ids a link names (#/baselines/X/TAB;
@@ -467,7 +470,7 @@ function othersOf(i) {
   // totals over no instance (neither answers any the system is given) are no time
   const total = (y, t) => (i.vs[y].total || i.vs[y].tddlog_total ? duration(t) : "–");
   const body = element("tbody", {}, ...xs.map((y) => element("tr", {}, element("th", { scope: "row" }, systemLink(y)),
-    num(count(i.given[y])), num(count(i.answers[y])), num(total(y, i.vs[y].total)), num(total(y, i.vs[y].tddlog_total)), num(speedup(i.vs[y])))));
+    num(count(i.given[y])), num(count(i.answers[y])), num(total(y, i.vs[y].total)), num(total(y, i.vs[y].tddlog_total)), num(speedCell(i.vs[y])))));
   out.push(element("h3", {}, "On a program of their own of the model"),
     scroller(stacked(element("table", { class: "board" }, head2(["system"], ["given", null, "num"], ["answers", null, "num"],
       { group: "against " + data.names[me], cols: [["total", par, "num"], [data.names[me], par, "num"], [speedName("speed-up"), null, "num"]] }), body)), "whole"));
@@ -502,7 +505,7 @@ function typeSplit(c, route) {
       body.append(element("tr", { class: x === route.vs ? "vs" : null }, element("th", { scope: "row" }, systemLink(x)),
         num(count(n(x, keep))), ...dirs,
         num(w ? count(w.answers) : ""), num(w ? duration(w.total) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.tddlog_total) : ""),
-        num(w ? speedup(w) : "")));
+        num(w ? speedCell(w) : "")));
     }
     const sec = element("section", { class: "panel split", id }, element("h3", {}, title), note(`Where ${text}.`));
     if (have.length) {
