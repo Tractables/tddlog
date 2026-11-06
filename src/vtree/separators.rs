@@ -49,7 +49,7 @@ use super::td::Rooted;
 /// bounds the logarithm of the functions of `S` at the unit's root from
 /// above.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct CopyRule {
+pub(super) struct CopyRule {
     /// `min(|I|, K)` at least this many times `|S|`.
     ratio: f64,
     /// `N` at most this many times `|S|`.
@@ -60,7 +60,7 @@ impl CopyRule {
     /// Every candidate unit with a separator, which the tests copy to
     /// exercise the copies on every unit they can be made for.
     #[cfg(test)]
-    pub(crate) const ALL: CopyRule = CopyRule {
+    pub(super) const ALL: CopyRule = CopyRule {
         ratio: 0.0,
         most: f64::INFINITY,
     };
@@ -70,7 +70,7 @@ impl CopyRule {
     /// same time on those both answer; copying every candidate unit lost
     /// nine. The bound on `N` leaves out long units, whose functions at the
     /// root fell far below what `I` and `K` allow.
-    pub(crate) const ON: CopyRule = CopyRule {
+    pub(super) const ON: CopyRule = CopyRule {
         ratio: 2.0,
         most: 4.0,
     };

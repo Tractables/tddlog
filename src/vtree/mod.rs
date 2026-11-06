@@ -40,7 +40,7 @@ mod forest;
 mod graph;
 mod naming;
 mod nest;
-pub(crate) mod order;
+mod order;
 mod separators;
 mod td;
 
@@ -162,7 +162,7 @@ pub(crate) const KIND_NAMES: &str =
 
 impl Kind {
     /// Whether the compile searches for a better vtree as it goes.
-    pub fn is_dynamic(self) -> bool {
+    pub(crate) fn is_dynamic(self) -> bool {
         matches!(self, Kind::Dynamic)
     }
 }
@@ -200,7 +200,7 @@ impl fmt::Display for Kind {
 }
 
 /// Fact atoms in program order.
-pub fn facts_in_order(gp: &GroundProgram) -> Vec<AtomId> {
+pub(crate) fn facts_in_order(gp: &GroundProgram) -> Vec<AtomId> {
     gp.facts().map(|(a, _)| a).collect()
 }
 

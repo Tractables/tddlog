@@ -1,6 +1,6 @@
 //! Merging cubes that differ in one literal's sign (`x ∧ c` and `¬x ∧ c`
 //! into `c`), which the `none_of` builder does before it builds the
-//! negation of a disjunction of cubes ([`crate::tp::none_of`]) and the
+//! negation of a disjunction of cubes (`tp::none_of`) and the
 //! indicator rewrite does to the rules of a table read in binary
 //! ([`crate::indicators`]).
 
