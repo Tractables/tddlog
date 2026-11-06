@@ -153,8 +153,8 @@ fn print_query_stats(run: &tddlog::Run) {
     );
     if q.summing_joins + q.weighted_joins > 0 {
         eprintln!(
-            "sum-out: {} joins summed out finished subtrees as they were built, {} other joins carried weights",
-            q.summing_joins, q.weighted_joins
+            "sum-out: {} joins summed out finished subtrees as they were built, {} other joins carried weights, {} summed-out variables dropped",
+            q.summing_joins, q.weighted_joins, q.collapsed_variables
         );
     }
     if q.names_kept + q.names_expanded > 0 {

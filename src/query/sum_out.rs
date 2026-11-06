@@ -33,10 +33,11 @@ use std::borrow::Cow;
 
 use num_rational::BigRational;
 use tididi::diagram::{Arithmetic, LiteralWeights, RationalWeights, WeightStore};
+use tididi::restructure::EmbedError;
 use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{OperationError, Tdd};
 
-use super::Formula;
+use super::{Formula, Scopes};
 use crate::eval::Probabilities;
 use crate::tp::backend::Part;
 use crate::tp::{CompileError, TddBackend, VtreeScope};
@@ -70,10 +71,16 @@ pub(super) struct SumOut {
     /// operands share, whose holdings it dropped.
     merged: Vec<VarId>,
     shared: Vec<VarId>,
-    /// The joins that summed out as they were built, and the other joins
-    /// with an operand that carries weights.
+    /// By program variable: summed out and dropped from its result's scope
+    /// ([`SumOut::collapse`]), so that no later scope may hold it.
+    dropped: Vec<bool>,
+    any_dropped: bool,
+    /// The joins that summed out as they were built, the other joins with
+    /// an operand that carries weights, and the variables collapses
+    /// dropped.
     pub(super) summing: usize,
     pub(super) weighted: usize,
+    pub(super) collapsed: usize,
 }
 
 impl SumOut {
@@ -149,8 +156,11 @@ impl SumOut {
             weights,
             merged: Vec::new(),
             shared: Vec::new(),
+            dropped: vec![false; tree.num_vars() as usize + 1],
+            any_dropped: false,
             summing: 0,
             weighted: 0,
+            collapsed: 0,
         }
     }
 
@@ -255,6 +265,121 @@ impl SumOut {
         self.support[b] = Vec::new();
         self.support[out] = std::mem::take(&mut self.merged);
         self.shared.clear();
+    }
+
+    /// The join begun's result `f`, on `scope`, moved onto the scope of the
+    /// variables a later join can still read (`Engine::project_over`).
+    /// Each topmost summed-out subtree keeps its level over one leaf of
+    /// each side, and its other variables leave the scope, the result's
+    /// variables and the holdings: its level's values sum over them, and no
+    /// later join reads them. Every later join then carries one level and
+    /// two leaves for the subtree instead of all its levels. A refusal of
+    /// the budget or the stop leaves `f` on `scope`, for the walk to meet
+    /// it there.
+    pub(super) fn collapse(
+        &mut self,
+        backend: &TddBackend,
+        scopes: &Scopes,
+        f: Tdd,
+        scope: VtreeScope,
+    ) -> Result<(Tdd, VtreeScope), CompileError> {
+        let Some(vars) = scope.vars() else {
+            return Ok((f, scope));
+        };
+        let tree = scope.vtree();
+        // Local variables to drop: under a topmost marginal level, all but
+        // the first leaf of each side.
+        let mut gone = vec![false; vars.len() + 1];
+        let mut any = false;
+        let first_leaf = |mut t: VtreeIdx| {
+            while !tree.node(t).is_leaf() {
+                t = tree.children(t).0;
+            }
+            t
+        };
+        let mut stack = vec![tree.root()];
+        while let Some(t) = stack.pop() {
+            if tree.node(t).is_leaf() {
+                continue;
+            }
+            let (l, r) = tree.children(t);
+            if !f.level(t).is_marginal() {
+                stack.push(l);
+                stack.push(r);
+                continue;
+            }
+            let keep = [first_leaf(l), first_leaf(r)];
+            let mut under = vec![t];
+            while let Some(u) = under.pop() {
+                if tree.node(u).is_leaf() {
+                    if !keep.contains(&u) {
+                        gone[tree.leaf_var(u).0 as usize] = true;
+                        any = true;
+                    }
+                } else {
+                    let (a, b) = tree.children(u);
+                    under.push(a);
+                    under.push(b);
+                }
+            }
+        }
+        if !any {
+            return Ok((f, scope));
+        }
+        let mut kept = Vec::with_capacity(vars.len());
+        let mut renamed = vec![VarId(0); vars.len() + 1];
+        for (i, &v) in vars.iter().enumerate() {
+            if gone[i + 1] {
+                continue;
+            }
+            kept.push(v);
+            renamed[i + 1] = VarId(kept.len() as u32);
+        }
+        let reduced = scopes.over(&kept)?;
+        let store = self.store_for(&reduced);
+        let local_of = |v: VarId| (!gone[v.0 as usize]).then(|| renamed[v.0 as usize]);
+        let g = match backend
+            .engine
+            .project_over(&f, reduced.vtree(), local_of, Some(store))
+        {
+            Ok(g) => g,
+            Err(EmbedError::Operation(OperationError::OverBudget | OperationError::Stopped)) => {
+                return Ok((f, scope));
+            }
+            Err(e) => return Err(e.into()),
+        };
+        for (i, &v) in vars.iter().enumerate() {
+            if gone[i + 1] {
+                self.hold(v, -1);
+                self.dropped[v.0 as usize] = true;
+                self.collapsed += 1;
+            }
+        }
+        self.any_dropped = true;
+        self.merged.retain(|v| !self.dropped[v.0 as usize]);
+        Ok((g, reduced))
+    }
+
+    /// Panics where `scope` holds a variable a collapse dropped: its
+    /// weights are in a summed-out level's values already, and a placement
+    /// there would count them again. The walk's scopes are unions of its
+    /// slots' scopes, which never hold one.
+    pub(super) fn check_scope(&self, scope: &VtreeScope) {
+        if !self.any_dropped {
+            return;
+        }
+        let back = match scope.vars() {
+            Some(vars) => vars.iter().find(|v| self.dropped[v.0 as usize]).copied(),
+            None => self
+                .dropped
+                .iter()
+                .position(|&d| d)
+                .map(|v| VarId(v as u32)),
+        };
+        assert!(
+            back.is_none(),
+            "variable {back:?}, summed out, is back in a join's scope"
+        );
     }
 
     /// The finished internal nodes of `scope`'s vtree for the join begun,

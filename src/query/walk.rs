@@ -1104,6 +1104,7 @@ impl EvidenceWalk {
                 if let Some(so) = &self.sum_out {
                     sizes.summing_joins = so.summing;
                     sizes.weighted_joins = so.weighted;
+                    sizes.collapsed_variables = so.collapsed;
                 }
                 self.built[tree.root().idx()] = None;
                 return Ok(self.slots[main].take());
@@ -1269,6 +1270,9 @@ impl EvidenceWalk {
         .then(|| backend.engine.limits().armed().stop_rules())
         .filter(|outer| outer.after_pairs.is_none_or(|(pairs, _)| pairs > floor));
         let (scope, merged) = self.join_scope(a, b, out, backend, scopes)?;
+        if let Some(so) = &self.sum_out {
+            so.check_scope(&scope);
+        }
         let (first, second) = match merged {
             true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
             false => (None, None),
@@ -1359,6 +1363,18 @@ impl EvidenceWalk {
                 self.restore_operands(a, b, fa, fb, backend)?;
                 return Err(e);
             }
+        };
+        // A summed-out subtree leaves the scope but for one leaf of each
+        // side (`SumOut::collapse`), except on the last join, which only
+        // counting reads, and in a group built on one shared scope, whose
+        // next join would place the result there again.
+        let (formula, scope) = match &mut self.sum_out {
+            Some(so)
+                if !last && !self.shared.contains_key(&out) && formula.has_marginal_level() =>
+            {
+                so.collapse(backend, scopes, formula, scope)?
+            }
+            _ => (formula, scope),
         };
         self.pending = Some(PendingFormula {
             formula: (formula, scope),

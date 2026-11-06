@@ -120,6 +120,10 @@ pub struct QuerySizes {
     /// (`query::sum_out`).
     pub summing_joins: usize,
     pub weighted_joins: usize,
+    /// The variables of summed-out subtrees the walk dropped from its
+    /// results' scopes, keeping one leaf of each side of each subtree
+    /// (`SumOut::collapse`).
+    pub collapsed_variables: usize,
 }
 
 impl QuerySizes {
