@@ -53,7 +53,7 @@
 
 use std::sync::Arc;
 
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::ground::deps::{Deps, fan_in};
 use crate::ground::tables::Tables;
@@ -197,6 +197,14 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Result<L
 /// end of the order and every state across the boundaries up to there.
 /// The views a chained body reads are left out with their rules.
 ///
+/// A link is named by the two literals it conjoins, so that bodies whose
+/// chains start alike share the links of their common start. The paths of
+/// a hidden Markov model whose atoms keep the history of its states (cplint's
+/// DNA model) are a body each, every path conjoining the steps of the paths
+/// it extends: chained apart, the model of 12 letters took 58368 links and
+/// its families layout ran out of memory; shared, the links are 6596 and the
+/// compile takes 1 s.
+///
 /// A switch that other rows of its table read too counts for nothing in a
 /// body's width and stays out of its chain, in the rule of its last link:
 /// the rows of an annotated disjunction read its switches together, each
@@ -233,6 +241,9 @@ pub(crate) fn chained(gp: GroundProgram) -> GroundProgram {
     let mut out = gp.without_rules();
     let mut rules: Vec<(usize, GroundRule)> = Vec::with_capacity(gp.rules.len());
     let mut links = 0;
+    // Each link by the two literals it conjoins, with the place of its rule:
+    // bodies that share the start of their chains share its links.
+    let mut made: FxHashMap<(GLit, GLit), (AtomId, usize)> = FxHashMap::default();
     for (ri, (r, body)) in gp.rules.iter().zip(flat).enumerate() {
         if taken[r.head as usize] {
             continue;
@@ -254,6 +265,11 @@ pub(crate) fn chained(gp: GroundProgram) -> GroundProgram {
         let mut link = inner[0];
         let mut placed = 0;
         for &l in &inner[1..] {
+            if let Some(&(a, at)) = made.get(&(link, l)) {
+                placed = at;
+                link = GLit::Pos(a);
+                continue;
+            }
             let a = out.atoms.len() as AtomId;
             out.atoms.push(Atom::new(NAME, vec![Term::Int(links)]));
             out.kinds.push(AtomKind::Derived);
@@ -265,6 +281,7 @@ pub(crate) fn chained(gp: GroundProgram) -> GroundProgram {
             };
             placed = at_l.clamp(placed, key);
             rules.push((placed, GroundRule::new(a, vec![link, l])));
+            made.insert((link, l), (a, placed));
             link = GLit::Pos(a);
         }
         let mut tail = vec![link, last];
@@ -827,6 +844,25 @@ mod tests {
         let reads: Vec<String> = (1..=40).map(|i| format!("f{i}")).collect();
         let gp = grounded(&format!("{facts}q :- {}.\nquery(q).\n", reads.join(", ")));
         assert_eq!(chained(gp).stats.links, 38);
+    }
+
+    /// Three conjunctions of the same 40 facts, each with a fact of its own
+    /// stated after them, are one chain of 39 links that each reads at its
+    /// end, not three.
+    #[test]
+    fn bodies_that_start_alike_share_their_links() {
+        let mut src: String = (1..=40).map(|k| format!("0.9::f({k}).\n")).collect();
+        let reads: Vec<String> = (1..=40).map(|k| format!("f({k})")).collect();
+        for i in 1..=3 {
+            src += &format!(
+                "0.5::g({i}).\nq({i}) :- {}, g({i}).\nquery(q({i})).\n",
+                reads.join(", ")
+            );
+        }
+        let gp = chained(grounded(&src));
+        assert_eq!(gp.stats.links, 39);
+        let tails: Vec<&GroundRule> = gp.rules.iter().filter(|r| r.body.len() == 2).collect();
+        assert_eq!(tails.len(), 39 + 3);
     }
 
     #[test]
