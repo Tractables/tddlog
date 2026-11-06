@@ -1373,7 +1373,7 @@ function benchmarksOf(root) {
         await visit(hashOf(x), "#programs select.version");
         // each entry of the menu names its readers after "read by"
         const readers = (await page.$$eval("#programs select.version option", (os) => os.map((o) => o.textContent)))
-          .flatMap((o) => o.split(": read by ")[1]?.split(/, | and /) ?? []);
+          .flatMap((o) => o.split(/(?:: |, )read by /)[1]?.split(/, | and /) ?? []);
         const translated = x.inst.tabs.flatMap((t) => (t.translations ?? []).map(([who]) => who));
         const said = await page.$eval("#programs", (p) => p.querySelector("p.uncaptured")?.textContent ?? "");
         for (const n of new Set((x.inst.runs ?? []).filter((r) => !r.ungrounded && !r.unhanded && !r.skipped).map((r) => names[r.system] ?? r.system))) {

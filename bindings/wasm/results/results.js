@@ -1906,11 +1906,14 @@ function fileRoute(inst, ti, fi) {
   return ti === t && fi === f ? undefined : [ti, fi];
 }
 
-// A tab in the menu: its language, and who reads it.
+// A tab in the menu: its language, what its files are to the original in a
+// few words (the original, a translation and the script that wrote it, a
+// change of format, a system's own form), and who reads it.
 function versionLabel(tab) {
   const who = readersOf(tab);
-  const what = who.length ? `read by ${and(who)}` : tab.translations?.length ? "an intermediate step, read by no system" : "read by no system";
-  return `${tab.lang}${tab.original ? ", the original" : ""}: ${what}`;
+  const read = who.length ? `read by ${and(who)}` : tab.translations?.length ? "an intermediate step, read by no system" : "read by no system";
+  const what = tab.what ?? (tab.original ? "the original" : "");
+  return `${tab.lang}: ${what ? `${what}, ` : ""}${read}`;
 }
 
 const UNFAIR = "Note: this is an automatic translation from the original program, which might have performance "
