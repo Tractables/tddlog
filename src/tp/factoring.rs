@@ -182,9 +182,10 @@ impl Scratch {
     }
 }
 
-/// A group of fact literals of which at most one holds, and whether a body
-/// of all their negations makes it exactly one ([`Factoring::at_most_one`]).
-pub(super) type AtMostOne = (Vec<tididi::Literal>, bool);
+/// A group of fact variables of which at most one holds, and whether a
+/// body of all their negations makes it exactly one
+/// ([`Factoring::at_most_one`]).
+pub(super) type AtMostOne = (Vec<VarId>, bool);
 
 /// A rule of pairs of the head ([`GroundRule`]) among its other rules'
 /// bodies, `at` of them before it. Over facts alone it goes to
@@ -251,8 +252,8 @@ pub(super) struct Exclusive {
 impl Exclusive {
     pub(super) fn new(groups: &[AtMostOne]) -> Self {
         let mut group_of = FxHashMap::default();
-        for (g, (lits, _)) in groups.iter().enumerate() {
-            group_of.extend(lits.iter().map(|l| (l.var, g)));
+        for (g, (vars, _)) in groups.iter().enumerate() {
+            group_of.extend(vars.iter().map(|&v| (v, g)));
         }
         Exclusive {
             group_of,
@@ -963,32 +964,21 @@ impl Factoring<'_> {
             }
             rest.push(body);
         }
-        let groups = groups
-            .into_iter()
-            .zip(exactly)
-            .map(|(group, exactly)| {
-                (
-                    group.into_iter().map(tididi::Literal::pos).collect(),
-                    exactly,
-                )
-            })
-            .collect();
-        (groups, rest)
+        (groups.into_iter().zip(exactly).collect(), rest)
     }
 
-    /// Exactly one of `lits`, or at most one ([`TddBackend::one_of`]), on
-    /// the scope of `lits` alone, which `scope` holds: a literal's diagram
+    /// Exactly one of `vars`, or at most one ([`TddBackend::one_of`]), on
+    /// the scope of `vars` alone, which `scope` holds: a literal's diagram
     /// has a node at every level of its scope.
     pub(super) fn one_of(
         &self,
         scope: &VtreeScope,
-        lits: &mut [tididi::Literal],
+        vars: &mut [VarId],
         exactly: bool,
     ) -> Result<Formula, CompileError> {
-        lits.sort_unstable_by_key(|l| l.var);
-        let vars: Vec<VarId> = lits.iter().map(|l| l.var).collect();
-        let own = self.backend.subscope(scope, &vars)?;
-        let f = self.backend.one_of(&own, lits, exactly)?;
+        vars.sort_unstable();
+        let own = self.backend.subscope(scope, vars)?;
+        let f = self.backend.one_of(&own, vars, exactly)?;
         Ok((f, own))
     }
 }

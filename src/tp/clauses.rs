@@ -511,8 +511,8 @@ impl Factoring<'_> {
         let mut scratch = self.scratch.borrow_mut();
         let taken = scratch.fresh_stamp();
         for (g, _) in found {
-            for l in g {
-                scratch.var_mark[l.var.0 as usize] = taken;
+            for v in g {
+                scratch.var_mark[v.0 as usize] = taken;
             }
         }
         let mut read: Vec<(u32, VarId)> = bodies
@@ -529,12 +529,7 @@ impl Factoring<'_> {
         read.dedup();
         read.chunk_by(|a, b| a.0 == b.0)
             .filter(|run| run.len() >= 2)
-            .map(|run| {
-                (
-                    run.iter().map(|&(_, v)| tididi::Literal::pos(v)).collect(),
-                    false,
-                )
-            })
+            .map(|run| (run.iter().map(|&(_, v)| v).collect(), false))
             .collect()
     }
 
@@ -783,8 +778,8 @@ impl Factoring<'_> {
                 cubes
                     .iter()
                     .flatten()
-                    .chain(groups.iter().flat_map(|(g, _)| g))
-                    .map(|l| l.var),
+                    .map(|l| l.var)
+                    .chain(groups.iter().flat_map(|(g, _)| g.iter().copied())),
                 |i, _| i as u32 + 1,
             );
             let local = |v: VarId| VarId(scratch.var_rank[v.0 as usize]);
@@ -798,7 +793,7 @@ impl Factoring<'_> {
                 .collect();
             let local_groups: Vec<(Vec<VarId>, bool)> = groups
                 .iter()
-                .map(|(g, exactly)| (g.iter().map(|l| local(l.var)).collect(), *exactly))
+                .map(|(g, exactly)| (g.iter().map(|&v| local(v)).collect(), *exactly))
                 .collect();
             (vars, cubes, local_groups)
         };
@@ -899,8 +894,8 @@ impl Factoring<'_> {
         // the first body's negation is the formula (`and_term`). The
         // or-route needs a formula other than true: from true it builds the
         // product it would avoid.
-        for (lits, exactly) in &groups {
-            let group = self.one_of(scope, &mut lits.clone(), *exactly)?;
+        for (vars, exactly) in &groups {
+            let group = self.one_of(scope, &mut vars.clone(), *exactly)?;
             let f = acc.unwrap_or_else(|| self.backend.one(scope));
             let f = self.backend.and_on((f, scope.clone()), group, scope)?;
             (self.count)(Op::And, 1);
