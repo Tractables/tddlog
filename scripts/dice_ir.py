@@ -327,6 +327,18 @@ class Lower:
                 raise ValueError(f'nth_bit(int({width}, {i}), x): no bit {i} of {width}')
             shifted = self.op(out, 'shl', v.t, [v, i])
             return self.op(out, 'le', BOOL, [Const(v.t, 1 << (width - 1)), shifted])
+        if kind == 'bin' and e[1] in ('&&', '||'):
+            # a chain of one operator, which the parser nests to the left as
+            # deep as it is long, walked down its left side: the operands in
+            # their order, each folded in as the recursion would
+            op, rights = e[1], []
+            while e[0] == 'bin' and e[1] == op:
+                rights.append(e[3])
+                e = e[2]
+            a = self.value(e, env, out)
+            for r in reversed(rights):
+                a = self.binary(out, op, a, self.value(r, env, out))
+            return a
         if kind == 'bin':
             a = self.value(e[2], env, out)
             b = self.value(e[3], env, out)
@@ -581,3 +593,37 @@ def refuse(err):
     """Exits with REFUSED: the target language cannot express the program."""
     print(f'cannot express the program: {err}', file=sys.stderr)
     sys.exit(REFUSED)
+
+
+# --- the translators that ask one component a run --------------------------
+# dice2genfer.py, dice2geni.py, dice2psi.py and dice2prism.py write a program
+# for each component of the value. `K` writes component K's, `--components`
+# lists the components' types, and `--each PREFIX` writes every component's
+# from one lowering of the program, the same programs byte for byte: a
+# program of thousands of components lowered once a component took hours.
+
+def kind(t):
+    """A component's type as `--components` prints it: `bool` or `int W`."""
+    return 'bool' if t == BOOL else f'int {t[1]}'
+
+
+def lowered(text, joint=False):
+    """(statements, components, their types) of a Dice program (`lower`)."""
+    stmts, value = lower(text, joint)
+    comps = leaves(value)
+    return stmts, comps, [x.t for x in comps]
+
+
+def written(prefix, k, t, files):
+    """Component k of type t under `--each PREFIX`: each of its files
+    ({extension: text}) written as PREFIX{k}.EXTENSION, renamed into place,
+    then its type printed as `--components` prints it. A run cut short (a
+    refusal at a later component, a time-out) has printed the components
+    whose files are complete, in order."""
+    for ext, text in files.items():
+        path = f'{prefix}{k}.{ext}'
+        part = f'{path}.{os.getpid()}.part'
+        with open(part, 'w', encoding='utf-8') as f:   # Psi's types are 𝔹 and ℤ
+            f.write(text)
+        os.replace(part, path)
+    print(kind(t), flush=True)

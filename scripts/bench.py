@@ -33,8 +33,8 @@ systems that read ProbLog programs are given is written by tddlog's
 reader, `tddlog --program` (gen's `--tddlog`, `source_tree.program`), the
 text the scripts gen_bn.py, dice2problog.py and lpad2problog.py wrote
 before the reader replaced them (`gen_network`, `write_program`); the
-generators that convert a cplint LPAD or a Dice program they write
-(gen_uwcse.py, gen_pedigree.py, gen_geni.py) call it too. `gen`
+generators that convert a cplint LPAD they write (gen_uwcse.py,
+gen_pedigree.py) call it too. `gen`
 decompresses a gzipped network for tddlog once, outside its time, as the
 harness does for Ace. The bnlearn networks of data/bn and data/bn-large are not in the
 repository (no license for them is established): `fetch` downloads each
@@ -186,6 +186,8 @@ import problog2scallop  # noqa: E402
 import problog2pita  # noqa: E402
 import problog2souffle  # noqa: E402
 import gen_tpch  # noqa: E402  (FOLD's TPC-H program and relations)
+import gen_roulette  # noqa: E402  (FOLD's roulette programs, their arguments and data)
+import gen_geni  # noqa: E402  (FOLD's Geni programs, their arguments and data)
 import tpch2provsql  # noqa: E402  (after sys.path, so the script runs from anywhere)
 
 # Suites that scripts/internal_suites.py, where there is one, adds: a name ->
@@ -360,11 +362,24 @@ def writes_dice(gargs):
     return gargs[0] in DICE_WRITERS or (len(gargs) > 1 and (gargs[0], os.path.basename(gargs[1])) in DICE_PORTS)
 
 
+# The systems that read the Dice program its own authors wrote where the
+# Dice paper has one (the roulette suite's diamond and ladder: gen_roulette's
+# DICE_PAPER); the others' translators read its loop, NAME.port.dice
+# (`--dice-port`), so that each target writes the loop as a loop.
+DICE_OWN = ('dice', 'nodice')
+
+
+def dice_ported(gargs):
+    """Whether an instance's generator writes the port NAME.port.dice beside
+    its Dice program (gen_roulette.py's DICE_PORT)."""
+    return gargs[0] == 'gen_roulette.py' and len(gargs) > 1 and gargs[1] in gen_roulette.DICE_PORT
+
+
 # The generators whose programs tddlog's reader writes (`tddlog --program`):
 # of a network, of a Dice program, of a cplint LPAD, whole or with its
 # students or families made anew, and of a Circulette netlist.
 PROGRAM_OF_TDDLOG = ('gen_bn.py', 'dice2problog.py', 'gen_cplint.py', 'gen_uwcse.py', 'gen_pedigree.py',
-                     'gen_geni.py', 'gen_circulette.py')
+                     'gen_circulette.py')
 def fold_key(family, a):
     """The name of the data file of an instance of `family` from its
     generator's arguments `a`: the family and the arguments, as one word."""
@@ -401,8 +416,9 @@ FOLD = {
     'gen_pedigree.py': lambda a: ('pedigree', a, [fold_key('pedigree', a)]),
     'gen_tpch.py': lambda a: (lambda f: (f[0], a, f[1]))(gen_tpch.family(a[:])),
     'gen_taint.py': lambda a: ('taint', a, ['taint_' + os.path.basename(a[0]).split('.')[0].replace('-', '_')]),
-    # of the roulette suite, the Dice paper's diamond and ladder (gen_roulette.py's DICE_PAPER) alone
-    'gen_roulette.py': lambda a: (a[0], a[:1], []) if a[0] in ('diamond', 'ladder') else None,
+    # the roulette suite's programs, hmm's five questions one and the two hardware ladders one
+    'gen_roulette.py': lambda a: gen_roulette.fold(a[0], int(a[1])),
+    'gen_geni.py': lambda a: gen_geni.fold(a[0], [int(s) for s in a[1:]]),
 }
 FOLD_DIR = 'programs'
 
@@ -410,7 +426,7 @@ FOLD_DIR = 'programs'
 def fold_of(gargs):
     """FOLD's entry of an instance, (program, template arguments, data
     keys), None where its generator is not one of FOLD's or does not fold
-    this program (gen_roulette.py's families but diamond and ladder)."""
+    this program."""
     entry = FOLD.get(gargs[0])
     return entry(gargs[1:]) if entry else None
 
@@ -522,8 +538,8 @@ for _name, (_dir, _prog, _const, _values, _label, _int, _fixed) in BB_PAPERS.ite
 # sizes where the systems run out of time, and the nine networks of its
 # Table 2, each with the marginal of the one variable the artifact queries,
 # read from the artifact's .bif files (`--roulette-benchmarks`, the
-# artifact's benchmark/ directory). gen_roulette.py writes a program's
-# ProbLog and Dice programs; `--roulette CMD` runs Roulette itself on the
+# artifact's benchmark/ directory). gen_roulette.py writes a family's ProbLog
+# program (FOLD) and an instance's Dice program; `--roulette CMD` runs Roulette itself on the
 # artifact's program, ported to neuppl/roulette's example language
 # (data/roulette, `run_roulette`). The hmm marginal likelihood stops
 # at 900 steps: past about 915 it is below the smallest normal double.
@@ -567,8 +583,9 @@ def roulette_suite(base):
 # time, and Rubicon's weather factory of its Figure 9 by its number of
 # factories N at 10 days (`geni_weather_n`, the artifact's N) and by its
 # days H with 10 factories (`geni_weather_h`, the artifact's H but 10,
-# which is geni_weather_n's). gen_geni.py writes each program's ProbLog
-# and Dice programs and answers it (`exact:dp`).
+# which is geni_weather_n's). gen_geni.py writes each family's ProbLog
+# program (FOLD) and each instance's Dice program, and answers it
+# (`exact:dp`).
 GENI_SIZES = {'link': [4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32],
               'router': [4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 56, 64, 72]}
 GENI_WEATHER_N = [2, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19]
@@ -1542,9 +1559,12 @@ def gen(args):
             continue
         if fold_of(gargs):
             gen_folded(args, name, gargs, written)
-            if writes_dice(gargs):   # the Dice paper's diamond and ladder: its own Dice program
+            if writes_dice(gargs):   # the roulette suite's: the instance's Dice program
                 subprocess.run([sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:] +
                                ['--dice', os.path.join(args.dir, name + '.dice')], check=True)
+            if dice_ported(gargs):   # and the loop the other translators read (dice_source)
+                subprocess.run([sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:] +
+                               ['--dice-port', os.path.join(args.dir, name + '.port.dice')], check=True)
             continue
         cmd = [sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:]
         if writes_dice(gargs):
@@ -2293,12 +2313,12 @@ def run_dice(args, name, path, tool='dice'):
     family, gargs = instances(args)[name]
     joint = gargs[0] == 'gen_bn.py' and tool == 'dice' and not getattr(args, 'pr', False)
     if getattr(args, 'pr', False):   # P(e), of a network alone, asked as `path`'s one query
-        source = dice_source(args, name)
+        source = dice_source(args, name, tool)
         if source is None:
             return {'status': 'error', 'seconds': 0, 'error': f"--pr: no program of P(e) for family {family}"}
         programs = [(source, queries(path))]
     elif gargs[0] == 'dice2problog.py' or writes_dice(gargs):
-        programs = [(dice_source(args, name), queries(path))]
+        programs = [(dice_source(args, name, tool), queries(path))]
     elif gargs[0] == 'alea_bench.jl':
         return run_dice_circuit(args, name, os.path.join(args.dir, name + '.dicemap'), tool)
     elif gargs[0] == 'gen_bn.py':
@@ -2391,7 +2411,7 @@ def run_dice_circuit(args, name, dicemap, tool='dice'):
     return {'status': 'ok', 'seconds': total, 'answers': answers}
 
 
-def dice_source(args, name):
+def dice_source(args, name, system=None):
     """The Dice program behind a dice2problog.py instance (its source, or
     with its arguments in its places NAME.dice), an instance whose generator
     writes one (writes_dice, beside it) or a network (the
@@ -2402,7 +2422,9 @@ def dice_source(args, name):
     returns its queries as a tuple (`ground_route`, run before the system);
     None for a circuit and a network that asks nothing. Under --pr, the
     program of a network's P(e), which returns the conjunction of its
-    observations (`gen_bn.dice_programs`), and None for another instance."""
+    observations (`gen_bn.dice_programs`), and None for another instance.
+    Of an instance with a port (dice_ported), the port for a `system` that
+    is not one of DICE_OWN."""
     _, gargs = instances(args)[name]
     if getattr(args, 'pr', False):
         if gargs[0] != 'gen_bn.py':
@@ -2414,6 +2436,8 @@ def dice_source(args, name):
         return out
     if gargs[0] == 'dice2problog.py' and len(gargs) == 2:
         return gargs[1]
+    if dice_ported(gargs) and system not in DICE_OWN:
+        return os.path.join(args.dir, name + '.port.dice')
     if gargs[0] == 'dice2problog.py' or writes_dice(gargs):   # with its arguments in its places, or beside it
         return os.path.join(args.dir, name + '.dice')
     if gargs[0] == 'gen_bn.py' and '--query none' not in ' '.join(gargs):
@@ -2565,7 +2589,7 @@ def run_alea(args, name, path):
             return dict(r, answers=alea_program_answers(path, r['answers'], r['values']))
         except ValueError as x:
             return {'status': 'error', 'seconds': r['seconds'], 'error': f'alea: {x}'}
-    source = dice_source(args, name)
+    source = dice_source(args, name, 'alea')
     if source is None:
         return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for family {family}'}
     jl = os.path.abspath(os.path.join(args.dir, f'{name}.alea.jl'))
@@ -2593,12 +2617,13 @@ def alea_command(args, mode, program, prefix=None, warm_below=None, template=Non
     """The command that runs alea_bench.jl under the `--alea` template (or
     `template`, --alea-tddlog's) on `program`, an instance's generator
     arguments after `alea_bench.jl`: the program's path, then the
-    NAME=VALUE it is run with (`--set`)."""
+    NAME=VALUE it is run with (`--set`) and the (NAME, PATH) of the files
+    it reads (`--file`, a logic program's facts)."""
     cmd = (template or args.alea).format(file=ALEA_BENCH, dir=HERE, base=os.path.basename(ALEA_BENCH)).split() + [mode]
     if warm_below is not None:
         cmd += ['--warm-below', f'{warm_below:g}']
     for setting in program[1:]:
-        cmd += ['--set', setting]
+        cmd += ['--file', *setting] if isinstance(setting, tuple) else ['--set', setting]
     return cmd + [program[0]] + ([prefix] if prefix else [])
 
 
@@ -2776,10 +2801,18 @@ def roulette_command(template, prog, *words):
     return template.format(file=file, dir=os.path.dirname(prog), base=os.path.basename(prog)).split()
 
 
+# A Roulette module that `raco make` did not compile within the time limit;
+# records made before 2026-11-05 have `raco make: timeout ` as an error.
+RACO_MAKE_LIMIT = 'raco make: the module did not compile within the time limit of {limit:g} s'
+
+
 def roulette_make(args, template, prog, *more):
     """`raco make` of program `prog` and the files `more` under a Racket
     command template (`roulette_command`), untimed: an error record where
-    it fails, else None. One compile at a time for each template, under a
+    it fails, else None. Bounded by the time limit, past which the record
+    is `unsupported` (RACO_MAKE_LIMIT), at 0 s as every compile is: a
+    program whose module does not compile within the limit is one Roulette
+    cannot express. One compile at a time for each template, under a
     lock in the temporary directory, which a run's lanes share (the
     runner's TMPDIR). Without the lock, lanes that start together race:
     `raco make` without `-j` takes no lock of its own, and they compile the
@@ -2792,6 +2825,8 @@ def roulette_make(args, template, prog, *more):
     with open(os.path.join(tempfile.gettempdir(), f'raco-make-{key}.lock'), 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         c = timed(roulette_command(template, prog, '-l-', 'raco', 'make') + list(more), args.timeout)
+    if c['status'] == 'timeout':
+        return {'status': 'unsupported', 'seconds': 0, 'error': RACO_MAKE_LIMIT.format(limit=args.timeout)}
     if c['status'] != 'ok':
         return {'status': 'error', 'seconds': 0, 'error': f"raco make: {c['status']} {c.get('error', '')[-2000:]}"}
     return None
@@ -2854,7 +2889,7 @@ def roulette_source(args, name, prog):
     where there is none or it fails, else None."""
     if args.suite in ('roulette', 'circulette') or roulette_bif(args, name) is not None:
         return None
-    source = dice_source(args, name)
+    source = dice_source(args, name, 'roulette')
     if source is None:
         return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for {name}'}
     return roulette_translate(args, source, prog)
@@ -2935,13 +2970,14 @@ def roulette_tddlog_accepts(args, name):
     programs Roulette runs through dice2roulette.py: the Dice paper's
     (data/dice, --suite standard and indicators), noDice's (data/nodice)
     and the arith programs' Dice ports (data/alea/arith; --suite ppl), and
-    Geni's (gen_geni.py's, --suite geni). Not a circuit's Dice programs nor
-    a Markov network's, whose Roulette+tddlog would be Alea.jl's or the
-    network's own reader with more steps between."""
+    Geni's (gen_geni.py's, --suite geni); and the logic programs Roulette
+    reads as problog2ppl.py writes them (lp_route). Not a circuit's Dice
+    programs nor a Markov network's, whose Roulette+tddlog would be
+    Alea.jl's or the network's own reader with more steps between."""
     if args.suite in ('roulette', 'circulette'):
         return True
     gargs = instances(args)[name][1]
-    if gargs[0] in ('dice2problog.py', 'gen_geni.py'):
+    if gargs[0] in ('dice2problog.py', 'gen_geni.py') or lp_route(gargs, 'roulette-tddlog', getattr(args, 'pr', False)):
         return True
     if gargs[0] != 'gen_bn.py':
         return False
@@ -3019,9 +3055,11 @@ def tddlog_on_circuit(args, pl, limit, pe=False):
                  + (['--evidence-probability'] if pe else []) + [pl], max(1.0, limit))
 
 
-def run_roulette_tddlog(args, name, path):
+def run_roulette_tddlog(args, name, path, lp=None):
     """Roulette+tddlog on an instance: Roulette's program for it
-    (`roulette_program`, variant rsdd) run on Roulette's tddlog engine under
+    (`roulette_program`, variant rsdd; under `lp`, from run_lp, a logic
+    program's module as problog2ppl.py writes it, its arguments and the
+    queries it answers, in order) run on Roulette's tddlog engine under
     --roulette-tddlog's Racket (the fork's), which writes the circuit
     Roulette builds as a ProbLog program, and tddlog (--tddlog's binary,
     strategy auto) on that program. The program is compiled before (raco
@@ -3044,10 +3082,13 @@ def run_roulette_tddlog(args, name, path):
     the netlist (`circulette_circuit_answers`), P(fail) kept as `p_fail`."""
     family, _ = instances(args)[name]
     ct = args.suite == 'circulette'
-    prog, rest = roulette_program(args, name, args.circulette_tddlog if ct else None)
-    err = roulette_source(args, name, prog)
-    if err:
-        return err
+    if lp is None:
+        prog, rest = roulette_program(args, name, args.circulette_tddlog if ct else None)
+        err = roulette_source(args, name, prog)
+        if err:
+            return err
+    else:
+        prog, rest = lp[0], lp[1]
     racket = args.roulette_tddlog
     err = roulette_make(args, racket, prog)
     if err:
@@ -3094,7 +3135,9 @@ def run_roulette_tddlog(args, name, path):
             if n is None or int(n.group(1)) != 2 * asked:
                 raise ValueError(f"bn.rkt called infer {n.group(1) if n else 'an unnoted number of'} times, "
                                  f"not twice for each of its {asked} queries")
-        if bif is not None and getattr(args, 'pr', False):
+        if lp is not None:
+            printed = lp_named(lp[2], roulette_tddlog_components(calls))
+        elif bif is not None and getattr(args, 'pr', False):
             printed = {PE_QUERY: calls.get(1, {}).get('#t', 0.0)}
         elif bif is not None:
             printed = roulette_network_answers(bif[2], {w: calls.get(2 * k + 1, {}) for k, w in enumerate(bif[2])})
@@ -3111,6 +3154,8 @@ def run_roulette_tddlog(args, name, path):
                         printed[a] = p
     except ValueError as e:
         return {'status': 'error', 'seconds': seconds, 'error': f'roulette-tddlog: {e}'}
+    if lp is not None:   # keyed as problog2ppl.py lists the queries, every one answered (lp_named)
+        return {'status': 'ok', 'seconds': seconds, 'answers': printed, 'stats': stats}
     return roulette_record({**x, 'seconds': seconds}, path, printed, stats)
 
 
@@ -3377,17 +3422,21 @@ def harness_timeout_record(script, what):
 
 def translation(args, script, argv):
     """(the output of `script ARGV`, None) bounded by translation_bound, or
-    (None, the record of its failure, whose error says how it ended:
-    `ended`). Every translator the harness runs runs through it."""
+    (the lines it printed, the record of its failure, whose error says how
+    it ended: `ended`). Every translator the harness runs runs through it.
+    A translator that writes a file a component (`--each`) prints a line
+    once each is written, so that the lines of one that failed say which
+    files are complete."""
     bound = translation_bound(args)
     try:
         t = subprocess.run([sys.executable, str(source_tree.script(script)), *argv], capture_output=True, text=True,
                            timeout=bound)
-    except subprocess.TimeoutExpired:
-        return None, harness_timeout_record(script, f'no translation within {bound:g} s')
+    except subprocess.TimeoutExpired as x:
+        out = x.stdout.decode(errors='replace') if isinstance(x.stdout, bytes) else x.stdout or ''
+        return out[:out.rfind('\n') + 1], harness_timeout_record(script, f'no translation within {bound:g} s')
     if t.returncode != 0:
         status = 'unsupported' if t.returncode == REFUSED else 'error'
-        return None, {'status': status, 'seconds': 0, 'error': f'{script}: ' + ended(t.returncode, t.stderr)}
+        return t.stdout, {'status': status, 'seconds': 0, 'error': f'{script}: ' + ended(t.returncode, t.stderr)}
     return t.stdout, None
 
 
@@ -3473,7 +3522,7 @@ def run_translated(args, name, path, system, masses):
                 for u, v in enumerate(want):
                     answers[f'{atom}({u})'] = comps[0][v]
     else:
-        comps, r = ask(name, dice_source(args, name), False)
+        comps, r = ask(name, dice_source(args, name, system), False)
         if comps is None:
             return {**r, 'seconds': total}
         try:
@@ -3488,37 +3537,27 @@ def run_translated(args, name, path, system, masses):
 
 def by_component(system, script, ext, flags, masses_of):
     """The `masses` of run_translated for a system that answers one variable
-    a run (Genfer, Geni, Psi): SCRIPT lists the components of the program's
-    value (`--components`: `bool` or `int W`) and writes a program for each,
-    run with the arguments flags(n) for its n values (2 for a Boolean);
+    a run (Genfer, Geni, Psi): SCRIPT writes a program for each component
+    of the program's value from one translation (`--each PREFIX`, K's file
+    PREFIXK.EXT, its type printed once it is written: `bool` or `int W`),
+    each run with the arguments flags(n) for its n values (2 for a Boolean);
     masses_of(stdout, n) reads a run's {value: probability}, which must
     cover the n values. The record's seconds are the runs', as for every
-    translated system; the translations, one translator process a
-    component, are bounded together by translation_bound, not by the time
-    limit, since a program of thousands of components translates for
-    hours: past it the record is the harness's time-out
-    (harness_timeout_record), not the system's failure."""
+    translated system; the translation is bounded by translation_bound, not
+    by the time limit, since a program of thousands of components
+    translates for hours: past it the record is the harness's time-out
+    (harness_timeout_record), not the system's failure. The components a
+    translation that failed (a later component refused, its bound) wrote
+    run first, in order, and the record is then its failure."""
     def masses(args, label, source, joint, budget):
         j = ['--joint'] if joint else []
-        t0 = time.time()
-        listing, err = translation(args, script, [source, '--components'] + j)
-        if err:
-            return None, err
-        lines = listing.splitlines()
-        comps, total, made = [], 0.0, time.time() - t0
-        for k, line in enumerate(lines):
+        prefix = os.path.abspath(os.path.join(args.dir, f'{label}.{system}'))
+        listing, failed = translation(args, script, [source, '--each', prefix] + j)
+        comps, total = [], 0.0
+        for k, line in enumerate(listing.splitlines()):
             ty = line.split()
             n = 2 if ty[0] == 'bool' else 2 ** int(ty[1])
-            file = os.path.abspath(os.path.join(args.dir, f'{label}.{system}{k}.{ext}'))
-            t0 = time.time()
-            err = translated(args, script, [source, str(k)] + j, file, system)
-            if err:
-                return None, {**err, 'seconds': total}
-            made += time.time() - t0
-            if made > translation_bound(args):
-                return None, {**harness_timeout_record(
-                    script, f'the translation of {len(lines)} components passed its bound of '
-                            f'{translation_bound(args):g} s ({k + 1} took {made:.0f} s)'), 'seconds': total}
+            file = f'{prefix}{k}.{ext}'
             r = timed(program_command(args, system, file) + flags(n), max(0.0, budget - total))
             total += r['seconds']
             if r['status'] != 'ok':
@@ -3533,6 +3572,8 @@ def by_component(system, script, ext, flags, masses_of):
                               'error': f'{system}: {why}: ' + r['stdout'].strip()[-300:]}
             comps.append({'true': got[1], 'false': got[0]} if ty[0] == 'bool' else
                          {str(v): got[v] for v in range(n)})
+        if failed:
+            return None, {**failed, 'seconds': total}
         return comps, {'seconds': total}
     return masses
 
@@ -3796,8 +3837,9 @@ PLUCK_BIT = re.compile(r'true|false|(?<![\w.])[01](?![\w.])')
 def parse_pluck(out):
     """The distributions Pluck's load_pluck_file prints for a program of
     dice2pluck.py: {K: {value: probability}} for its query cK, a value a
-    Boolean (1 or 0) or the list of an int's bits (the most significant
-    first) as the int; {} for a query whose observations are impossible.
+    Boolean (1 or 0), an int's constructor `(Vk)` as k, or the list of an
+    int's bits (the most significant first) as the int; {} for a query
+    whose observations are impossible.
     A value printed twice (two paths to it) adds up."""
     dists, cur = {}, None
     for line in out.splitlines():
@@ -3810,9 +3852,10 @@ def parse_pluck(out):
         if cur is None or not line.strip() or 'impossible constraint' in line:
             continue
         value, p = line.strip().rsplit(None, 1)
-        bits = PLUCK_BIT.findall(value)
-        if bits:
-            v = int(''.join('1' if b in ('true', '1') else '0' for b in bits), 2)
+        m = re.fullmatch(r'\(V(\d+)\)', value)
+        bits = None if m else PLUCK_BIT.findall(value)
+        if m or bits:
+            v = int(m.group(1)) if m else int(''.join('1' if b in ('true', '1') else '0' for b in bits), 2)
             cur[v] = cur.get(v, 0.0) + float(p)
     return dists
 
@@ -3845,12 +3888,17 @@ def pluck_masses(args, label, source, joint, budget):
                           'error': f'pluck: component {k}: {why}: ' + r['stdout'].strip()[-300:]}
         comps.append({'true': got.get(1, 0.0), 'false': got.get(0, 0.0)} if ty[0] == 'bool' else
                      {str(v): got.get(v, 0.0) for v in range(n)})
+    return comps, {'seconds': r['seconds'], 'stats': pluck_stats(r['stdout'])}
+
+
+def pluck_stats(out):
+    """pluck_dice.jl's time, load_pluck_file's, as `inproc_seconds`."""
     stats = {}
-    for line in r['stdout'].splitlines():
+    for line in out.splitlines():
         f = line.split()
         if len(f) == 2 and f[0] == 'pluck_seconds':
             stats['inproc_seconds'] = round(float(f[1]), 3)
-    return comps, {'seconds': r['seconds'], 'stats': stats}
+    return stats
 
 
 def run_pluck(args, name, path):
@@ -3995,24 +4043,32 @@ def sppl_masses(args, label, source, joint, budget):
     """A translated Dice program's masses (`run_translated`): dice2sppl.py's
     program, run by sppl_dice.py, which compiles it once and asks `prob` for
     each value of each component of the program's value, or with `joint`
-    each assignment of its Booleans (`sppl_c K VALUE P`). The seconds are
-    the process's, its `sppl_seconds` (the compile and the queries)
-    `inproc_seconds`."""
+    each assignment of its Booleans (sppl_run). The seconds are the
+    process's."""
     file = os.path.abspath(os.path.join(args.dir, f'{label}.sppl'))
     err = translated(args, 'dice2sppl.py', [source] + (['--joint'] if joint else []), file, 'sppl')
     if err:
         return None, err
-    r = timed(program_command(args, 'sppl', os.path.join(HERE, 'sppl_dice.py')) + [file], budget)
+    r, comps, stats = sppl_run(args, file, budget)
     if r['status'] != 'ok':
         return None, r
+    return comps, {'seconds': r['seconds'], 'stats': stats}
+
+
+def sppl_run(args, file, budget):
+    """sppl_dice.py on the SPPL program `file`: its run, the distributions
+    of the components in order, each {VALUE: P} from its lines `sppl_c K
+    VALUE P`, and its stats, the `sppl_seconds` it prints (the compile and
+    the queries) `inproc_seconds`."""
+    r = timed(program_command(args, 'sppl', os.path.join(HERE, 'sppl_dice.py')) + [file], budget)
     comps, stats = {}, {}
-    for line in r['stdout'].splitlines():
+    for line in r['stdout'].splitlines() if r['status'] == 'ok' else []:
         f = line.split()
         if len(f) == 4 and f[0] == 'sppl_c':
             comps.setdefault(int(f[1]), {})[f[2]] = float(f[3])
         elif len(f) == 2 and f[0] == 'sppl_seconds':
             stats['inproc_seconds'] = float(f[1])
-    return [comps[k] for k in sorted(comps)], {'seconds': r['seconds'], 'stats': stats}
+    return r, [comps[k] for k in sorted(comps)], stats
 
 
 def run_sppl(args, name, path):
@@ -4065,15 +4121,22 @@ def webppl_masses(args, label, source, joint, budget):
     r = timed(program_command(args, 'webppl', os.path.join(HERE, 'webppl_dice.js')) + [file], budget)
     if r['status'] != 'ok':
         return None, r
+    comps, stats = webppl_output(r['stdout'])
+    return comps, {'seconds': r['seconds'], 'stats': stats}
+
+
+def webppl_output(stdout):
+    """(the distributions of the components, in order, the stats) that
+    webppl_dice.js prints (`webppl_masses`)."""
     comps, stats = {}, {}
     keys = {'webppl_seconds': 'inproc_seconds', 'webppl_header_seconds': 'header_seconds'}
-    for line in r['stdout'].splitlines():
+    for line in stdout.splitlines():
         f = line.split()
         if len(f) == 4 and f[0] == 'webppl_c':
             comps.setdefault(int(f[1]), {})[f[2]] = float(f[3])
         elif len(f) == 2 and f[0] in keys:
             stats[keys[f[0]]] = float(f[1])
-    return [comps[k] for k in sorted(comps)], {'seconds': r['seconds'], 'stats': stats}
+    return [comps[k] for k in sorted(comps)], stats
 
 
 def run_webppl(args, name, path):
@@ -4084,22 +4147,26 @@ def run_webppl(args, name, path):
 
 
 program_system('webppl', "WebPPL (Goodman and Stuhlmüller, dippl.org) by exact enumeration on the Dice programs, the "
-               "circuits' included, translated by dice2webppl.py and run by webppl_dice.js; e.g. 'env "
+               "circuits' included, translated by dice2webppl.py, and on the logic programs, written by "
+               "problog2ppl.py, run by webppl_dice.js; e.g. 'env "
                "NODE_PATH=WEBPPL/node_modules prlimit --stack=unlimited NODE --stack-size=65500 {file}'",
                accepts_translated, run_webppl)
 
 
 def accepts_alea_tddlog(args, name):
-    return alea_program(args, instances(args)[name][1]) is not None
+    gargs = instances(args)[name][1]
+    return alea_program(args, gargs) is not None or lp_route(gargs, 'alea-tddlog', getattr(args, 'pr', False))
 
 
 ALEA_EXPORT_TIMES = ('alea_seconds', 'alea_compile_seconds', 'alea_warm_seconds')
 
 
-def run_alea_tddlog(args, name, path):
+def run_alea_tddlog(args, name, path, lp=None):
     """Alea.jl+tddlog on an instance of ALEA_PROGRAMS'
     families or of the ppl suite's arith and pluck programs (ALEA_OF),
-    beside plain tddlog on the instance's program:
+    or on a logic program as problog2ppl.py writes it for Alea.jl (`lp`,
+    from run_lp: the program as alea_command takes it and the queries it
+    answers, in order), beside plain tddlog on the instance's program:
     Alea.jl runs the instance's Alea.jl program (alea_program) up to the
     circuit it builds and writes it as a ProbLog program, by the export
     the bitblast suite's gen makes (alea_command's `export` under
@@ -4115,7 +4182,7 @@ def run_alea_tddlog(args, name, path):
     the export prints after its timed part); its files go once tddlog has
     read it, as Roulette+tddlog's do."""
     family, gargs = instances(args)[name]
-    own = alea_program(args, gargs)
+    own = alea_program(args, gargs) if lp is None else lp[0]
     if own is None:
         return {'status': 'error', 'seconds': 0, 'error': f'alea-tddlog: no Alea.jl program for family {family}'}
     prefix = os.path.abspath(os.path.join(args.dir, f'{name}.alea'))
@@ -4153,14 +4220,15 @@ def run_alea_tddlog(args, name, path):
     try:
         if answers == 'inconsistent':
             raise ValueError("the circuit's evidence is inconsistent")
-        answers = alea_program_answers(path, answers, values)
+        answers = alea_program_answers(path, answers, values) if lp is None else lp_named(lp[1], alea_bools(answers))
     except ValueError as e:
         return {'status': 'error', 'seconds': seconds, 'error': f'alea-tddlog: {e}', 'stats': stats}
     return {'status': 'ok', 'seconds': seconds, 'answers': answers, 'stats': stats}
 
 
 program_system('alea-tddlog', "Alea.jl+tddlog on the roulette suite's diamond and ladder, Alea.jl's own diamond and "
-               "the ladder's port (ALEA_PROGRAMS), and on the ppl suite's arith and pluck programs (ALEA_OF), which "
+               "the ladder's port (ALEA_PROGRAMS), on the ppl suite's arith and pluck programs (ALEA_OF) and on the "
+               "logic programs as problog2ppl.py writes them, which "
                "Alea.jl runs up to the circuit it exports (alea_bench.jl export) for tddlog to answer; the command "
                "template of --alea's Julia, e.g. 'env JULIA_DEPOT_PATH=... julia --project=ALEA {file}'",
                accepts_alea_tddlog, run_alea_tddlog)
@@ -4252,7 +4320,11 @@ def aspmc_conditioned(text):
         return None
     e = ', '.join(observed)
     lines = kept + [f'{ASPMC_E} :- {e}.', f'query({ASPMC_E}).']
+    # each `_` of a query a name of its own, the same in the head, the body and the query it is
+    # asked by, which aspmc_variables would give three names, the head's unbound
+    stem, count = aspmc_fresh(text, '_Q'), itertools.count(1)
     for q, body in queries:
+        q = ASPMC_VARIABLE.sub(lambda m: f'{stem}{next(count)}' if m.group('v') == '_' else m.group(0), q)
         guard = f'{body}, ' if body else ''
         lines += [f'{ASPMC_QE}{q} :- {guard}{q}, {e}.',
                   f'query({ASPMC_QE}{q})' + (f' :- {body}.' if body else '.')]
@@ -4303,18 +4375,411 @@ def aspmc_is(text):
     return ASPMC_IS.sub(r'\1 = ', text)
 
 
+# The comments, quoted atoms, strings and character codes of a ProbLog
+# program, which the rewrites for aspmc below leave as they are.
+ASPMC_SKIP = r"""'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.)*"|/\*.*?\*/|0'\\?.|%[^\n]*"""
 # aspmc's grammar reads a `%` comment only with a character after the `%`: a
 # line that is a `%` alone, as the ProbLog tutorial and our ports write between
-# a comment's paragraphs, stops its lexer ("No terminal matches '%'").
-ASPMC_COMMENT = re.compile(r"""'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.)*"|/\*.*?\*/|0'\\?.|%[^\n]*""", re.S)
+# a comment's paragraphs, stops its lexer ("No terminal matches '%'"). It reads
+# no block comment (`/* */`) either.
+ASPMC_COMMENT = re.compile(ASPMC_SKIP, re.S)
 
 
 def aspmc_comments(text):
-    """The ProbLog program `text` without its empty `%` comments, which say
-    nothing and which aspmc's grammar cannot read; quoted atoms, strings and
-    the other comments are left as they are."""
-    return ASPMC_COMMENT.sub(lambda m: '' if m.group(0).startswith('%') and not m.group(0)[1:].strip()
-                             else m.group(0), text)
+    """The ProbLog program `text` without its block comments and its empty
+    `%` comments, which aspmc's grammar cannot read, a block comment leaving
+    its line breaks; quoted atoms, strings and the other comments are left
+    as they are."""
+    def sub(m):
+        s = m.group(0)
+        if s.startswith('/*'):
+            return '\n' * s.count('\n') or ' '
+        return '' if s.startswith('%') and not s[1:].strip() else s
+    return ASPMC_COMMENT.sub(sub, text)
+
+
+def aspmc_uncommented(text):
+    """`text` with each comment blanked, its line breaks kept: its clauses
+    at the same places."""
+    return ASPMC_COMMENT.sub(lambda m: re.sub(r'[^\n]', ' ', m.group(0)) if m.group(0)[0] in '%/' else m.group(0),
+                             text)
+
+
+def aspmc_fresh(text, stem, tail=r'\d'):
+    """`stem`, its last character repeated until no name of `text` starts
+    with it followed by `tail`: the start of the names a rewrite adds."""
+    while re.search(rf'(?<!\w){re.escape(stem)}{tail}', text):
+        stem += stem[-1]
+    return stem
+
+
+def aspmc_spans(text, positions):
+    """The (start, end) of each clause of `text` (aspmc_uncommented) that one
+    of the ascending `positions` falls in: from the full stop of the clause
+    before it, a `.` before white space, to its own."""
+    spans = []
+    for p in positions:
+        if spans and p < spans[-1][1]:
+            continue
+        s = p
+        while (s := text.rfind('.', 0, s)) >= 0 and not text[s + 1:s + 2].isspace():
+            pass
+        e = p
+        while (e := text.find('.', e)) >= 0 and e + 1 < len(text) and not text[e + 1].isspace():
+            e += 1
+        spans.append((s + 1, len(text) if e < 0 else e))
+    return spans
+
+
+def aspmc_rewritten(text, positions, rewrite):
+    """The ProbLog program `text` with each clause that one of the ascending
+    `positions` falls in written as rewrite(clause) writes it, `clause` its
+    text without comments and full stop: the clauses that take its place, or
+    None where it stays as it is. Only those clauses are read, so that a
+    rewrite of a few clauses of a large program costs little."""
+    bare = aspmc_uncommented(text)
+    out, at = [], 0
+    for s, e in aspmc_spans(bare, positions):
+        clause = bare[s:e]
+        new = rewrite(clause.strip())
+        if new is not None:
+            out += [text[at:s + len(clause) - len(clause.lstrip())], '.\n'.join(new)]
+            at = e
+    return ''.join(out) + text[at:] if out else text
+
+
+def aspmc_names(text):
+    """The variables of `text` in order, `_` each time it occurs."""
+    return [m.group('v') for m in ASPMC_VARIABLE.finditer(text) if m.group('v')]
+
+
+def aspmc_enclosed(literal):
+    """Whether `literal` is a goal in parentheses, `(G)`."""
+    from lpad2problog import split_top
+    return literal.startswith('(') and split_top(literal, ')')[1:] == ['']
+
+
+def aspmc_disjuncts(body):
+    """The disjuncts of the ProbLog body `body`, each the list of its
+    literals: its disjunctions (`;`) and its goals in parentheses written
+    out, ProbLog's `not` as `\\+`, and `true` left out; a negated goal in
+    parentheses, `\\+ (G)`, is one literal. ValueError on an if-then-else,
+    which aspmc's grammar has no form of."""
+    from lpad2problog import split_top
+    if re.search(r'->', ASPMC_COMMENT.sub(' ', body)):
+        raise ValueError(f"an if-then-else, which aspmc's grammar has no form of: {' '.join(body.split())}")
+    out = []
+    for alt in split_top(body, ';'):
+        conjs = [[]]
+        for lit in split_top(alt, ','):
+            lit = lit.strip()
+            m = re.fullmatch(r'not(?:\s+|(?=\())(.+)', lit, re.S)
+            if m:
+                lit = '\\+' + m.group(1).strip()
+            if lit == 'true':
+                continue
+            if aspmc_enclosed(lit):
+                inner = aspmc_disjuncts(lit[1:-1])
+                conjs = [c + d for c in conjs for d in inner]
+            else:
+                conjs = [c + [lit] for c in conjs]
+        out += conjs
+    return out
+
+
+def aspmc_weighted(head):
+    """Whether the head `head` has a probability (`p::a`, an annotated disjunction)."""
+    from lpad2problog import split_top
+    return any(problog2pita.head_atom(d)[0] for d in split_top(head, ';'))
+
+
+# aspmc's grammar has no quoted atom (cplint's `'$choice_3'`, PRISM's `'A'`):
+# each is given a plain name, which means the same, as clingo compares names:
+# a program that compares atoms by the standard order of terms (`@<`) keeps
+# that order only where the names are its own.
+ASPMC_PLAIN = re.compile(r'[a-z][a-zA-Z0-9_]*')
+
+
+def aspmc_quoted(text):
+    """(program, names): the ProbLog program `text` with each quoted atom
+    written as a plain name, `'abc'` as abc, the same atom, any other as
+    bench_q1, bench_q2..., one for each atom; and the quoted atom of each
+    such name. ValueError where it compares terms by the standard order
+    (`@<`...) and has an atom so renamed."""
+    stem, names, by = aspmc_fresh(text, 'bench_q'), {}, {}
+
+    def sub(m):
+        s = m.group(0)
+        if not s.startswith("'"):
+            return s
+        atom = re.sub(r"''|\\(.)", lambda e: "'" if e.group(0) == "''" else {'n': '\n', 't': '\t'}.get(
+            e.group(1), e.group(1)), s[1:-1])
+        if ASPMC_PLAIN.fullmatch(atom) and atom != 'not':
+            return atom
+        if atom not in by:
+            by[atom] = f'{stem}{len(by) + 1}'
+            names[by[atom]] = s
+        return by[atom]
+    out = ASPMC_COMMENT.sub(sub, text)
+    if names and any(m.group('op') in ASPMC_ORDER for m in ASPMC_OPERATOR.finditer(out)):
+        raise ValueError('a comparison by the standard order of terms in a program with quoted atoms, '
+                         "which the names aspmc's grammar reads order otherwise")
+    return out, names
+
+
+def aspmc_unquoted(query, names):
+    """The query `query` aspmc answered with each name of aspmc_quoted's
+    `names` written as the quoted atom it stands for."""
+    return re.sub(r'(?<!\w)\w+', lambda m: names.get(m.group(0), m.group(0)), query) if names else query
+
+
+# Prolog's comparisons in the notation of aspmc's grammar, which is its
+# grounder clingo's, and ProbLog's second neck `<-`. On the ground terms
+# ProbLog compares, `\=` and `\==` are clingo's `!=`, `==` its `=`, and the
+# arithmetic comparisons of integers (`=:=`, `=\=`, `=<`) its `=`, `!=` and
+# `<=`; the standard order of terms (`@<`...) agrees with clingo's order of
+# integers and of names (aspmc's grammar has no floats).
+ASPMC_OPERATORS = {'<-': ':-', '\\=': '!=', '\\==': '!=', '=\\=': '!=', '==': '=', '=:=': '=', '=<': '<=',
+                   '@<': '<', '@=<': '<=', '@>': '>', '@>=': '>='}
+ASPMC_ORDER = {'@<', '@=<', '@>', '@>='}
+# the comparisons whose meaning depends on what is bound when ProbLog calls
+# them: an unbound variable unifies with any term, is identical to none, and
+# comes first in the standard order, where clingo binds it before it compares
+ASPMC_BINDING = {'\\=', '\\==', '=='} | ASPMC_ORDER
+ASPMC_SYMBOL = r'[-+*/\\^<>=~:.?@#&$]'   # Prolog's symbol characters, which make one token together
+ASPMC_OPERATOR = re.compile(ASPMC_SKIP + rf'|(?<!{ASPMC_SYMBOL})(?P<op>' + '|'.join(
+    map(re.escape, sorted(ASPMC_OPERATORS, key=len, reverse=True))) + rf')(?!{ASPMC_SYMBOL})', re.S)
+
+
+def aspmc_operators(text):
+    """The ProbLog program `text` with its neck `<-` and its comparisons in
+    the notation aspmc's grammar reads (ASPMC_OPERATORS). ValueError where a
+    comparison of ASPMC_BINDING reads a variable, `_` included, that neither
+    the head of its clause nor a positive literal before it binds (`p(X) :-
+    X \\= a, q(X).`)."""
+    found = set()
+
+    def sub(m):
+        op = m.group('op')
+        if op is None:
+            return m.group(0)
+        found.add(op)
+        return ASPMC_OPERATORS[op]
+    out = ASPMC_OPERATOR.sub(sub, text)
+    if found & ASPMC_BINDING:
+        aspmc_bound_first(ASPMC_OPERATOR.sub(lambda m: ':-' if m.group('op') == '<-' else m.group(0), text))
+    return out
+
+
+def aspmc_bound_first(text):
+    """ValueError where a comparison of ASPMC_BINDING in the ProbLog program
+    `text` reads a variable that neither the head of its clause (which the
+    call binds) nor a positive literal before it binds."""
+    def check(lits, bound, clause):
+        for lit in lits:
+            neg = lit.startswith('\\+')
+            inner = lit[2:].strip() if neg else lit
+            if neg and aspmc_enclosed(inner):
+                for conj in aspmc_disjuncts(inner[1:-1]):
+                    check(conj, set(bound), clause)
+            elif any(m.group('op') in ASPMC_BINDING for m in ASPMC_OPERATOR.finditer(lit)):
+                free = [v for v in aspmc_names(lit) if v not in bound]
+                if free:
+                    raise ValueError(f'a comparison of {free[0]}, which ProbLog compares before a literal binds '
+                                     f'it and clingo binds first: {clause}')
+            elif not neg:
+                bound.update(v for v in aspmc_names(lit) if v != '_')
+
+    def visit(clause):
+        head, body = problog2pita.split_neck(clause)
+        for conj in aspmc_disjuncts(body) if body is not None else ():
+            check(conj, {v for v in aspmc_names(head) if v != '_'}, ' '.join(clause.split()))
+    aspmc_rewritten(text, [m.start() for m in ASPMC_OPERATOR.finditer(text) if m.group('op') in ASPMC_BINDING],
+                    visit)
+
+
+# The bodies aspmc's grammar does not read, which aspmc_bodies writes as
+# conjunctions, the negated heads, and the calls of ProbLog's built-ins,
+# which it has none of: its grounder clingo reads one as an atom no rule
+# derives.
+ASPMC_BUILTIN = (problog2pita.SWI_BUILTIN | {'subquery/2', 'subquery/3'}) - {'true/0', 'fail/0', 'false/0', 'not/1'}
+_CALLED = '|'.join(sorted({f.rsplit('/', 1)[0] for f in ASPMC_BUILTIN if not f.endswith('/0')}))
+_ATOMS = '|'.join(sorted(f.rsplit('/', 1)[0] for f in ASPMC_BUILTIN if f.endswith('/0')))
+ASPMC_BODY = re.compile(
+    ASPMC_SKIP + r'|(?P<form>:-(?:[^.;%]|\.(?!\s))*;|\\\+\s*\(|(?<![\w$])not(?=\s*\(|\s+[a-z\\(])'
+    r'|(?::-|,|;|\()\s*(?:true(?=\s*[,;)]|\s*\.(?:\s|$))|\()|->)|(?P<neg>::\s*\\\+)'
+    rf'|(?P<call>(?<![\w$])(?:(?:{_CALLED})\s*\(|(?:{_ATOMS})(?![\w$(])))', re.S)
+
+
+def aspmc_bodies(text):
+    """The ProbLog program `text` with each body in the form aspmc's grammar
+    reads, a conjunction of literals, which means the same: a body with
+    disjunctions as a clause for each of its disjuncts (aspmc_disjuncts); a
+    negated conjunction, disjunction or comparison `\\+ (G)` as the negation of an atom
+    bench_n1(V..) over the variables G shares with the rest of its clause,
+    defined by `bench_n1(V..) :- C, (G).`, C the positive literals before it,
+    which bind V.. as ProbLog's call does and as clingo's safety needs, and
+    hold wherever the clause reads bench_n1 (C is left out where V.. is
+    empty); a negated literal in parentheses as `\\+a`; `true` left out. A
+    predicate p with a negated head (`0.2::\\+p :- b.`, ProbLog's
+    inhibition) is written as ProbLog reads it, and as problog2pita.py
+    writes it for PITA: its positive clauses define bench_pos_p, its negated
+    ones bench_neg_p, and p(X0..) :- bench_pos_p(X0..), \\+bench_neg_p(X0..).
+    ValueError where it
+    cannot: a probabilistic clause with a disjunctive body (a clause for each
+    disjunct would make a choice for each), an if-then-else, a call of a
+    built-in of ProbLog's (ASPMC_BUILTIN) that the program does not define."""
+    from lpad2problog import split_top
+    forms = [m for m in ASPMC_BODY.finditer(text) if m.lastgroup in ('form', 'neg', 'call')]
+    if not forms:
+        return text
+    defined, negated = (problog2pita.defined(aspmc_uncommented(text)) if any(m.lastgroup != 'form' for m in forms)
+                        else (set(), set()))
+    aux, pos, neg = (aspmc_fresh(text, s, t) for s, t in (('bench_n', r'\d'), ('bench_pos_', ''), ('bench_neg_', '')))
+    count = itertools.count(1)
+    positions = {m.start() for m in forms}
+    if negated:
+        name = '|'.join(re.escape(f.rsplit('/', 1)[0]) for f in negated)
+        positions |= {m.start() for m in re.finditer(ASPMC_SKIP + rf'|(?P<p>(?<![\w$])(?:{name})(?!\w))', text, re.S)
+                      if m.group('p')}
+
+    def polar(head):
+        if not negated or re.fullmatch(r'\s*(query|evidence)\s*\(.*\)\s*', head, re.S):
+            return head
+        out = []
+        for d in split_top(head, ';'):
+            label, atom, negative = problog2pita.head_atom(d)
+            out.append(label + (neg if negative else pos) + atom if problog2pita.functor(atom) in negated
+                       else d.strip())
+        return head if out == [d.strip() for d in split_top(head, ';')] else '; '.join(out)
+
+    def rewrite(clause):
+        head, body = problog2pita.split_neck(clause)
+        if not head.strip():
+            return None   # a directive
+        h = polar(head)
+        changed = h is not head
+        if body is None:
+            return [h.strip()] if changed else None
+        done, todo = [], [(h, body)]
+        while todo:
+            h, b = todo.pop(0)
+            conjs = aspmc_disjuncts(b)
+            if conjs != [[lit.strip() for lit in split_top(b, ',')]]:
+                changed = True
+                if len(conjs) > 1 and aspmc_weighted(h):
+                    raise ValueError("a probabilistic clause with a disjunctive body, which aspmc's grammar writes "
+                                     'only as a clause for each disjunct, a choice each: ' + ' '.join(clause.split()))
+            for conj in conjs:
+                lits = []
+                for i, lit in enumerate(conj):
+                    inner = lit[2:].strip() if lit.startswith('\\+') else None
+                    enclosed = inner is not None and aspmc_enclosed(inner)
+                    goal = inner[1:-1].strip() if enclosed else inner
+                    # a negated group: a conjunction, a disjunction, or a goal in parentheses that is not
+                    # an atom (`\+ (X = a)`), which aspmc's grammar does not negate
+                    if not enclosed or (len(split_top(goal, ',')) == 1 and len(split_top(goal, ';')) == 1
+                                        and problog2pita.functor(goal)):
+                        f = problog2pita.functor(lit if goal is None else goal)
+                        if f in ASPMC_BUILTIN and f not in defined:
+                            raise ValueError(f"a call of {f}, a built-in of ProbLog's that aspmc's language does "
+                                             f"not have: {' '.join(clause.split())}")
+                        if enclosed:
+                            lit, changed = '\\+' + goal, True
+                        lits.append(lit)
+                        continue
+                    rest = set(aspmc_names(h + ' ' + ' '.join(conj[:i] + conj[i + 1:])))
+                    shared = [v for v in dict.fromkeys(aspmc_names(goal)) if v != '_' and v in rest]
+                    atom = f'{aux}{next(count)}' + (f"({','.join(shared)})" if shared else '')
+                    context = [c for c in conj[:i] if not c.startswith('\\+')] if shared else []
+                    todo.append((atom, ', '.join(context + [f'({goal})'])))
+                    lits.append('\\+' + atom)
+                    changed = True
+                done.append(f"{h.strip()} :- {', '.join(lits)}" if lits else h.strip())
+        return done if changed else None
+    out = aspmc_rewritten(text, sorted(positions), rewrite)
+    for f in sorted(negated):
+        name, n = f.rsplit('/', 1)
+        args = f"({','.join(f'X{i}' for i in range(int(n)))})" if int(n) else ''
+        out += f'\n{name}{args} :- {pos}{name}{args}, \\+{neg}{name}{args}.\n'
+    return out
+
+
+# aspmc 1.1.1's ProbLog front end stops with a TypeError on a probabilistic
+# clause whose body compares (`0.999::p(V) :- m(M, I, V), I != 0.`, the taint
+# apps): _prepare_grounding reads the variables of the body's literals, and
+# ArtithmeticAtom.get_variables returns None. Such a body is folded into an
+# atom over its variables, which tells the same groundings apart.
+ASPMC_COMPARISON = rf'(?<!{ASPMC_SYMBOL})(?P<op>!=|<=|>=|<|>|=)(?!{ASPMC_SYMBOL})'
+ASPMC_COMPARES = re.compile(ASPMC_SKIP + '|' + ASPMC_COMPARISON, re.S)
+
+
+def aspmc_folded(text):
+    """The ProbLog program `text`, its variables named as aspmc's grammar
+    reads them (aspmc_variables), with the body B of each probabilistic
+    clause that has a comparison among its literals folded into an atom
+    over B's variables, bench_b1(V..) :- B.: the clause has the same
+    groundings, each a choice of its own, and no comparison in its body."""
+    from lpad2problog import split_top
+    stem, count = aspmc_fresh(text, 'bench_b'), itertools.count(1)
+
+    def compares(lit):
+        s = ASPMC_COMMENT.sub(' ', lit)
+        while (t := re.sub(r'\([^()]*\)', ' ', s)) != s:
+            s = t
+        return re.search(ASPMC_COMPARISON, s) is not None
+
+    def rewrite(clause):
+        head, body = problog2pita.split_neck(clause)
+        if body is None or not aspmc_weighted(head) or not any(compares(lit) for lit in split_top(body, ',')):
+            return None
+        names = [v for v in dict.fromkeys(aspmc_names(body)) if v != '_']
+        atom = f'{stem}{next(count)}' + (f"({','.join(names)})" if names else '')
+        return [f'{head.strip()} :- {atom}', f'{atom} :- {body.strip()}']
+    return aspmc_rewritten(text, [m.start() for m in ASPMC_COMPARES.finditer(text) if m.group('op')], rewrite)
+
+
+def aspmc_constants(text):
+    """The ProbLog program `text`, its comparisons in clingo's notation
+    (aspmc_operators), with each operand of a comparison that is a ground
+    term, which aspmc's grammar does not read there (it reads variables and
+    integer expressions), compared through a variable bound by a fact that
+    holds the term: `B != brand45` as `bench_k1(K1), B != K1` and
+    `bench_k1(brand45).`, which means the same."""
+    from lpad2problog import split_top
+    stem, var, terms = aspmc_fresh(text, 'bench_k'), aspmc_fresh(text, 'K'), {}
+
+    def flat(s):   # s with its quoted parts and what parentheses enclose blanked, at the same places
+        s = ASPMC_COMMENT.sub(lambda m: ' ' * len(m.group(0)), s)
+        while (t := re.sub(r'\([^()]*\)', lambda m: ' ' * len(m.group(0)), s)) != s:
+            s = t
+        return s
+
+    def operand(side, lits):
+        t = side.strip()
+        if aspmc_names(t) or not re.search(r'(?<!\w)[a-z]', ASPMC_COMMENT.sub(' x ', t)):
+            return side   # a variable's expression, or an integer one (a string is a term)
+        k = terms.setdefault(t, len(terms) + 1)
+        lits.append(f'{stem}{k}({var}{k})')
+        return f' {var}{k} '
+
+    def rewrite(clause):
+        head, body = problog2pita.split_neck(clause)
+        if body is None or not head.strip():
+            return None
+        out, changed = [], False
+        for lit in (lit.strip() for lit in split_top(body, ',')):
+            m = None if lit.startswith('\\+') else re.search(ASPMC_COMPARISON, flat(lit))
+            if m:
+                bound = []
+                new = (operand(lit[:m.start()], bound) + m.group('op') + operand(lit[m.end():], bound)).strip()
+                if bound:
+                    lit, changed = re.sub(r'\s+', ' ', new), True
+                    out += bound
+            out.append(lit)
+        return [f"{head.strip()} :- {', '.join(out)}"] if changed else None
+    out = aspmc_rewritten(text, [m.start() for m in ASPMC_COMPARES.finditer(text) if m.group('op')], rewrite)
+    return out + ''.join(f'\n{stem}{k}({t}).' for t, k in terms.items()) + ('\n' if terms else '')
 
 
 # clingo projects an anonymous variable out of a body of two or more
@@ -4327,8 +4792,7 @@ def aspmc_comments(text):
 # `A_b`) as a constant: left out of the variables that tell a probabilistic
 # rule's groundings apart, `_V1` gave cplint's eruption 0.42 for ProbLog's
 # 0.588. So every variable it cannot read is named in that form too.
-ASPMC_VARIABLE = re.compile(r"""'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.)*"|%[^\n]*|/\*.*?\*/|0'\\?.|"""
-                            r"""(?P<v>(?<!\w)[A-Z_]\w*)""", re.S)
+ASPMC_VARIABLE = re.compile(ASPMC_SKIP + r'|(?P<v>(?<!\w)[A-Z_]\w*)', re.S)
 ASPMC_READS = re.compile(r'[A-Z][a-zA-Z0-9]*')
 
 
@@ -4357,8 +4821,8 @@ def aspmc_variables(text):
 
 
 # aspmc's ProbLog front end refuses much of what ProbLog reads: lists,
-# facts and queries with variables (its grounder clingo's "unsafe
-# variables"); it refused 109 of the ProbLog tutorial's 122 programs. A
+# floats, facts with variables (its grounder clingo's "unsafe variables");
+# it refused 109 of the ProbLog tutorial's 122 programs. A
 # program it refuses so is one it does not support, `unsupported` with its
 # reason (aspmc reads the program first order, and is given no ground
 # program in its place). Where it stops with a KeyError reading clingo's
@@ -4428,8 +4892,9 @@ def aspmc_ground(text):
 
 def run_aspmc(args, name, path, circuit=False):
     """aspmc on the ProbLog program (`aspmc_run`). A program it refuses
-    (ASPMC_REFUSED), or whose evidence the harness cannot ask as queries,
-    is `unsupported`; a circuit is then given to it as its ground program
+    (ASPMC_REFUSED), or that the harness cannot write in its language (its
+    evidence as queries, its syntax), is `unsupported`; a circuit is then
+    given to it as its ground program
     (`aspmc_ground`), the record marked `aspmc_route: ground`."""
     r = aspmc_run(args, name, path)
     if r['status'] != 'unsupported' and not (r['status'] == 'error' and
@@ -4461,10 +4926,15 @@ def run_aspmc(args, name, path, circuit=False):
 
 def aspmc_run(args, name, path, form=None):
     """aspmc on the ProbLog program, with its evidence asked as queries
-    (`aspmc_conditioned`) where it has any, and its probabilities, `is` and
-    comments in the notation it reads (`aspmc_numbers`, `aspmc_is`,
-    `aspmc_comments`): that form of the program at `form` (default
-    aspmc-NAME/NAME.pl). It writes
+    (`aspmc_conditioned`) where it has any, and written in the syntax its
+    grammar reads where ProbLog's means the same: its probabilities, `is`,
+    comments, quoted atoms, comparisons, bodies, the terms it compares and
+    its variables (`aspmc_numbers`, `aspmc_is`, `aspmc_comments`,
+    `aspmc_quoted`, `aspmc_operators`, `aspmc_bodies`, `aspmc_constants`,
+    `aspmc_variables`), and the bodies of
+    its probabilistic clauses that compare folded (`aspmc_folded`): that
+    form of the program at `form` (default aspmc-NAME/NAME.pl). A program
+    those rewrites cannot write is `unsupported`, with the reason. It writes
     `out.cnf` and the decomposer's scratch into the working directory, so
     each instance gets one of its own. A ground query it does not print, an
     atom its grounder removed, answers 1 where the program states it as a
@@ -4476,16 +4946,21 @@ def aspmc_run(args, name, path, form=None):
     with open(path) as f:
         text = f.read()
     clauses = split_clauses(strip_comments(text))
-    asked = [re.sub(r'\s+', '', m.group(1)) for clause in clauses
-             if (m := re.fullmatch(r'\s*query\s*\((.*)\)\s*', clause, re.S))]
-    facts = {re.sub(r'\s+', '', m.group(1)) for clause in clauses
+
+    def bare(q):   # as aspmc prints it, a quoted atom that need not be quoted without its quotes
+        return re.sub(r"'([a-z][a-zA-Z0-9_]*)'", lambda m: m.group(1) if m.group(1) != 'not' else m.group(0),
+                      re.sub(r'\s+', '', q))
+    asked = [bare(m.group(1)) for clause in clauses if (m := re.fullmatch(r'\s*query\s*\((.*)\)\s*', clause, re.S))]
+    facts = {bare(m.group(1)) for clause in clauses
              if (m := re.fullmatch(r'\s*([a-z]\w*(?:\(.*\))?)\s*(?::-\s*true\s*)?', clause, re.S))}
     try:
         conditioned = aspmc_conditioned(text)
+        program, quoted = aspmc_quoted(aspmc_is(aspmc_numbers(aspmc_comments(text) if conditioned is None
+                                                              else conditioned)))
+        program = aspmc_folded(aspmc_variables(aspmc_constants(aspmc_bodies(aspmc_operators(program)))))
     except ValueError as e:
-        # the harness's rewrite of the evidence as queries cannot write it: its limit, not aspmc's
+        # the harness's rewrites cannot write it in aspmc's language: a program it does not support
         return {'status': 'unsupported', 'seconds': 0.0, 'error': f'translator: {e}'}
-    program = aspmc_variables(aspmc_is(aspmc_numbers(aspmc_comments(text) if conditioned is None else conditioned)))
     if program != text:
         path = form or os.path.join(d, name + '.pl')
         write_new(path, program)
@@ -4495,6 +4970,7 @@ def aspmc_run(args, name, path, form=None):
     if r['status'] == 'ok':
         r['answers'] = parse_aspmc(r['stderr'], conditioned is not None)
         if isinstance(r['answers'], dict):
+            r['answers'] = {aspmc_unquoted(q, quoted): p for q, p in r['answers'].items()}
             for q in asked:
                 if not re.search(r'[(,][A-Z_]', q):
                     r['answers'].setdefault(q, 1.0 if q in facts else 0.0)
@@ -5059,7 +5535,8 @@ def ground_format(args, name, system, variant):
     Storm and PRISM, its Markov chain) where `ground_dice`; None otherwise,
     and under --pr, where the systems are asked log10 Z, which a ground
     program does not state. Not for a system that reads a program of its own
-    (OWN_PROGRAMS)."""
+    (OWN_PROGRAMS), nor for one that reads the logic program written in its
+    language (`lp_route`)."""
     return ground_form(instances(args)[name][1], system, variant, getattr(args, 'pr', False))
 
 
@@ -5068,7 +5545,7 @@ def ground_form(gargs, system, variant, pr=False):
     (the capture's, for the processing), in a run that asks log10 Z if
     `pr`."""
     gen = gargs[0]
-    if pr or variant.endswith('-pr') or system in OWN_PROGRAMS.get(gen, ()):
+    if pr or variant.endswith('-pr') or system in OWN_PROGRAMS.get(gen, ()) or lp_route(gargs, system):
         return None
     if system in NETWORK_SYSTEMS and gen != 'gen_bn.py':
         return 'hugin' if system == 'ace' else 'uai'
@@ -5135,6 +5612,185 @@ def drop_ground(args, name):
     for key in [k for k in list(GROUNDED) if k[0] == name]:
         del GROUNDED[key]
     shutil.rmtree(ground_dir(args, name), ignore_errors=True)
+
+
+# --- Logic programs written over their facts ------------------------------------
+# Alea.jl, Roulette, WebPPL, Psi, Pluck and SPPL are given a logic program (an instance the
+# other systems that read Dice programs are given through its ground
+# program, `grounds_dice`) as problog2ppl.py writes it in their language,
+# first order: a relation a table over its facts, a rule a loop over the
+# relations its body joins, a recursive component a loop of stages, the
+# facts a file the program reads (in Psi's, Pluck's and SPPL's program, run_lp_psi,
+# run_lp_pluck and run_lp_sppl).
+# Alea.jl+tddlog and Roulette+tddlog read
+# the same program as Alea.jl and Roulette, so that each differs from its
+# system only in the inference. The translation is the harness's,
+# untimed and bounded by translation_bound; a program it cannot write is
+# `unsupported`.
+LP_SYSTEMS = {'alea': 'alea', 'alea-tddlog': 'alea', 'roulette': 'roulette', 'roulette-tddlog': 'roulette',
+              'webppl': 'webppl', 'psi': 'psi', 'pluck': 'pluck', 'sppl': 'sppl'}
+# the languages whose program holds its facts (problog2ppl.py's INLINE): no facts file
+LP_INLINE = ('psi', 'pluck', 'sppl')
+LP_EXT = {'alea': 'jl', 'roulette': 'rkt', 'webppl': 'wppl', 'psi': 'psi', 'pluck': 'pluck', 'sppl': 'sppl'}
+
+
+def lp_route(gargs, system, pr=False):
+    """Whether `system` is given the instance whose generator arguments are
+    `gargs` as problog2ppl.py writes it, outside a run that asks log10 Z:
+    not where it reads a program of its own (OWN_PROGRAMS, and Alea.jl's
+    of ALEA_OF for Alea.jl and Alea.jl+tddlog)."""
+    return (system in LP_SYSTEMS and not pr and grounds_dice(gargs) and system not in OWN_PROGRAMS.get(gargs[0], ())
+            and not (LP_SYSTEMS[system] == 'alea' and tuple(gargs) in ALEA_OF))
+
+
+def lp_named(qs, comps):
+    """The answers to problog2ppl.py's queries `qs` from the distributions of
+    the program's components, the K-th the K-th query's ({'true': P, ...});
+    ValueError where they do not line up."""
+    if len(comps) != len(qs) or any('true' not in c for c in comps):
+        raise ValueError(f'{len(comps)} Boolean distributions for {len(qs)} queries')
+    return {re.sub(r'\s+', '', q): c['true'] for q, c in zip(qs, comps)}
+
+
+def alea_bools(answers):
+    """The components of an Alea.jl program whose value is a tuple of
+    Booleans, from alea_bench.jl's answers `qK`, in order."""
+    if any(not re.fullmatch(r'q\d+', a) for a in answers):
+        raise ValueError(f'components that are not Booleans: {sorted(answers)[:4]}')
+    return [{'true': answers[f'q{k}']} if f'q{k}' in answers else {} for k in range(1, len(answers) + 1)]
+
+
+def run_lp(args, name, path, system):
+    """SYSTEM (of LP_SYSTEMS) on logic program `path`, written by
+    problog2ppl.py in its language with its facts file, which the program
+    reads: Alea.jl's program by alea_bench.jl (run_alea_program, the facts
+    its `--file`), Alea.jl+tddlog's export of the same program
+    (run_alea_tddlog), Roulette's module timed by roulette_timer.rkt
+    (`roulette_timed`) on the facts, Roulette+tddlog's engine on the same
+    (run_roulette_tddlog), WebPPL's program run by webppl_dice.js, Psi's
+    (run_lp_psi), which holds its facts, by `psi --dp`, Pluck's by pluck_dice.jl
+    (run_lp_pluck), SPPL's by sppl_dice.py (run_lp_sppl). The
+    answers are keyed as the queries problog2ppl.py lists; the stats as
+    those of the system's own programs. The facts file is removed after
+    the run."""
+    lang = LP_SYSTEMS[system]
+    prog = os.path.abspath(os.path.join(args.dir, f'{name}.lp.{lang}.{LP_EXT[lang]}'))
+    facts = os.path.abspath(os.path.join(args.dir, f'{name}.lp.{lang}.facts'))
+    out, err = translation(args, 'problog2ppl.py', [lang, path, prog] + ([] if lang in LP_INLINE else [facts]))
+    if err:
+        return err
+    qs = out.splitlines()
+    if system == 'psi':
+        return run_lp_psi(args, name, prog, qs)
+    if system == 'pluck':
+        return run_lp_pluck(args, prog, qs)
+    if system == 'sppl':
+        return run_lp_sppl(args, prog, qs)
+    try:
+        if system == 'alea-tddlog':
+            return run_alea_tddlog(args, name, path, ([prog, ('FACTS', facts)], qs))
+        if system == 'roulette-tddlog':
+            return run_roulette_tddlog(args, name, path, (prog, [facts], qs))
+        if system == 'alea':
+            r = run_alea_program(args, [prog, ('FACTS', facts)])
+            if r['status'] != 'ok':
+                return r
+            try:
+                comps = alea_bools(r['answers'])
+            except ValueError as e:
+                return {'status': 'error', 'seconds': r['seconds'], 'error': f'alea: {e}'}
+            stats = r['stats']
+        elif system == 'roulette':
+            r = roulette_timed(args, prog, [facts], args.timeout)
+            if r['status'] != 'ok':
+                return r
+            comps, stats = parse_alea(r['stdout'], 'roulette')[0], {'inproc_seconds': r['inproc_seconds']}
+        else:
+            r = timed(program_command(args, 'webppl', os.path.join(HERE, 'webppl_dice.js')) + [prog, facts],
+                      args.timeout)
+            if r['status'] != 'ok':
+                return r
+            comps, stats = webppl_output(r['stdout'])
+    finally:
+        if os.path.exists(facts):
+            os.remove(facts)
+    try:
+        answers = lp_named(qs, comps)
+    except ValueError as e:
+        # (run_alea_program keeps what Alea.jl printed in its stats, not as stdout)
+        shown = r.get('stdout') or '\n'.join(stats.get('printed', []))
+        return {'status': 'error', 'seconds': r['seconds'], 'error': f'{system}: {e}: ' + shown.strip()[-300:]}
+    return {'status': 'ok', 'seconds': r['seconds'], 'stats': stats, 'answers': answers}
+
+
+def run_lp_psi(args, name, prog, qs):
+    """Psi on the program problog2ppl.py wrote at `prog`, which holds its
+    facts and returns the array of the queries' holdings: one run a query,
+    its `return queries;` made `return queries[K];` (NAME.lp.psiK.psi), as
+    Psi is asked its own programs' components (run_psi_own). Psi runs its
+    exact back end for discrete programs, `--dp`, which the command gains
+    where it lacks it: its symbolic back end does not get through the
+    stages' `while` loop. A query answers with the mass of 1. The seconds
+    add up."""
+    with open(prog) as f:
+        text = f.read()
+    if text.count('return queries;') != 1:
+        return {'status': 'error', 'seconds': 0, 'error': 'psi: no `return queries;` to index'}
+    total, comps = 0.0, []
+    for k in range(len(qs)):
+        file = os.path.abspath(os.path.join(args.dir, f'{name}.lp.psi{k}.psi'))
+        write_new(file, text.replace('return queries;', f'return queries[{k}];'))
+        cmd = program_command(args, 'psi', file)
+        if '--dp' not in cmd:
+            cmd.insert(cmd.index(file), '--dp')
+        r = timed(cmd, max(0.0, args.timeout - total))
+        total += r['seconds']
+        if r['status'] != 'ok':
+            return {**r, 'seconds': total}
+        try:
+            dist = parse_psi(r['stdout'])
+        except ValueError as x:
+            return {'status': 'error', 'seconds': total, 'error': str(x)}
+        if not dist or not set(dist) <= {0, 1}:
+            return {'status': 'error', 'seconds': total,
+                    'error': 'psi: no Boolean distribution: ' + r['stdout'].strip()[-300:]}
+        comps.append({'true': dist.get(1, 0.0), 'false': dist.get(0, 0.0)})
+    return {'status': 'ok', 'seconds': total, 'stats': {}, 'answers': lp_named(qs, comps)}
+
+
+def run_lp_pluck(args, prog, qs):
+    """Pluck on the program problog2ppl.py wrote at `prog`, which holds its
+    facts and asks the K-th query as its query cK: pluck_dice.jl runs it
+    once (one Julia start for all the queries), as on the Dice programs
+    (pluck_masses), a query's distribution read by parse_pluck."""
+    r = timed(program_command(args, 'pluck', os.path.join(HERE, 'pluck_dice.jl')) + [prog], args.timeout)
+    if r['status'] != 'ok':
+        return r
+    dists, comps = parse_pluck(r['stdout']), []
+    for k in range(len(qs)):
+        got = dists.get(k)
+        why = ('no distribution printed' if got is None else 'the evidence is impossible as printed' if not got
+               else f'values {sorted(got)} of a Boolean' if not set(got) <= {0, 1} else None)
+        if why:
+            return {'status': 'error', 'seconds': r['seconds'],
+                    'error': f'pluck: query {k}: {why}: ' + r['stdout'].strip()[-300:]}
+        comps.append({'true': got.get(1, 0.0), 'false': got.get(0, 0.0)})
+    return {'status': 'ok', 'seconds': r['seconds'], 'stats': pluck_stats(r['stdout']), 'answers': lp_named(qs, comps)}
+
+
+def run_lp_sppl(args, prog, qs):
+    """SPPL on the program problog2ppl.py wrote at `prog`, which holds its
+    facts: sppl_dice.py compiles it once and asks each query, the K-th of
+    the events its module's `queries_()` returns (its `# queries` line), of
+    the model given the evidence (sppl_run)."""
+    r, comps, stats = sppl_run(args, prog, args.timeout)
+    if r['status'] != 'ok':
+        return r
+    try:
+        answers = lp_named(qs, comps)
+    except ValueError as e:
+        return {'status': 'error', 'seconds': r['seconds'], 'error': f'sppl: {e}: ' + r['stdout'].strip()[-300:]}
+    return {'status': 'ok', 'seconds': r['seconds'], 'stats': stats, 'answers': answers}
 
 
 class ProvSQLServer:
@@ -5530,46 +6186,31 @@ def checker_distribution(system, out, props, ty):
 
 
 # dice2prism.py's translations in this process, by (label, source, joint):
-# the components' listing and each component's files, made once for every
-# checker and engine, and the seconds they took.
+# what each printed and its failure (translation), made once for every
+# checker and engine.
 CHAINS = {}
 
 
 def checker_masses(system, variant):
-    """The `masses` of run_translated for Storm or PRISM: dice2prism.py lists
-    the components (`--components`) and writes a model and its properties
-    for each, which the checker builds once and answers. The translations
-    are not timed, as no system's are, but their seconds over all the
-    engines are bounded by translation_bound: past it the engine is not
-    run, and its record is the harness's time-out, as one translation past
-    the bound is (translation): a chain too large to write, no program
-    handed to the checker."""
+    """The `masses` of run_translated for Storm or PRISM: dice2prism.py
+    writes a model and its properties for each component from one
+    translation (`--each`), which the checker builds once and answers. The
+    translation is made once for every checker and engine (CHAINS); it is
+    not timed, as no system's is, and is bounded by translation_bound: past
+    it the record is the harness's time-out (translation), a chain too
+    large to write, no program handed to the checker. The components a
+    translation that failed wrote run first, in order, and the record is
+    then its failure."""
     def masses(args, label, source, joint, budget):
         j = ['--joint'] if joint else []
-        made = CHAINS.setdefault((label, source, joint), {'seconds': 0.0})
-
-        def once(key, make):
-            if key not in made:
-                t0 = time.time()
-                made[key] = make()
-                made['seconds'] += time.time() - t0
-            return made[key]
-
-        def slow():
-            if made['seconds'] <= translation_bound(args):
-                return None
-            return harness_timeout_record('dice2prism.py', f'the translations took {made["seconds"]:.0f} s, past '
-                                                           f'their bound of {translation_bound(args):g} s')
-        listing, err = once('listing', lambda: translation(args, 'dice2prism.py', [source, '--components'] + j))
-        if err:
-            return None, err
+        prefix = os.path.abspath(os.path.join(args.dir, f'{label}.dtmc'))   # one for every checker and engine
+        key = (label, source, joint)
+        if key not in CHAINS:
+            CHAINS[key] = translation(args, 'dice2prism.py', [source, '--each', prefix] + j)
+        listing, failed = CHAINS[key]
         comps, total, inproc = [], 0.0, 0.0
         for k, line in enumerate(listing.splitlines()):
-            base = os.path.abspath(os.path.join(args.dir, f'{label}.dtmc{k}'))  # one for every checker and engine
-            err = slow() or once(k, lambda: translated(args, 'dice2prism.py', [source, str(k), '--props', base + '.props']
-                                                       + j, base + '.prism', system))
-            if err:
-                return None, {**err, 'seconds': max(total, err['seconds'])}
+            base = f'{prefix}{k}'
             r = timed(checker_command(args, system, variant, base + '.prism', base + '.props'), max(0.0, budget - total),
                       env=dict(os.environ, OMP_NUM_THREADS='1'))
             total += r['seconds']
@@ -5580,6 +6221,8 @@ def checker_masses(system, variant):
             except ValueError as x:
                 return None, {'status': 'error', 'seconds': total, 'error': f'{system}: {x}'}
             inproc += checker_seconds(system, r['stdout']) or 0.0
+        if failed:
+            return None, {**failed, 'seconds': total}
         return comps, {'seconds': total, 'stats': {'inproc_seconds': inproc}}
     return masses
 
@@ -6066,6 +6709,8 @@ def run_job(args, spec, systems, out, lock, names):
                 rpath = ground['ground']
             if ground and ground['status'] != 'ok':
                 r = dict(ground)
+            elif lp_route(spec[name][1], system, args.pr):
+                r = run_lp(args, name, src, system)
             elif system == 'dice':
                 r = run_dice(rargs, name, rpath)
             elif system == 'alea':
@@ -6446,10 +7091,11 @@ def ace_defaults(args):
         raise SystemExit('--roulette-variants without --roulette: Roulette is not run')
     # Under the memory cap the Java systems' heaps are set from it: Ace's at
     # 0.8 of it (the JVM's own memory and c2d's beside the heap), PRISM's
-    # heap and its decision diagrams' memory a third each.
+    # heap and its decision diagrams' memory 0.8 each (the cap kills a run that
+    # fills both).
     cap = getattr(args, 'mem_cap', None)
     if cap is not None:
-        for k, share in [('ace_heap', 0.8), ('prism_heap', 1 / 3)]:
+        for k, share in [('ace_heap', 0.8), ('prism_heap', 0.8)]:
             heap = getattr(args, k, None)
             if heap is None:
                 setattr(args, k, f'{int(cap * share) >> 20}m')
@@ -6495,7 +7141,8 @@ def main():
     r.add_argument('--dice', default='', help='command template for Dice with {file}, {dir}, {base}; '
                    'e.g. "docker run --rm -v {dir}:/b sholtzen/dice dice /b/{base}"; empty = not run')
     r.add_argument('--alea', default='', help='command template for Alea.jl with {file}, {dir}, {base}, run on '
-                   'the script dice2alea.py writes, or on alea_bench.jl for an Alea.jl program; e.g. '
+                   'the script dice2alea.py writes, on the one problog2ppl.py writes of a logic program, or on '
+                   'alea_bench.jl for an Alea.jl program; e.g. '
                    '"julia --project=ALEA_DIR {file}"; empty = not run')
     r.add_argument('--pita', default='', help='swipl binary with the cplint pack; empty = not run')
     r.add_argument('--pita-packs', default='', help='pack directory to attach before consulting')
@@ -6534,7 +7181,8 @@ def main():
     r.add_argument('--roulette', default='', help="command template for Racket with neuppl/roulette's packages "
                    "roulette-lib and roulette installed, {file} the program: data/roulette's driver of the "
                    "artifact's program on --suite roulette, a Bayesian network's BIF file in Roulette's BN "
-                   "language (data/roulette/bn.rkt), the Dice program dice2roulette.py translates on the others; "
+                   "language (data/roulette/bn.rkt), the program problog2ppl.py writes of a logic program, "
+                   "the Dice program dice2roulette.py translates on the others; "
                    "e.g. \"env PLTUSERHOME=... racket {file}\"; empty = not run")
     r.add_argument('--roulette-variants', type=lambda s: s.split(','),
                    help="Roulette's runs: rsdd, the default and the one variant")

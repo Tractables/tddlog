@@ -1098,6 +1098,27 @@ def calls(e, fname):
     return False
 
 
+# The operands of one && or || that a translation nests in one expression
+# before it names the chain so far: a ground program's conjunction of a
+# million literals would otherwise be a million-deep expression, past the
+# translator's recursion limit and the target language's parser.
+CHAIN = 256
+
+
+def chain_operands(e):
+    """The operands of e, a chain of one operator (&& or ||) as the parser
+    builds it, in their order. It walks the chain with a stack of its own,
+    since the parser's chain is a tree as deep as it is long."""
+    op, found, stack = e[1], [], [e]
+    while stack:
+        x = stack.pop()
+        if x[0] == 'bin' and x[1] == op:
+            stack += [x[3], x[2]]
+        else:
+            found.append(x)
+    return found
+
+
 def deep(fn, *args):
     """fn(*args) on a thread with a large stack and recursion limit: the
     parser's trees are as deep as a program's chains of lets and ifs."""

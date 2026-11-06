@@ -131,6 +131,18 @@ def translate(text):
     return dice2alea.translate(text, 'test')
 
 
+def nesting(code):
+    """How deep the brackets of Julia code nest, strings left out."""
+    depth = deepest = 0
+    for ch in re.sub(r'"(\\.|[^"\\])*"', '""', code):
+        if ch in '([{':
+            depth += 1
+            deepest = max(deepest, depth)
+        elif ch in ')]}':
+            depth -= 1
+    return deepest
+
+
 def flips(script):
     return [float(p) for p in re.findall(r'\bflip\(([0-9.e-]+)\)', body(script))]
 
@@ -232,6 +244,21 @@ class TranslationTests(unittest.TestCase):
         self.assertRegex(main, r'd_h\(x\d+_x, x\d+_\w*\)')   # under the branch's path, x
         self.assertRegex(main, r'd_g\(true, x\d+_x\)')       # g observes nothing
 
+    def test_a_long_chain_is_named_every_chain_operands(self):
+        # A ground program's conjunction of literals is a tree as deep as it
+        # is long: TPC-H's q1 at scale 200, 1.2 million deep, passed the
+        # translator's recursion limit, and from scale 2 Julia's parser
+        # failed on the expression it wrote.
+        n = 5 * dice2problog.CHAIN + 3
+        script = translate('let a = flip 0.3 in let b = flip 0.6 in let c = flip 0.5 in\n'
+                           f'(if c then {" && ".join("ab"[k % 2] for k in range(n))} else false, '
+                           f'{" || ".join("ab"[k % 2] for k in range(n))})')
+        self.assertEqual(check(script), [])
+        self.assertLess(nesting(body(script)), dice2problog.CHAIN + 10)
+        # A chain of fewer operands nests from the left as it did.
+        self.assertRegex(translate('let a = flip 0.3 in let b = flip 0.6 in a && b && a'),
+                         r'\(\((x\d+_a) & (x\d+_b)\) & \1\)')
+
     def test_recursion_is_cut_at_dices_limit(self):
         script = dice2alea.translate((data / 'recursion.dice').read_text())
         self.assertIn(f'> {dice2problog.RECURSION_LIMIT}', script)
@@ -248,6 +275,15 @@ class TranslationTests(unittest.TestCase):
         self.assertIn('discrete(DistUInt{2}, [0.25, 0.25, 0.5])', script)
         self.assertRegex(script, r'shr\(\(x\d+_x \+ DistUInt\{2\}\(3\)\), 1\)')
         self.assertNotIn('@alea', script)
+
+    def test_nth_bit_counts_from_the_most_significant_bit(self):
+        # Dice's nth_bit(int(3, 0), x) is x's top bit: x << 0 >= 4.
+        script = translate(reference.NTH_BIT)
+        for i in range(3):
+            self.assertRegex(script, rf'\(\(x\d+_x << {i}\) >= DistUInt\{{3\}}\(4\)\)')
+        self.assertEqual(check(script), [])
+        with self.assertRaisesRegex(ValueError, 'no bit 3 of 3'):
+            translate('let x = int(3, 1) in nth_bit(int(3, 3), x)')
 
     def test_unsupported_constructs_fail(self):
         for program, error in [('let x = [flip 0.5] in x', NotImplementedError),

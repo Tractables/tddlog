@@ -79,6 +79,15 @@ definition (`print.rkt`'s `statement`).
   program, `(random 0 26 rng)` from a generator seeded with `(random-seed
   0)`, as the benchmark draws them; `caesar_obs.txt` holds the first
   100000 (Racket 8.16), one a line.
+- `motivating.pl`, `network.pl`, `hardware.pl`, `hmm.pl`: ports of the
+  models to first-order ProbLog, written for this repository: a family's
+  program for every size, its sizes, parameters and data files (the
+  observations, the hardware ladders' totals) its places, as
+  `gen_roulette.py FAMILY --template` prints it (bench.py's FOLD); hmm's
+  five questions are one program, and the two hardware ladders one.
+  caesar's program `gen_roulette.py` writes itself, its distributions the
+  values of the benchmark's bisection. The Dice paper's diamond and ladder
+  are ported in `data/dice/`.
 
 ## Two findings in the artifact
 

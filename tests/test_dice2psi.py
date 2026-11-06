@@ -29,13 +29,24 @@ from test_nodice import dice_programs  # noqa: E402
 import dice2problog  # noqa: E402
 import dice2psi  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
-from test_dice2genfer import JOINT, JOINT_MASSES  # noqa: E402
+from test_dice2genfer import JOINT, JOINT_MASSES, check_each  # noqa: E402
 
 PSI = os.environ.get('PSI', '')
-# Psi 's build (ef8a9e5) dumps core on murderMystery (a function that returns a
-# tuple) and on diamond (a hundred calls of a function in a loop), which
-# translate correctly; they are not run here.
 SMALL = ['arith', 'compare', 'walk', 'twocoins', 'evidence1', 'evidence2', 'grass', 'alarm', 'noisyOr']
+# functions of Boolean and tuple parameters, a constant Boolean argument and a
+# loop over a tuple state: Psi stopped with signal 11 on them while their
+# parameters had no type (Psi takes one for a real) and true was written 1
+FUNCTIONS = ['murderMystery', 'counter']
+# a tuple passed to a function in one branch and out of the other: each branch builds it (the
+# weather factory's unrolled steps; the else branch read a tuple only the then branch had built,
+# a variable Psi had not seen, and Psi stopped with signal 11)
+BRANCH_TUPLE = '''fun swap(p: (bool, bool)) {
+  (snd p, fst p)
+}
+let r = (flip 0.3, true) in
+let s = if flip 0.5 then swap(r) else r in
+fst s
+'''
 
 
 def program_text(name):
@@ -50,7 +61,7 @@ def psi_answers(text, qs):
         code, _ = dice2psi.translate(text, k)
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / 'p.psi'
-            path.write_text(code)
+            path.write_text(code, encoding='utf-8')
             out = subprocess.run(shlex.split(PSI) + [str(path)], capture_output=True, text=True, check=True,
                                  timeout=300).stdout
         dist = bench.parse_psi(out)
@@ -71,6 +82,9 @@ class Dice2PsiTests(unittest.TestCase):
                 self.assertEqual(code.count('{'), code.count('}'))
                 self.assertIn('def main()', code)
                 self.assertGreaterEqual(len(types), 1)
+
+    def test_each_component_from_one_translation(self):
+        check_each(self, dice2psi, ['psi'])
 
     def test_a_component_is_returned(self):
         text = 'let a = flip 0.1 in let b = discrete(0.5, 0.25, 0.25) in (a, (b, a && flip 0.5))'
@@ -130,17 +144,44 @@ class Dice2PsiTests(unittest.TestCase):
         code, _ = dice2psi.translate(JOINT, 0, joint=True)
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / 'p.psi'
-            path.write_text(code)
+            path.write_text(code, encoding='utf-8')
             out = subprocess.run(shlex.split(PSI) + [str(path)], capture_output=True, text=True, check=True,
                                  timeout=300).stdout
         masses = bench.psi_masses(out, 8)
         for u, p in JOINT_MASSES.items():
             self.assertAlmostEqual(masses[u], p, delta=1e-12, msg=u)
 
+    def test_parameters_have_the_signatures_types(self):
+        # counter's step takes (int(3), bool), murderMystery's gunFoundAtScene a
+        # bool and is called with true
+        self.assertRegex(dice2psi.translate(program_text('counter'), 0)[0], r'def f_step\(v\d+_s: ℤ × 𝔹\) \{')
+        code = dice2psi.translate(program_text('murderMystery'), 0)[0]
+        self.assertRegex(code, r'def f_mystery\(\) \{')
+        self.assertRegex(code, r'def f_gunfoundatscene\(v\d+_gunfound: 𝔹\) \{')
+        self.assertRegex(code, r':= f_gunfoundatscene\(true\);')
+        self.assertEqual(dice2psi.psi_type(('tuple', dice2psi.BOOL, ('tuple', ('int', 2), dice2psi.BOOL))),
+                         '𝔹 × (ℤ × 𝔹)')
+
+    def test_booleans_are_true_and_false(self):
+        code = dice2psi.translate('let a = flip 0.5 in let b = if a then true else flip 0.2 in (b, flip 0.0)', 0)[0]
+        self.assertIn('= true;', code)
+        self.assertIn(':= false;', code)          # the variable both branches set
+        self.assertNotRegex(code, r'= [01];')
+        self.assertIn('return false;', dice2psi.translate('let a = flip 0.5 in (a, flip 0.0)', 1)[0])
+
+    def test_each_branch_builds_the_tuples_it_passes_on(self):
+        code = dice2psi.translate(BRANCH_TUPLE, 0)[0]
+        built = re.findall(r'(v\d+_r) := \(v\d+_r, true\);', code)
+        self.assertEqual(len(built), 2, code)
+        self.assertEqual(built[0], built[1])
+        then, other = re.search(r'if v\d+_s \{(.*)\} else \{(.*)\}', code).groups()
+        self.assertIn(f'{built[0]} := (', then)
+        self.assertIn(f'{built[0]} := (', other)
+
     @unittest.skipUnless(PSI, 'PSI is not set')
     def test_psi_gives_the_exact_answers(self):
-        for name in SMALL:
-            text = program_text(name)
+        for name in SMALL + FUNCTIONS + ['BRANCH_TUPLE']:
+            text = BRANCH_TUPLE if name == 'BRANCH_TUPLE' else program_text(name)
             qs = reference.queries(dice2problog.translate(text))
             want = reference.answers(reference.exact(text), qs)
             with self.subTest(name=name):
@@ -155,6 +196,13 @@ class Dice2PsiTests(unittest.TestCase):
         self.assertIn('(((v1_x * 2) - 8 * floor(v1_x * 2 / 8)) >= 4)', dice2psi.translate(reference.NTH_BIT, 1)[0])
         with self.assertRaises(TypeError):
             dice2psi.translate('nth_bit(int(4, 0), int(3, 1))', 0)
+
+    def test_a_long_chain_translates_without_recursing_down_it(self):
+        # each operation of the chain is a variable of its own, as before
+        for k, op in enumerate(['&&', '||']):
+            code = reference.shallow(lambda: dice2psi.translate(reference.CHAINS, k)[0])
+            self.assertEqual(max(line.count(op) for line in code.splitlines()), 1)
+            self.assertGreaterEqual(code.count(op), reference.LONG - 1)
 
     @unittest.skipUnless(PSI, 'PSI is not set')
     def test_psi_gives_nth_bit(self):

@@ -5,14 +5,17 @@ The reference answers (a dynamic program over each model's states) are
 checked against an exact enumeration of the Dice program the script
 writes for the same size (tests/test_dice2problog.py's `exact`), and
 against Roulette's own answers, printed in full by the drivers in
-data/roulette/; the committed programs in tests/roulette/ against what
-the script writes now. tests/it/examples.rs checks tddlog's answers on those
-programs against the same references.
+data/roulette/; tddlog's answers on each family's program (bench.py's
+FOLD: the program, its data and its arguments) against the references.
+tests/roulette/ keeps the unrolled programs this script wrote before,
+whose answers tests/it/examples.rs checks against the same references.
 """
 from pathlib import Path
 import math
+import os
 import subprocess
 import sys
+import tempfile
 import unittest
 
 root = Path(__file__).resolve().parents[1]
@@ -21,6 +24,7 @@ sys.path.insert(0, str(scripts))
 from source_tree import SOURCE  # noqa: E402
 programs = SOURCE / 'tests' / 'roulette'
 sys.path.insert(0, str(root / 'tests'))
+import bench  # noqa: E402
 import gen_roulette  # noqa: E402
 from test_dice2problog import exact  # noqa: E402
 
@@ -85,20 +89,30 @@ def reference(family, n):
     return {a: math.exp(x.l) for a, x in gen_roulette.reference(family, n).items() if a != 'P(e)'}
 
 
-def dice_program(family, n):
-    """A family's Dice program at size n: the Dice paper's text for diamond
-    and ladder (DICE_PAPER), what program() writes for the others."""
-    if family in gen_roulette.DICE_PAPER:
-        return gen_roulette.dice_paper(family, n)
-    return '\n'.join(gen_roulette.program(family, n)[1])
-
-
 def problog_program(family, n):
-    """A family's ProbLog program at size n, as lines: for diamond and
-    ladder their port (data/dice/FAMILY.pl) with n in its place."""
-    if family in gen_roulette.DICE_PAPER:
-        return (Path(gen_roulette.PORTS) / f'{family}.pl').read_text().replace('$1', str(n)).splitlines()
-    return gen_roulette.program(family, n)[0]
+    """A family's ProbLog program at size n, as lines: its program with its
+    arguments in their places and its data consulted (bench.py's NAME.pl)."""
+    return bench.folded_program(['gen_roulette.py', family, str(n)]).splitlines()
+
+
+def tddlog_answers(gargs):
+    """tddlog's answers on a FOLD instance as bench.py runs it: the family's
+    program and its data files in a directory of their own, the instance's
+    arguments after the program."""
+    program, text = bench.fold_template(gargs)
+    (root / 'tmp').mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=root / 'tmp') as d:
+        os.makedirs(os.path.join(d, bench.FOLD_DIR))
+        os.makedirs(os.path.join(d, bench.DATA_DIR))
+        for key in bench.fold_of(gargs)[2]:
+            Path(d, bench.DATA_DIR, key + '.pl').write_text(bench.fold_data(gargs, key))
+        path = Path(d, bench.FOLD_DIR, program)
+        path.write_text(text)
+        out = subprocess.run([str(bench.source_tree.BINARY), '--precision', '17', str(path),
+                              *bench.fold_arguments(gargs)], capture_output=True, text=True)
+    if out.returncode != 0:
+        raise AssertionError(f'{gargs}: {out.stderr[-2000:]}')
+    return bench.parse_answers(out.stdout)
 
 
 def run(*args):
@@ -113,10 +127,30 @@ class GenRouletteTests(unittest.TestCase):
     def test_references_agree_with_the_dice_programs(self):
         for family, n in SIZES:
             ref = reference(family, n)
-            dice = dice_answers(family, n, exact(dice_program(family, n)))
-            self.assertEqual(set(dice), set(ref), (family, n))
-            for atom, p in dice.items():
-                self.close(f'{family} {n} {atom}', p, ref[atom])
+            texts = [gen_roulette.dice(family, n)]
+            if family in gen_roulette.DICE_PORT:   # the paper's program and its loop, the port
+                texts.append(gen_roulette.dice_port(family, n))
+            for text in texts:
+                dice = dice_answers(family, n, exact(text))
+                self.assertEqual(set(dice), set(ref), (family, n))
+                for atom, p in dice.items():
+                    self.close(f'{family} {n} {atom}', p, ref[atom])
+
+    def test_the_dice_programs_loop(self):
+        # a loop of the model is `iterate` over one step, so that the program
+        # does not grow with the size (caesar's observations, data, aside)
+        for family in gen_roulette.FAMILIES:
+            if family == 'caesar':
+                continue
+            sizes = (5, 10) if family == 'hardware-bitwidth' else (5, 500)
+            small, large = (gen_roulette.dice_port(family, n) if family in gen_roulette.DICE_PORT else
+                            gen_roulette.dice(family, n) for n in sizes)
+            self.assertIn('iterate(', large, family)
+            self.assertEqual(len(small.splitlines()), len(large.splitlines()), family)
+        r = run('motivating', '3', '--dice-port', 'x.dice')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('no port of its own', r.stderr)
+        self.assertFalse(Path('x.dice').exists())
 
     def test_references_agree_with_roulette(self):
         for (family, n), answers in ROULETTE.items():
@@ -136,22 +170,35 @@ class GenRouletteTests(unittest.TestCase):
             queries = [line[len('query('):-2] for line in pl if line.startswith('query(')]
             self.assertEqual(queries, [a for a in gen_roulette.reference(family, n) if a != 'P(e)'], family)
 
-    def test_the_committed_programs_are_what_the_script_writes(self):
-        # The directory also holds circuits Roulette builds, written by
-        # another script.
+    def test_tddlog_answers_each_program_as_the_reference(self):
+        larger = [('motivating', 40), ('diamond', 30), ('ladder', 30), ('caesar', 8), ('network', 6),
+                  ('hardware', 6), ('hardware-bitwidth', 6)] + [(f'hmm-{q}', 30) for q in gen_roulette.HMM_QUERIES]
+        for family, n in SIZES + larger:
+            with self.subTest(family=family, n=n):
+                got, ref = tddlog_answers(['gen_roulette.py', family, str(n)]), reference(family, n)
+                self.assertEqual(set(got), set(ref))
+                for atom, p in ref.items():
+                    self.close(f'{family} {n} {atom}', got[atom], p)
+
+    def test_a_program_is_answered_by_its_instance_name(self):
+        # bench.py's NAME.pl, rl_FAMILY_SIZE.pl with the family's dashes underscores
+        (root / 'tmp').mkdir(exist_ok=True)
+        for family, n in (('hmm-filtering-joint', 4), ('hardware-bitwidth', 3), ('caesar', 2)):
+            with tempfile.TemporaryDirectory(dir=root / 'tmp') as d:
+                path = Path(d, f'rl_{family.replace("-", "_")}_{n}.pl')
+                path.write_text('\n'.join(problog_program(family, n)) + '\n')
+                self.assertEqual(run('--reference-of', str(path)).stdout, run(family, str(n), '--reference').stdout)
+
+    def test_the_committed_programs_are_answered_by_their_first_line(self):
+        # The unrolled programs this script wrote before each family became
+        # one program, kept as tddlog's tests; the directory also holds
+        # circuits Roulette builds, written by another script.
         files = sorted(f for f in programs.glob('*.pl')
                        if f.read_text().startswith('% gen_roulette.py '))
         self.assertEqual({f.read_text().split()[2] for f in files}, set(gen_roulette.FAMILIES))
         for f in files:
             _, _, family, size = f.read_text().split('\n', 1)[0].split()
             self.assertEqual(f.name, f'{family}-{size}.pl')
-            # diamond's and ladder's are the unrolled programs this script wrote before their
-            # ProbLog program became the port of the Dice paper's (data/dice/FAMILY.pl), kept as
-            # tddlog's tests: their answers are still the reference's
-            if family not in gen_roulette.DICE_PAPER:
-                out = run(family, size)
-                self.assertEqual(out.returncode, 0, out.stderr)
-                self.assertEqual(out.stdout, f.read_text(), f.name)
             ref = run('--reference-of', str(f))
             self.assertEqual(ref.stdout, run(family, size, '--reference').stdout, f.name)
 
@@ -178,10 +225,27 @@ class GenRouletteTests(unittest.TestCase):
                      ['--reference-of', str(SOURCE / 'tests' / 'dice' / 'diamond.pl')],
                      # diamond's ProbLog program is its port and an argument, its Dice program apart
                      ['diamond', '3'], ['diamond', '3', '--template'], ['diamond', '3', '--arguments', '--dice', 'x.dice'],
-                     ['caesar', '3', '--arguments'], ['caesar', '--template']):
+                     ['caesar', '3', '--data', 'caesar_4'], ['hmm-filtering-marginal', '3', '--data', 'hmm_none'],
+                     ['network', '3', '--data', 'network_3'], ['--template']):
             out = run(*args)
             self.assertNotEqual(out.returncode, 0, args)
             self.assertFalse(Path('x.dice').exists())
+
+    def test_a_family_is_one_program_its_arguments_and_data(self):
+        # bench.py's FOLD: hmm's five questions are one program, the two
+        # hardware ladders one, and the observations a data file
+        self.assertEqual({gen_roulette.fold(f, 3)[0] for f in gen_roulette.FAMILIES},
+                         {'motivating', 'diamond', 'ladder', 'caesar', 'network', 'hardware', 'hmm'})
+        for family in gen_roulette.FAMILIES:
+            if family not in gen_roulette.DICE_PAPER and family != 'caesar':
+                name = gen_roulette.fold(family, 3)[0]
+                self.assertEqual(run(family, '--template').stdout,
+                                 (Path(gen_roulette.TEMPLATES) / f'{name}.pl').read_text(), family)
+        self.assertEqual(run('hmm-smoothing-joint', '6', '--arguments').stdout, '6\nsmoothing_joint\n')
+        self.assertEqual(gen_roulette.fold('hmm-smoothing-joint', 6)[2], ['hmm_6'])
+        self.assertEqual(gen_roulette.fold('hmm-marginal-likelihood', 6)[2], ['hmm_none'])
+        self.assertEqual(run('caesar', '2', '--data', 'caesar_2').stdout.splitlines()[1:],
+                         [f'evidence(seen({i},{o}),true).' for i, o in enumerate(gen_roulette.observations(2), 1)])
 
     def test_the_dice_papers_networks_are_one_program_and_their_size(self):
         # bench.py's FOLD: the port as the template, the size as the argument, and

@@ -9,8 +9,9 @@ JULIA_DEPOT_PATH=P/depot JULIA --project=P/src/PluckArtifact.jl/Pluck.jl
 {file} P/src`), the translated programs run through scripts/pluck_dice.jl,
 and their answers, read as bench.py reads them, are checked against the
 exact distribution of test_dice2problog.py: the small programs, loops with
-observations in their body (diamond, ladder, caesar), and every integer
-operation, whose bits Pluck computes.
+observations in their body (diamond, ladder, caesar), every integer
+operation as a case split, a network's tables as matches, and a number too
+wide to split on as its bits.
 """
 from pathlib import Path
 import os
@@ -34,6 +35,14 @@ import test_dice2problog as reference  # noqa: E402
 from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y  # noqa: E402
 
 PLUCK = os.environ.get('PLUCK', '')
+# a network: a table on a three-valued parent, and a two-valued variable
+# that is a Boolean, observed
+NET = ('let a = discrete(0.2, 0.3, 0.5) in '
+       'let b = if a == int(2, 0) then flip 0.1 else if a == int(2, 1) then flip 0.2 else flip 0.3 in '
+       'let c = if a == int(2, 2) then discrete(0.6, 0.4) else int(1, 0) in '
+       'let o = observe (b || c == int(1, 1)) in (a, (b, c))')
+# a number of more values than dice2pluck.CASES: its bits
+WIDE = 'let x = uniform(11, 0, 1030) in (x < int(11, 7), x == int(11, 1029))'
 
 
 def program_text(name):
@@ -77,15 +86,37 @@ class Dice2PluckTests(unittest.TestCase):
                 self.assertIn('(define (dice_model)', code)
                 self.assertEqual(len(re.findall(r'^\(query c\d+ ', code, re.M)), len(types))
 
-    def test_components_and_their_bits(self):
+    def test_components_and_their_constructors(self):
         text = 'let a = flip 0.1 in let b = discrete(0.5, 0.25, 0.25) in (a, (b, a && flip 0.5))'
         code, types = dice2pluck.translate(text)
         self.assertEqual(types, [dice2pluck.BOOL, ('int', 2), dice2pluck.BOOL])
-        # the int is the list of its two bits: a flip draws the high bit, and the low
-        # one is 1 only where the high one is 0 (the masses 0.5, 0.25, 0.25, 0)
-        self.assertIn('(Cons ', code)
+        # the int of three values is a constructor, drawn by a flip of V0 against
+        # V1 and V2 and one of V1 against V2
+        self.assertIn('(define-type value (V0) (V1) (V2))', code)
+        self.assertIn('(if (flip 0.5) (if (flip 0.5) (V2) (V1)) (V0))', code)
+        self.assertNotIn('(Cons ', code)
         self.assertEqual(code.count('(flip '), 1 + 2 + 1)
         self.assertEqual(code.count('(Marginal '), 3)
+
+    def test_a_table_is_a_match_on_its_parent(self):
+        code, _ = dice2pluck.translate(NET)
+        self.assertRegex(code, r'\(match v\d+ V0 => \(flip 0\.1\) V1 => \(flip 0\.2\) V2 => \(flip 0\.3\)\)')
+        # c, of two values, a Boolean: false but where a is 2
+        self.assertRegex(code, r'\(match v\d+ V0 => \(False\) V1 => \(False\) V2 => \(flip 0\.4\)\)')
+        self.assertNotIn('(Cons ', code)
+
+    def test_arithmetic_is_a_case_split(self):
+        # x + y modulo 8: where x is 0, y itself; where it is 1, y's successor
+        code, _ = dice2pluck.translate(f'let x = discrete({X}) in let y = discrete({Y}) in x + y')
+        self.assertRegex(code, r'\(match v\d+ V0 => v\d+ V1 => \(match v\d+ V0 => \(V1\) V1 => \(V2\) ')
+        self.assertNotIn('(Cons ', code)
+
+    def test_a_wide_number_is_its_bits(self):
+        code, _ = dice2pluck.translate(WIDE)
+        self.assertNotIn('(match ', code)
+        self.assertNotIn('(define-type ', code)
+        code, _ = dice2pluck.translate('let x = uniform(11, 0, 1030) in x')
+        self.assertEqual(code.count('(Cons '), 11)
 
     def test_observations_condition_every_query(self):
         code, _ = dice2pluck.translate(JOINT)
@@ -116,8 +147,10 @@ class Dice2PluckTests(unittest.TestCase):
 
     def test_plucks_distributions_are_read(self):
         out = ('c0:\n  false  0.7\n  true   0.3\n\nc1:\n  Any[true, false]  0.25\n  Any[false, true]  0.5\n'
-               '  Any[false, true]  0.25\n\nc2:\n  impossible constraint\npluck_seconds 1.5\n')
-        self.assertEqual(bench.parse_pluck(out), {0: {0: 0.7, 1: 0.3}, 1: {2: 0.25, 1: 0.75}, 2: {}})
+               '  Any[false, true]  0.25\n\nc2:\n  impossible constraint\nc3:\n  (V12)  0.4\n  (V0)  0.6\n'
+               'pluck_seconds 1.5\n')
+        self.assertEqual(bench.parse_pluck(out), {0: {0: 0.7, 1: 0.3}, 1: {2: 0.25, 1: 0.75}, 2: {},
+                                                  3: {12: 0.4, 0: 0.6}})
         self.assertEqual(bench.parse_pluck('c0:\n  Bool[1, 1]  1.0\n'), {0: {3: 1.0}})
 
     def test_an_inexpressible_program_is_refused(self):
@@ -150,7 +183,7 @@ class Dice2PluckTests(unittest.TestCase):
     def test_integer_operations_wrap_as_dices(self):
         programs = [f'let x = discrete({X}) in let y = discrete({Y}) in (x, (y, x {op} y))' for op in OPS] + \
                    [f'let x = discrete({X}) in (x, (x << 1, x >> 1))', f'let x = discrete({X}) in (x, int(3, 5) - x)',
-                    f'let x = discrete({X}) in (x, x * int(3, 3))', CAESAR]
+                    f'let x = discrete({X}) in (x, x * int(3, 3))', CAESAR, NET, WIDE]
         for text in programs:
             with self.subTest(program=text[-24:]):
                 qs = reference.queries(dice2problog.translate(text))
@@ -158,6 +191,20 @@ class Dice2PluckTests(unittest.TestCase):
                 got = pluck_answers(text, qs)
                 for q, w in zip(qs, want):
                     self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-12, msg=q)
+
+    def test_a_long_chain_is_bound_every_chain_operations(self):
+        code, _ = reference.shallow(lambda: dice2pluck.translate(reference.CHAINS))
+        body = '\n'.join(line for line in code.splitlines() if not line.startswith(';;'))
+        depth = deepest = 0
+        for ch in body:
+            depth += (ch == '(') - (ch == ')')
+            deepest = max(deepest, depth)
+        self.assertEqual(depth, 0)
+        self.assertLess(deepest, dice2problog.CHAIN + 20)
+        # a chain of fewer operations is written in place, as it was: the flips its only bindings
+        code, _ = dice2pluck.translate('let a = flip 0.3 in let b = flip 0.6 in a && b && a && b')
+        self.assertEqual(re.findall(r'^\s+\(\(?(v\d+) \(', code, re.M), ['v1', 'v2'])
+        self.assertEqual(code.count('(and '), 3)
 
     def test_nth_bit_is_a_shift_and_a_comparison(self):
         # x << i at least 2^(w - 1) (dice_ir.py)

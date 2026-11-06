@@ -50,8 +50,9 @@ CHUNK statements, each taking the variables it reads and returning those
 read after it, since lowering a function takes time that grows faster
 than its length.
 
-Supported: what dice2problog.py supports. Not supported: lists, /, %,
-nth_bit, sample.
+Supported: what dice2problog.py supports, and `nth_bit(int(w, i), x)`,
+bit i of x from the most significant, `x << i` compared with 2^(w-1) as
+dice_ir.py has it. Not supported: lists, /, %, sample.
 
 Usage: dice2alea.py program.dice > program.jl
 """
@@ -63,8 +64,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import source_tree  # noqa: E402,F401  (the source tree's converters)
-from dice2problog import (Parser, RECURSION_LIMIT, bits_for, calls, deep,  # noqa: E402
-                          discrete_probs, tokenize)
+from dice2problog import (CHAIN, Parser, RECURSION_LIMIT, bits_for, calls,  # noqa: E402
+                          chain_operands, deep, discrete_probs, tokenize)
 
 CHUNK = 400
 # Every local variable the translation makes is x<number>_<hint>.
@@ -306,6 +307,16 @@ class Translator:
         if kind == 'shift':
             t = self.expr(e[2], env, path, block, hint)
             return f'({t} << {e[3]})' if e[1] == '<<' else f'shr({t}, {e[3]})'
+        if kind == 'nth_bit':
+            # bit i counted from the most significant, as Dice numbers it: x << i
+            # compared with 2^(w - 1), which Julia refuses for an x of another width
+            w, i = e[1], e[2]
+            if not 0 <= i < w:
+                raise ValueError(f'nth_bit(int({w}, {i})): no bit {i} of {w}')
+            t = self.expr(e[3], env, path, block, hint)
+            return f'(({t} << {i}) >= DistUInt{{{w}}}({2 ** (w - 1)}))'
+        if kind == 'bin' and e[1] in ('&&', '||'):
+            return self.chain(e, env, path, block, hint)
         if kind == 'bin':
             return self.binary(e[1], self.expr(e[2], env, path, block, hint),
                                self.expr(e[3], env, path, block, hint))
@@ -327,13 +338,23 @@ class Translator:
             return state
         raise ValueError(f'unknown expression {kind}')
 
+    def chain(self, e, env, path, block, hint):
+        """A chain of && or || nested as the parser reads it, from the left,
+        and named every CHAIN operands, so that no expression is deeper."""
+        op, text = {'&&': '&', '||': '|'}[e[1]], None
+        for k, x in enumerate(chain_operands(e)):
+            t = self.expr(x, env, path, block, hint)
+            if text is None:
+                text = t
+                continue
+            if k % CHAIN == 0:
+                text = self.make(text, block, hint)
+            text = f'({text} {op} {t})'
+        return text
+
     def binary(self, op, a, b):
         if op in ('/', '%', '::'):
             raise NotImplementedError(f'operator {op} is not supported')
-        if op == '&&':
-            return f'({a} & {b})'
-        if op == '||':
-            return f'({a} | {b})'
         if op == '^':
             return f'xor({a}, {b})'
         if op in ('<=>', '=='):
@@ -443,7 +464,7 @@ class Translator:
         raise NotImplementedError(f'{fname}: default value of {t[0]}')
 
     def translate(self, text, source):
-        funs, body = Parser(tokenize(text)).program()
+        funs, body = Parser(tokenize(text), nth_bit=True).program()
         taken = set()
         for name, params, ret, fbody in funs:
             jname = 'd_' + re.sub(r'[^A-Za-z0-9_]', '_', name)

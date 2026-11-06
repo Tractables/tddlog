@@ -280,7 +280,7 @@ class TranslateTests(unittest.TestCase):
     def test_refusals(self):
         for text, reason in [('p([1,2]).\n', '^translator: a list'),
                              ('p(f(1)).\n', '^translator: a function symbol'),
-                             ('p(X) :- q(X) ; r(X).\n', '^translator: a disjunction'),
+                             ('q(1).\n0.5::p(X) :- q(X) ; q(X).\n', '^translator: a disjunction in the body of a probabilistic'),
                              ('q(1).\np(X+1) :- q(X).\n', '^translator: arithmetic as a term'),
                              ('q(1).\np(Y) :- q(X), Y is X / 2.\n', '^translator: the division'),
                              ('p(X).\n', '^a fact that is not ground'),

@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import sys
 import unittest
+from unittest import mock
 
 root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(root / 'scripts'))
@@ -238,6 +239,29 @@ NTH_BIT_AS_SETS = (f'let x = discrete({X3}) in let o = observe (x != int(3, 0)) 
                    '(int(3, 4) <= x, (x == int(3, 2) || x == int(3, 3) || x == int(3, 6) || x == int(3, 7), '
                    'x == int(3, 1) || x == int(3, 3) || x == int(3, 5) || x == int(3, 7)))\n')
 NTH_BIT_ANSWERS = [26 / 35, 22 / 35, 20 / 35]
+
+# A chain of && and one of || as long as five times CHAIN, over a and b,
+# for the translators' tests: a ground program's conjunction of literals
+# is one chain, which the parser reads as a tree as deep as it is long
+# (TPC-H's q1 at scale 200, 1.2 million deep). The value is (a && b, a || b).
+LONG = 5 * dice2problog.CHAIN + 3
+CHAINS = ('let a = flip 0.3 in let b = flip 0.6 in\n('
+          + ' && '.join('ab'[k % 2] for k in range(LONG)) + ', '
+          + ' || '.join('ab'[k % 2] for k in range(LONG)) + ')\n')
+CHAINS_ANSWERS = [0.3 * 0.6, 1 - 0.7 * 0.4]
+
+
+def shallow(fn, limit=1000):
+    """fn() under a recursion limit of `limit`, which deep() keeps: a
+    translator that recurses once per operand of CHAINS fails, one whose
+    depth does not grow with a chain's length does not."""
+    old = sys.getrecursionlimit()
+    sys.setrecursionlimit(limit)
+    try:
+        with mock.patch.object(sys, 'setrecursionlimit'):
+            return fn()
+    finally:
+        sys.setrecursionlimit(old)
 
 
 class DiceTests(unittest.TestCase):

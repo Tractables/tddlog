@@ -34,29 +34,39 @@ A family and its sizes give one program:
               another H is the one at H = 10 with H steps in place of 10,
               which is the artifact's file at each H it has.
 
-The Dice programs of link and router are the artifact's generators',
-written here anew (their text the same). The ProbLog program goes to
-standard output, its first line `% gen_geni.py FAMILY SIZES`, the rest
-the Dice program as tddlog reads it (`tddlog --program`, the binary
-$TDDLOG or the source tree's). `--dice PATH` also writes the Dice
-program. `--reference` prints the answers instead, `ATOM:
-PROBABILITY` a line, from a dynamic program over the model's states, never
-from either program: for link and router over the grid's frontier, row
-by row (2^(N+1) states for `link`, 2^N for `router`); for weather over
-the chain's 2^(N+1) states, day by day, with the transition
-probabilities read from the Dice program (`weather_chain`).
-`--reference-of PROGRAM` prints those of a program this script wrote,
-read from its first line.
+The artifact's Dice programs (its generators' of link and router,
+written here anew, and Rubicon's of the weather) write the grid cell by
+cell and the days one after the other. The Dice programs here are ports
+of Geni's, written at Dice's level: a row of the grid a function of the
+row above, a day a function of the day before, and `iterate` over them
+(`grid_dice`, `weather_dice`); Geni reads the artifact's own.
+
+Each family's ProbLog program is one first-order program,
+data/geni/FAMILY.pl, over the grid's cells
+or the days, its sizes its arguments (the places $1, $2, ...) and, for
+weather, the factories and their probabilities a data file it consults
+(`:- consult($1).`): bench.py's FOLD. `--template` prints the program,
+`FAMILY SIZES --arguments` an instance's arguments after its data files,
+a line each, and `FAMILY SIZES --data KEY` its data file KEY (`fold`).
+`--dice PATH` writes the Dice program, `--gir PATH` Geni's. `--reference`
+prints the answers, `ATOM: PROBABILITY` a line, from a dynamic program
+over the model's states, never from either program: for link and router
+over the grid's frontier, row by row (2^(N+1) states for `link`, 2^N for
+`router`); for weather over the chain's 2^(N+1) states, day by day, with
+the transition probabilities read from the artifact's Dice program
+(`weather_chain`). `--reference-of PROGRAM` prints those of an
+instance's program, named by its instance (bench.py's geni_FAMILY_N.pl,
+geni_weather_nN.pl and geni_weather_hH.pl) or, for a program this script
+wrote before (its first line `% gen_geni.py FAMILY SIZES`), from its
+first line, under the program's queries in order.
 """
 import argparse
 import os
 import re
 import sys
-import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
-import source_tree  # noqa: E402  (tddlog --program)
+TEMPLATES = os.path.join(os.path.dirname(HERE), 'data', 'geni')
 
 HEADER = '% gen_geni.py'
 FAMILIES = {'link': 1, 'router': 1, 'weather': 2}      # the number of sizes
@@ -68,7 +78,7 @@ WEATHER_DIR = os.path.join(os.path.dirname(HERE), 'data', 'geni', 'weather_facto
 WEATHER_H = 10                                            # the horizon of the stored programs
 
 
-def link_dice(n):
+def link_cells(n):
     lines = []
     for x in range(1, n + 1):
         for y in range(1, n + 1):
@@ -85,7 +95,7 @@ def link_dice(n):
     return '\n'.join(lines) + '\n'
 
 
-def router_dice(n):
+def router_cells(n):
     e, i = ROUTER_EDGE, ROUTER_INNER
     lines = []
     for r in range(n):
@@ -108,7 +118,7 @@ WEATHER_LAST = '(hit(res), false)'
 WEATHER_START = 'let _goal = false in '                # (with its space)
 
 
-def weather_dice(n, h):
+def weather_artifact(n, h):
     """The artifact's weather-factory-N-H.dice: the stored program at
     H = 10 with H steps (each a test of the goal and a step) in place of
     its 10."""
@@ -126,6 +136,80 @@ def weather_dice(n, h):
     return '\n'.join(lines[:k] + WEATHER_STEP * h + [WEATHER_LAST])
 
 
+# --- Dice programs -----------------------------------------------------------
+# Ports of Geni's programs, the model, written at Dice's own level:
+# where the artifact's Dice writes the grid cell by cell and the
+# days one after the other, a row of the grid (a tuple of its cells, Dice
+# having no arrays) and a day are functions of the row above and of the
+# day before, and `iterate` runs them. A grid's first row has no row above
+# and is written out.
+
+def row_type(n):
+    """The type of a row of n Booleans as nested pairs, (bool, (bool, bool))."""
+    return 'bool' if n == 1 else f'(bool, {row_type(n - 1)})'
+
+
+def row_cell(row, k, n):
+    """Cell k (from 0) of a row of n, a nested pair, as `fst (snd row)`."""
+    e = row
+    for _ in range(k):
+        e = f'snd ({e})' if ' ' in e else f'snd {e}'
+    return e if k == n - 1 else (f'fst ({e})' if ' ' in e else f'fst {e}')
+
+
+def row_value(cells):
+    """The nested pair of the cells' names."""
+    return cells[0] if len(cells) == 1 else f'({cells[0]}, {row_value(cells[1:])})'
+
+
+def grid_dice(n, first, cell):
+    """The grid's program: its first row from first(k, cells before), a row
+    below from cell(k, cells before, the row above), `iterate` over the rows,
+    and the last cell of the last row."""
+    names = [f'c{k}' for k in range(n)]
+    fun = [f'fun row(up: {row_type(n)}) {{'] + [f'  let u{k} = {row_cell("up", k, n)} in' for k in range(n)]
+    fun += [f'  let c{k} = {cell(k)} in' for k in range(n)] + [f'  {row_value(names)}', '}']
+    top = [f'let c{k} = {first(k)} in' for k in range(n)]
+    return '\n'.join(fun + top + [f'let last = iterate(row, {row_value(names)}, {n - 1}) in',
+                                  row_cell('last', n - 1, n)]) + '\n'
+
+
+def link_dice(n):
+    # link-failure.dice.py's cells: reached from the left, from above or
+    # from the upper left, each link working with probability LINK_P
+    f = f'flip {LINK_P}'
+    return grid_dice(n, lambda k: 'true' if k == 0 else f'c{k - 1} && {f}',
+                     lambda k: f'u0 && {f}' if k == 0 else f'(c{k - 1} && {f}) || (u{k} && {f}) || (u{k - 1} && {f})')
+
+
+def router_dice(n):
+    # router-failure.dice.py's cells: working with a probability that
+    # depends on the left and the upper neighbours
+    e, i = ROUTER_EDGE, ROUTER_INNER
+    return grid_dice(n, lambda k: f'flip ({ROUTER_INIT})' if k == 0 else
+                     f'if c{k - 1} then flip ({e[0]}) else flip ({e[1]})',
+                     lambda k: f'if u0 then flip ({e[0]}) else flip ({e[1]})' if k == 0 else
+                     f'if c{k - 1} then (if u{k} then flip ({i[0]}) else flip ({i[1]})) else '
+                     f'(if u{k} then flip ({i[2]}) else flip ({i[3]}))')
+
+
+WEATHER_TYPE = re.compile(r'^fun step\(packedstate : (.+)\) \{$', re.M)
+
+
+def weather_dice(n, h):
+    """Rubicon's weather factory with its day a function: the artifact's
+    hit and step, then `day`, which tests the goal and steps once it is not
+    reached, `iterate`d over the h days from the initial state."""
+    text = weather_artifact(n, 1)
+    lines = text.split('\n')
+    k = lines.index(WEATHER_START)
+    state = WEATHER_TYPE.search(text).group(1)
+    day = [f'fun day(s: (bool, {state})) {{', '  let _goal = fst s in', '  let res = snd s in',
+           *('  ' + line for line in WEATHER_STEP), '  (_goal, res)', '}']
+    return '\n'.join(lines[:k] + day + [lines[k + 1], f'let s = iterate(day, (false, res), {h}) in',
+                                        'let res = snd s in', WEATHER_LAST]) + '\n'
+
+
 # --- Geni's programs ---------------------------------------------------------
 # The programs of the artifact's `gennifer` (the .gir language), which
 # `bench.py --geni` runs: the grids as the artifact's
@@ -140,11 +224,11 @@ def _bern(text):
 
 
 def link_gir(n):
-    return _bern(link_dice(n))
+    return _bern(link_cells(n))
 
 
 def router_gir(n):
-    return _bern(router_dice(n))
+    return _bern(router_cells(n))
 
 
 GIR_DAY = re.compile(r'(sun|state_\d+)_(\d+)')
@@ -348,7 +432,7 @@ def weather_reference(n, h):
     days the goal has not been reached, day by day; the goal's mass is
     taken out when reached and summed."""
     import numpy as np
-    n2, init, sun_p, strike_p, h2 = weather_chain(dice_program('weather', [n, h]))
+    n2, init, sun_p, strike_p, h2 = weather_chain(weather_artifact(n, h))
     assert (n2, h2) == (n, h)
     a = np.zeros((2,) * (n + 1))
     a[tuple(int(v) for v in init)] = 1.0
@@ -375,68 +459,133 @@ def reference(family, sizes):
     return {'link': link_reference, 'router': router_reference, 'weather': weather_reference}[family](*sizes)
 
 
-def translate(dice, stdout=None):
-    """The ProbLog program of Dice program `dice` (its text), as tddlog
-    reads it (`tddlog --program`, of the program written to a temporary
-    file): its text, or with `stdout` (a file) written there."""
-    with tempfile.TemporaryDirectory(prefix='gen_geni-') as d:
-        path = os.path.join(d, 'program.dice')
-        with open(path, 'w') as f:
-            f.write(dice)
-        return source_tree.program(path, stdout=stdout)
+# --- ProbLog programs: a family's program, an instance's arguments and data --
+
+def fold(family, sizes):
+    """bench.py's FOLD entry of an instance: (its program's name, the
+    arguments that print the program with --template, the keys of its data
+    files, which come first among its places): weather's data are its
+    factories."""
+    return family, [family], [f'weather_{sizes[0]}'] if family == 'weather' else []
+
+
+def template(family):
+    """The text of a family's ProbLog program, data/geni/FAMILY.pl."""
+    with open(os.path.join(TEMPLATES, family + '.pl')) as f:
+        return f.read()
+
+
+def arguments(family, sizes):
+    """An instance's arguments after its data files: the grid's side, or the
+    weather's days."""
+    return [sizes[1]] if family == 'weather' else [sizes[0]]
+
+
+def data(family, sizes, key):
+    """The text of an instance's data file `key` (fold's): weather's
+    factories, from the Dice program's chain (weather_chain), whose sun and
+    start must be the ones the program states."""
+    if key not in fold(family, sizes)[2]:
+        raise SystemExit(f'{family} {" ".join(map(str, sizes))}: its data files are {fold(family, sizes)[2]}, '
+                         f'not {key}')
+    n, init, sun_p, strike_p, _ = weather_chain(weather_artifact(sizes[0], WEATHER_H))
+    if init != [True] + [False] * n or sun_p != [0.6, 0.7]:
+        raise SystemExit(f'weather {n}: not sunny and off strike at the start, or not the sun of weather.pl')
+    lines = [f"% The {n} factories of Rubicon's weather factory (data/geni/weather_factory/"
+             f"weather-factory-{n}-{WEATHER_H}.dice): P(factory I on strike tomorrow | its strike S today",
+             '% and the weather W today).']
+    lines += [f'factory({i}).' for i in range(1, n + 1)]
+    for i, rows in enumerate(strike_p, 1):
+        for s, word in ((1, 'on'), (0, 'off')):
+            for w, sky in ((1, 'sun'), (0, 'rain')):
+                lines.append(f'{rows[s][w]!r}::strikes({i}, T, {word}, {sky}) :- step(T).')
+    return '\n'.join(lines) + '\n'
+
+
+def query_names(family, sizes):
+    """The queries of an instance's program, in order."""
+    if family == 'weather':
+        return ['reached', 'second']
+    return [f'{"conn" if family == "link" else "x"}({sizes[0]},{sizes[0]})']
+
+
+INSTANCE = re.compile(r'geni_(link|router)_(\d+)\.pl|geni_weather_([nh])(\d+)\.pl')
+
+
+def program_of(path):
+    """(family, sizes) of an instance's program: from its name, bench.py's
+    geni_FAMILY_N.pl, geni_weather_nN.pl (N factories, 10 days) or
+    geni_weather_hH.pl (10 factories, H days), or from its first line, `%
+    gen_geni.py FAMILY SIZES`."""
+    m = INSTANCE.fullmatch(os.path.basename(path))
+    if m and m.group(1):
+        return m.group(1), [int(m.group(2))]
+    if m:
+        k = int(m.group(4))
+        return 'weather', [k, WEATHER_H] if m.group(3) == 'n' else [WEATHER_H, k]
+    with open(path) as f:
+        head = f.readline().split()
+    if head[:2] != HEADER.split() or len(head) < 3 or head[2] not in FAMILIES:
+        raise SystemExit(f'{path}: not an instance of gen_geni.py (not named as bench.py names one, and its '
+                         f'first line is not `{HEADER} FAMILY SIZES`)')
+    return head[2], [int(s) for s in head[3:]]
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('family', nargs='?', choices=list(FAMILIES))
     ap.add_argument('sizes', nargs='*', type=int)
-    ap.add_argument('--dice', help='also write the Dice program here')
-    ap.add_argument('--gir', help="also write Geni's program here (weather: from the artifact's bench/ICFP, "
-                    '--geni-benchmarks)')
-    ap.add_argument('--geni-benchmarks', default=os.path.expanduser('~/local/geni/src/bench/ICFP'),
-                    help="the Geni artifact's bench/ICFP directory (default ~/local/geni/src/bench/ICFP)")
-    ap.add_argument('--reference', action='store_true', help='print the answers instead of the program')
-    ap.add_argument('--reference-of', metavar='PROGRAM', help='print the answers of a program this script wrote')
+    ap.add_argument('--template', action='store_true', help="print the family's ProbLog program")
+    ap.add_argument('--arguments', action='store_true', help="print an instance's arguments after its data files")
+    ap.add_argument('--data', metavar='KEY', help="print an instance's data file KEY")
+    ap.add_argument('--dice', metavar='PATH', help="write an instance's Dice program here")
+    ap.add_argument('--gir', metavar='PATH', help="write an instance's Geni program here (weather: from the "
+                    "artifact's bench/ICFP, --geni-benchmarks)")
+    ap.add_argument('--geni-benchmarks', default=os.path.join(os.path.expanduser('~'), 'local/geni/src/bench/ICFP'),
+                    help="the Geni artifact's bench/ICFP directory (default local/geni/src/bench/ICFP in the home directory, as bench.py)")
+    ap.add_argument('--reference', action='store_true', help="print an instance's answers")
+    ap.add_argument('--reference-of', metavar='PROGRAM', help="print the answers of an instance's program")
     a = ap.parse_args()
+    modes = [m for m in ('template', 'arguments', 'data', 'dice', 'gir', 'reference', 'reference_of')
+             if getattr(a, m)]
+    if len(modes) != 1:
+        raise SystemExit('give one of --template, --arguments, --data KEY, --dice PATH, --gir PATH, --reference '
+                         'and --reference-of PROGRAM')
     query = None
     if a.reference_of:
-        if a.family or a.sizes or a.dice or a.reference:
+        if a.family or a.sizes:
             raise SystemExit('--reference-of reads the family and sizes from the program and takes nothing else')
+        a.family, a.sizes = program_of(a.reference_of)
+        a.reference = True
         with open(a.reference_of) as f:
-            text = f.read()
-        head = text.split('\n', 1)[0].split()
-        if head[:2] != HEADER.split() or len(head) < 3 or head[2] not in FAMILIES:
-            raise SystemExit(f'{a.reference_of}: not a program of gen_geni.py (its first line is not '
-                             f'`{HEADER} FAMILY SIZES`)')
-        a.family, a.sizes, a.reference = head[2], [int(s) for s in head[3:]], True
-        query = re.findall(r'^query\((.+)\)\.$', text, re.M)
+            query = re.findall(r'^query\((.+)\)\.$', f.read(), re.M)
     if a.family is None:
         raise SystemExit('give FAMILY and SIZES, or --reference-of PROGRAM')
+    if a.template:
+        if a.sizes:
+            raise SystemExit('--template takes a family and no sizes')
+        sys.stdout.write(template(a.family))
+        return
     if len(a.sizes) != FAMILIES[a.family]:
         raise SystemExit(f'{a.family} takes {FAMILIES[a.family]} size(s): ' +
                          {'link': 'N', 'router': 'N', 'weather': 'N H'}[a.family])
-    if a.gir and a.reference:
-        raise SystemExit('--gir writes a program, --reference prints answers instead')
     if a.family != 'weather' and a.sizes[0] < 2:
         raise SystemExit('size: at least 2')
-    dice = dice_program(a.family, a.sizes)
     if a.reference:
-        if a.dice:
-            raise SystemExit('--reference prints the answers and writes no program; --dice has nothing to write')
-        if query is None:
-            query = re.findall(r'^query\((.+)\)\.$', translate(dice), re.M)
+        query = query if query is not None else query_names(a.family, a.sizes)
         values = reference(a.family, a.sizes)
         if len(query) != len(values):
             raise SystemExit(f'expected {len(values)} queries, found {len(query)}')
         for q, x in zip(query, values):
             print(f'{q}: {x!r}')
-        return
-    sys.stdout.write(f'{HEADER} {a.family} {" ".join(map(str, a.sizes))}\n')
-    translate(dice, stdout=sys.stdout)   # written by tddlog, hundreds of MB for weather's longest
-    if a.dice:
+    elif a.arguments:
+        sys.stdout.write(''.join(f'{w}\n' for w in arguments(a.family, a.sizes)))
+    elif a.data:
+        sys.stdout.write(data(a.family, a.sizes, a.data))
+    elif a.dice:
         with open(a.dice, 'w') as f:
-            f.write(dice)
-    if a.gir:
+            f.write(dice_program(a.family, a.sizes))
+    else:
         with open(a.gir, 'w') as f:
             f.write(gir_program(a.family, a.sizes, a.geni_benchmarks))
 

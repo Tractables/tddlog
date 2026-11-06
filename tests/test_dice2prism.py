@@ -32,7 +32,7 @@ import dice2prism  # noqa: E402
 import dice2problog  # noqa: E402
 import dice_ir  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
-from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y  # noqa: E402
+from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y, check_each  # noqa: E402
 
 STORM = os.environ.get('STORM_PYTHON', '')
 PRISM = os.environ.get('PRISM_DIR', '')
@@ -95,6 +95,18 @@ class Dice2PrismTests(unittest.TestCase):
                         self.assertRegex(line, r'^  \[\] pc=\d+.* -> .*;$')
                     for line in props.splitlines():
                         self.assertRegex(line, r'^"(obs|v\d+)": P=\? \[F .*\];$')
+
+    def test_each_component_from_one_lowering(self):
+        check_each(self, dice2prism, ['prism', 'props'])
+        # a refusal at the second component: the first's files are written and listed, and nothing of the second
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, 'p.dice')
+            path.write_text('let x = flip 0.5 in (x, if x then int(31, 1) else int(31, 2))')
+            r = subprocess.run([sys.executable, str(scripts / 'dice2prism.py'), str(path), '--each', f'{d}/p.'],
+                               capture_output=True, text=True)
+            self.assertEqual((r.returncode, r.stdout), (bench.REFUSED, 'bool\n'), r.stderr)
+            self.assertEqual(sorted(os.listdir(d)), ['p.0.prism', 'p.0.props', 'p.dice'])
+            self.assertEqual(Path(d, 'p.0.prism').read_text(), dice2prism.translate(path.read_text(), 0, 'p.dice')[0])
 
     def test_registers_are_reused(self):
         # a chain of a hundred flips needs a few variables, not a hundred
@@ -186,6 +198,12 @@ class Dice2PrismTests(unittest.TestCase):
                 comp, = checker_answers(JOINT, None, system, engine, joint=True)
                 for u, p in JOINT_MASSES.items():
                     self.assertAlmostEqual(comp[str(u)], p, delta=1e-12, msg=u)
+
+    def test_a_long_chain_translates_without_recursing_down_it(self):
+        for k in range(2):
+            model, props, _ = reference.shallow(lambda: dice2prism.translate(reference.CHAINS, k))
+            self.assertIn('module', model)
+            self.assertTrue(props)
 
     def test_nth_bit_is_a_shift_and_a_comparison(self):
         # x << i at least 2^(w - 1) (dice_ir.py), << a product modulo 2^w here

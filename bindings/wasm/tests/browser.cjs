@@ -38,6 +38,8 @@ const path = require("node:path");
 const zlib = require("node:zlib");
 const { chromium } = require("playwright");
 const { tddlogExamples } = require("../examples.js");
+// the file of a benchmark the playground opens, as the pages choose it
+const { filledFile } = require("../code.js");
 
 const site = path.resolve(process.argv[2]);
 const only = process.env.RESULTS_ONLY === "1";     // the results page alone, from a site that has only it
@@ -151,22 +153,11 @@ async function noSidewaysScroll(page, what) {
   assert.ok(scroll <= width, `${what}: the page is ${scroll} px wide in a window of ${width} (${out.join(", ")})`);
 }
 
-// The file the playground opens for tddlog's file `file` (in `tab`) of an
-// instance: where it has places ($1, $2, ...), the instance's program of its
-// own name in another ProbLog tab, with its arguments in their places, the
-// one a ProbLog system read where there are several; else `file`.
-function opensAs(inst, tab, file, texts) {
-  if (!/\$[1-9]/.test(texts[file.sha] ?? "")) return file;
-  const filled = (inst.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
-    .flatMap((t) => t.files.filter((x) => x.name === `${inst.name}.pl`).map((x) => [t, x]));
-  const read = filled.find(([t, x]) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0];
-  return read ? read[1] : file;
-}
-
 // The benchmarks of the results the playground can open, where the site
-// has their data: for each instance, the one .pl file tddlog read (filled
-// in where it has places), whether the site keeps it whole and its text,
-// and tddlog's time in the release run.
+// has their data: for each instance, the one .pl file tddlog read (the
+// instance's program where the family's has places: code.js's filledFile,
+// `filled`), whether the site keeps it whole and its text, and tddlog's
+// time in the release run.
 function benchmarksOf(root) {
   const dir = path.join(root, "results", "benchmarks");
   if (!fs.existsSync(path.join(dir, "index.json"))) return [];
@@ -187,7 +178,8 @@ function benchmarksOf(root) {
         const files = (inst.tabs ?? []).filter((t) => t.readers.includes("tddlog"))
           .flatMap((t) => t.files.filter((x) => x.name.endsWith(".pl")).map((x) => [t, x]));
         if (files.length !== 1) continue;
-        const file = opensAs(inst, files[0][0], files[0][1], fam.texts);
+        const opened = filledFile(inst, files[0][0], files[0][1], fam.texts);
+        const file = opened?.file ?? files[0][1];
         const inline = fam.texts[file.sha];
         const readable = !file.held && !file.part && (inline !== undefined || Boolean(file.src));
         const text = () => {
@@ -195,7 +187,7 @@ function benchmarksOf(root) {
           const raw = fs.readFileSync(path.join(dir, file.src));
           return (file.src.endsWith(".gz") ? zlib.gunzipSync(raw) : raw).toString("utf8");
         };
-        out.push({ suite, family: f.key, name: inst.name, path: `${suite}/${f.key}/${inst.name}`, famFile, file, readable, text,
+        out.push({ suite, family: f.key, name: inst.name, path: `${suite}/${f.key}/${inst.name}`, famFile, file, filled: opened !== null, readable, text,
           inline: inline !== undefined, native: native.get(`${suite}/${inst.name}`), reference: Boolean(inst.answers?.ref) });
       }
     }
@@ -493,6 +485,10 @@ function benchmarksOf(root) {
       assert.equal(await page.inputValue("#program"), text);
       const opening = `${whole.name} from ${whole.suite}/${whole.family}: `;
       assert.ok((await page.textContent("#source")).startsWith(`${opening}the program tddlog was given`), await page.textContent("#source"));
+      // a family's program with places opens with this instance's arguments in them, and says so
+      const places = "the program tddlog was given in the release run, with this instance's arguments in its places";
+      assert.equal((await page.textContent("#source")).includes(places), whole.filled, `${whole.path}: the note on its places`);
+      if (whole.filled) assert.doesNotMatch(await page.inputValue("#program"), /\$[1-9]/, `${whole.path}: a place left in the program`);
       assert.equal(await page.getAttribute("#source a", "href"), `${base}results/#/${whole.path}`);
       assert.ok(page.url().endsWith(`#bench=${whole.path}`), page.url());
       await page.reload();
@@ -1294,8 +1290,11 @@ function benchmarksOf(root) {
               && observed(t.files[0].name) && t.files.some((x) => !observed(x.name)));
             if (!multi && ti >= 0) multi = { ...at, ti, inst };
             const mine = inst.tabs.find((t) => t.readers.includes("tddlog"));
-            const pl = (mine?.files.filter((file) => file.name.endsWith(".pl")) ?? []).map((file) => opensAs(inst, mine, file, fam.texts));
-            if (pl.length === 1 && !pl[0].held && !pl[0].part && !tried) tried = at;
+            // the file the playground opens: the instance's program where the family's has places (code.js)
+            const read = mine?.files.filter((file) => file.name.endsWith(".pl")) ?? [];
+            const filled = read.map((file) => filledFile(inst, mine, file, fam.texts));
+            const pl = read.map((file, k) => filled[k]?.file ?? file);
+            if (pl.length === 1 && !pl[0].held && !pl[0].part && !tried) tried = { ...at, filled: filled[0] !== null };
             if (pl.length === 1 && (pl[0].held || pl[0].part) && !kept) kept = at;
           }
           nf++;
@@ -1407,6 +1406,8 @@ function benchmarksOf(root) {
         await visit(hashOf(tried), "#programs select.version");
         const link = `../playground/#bench=${[tried.suite, tried.key, tried.name].map(encodeURIComponent).join("/")}`;
         assert.equal(await page.getAttribute("#programs .pick .try a", "href"), link, `${tried.name}: the link to the playground`);
+        assert.equal((await page.textContent("#programs .pick .try")).includes("with this instance's arguments in its places"), tried.filled,
+          `${tried.name}: the link says whether the program opens with this instance's arguments in its places`);
         await page.click(`#view button[data-runs="${tried.suite}/${tried.name}/tddlog"]`);
         await page.waitForSelector("#drawer:not([hidden]) h4");
         assert.equal(await page.getAttribute("#drawer .try a", "href"), link, `${tried.name}: the link in tddlog's runs`);

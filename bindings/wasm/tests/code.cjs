@@ -2,7 +2,8 @@
 // (every code block names a language code.js knows, highlighting keeps each
 // block's text as it is, and the tokens that matter get their classes), the
 // guide's programs against the repository's files, and the site's
-// navigation, the same on every page. `node --test tests/code.cjs`.
+// navigation, the same on every page, and the file of a benchmark the
+// playground opens. `node --test tests/code.cjs`.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -115,4 +116,20 @@ test("Rust, Python, C and TOML", () => {
   assert.deepEqual(spans(toml, "kw"), ["[dependencies]"]);
   assert.deepEqual(spans(toml, "fn"), ["tddlog"]);
   assert.throws(() => code.highlight("cobol", "x"), /no rules/);
+});
+
+// A family's program with places ($1, ...) opens in the playground as the
+// instance's program of its own name, the one a ProbLog system read; a
+// program without places, or with no such program beside it, as it is.
+test("filledFile: the instance's program in place of a family's with places", () => {
+  const family = { name: "grid.pl", sha: "f" };
+  const mine = { lang: "ProbLog", readers: ["tddlog"], files: [family] };
+  const pita = { lang: "ProbLog", readers: ["PITA"], files: [{ name: "grid4.pl", sha: "p" }] };
+  const problog = { lang: "ProbLog", readers: ["ProbLog -k sdd", "aspmc"], files: [{ name: "grid4.pl", sha: "q" }] };
+  const texts = { f: "size($1).\n", p: "size(4).\n", q: "size(4).\n" };
+  const inst = { name: "grid4", tabs: [mine, pita, problog] };
+  assert.deepEqual(code.filledFile(inst, mine, family, texts), { tab: problog, file: problog.files[0] });
+  assert.deepEqual(code.filledFile({ name: "grid4", tabs: [mine, pita] }, mine, family, texts), { tab: pita, file: pita.files[0] });
+  assert.equal(code.filledFile(inst, mine, family, { ...texts, f: "size(4).\n" }), null);
+  assert.equal(code.filledFile({ name: "grid4", tabs: [mine] }, mine, family, texts), null);
 });

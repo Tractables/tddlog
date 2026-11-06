@@ -405,7 +405,14 @@ impl QueryEvaluation {
             sizes,
         };
         for (atom, id, positive) in gp.queries.iter().skip(out.len()) {
-            backend.pause()?;
+            // An answer the compile counted, or of an atom that cannot hold,
+            // takes no work, and the turn does not end before it: a trial
+            // whose compile ends past its turn's end finishes then, where
+            // it waited for its next turn to read the answers (liftsep11:
+            // 16 s of the other trials' turns).
+            if id.is_some_and(|a| !answers.compiled.for_queries.counted.contains_key(&a)) {
+                backend.pause()?;
+            }
             let p = match id {
                 None => {
                     if *positive {

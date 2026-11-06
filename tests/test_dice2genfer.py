@@ -8,6 +8,8 @@ command that runs it, e.g. `$HOME/local/genfer/bin/genfer`), the
 translated programs run, and their answers, read as bench.py reads them,
 are checked against the exact distribution of test_dice2problog.py.
 """
+import contextlib
+import io
 from pathlib import Path
 import math
 import os
@@ -56,6 +58,44 @@ def program_text(name):
     return (path if path.exists() else source_tree.SOURCE / 'tests' / 'dice' / f'{name}.dice').read_text()
 
 
+def check_each(test, module, exts):
+    """`--each` of a translator that writes a program a component (module,
+    whose translate(text, K, source, joint) returns the texts of K's files,
+    their extensions exts, and the types): over the baseline programs and
+    JOINT, the files of one lowering are byte for byte what `K` writes, each
+    component's type printed once its files are in place; where a component
+    is refused, those before it are written and listed."""
+    cases = [(p.name, p.read_text(), False) for p in dice_programs()] + [('joint', JOINT, True)]
+    for name, text, joint in cases:
+        with test.subTest(name=name), tempfile.TemporaryDirectory() as d:
+            try:
+                types = module.translate(text, None, name, joint)[-1]
+            except NotImplementedError:
+                continue   # lists, /, % and recursion
+            out, refused = io.StringIO(), None
+            with contextlib.redirect_stdout(out):
+                try:
+                    module.translate_each(text, os.path.join(d, 'p.'), name, joint)
+                except NotImplementedError as err:
+                    refused = err
+            listed = out.getvalue().splitlines()
+            test.assertEqual(listed, [dice_ir.kind(t) for t in types[:len(listed)]])
+            for k in range(len(types)):
+                try:
+                    want = module.translate(text, k, name, joint)[:-1]
+                except NotImplementedError:
+                    test.assertIsNotNone(refused)
+                    test.assertEqual(len(listed), k)
+                    break
+                for ext, file in zip(exts, want):
+                    test.assertEqual(Path(d, f'p.{k}.{ext}').read_text(encoding='utf-8'), file)
+            else:
+                test.assertIsNone(refused)
+                test.assertEqual(len(listed), len(types))
+            test.assertEqual(sorted(p.name for p in Path(d).iterdir()),
+                             sorted(f'p.{k}.{ext}' for k in range(len(listed)) for ext in exts))
+
+
 def genfer_answers(text, qs):
     """bench.py's reading of Genfer's runs, one run a component."""
     _, types = dice2genfer.translate(text, None)
@@ -89,6 +129,9 @@ class Dice2GenferTests(unittest.TestCase):
                     self.assertEqual(code.count('{'), code.count('}'))
                     self.assertRegex(code, r'\nreturn [a-z0-9]+\n$')
 
+    def test_each_component_from_one_lowering(self):
+        check_each(self, dice2genfer, ['sgcl'])
+
     def test_registers_are_reused(self):
         # a chain of a hundred flips needs a few variables, not a hundred
         text = 'let a0 = flip 0.5 in ' + ''.join(f'let a{i} = a{i - 1} ^ flip 0.5 in ' for i in range(1, 100)) + 'a99'
@@ -105,6 +148,17 @@ class Dice2GenferTests(unittest.TestCase):
     def test_an_event_read_once_is_inlined(self):
         code, _ = dice2genfer.translate('let a = flip 0.1 in let b = flip 0.2 in let c = observe (a || !b) in a', 0)
         self.assertRegex(code, r'observe \(x\d+ = 1\) \|\| \(!\(x\d+ = 1\)\);')
+
+    def test_a_long_chain_is_an_event_every_chain_operands(self):
+        # an inlined chain is cut every CHAIN operands, a variable ending each part
+        for k, op in enumerate(['&&', '||']):
+            code = reference.shallow(lambda: dice2genfer.translate(reference.CHAINS, k)[0])
+            counts = [line.count(op) for line in code.splitlines()]
+            self.assertLessEqual(max(counts), dice2problog.CHAIN - 1)
+            self.assertEqual(sum(counts), reference.LONG - 1)
+        # a chain of fewer operands is one event, as it was
+        code, _ = dice2genfer.translate('let a = flip 0.3 in let b = flip 0.6 in a && b && a', 0)
+        self.assertRegex(code, r'if \((x\d+) = 1\) && \((x\d+) = 1\) && \(\1 = 1\)')
 
     def test_types_are_checked(self):
         for program, error in [('int(2, 1) + int(3, 1)', TypeError), ('flip 0.5 + int(2, 1)', TypeError),

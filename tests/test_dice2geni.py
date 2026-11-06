@@ -29,7 +29,7 @@ import dice2geni  # noqa: E402
 import dice2problog  # noqa: E402
 import dice_ir  # noqa: E402
 import test_dice2problog as reference  # noqa: E402
-from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y  # noqa: E402
+from test_dice2genfer import CAESAR, JOINT, JOINT_MASSES, OPS, SMALL, X, Y, check_each  # noqa: E402
 
 GENI = os.environ.get('GENI', '')
 
@@ -72,6 +72,9 @@ class Dice2GeniTests(unittest.TestCase):
                     self.assertEqual(code.count('('), code.count(')'))
                     self.assertNotIn('None', code)
                     self.assertNotRegex(code.splitlines()[-1], r'^let ')
+
+    def test_each_component_from_one_lowering(self):
+        check_each(self, dice2geni, ['gir'])
 
     def test_an_integer_is_its_bits(self):
         # the most significant bit first, then the next given it
@@ -159,6 +162,12 @@ class Dice2GeniTests(unittest.TestCase):
                 got = geni_answers(text, qs)
                 for q, w in zip(qs, want):
                     self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-5, msg=q)
+
+    def test_a_long_chain_translates_without_recursing_down_it(self):
+        # a let for each operation of the chain, as before
+        for k in range(2):
+            code = reference.shallow(lambda: dice2geni.translate(reference.CHAINS, k)[0])
+            self.assertTrue(code.strip())
 
     def test_nth_bit_is_a_shift_and_a_comparison(self):
         # x << i at least 2^(w - 1) (dice_ir.py)

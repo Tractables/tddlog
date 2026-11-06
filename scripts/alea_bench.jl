@@ -1,8 +1,8 @@
 # alea_bench.jl: run an Alea.jl program, or write the Boolean circuit Alea
 # builds for it as a ProbLog program and as Dice programs.
 #
-#     julia --project=ALEA alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl [PREFIX]
-#     julia --project=ALEA alea_bench.jl export [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl PREFIX
+#     julia --project=ALEA alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] [--file NAME PATH ...] PROGRAM.jl [PREFIX]
+#     julia --project=ALEA alea_bench.jl export [--warm-below S] [--set NAME=VALUE ...] [--file NAME PATH ...] PROGRAM.jl PREFIX
 #
 # ALEA is a checkout of Alea.jl's branch tddlog (Tractables/Alea.jl), which
 # adds a tddlog backend, and the writer of the circuit, to Alea.jl at
@@ -19,7 +19,9 @@
 # distribution is not computed). `--set NAME=VALUE` runs the program with
 # its line `const NAME = ...` reading `const NAME = VALUE` (a size, such
 # as the bits of a fixed-point number); the program must have exactly one
-# such line.
+# such line. `--file NAME PATH` sets it to the path of a file the program
+# reads (`raw"PATH"`): a logic program's facts (problog2ppl.py's Alea.jl
+# programs).
 #
 # Alea represents every Boolean of a program as a DAG of flips, &, | and !,
 # and a number as a vector of such Booleans (its bits, the most significant
@@ -142,7 +144,7 @@ function flip_numbers(model::Model, query)
     problog_flip_numbers(roots)
 end
 
-const USAGE = "usage: alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl [PREFIX] | export [--warm-below S] [--set NAME=VALUE ...] PROGRAM.jl PREFIX"
+const USAGE = "usage: alea_bench.jl run [--warm-below S] [--set NAME=VALUE ...] [--file NAME PATH ...] PROGRAM.jl [PREFIX] | export [--warm-below S] [--set NAME=VALUE ...] [--file NAME PATH ...] PROGRAM.jl PREFIX"
 
 # The value a world of a number's bits names, for display.
 value(x, world) = Alea.frombits(x, world)
@@ -367,6 +369,20 @@ function main()
         push!(sets, m[1] => m[2])
         deleteat!(args, i:i+1)
     end
+    # `--file NAME PATH`, any number of times: the line `const NAME = ...`
+    # reads the path of a file the program reads (a logic program's facts),
+    # named on the command line by a word of its own. The circuit's first
+    # line names the file by its base name.
+    labels = ["$name=$value" for (name, value) in sets]
+    while (i = findfirst(==("--file"), args)) !== nothing
+        i + 1 < length(args) || error(USAGE)
+        name, path = args[i + 1], abspath(args[i + 2])
+        occursin(r"^[A-Za-z_][A-Za-z0-9_]*$", name) || error("--file takes NAME PATH, not $name")
+        occursin('"', path) && error("--file $name: the path $path has a quote")
+        push!(sets, name => "raw\"$path\"")
+        push!(labels, "$name=$(basename(path))")
+        deleteat!(args, i:i+2)
+    end
     length(args) in (2, 3) || error(USAGE)
     mode, src = args[1], abspath(args[2])
     prefix = length(args) == 3 ? abspath(args[3]) : nothing
@@ -378,7 +394,7 @@ function main()
         text = replace(text, line => "const $name = $value")
     end
     query, ignore_errors = load(text, src)
-    source = join([basename(src); ["$name=$value" for (name, value) in sets]], " ")
+    source = join([basename(src); labels], " ")
     if mode == "run"
         warmup()
         model, seconds = run_program(query, ignore_errors)

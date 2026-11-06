@@ -18,8 +18,12 @@ so it is a switch on the values of one operand and, in each case, on the
 sets of values of the other that give each result (`atomic(loc=r)`). A
 Dice conditional is an `if` whose branches define the same variables (a
 variable one branch does not need is `atomic(loc=0)` there), a chain of
-`else if` an `elif` chain; `iterate(f, x, k)` is unrolled (SPPL's own
-`for` unrolls too).
+`else if` an `elif` chain. `iterate(f, x, k)` is SPPL's `for i in
+range(k)` over arrays (`x = array(n)`, each entry sampled once): each
+state of the loop an array of k + 1 entries, the first its initial value
+and entry i + 1 what iteration i makes of entry i (`s[i + 1] ~= v[i]`), and
+each variable of the body an array of k entries, read and written at
+entry i; a loop inside another has the outer loop's dimension first.
 
 The program's value is asked by sppl_dice.py, which compiles the program
 once and asks `prob` for each value of each component, each a single
@@ -37,6 +41,8 @@ recursive functions.
 Usage: dice2sppl.py program.dice [--joint] > program.sppl
 """
 import argparse
+import itertools
+import math
 import os
 import sys
 
@@ -91,6 +97,9 @@ class Emitter:
         # inlined events whose readers cannot take their form: to be variables
         # (the lines emitted with them are discarded)
         self.unformable = set()
+        self.loops = []     # the enclosing `for`s, each (its index, its number of iterations)
+        self.arrays = {}    # an array's name: its dimensions, the enclosing loops' and its own
+        self.held = set()   # the arrays of observations inside branches
 
     # --- events --------------------------------------------------------------
     # An event is (positive, lits): the conjunction of `name << values` for
@@ -166,10 +175,33 @@ class Emitter:
     # --- statements ----------------------------------------------------------
 
     def name(self, v, suffix):
-        n = f'v{v.n}{suffix}'
+        n = self.fresh(f'v{v.n}{suffix}', v.support)
         self.env[v] = n
-        self.supports[n] = v.support
         return n
+
+    def fresh(self, base, support):
+        """A variable named base, or inside a loop the entry of array base
+        for the enclosing loops' iteration."""
+        if self.loops:
+            dims = [k for _, k in self.loops]
+            self.arrays[base] = dims
+            base = self.at(base, dims, [(i, 0) for i, _ in self.loops])
+        self.supports[base] = support
+        return base
+
+    @staticmethod
+    def at(base, dims, pos):
+        """The entry of array base, of dimensions dims, at pos: each an
+        iteration, or (a loop's index, an offset)."""
+        k, terms, stride = 0, [], 1
+        for n, p in reversed(list(zip(dims, pos))):
+            if isinstance(p, int):
+                k += p * stride
+            else:
+                terms.append(p[0] if stride == 1 else f'{p[0]} * {stride}')
+                k += p[1] * stride
+            stride *= n
+        return f'{base}[{" + ".join(terms[::-1] + ([str(k)] if k or not terms else []))}]'
 
     def assign(self, name, x):
         """name ~= the value x (a constant or a variable)."""
@@ -276,9 +308,10 @@ class Emitter:
                 # paths that do not take the branch, conditioned on after
                 # the outermost if
                 self.dummies += 1
-                n = f'ok{self.dummies}'
-                self.supports[n] = (0, 1)
+                n = self.fresh(f'ok{self.dummies}', (0, 1))
                 self.holds.add(n)
+                if self.loops:
+                    self.held.add(f'ok{self.dummies}')
                 pol, lits = self.event(s[1])
                 one, zero = (1, 0) if pol else (0, 1)
                 out += [f'if {self.render(lits)}:', f'    {n} ~= atomic(loc={one})',
@@ -291,22 +324,55 @@ class Emitter:
                 if depth == 0:
                     out += [f'condition({n} << {{1}})' for n in defined if n in self.holds]
             elif kind == 'loop':
-                _, k, states, inits, body, nexts = s
-                current = [self.val(x) for x in inits]
-                for i in range(k + 1):
-                    for j, (v, x) in enumerate(zip(states, current)):
-                        if isinstance(x, Const):   # a state's operations read a variable
-                            n = self.name(v, f'{suffix}_{i}s{j}')
-                            out.append(f'{n} ~= atomic(loc={x.k})')
-                            names.append(n)
-                        else:
-                            self.env[v] = x
-                    if i == k:
-                        break
-                    lines, defined = self.emit(body, f'{suffix}_{i}', depth)
-                    out += lines
-                    names += defined
-                    current = [self.val(x) for x in nexts]
+                lines, defined = self.emit_loop(s, suffix, depth)
+                out += lines
+                names += defined
+        return out, names
+
+    def emit_loop(self, s, suffix, depth):
+        """iterate(f, x, k) as `for i in range(k)`: each state an array of
+        k + 1 entries, the first the initial state, entry i + 1 what
+        iteration i makes of entry i; each variable of the body an array of
+        k entries. Inside other loops each array has their dimensions
+        before its own. The names defined are every entry of the arrays,
+        for the enclosing loops' iteration."""
+        _, k, states, inits, body, nexts = s
+        if k == 0:
+            for v, x in zip(states, inits):
+                self.env[v] = self.val(x)
+            return [], []
+        self.dummies += 1
+        index, outer = f'i{self.dummies}_', [(i, 0) for i, _ in self.loops]
+        dims = [n for _, n in self.loops] + [k + 1]
+        bases = [f's{self.dummies}_{j}' for j in range(len(states))]
+        before = set(self.arrays)
+        out = []
+        for b, v, x in zip(bases, states, inits):
+            self.arrays[b] = dims
+            out.append(self.assign(self.at(b, dims, outer + [0]), x))
+
+        def entry(b, v, p):
+            n = self.at(b, dims, outer + [p])
+            self.supports[n] = v.support
+            return n
+        for b, v in zip(bases, states):
+            self.env[v] = entry(b, v, (index, 0))
+        self.loops.append((index, k))
+        lines, _ = self.emit(body, suffix, depth)
+        lines += [self.assign(self.at(b, dims, outer + [(index, 1)]), x) for b, x in zip(bases, nexts)]
+        self.loops.pop()
+        out += [f'for {index} in range({k}):'] + ['    ' + line for line in lines]
+        for b, v in zip(bases, states):
+            self.env[v] = entry(b, v, k)
+        names = []
+        for b in self.arrays:
+            if b not in before:
+                own = self.arrays[b][len(outer):]
+                for p in itertools.product(*map(range, own)):
+                    n = self.at(b, self.arrays[b], outer + list(p))
+                    names.append(n)
+                    if b in self.held:
+                        self.holds.add(n)
         return out, names
 
     def branches(self, s, values, suffix, depth):
@@ -349,8 +415,7 @@ class Emitter:
         for i, (e, lines, ns) in enumerate(bs):
             if not lines:
                 self.dummies += 1
-                d = f'skip{self.dummies}'
-                self.supports[d] = (0,)
+                d = self.fresh(f'skip{self.dummies}', (0,))
                 lines = [f'{d} ~= atomic(loc=0)']
                 ns = ns + [d]
                 defined.add(d)
@@ -415,7 +480,8 @@ def translate(text, source='a Dice program', joint=False):
                 head.append(f'# component {k} {ty} {got} {",".join(map(str, e.supports[got]))}')
         if not lines:
             lines = ['skip0 ~= atomic(loc=0)']
-        return '\n'.join(head + lines) + '\n'
+        arrays = [f'{b} = array({math.prod(dims)})' for b, dims in e.arrays.items()]
+        return '\n'.join(head + arrays + lines) + '\n'
     return deep(run)
 
 

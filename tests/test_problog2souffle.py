@@ -288,10 +288,30 @@ class TranslateTests(unittest.TestCase):
         _, rows, _, _, _ = translate("0.5::f('Hello world').\nquery(f(_)).\n")
         self.assertEqual(rows['f'], ['Hello world'])
 
+    def test_a_certain_disjunction_is_a_clause_per_disjunct_and_the_other_neck_is_read(self):
+        # ProbLog's tutorial programs: smokers_or's rule and add's `any`, with `<-`
+        text = ("0.3::p(1); 0.4::p(2).\nany <- p(1) ; p(2).\nq(X) :- p(X), X > 1 ; p(X), X < 2.\n"
+                "query(any). query(q(1)).\n")
+        _, rules, _, _, queries, _ = problog2souffle.parse(text)
+        self.assertEqual([(prob, head) for prob, head, _ in rules],
+                         [(None, ('any', [])), (None, ('any', [])), (None, ('q', [('var', 'X')])),
+                          (None, ('q', [('var', 'X')]))])
+        self.assertEqual([body for _, _, body in rules][:2], [[('pos', ('p', [('int', 1)]))],
+                                                              [('pos', ('p', [('int', 2)]))]])
+        self.assertEqual([len(body) for _, _, body in rules][2:], [2, 2])
+        self.assertEqual(queries, [('any', []), ('q', [('int', 1)])])
+
+    def test_evidence_on_a_negation_is_its_atom_observed_false(self):
+        # smokers_or's `evidence(\+influences(4,2)).`, as ProbLog reads it
+        *_, evidence = problog2souffle.parse('0.2::i(4,2).\n0.5::a.\nevidence(\\+i(4,2)).\nevidence(\\+a).\n')
+        self.assertEqual(evidence, [(('i', [('int', 4), ('int', 2)]), False), (('a', []), False)])
+        with self.assertRaises(problog2souffle.Refused):
+            problog2souffle.parse('0.5::a.\nevidence(\\+a, true).\n')
+
     def test_refusals(self):
         for text, reason in [('p([1,2]).\n', 'a list'),
                              ('p(f(1)).\n', 'function symbol'),
-                             ('p(X) :- q(X) ; r(X).\n', 'disjunction'),
+                             ('q(1).\n0.5::p(X) :- q(X) ; q(X).\n', 'disjunction in the body of a probabilistic'),
                              (':- use_module(library(lists)).\n', 'directive'),
                              ('p(X).\n', 'not ground'),
                              ('q(1).\np(X) :- q(X), \\+ p(X).\n', 'recursion'),

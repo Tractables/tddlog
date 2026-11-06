@@ -63,6 +63,21 @@ def balanced(code):
     return not stack
 
 
+def nesting(code):
+    """How deep the parentheses and brackets of Racket code nest, strings
+    and comments left out."""
+    code = re.sub(r'"(\\.|[^"\\])*"', '""', code)
+    code = re.sub(r';[^\n]*', '', code)
+    depth = deepest = 0
+    for ch in code:
+        if ch in '([':
+            depth += 1
+            deepest = max(deepest, depth)
+        elif ch in ')]':
+            depth -= 1
+    return deepest
+
+
 def run(code, *args):
     """What Racket prints running the program `code`."""
     with tempfile.TemporaryDirectory() as d:
@@ -172,6 +187,33 @@ class Dice2RouletteTests(unittest.TestCase):
         self.assertLess(len(main), 100 * n)
         self.assertEqual(main.count('(distribution '), n)
         self.assertRegex(main, r'\(define dists \(list \(distribution x1-a0\) \(distribution x2-a1\) ')
+
+    # A chain of && and one of || as long as five times CHAIN, over a and b.
+    LONG = 5 * dice2problog.CHAIN + 3
+    CHAINS = ('let a = flip 0.3 in let b = flip 0.6 in\n('
+              + ' && '.join('ab'[k % 2] for k in range(LONG)) + ', '
+              + ' || '.join('ab'[k % 2] for k in range(LONG)) + ')\n')
+
+    def test_a_long_chain_is_named_every_chain_operands(self):
+        # A ground program's conjunction of literals is a tree as deep as it
+        # is long: TPC-H's q1 at scale 200, 1.2 million deep, passed the
+        # translator's recursion limit, and at scale 20 Racket's compile of
+        # a 120,000-deep expression its time limit.
+        main = translate(self.CHAINS).split('(define clock (start-clock))')[1]
+        self.assertTrue(balanced(main))
+        self.assertLess(nesting(main), dice2problog.CHAIN + 10)
+        for op in ('&&', '||'):
+            self.assertEqual(len(re.findall(rf'\(define x\d+-result \({re.escape(op)} ', main)),
+                             (self.LONG - 1) // dice2problog.CHAIN + 1)
+        # A chain of fewer operands nests from the left as it did.
+        self.assertRegex(translate('let a = flip 0.3 in let b = flip 0.6 in a && b && a\n'),
+                         r'\(&& \(&& (x\d+-a) (x\d+-b)\) \1\)')
+
+    @unittest.skipUnless(RACKET, 'ROULETTE_RACKET is not set')
+    def test_a_long_chain_gives_the_exact_answers(self):
+        comps = bench.parse_alea(run(translate(self.CHAINS)), 'roulette')[0]
+        self.assertAlmostEqual(comps[0]['true'], 0.3 * 0.6, delta=1e-12)
+        self.assertAlmostEqual(comps[1]['true'], 1 - 0.7 * 0.4, delta=1e-12)
 
     JOINT = 'let x = flip 0.5 in let y = flip 0.25 in let o = observe (x || y) in (x, y)\n'
 

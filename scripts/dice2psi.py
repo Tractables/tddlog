@@ -3,11 +3,14 @@
 into a program of Psi's language (Gehr, Misailovic and Vechev, CAV 2016;
 github.com/eth-sri/psi), the exact symbolic inference engine.
 
-The program is read by dice2problog.py's parser. Psi is imperative with
-real-valued variables: a Boolean is a Psi number that is 0 or 1 (`flip(p)`
-draws one; `!`, `&&`, `||` and `==` act on them), an int(w) a number from 0
+The program is read by dice2problog.py's parser. Psi is imperative and
+typed: a Boolean is a Psi 𝔹 (`flip(p)` draws one, `true` and `false` are
+the constants; `!`, `&&`, `||` and `==` act on them), an int(w) a ℤ from 0
 to 2^w - 1 whose `+`, `-` and `*` are taken modulo 2^w as Dice's, a tuple
-a Psi tuple. `discrete(...)` is `categorical([...])` and `uniform(w, lo,
+a Psi tuple. A function's parameters are declared with the types of the
+Dice signature (𝔹, ℤ, A × B): Psi takes a parameter without a type for a
+real, and stops with signal 11, not an error, on a type error such as `!`,
+`&&` or `if` of a real, or a Boolean constant written 1 passed as a 𝔹. `discrete(...)` is `categorical([...])` and `uniform(w, lo,
 hi)` `uniformInt(lo, hi - 1)`, so Psi sums over the values where Dice
 draws bits; the answer is the same distribution. `observe e` is
 `observe(e)`, which Psi renormalizes by. A Dice function is a Psi
@@ -21,7 +24,9 @@ come out as the joint. The program's value is therefore asked one
 component at a time, as run_dice does for the networks: `dice2psi.py
 program.dice K` writes the program whose value is the K-th component
 (counted from 0, left to right through nested tuples; `--components` prints
-how many there are and each one's type: `bool` or `int W`). With
+how many there are and each one's type: `bool` or `int W`; `--each
+PREFIX` writes every component's program, K's as PREFIXK.psi, from one
+translation, and prints each one's type once its file is written). With
 `--joint` the value, a tuple of Booleans, is one int(N) whose bits they
 are, the first the most significant: the Dice programs of an Alea.jl
 circuit's `joint` lines (bench.py's dicemap). A program Psi cannot express
@@ -32,6 +37,7 @@ recursive functions (Psi has no recursion), and `nth_bit`.
 
 Usage: dice2psi.py program.dice K [--joint] > program.psi
        dice2psi.py program.dice --components [--joint]
+       dice2psi.py program.dice --each PREFIX [--joint]
 """
 import argparse
 from fractions import Fraction
@@ -43,10 +49,32 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import source_tree  # noqa: E402,F401  (the source tree's converters)
 from dice2problog import (Parser, bits_for, calls, deep,  # noqa: E402
                           discrete_probs, tokenize)
-from dice_ir import refuse  # noqa: E402
+from dice_ir import kind, refuse, written  # noqa: E402
 
 BOOL = ('bool',)
 ATOM = re.compile(r'[A-Za-z_][A-Za-z0-9_]*|[0-9]+(\.[0-9]+)?')
+TRUE, FALSE = 'true', 'false'
+# an int(w)'s type in Psi: a parameter declared without a type is a real
+INT = 'ℤ'
+
+
+def psi_type(t, inner=False):
+    """Psi's type of a value of Dice type t: 𝔹, ℤ, or A × B for a tuple."""
+    if t == BOOL:
+        return '𝔹'
+    if t[0] == 'int':
+        return INT
+    pair = f'{psi_type(t[1], True)} × {psi_type(t[2], True)}'
+    return f'({pair})' if inner else pair
+
+
+def default(t):
+    """A value of Dice type t, for a variable that both branches of an `if` set."""
+    if t == BOOL:
+        return FALSE
+    if t[0] == 'int':
+        return '0'
+    return f'({default(t[1])}, {default(t[2])})'
 
 
 def literal(p):
@@ -97,7 +125,10 @@ class Translator:
 
     def value(self, e, env, out, hint):
         """e's value as a variable or a constant, its statements in out."""
-        code, t = self.expr(e, env, out, hint)
+        return self.named(*self.expr(e, env, out, hint), out, hint)
+
+    def named(self, code, t, out, hint):
+        """code (of type t) as a variable or a constant, its statement in out."""
         if ATOM.fullmatch(code):
             return code, t
         v = self.fresh(hint)
@@ -121,13 +152,13 @@ class Translator:
                 raise NameError(f'unbound variable {e[1]}')
             return env[e[1]]
         if kind == 'bool':
-            return ('1' if e[1] else '0'), BOOL
+            return (TRUE if e[1] else FALSE), BOOL
         if kind == 'flip':
             p = e[1]
             if p <= 0:
-                return '0', BOOL
+                return FALSE, BOOL
             if p >= 1:
-                return '1', BOOL
+                return TRUE, BOOL
             return self.draw(f'flip({literal(p)})', out, hint), BOOL
         if kind == 'discrete':
             ps = discrete_probs(e[1])
@@ -176,6 +207,21 @@ class Translator:
             if not 0 <= i < width:
                 raise ValueError(f'nth_bit: bit {i} of {width}')
             return f'({shl(c, i, width)} >= {2 ** (width - 1)})', BOOL
+        if kind == 'bin' and e[1] in ('&&', '||'):
+            # a chain of one operator, which the parser nests to the left as
+            # deep as it is long, walked down its left side: each operand
+            # and each part of the chain a value, as the recursion makes them
+            op, rights = e[1], []
+            while e[0] == 'bin' and e[1] == op:
+                rights.append(e[3])
+                e = e[2]
+            a, ta = self.value(e, env, out, hint)
+            for k, r in enumerate(reversed(rights)):
+                b, tb = self.value(r, env, out, hint)
+                code, t = self.binary(op, a, ta, b, tb)
+                if k == len(rights) - 1:
+                    return code, t
+                a, ta = self.named(code, t, out, hint)
         if kind == 'bin':
             a, ta = self.value(e[2], env, out, hint)
             b, tb = self.value(e[3], env, out, hint)
@@ -184,7 +230,7 @@ class Translator:
             c, t = self.value(e[1], env, out, hint)
             same(t, BOOL, 'observe')
             out.append(f'observe({c});')
-            return '1', BOOL
+            return TRUE, BOOL
         if kind == 'if':
             return self.ite(e, env, out, hint)
         if kind == 'call':
@@ -234,10 +280,10 @@ class Translator:
         if op in ('&&', '||'):
             same(ta, BOOL, op)
             same(tb, BOOL, op)
-            # Psi crashes on a constant operand of && and ||
-            if '0' in (a, b) or '1' in (a, b):
-                one, other = (a, b) if a in ('0', '1') else (b, a)
-                if (one == '1') == (op == '&&'):
+            # a constant operand decides or drops out
+            if FALSE in (a, b) or TRUE in (a, b):
+                one, other = (a, b) if a in (FALSE, TRUE) else (b, a)
+                if (one == TRUE) == (op == '&&'):
                     return other, BOOL
                 return one, BOOL
             return f'({a} {op} {b})', BOOL
@@ -261,19 +307,22 @@ class Translator:
     def ite(self, e, env, out, hint):
         c, t = self.value(e[1], env, out, hint)
         same(t, BOOL, 'if')
-        if c == '1':
+        if c == TRUE:
             return self.expr(e[2], env, out, hint)
-        if c == '0':
+        if c == FALSE:
             return self.expr(e[3], env, out, hint)
         then, other = [], []
-        built = set(self.built)   # a tuple a branch builds is not there after it
+        # a tuple one branch builds is there neither in the other branch nor after the `if`
+        built = set(self.built)
         a, ta = self.value(e[2], env, then, hint)
+        a = self.build(a, then)
+        self.built = set(built)
         b, tb = self.value(e[3], env, other, hint)
-        t = same(ta, tb, 'if')
-        a, b = self.build(a, then), self.build(b, other)
+        b = self.build(b, other)
         self.built = built
+        t = same(ta, tb, 'if')
         r = self.fresh(hint)
-        out.append(f'{r} := 0;')
+        out.append(f'{r} := {default(t)};')
         out.append(f'if {c} {{ {" ".join(then)} {r} = {a}; }} else {{ {" ".join(other)} {r} = {b}; }}')
         return r, t
 
@@ -293,7 +342,8 @@ class Translator:
         value, t = self.value(body, {p: (a, ty) for p, a, ty in zip(params, args, types)}, out, fname)
         value = self.build(value, out)
         self.funs[fname] = (name, types, t)
-        self.defs.append(f'def {name}({", ".join(args)}) {{\n  ' + '\n  '.join(out + [f'return {value};']) + '\n}')
+        typed = ', '.join(f'{a}: {psi_type(ty)}' for a, ty in zip(args, types))
+        self.defs.append(f'def {name}({typed}) {{\n  ' + '\n  '.join(out + [f'return {value};']) + '\n}')
 
     def components(self, t, code):
         """The leaves of a value of type t: (code, type) each."""
@@ -302,10 +352,11 @@ class Translator:
             return self.components(t[1], a) + self.components(t[2], b)
         return [(code, t)]
 
-    def translate(self, text, k, joint=False):
-        """(the Psi program asking component k, the components' types). With
-        joint, the value, a tuple of Booleans, is one int(N) whose bits they
-        are, the first the most significant: their joint distribution."""
+    def translate(self, text, joint=False):
+        """(main's statements, the components of the value: (code, type)
+        each); the functions are in self.defs. With joint, the value, a
+        tuple of Booleans, is one int(N) whose bits they are, the first the
+        most significant: their joint distribution."""
         parser = Parser(tokenize(text), nth_bit=True)
         funs, body = parser.program()
         names = [f[0] for f in funs]
@@ -323,23 +374,41 @@ class Translator:
                 raise TypeError('joint: a value of Booleans')
             n = len(comps)
             comps = [(' + '.join(f'({c})*{2 ** (n - 1 - i)}' for i, (c, _) in enumerate(comps)), ('int', n))]
-        types = [ct for _, ct in comps]
-        if k is None:
-            return None, types
-        if not 0 <= k < len(comps):
-            raise ValueError(f'component {k} of {len(comps)}')
+        return out, comps
+
+    def program(self, out, comps, k, source):
+        """The Psi program that returns component k, of comps, after main's
+        statements out."""
         main = '\n  '.join(out + [f'return {comps[k][0]};'])
-        return '\n\n'.join(self.defs + [f'def main() {{\n  {main}\n}}']) + '\n', types
+        return (f'// {source}, translated by tddlog\'s scripts/dice2psi.py, component {k}.\n'
+                + '\n\n'.join(self.defs + [f'def main() {{\n  {main}\n}}']) + '\n')
 
 
 def translate(text, k, source='a Dice program', joint=False):
     """The Psi program that returns component k of a Dice program's value,
     with the types of all the components (`bool` or ('int', w)); with
     joint, of the int whose bits are the value's Booleans."""
-    program, types = deep(lambda: Translator().translate(text, k, joint))
-    if program is not None:
-        program = f'// {source}, translated by tddlog\'s scripts/dice2psi.py, component {k}.\n' + program
-    return program, types
+    def run():
+        tr = Translator()
+        out, comps = tr.translate(text, joint)
+        types = [t for _, t in comps]
+        if k is None:
+            return None, types
+        if not 0 <= k < len(comps):
+            raise ValueError(f'component {k} of {len(comps)}')
+        return tr.program(out, comps, k, source), types
+    return deep(run)
+
+
+def translate_each(text, prefix, source='a Dice program', joint=False):
+    """Every component's program from one translation, written as
+    PREFIXk.psi (dice_ir.written)."""
+    def run():
+        tr = Translator()
+        out, comps = tr.translate(text, joint)
+        for k, (_, t) in enumerate(comps):
+            written(prefix, k, t, {'psi': tr.program(out, comps, k, source)})
+    deep(run)
 
 
 def main():
@@ -347,22 +416,27 @@ def main():
     ap.add_argument('program')
     ap.add_argument('component', nargs='?', type=int)
     ap.add_argument('--components', action='store_true', help="print each component's type instead")
+    ap.add_argument('--each', metavar='PREFIX', help="write every component's program, K's as PREFIXK.psi, "
+                    "and print each one's type once its program is written")
     ap.add_argument('--joint', action='store_true', help='the value, a tuple of Booleans, as one int whose bits '
                     'they are (the most significant first): their joint distribution')
     a = ap.parse_args()
-    if a.components == (a.component is not None):
-        raise SystemExit('give a component K, or --components')
+    if (a.component is not None) + a.components + (a.each is not None) != 1:
+        raise SystemExit('give a component K, --components or --each PREFIX')
     with open(a.program) as f:
         text = f.read()
     try:
+        if a.each is not None:
+            translate_each(text, a.each, os.path.basename(a.program), a.joint)
+            return
         program, types = translate(text, a.component, os.path.basename(a.program), a.joint)
     except NotImplementedError as err:
         refuse(err)
     if a.components:
         for t in types:
-            print('bool' if t == BOOL else f'int {t[1]}')
+            print(kind(t))
     else:
-        sys.stdout.write(program)
+        sys.stdout.buffer.write(program.encode())   # UTF-8, whatever the locale
 
 
 if __name__ == '__main__':

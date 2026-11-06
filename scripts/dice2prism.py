@@ -52,7 +52,10 @@ The value is asked one component at a time, as dice2psi.py does:
 `dice2prism.py program.dice K` writes the model whose value is the K-th
 component (counted from 0, left to right through nested tuples), with only
 the statements it and the observations need; `--components` prints each
-component's type (`bool` or `int W`). With `--joint` a value of N Booleans
+component's type (`bool` or `int W`); `--each PREFIX` writes every
+component's model and properties, K's as PREFIXK.prism and PREFIXK.props,
+from one lowering of the program, and prints each one's type once its
+files are written. With `--joint` a value of N Booleans
 is one component, an int(N) whose most significant bit is the first
 Boolean: the joint distribution a circuit's `joint` program asks.
 
@@ -62,6 +65,7 @@ recursive functions (the chain has no stack), and integers beyond PRISM's
 
 Usage: dice2prism.py program.dice K [--joint] [--props FILE] > program.prism
        dice2prism.py program.dice --components [--joint]
+       dice2prism.py program.dice --each PREFIX [--joint]
 """
 import argparse
 import heapq
@@ -74,7 +78,7 @@ from fractions import Fraction
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import source_tree  # noqa: E402,F401  (the source tree's converters)
 from dice2problog import bits_for  # noqa: E402
-from dice_ir import BOOL, Const, Lower, Var, deep, leaves, lower, prune, refuse, size  # noqa: E402
+from dice_ir import BOOL, Const, Lower, Var, deep, kind, lowered, prune, refuse, size, written  # noqa: E402
 
 EXPRESSION = 64       # the largest expression a command computes before its operands are stored
 GROUPS = 256          # the most commands, one per guard, that a step is split into
@@ -659,24 +663,40 @@ def translate(text, k, source='a Dice program', joint=False):
     properties as the text of a properties file, the types of all the
     components: `BOOL` or ('int', w))."""
     def run():
-        stmts, value = lower(text, joint)
-        comps = leaves(value)
-        types = [x.t for x in comps]
+        stmts, comps, types = lowered(text, joint)
         if k is None:
             return None, None, types
         if not 0 <= k < len(comps):
             raise ValueError(f'component {k} of {len(comps)}')
-        result = comps[k]
-        kept = reorder(prune(stmts, {result} if isinstance(result, Var) else set()))
-        chain = Chain(Flat(kept, result))
-        props = chain.properties()
-        commands = sum(len(g) for g in chain.steps.values())
-        head = [f'{source}, translated by tddlog\'s scripts/dice2prism.py, component {k} '
-                f'({"bool" if types[k] == BOOL else f"int({types[k][1]})"}): {len(chain.steps)} steps, '
-                f'{len(chain.regs)} registers, {commands} commands.'] + \
-            [f'"{name}": {prop}' for name, prop in props]
-        return chain.model(head), ''.join(f'"{name}": {prop};\n' for name, prop in props), types
+        return (*component(stmts, comps, types, k, source), types)
     return deep(run)
+
+
+def component(stmts, comps, types, k, source):
+    """(the PRISM model of component k, of comps, the lowered program stmts'
+    components, of the types `types`; its properties as the text of a
+    properties file)."""
+    result = comps[k]
+    kept = reorder(prune(stmts, {result} if isinstance(result, Var) else set()))
+    chain = Chain(Flat(kept, result))
+    props = chain.properties()
+    commands = sum(len(g) for g in chain.steps.values())
+    head = [f'{source}, translated by tddlog\'s scripts/dice2prism.py, component {k} '
+            f'({"bool" if types[k] == BOOL else f"int({types[k][1]})"}): {len(chain.steps)} steps, '
+            f'{len(chain.regs)} registers, {commands} commands.'] + \
+        [f'"{name}": {prop}' for name, prop in props]
+    return chain.model(head), ''.join(f'"{name}": {prop};\n' for name, prop in props)
+
+
+def translate_each(text, prefix, source='a Dice program', joint=False):
+    """Every component's model and properties from one lowering, written as
+    PREFIXk.prism and PREFIXk.props (dice_ir.written)."""
+    def run():
+        stmts, comps, types = lowered(text, joint)
+        for k, t in enumerate(types):
+            model, props = component(stmts, comps, types, k, source)
+            written(prefix, k, t, {'prism': model, 'props': props})
+    deep(run)
 
 
 def main():
@@ -684,23 +704,28 @@ def main():
     ap.add_argument('program')
     ap.add_argument('component', nargs='?', type=int)
     ap.add_argument('--components', action='store_true', help="print each component's type instead")
+    ap.add_argument('--each', metavar='PREFIX', help="write every component's model and properties, K's as "
+                    "PREFIXK.prism and PREFIXK.props, and print each one's type once its files are written")
     ap.add_argument('--joint', action='store_true', help='the value, a tuple of Booleans, as one int whose bits '
                     'they are (the most significant first): their joint distribution')
     ap.add_argument('--props', help='write the properties to this file')
     a = ap.parse_args()
-    if a.components == (a.component is not None):
-        raise SystemExit('give a component K, or --components')
-    if a.props and a.components:
+    if (a.component is not None) + a.components + (a.each is not None) != 1:
+        raise SystemExit('give a component K, --components or --each PREFIX')
+    if a.props and a.component is None:
         raise SystemExit('--props writes the properties of a component K')
     with open(a.program) as f:
         text = f.read()
     try:
+        if a.each is not None:
+            translate_each(text, a.each, os.path.basename(a.program), a.joint)
+            return
         model, props, types = translate(text, a.component, os.path.basename(a.program), a.joint)
     except NotImplementedError as err:
         refuse(err)
     if a.components:
         for t in types:
-            print('bool' if t == BOOL else f'int {t[1]}')
+            print(kind(t))
         return
     if a.props:
         with open(a.props, 'w') as f:

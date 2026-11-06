@@ -312,6 +312,27 @@ class BifFormatTests(unittest.TestCase):
         self.assertFalse(gen_bn.is_bayesian([str(regress / 'markov.uai'), '--query', 'none']))
         self.assertTrue(gen_bn.is_bayesian([str(SOURCE / 'tests' / 'networks' / 'asia.net'), '--query', 'none']))
 
+    def test_a_certain_variable_of_one_value_is_bayesian(self):
+        """A Bayesian network's variable of one value has every row 1 (Ace's
+        munin1, munin3 and munin4 have three): the network is Bayesian, and
+        its BIF file declares the variable and reads back as its tables. A
+        variable of one value with a row below 1 is a Markov network's
+        factor."""
+        variables = {'a': ['x', 'y'], 'd': ['dummy']}
+        tables = {'a': ([], {(): [0.25, 0.75]}), 'd': (['a'], {('x',): [1.0], ('y',): [1.0]})}
+        network = (['a', 'd'], variables, tables)
+        self.assertTrue(gen_bn.bayesian(network))
+        text, word = gen_bn.to_bif(network)
+        self.assertIn('type discrete [ 1 ] { s0 };', text)
+        back_order, back_variables, back_tables = gen_bn.parse_bif(text)
+        self.assertEqual(back_variables['x1'], ['s0'])
+        self.assertEqual(back_tables['x1'][0], ['x0'])
+        self.assertEqual({k: [float(p) for p in row] for k, row in back_tables['x1'][1].items()},
+                         {('s0',): [1.0], ('s1',): [1.0]})
+        factor = (['a', 'd'], variables, {**tables, 'd': (['a'], {('x',): [1.0], ('y',): [0.5]})})
+        self.assertFalse(gen_bn.bayesian(factor))
+        self.assertIsNone(gen_bn.to_bif(factor))
+
 
 class DiceFormatTests(unittest.TestCase):
     """The Dice format with observations (`dice_programs`): one program per

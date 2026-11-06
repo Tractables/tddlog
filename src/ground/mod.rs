@@ -11,6 +11,8 @@
 //!      takes the next steps.
 //!    - `normalize`: annotated disjunctions and probabilistic rules become
 //!      *switch* facts and deterministic rules.
+//!    - `relevant`: the rules and facts of the predicates that no query or
+//!      observation reads dropped.
 //!    - `chain`: doubly recursive transitive closures written linear.
 //!    - `magic` and `schedule`: the magic-set rewrite, after which only
 //!      what the queries and the evidence demand is ground.
@@ -82,6 +84,7 @@ mod normalize;
 mod preprocess;
 mod program;
 mod propagation;
+mod relevant;
 mod renormalize;
 mod schedule;
 pub(crate) mod shape;
@@ -271,7 +274,10 @@ fn ground_tried(
         };
         return Ok(finish_keeping(gp, opts, keep));
     }
-    let norm = normalize::normalize(program, counted)?;
+    let mut norm = normalize::normalize(program, counted)?;
+    // The predicates no query or observation reads are not ground
+    // ([`relevant`]).
+    relevant::keep_relevant(&mut norm);
     // An argument no clause reads, as a derivation a fact leaves free, is
     // dropped ([`unread`]).
     let norm = unread::drop_unread(&norm).unwrap_or(norm);

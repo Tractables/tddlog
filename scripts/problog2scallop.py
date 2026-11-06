@@ -67,7 +67,8 @@ symbols (each argument has one type), and a constant with a backslash (its
 string literals read one back ambiguously). A reason that begins
 `translator:` is this translator's limit and not Scallop's: function
 symbols and lists (Scallop's algebraic data types could hold them), a
-disjunction in a body, flexible probabilities, and the like.
+disjunction in the body of a probabilistic clause, flexible probabilities,
+and the like.
 """
 import gzip
 import re

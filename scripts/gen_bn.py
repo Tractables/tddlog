@@ -948,9 +948,14 @@ def bif_number(p):
 
 def bayesian(network):
     """Whether the network (`model`'s) is a Bayesian network, which a BIF file
-    holds: a Markov network's factors are variables of one value."""
-    order, variables, _ = network
-    return all(len(variables[v]) > 1 for v in order)
+    holds: each variable of one value has every row 1. A Markov network's
+    factors are variables of one value whose rows are the factor's entries
+    over its largest, some below 1 (`parse_uai` leaves out a constant
+    factor); a Bayesian network's variable of one value is certain (Ace's
+    munin1, munin3 and munin4 have three, DIFFN_DUMMY_1 to 3)."""
+    order, variables, tables = network
+    return all(len(variables[v]) > 1 or all(p == 1 for row in tables[v][1].values() for p in row)
+               for v in order)
 
 
 def is_bayesian(argv):

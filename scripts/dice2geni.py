@@ -26,7 +26,9 @@ value is asked one component at a time, as dice2genfer.py does:
 `dice2geni.py program.dice K` writes the program whose value is the K-th
 component (counted from 0, left to right through nested tuples), an
 int(w) as the tuple of its bits, the most significant first; `--components`
-prints each component's type (`bool` or `int W`). Geni does not normalize
+prints each component's type (`bool` or `int W`); `--each PREFIX` writes
+every component's program, K's as PREFIXK.gir, from one lowering of the
+program, and prints each one's type once its file is written. Geni does not normalize
 by the observations' probability: the masses of all the values, which it
 prints, are divided by their sum.
 
@@ -35,13 +37,14 @@ recursive functions.
 
 Usage: dice2geni.py program.dice K [--joint] > program.gir
        dice2geni.py program.dice --components [--joint]
+       dice2geni.py program.dice --each PREFIX [--joint]
 """
 import argparse
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from dice_ir import BOOL, Const, Var, decimal, deep, leaves, lower, prune, refuse  # noqa: E402
+from dice_ir import BOOL, Const, Var, decimal, deep, kind, lowered, prune, refuse, written  # noqa: E402
 
 # a discrete over more values is refused: its chain of Bernoullis has a
 # leaf for each value
@@ -332,27 +335,41 @@ class Emitter:
             self.env[v] = self.fixed(v, [b if b is not None else next(got) for b in bits])
 
 
+def component(stmts, comps, k):
+    """The Geni program that returns component k (of comps, the lowered
+    program stmts' components)."""
+    result = comps[k]
+    kept = prune(stmts, {result} if isinstance(result, Var) else set())
+    e = Emitter()
+    e.emit(kept)
+    bits = e.bits(result)
+    ret = e.expr(bits[0])
+    for b in bits[1:]:        # the most significant bit first
+        ret = f'({e.expr(b)}, {ret})'
+    return '\n'.join(e.lines + [ret]) + '\n'
+
+
 def translate(text, k, source='a Dice program', joint=False):
     """The Geni program that returns component k of a Dice program's value,
     with the types of all the components (`BOOL` or ('int', w))."""
     def run():
-        stmts, value = lower(text, joint)
-        comps = leaves(value)
-        types = [x.t for x in comps]
+        stmts, comps, types = lowered(text, joint)
         if k is None:
             return None, types
         if not 0 <= k < len(comps):
             raise ValueError(f'component {k} of {len(comps)}')
-        result = comps[k]
-        kept = prune(stmts, {result} if isinstance(result, Var) else set())
-        e = Emitter()
-        e.emit(kept)
-        bits = e.bits(result)
-        ret = e.expr(bits[0])
-        for b in bits[1:]:        # the most significant bit first
-            ret = f'({e.expr(b)}, {ret})'
-        return '\n'.join(e.lines + [ret]) + '\n', types
+        return component(stmts, comps, k), types
     return deep(run)
+
+
+def translate_each(text, prefix, source='a Dice program', joint=False):
+    """Every component's program from one lowering, written as PREFIXk.gir
+    (dice_ir.written)."""
+    def run():
+        stmts, comps, types = lowered(text, joint)
+        for k, t in enumerate(types):
+            written(prefix, k, t, {'gir': component(stmts, comps, k)})
+    deep(run)
 
 
 def main():
@@ -360,20 +377,25 @@ def main():
     ap.add_argument('program')
     ap.add_argument('component', nargs='?', type=int)
     ap.add_argument('--components', action='store_true', help="print each component's type instead")
+    ap.add_argument('--each', metavar='PREFIX', help="write every component's program, K's as PREFIXK.gir, "
+                    "and print each one's type once its program is written")
     ap.add_argument('--joint', action='store_true', help='the value, a tuple of Booleans, as one int whose bits '
                     'they are (the most significant first): their joint distribution')
     a = ap.parse_args()
-    if a.components == (a.component is not None):
-        raise SystemExit('give a component K, or --components')
+    if (a.component is not None) + a.components + (a.each is not None) != 1:
+        raise SystemExit('give a component K, --components or --each PREFIX')
     with open(a.program) as f:
         text = f.read()
     try:
+        if a.each is not None:
+            translate_each(text, a.each, os.path.basename(a.program), a.joint)
+            return
         program, types = translate(text, a.component, os.path.basename(a.program), a.joint)
     except NotImplementedError as err:
         refuse(err)
     if a.components:
         for t in types:
-            print('bool' if t == BOOL else f'int {t[1]}')
+            print(kind(t))
     else:
         sys.stdout.write(program)
 

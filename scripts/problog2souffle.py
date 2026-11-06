@@ -44,7 +44,8 @@ An argument position holds Souffle numbers where every constant that
 reaches it, through the variables the clauses share, is an integer, and
 symbols otherwise. A program that PSouffle cannot be given exits with
 status 3 (bench.py's REFUSED) and the reason: function symbols or lists,
-a disjunction or a directive in a body, arithmetic on symbols, an
+a directive, a disjunction in the body of a probabilistic clause (that of a
+certain clause is a clause for each disjunct), arithmetic on symbols, an
 annotated disjunction whose body depends on its heads, a negation through
 recursion, a non-ground fact, a predicate that no clause defines (where
 ProbLog stops on an unknown clause), between/3 of other bounds.
@@ -74,7 +75,7 @@ TOKEN = re.compile(r"""
   | (?P<quoted>'(?:[^'\\]|''|\\.)*')
   | (?P<string>"(?:[^"\\]|\\.)*")
   | (?P<end>\.(?=\s|%|$))
-  | (?P<op>::|:-|\\\+|\\==|\\=|=\\=|=:=|==|=<|>=|//|[-+*/=<>(),;\[\]|])
+  | (?P<op>::|:-|<-|\\\+|\\==|\\=|=\\=|=:=|==|=<|>=|//|[-+*/=<>(),;\[\]|])
 """, re.S | re.X)
 COMPARISONS = {'=': '=', '==': '=', '=:=': '=', '\\=': '!=', '\\==': '!=', '=\\=': '!=',
                '<': '<', '>': '>', '=<': '<=', '>=': '>='}
@@ -117,7 +118,8 @@ def tokens(text):
             raise Refused(f'cannot read {text[i:i + 40]!r}')
         i = m.end()
         if m.lastgroup != 'ws':
-            out.append((m.lastgroup, m.group()))
+            # `H <- B`, ProbLog's other neck, is `H :- B`
+            out.append((m.lastgroup, ':-' if m.group() == '<-' else m.group()))
             start = m.lastgroup == 'end'
     return out
 
@@ -218,27 +220,38 @@ class Parser:
 
     def clauses(self):
         """Each clause, (heads, body), and each run of facts read whole, the
-        token ('facts', [...])."""
+        token ('facts', [...]). A certain clause whose body is a disjunction,
+        H :- B1 ; B2, is the clauses H :- B1 and H :- B2, as Prolog reads
+        it; a probabilistic one draws once for the whole body, which two
+        clauses would not, and is refused."""
         while self.peek()[0] is not None:
-            yield self.take() if self.peek()[0] == 'facts' else self.clause()
+            if self.peek()[0] == 'facts':
+                yield self.take()
+                continue
+            heads, bodies = self.clause()
+            if len(bodies) > 1 and (len(heads) > 1 or heads[0][0] is not None and heads[0][0] < 1):
+                raise Refused('a disjunction in the body of a probabilistic clause')
+            for body in bodies:
+                yield heads, body
 
     def clause(self):
+        """(heads, the body's disjuncts), `,` binding tighter than `;`."""
         if self.peek()[1] == ':-':
             raise Refused('a directive')
         heads = [self.head()]
         while self.peek()[1] == ';':
             self.take(';')
             heads.append(self.head())
-        body = []
+        bodies = [[]]
         if self.peek()[1] == ':-':
             self.take(':-')
-            body = [self.literal()]
+            bodies[0].append(self.literal())
             while self.peek()[1] in (',', ';'):
                 if self.take()[1] == ';':
-                    raise Refused('a disjunction in a body')
-                body.append(self.literal())
+                    bodies.append([])
+                bodies[-1].append(self.literal())
         self.take('.')
-        return heads, body
+        return heads, bodies
 
     def head(self):
         prob = None
@@ -304,6 +317,9 @@ class Parser:
         return (name, args)
 
     def arg(self, outer=False):
+        if outer and self.peek()[1] == '\\+':   # evidence(\+A): A observed false, as ProbLog reads it
+            self.take()
+            return ('negated', ('atom', self.atom()))
         e = self.expr()
         if e[0] == 'atom' and not outer:
             raise Refused(f'a function symbol: {e[1][0]}/{len(e[1][1])}')
@@ -530,6 +546,11 @@ def parse(text):
                 queries.append(as_atom(args[0]))
                 continue
             if name == 'evidence' and len(args) in (1, 2) and prob is None:
+                if args[0][0] == 'negated':
+                    if len(args) == 2:
+                        raise Refused('evidence on a negation with a value')
+                    evidence.append((as_atom(args[0][1]), False))
+                    continue
                 atom, value = as_atom(args[0]), True
                 if len(args) == 2:
                     if args[1] not in (('sym', 'true'), ('sym', 'false')):

@@ -158,6 +158,27 @@ class PplTests(unittest.TestCase):
         base.update(kw)
         return SimpleNamespace(**base)
 
+    def test_psi_asks_a_logic_programs_queries_one_run_each(self):
+        # problog2ppl.py's Psi program returns the array of its queries; a run asks queries[K]
+        outs = ['p(x) = 3/10·δ(1)[x]+7/10·δ(0)[x]\n', 'p(x) = δ(0)[x]\n']
+        seen, cmds = [], []
+
+        def timed(cmd, timeout, cwd=None):
+            cmds.append(cmd[:-1])
+            seen.append(Path(cmd[-1]).read_text())
+            return {'status': 'ok', 'seconds': 1.5, 'stdout': outs[len(seen) - 1], 'stderr': ''}
+        with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', side_effect=timed):
+            prog = Path(d, 'p.lp.psi.psi')
+            prog.write_text('def main() {\n  queries := [q1, q2];\n  return queries;\n}\n')
+            r = bench.run_lp_psi(self.args(dir=d, psi='prlimit --stack=unlimited psi {file}'), 'p', str(prog),
+                                 ['p(1)', 'p(a, b)'])
+        self.assertEqual(r['status'], 'ok')
+        self.assertEqual(r['answers'], {'p(1)': 0.3, 'p(a,b)': 0.0})
+        self.assertEqual(r['seconds'], 3.0)
+        self.assertEqual([s.count('return queries[0];') for s in seen], [1, 0])
+        self.assertEqual([s.count('return queries[1];') for s in seen], [0, 1])
+        self.assertEqual(cmds, [['prlimit', '--stack=unlimited', 'psi', '--dp']] * 2)   # its exact discrete back end
+
     def test_the_suite_names_programs_that_exist(self):
         spec = bench.instances(self.args())
         self.assertEqual({family for family, _ in spec.values()}, {'arith', 'pluck', 'nodice'})
@@ -393,67 +414,68 @@ class PplTests(unittest.TestCase):
         self.assertRegex(runs[1], r'\(distribution \(list (\S+-y) (\S+-x)\)\)')
         self.assertIn("(report dists '(2))", runs[1])
 
-    def test_a_chain_whose_translations_pass_their_bound_is_the_harness_time_out(self):
-        # dice2prism.py's translations of a chain took longer than their
-        # bound: no engine of the checker runs on it, and each engine's
-        # record is the harness's time-out, no program handed to the
-        # checker, as one translation past the bound is.
-        clock = [0.0]
-
-        def translation(args, script, argv):
-            clock[0] += 40.0
-            return 'v1 bool\n', None
-        with patch.dict(bench.CHAINS, clear=True), patch.object(bench.time, 'time', side_effect=lambda: clock[0]), \
-                patch.object(bench, 'translation', side_effect=translation) as made, \
-                patch.object(bench, 'timed') as timed:
+    def test_a_chain_whose_translation_passes_its_bound_is_the_harness_time_out(self):
+        # dice2prism.py's translation of a chain, made once for every engine,
+        # passed its bound after it wrote the first component: each engine
+        # checks that one, and its record is the harness's time-out, the
+        # rest of the program not handed to the checker.
+        late = harness_timeout = bench.harness_timeout_record('dice2prism.py', 'no translation within 30 s')
+        ok = {'status': 'ok', 'seconds': 1.0, 'stdout': ''}
+        with patch.dict(bench.CHAINS, clear=True), \
+                patch.object(bench, 'translation', return_value=('bool\n', late)) as made, \
+                patch.object(bench, 'timed', return_value=ok) as timed, \
+                patch.object(bench, 'checker_command', side_effect=lambda args, system, variant, *files: list(files)), \
+                patch.object(bench, 'checker_distribution', return_value={'true': 0.5, 'false': 0.5}):
             for variant in ('hybrid', 'sparse'):
-                comps, r = bench.checker_masses('prism', variant)(self.args(translation_timeout=30.0), 'p', '/p.dice',
-                                                                  False, 30.0)
+                comps, r = bench.checker_masses('prism', variant)(self.args(dir='/d', translation_timeout=30.0), 'p',
+                                                                  '/p.dice', False, 30.0)
                 self.assertIsNone(comps)
-                self.assertEqual((r['status'], r['harness']), ('error', 'timeout'), r)
-                self.assertTrue(r['error'].startswith('dice2prism.py: the translations took 40 s, past their bound'), r)
+                self.assertEqual(r, {**harness_timeout, 'seconds': 1.0})
         self.assertEqual(made.call_count, 1)
-        timed.assert_not_called()
+        self.assertEqual(made.call_args.args[1:], ('dice2prism.py', ['/p.dice', '--each', '/d/p.dtmc']))
+        self.assertEqual([c.args[0] for c in timed.call_args_list], [['/d/p.dtmc0.prism', '/d/p.dtmc0.props']] * 2)
 
-    def test_a_system_run_by_component_has_its_translations_bounded(self):
-        # Geni on a program of three Boolean components, each translation
-        # 12 s and each run 1 s, with a 30 s bound on the translations: two
-        # components translate and run, the third's translation passes the
-        # bound (36 s), and the record is the harness's time-out with the
-        # runs' 2 s; a first translation of 40 s hands Geni nothing. By
-        # default the bound is four times the time limit, which the
-        # translations, not the system's time, do not count against.
-        for step, ran, bound in [(12.0, 2, 30.0), (40.0, 0, 30.0), (40.0, 3, None)]:
-            clock = [0.0]
-
-            def translation(args, script, argv):
-                if '--components' in argv:
-                    return 'bool\nbool\nbool\n', None
-                clock[0] += step
-                return 'program\n', None
+    def test_a_system_run_by_component_has_its_translation_bounded(self):
+        # Geni on a program of three Boolean components, each run 1 s: one
+        # translation writes them all and lists each one written (--each).
+        # Where it passed its bound after two, those two run and the record
+        # is the harness's time-out with their 2 s; where it passed it
+        # before the first, Geni is handed nothing; where a component is
+        # refused, the record is the refusal after the runs of those before it.
+        late = bench.harness_timeout_record('dice2geni.py', 'no translation within 30 s')
+        refused = {'status': 'unsupported', 'seconds': 0, 'error': 'dice2geni.py: cannot express the program: x'}
+        for listing, failed, ran in [('bool\nbool\nbool\n', None, 3), ('bool\nbool\n', late, 2), ('', late, 0),
+                                     ('bool\n', refused, 1)]:
             with tempfile.TemporaryDirectory() as d, \
-                    patch.object(bench.time, 'time', side_effect=lambda: clock[0]), \
-                    patch.object(bench, 'translation', side_effect=translation), \
-                    patch.object(bench, 'program_command', return_value=['geni']), \
+                    patch.object(bench, 'translation', return_value=(listing, failed)) as made, \
+                    patch.object(bench, 'program_command', side_effect=lambda args, system, file: ['geni', file]), \
                     patch.object(bench, 'timed', return_value={'status': 'ok', 'seconds': 1.0, 'stdout': ''}) as timed:
                 masses = bench.by_component('geni', 'dice2geni.py', 'gir', lambda n: [], lambda out, n: {0: 0.5, 1: 0.5})
-                comps, r = masses(self.args(dir=d, translation_timeout=bound), 'p', '/p.dice', False, 30.0)
-            self.assertEqual(timed.call_count, ran)
-            self.assertEqual([c.args[1] for c in timed.call_args_list], [30.0, 29.0, 28.0][:ran])
-            if bound is None:
+                comps, r = masses(self.args(dir=d), 'p', '/p.dice', True, 30.0)
+            self.assertEqual(made.call_args.args[1:], ('dice2geni.py', ['/p.dice', '--each', f'{d}/p.geni', '--joint']))
+            self.assertEqual([c.args for c in timed.call_args_list],
+                             [(['geni', f'{d}/p.geni{k}.gir'], 30.0 - k) for k in range(ran)])
+            if failed is None:
                 self.assertEqual((len(comps), r), (3, {'seconds': 3.0}))
-                continue
-            self.assertIsNone(comps)
-            self.assertEqual((r['status'], r['harness']), ('error', 'timeout'), r)
-            self.assertTrue(r['error'].startswith('dice2geni.py: the translation of 3 components passed its bound '
-                                                  'of 30 s'), r)
-            self.assertEqual(r['seconds'], float(ran))
+            else:
+                self.assertIsNone(comps)
+                self.assertEqual(r, {**failed, 'seconds': float(ran)})
+
+    def test_a_translation_past_its_bound_keeps_the_lines_it_printed(self):
+        # what a translator printed before its bound, without a line it had not ended
+        late = subprocess.TimeoutExpired(['dice2geni.py'], 30.0, output=b'bool\nint 3\nbo')
+        with patch.object(bench.subprocess, 'run', side_effect=late):
+            out, r = bench.translation(self.args(translation_timeout=30.0), 'dice2geni.py', ['p.dice', '--each', 'p.'])
+        self.assertEqual(out, 'bool\nint 3\n')
+        self.assertTrue(bench.harness_timeout(r) and bench.translation_limit(r), r)
+        with patch.object(bench.subprocess, 'run', side_effect=subprocess.TimeoutExpired(['x'], 30.0)):
+            self.assertEqual(bench.translation(self.args(), 'dice2geni.py', [])[0], '')
 
     def test_a_program_the_language_cannot_express_is_unsupported(self):
         refused = SimpleNamespace(returncode=bench.REFUSED, stdout='', stderr='cannot express the program: recursion')
         with patch.object(bench.subprocess, 'run', return_value=refused):
             out, r = bench.translation(self.args(), 'dice2genfer.py', ['p.dice', '--components'])
-        self.assertIsNone(out)
+        self.assertEqual(out, '')
         self.assertEqual(r['status'], 'unsupported')
         self.assertIn('recursion', r['error'])
         self.assertEqual(bench.fmt(r), 'n/a')
@@ -847,6 +869,20 @@ probability ( Dyspnoea | Cancer ) {
         self.assertEqual(held, [(True, False)])
         self.assertEqual(err, {'status': 'error', 'seconds': 0, 'error': 'raco make: error cannot open module file'})
 
+    def test_a_module_that_does_not_compile_within_the_limit_is_unsupported(self):
+        """A compile that runs past the time limit (TPC-H q1 at 200 to 1000,
+        savage_knife's 24 MB module) is a program Roulette cannot express,
+        not an error and not a timeout; the compile is not charged, past
+        the limit as before it."""
+        args = self.args(timeout=300)
+        want = {'status': 'unsupported', 'seconds': 0,
+                'error': 'raco make: the module did not compile within the time limit of 300 s'}
+        with patch.object(bench, 'timed', return_value={'status': 'timeout', 'seconds': 300}) as t:
+            self.assertEqual(bench.roulette_timed(args, '/p/q1.roulette.rkt', [], 300), want)
+            self.assertEqual(t.call_count, 1)   # the program is not run
+            self.assertEqual(bench.roulette_make(args, 'racket {file}', '/p/q1.roulette.rkt'), want)
+            self.assertFalse(bench.ran_out(want))
+
     @unittest.skipUnless(os.environ.get('ROULETTE_RACKET'), 'ROULETTE_RACKET is not set')
     def test_bn_rkt_reads_values_that_print_between_bars(self):
         """data/roulette/bn.rkt under Roulette: values that read as numbers,
@@ -874,6 +910,30 @@ probability ( Dyspnoea | Cancer ) {
                 got[(v, x)] = float(p)
         want = {('a', '|0|'): 0.25, ('a', '|1|'): 0.5, ('a', '|2|'): 0.25,
                 ('b', 'yes'): 0.425, ('b', 'no'): 0.575, ('c', '|0|'): 1.0}
+        self.assertEqual(sorted(got), sorted(want))
+        for k, p in want.items():
+            self.assertAlmostEqual(got[k], p, delta=1e-12, msg=k)
+
+    @unittest.skipUnless(os.environ.get('ROULETTE_RACKET'), 'ROULETTE_RACKET is not set')
+    def test_bn_rkt_reads_a_certain_variable_of_one_value(self):
+        """A Bayesian network's certain variable of one value (Ace's munin1's
+        DIFFN_DUMMY_1 to 3) as gen_bn.py writes it in BIF, a child's parent
+        here: bn.rkt reads it, and gives it and its child their
+        distributions."""
+        variables = {'a': ['x', 'y'], 'd': ['dummy'], 'b': ['f', 't']}
+        tables = {'a': ([], {(): [0.25, 0.75]}), 'd': (['a'], {('x',): [1.0], ('y',): [1.0]}),
+                  'b': (['d'], {('dummy',): [0.4, 0.6]})}
+        text, _ = bench.gen_bn.to_bif((['a', 'd', 'b'], variables, tables))
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, 'n.bif').write_text(text)
+            Path(d, 'n.asks').write_text('order x0 x1 x2\nquery x1\nquery x2\n')
+            r = subprocess.run(shlex.split(os.environ['ROULETTE_RACKET']) +
+                               [f'{bench.ROULETTE_DATA}/bn.rkt', f'{d}/n.bif', f'{d}/n.asks'],
+                               capture_output=True, text=True, timeout=600)
+        self.assertEqual(r.returncode, 0, r.stderr[-2000:])
+        got = {tuple(line.split()[1:3]): float(line.split()[3]) for line in r.stdout.splitlines()
+               if line.startswith('roulette_b ')}
+        want = {('x1', 's0'): 1.0, ('x2', 's0'): 0.4, ('x2', 's1'): 0.6}
         self.assertEqual(sorted(got), sorted(want))
         for k, p in want.items():
             self.assertAlmostEqual(got[k], p, delta=1e-12, msg=k)
@@ -1055,6 +1115,29 @@ class RouletteTddlogTests(unittest.TestCase):
         self.assertEqual((r['stats']['program_s'], r['stats']['circuit_s'], r['stats']['tddlog_s']),
                          (1.25, 0.25, 0.5))
 
+    def test_a_logic_programs_answers_are_keyed_as_problog2ppl_lists_its_queries(self):
+        # problog2ppl.py's module: a Boolean a query, each call followed by its observations';
+        # the ProbLog program asks them with a rule, which names no query of its own
+        circuit = '% q1(1): #t\n% q1(2): #f\n% q2(1): #t\n% q3(1): #t\n% q3(2): #f\n% q4(1): #t\n'
+        answers = {'q1(1)': 0.3, 'q1(2)': 0.7, 'q2(1)': 1.0, 'q3(1)': 0.6, 'q3(2)': 0.4, 'q4(1)': 1.0}
+        out = ''.join(f'{q}: {p}\n' for q, p in answers.items())
+
+        def timed(cmd, timeout, cwd=None):
+            if cmd[0] == 'tddlog':
+                return {'status': 'ok', 'seconds': 0.5, 'stdout': out, 'stderr': ''}
+            if 'make' in cmd:
+                return {'status': 'ok', 'seconds': 9.0, 'stdout': '', 'stderr': ''}
+            return {'status': 'ok', 'seconds': 2.0, 'stdout': circuit, 'stderr': self.SUMMARY}
+        with tempfile.TemporaryDirectory() as d, patch.object(bench, 'timed', side_effect=timed):
+            path = Path(d, 'p.pl')
+            path.write_text('query(p(X)) :- between(1,2,X).\n')
+            lp = (str(Path(d, 'p.lp.roulette.rkt')), [str(Path(d, 'p.lp.roulette.facts'))], ['p(1)', 'p(2)'])
+            r = bench.run_roulette_tddlog(self.args(dir=d), 'rl_motivating_1000', str(path), lp)
+        self.assertEqual(r['status'], 'ok')
+        self.assertEqual(sorted(r['answers']), ['p(1)', 'p(2)'])
+        self.assertAlmostEqual(r['answers']['p(1)'], 0.3)
+        self.assertAlmostEqual(r['answers']['p(2)'], 0.6)
+
     def test_a_networks_value_that_reads_as_a_number_loses_its_bars(self):
         # The circuit's note writes the symbol 0 as |0|, the ProbLog program's atom reads v_0.
         with tempfile.TemporaryDirectory() as d:
@@ -1138,20 +1221,26 @@ class RouletteTddlogTests(unittest.TestCase):
     def test_it_runs_the_roulette_suite_the_networks_and_the_dice_programs_roulette_translates(self):
         self.assertTrue(bench.roulette_tddlog_accepts(self.args(), 'rl_motivating_1000'))
         with tempfile.TemporaryDirectory() as d:
-            # the Dice paper's programs and the Bayesian networks, which Roulette reads in its BN language
+            # the Dice paper's programs, the Bayesian networks, which Roulette reads in its BN language,
+            # and the logic programs, which it reads over their facts (problog2ppl.py)
             args = self.args(suite='standard', dir=d, only=['bn_asia', 'bn_asia_ev', 'dice_twocoins', 'dice_grass',
                                                             'grid4', 'g10_25'])
             taken = [n for n in bench.instances(args) if bench.roulette_tddlog_accepts(args, n)]
-            self.assertEqual(set(taken), {'bn_asia', 'bn_asia_ev', 'dice_twocoins', 'dice_grass'})
+            self.assertEqual(set(taken), {'bn_asia', 'bn_asia_ev', 'dice_twocoins', 'dice_grass', 'grid4', 'g10_25'})
+            self.assertTrue(bench.lp_route(bench.instances(args)['grid4'][1], 'roulette-tddlog'))
             self.assertEqual(os.listdir(d), [])   # deciding writes nothing (rt2_jobs.py plans with it)
             # a Markov network's Dice program is not one
             markov = {'uai_markov': ('uaimarkov', ['gen_bn.py', str(SOURCE / 'tests' / 'regress' / 'markov.uai')])}
             with patch.object(bench, 'instances', return_value=markov):
                 self.assertFalse(bench.roulette_tddlog_accepts(self.args(suite='uai', dir=d), 'uai_markov'))
-        # noDice's programs and the Dice ports of the arith programs, not the pluck programs' ProbLog ports
+        # noDice's programs and the Dice ports of the arith programs; of the pluck programs' ProbLog
+        # ports, those Roulette reads over their facts (not hmm's, whose Dice port it reads)
         args = self.args(suite='ppl')
-        taken = {n for n in bench.instances(args) if bench.roulette_tddlog_accepts(args, n)}
-        self.assertEqual(taken, {n for n in bench.instances(args) if n.startswith(('nodice_', 'arith_'))})
+        spec = bench.instances(args)
+        taken = {n for n in spec if bench.roulette_tddlog_accepts(args, n)}
+        self.assertEqual(taken, {n for n in spec if n.startswith(('nodice_', 'arith_'))
+                                 or bench.lp_route(spec[n][1], 'roulette')})
+        self.assertFalse(any(bench.lp_route(spec[n][1], 'alea') for n in spec))   # Alea.jl's own programs
         self.assertTrue(taken)
         args = self.args(suite='geni')
         self.assertTrue(all(bench.roulette_tddlog_accepts(args, n) for n in bench.instances(args)))
@@ -1390,14 +1479,14 @@ class SkipTests(unittest.TestCase):
         self.assertEqual((args.ace_heap, args.prism_heap), ('8g', '4g'))
         args = parsed(mem_cap=30 << 30)
         bench.ace_defaults(args)
-        self.assertEqual((args.ace_heap, args.prism_heap), ('24576m', '10240m'))
+        self.assertEqual((args.ace_heap, args.prism_heap), ('24576m', '24576m'))
         args = parsed(mem_cap=30 << 30, ace_heap='20g', prism_heap='8g')
         bench.ace_defaults(args)
         self.assertEqual((args.ace_heap, args.prism_heap), ('20g', '8g'))
         with self.assertRaisesRegex(SystemExit, '--ace-heap 28g is more than 0.8 of --mem-cap'):
             bench.ace_defaults(parsed(mem_cap=30 << 30, ace_heap='28g'))
-        with self.assertRaisesRegex(SystemExit, '--prism-heap 12g is more than 0.33 of --mem-cap'):
-            bench.ace_defaults(parsed(mem_cap=30 << 30, prism_heap='12g'))
+        with self.assertRaisesRegex(SystemExit, '--prism-heap 28g is more than 0.8 of --mem-cap'):
+            bench.ace_defaults(parsed(mem_cap=30 << 30, prism_heap='28g'))
         cmd = ['env', 'JULIA_DEPOT_PATH=d', '/x/julia-1.11.9/bin/julia', '--startup-file=no', 'f.jl']
         self.assertEqual(bench.julia_heap_hint(cmd, 10 << 30),
                          cmd[:3] + ['--heap-size-hint=8192M'] + cmd[3:])
@@ -1887,10 +1976,11 @@ class AspmcTests(unittest.TestCase):
                 f.write(program)
             args = SimpleNamespace(dir=d, aspmc='python3', timeout=1)
             with patch.object(bench, 'timed', return_value={
-                        'status': 'ok', 'seconds': 0.1, 'stderr': "[RESULT] aspmc: q('5%'): 1.0\n"}) as run:
+                        'status': 'ok', 'seconds': 0.1, 'stderr': "[RESULT] aspmc: q(bench_q1): 1.0\n"}) as run:
                 result = bench.run_aspmc(args, 'port', path)
             with open(run.call_args[0][0][-1]) as f:
-                self.assertEqual(f.read(), written)
+                # the quoted atom, which aspmc's grammar does not read, under a plain name (aspmc_quoted)
+                self.assertEqual(f.read(), written.replace("q('5%')", 'q(bench_q1)'))
             self.assertEqual(result['answers'], {"q('5%')": 1.0})
         # a program without one is read as it is
         self.assertEqual(bench.aspmc_comments('% a\na.\nquery(a).\n'), '% a\na.\nquery(a).\n')
@@ -1960,6 +2050,7 @@ class AspmcTests(unittest.TestCase):
         args = SimpleNamespace(dir='bench', aspmc='python3', timeout=1)
         with patch('builtins.open', mock_open(read_data=program)), \
                 patch.object(bench.os, 'makedirs'), \
+                patch.object(bench, 'write_new') as wrote, \
                 patch.object(bench, 'timed', return_value={
                     'status': 'ok', 'seconds': 0.1,
                     'stderr': '[RESULT] aspmc: evidence: 0.5',
@@ -1967,6 +2058,160 @@ class AspmcTests(unittest.TestCase):
             result = bench.run_aspmc(args, 'coin', 'coin.pl')
             self.assertEqual(result['answers'], {'evidence': 0.5})
             run.assert_called_once()
+        # the block comment, which aspmc's grammar does not read, left out
+        wrote.assert_called_once_with(os.path.join('bench', 'aspmc-coin', 'coin.pl'),
+                                      '% evidence(obs, true).\n \n0.5::evidence. query(evidence).\n')
+
+    def test_a_block_comment_keeps_its_line_breaks(self):
+        self.assertEqual(bench.aspmc_comments('/* a\nb */\na. /* c */ query(a).\n'), '\n\na.   query(a).\n')
+
+    def test_comparisons_and_the_second_neck_are_written_in_clingos_notation(self):
+        program = ('a <- b.\n'
+                   'p(X) :- q(X), X \\= a, X \\== b, X == X, X =:= 1, X =\\= 2, X =< 3.\n'
+                   'r(X, Y) :- q(X), q(Y), X @< Y, X @=< Y, X @> Y, X @>= Y.\n'
+                   "s :- t('\\\\=', \"==\", 0'=, 0'<). % X \\= Y\n")
+        self.assertEqual(bench.aspmc_operators(program),
+                         'a :- b.\n'
+                         'p(X) :- q(X), X != a, X != b, X = X, X = 1, X != 2, X <= 3.\n'
+                         'r(X, Y) :- q(X), q(Y), X < Y, X <= Y, X > Y, X >= Y.\n'
+                         "s :- t('\\\\=', \"==\", 0'=, 0'<). % X \\= Y\n")
+        # what the call binds (the head's variables) and what a literal before it binds
+        self.assertEqual(bench.aspmc_operators('path(X, Y) :- edge(X, Z), Y \\== Z, path(Z, Y).\n'),
+                         'path(X, Y) :- edge(X, Z), Y != Z, path(Z, Y).\n')
+        self.assertEqual(bench.aspmc_operators('p(X) :- q(X), \\+ (r(Y), Y \\= X).\n'),
+                         'p(X) :- q(X), \\+ (r(Y), Y != X).\n')
+
+    def test_a_comparison_before_its_variables_are_bound_is_unsupported(self):
+        # ProbLog compares an unbound variable, where clingo binds it first
+        for program, free in [('p :- X \\= a, q(X).\n', 'X'), ('p :- q(X), X \\== _.\n', '_'),
+                              ('p :- \\+ (q(X), Y @< X), r(Y).\n', 'Y')]:
+            with self.subTest(program=program), self.assertRaisesRegex(ValueError, f'a comparison of {free},'):
+                bench.aspmc_operators(program)
+
+    def test_bodies_are_written_as_conjunctions(self):
+        program = ('any :- a ; b.\n'
+                   'c :- d, (e ; f), g.\n'
+                   'd2 :- not e, not(f), \\+ (e, f).\n'
+                   'e2 :- true, a.\n'
+                   'constraint1 :- \\+ (a ; b).\n'
+                   'p(X) :- q(X), r(X, Z), \\+ (s(X, Y), t(Y)).\n'
+                   '0.3::h :- a, b.\n'
+                   'query(any).\n')
+        self.assertEqual(bench.aspmc_bodies(program),
+                         'any :- a.\nany :- b.\n'
+                         'c :- d, e, g.\nc :- d, f, g.\n'
+                         'd2 :- \\+e, \\+f, \\+bench_n1.\nbench_n1 :- e, f.\n'
+                         'e2 :- a.\n'
+                         'constraint1 :- \\+bench_n2.\nbench_n2 :- a.\nbench_n2 :- b.\n'
+                         'p(X) :- q(X), r(X, Z), \\+bench_n3(X).\nbench_n3(X) :- q(X), r(X, Z), s(X, Y), t(Y).\n'
+                         '0.3::h :- a, b.\n'
+                         'query(any).\n')
+        self.assertEqual(bench.aspmc_bodies('a.\nquery(a).\n'), 'a.\nquery(a).\n')
+        # a negated comparison, which aspmc's grammar does not negate
+        self.assertEqual(bench.aspmc_bodies('n :- s(X), \\+ (X = a).\n'),
+                         'n :- s(X), \\+bench_n1(X).\nbench_n1(X) :- s(X), X = a.\n')
+        # a built-in the program defines is its own predicate
+        self.assertEqual(bench.aspmc_bodies('between(1, 2, 1).\na(X) :- between(1, 3, X).\n'),
+                         'between(1, 2, 1).\na(X) :- between(1, 3, X).\n')
+
+    def test_a_body_aspmcs_language_cannot_write_is_unsupported(self):
+        for program, reason in [('0.3::a :- b ; c.\n', 'a probabilistic clause with a disjunctive body'),
+                                ('a :- b -> c ; d.\n', 'an if-then-else'),
+                                ('a(X) :- between(1, 3, X).\n', 'a call of between/3'),
+                                ('a :- nl, b.\n', 'a call of nl/0'),
+                                ('a :- \\+ (findall(X, b(X), L)).\n', 'a call of findall/3')]:
+            with self.subTest(program=program), self.assertRaisesRegex(ValueError, reason):
+                bench.aspmc_bodies(program)
+
+    def test_a_negated_head_is_written_as_problog_reads_it(self):
+        # the ProbLog tutorial's inhibition effects: e1 holds where a clause of it holds and no
+        # negated one does
+        program = '0.5::c1.\n0.3::e1 :- c1.\n0.2::\\+e1 :- c2.\ne1.\ne :- e1.\nquery(e1).\n'
+        self.assertEqual(bench.aspmc_bodies(program),
+                         '0.5::c1.\n0.3::bench_pos_e1 :- c1.\n0.2::bench_neg_e1 :- c2.\nbench_pos_e1.\n'
+                         'e :- e1.\nquery(e1).\n\ne1 :- bench_pos_e1, \\+bench_neg_e1.\n')
+        self.assertTrue(bench.aspmc_bodies('0.2::\\+p(X) :- q(X).\n0.5::p(X) :- q(X).\n').endswith(
+            '\np(X0) :- bench_pos_p(X0), \\+bench_neg_p(X0).\n'))
+
+    def test_quoted_atoms_get_plain_names(self):
+        program = "p('A'). q('$choice_3', 'A'). r('c'). % 'B'\ns(\"str\").\nquery(p('A')).\n"
+        out, names = bench.aspmc_quoted(program)
+        self.assertEqual(out, 'p(bench_q1). q(bench_q2, bench_q1). r(c). % \'B\'\ns("str").\nquery(p(bench_q1)).\n')
+        self.assertEqual(names, {'bench_q1': "'A'", 'bench_q2': "'$choice_3'"})
+        self.assertEqual(bench.aspmc_unquoted('msw(l,bench_q1)', names), "msw(l,'A')")
+        # the standard order of terms is that of the names only where they are the program's own
+        with self.assertRaisesRegex(ValueError, 'the standard order of terms'):
+            bench.aspmc_quoted("p('A'). r(X, Y) :- p(X), p(Y), X @< Y.\n")
+        self.assertEqual(bench.aspmc_quoted("p('a'). r(X, Y) :- p(X), p(Y), X @< Y.\n"),
+                         ('p(a). r(X, Y) :- p(X), p(Y), X @< Y.\n', {}))
+
+    def test_a_probabilistic_body_that_compares_is_folded_into_an_atom(self):
+        # aspmc 1.1.1's front end reads no comparison in a probabilistic clause's body
+        program = ('0.999::p(V) :- m(M, I, V), I != 0.\n'
+                   '0.5::t(X1) :- s(X), X1 = X - 1, X1 >= 0, w(V1).\n'
+                   'd(V) :- m(M, I, V), I != 0.\n'
+                   '0.5::u(X) :- s(f(X >= 1)).\n')
+        self.assertEqual(bench.aspmc_folded(program),
+                         '0.999::p(V) :- bench_b1(M,I,V).\nbench_b1(M,I,V) :- m(M, I, V), I != 0.\n'
+                         '0.5::t(X1) :- bench_b2(X,X1,V1).\nbench_b2(X,X1,V1) :- s(X), X1 = X - 1, X1 >= 0, w(V1).\n'
+                         'd(V) :- m(M, I, V), I != 0.\n'
+                         '0.5::u(X) :- s(f(X >= 1)).\n')
+
+    def test_a_term_compared_is_bound_through_a_fact(self):
+        # aspmc's grammar compares variables and integer expressions only (TPC-H's q16)
+        program = ('q16 :- part(P, Brand), Brand != brand45, s(P).\n'
+                   'r(X) :- s(X), X = "a", X != 3, X != Y, t(Y).\n'
+                   'w :- s(f(a)), u(X), X >= f(a), brand45 < X.\n'
+                   'v :- s(X), X != g(X).\n')
+        self.assertEqual(bench.aspmc_constants(program),
+                         'q16 :- part(P, Brand), bench_k1(K1), Brand != K1, s(P).\n'
+                         'r(X) :- s(X), bench_k2(K2), X = K2, X != 3, X != Y, t(Y).\n'
+                         'w :- s(f(a)), u(X), bench_k3(K3), X >= K3, bench_k1(K1), K1 < X.\n'
+                         'v :- s(X), X != g(X).\n'
+                         '\nbench_k1(brand45).\nbench_k2("a").\nbench_k3(f(a)).\n')
+        self.assertEqual(bench.aspmc_constants('p(X) :- q(X), X != 1.\n'), 'p(X) :- q(X), X != 1.\n')
+
+    def test_an_anonymous_variable_of_a_query_is_one_name(self):
+        program = ('0.5::col(1, green); 0.5::col(1, red).\n0.5::col(2, green).\n'
+                   'query(col(1, _)).\nevidence(col(2, green)).\n')
+        conditioned = bench.aspmc_conditioned(program)
+        self.assertIn('bench_qe_col(1, _Q1) :- col(1, _Q1), col(2, green).', conditioned)
+        named = bench.aspmc_variables(conditioned)
+        self.assertIn('bench_qe_col(1, V1) :- col(1, V1), col(2, green).', named)
+        self.assertIn('query(bench_qe_col(1, V1)).', named)
+
+    def test_run_aspmc_writes_and_answers_the_rewritten_program(self):
+        program = ("0.5::msw(l, 'A'); 0.5::msw(l, b).\n"
+                   'p(X) :- msw(l, X), X \\= b.\n'
+                   "0.9::r(X) :- msw(l, X), X \\= 'A'.\n"
+                   "query(p('A')).\nquery(msw(l, 'A')).\nquery(r(b)).\n")
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'prism.pl')
+            with open(path, 'w') as f:
+                f.write(program)
+            with patch.object(bench, 'timed', return_value={
+                        'status': 'ok', 'seconds': 0.1,
+                        'stderr': '[RESULT] aspmc: p(bench_q1): 0.5\n[RESULT] aspmc: msw(l,bench_q1): 0.5\n'
+                                  '[RESULT] aspmc: r(b): 0.45\n'}) as run:
+                result = bench.run_aspmc(SimpleNamespace(dir=d, aspmc='python3', timeout=1), 'prism', path)
+            with open(run.call_args[0][0][-1]) as f:
+                self.assertEqual(f.read(), '0.5::msw(l, bench_q1); 0.5::msw(l, b).\n'
+                                           'p(X) :- msw(l, X), bench_k1(K1), X != K1.\n'
+                                           '0.9::r(X) :- bench_b1(X,K2).\n'
+                                           'bench_b1(X,K2) :- msw(l, X), bench_k2(K2), X != K2.\n'
+                                           'query(p(bench_q1)).\nquery(msw(l, bench_q1)).\nquery(r(b)).\n'
+                                           '\nbench_k1(b).\nbench_k2(bench_q1).\n')
+        self.assertEqual(result['answers'], {"p('A')": 0.5, "msw(l,'A')": 0.5, 'r(b)': 0.45})
+        # one the rewrites cannot write is not run
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, 'cut.pl')
+            with open(path, 'w') as f:
+                f.write('0.5::b.\na :- b -> c ; d.\nquery(a).\n')
+            with patch.object(bench, 'timed') as run:
+                result = bench.run_aspmc(SimpleNamespace(dir=d, aspmc='python3', timeout=1), 'cut', path)
+            run.assert_not_called()
+        self.assertEqual(result['status'], 'unsupported')
+        self.assertIn('translator: an if-then-else', result['error'])
 
 
 # Ace's marginals file for tests/networks/asia.net with smoke=yes and xray=yes, as

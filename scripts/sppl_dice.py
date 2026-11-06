@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Run an SPPL program that dice2sppl.py wrote: compile it with SPPL's
-compiler (`SPPL_Compiler(...).execute_module()`, as SPPL's notebooks do)
-and ask `prob` for each value of each component of the Dice program's
-value, one marginal at a time, as named by its `# component K TYPE NAME
-VALUES` lines (`# component K TYPE const V` for a constant).
+"""Run an SPPL program that dice2sppl.py or problog2ppl.py wrote: compile
+it with SPPL's compiler (`SPPL_Compiler(...).execute_module()`, as SPPL's
+notebooks do) and ask `prob` for each value of each component of the Dice
+program's value, one marginal at a time, as named by its `# component K
+TYPE NAME VALUES` lines (`# component K TYPE const V` for a constant).
 With a `# joint` line the components are Booleans asked jointly: it asks
 the probability of each assignment of them, printed as component 0, the
 int whose bits they are (the first the most significant).
+With a `# queries` line (a logic program problog2ppl.py wrote) the
+components are the Boolean queries, the events that the module's
+`queries_()` returns, each asked of the model.
 
     sppl_dice.py PROGRAM.sppl
 
@@ -20,7 +23,7 @@ import threading
 import time
 
 
-def marginals(model, comps, Id):
+def marginals(module, comps, Id):
     """(K, VALUE, P) for each value of each component."""
     for c in comps:
         k, ty = c[0], c[1]
@@ -30,16 +33,16 @@ def marginals(model, comps, Id):
         if rest[0] == 'const':
             probs = {v: float(v == int(rest[1])) for v in values}
         elif width is None:   # a Boolean: its one query
-            p = float(model.prob(Id(rest[0]) << {1}))
+            p = float(module.model.prob(Id(rest[0]) << {1}))
             probs = {0: 1 - p, 1: p}
         else:
             name, support = Id(rest[0]), {int(v) for v in rest[1].split(',')}
-            probs = {v: float(model.prob(name << {v})) if v in support else 0.0 for v in values}
+            probs = {v: float(module.model.prob(name << {v})) if v in support else 0.0 for v in values}
         for v, p in probs.items():
             yield k, ('true' if v else 'false') if width is None else str(v), p
 
 
-def joint(model, comps, Id):
+def joint(module, comps, Id):
     """(0, U, P) for each assignment of the Boolean components, U the int
     whose bits they are, the first the most significant."""
     n = len(comps)
@@ -51,12 +54,22 @@ def joint(model, comps, Id):
                 possible &= int(c[3]) == bit
             else:
                 event = Id(c[2]) << {bit} if event is None else event & (Id(c[2]) << {bit})
-        yield '0', str(u), float(possible) if event is None or not possible else float(model.prob(event))
+        yield '0', str(u), float(possible) if event is None or not possible else float(module.model.prob(event))
+
+
+def queries(module, comps, Id):
+    """(K, VALUE, P) for each Boolean component K, the K-th of the events
+    module.queries_() returns."""
+    for c, event in zip(comps, module.queries_()):
+        p = float(module.model.prob(event))
+        yield c[0], 'true', p
+        yield c[0], 'false', 1 - p
 
 
 def plan(text):
     """The program's components, from its `# component` lines, and how they
-    are asked: `marginals`, or `joint` with a `# joint` line."""
+    are asked: `marginals`, or `joint` with a `# joint` line, or `queries`
+    with a `# queries` line."""
     comps, asked = [], marginals
     for line in text.splitlines():
         f = line.split()
@@ -64,6 +77,8 @@ def plan(text):
             comps.append(f[2:])
         elif f == ['#', 'joint']:
             asked = joint
+        elif f == ['#', 'queries']:
+            asked = queries
     return comps, asked
 
 
@@ -73,8 +88,8 @@ def run(path):
     text = open(path).read()
     comps, asked = plan(text)
     start = time.time()
-    model = SPPL_Compiler(text).execute_module().model
-    for k, value, p in asked(model, comps, Id):
+    module = SPPL_Compiler(text).execute_module()
+    for k, value, p in asked(module, comps, Id):
         print('sppl_c', k, value, repr(p))
     print('sppl_seconds', time.time() - start)
 

@@ -29,3 +29,10 @@ The artifact's programs for 10 factories at H = 1 to 9 and 100 to 1000
 days differ from `weather-factory-10-10.dice` only in the number of
 steps after `let _goal = false in`; `gen_geni.py weather 10 H --dice
 PATH` writes each of them byte for byte from that file.
+
+`link.pl`, `router.pl` and `weather.pl` are ports of the three models to
+first-order ProbLog, written for this repository: a family's program for
+every size, the grid's side or the weather's days its argument, and for
+the weather factory the factories and their probabilities a data file it
+consults, which `gen_geni.py weather N H --data weather_N` writes from
+`weather-factory-N-10.dice` (bench.py's FOLD).

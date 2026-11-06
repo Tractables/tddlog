@@ -27,7 +27,9 @@ is asked one component at a time, as dice2psi.py does: `dice2genfer.py
 program.dice K` writes the program whose value is the K-th component
 (counted from 0, left to right through nested tuples), with only the
 statements it and the observations need; `--components` prints each
-component's type (`bool` or `int W`). Run it with `--limit 2^W` (2 for a
+component's type (`bool` or `int W`); `--each PREFIX` writes every
+component's program, K's as PREFIXK.sgcl, from one lowering of the
+program, and prints each one's type once its file is written. Run it with `--limit 2^W` (2 for a
 Boolean) for the masses of all its values. With `--joint` a value of N
 Booleans is one component, an int N whose most significant bit is the
 first Boolean: the joint distribution a circuit's `joint` program asks.
@@ -39,6 +41,7 @@ recursive functions.
 
 Usage: dice2genfer.py program.dice K [--joint] > program.sgcl
        dice2genfer.py program.dice --components [--joint]
+       dice2genfer.py program.dice --each PREFIX [--joint]
 """
 import argparse
 import heapq
@@ -46,8 +49,9 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from dice_ir import (BOOL, BOOLEAN, Const, Var, args_of, decimal, deep, leaves, lower, prune, refuse,  # noqa: E402
-                    size, uses)
+from dice2problog import CHAIN  # noqa: E402
+from dice_ir import (BOOL, BOOLEAN, Const, Var, args_of, decimal, deep, kind, lowered, prune, refuse,  # noqa: E402
+                    size, uses, written)
 
 EVENT_ARGS = {'not', 'and', 'or'}   # operators whose operands are read as events
 
@@ -94,6 +98,7 @@ class Emitter:
         # A Boolean operation read once, as an event, is written as one.
         self.inline = {v for v, s in self.defs.items()
                        if s[0] == 'op' and s[2] in BOOLEAN and n.get(v) == 1 and ev.get(v) == 1}
+        self.cut()
         self.first, self.last = {}, {}
         self.pos = 0
         self.walk(stmts)
@@ -101,6 +106,23 @@ class Emitter:
             self.last[result] = float('inf')
         self.allocate()
         self.result = result
+
+    def cut(self):
+        """Inlined chains of && or of || cut every CHAIN operands, the
+        operation that ends a part a variable of its own, so that no event
+        is longer (a ground conjunction of a million literals would be one)."""
+        length = {}
+        for v, s in self.defs.items():
+            if s[0] != 'op' or s[2] not in ('and', 'or'):
+                continue
+            parts = [x for x in s[3] if isinstance(x, Var) and x in self.inline and self.defs[x][2] == s[2]]
+            n = len(s[3]) - len(parts) + sum(length[x] for x in parts)
+            while n > CHAIN:
+                x = max(parts, key=lambda x: length[x])
+                self.inline.discard(x)
+                parts.remove(x)
+                n -= length[x] - 1
+            length[v] = n
 
     def collect(self, stmts):
         for s in stmts:
@@ -363,24 +385,38 @@ class Emitter:
         return out
 
 
+def component(stmts, comps, types, k, source):
+    """The SGCL program that returns component k (of comps, the lowered
+    program stmts' components, of the types `types`)."""
+    result = comps[k]
+    kept = prune(stmts, {result} if isinstance(result, Var) else set())
+    e = Emitter(kept, result)
+    head = [f'# {source}, translated by tddlog\'s scripts/dice2genfer.py, component {k} '
+            f'({"bool" if types[k] == BOOL else f"int({types[k][1]})"}); {e.registers} variables.']
+    return '\n'.join(head + e.program(kept)) + '\n'
+
+
 def translate(text, k, source='a Dice program', joint=False):
     """The SGCL program that returns component k of a Dice program's value,
     with the types of all the components (`BOOL` or ('int', w))."""
     def run():
-        stmts, value = lower(text, joint)
-        comps = leaves(value)
-        types = [x.t for x in comps]
+        stmts, comps, types = lowered(text, joint)
         if k is None:
             return None, types
         if not 0 <= k < len(comps):
             raise ValueError(f'component {k} of {len(comps)}')
-        result = comps[k]
-        kept = prune(stmts, {result} if isinstance(result, Var) else set())
-        e = Emitter(kept, result)
-        head = [f'# {source}, translated by tddlog\'s scripts/dice2genfer.py, component {k} '
-                f'({"bool" if types[k] == BOOL else f"int({types[k][1]})"}); {e.registers} variables.']
-        return '\n'.join(head + e.program(kept)) + '\n', types
+        return component(stmts, comps, types, k, source), types
     return deep(run)
+
+
+def translate_each(text, prefix, source='a Dice program', joint=False):
+    """Every component's program from one lowering, written as PREFIXk.sgcl
+    (dice_ir.written)."""
+    def run():
+        stmts, comps, types = lowered(text, joint)
+        for k, t in enumerate(types):
+            written(prefix, k, t, {'sgcl': component(stmts, comps, types, k, source)})
+    deep(run)
 
 
 def main():
@@ -388,20 +424,25 @@ def main():
     ap.add_argument('program')
     ap.add_argument('component', nargs='?', type=int)
     ap.add_argument('--components', action='store_true', help="print each component's type instead")
+    ap.add_argument('--each', metavar='PREFIX', help="write every component's program, K's as PREFIXK.sgcl, "
+                    "and print each one's type once its program is written")
     ap.add_argument('--joint', action='store_true', help='the value, a tuple of Booleans, as one int whose bits '
                     'they are (the most significant first): their joint distribution')
     a = ap.parse_args()
-    if a.components == (a.component is not None):
-        raise SystemExit('give a component K, or --components')
+    if (a.component is not None) + a.components + (a.each is not None) != 1:
+        raise SystemExit('give a component K, --components or --each PREFIX')
     with open(a.program) as f:
         text = f.read()
     try:
+        if a.each is not None:
+            translate_each(text, a.each, os.path.basename(a.program), a.joint)
+            return
         program, types = translate(text, a.component, os.path.basename(a.program), a.joint)
     except NotImplementedError as err:
         refuse(err)
     if a.components:
         for t in types:
-            print('bool' if t == BOOL else f'int {t[1]}')
+            print(kind(t))
     else:
         sys.stdout.write(program)
 

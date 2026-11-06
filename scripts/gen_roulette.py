@@ -5,35 +5,44 @@ Efficient Discrete Probabilistic Programming", PLDI 2025; the artifact's
 benchmark/ directory, data/roulette/README.md) as ProbLog programs, as
 Dice programs, and their answers.
 
-A family and a size give one program. The ProbLog program goes to
-standard output, its first line `% gen_roulette.py FAMILY SIZE`; `--dice
-PATH` also writes the Dice program, whose value answers the ProbLog
-program's queries as bench.py reads Dice's table (a Boolean for one
-query, a tuple of Booleans for one query each, an integer whose value k
-is the k-th query). `--reference` prints the answers instead, one `ATOM:
-PROBABILITY` a line, from a dynamic program over the model's states
-(`reference`), never from either program, and for a program with
-evidence (caesar and the hmm queries but the marginal likelihood) the
-evidence's probability, `P(e): PROBABILITY`, as tddlog's
-`--evidence-probability` prints it; `--reference-of PROGRAM` those of a
-program it wrote, read from its first line. A probability below the
-smallest normal double is printed with its decimal exponent
+Each family's ProbLog program is one first-order program, over the steps
+of its loop, its size and parameters its arguments (the places $1, $2,
+...) and its data (observations, the totals it asks about) files it
+consults (`:- consult($1).`): bench.py's FOLD. `--template` prints the
+program (data/roulette/FAMILY.pl; data/dice/FAMILY.pl for the Dice
+paper's diamond and ladder; caesar's is written here, its categoricals'
+probabilities computed), `FAMILY SIZE --arguments` an instance's
+arguments after its data files, a line each, and `FAMILY SIZE --data
+KEY` the data file KEY of `fold` (FAMILY SIZE). `FAMILY SIZE --dice PATH`
+writes the Dice program, whose value answers the ProbLog program's
+queries as bench.py reads Dice's table (a Boolean for one query, a tuple
+of Booleans for one query each, an integer whose value k is the k-th
+query). `--reference` prints the answers, one `ATOM: PROBABILITY` a
+line, from a dynamic program over the model's states (`reference`),
+never from either program, and for a program with evidence (caesar and
+the hmm queries but the marginal likelihood) the evidence's probability,
+`P(e): PROBABILITY`, as tddlog's `--evidence-probability` prints it;
+`--reference-of PROGRAM` those of an instance's program, named by its
+instance (bench.py's rl_FAMILY_SIZE.pl), or of a program whose first
+line is `% gen_roulette.py FAMILY SIZE` (the unrolled programs this
+script wrote before, which tddlog's tests keep). A probability below
+the smallest normal double is printed with its decimal exponent
 (`1.234e-400`) and stands for 0 in a double.
 
 Families (the artifact's file; its sizes; the size here):
   motivating   modular/motivating.rkt, the Markov chain of the paper's
                Figure 2: x0 ~ flip 0.1, x_k = if x_{k-1} then flip 0.2
-               else flip 0.3; P(x_N). N steps (artifact to 5000).
+               else flip 0.3; P(x_N). N steps (artifact to 5000); the
+               program's argument N.
   diamond      modular/diamond.rkt: N diamonds in a row, each passing its
                input along one of two routes chosen by flip 0.5, one of
                which drops it with probability 0.0001; P(through).
   ladder       modular/ladder.rkt: a ladder of N rungs over two wires;
                the joint of the two last wires, (true, false), (false,
                true) or neither, queried as the two marginals.
-               Both are the Dice paper's networks (DICE_PAPER): one ProbLog
-               program, data/dice/FAMILY.pl, whose argument is N
-               (`--template`, `--arguments`; bench.py's FOLD), and the Dice
-               paper's own Dice program (`--dice PATH` alone).
+               Both are the Dice paper's networks (DICE_PAPER): their
+               ProbLog program is data/dice/FAMILY.pl, its argument N, and
+               their Dice program the Dice paper's own.
   caesar       modular/caesar.rkt: a key uniform over 26 letters, N
                letters drawn from English letter frequencies, each seen
                as letter + key (no wrap around: the benchmark adds 32-bit
@@ -43,13 +52,13 @@ Families (the artifact's file; its sizes; the size here):
                Racket's generator seeded with 0). N letters (to 300).
                Roulette draws each categorical by bisection (`bin-cat`):
                a flip with the left half's mass, then the half's values
-               renormalized. The program here makes the same flips and
-               holds each value as its bits, an if-then-else of a node's
-               flip over its halves' bits, and adds the letter and the key
-               as bvadd does, a carry rippling from bit 0. A value's
-               probability is the product of the flips' on the way to it,
-               which differs from the table as written (the key's 26 x
-               0.038461538 sum to 1 - 1.2e-8) in the eighth digit.
+               renormalized, so that a value's probability is the product
+               of the flips' on the way to it, which differs from the table
+               as written (the key's 26 x 0.038461538 sum to 1 - 1.2e-8) in
+               the eighth digit. The ProbLog program's categoricals are
+               annotated disjunctions with those probabilities, the letter
+               and the key integers, added with `is`; its data the
+               observations, evidence on seen(I, O), and its argument N.
   hmm-QUERY    hmm.rkt: a hidden chain h0 ~ flip 0.5, h_k ~ flip 0.3 after
                true and flip 0.65 after false, and observations v_k ~ flip
                0.65 when h_k and flip 0.3 otherwise; N steps. QUERY:
@@ -58,7 +67,9 @@ Families (the artifact's file; its sizes; the size here):
                P(h_0 | all v true); filtering-joint P(h_{N/2}..h_N all
                true | all v true); smoothing-joint P(h_0..h_{N/2-1} all
                true | all v true) (N/2 rounded down). The artifact runs 1,
-               100, 500, 1000 and 2000 steps.
+               100, 500, 1000 and 2000 steps. One ProbLog program for the
+               five, its data the observations (none for the marginal
+               likelihood), its arguments N and the question.
   network      scaling/network.rkt: a 4-bit message 1111 sent through K
                diamonds, each sending it with probability 0.5 to a noisy
                node, which with probability 0.01 flips one of its bits
@@ -69,7 +80,7 @@ Families (the artifact's file; its sizes; the size here):
                (to 100; the paper's
                to 400). Roulette only in the paper. Both programs here
                hold the message as Roulette does, four bits, and a flag
-               for a lost message.
+               for a lost message; the ProbLog program's argument is K.
   hardware     scaling/hardware.rkt: an interpreter of a loop over a
                memory of two cells of BW bits (total, counter) whose
                every read and write first resets the cell to 0 with
@@ -90,25 +101,34 @@ Families (the artifact's file; its sizes; the size here):
   hardware-bitwidth
                the same with n = 2 and FUEL 3, as in the artifact's
                bit-width ladder (bit widths 5 to 20). The size is BW. The
-               ProbLog program is written once over the iterations and the
-               bits, width(BW) a fact, as Roulette's program takes BW as a
+               artifact's third ladder, n from 5 to 20 at BW = 2 and FUEL
+               3, is left out: `(int n)` saturates at 2^BW - 1 = 3, so
+               every n of it is the same program.
+               The two are one ProbLog program, written once over the
+               iterations and the bits, as Roulette's program takes BW as a
                parameter: a cell's bits are atoms with the bit as an
-               argument, so that a reader finds the constant high bits
-               itself, and the program does not grow with BW (unrolled,
-               it took about 47 lines a bit). The artifact's third
-               ladder, n from 5 to 20 at BW = 2 and FUEL 3, is left out:
-               `(int n)` saturates at 2^BW - 1 = 3, so every n of it is
-               the same program.
+               argument, so that a reader grounds the bits a run can set
+               and finds the constant high bits itself, and the program
+               does not grow with BW. Its arguments are BW, the counter's
+               start and FUEL; its data the totals it asks about.
 
-The ProbLog programs state the facts in the order Roulette creates its
-flips and hold its bit vectors as bits, not one atom a value; the queries
-are what Roulette's query computes, the distribution of the program's
-value. The Dice programs are as the artifact's Dice generators (gen-*.rkt,
-hmm.rkt's dice mode) write them, where it has one.
+The ProbLog programs hold Roulette's bit vectors as bits, an atom a bit,
+and its integers as integers; the queries are what Roulette's query
+computes, the distribution of the program's value. The Dice programs are
+ports of Roulette's, which is the model, written at Dice's level: a loop
+of the model is `iterate` over a function of one step, where the
+artifact's Dice generators (gen-*.rkt, hmm.rkt's dice mode), written by
+Roulette's authors as a baseline, unroll it. Caesar's observations are
+data, a call of drawChar each, as caesar.dice.scrbl writes them: Dice has
+no array to loop over that every target's translator reads. The Dice
+paper's diamond and ladder keep the paper's own program for Dice and
+noDice, a call a diamond or a rung; `--dice-port PATH` writes the loop
+over the same function that the other systems' translators read.
 
-Usage: gen_roulette.py FAMILY SIZE [--dice PATH] [--reference]
+Usage: gen_roulette.py FAMILY --template | FAMILY SIZE --arguments | FAMILY SIZE --data KEY
+       gen_roulette.py FAMILY SIZE --dice PATH | diamond|ladder SIZE --dice-port PATH
+       gen_roulette.py FAMILY SIZE --reference
        gen_roulette.py --reference-of PROGRAM.pl
-       gen_roulette.py diamond|ladder --template | diamond|ladder SIZE --arguments | --dice PATH
 """
 import argparse
 import math
@@ -176,79 +196,6 @@ def bin_cat(ps):
     return [float(out[v]) for v in range(len(ps))]
 
 
-# Bits as ProbLog: a literal is an atom, `\+atom`, True or False.
-
-def neg(x):
-    return (not x) if isinstance(x, bool) else x[2:] if x.startswith('\\+') else '\\+' + x
-
-
-def gate(lines, atom, terms, keep=False):
-    """`atom` as the disjunction of the conjunctions `terms` (lists of
-    literals), constants folded: a constant, or the literal of a single
-    term of one literal, is returned as it is; otherwise `atom` gets a rule
-    a term, appended to `lines`, and is returned. `keep` always defines
-    `atom` (as a fact, or `atom :- fail.`)."""
-    out = []
-    for t in terms:
-        if any(x is False for x in t):
-            continue
-        t = [x for x in t if x is not True]
-        if not t:
-            if keep:
-                lines.append(f'{atom}.')
-                return atom
-            return True
-        out.append(t)
-    if not keep and not out:
-        return False
-    if not keep and len(out) == 1 and len(out[0]) == 1:
-        return out[0][0]
-    lines += [f'{atom} :- {", ".join(t)}.' for t in out] or [f'{atom} :- fail.']
-    return atom
-
-
-def equals(bits, v):
-    """The literals that make `bits` (least significant first) read v."""
-    return [b if v >> k & 1 else neg(b) for k, b in enumerate(bits)]
-
-
-def adder(lines, atom, a, b, carry_out=False):
-    """The bits of a + b as `bvadd` makes them, the carry rippling from bit
-    0: bit k is `atom('s', k)`, over `atom('x', k)`, a_k xor b_k, and the
-    carry into it, `atom('c', k)`; with `carry_out`, the carry out of the
-    last bit is one bit more."""
-    c, s = False, []
-    for k, (x, y) in enumerate(zip(a, b)):
-        h = gate(lines, atom('x', k), [[x, neg(y)], [neg(x), y]])
-        s.append(gate(lines, atom('s', k), [[h, neg(c)], [neg(h), c]]))
-        if k + 1 < len(a) or carry_out:
-            c = gate(lines, atom('c', k + 1), [[x, y], [c, h]])
-    return s + [c] if carry_out else s
-
-
-def categorical(lines, flip, bit, ps, width):
-    """A categorical as Roulette's `bin-cat` draws it: the fact `S::FLIP(T)`
-    at each node T of its `bisect` tree, numbered in the order Roulette
-    makes its flips (a node, then its left half's, then its right half's),
-    and bit k of the value under node T, `BIT(T,K)`, the node's flip's
-    if-then-else over its halves' bits. Returns the value's `width` bits,
-    least significant first."""
-    facts, rules, count = [], [], [0]
-
-    def go(t):
-        if isinstance(t, int):
-            return [bool(t >> k & 1) for k in range(width)]
-        node, count[0] = count[0], count[0] + 1
-        f = flip(node)
-        facts.append(f'{p(t[0])}::{f}.')
-        left, right = go(t[1]), go(t[2])
-        return [x if x == y else gate(rules, bit(node, k), [[f, x], [neg(f), y]])
-                for k, (x, y) in enumerate(zip(left, right))]
-    bits = go(bisect(ps))
-    lines += facts + rules
-    return bits
-
-
 def observations(n):
     with open(OBS) as f:
         obs = [int(line) for line in f]
@@ -257,29 +204,134 @@ def observations(n):
     return obs[:n]
 
 
-def ad(heads):
-    return '; '.join(f'{p(q)}::{h}' for h, q in heads) + '.'
+# --- ProbLog programs: a family's program, an instance's arguments and data --
+
+TEMPLATES = os.path.join(HERE, '..', 'data', 'roulette')
+PORTS = os.path.join(HERE, '..', 'data', 'dice')
 
 
-# --- ProbLog and Dice programs ---------------------------------------------
+def program_name(family):
+    """The ProbLog program of a family: hmm's five queries are one program, and
+    the two hardware ladders one."""
+    return 'hmm' if family.startswith('hmm-') else 'hardware' if family in HARDWARE else family
+
+
+def disjunction(heads, ps, body=None):
+    """The annotated disjunction of `heads` with the probabilities `ps`, a head
+    a line, with `body`; the last probability less what their sum passes 1 by
+    in doubles, as the sum of Roulette's bisection may (bin_cat), so that every
+    reader takes it."""
+    ps = [float(q) for q in ps]
+    for _ in range(4):
+        over = sum(ps) - 1
+        if over <= 0:
+            break
+        ps[-1] -= over
+    lines = [f'{p(q)}::{h};' for h, q in zip(heads, ps)]
+    lines[-1] = lines[-1][:-1] + (f' :- {body}.' if body else '.')
+    return lines
+
+
+CAESAR = """\
+% The cipher of Roulette's caesar.rkt, ported to ProbLog: a key uniform
+% over 26 letters (key) and $2 letters drawn from English letter
+% frequencies (letter(I, L), the I-th letter L), each seen as letter + key
+% (no wrap around: the benchmark adds 32-bit vectors) or, with probability
+% 0.0001 (fail), as itself. The observations, consulted from $1, are
+% evidence on seen(I, O) for I = 1 .. $2 (data/roulette/caesar_obs.txt, the
+% benchmark's); the queries are the posterior of the key. caesar.rkt draws
+% each categorical by bisection (`bin-cat`), and the probabilities here are
+% its values' (gen_roulette.py's bin_cat).
+:- consult($1).
+letters($2).
+index(1) :- letters(N), N > 0.
+index(I1) :- index(I), letters(N), I1 is I + 1, I1 =< N.
+"""
+
+
+def template(family):
+    """The text of a family's ProbLog program."""
+    if family in DICE_PAPER:
+        path = os.path.join(PORTS, family + '.pl')
+    elif family != 'caesar':
+        path = os.path.join(TEMPLATES, program_name(family) + '.pl')
+    else:
+        lines = disjunction([f'key({v})' for v in range(26)], bin_cat(KEY))
+        lines += disjunction([f'letter(I, {v})' for v in range(26)], bin_cat(LETTERS), 'index(I)')
+        lines += [f'{FAIL}::fail(I) :- index(I).',
+                  'seen(I, L) :- fail(I), letter(I, L).',
+                  'seen(I, O) :- \\+fail(I), key(K), letter(I, L), O is L + K.']
+        lines += [f'query(key({v})).' for v in range(26)]
+        return CAESAR + '\n'.join(lines) + '\n'
+    with open(path) as f:
+        return f.read()
+
+
+def fold(family, size):
+    """bench.py's FOLD entry of an instance: (its program's name, the
+    arguments that print the program with --template, the keys of its data
+    files, which come first among its places)."""
+    if family == 'caesar':
+        keys = [f'caesar_{size}']
+    elif family == 'hmm-marginal-likelihood':
+        keys = ['hmm_none']
+    elif family.startswith('hmm-'):
+        keys = [f'hmm_{size}']
+    elif family in HARDWARE:
+        keys = [f'{family.replace("-", "_")}_{size}']
+    else:
+        keys = []
+    return program_name(family), [family], keys
+
+
+def arguments(family, size):
+    """An instance's arguments after its data files: the size, and hmm's
+    question, the hardware ladders' bit width, counter and fuel."""
+    if family.startswith('hmm-'):
+        return [size, family[4:].replace('-', '_')]
+    if family in HARDWARE:
+        bw, n, fuel = HARDWARE[family](size)
+        return [bw, hardware_start(bw, n), fuel]
+    return [size]
+
+
+def data(family, size, key):
+    """The text of an instance's data file `key` (fold's)."""
+    if key not in fold(family, size)[2]:
+        raise SystemExit(f'{family} {size}: its data files are {fold(family, size)[2]}, not {key}')
+    if family == 'caesar':
+        lines = ['% The observations of caesar.rkt (data/roulette/caesar_obs.txt): letter I seen as O.']
+        lines += [f'evidence(seen({i},{o}),true).' for i, o in enumerate(observations(size), 1)]
+    elif key == 'hmm_none':
+        lines = ['% No observations: the marginal likelihood asks for them.']
+    elif family.startswith('hmm-'):
+        lines = [f'% The observations of hmm.rkt: v(T) true for T = 1 .. {size}.']
+        lines += [f'evidence(v({t}),true).' for t in range(1, size + 1)]
+    else:
+        totals, label = hardware_queries(*HARDWARE[family](size))
+        lines = ['% The totals a run of hardware.rkt can end with (the reference\'s states), the label',
+                 '% of a run out of fuel, one past the largest, and the queries.']
+        lines += [f'total({t}).' for t in totals] + [f'out_of_fuel({label}).']
+        lines += [f'query(res({t})).' for t in totals + [label]]
+    return '\n'.join(lines) + '\n'
+
+
+# --- Dice programs ---------------------------------------------------------
+
+# The Dice programs are written at Dice's own level: a loop
+# of the model is `iterate` over a function of one step, as the Dice paper's
+# caesar-iter does, where the artifact's generators unroll it. A loop that
+# runs no step is its start.
+
+def loop(f, start, k):
+    """`iterate(f, start, k)`, or `start` for no step."""
+    return f'iterate({f}, {start}, {k})' if k else start
+
 
 def motivating(n):
-    pl = ['% Roulette motivating.rkt: x0 ~ flip 0.1, x_k = if x_{k-1} then flip 0.2 else flip 0.3.']
-    for k in range(n, 0, -1):          # go(k) creates its flips before go(k-1)'s
-        pl += [f'0.2::a({k}).', f'0.3::b({k}).']
-    pl.append('0.1::x(0).')
-    for k in range(1, n + 1):
-        pl += [f'x({k}) :- x({k - 1}), a({k}).', f'x({k}) :- \\+x({k - 1}), b({k}).']
-    pl.append(f'query(x({n})).')
-    # gen-motivating.rkt
-    dice = []
-    for k in range(n, 0, -1):
-        dice += [f'let a{k} = flip 0.2 in', f'let b{k} = flip 0.3 in']
-    dice.append('let x0 = flip 0.1 in')
-    for k in range(1, n + 1):
-        dice.append(f'let x{k} = (if x{k - 1} then a{k} else b{k}) in')
-    dice.append(f'x{n}')
-    return pl, dice
+    # motivating.rkt: x0 ~ flip 0.1, x_k = if x_{k-1} then flip 0.2 else flip 0.3
+    return ['fun step(x: bool) {', '  if x then flip 0.2 else flip 0.3', '}',
+            'let x0 = flip 0.1 in', loop('step', 'x0', n)]
 
 
 # The Dice paper's diamond and ladder networks (Holtzen, Van den Broeck and
@@ -287,8 +339,7 @@ def motivating(n):
 # gen_ladder), the model of Roulette's diamond.rkt and ladder.rkt: N
 # diamonds or rungs. Their Dice program is the text gen_diamond N and
 # gen_ladder N build, byte for byte (noDice's diamond-L-p and ladder-L-p are
-# it at N = L + 1); their ProbLog program is one program, the port
-# data/dice/FAMILY.pl, with N its argument (`--template`, `--arguments`).
+# it at N = L + 1); their ProbLog program is the port data/dice/FAMILY.pl.
 DICE_PAPER = {
     'diamond': ('\nfun diamond(s1: bool) {\n//      if flip(0.5) then s1 else (flip(0.0001) && s1)\n'
                 '      let route = flip 0.5 in\n      let s2 = if route then s1 else false in\n'
@@ -299,7 +350,6 @@ DICE_PAPER = {
                '      else if s2 then\n           let f = flip 0.5 in (f, !f)\n      else (false, false)\n}\n'
                '      let x = (true, false) in\n', '\nlet x = ladder(fst x, snd x) in', '\nx'),
 }
-PORTS = os.path.join(HERE, '..', 'data', 'dice')
 
 
 def dice_paper(family, n):
@@ -308,23 +358,30 @@ def dice_paper(family, n):
     return head + call * n + tail
 
 
+# The port of the Dice paper's networks that the other systems' translators
+# read (`--dice-port`): Dice and noDice read the paper's own program, a call
+# a diamond or a rung, and the others its loop, `iterate` over the same
+# function (the ladder's of one pair), so that each target writes its loop.
+DICE_PORT = {
+    'diamond': ['fun diamond(s1: bool) {', '  let route = flip 0.5 in', '  let s2 = if route then s1 else false in',
+                '  let s3 = if route then false else s1 in', '  let drop = flip 0.0001 in', '  s2 || (s3 && !drop)',
+                '}'],
+    'ladder': ['fun ladder(x: (bool, bool)) {', '  let s1 = fst x in', '  let s2 = snd x in',
+               '  if s1 then', '    if flip 0.001 then', '      (false, false)', '    else',
+               '      let f = flip 0.5 in (f, !f)', '  else if s2 then', '    let f = flip 0.5 in (f, !f)',
+               '  else (false, false)', '}'],
+}
+
+
+def dice_port(family, n):
+    """The loop of the Dice paper's network `family` at n (DICE_PORT)."""
+    start = {'diamond': 'true', 'ladder': '(true, false)'}[family]
+    return '\n'.join(DICE_PORT[family] + [loop(family, start, n)]) + '\n'
+
+
 def caesar(n):
     key, letter = bin_cat(KEY), bin_cat(LETTERS)
     obs = observations(n)
-    pl = ['% Roulette caesar.rkt: key ~ 26 letters; letter i ~ English frequencies, seen as letter + key,',
-          '% or with probability 0.0001 as itself. The categoricals as Roulette bisects them, their',
-          '% values in bits (kb, db at a node of the bisection, kc and dc its flips), letter + key as',
-          '% its bit vectors add (x the bits\' exclusive or, s the sum, c the carry).']
-    kbits = categorical(pl, lambda t: f'kc({t})', lambda t, k: f'kb({t},{k})', KEY, 5)
-    for i, o in enumerate(obs, 1):
-        drawn = categorical(pl, lambda t: f'dc({i},{t})', lambda t, k: f'db({i},{t},{k})', LETTERS, 5)
-        pl.append(f'{FAIL}::fail({i}).')
-        enc = adder(pl, lambda kind, k: f'{kind}({i},{k})', kbits, drawn, carry_out=True)
-        gate(pl, f'ok({i})', [[f'fail({i})'] + equals(drawn, o), [f'\\+fail({i})'] + equals(enc, o)], keep=True)
-        pl.append(f'evidence(ok({i}), true).')
-    for v in range(26):
-        gate(pl, f'key({v})', [equals(kbits, v)], keep=True)
-    pl += [f'query(key({v})).' for v in range(26)]
     # As caesar.dice.scrbl, but with 6-bit integers, which hold a letter
     # plus a key (at most 50) as the benchmark's 32-bit vectors do, where
     # its 5 bits wrap around at 32. A categorical is padded with zeros to
@@ -340,41 +397,37 @@ def caesar(n):
             f'let key1 = discrete({pad(key)}) in']
     dice += [f'let a = drawChar(key1, int(6, {o})) in' for o in obs]
     dice.append('key1')
-    return pl, dice
+    return dice
 
 
 def hmm(query, n):
-    pl = [f'% Roulette hmm.rkt, {query}, {n} steps.', '0.5::h(0).']
-    for k in range(1, n + 1):
-        j = k - 1
-        pl += [f'0.3::t1({k}).', f'0.65::t0({k}).', f'0.65::e1({k}).', f'0.3::e0({k}).',
-               f'h({k}) :- h({j}), t1({k}).', f'h({k}) :- \\+h({j}), t0({k}).',
-               f'v({k}) :- h({k}), e1({k}).', f'v({k}) :- \\+h({k}), e0({k}).']
-    out = outcomes(query, n)
-    if query != 'marginal-likelihood':
-        pl += [f'evidence(v({k}), true).' for k in range(1, n + 1)]
-    # q: the conjunction of the outcomes, as a chain.
-    kind, idx = out
-    if not idx:
-        pl.append('q.')
-    else:
-        pl.append(f'c({idx[0]}) :- {kind}({idx[0]}).')
-        pl += [f'c({b}) :- c({a}), {kind}({b}).' for a, b in zip(idx, idx[1:])]
-        pl.append(f'q :- c({idx[-1]}).')
-    pl.append('query(q).')
-    # hmm.rkt's gen-hmm-dice
-    dice = ['fun nextState(prevHidden: bool) {',
-            '  let nextHidden = if prevHidden then flip 0.3 else flip 0.65 in',
-            '  let nextVisible = if nextHidden then flip 0.65 else flip 0.3 in',
-            '  (nextHidden, nextVisible)', '}', 'let hidden0 = flip 0.5 in']
-    for k in range(1, n + 1):
-        dice += [f'let state{k} = nextState(hidden{k - 1}) in', f'let hidden{k} = fst state{k} in',
-                 f'let visible{k} = snd state{k} in']
-    if query != 'marginal-likelihood':
-        dice += [f'let _ = observe(visible{k}) in' for k in range(1, n + 1)]
-    name = {'v': 'visible', 'h': 'hidden'}[kind]
-    dice.append(' && '.join(['true'] + [f'{name}{k}' for k in idx]))
-    return pl, dice
+    # hmm.rkt's model, a step of the chain a function: `step` observes the
+    # step's visible variable, `stepAnd` also conjoins the hidden one into
+    # the pair's second, and `stepSeen` (the marginal likelihood's)
+    # conjoins the visible one without observing it
+    def body(name, arg, h, value, observe=True):
+        return [f'fun {name}({arg}) {{', f'  let nextHidden = if {h} then flip 0.3 else flip 0.65 in',
+                '  let nextVisible = if nextHidden then flip 0.65 else flip 0.3 in'] + \
+               (['  let _ = observe nextVisible in'] if observe else []) + [f'  {value}', '}']
+    pair = 's: (bool, bool)'
+    if query == 'marginal-likelihood':            # P(v_1 .. v_n all true)
+        return body('stepSeen', pair, 'fst s', '(nextHidden, (snd s) && nextVisible)', False) + \
+            ['let hidden0 = flip 0.5 in', f'let s = {loop("stepSeen", "(hidden0, true)", n)} in', 'snd s']
+    dice = body('step', 'h: bool', 'h', 'nextHidden') + \
+        (body('stepAnd', pair, 'fst s', '(nextHidden, (snd s) && nextHidden)') if query.endswith('-joint') else []) + \
+        ['let hidden0 = flip 0.5 in']
+    m = n // 2
+    if query == 'filtering-marginal':             # h_n
+        return dice + [loop('step', 'hidden0', n)]
+    if query == 'smoothing-marginal':             # h_0
+        return dice + [f'let h = {loop("step", "hidden0", n)} in', 'hidden0']
+    if query == 'filtering-joint':                # h_m && .. && h_n
+        return dice + [f'let hm = {loop("step", "hidden0", m)} in',
+                       f'let s = {loop("stepAnd", "(hm, hm)", n - m)} in', 'snd s']
+    if m == 0:                                    # smoothing-joint: h_0 && .. && h_{m-1}, none
+        return dice + [f'let h = {loop("step", "hidden0", n)} in', 'true']
+    return dice + [f'let s = {loop("stepAnd", "(hidden0, hidden0)", m - 1)} in',
+                   f'let h = {loop("step", "fst s", n - m + 1)} in', 'snd s']
 
 
 def outcomes(query, n):
@@ -387,23 +440,6 @@ def outcomes(query, n):
 
 
 def network(k):
-    pl = ['% Roulette network.rkt: message 1111 through diamonds of a noisy node (flip 0.01: one bit flipped,',
-          '% chosen uniformly) and a forwarding one (flip 0.99: passed, else lost), split by flip 0.5.']
-    pl.append('% The message as its four bits b(I,B) and l(I) for lost; t(I,B) flips bit B in diamond I.')
-    for i in range(1, k + 1):           # noisy's select and flip, forward's flip, split's flip
-        pl += [ad([(f'bit({i},{b})', 0.25) for b in range(4)]), f'0.01::nz({i}).', f'0.99::fw({i}).',
-               f'0.5::sp({i}).']
-    bits, lost = [True] * 4, False
-    for i in range(1, k + 1):
-        # A lost message's bits are never read, so a bit flips where the
-        # noisy node flips it whether or not the message is lost.
-        flips = [gate(pl, f't({i},{b})', [[f'sp({i})', f'nz({i})', f'bit({i},{b})']]) for b in range(4)]
-        bits = [gate(pl, f'b({i},{b})', [[x, neg(t)], [neg(x), t]]) for b, (x, t) in enumerate(zip(bits, flips))]
-        lost = gate(pl, f'l({i})', [[lost], [f'\\+sp({i})', f'\\+fw({i})']])
-    for v in range(16):
-        gate(pl, f'm({k},{v})', [[neg(lost)] + equals(bits, v)], keep=True)
-    gate(pl, f'm({k},16)', [[lost]], keep=True)
-    pl += [f'query(m({k},{v})).' for v in range(17)]
     # The message as a flag (lost) and its four bits; the value an
     # integer, 16 for a lost message.
     dice = ['fun diamond(m: (bool, (bool, (bool, (bool, bool))))) {',
@@ -416,14 +452,13 @@ def network(k):
             '  let n2 = b2 ^ (c && bit == int(2, 2)) in', '  let n3 = b3 ^ (c && bit == int(2, 3)) in',
             '  if sp then (lost, (n0, (n1, (n2, n3))))',
             '  else (if fw then m else (true, (false, (false, (false, false)))))', '}',
-            'let m0 = (false, (true, (true, (true, true)))) in']
-    dice += [f'let m{i} = diamond(m{i - 1}) in' for i in range(1, k + 1)]
-    dice += [f'let lost = fst m{k} in', f'let b0 = fst (snd m{k}) in', f'let b1 = fst (snd (snd m{k})) in',
-             f'let b2 = fst (snd (snd (snd m{k}))) in', f'let b3 = snd (snd (snd (snd m{k}))) in',
+            f'let m = {loop("diamond", "(false, (true, (true, (true, true))))", k)} in']
+    dice += ['let lost = fst m in', 'let b0 = fst (snd m) in', 'let b1 = fst (snd (snd m)) in',
+             'let b2 = fst (snd (snd (snd m))) in', 'let b3 = snd (snd (snd (snd m))) in',
              'if lost then int(5, 16) else '
              '((if b0 then int(5, 1) else int(5, 0)) + (if b1 then int(5, 2) else int(5, 0)) + '
              '(if b2 then int(5, 4) else int(5, 0)) + (if b3 then int(5, 8) else int(5, 0)))']
-    return pl, dice
+    return dice
 
 
 def hardware_start(bw, n):
@@ -431,135 +466,46 @@ def hardware_start(bw, n):
     return n if n.bit_length() <= bw else 2 ** bw - 1
 
 
-HARDWARE_COMMENT = [
-    '% bit K of the total and the counter entering the loop with J iterations done, on(J) while',
-    '% it runs; z(J, R) resets a cell before the R-th read of iteration J: counter (test, d),',
-    '% total (u), counter (sum, g), counter (step, f); x(J) leaves the loop at iteration J.']
-
-
-def hardware_unrolled(bw, n, fuel):
-    """The ProbLog program of hardware.rkt at bit width bw, unrolled: a
-    rule for each iteration and bit, the constants folded here (the fuel
-    ladder's programs, at bw 2, as they were run)."""
-    c0 = hardware_start(bw, n)
-    totals, out_of_fuel = hardware_queries(bw, n, fuel)
-    pl = [f'% Roulette hardware.rkt, bit width {bw}, n = {n}, fuel {fuel}: t(J, K) and c(J, K),'] + \
-        HARDWARE_COMMENT
-    for j in range(fuel):
-        pl += [f'{PERTURB}::z({j},{r}).' for r in range(1, 5)]
-    total, counter = [False] * bw, [bool(c0 >> k & 1) for k in range(bw)]
-    on, leave = True, []
-    for j in range(fuel):
-        def read(name, bits, r):
-            return [gate(pl, f'{name}({j},{k})', [[b, f'\\+z({j},{r})']]) for k, b in enumerate(bits)]
-        d = read('d', counter, 1)
-        nonzero = gate(pl, f'nz({j})', [[b] for b in d])
-        leave.append((gate(pl, f'x({j})', [[on, neg(nonzero)]]), total))
-        on = gate(pl, f'on({j + 1})', [[on, nonzero]])
-        u = read('u', total, 2)
-        g = read('g', d, 3)
-        f = read('f', g, 4)
-        total = adder(pl, lambda kind, k: {'s': 't'}.get(kind, f't{kind}') + f'({j + 1},{k})', u, g)
-        counter = adder(pl, lambda kind, k: {'s': 'c'}.get(kind, f'c{kind}') + f'({j + 1},{k})', f,
-                        [k == 0 for k in range(bw)])
-    # The total the loop left with.
-    done = gate(pl, 'done', [[x] for x, _ in leave])
-    result = [gate(pl, f'r({k})', [[x, bits[k]] for x, bits in leave]) for k in range(bw)]
-    for t in totals:
-        gate(pl, f'res({t})', [[done] + equals(result, t)], keep=True)
-    gate(pl, f'res({out_of_fuel})', [[on]], keep=True)
-    pl += [f'query(res({t})).' for t in totals + [out_of_fuel]]
-    return pl
-
-
-def hardware_first_order(bw, n, fuel):
-    """The ProbLog program of hardware.rkt at bit width bw, written once
-    over the iterations J and the bits K, as Roulette's program takes the
-    bit width and the fuel as parameters, width(BW) and fuel(FUEL) here:
-    the program does not grow with either. A cell's bits are atoms with the
-    bit as an argument, so that a reader grounds the bits a run can set and
-    finds the constant high bits itself. The sums ripple their carries up
-    to bit BW - 1 and drop the last, as bvadd does. A total's query reads
-    the bits below the largest total's, and `hi`, any bit above them."""
-    c0 = hardware_start(bw, n)
-    totals, out_of_fuel = hardware_queries(bw, n, fuel)
-    low = min(bw, max(totals, default=0).bit_length())
-    pl = [f'% Roulette hardware.rkt, bit width {bw}, n = {n}, fuel {fuel}: t(J, K) and c(J, K),'] + \
-        HARDWARE_COMMENT + [
-        '% tx(J, K) and tc(J, K): the sum bit without the carry, and the carry into it, of the',
-        '% total; cc(J, K) the carry of the counter (+ 1); r(K) the total at exit.',
-        f'width({bw}).', f'fuel({fuel}).', 'step(0).', 'step(J1) :- step(J), fuel(F), J1 is J + 1, J1 < F.']
-    pl += [f'{PERTURB}::z(J,{r}) :- step(J).' for r in range(1, 5)]
-    pl += [f'c(0,{k}).' for k in range(c0.bit_length()) if c0 >> k & 1] + ['on(0).']
-    pl += ['d(J,K) :- step(J), c(J,K), \\+z(J,1).',
-           'nz(J) :- d(J,_).',
-           'x(J) :- step(J), on(J), \\+nz(J).',
-           'on(J1) :- step(J), J1 is J + 1, on(J), nz(J).',
-           'u(J,K) :- step(J), t(J,K), \\+z(J,2).',
-           'g(J,K) :- d(J,K), \\+z(J,3).',
-           'f(J,K) :- g(J,K), \\+z(J,4).',
-           # the total := u + g
-           'tx(J1,K) :- step(J), J1 is J + 1, u(J,K), \\+g(J,K).',
-           'tx(J1,K) :- step(J), J1 is J + 1, g(J,K), \\+u(J,K).',
-           'tc(J1,K1) :- step(J), J1 is J + 1, u(J,K), g(J,K), K1 is K + 1, width(W), K1 < W.',
-           'tc(J,K1) :- tc(J,K), tx(J,K), K1 is K + 1, width(W), K1 < W.',
-           't(J,K) :- tx(J,K), \\+tc(J,K).',
-           't(J,K) :- tc(J,K), \\+tx(J,K).',
-           # the counter := f + 1
-           'c(J1,0) :- step(J), J1 is J + 1, \\+f(J,0).',
-           'cc(J1,1) :- step(J), J1 is J + 1, f(J,0), width(W), 1 < W.',
-           'cc(J,K1) :- cc(J,K), P is J - 1, f(P,K), K1 is K + 1, width(W), K1 < W.',
-           'c(J1,K) :- step(J), J1 is J + 1, f(J,K), K > 0, \\+cc(J1,K).',
-           'c(J,K) :- cc(J,K), P is J - 1, \\+f(P,K).',
-           # the total the loop left with
-           'done :- x(_).',
-           'r(K) :- x(J), t(J,K).']
-    high = ['\\+hi'] if bw > low else []
-    if high:
-        pl.append(f'hi :- r(K), K >= {low}.')
-    for t in totals:
-        pl.append(f'res({t}) :- ' + ', '.join(['done'] + equals([f'r({k})' for k in range(low)], t) + high) + '.')
-    pl.append(f'res({out_of_fuel}) :- fuel(F), on(F).')
-    pl += [f'query(res({t})).' for t in totals + [out_of_fuel]]
-    return pl
-
-
 def hardware_dice(bw, n, fuel):
-    """The Dice program of hardware.rkt at bit width bw, unrolled: `on`
-    while the loop runs, `done` once it has ended with the total `r`; the
-    value the index of the total's query, or that of res(out_of_fuel), the
-    last, without fuel."""
+    """The Dice program of hardware.rkt at bit width bw, a step of the
+    loop (one unit of fuel) a function of the machine's state: the total
+    `t`, the counter `c`, `running` while the loop runs, `finished` once
+    it has ended with the total `r`. The value is the index of the total's
+    query, or that of res(out_of_fuel), the last, without fuel."""
     c0 = hardware_start(bw, n)
     totals, _ = hardware_queries(bw, n, fuel)
-    w = f'int({bw}, 0)'
-    dice = [f'let t0 = {w} in', f'let c0 = int({bw}, {c0}) in', 'let on0 = true in', 'let done0 = false in',
-            f'let r0 = {w} in']
-    for j in range(fuel):
-        i = j + 1
-        dice += [f'let z{i}a = flip {PERTURB} in', f'let d{i} = if z{i}a then {w} else c{j} in',
-                 f'let x{i} = on{j} && d{i} == {w} in',
-                 f'let r{i} = if x{i} then t{j} else r{j} in', f'let done{i} = done{j} || x{i} in',
-                 f'let on{i} = on{j} && !x{i} in',
-                 f'let z{i}b = flip {PERTURB} in', f'let u{i} = if z{i}b then {w} else t{j} in',
-                 f'let z{i}c = flip {PERTURB} in', f'let g{i} = if z{i}c then {w} else d{i} in',
-                 f'let t{i} = u{i} + g{i} in',
-                 f'let z{i}d = flip {PERTURB} in', f'let f{i} = if z{i}d then {w} else g{i} in',
-                 f'let c{i} = f{i} + int({bw}, 1) in']
+    w, i = f'int({bw}, 0)', f'int({bw})'
+    dice = [f'fun step(s: ({i}, ({i}, (bool, (bool, {i}))))) {{',
+            '  let t = fst s in', '  let c = fst (snd s) in', '  let running = fst (snd (snd s)) in',
+            '  let finished = fst (snd (snd (snd s))) in', '  let r = snd (snd (snd (snd s))) in',
+            f'  let d = if flip {PERTURB} then {w} else c in',      # the counter read
+            f'  let x = running && d == {w} in',                     # the loop's test fails: the run ends
+            '  let r2 = if x then t else r in',
+            f'  let u = if flip {PERTURB} then {w} else t in',      # total := total + counter
+            f'  let g = if flip {PERTURB} then {w} else d in',
+            f'  let f = if flip {PERTURB} then {w} else g in',      # counter := counter + (int -1)
+            f'  (u + g, (f + int({bw}, 1), (running && !x, (finished || x, r2))))', '}',
+            f'let s = {loop("step", f"({w}, (int({bw}, {c0}), (true, (false, {w}))))", fuel)} in',
+            'let finished = fst (snd (snd (snd s))) in', 'let r = snd (snd (snd (snd s))) in']
     width = len(totals).bit_length()
     out = f'int({width}, {len(totals)})'
     for k in range(len(totals) - 1, -1, -1):
-        out = f'(if r{fuel} == int({bw}, {totals[k]}) then int({width}, {k}) else {out})'
-    dice.append(f'if done{fuel} then {out} else int({width}, {len(totals)})')
+        out = f'(if r == int({bw}, {totals[k]}) then int({width}, {k}) else {out})'
+    dice.append(f'if finished then {out} else int({width}, {len(totals)})')
     return dice
 
 
-def program(family, size):
+def dice(family, size):
+    """The text of an instance's Dice program."""
+    if family in DICE_PAPER:
+        return dice_paper(family, size)
     if family.startswith('hmm-'):
-        return hmm(family[4:], size)
-    if family in HARDWARE:
-        pl = hardware_first_order if family == 'hardware-bitwidth' else hardware_unrolled
-        return pl(*HARDWARE[family](size)), hardware_dice(*HARDWARE[family](size))
-    return {'motivating': motivating, 'caesar': caesar, 'network': network}[family](size)
+        lines = hmm(family[4:], size)
+    elif family in HARDWARE:
+        lines = hardware_dice(*HARDWARE[family](size))
+    else:
+        lines = {'motivating': motivating, 'caesar': caesar, 'network': network}[family](size)
+    return '\n'.join(lines) + '\n'
 
 
 # --- reference answers -----------------------------------------------------
@@ -746,65 +692,70 @@ def hardware_reference(bw, n, fuel):
 HEADER = '% gen_roulette.py'
 
 
+def program_of(path):
+    """(family, size) of an instance's program: from its name, bench.py's
+    rl_FAMILY_SIZE.pl (the family's dashes underscores), or from its first
+    line, `% gen_roulette.py FAMILY SIZE`."""
+    named = re.fullmatch(r'rl_(.+)_(\d+)\.pl', os.path.basename(path))
+    by_name = {f.replace('-', '_'): f for f in FAMILIES}
+    if named and named.group(1) in by_name:
+        return by_name[named.group(1)], int(named.group(2))
+    with open(path) as f:
+        head = f.readline().split()
+    if head[:2] != HEADER.split() or len(head) != 4 or head[2] not in FAMILIES:
+        raise SystemExit(f'{path}: not an instance of gen_roulette.py (not named rl_FAMILY_SIZE.pl, and its '
+                         f'first line is not `{HEADER} FAMILY SIZE`)')
+    return head[2], int(head[3])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('family', nargs='?', choices=FAMILIES)
     ap.add_argument('size', nargs='?', type=int)
-    ap.add_argument('--dice', help='also write the Dice program here')
-    ap.add_argument('--reference', action='store_true', help='print the answers instead of the program')
-    ap.add_argument('--reference-of', metavar='PROGRAM', help='print the answers of a program this script wrote')
-    ap.add_argument('--template', action='store_true',
-                    help='diamond and ladder: print the ProbLog program, its size the place $1')
-    ap.add_argument('--arguments', action='store_true', help="diamond and ladder: print the program's argument")
+    ap.add_argument('--template', action='store_true', help="print the family's ProbLog program")
+    ap.add_argument('--arguments', action='store_true', help="print an instance's arguments after its data files")
+    ap.add_argument('--data', metavar='KEY', help="print an instance's data file KEY")
+    ap.add_argument('--dice', metavar='PATH', help="write an instance's Dice program here")
+    ap.add_argument('--dice-port', metavar='PATH', help="write the loop of the Dice paper's diamond or ladder, "
+                    "which the systems other than Dice and noDice translate, here")
+    ap.add_argument('--reference', action='store_true', help="print an instance's answers")
+    ap.add_argument('--reference-of', metavar='PROGRAM', help="print the answers of an instance's program")
     a = ap.parse_args()
+    modes = [m for m in ('template', 'arguments', 'data', 'dice', 'dice_port', 'reference', 'reference_of')
+             if getattr(a, m)]
+    if len(modes) != 1:
+        raise SystemExit('give one of --template, --arguments, --data KEY, --dice PATH, --dice-port PATH, '
+                         '--reference and --reference-of PROGRAM')
+    if a.dice_port and a.family not in DICE_PORT:
+        raise SystemExit(f'--dice-port: {a.family} has no port of its own (its Dice program is the loop); '
+                         f'the families with one are {", ".join(DICE_PORT)}')
     if a.reference_of:
-        if a.family or a.size is not None or a.dice or a.reference or a.template or a.arguments:
+        if a.family or a.size is not None:
             raise SystemExit('--reference-of reads the family and size from the program and takes nothing else')
-        with open(a.reference_of) as f:
-            head = f.readline().split()
-        # a program of DICE_PAPER is its port with its size in its place, named by its instance
-        # (bench.py's rl_FAMILY_SIZE.pl), as tddlog --program writes it
-        named = re.fullmatch(r'rl_(diamond|ladder)_(\d+)\.pl', os.path.basename(a.reference_of))
-        if named:
-            head = HEADER.split() + list(named.groups())
-        if head[:2] != HEADER.split() or len(head) != 4 or head[2] not in FAMILIES:
-            raise SystemExit(f'{a.reference_of}: not a program of gen_roulette.py (its first line is not '
-                             f'`{HEADER} FAMILY SIZE`)')
-        a.family, a.size, a.reference = head[2], int(head[3]), True
+        a.family, a.size = program_of(a.reference_of)
+        a.reference = True
     if a.template:
-        if a.family not in DICE_PAPER or a.size is not None or a.dice or a.reference or a.arguments:
-            raise SystemExit('--template takes diamond or ladder and nothing else')
-        with open(os.path.join(PORTS, a.family + '.pl')) as f:
-            sys.stdout.write(f.read())
+        if a.family is None or a.size is not None:
+            raise SystemExit('--template takes a family and no size')
+        sys.stdout.write(template(a.family))
         return
     if a.family is None or a.size is None:
         raise SystemExit('give FAMILY and SIZE, or --reference-of PROGRAM')
     if a.size < 1:
         raise SystemExit('size: at least 1')
     if a.reference:
-        if a.dice:
-            raise SystemExit('--reference prints answers and writes no program; --dice has nothing to write')
         for atom, x in reference(a.family, a.size).items():
             print(f'{atom}: {fmt(x)}')
-        return
-    if a.family in DICE_PAPER:
-        # one ProbLog program and its argument (bench.py's FOLD), and the Dice paper's program
-        if a.arguments == bool(a.dice):
-            raise SystemExit(f'{a.family}: its ProbLog program is data/dice/{a.family}.pl and its size the argument '
-                             '(--template, --arguments); --dice PATH writes the Dice program alone')
-        if a.arguments:
-            print(a.size)
-        else:
-            with open(a.dice, 'w') as f:
-                f.write(dice_paper(a.family, a.size))
-        return
-    if a.arguments:
-        raise SystemExit('--arguments: only diamond and ladder are one program and an argument')
-    pl, dice = program(a.family, a.size)
-    sys.stdout.write('\n'.join([f'{HEADER} {a.family} {a.size}'] + pl) + '\n')
-    if a.dice:
+    elif a.arguments:
+        sys.stdout.write(''.join(f'{w}\n' for w in arguments(a.family, a.size)))
+    elif a.data:
+        sys.stdout.write(data(a.family, a.size, a.data))
+    elif a.dice_port:
+        with open(a.dice_port, 'w') as f:
+            f.write(dice_port(a.family, a.size))
+    else:
         with open(a.dice, 'w') as f:
-            f.write('\n'.join(dice) + '\n')
+            f.write(dice(a.family, a.size))
 
 
 if __name__ == '__main__':

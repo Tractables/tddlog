@@ -37,6 +37,17 @@ SPPL = os.environ.get('SPPL', '')
 LONG_AND = (''.join(f'let a{i} = flip 0.99 in ' for i in range(250)) + 'let b = if a0 then flip 0.3 else flip 0.6 in '
             'let o = observe (' + ' && '.join(f'a{i}' for i in range(250)) + ') in b')
 
+# loops in a loop (row's iterate of step) and in a branch, one with an
+# observation in its body
+LOOPS = ('fun step(x: bool) { let y = flip 0.3 in x || y }\n'
+         'fun row(x: bool) { iterate(step, x, 2) }\n'
+         'fun noisy(x: bool) { let y = flip 0.4 in let o = observe (x || y) in y }\n'
+         'let a = flip 0.5 in let b = iterate(row, a, 2) in\n'
+         'let c = if a then iterate(step, false, 3) else flip 0.1 in\n'
+         'let d = if b then iterate(noisy, a, 2) else flip 0.2 in (b, (c, d))')
+# the reference's program of LOOPS: the loop in a loop unrolled, which
+# dice2problog.py refuses
+REFERENCE = {LOOPS: LOOPS.replace('iterate(step, x, 2)', 'step(step(x))')}
 
 def program_text(name):
     return (data / 'dice' / f'{name}.dice').read_text()
@@ -80,6 +91,20 @@ class Dice2SpplTests(unittest.TestCase):
                                    'if x == int(2, 1) then flip 0.2 else flip 0.3')
         self.assertEqual(code.count('elif '), 1)
         self.assertEqual(code.count('else:'), 1)
+
+    def test_a_loop_is_a_for_over_arrays(self):
+        code = dice2sppl.translate(CAESAR)
+        self.assertRegex(code, r'(?m)^for i\d+_ in range\(3\):$')
+        self.assertRegex(code, r'(?m)^s\d+_0 = array\(4\)$')   # a state: its initial value and one entry an iteration
+        body = itertools.takewhile(lambda line: line.startswith('    '), code.split('\nfor ', 1)[1].splitlines()[1:])
+        targets = [m.group(1) for m in (re.match(r'\s*(\S.*?) ~=', line) for line in body) if m]
+        self.assertTrue(targets)
+        self.assertTrue(all('[' in t for t in targets), targets)   # inside the for, each variable an array's entry
+        # a loop in a loop: the outer loop's dimension first; a loop in a branch: the other branch sets its entries
+        code = dice2sppl.translate(LOOPS)
+        self.assertRegex(code, r'(?m)^    for i\d+_ in range\(2\):$')
+        self.assertRegex(code, r'\[i\d+_ \* 3 \+ i\d+_ \+ 1\] ~=')
+        compile(code.replace('~=', '='), 'loops', 'exec')
 
     def test_recursion_is_refused(self):
         with self.assertRaises(NotImplementedError):
@@ -135,11 +160,12 @@ class Dice2SpplTests(unittest.TestCase):
     def test_integer_operations_wrap_as_dices(self):
         programs = [f'let x = discrete({X}) in let y = discrete({Y}) in (x, (y, x {op} y))' for op in OPS] + \
                    [f'let x = discrete({X}) in (x, (x << 1, x >> 1))', f'let x = discrete({X}) in (x, int(3, 5) - x)',
-                    CAESAR]
+                    CAESAR, LOOPS]
         for text in programs:
             with self.subTest(program=text[-24:]):
-                qs = reference.queries(dice2problog.translate(text))
-                want = reference.answers(reference.exact(text), qs)
+                ref = REFERENCE.get(text, text)
+                qs = reference.queries(dice2problog.translate(ref))
+                want = reference.answers(reference.exact(ref), qs)
                 got = sppl_answers(text, qs)
                 for q, w in zip(qs, want):
                     self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-9, msg=q)
@@ -147,6 +173,10 @@ class Dice2SpplTests(unittest.TestCase):
     def test_nth_bit_is_a_shift_and_a_comparison(self):
         # x << i at least 2^(w - 1) (dice_ir.py)
         dice2sppl.translate(reference.NTH_BIT)
+
+    def test_a_long_chain_translates_without_recursing_down_it(self):
+        code = reference.shallow(lambda: dice2sppl.translate(reference.CHAINS))
+        self.assertEqual(len(re.findall(r'^# component \d ', code, re.M)), 2)
 
     @unittest.skipUnless(SPPL, 'SPPL is not set')
     def test_sppl_gives_nth_bit(self):

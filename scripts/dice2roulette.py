@@ -66,8 +66,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import source_tree  # noqa: E402,F401  (the source tree's converters)
-from dice2problog import (Parser, RECURSION_LIMIT, bits_for, calls, deep,  # noqa: E402
-                          discrete_probs, tokenize)
+from dice2problog import (CHAIN, Parser, RECURSION_LIMIT, bits_for, calls,  # noqa: E402
+                          chain_operands, deep, discrete_probs, tokenize)
 
 BOOL = ('bool',)
 # A variable, a constant, or an expression that creates nothing: evaluating
@@ -195,6 +195,8 @@ class Translator:
             if t[0] != 'int':
                 raise TypeError(f'{e[1]} of {show(t)}')
             return f'({"bv-shl" if e[1] == "<<" else "bv-shr"} {c} {e[3]})', t
+        if kind == 'bin' and e[1] in ('&&', '||'):
+            return self.chain(e, env, out, hint)
         if kind == 'bin':
             a, ta = self.expr(e[2], env, out, hint)
             b, tb = self.expr(e[3], env, out, hint)
@@ -221,13 +223,24 @@ class Translator:
             return self.make(f'(for/fold ([{s} {init}]) ([_ (in-range {e[3]})]) {call})', out, hint), t
         raise ValueError(f'unknown expression {kind}')
 
+    def chain(self, e, env, out, hint):
+        """A chain of && or || nested as the parser reads it, from the left,
+        and named every CHAIN operands, so that no expression is deeper."""
+        op, code = e[1], None
+        for k, x in enumerate(chain_operands(e)):
+            c, t = self.expr(x, env, out, hint)
+            same(t, BOOL, op)
+            if code is None:
+                code = c
+                continue
+            if k % CHAIN == 0:
+                code = self.make(code, out, hint)
+            code = f'({op} {code} {c})'
+        return code, BOOL
+
     def binary(self, op, a, ta, b, tb):
         if op in ('/', '%', '::'):
             raise NotImplementedError(f'operator {op} is not supported')
-        if op in ('&&', '||'):
-            same(ta, BOOL, op)
-            same(tb, BOOL, op)
-            return f'({op} {a} {b})', BOOL
         if ta == BOOL and op in ('^', '<=>', '==', '!='):
             # Dice reads == and != on integers only, the translators on
             # Booleans too.
