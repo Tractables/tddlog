@@ -1350,52 +1350,7 @@ pub(crate) fn spans(vtree: &tididi::vtree::Vtree) -> Vec<(u32, u32)> {
     out
 }
 
-/// The weighted count of `e ∧ f`, without building the conjunction.
-///
-/// `e` is counted (`counted`, both passes) on a vtree whose pre-order
-/// `spans` these are; `f` is counted on its own vtree, a projection of
-/// `e`'s: `leaf_in_e` maps each of its variables to that variable's leaf
-/// in `e`'s vtree. Every internal node of `f`'s vtree then has an image in
-/// `e`'s, the lowest common ancestor of its leaves' images, and `f`
-/// embedded onto `e`'s vtree would hold, at every level between an image
-/// and its parent's, a node with one pair passing its node through on the
-/// side the image lies and true on the other side, and true nodes
-/// everywhere else. The count reads the two diagrams as they are, with
-/// that embedding read off the images instead of built.
-///
-/// The count starts at the image of the level of `f`'s cone, below which
-/// `f` is not one pair with a true side. It is the sum, over `e`'s nodes
-/// `u` there, of the models through `u` (`down`) times the count of
-/// `u ∧ v` under the level, `v` `f`'s node. Those counts are computed
-/// bottom-up over `f`'s vtree under the cone, one dense table per level of
-/// `f`: a row per node of `e` at the level's image, a column per node of
-/// `f`. At a leaf the literals agree or contradict; at an internal level
-/// an entry is the sum over the pairs of both nodes of the products of the
-/// children's entries. A child's table is on its own image, which can lie
-/// below the image's child on its side: there `f` passes its nodes
-/// through, and the table is lifted level by level up that path, each
-/// node of `e` on it summing its pairs' rows on the path side weighted by
-/// the count of their other side.
-///
-/// Every pair of nodes of a level is computed, reached from the cone or
-/// not: a memoized walk from the cone reaches nearly all of them, and a
-/// hash entry per pair costs far more than the dense loop.
-///
-/// A variable of `f` that `e` does not hold (`leaf_in_e` gives `None`) is
-/// summed inside `f`, since `e` does not read it. A subtree of `f`'s
-/// vtree over such variables alone has no image and enters as its own
-/// count, and a node with one on a side takes the image of its other side
-/// and that side's table weighted by it. Embedding `e` onto a scope that
-/// holds them would copy the whole evidence formula for a query's own few
-/// variables.
-///
-/// The walk is outside the engine's operations, so it reports its own work:
-/// `poll` is called with the multiply-adds of each table before it is
-/// computed, and an error from it stops the walk.
-///
-/// The count comes under a power of two, the sum of those of the levels
-/// and the column it read, and with whether it is exact: every count of
-/// the two diagrams it read, and every product it took ([`Range`]).
+/// The index of the node a child reference names (no level is summed out).
 fn node(c: tididi::diagram::ChildRef) -> usize {
     match c {
         tididi::diagram::ChildRef::Node(n) => n.idx(),
@@ -1752,6 +1707,52 @@ impl<V: Value> ConjunctionWalk<'_, V> {
     }
 }
 
+/// The weighted count of `e ∧ f`, without building the conjunction.
+///
+/// `e` is counted (`counted`, both passes) on a vtree whose pre-order
+/// `spans` these are; `f` is counted on its own vtree, a projection of
+/// `e`'s: `leaf_in_e` maps each of its variables to that variable's leaf
+/// in `e`'s vtree. Every internal node of `f`'s vtree then has an image in
+/// `e`'s, the lowest common ancestor of its leaves' images, and `f`
+/// embedded onto `e`'s vtree would hold, at every level between an image
+/// and its parent's, a node with one pair passing its node through on the
+/// side the image lies and true on the other side, and true nodes
+/// everywhere else. The count reads the two diagrams as they are, with
+/// that embedding read off the images instead of built.
+///
+/// The count starts at the image of the level of `f`'s cone, below which
+/// `f` is not one pair with a true side. It is the sum, over `e`'s nodes
+/// `u` there, of the models through `u` (`down`) times the count of
+/// `u ∧ v` under the level, `v` `f`'s node. Those counts are computed
+/// bottom-up over `f`'s vtree under the cone, one dense table per level of
+/// `f`: a row per node of `e` at the level's image, a column per node of
+/// `f`. At a leaf the literals agree or contradict; at an internal level
+/// an entry is the sum over the pairs of both nodes of the products of the
+/// children's entries. A child's table is on its own image, which can lie
+/// below the image's child on its side: there `f` passes its nodes
+/// through, and the table is lifted level by level up that path, each
+/// node of `e` on it summing its pairs' rows on the path side weighted by
+/// the count of their other side.
+///
+/// Every pair of nodes of a level is computed, reached from the cone or
+/// not: a memoized walk from the cone reaches nearly all of them, and a
+/// hash entry per pair costs far more than the dense loop.
+///
+/// A variable of `f` that `e` does not hold (`leaf_in_e` gives `None`) is
+/// summed inside `f`, since `e` does not read it. A subtree of `f`'s
+/// vtree over such variables alone has no image and enters as its own
+/// count, and a node with one on a side takes the image of its other side
+/// and that side's table weighted by it. Embedding `e` onto a scope that
+/// holds them would copy the whole evidence formula for a query's own few
+/// variables.
+///
+/// The walk is outside the engine's operations, so it reports its own work:
+/// `poll` is called with the multiply-adds of each table before it is
+/// computed, and an error from it stops the walk.
+///
+/// The count comes under a power of two, the sum of those of the levels
+/// and the column it read, and with whether it is exact: every count of
+/// the two diagrams it read, and every product it took ([`Range`]).
 pub(crate) fn conjunction_count<V: Value>(
     e: &tididi::Tdd,
     counted: &Counted<V>,

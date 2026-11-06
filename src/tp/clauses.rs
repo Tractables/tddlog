@@ -1,5 +1,10 @@
-//! The clause loop over the bodies of facts alone, and the memo of the
-//! loops compiled so far.
+//! The clause loop (`Factoring::one_by_one`), which conjoins `¬body_r`
+//! into a formula a body at a time: the bodies `Factoring::negated_terms`
+//! is given where all are of facts alone, as clauses, and otherwise the
+//! bodies it leaves once no two of them share a literal, a body with
+//! derived literals through the product of their formulas or by the
+//! or-route. And the memo of the loops over bodies of facts alone compiled
+//! so far (`ClauseMemo`).
 
 use rustc_hash::FxHashMap;
 use std::sync::Arc;

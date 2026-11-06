@@ -15,15 +15,15 @@
 //! observation, so an atom joining two components would make an
 //! observation, or a query, read both: two components share no fact.
 //!
-//! The search is a DPLL over the completion, with
-//! [`super::condition`]'s unit propagation and its trail. It takes the
-//! part's derived atoms consumers first, and where one is known true with
-//! no rule known to hold, or known false with a rule not known dead, it
-//! tries the first open literal of the live rule with the fewest, to hold
-//! or to fail, and on a contradiction the opposite. Once every atom known
-//! is so settled, the facts known with the others false are evaluated
-//! through the rules, and the world counts where the part's observations
-//! hold in it.
+//! The search is a DPLL over the completion, on the unit propagation the
+//! conditioning runs, with its trail ([`super::propagation::Propagation`]).
+//! It takes the part's derived atoms consumers first, and where one is
+//! known true with no rule known to hold, or known false with a rule not
+//! known dead, it tries the first open literal of the live rule with the
+//! fewest, to hold or to fail, and on a contradiction the opposite. Once
+//! every atom known is so settled, the facts known with the others false
+//! are evaluated through the rules, and the world counts where the part's
+//! observations hold in it.
 //!
 //! ace_mildew observes dm_4, the one parent of the udbytte it queries. Once
 //! conditioned, udbytte's rules read its own switches alone, and the rest

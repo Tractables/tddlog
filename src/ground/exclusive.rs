@@ -1,9 +1,8 @@
 //! Sets of derived atoms of which at most one is true in any world.
 //!
-//! A ground-program analysis shared by the rewrites that exploit it: the
-//! indicators ([`crate::indicators`]) read the other members of a set
-//! negatively, and row classes ([`super::classes`]) merge the chains of
-//! rows whose bodies read different members of one set.
+//! A ground-program analysis that many passes read, in the grounder and
+//! after it; step 6 of the grounding in `docs/design.md`, *Exclusive
+//! sets*, describes the sets and what reads them.
 
 use std::hash::BuildHasher;
 
@@ -12,41 +11,7 @@ use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use super::interned::Interned;
 use super::{AtomId, GLit, GroundProgram, RulesByHead};
 
-/// The sets of two or more derived atoms of which at most one is true in
-/// any world, found from the rules alone, in the order their components are
-/// compiled.
-///
-/// Two atoms are exclusive when every rule for the one and every rule for
-/// the other have bodies that cannot both hold: a literal of one is the
-/// negation of a literal of the other, as the stick-breaking switches of one
-/// row, or they read two different atoms of a set already found, as the
-/// parents' values of two rows. The atoms are taken in dependency order,
-/// so that the sets of an atom's parents are final when it comes, and an
-/// atom joins the first set it is exclusive with among those whose atoms
-/// read atoms of the same sets: the values of one Bayesian network variable
-/// read the same parents, if not the same values of them (a genotype reads
-/// one value of each parental allele). Among them siblings with the same
-/// parents are not exclusive, and end up in sets of their own. An atom
-/// that reads no derived atom is compared with the atoms of its own unit
-/// in the sense of [`super::deps::components`]
-/// ([`super::structure::Structure::base_of`]), which holds the values of a
-/// table without parents.
-///
-/// The atoms of a predicate with several atoms join only sets of that
-/// predicate, and atoms alone in their predicate only sets of such atoms.
-/// Relevance can leave one value of a table, as `dewpoints(highevrywher)`,
-/// the evidence of hailfinder_ev; it excluded `scnrelplfcst(g)`, which
-/// joined it and was parted from the other values of scnrelplfcst, and
-/// then no two rows of plainsfcst, which read them, clashed.
-///
-/// Nor are the atoms of a predicate of several atoms that the evidence
-/// makes false, every one, and that no rule reads: each is a set of its
-/// own. They join only sets of their predicate, and such a set says
-/// nothing, none of its atoms ever being true and no body reading one. A
-/// weighted CNF's clauses are such a predicate, each `violated(j)` observed
-/// false, which compared with each other would be most of the run on a
-/// large one. Values that conditioning settles false beside one it settles
-/// true (`s(a)` beside `s(b)` in a test below) keep their sets.
+/// A literal's index in a table of two entries per atom, the negative first.
 fn lit_index(l: &GLit) -> usize {
     2 * l.atom() as usize + usize::from(l.is_positive())
 }
@@ -122,6 +87,41 @@ struct AtomScratch {
     common_a: Vec<AtomId>,
 }
 
+/// The sets of two or more derived atoms of which at most one is true in
+/// any world, found from the rules alone, in the order their components are
+/// compiled.
+///
+/// Two atoms are exclusive when every rule for the one and every rule for
+/// the other have bodies that cannot both hold: a literal of one is the
+/// negation of a literal of the other, as the stick-breaking switches of one
+/// row, or they read two different atoms of a set already found, as the
+/// parents' values of two rows. The atoms are taken in dependency order,
+/// so that the sets of an atom's parents are final when it comes, and an
+/// atom joins the first set it is exclusive with among those whose atoms
+/// read atoms of the same sets: the values of one Bayesian network variable
+/// read the same parents, if not the same values of them (a genotype reads
+/// one value of each parental allele). Among them siblings with the same
+/// parents are not exclusive, and end up in sets of their own. An atom
+/// that reads no derived atom is compared with the atoms of its own unit
+/// in the sense of [`super::deps::components`]
+/// ([`super::structure::Structure::base_of`]), which holds the values of a
+/// table without parents.
+///
+/// The atoms of a predicate with several atoms join only sets of that
+/// predicate, and atoms alone in their predicate only sets of such atoms.
+/// Relevance can leave one value of a table, as `dewpoints(highevrywher)`,
+/// the evidence of hailfinder_ev; it excluded `scnrelplfcst(g)`, which
+/// joined it and was parted from the other values of scnrelplfcst, and
+/// then no two rows of plainsfcst, which read them, clashed.
+///
+/// Nor are the atoms of a predicate of several atoms that the evidence
+/// makes false, every one, and that no rule reads: each is a set of its
+/// own. They join only sets of their predicate, and such a set says
+/// nothing, none of its atoms ever being true and no body reading one. A
+/// weighted CNF's clauses are such a predicate, each `violated(j)` observed
+/// false, which compared with each other would be most of the run on a
+/// large one. Values that conditioning settles false beside one it settles
+/// true (`s(a)` beside `s(b)` in a test below) keep their sets.
 pub(super) fn exclusive_sets(
     gp: &GroundProgram,
     by_head: &RulesByHead,

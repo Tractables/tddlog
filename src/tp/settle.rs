@@ -172,6 +172,9 @@ pub(crate) fn settle(
     compiled: &mut Compiled,
 ) -> Result<(), CompileError> {
     let encoding = &gp.encoding;
+    // Without projection every formula is on the whole program's scope,
+    // which `readers` lists as a reader of every cut: the cuts keep their
+    // names.
     if encoding.segments.is_empty() || compiled.projection == Projection::Off {
         return Ok(());
     }
@@ -620,10 +623,8 @@ fn pairs(backend: &TddBackend, compiled: &Compiled, a: AtomId) -> usize {
     )
 }
 
-/// `others`, the readers of `cut` that are not queries, composed with its
-/// links where they gain no more than the links' joint (`K - R <= J`),
-/// and whether that joint is larger than [`GROWTH`] times the links;
-/// `None` where the names pay for them.
+/// The pairs of `readers`' formulas, summed, and then those of `cut`'s
+/// links, summed.
 fn links_and_readers_pairs(
     backend: &TddBackend,
     compiled: &Compiled,
@@ -639,6 +640,10 @@ fn links_and_readers_pairs(
     (held, l)
 }
 
+/// `others`, the readers of `cut` that are not queries, composed with its
+/// links where they gain no more than the links' joint (`K - R <= J`),
+/// and whether that joint is larger than [`GROWTH`] times the links;
+/// `None` where the names pay for them.
 fn others_composed(
     backend: &TddBackend,
     compiled: &Compiled,

@@ -71,8 +71,10 @@ pub(crate) fn assert_answers(
 pub struct QuerySizes {
     /// The conjunction of the evidence: with indicators, of their links.
     pub evidence: usize,
-    /// The largest formula built, intermediate conjunctions of the evidence
-    /// and each query's conjunction with it included.
+    /// The largest formula built or read: the evidence walk's intermediate
+    /// conjunctions, the evidence formula, and, where there is no evidence,
+    /// each query's formula counted alone. A query counted against the
+    /// evidence builds no conjunction, and its formula is not recorded.
     pub largest: usize,
     /// The query phase's negations, of the evidence and of the queries.
     pub negations: Negations,
@@ -83,9 +85,10 @@ pub struct QuerySizes {
     /// Seconds of the evidence walk, the conjunction of the observations
     /// or links into the evidence formula.
     pub walk_seconds: f64,
-    /// The queries that are not literals of the evidence, each counted
-    /// against the evidence formula without building their conjunction,
-    /// and their seconds.
+    /// The queries counted from their formulas, not as literals of the
+    /// evidence, and their seconds: each counted against the evidence
+    /// formula without building their conjunction, or alone where there is
+    /// no evidence.
     pub products: usize,
     pub product_seconds: f64,
     /// Seconds of counting the evidence formula up and down, once: its
@@ -488,11 +491,12 @@ struct Evidence<'a> {
 }
 
 /// The mass of the evidence formula `e` on `scope` under its weights `w`.
-/// The mass is the count's pass up, with or without queries: its levels
-/// under powers of two keep a count in floats that the engine's
-/// evaluation, one range for the whole diagram, would take again in
-/// `Count`s. The count is kept in `counted`, as the queries read its pass
-/// down too, which is taken when one reads it.
+/// Where the walk summed the evidence out as it built it (no query reads
+/// it), the mass is the weighted value it left. Otherwise it is the
+/// count's pass up: its levels under powers of two keep a count in floats
+/// that the engine's evaluation, one range for the whole diagram, would
+/// take again in `Count`s. That count is kept in `counted`, as the queries
+/// read its pass down too, which is taken when one reads it.
 fn evidence_mass(
     backend: &TddBackend,
     e: &Tdd,
