@@ -223,7 +223,8 @@ Where another system's code runs first and hands the inference to tddlog,
 the [integrations](#integrations) compare the two.
 Every answer is checked against an exact reference. Each table gives a
 system's answers, its total time and tddlog's over the instances it is
-given and either answers, and how many times faster tddlog is. The
+given as its users would write them and either answers, and how many
+times faster tddlog is. The
 [results page](https://tractables.github.io/tddlog/results/) has every
 instance, time and program, and a page for each system.
 

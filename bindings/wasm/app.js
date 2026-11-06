@@ -284,11 +284,13 @@ function benchPath(value) {
 }
 
 // The file tddlog read of an instance of the results: the one .pl file of
-// the tab tddlog (or a pipeline, Alea.jl+tddlog) is a reader of. Else why
-// there is none to open.
+// the tab tddlog is a reader of, else of the tab a pipeline (Alea.jl+tddlog)
+// is a reader of, where tddlog reads none. Else why there is none to open.
 function tddlogFile(instance) {
-  const tddlog = (r) => r === "tddlog" || r.endsWith("+tddlog");
-  let files = (instance.tabs ?? []).filter((tab) => tab.readers.some(tddlog))
+  const plain = (r) => r === "tddlog";
+  const tabs = instance.tabs ?? [];
+  const tddlog = tabs.some((tab) => tab.readers.some(plain)) ? plain : (r) => r.endsWith("+tddlog");
+  let files = tabs.filter((tab) => tab.readers.some(tddlog))
     .flatMap((tab) => tab.files.filter((file) => file.name.endsWith(".pl")).map((file) => ({ tab, file })));
   // files of one name (a loop's two forms) each name their readers
   if (files.length > 1) files = files.filter(({ file }) => !(file.readers || file.for) || (file.readers ?? []).some(tddlog));
