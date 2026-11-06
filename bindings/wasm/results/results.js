@@ -665,8 +665,8 @@ const groupOf = (c, only) => c.groups.find((g) => g.key === only);
 
 // The benchmarks' pages of rows (catRows'): each family of the benchmarks'
 // data that holds some of them (without that data, each suite), with how
-// many (n) and how many of them tddlog answers (a), named by its title and,
-// where two share a title, its suite's too.
+// many (n) and how many of them tddlog answers (a), named by its title or,
+// where two share one (a family's pages in several suites), by its suite's.
 function pagesOf(rows) {
   const out = new Map();
   for (const r of rows) {
@@ -681,7 +681,7 @@ function pagesOf(rows) {
   }
   const list = [...out.values()];
   const twice = new Set(list.map((p) => p.title).filter((t, i, all) => all.indexOf(t) !== i));
-  return list.map((p) => ({ ...p, label: twice.has(p.title) && p.title !== p.suite ? `${p.title} (${p.suite})` : p.title }));
+  return list.map((p) => ({ ...p, label: twice.has(p.title) ? p.suite : p.title }));
 }
 
 // A cell of links to the benchmark pages of rows (pagesOf's), each opening
@@ -1074,6 +1074,7 @@ const data = {
   families: new Map(), // `${suite}/${family}`: the promise of that family's data
   family: new Map(),   // `${suite}/${instance}`: the instance's family
   place: new Map(),    // `${suite}/${instance}`: the category and the family of its instances (c.groups) that hold it
+  circuit: new Map(),  // `${suite}/${instance}` of a circuit's readings: the circuits' family (data.circuits.groups) that holds it
   copyOf: new Map(),   // `${suite}/${instance}` of a copy (categories.json's `copies`): the instance it copies
 };
 
@@ -1191,7 +1192,9 @@ function parse(hash) {
   const fams = familiesOf(suite);
   if (!fams) return { view: "suite", suite };   // the site has no benchmarks' data
   const instance = named ? parts[1].slice(1) : parts[2];
-  const family = named ? familyOf(suite, instance) : fams.find((f) => f.key === parts[1]);
+  // (a family's former key, with an instance, opens the instance's family)
+  const family = named ? familyOf(suite, instance)
+    : fams.find((f) => f.key === parts[1]) ?? (instance === undefined ? undefined : familyOf(suite, instance));
   if (!family || (instance !== undefined && !family.instances.includes(instance))) return missing;
   const route = { view: "family", suite, family: family.key, instance: instance ?? family.instances[0] };
   const m = parts.slice(named ? 2 : 3).join("/").match(/^(?:tab\/(\d+)(?:\/(\d+))?)?(?:(?:^|\/)runs\/([^/]+))?$/);
@@ -1730,8 +1733,11 @@ function familyView(route, view) {
   const short = shortNames(f.instances);
   const rows = new Map(s.instances.map((row) => [row[0], row]));
   const page = href(pageOf(route));
+  // the family's last crumb is its view on its type or among the circuits, of every suite's instances
+  const ct = at ? undefined : data.circuit.get(`${s.key}/${route.instance}`);
   const out = [crumbs(HOME, ...suiteHome(s.key, c),
-    at ? [at.g.title, { view: "category", category: c.key, only: at.g.key }] : [s.title, { view: "suite", suite: s.key }], [f.title]),
+    ...(at ? [[at.g.title, { view: "category", category: c.key, only: at.g.key }]]
+      : ct ? [[ct.title, { view: "category", category: APART, only: ct.key }]] : [[s.title, { view: "suite", suite: s.key }], [f.title]])),
     element("h2", {}, f.title),
     element("div", { class: "chips" }, element("span", { class: "chip" }, plural(f.instances.length, "instance")),
       element("span", { class: "chip" }, `${s.limit} s a run`), Object.assign(link({ view: "suite", suite: s.key }, s.title), { className: "chip" }))];
@@ -1935,8 +1941,11 @@ function instanceView(s, f, fam, route, short) {
         if (f.instances[i] === inst.name) a.setAttribute("aria-current", "true");
         return a;
       }));
-  out.push(element("h3", {}, "Programs"), element("div", { class: "pick" }, element("span", { class: "muted" }, "instance"), pick,
-    element("code", { class: "inst" }, inst.name), playground(s, f, fam, inst, mineReader(inst))));
+  // the instance's whole name where the choice shows a shorter one; a family of one shows its name alone
+  const one = f.instances.length === 1;
+  out.push(element("h3", {}, "Programs"), element("div", { class: "pick" }, element("span", { class: "muted" }, "instance"),
+    ...(one ? [] : [pick]), ...(one || short.get(inst.name) !== inst.name ? [element("code", { class: "inst" }, inst.name)] : []),
+    playground(s, f, fam, inst, mineReader(inst))));
   if (!inst.tabs) {
     if (inst.gen) out.push(markup("p", inst.gen, { class: "note" }));
     out.push(note("The programs of this instance were not captured."));
@@ -2295,7 +2304,10 @@ const METHODS = "Methods";
 // The section each view is in, which the bar marks.
 const SECTION_OF = { baselines: "baselines", baseline: "baselines", coverage: "types", integrations: "integrations",
   integration: "integrations", types: "types", category: "types", suite: "types", family: "types", how: "how", methods: "how" };
-const sectionOf = (route) => (route.view === "category" && route.category === APART ? APART : SECTION_OF[route.view]);
+// The circuits and a suite of circuits in no type, with its pages, are the circuits' section.
+const circuitSuite = (suite) => !categoriesOf(suite).length && Boolean(data.circuits?.perSuite.has(suite));
+const sectionOf = (route) => ((route.view === "category" && route.category === APART)
+  || ((route.view === "suite" || route.view === "family") && circuitSuite(route.suite)) ? APART : SECTION_OF[route.view]);
 const MENU_KEY = "tddlog-baselines";
 function rail(route) {
   const tree = element("ul", { class: "tree" });
@@ -2364,10 +2376,12 @@ function rail(route) {
   // the circuits, where the data has them (and the bar's link to them with it): their families
   if (data.circuits) {
     const c = data.circuits;
-    const here = route.view === "category" && route.category === APART;
+    // a circuit's page marks its family, as a category narrowed to it does
+    const here = route.view === "category" && route.category === APART ? route.only
+      : route.view === "family" ? data.circuit.get(`${route.suite}/${route.instance}`)?.key : undefined;
     tree.append(group(APART, element("ul", {}, legend("instances"), ...c.groups.map((g) => {
       const li = element("li", {}, link({ view: "category", category: APART, only: g.key }, g.title, element("span", { class: "n" }, count(g.rows.length))));
-      if (here && route.only === g.key) li.firstChild.setAttribute("aria-current", "page");
+      if (here !== undefined && here === g.key) li.firstChild.setAttribute("aria-current", "page");
       return li;
     }))));
   }
@@ -2607,11 +2621,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
       c.suites = [...c.perSuite.keys()];
       for (const key of c.suites) if (!data.suites.has(key)) throw new Error(`the category ${c.key} has no suite ${key}`);
-      if (c.key === ALL || c.key === APART) continue;
+      if (c.key === ALL) continue;
       for (const g of c.groups) {
         for (const i of g.rows) {
           const key = `${c.rows[i][0]}/${c.rows[i][1]}`;
-          for (const k of [key, ...(c.copies[key] ?? [])]) data.place.set(k, { c, g });
+          for (const k of [key, ...(c.copies[key] ?? [])]) (c.key === APART ? data.circuit : data.place).set(k, c.key === APART ? g : { c, g });
         }
       }
     }

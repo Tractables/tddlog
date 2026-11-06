@@ -1277,6 +1277,17 @@ function benchmarksOf(root) {
       const observed = (name) => /\.(inst|evid)$/.test(name);
       // (a copy of another suite's instance, categories.json's copies, may have no page of its own)
       const copied = new Set(categories.flatMap((c) => Object.values(c.copies ?? {}).flat()));
+      // each instance's family on the types' views and the circuits' (categories.json's groups), a
+      // copy's its instance's: the benchmarks' pages list it in that family, under its key and title
+      const familyAt = new Map();
+      for (const c of [...types, ...(cats.circuits ? [cats.circuits] : [])]) {
+        for (const g of c.groups) {
+          for (const i of g.rows) {
+            const key = `${c.rows[i][0]}/${c.rows[i][1]}`;
+            for (const k of [key, ...(c.copies?.[key] ?? [])]) familyAt.set(k, g);
+          }
+        }
+      }
       for (const [suite, fams] of Object.entries(index.suites)) {
         const s = bySuite.get(suite);
         assert.ok(s, `benchmarks/index.json: the suite ${suite} is in the results' data`);
@@ -1285,6 +1296,11 @@ function benchmarksOf(root) {
         assert.deepEqual(held.sort(), s.instances.map((row) => row[0]).filter((i) => placed.has(i) || !copied.has(`${suite}/${i}`)).sort(),
           `${suite}: its families hold its instances, but copies without a page`);
         for (const f of fams) {
+          for (const i of f.instances) {
+            const g = familyAt.get(`${suite}/${i}`);
+            assert.ok(g, `${suite}/${i}: in a family of the types' views`);
+            assert.deepEqual([f.key, f.title], [g.key, g.title], `${suite}/${i}: its family on the types' views`);
+          }
           const fam = JSON.parse(fs.readFileSync(path.join(benchmarks, suite, `${f.key}.json`), "utf8"));
           assert.deepEqual(fam.instances.map((i) => i.name), f.instances, `${suite}/${f.key}: its instances`);
           for (const inst of fam.instances) {
