@@ -1420,7 +1420,7 @@ mod tests {
                         );
                     };
                     assert_eq!(state.walk.completed_joins, gp.evidence.len() - 1);
-                    reassociated += state.walk.reassociated;
+                    reassociated += state.walk.probe.reassociated;
                     assert_eq!(answers.len(), fresh.len());
                     for (i, (answer, fresh)) in answers.iter().zip(&fresh).enumerate() {
                         assert!(
@@ -1517,15 +1517,15 @@ mod tests {
                     let mut state = tree.context().run(|engine| {
                         QueryEvaluation::new(&gp, &TddBackend::new(engine, tree.clone()), &compiled)
                     });
-                    state.walk.give_up_batches = capped;
-                    state.walk.refuse_rooms = refuse;
+                    state.walk.probe.give_up_batches = capped;
+                    state.walk.probe.refuse_rooms = refuse;
                     let (answers, _) = loop {
                         let result = tree.context().run(|engine| {
                             state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
                         });
                         match result {
                             Err(CompileError::Tdd(OperationError::OverBudget)) if refuse => {
-                                assert!(state.walk.rooms < 1 << 20, "a refused walk goes on");
+                                assert!(state.walk.probe.rooms < 1 << 20, "a refused walk goes on");
                             }
                             result => break result.unwrap(),
                         }
@@ -1539,10 +1539,10 @@ mod tests {
                              {capped} {refuse}"
                         );
                     }
-                    grouped += state.walk.grouped;
-                    unbatched += state.walk.unbatched;
-                    ended_steps += state.walk.ended_steps;
-                    refused += state.walk.refused_unbatches;
+                    grouped += state.walk.probe.grouped;
+                    unbatched += state.walk.probe.unbatched;
+                    ended_steps += state.walk.probe.ended_steps;
+                    refused += state.walk.probe.refused_unbatches;
                 }
             }
         }
@@ -1673,7 +1673,10 @@ mod tests {
             // The own factors went into the child's result one at a time, and
             // no formula of the walk outgrew the evidence; conjoined among
             // themselves first, the largest is eighteen times the evidence.
-            assert!(state.walk.unbatched > 0, "no node's own factors given up");
+            assert!(
+                state.walk.probe.unbatched > 0,
+                "no node's own factors given up"
+            );
             assert!(
                 sizes.largest <= sizes.evidence,
                 "largest {} evidence {}",
@@ -1742,7 +1745,12 @@ mod tests {
                         "{answer:?} {expected} grouped {grouped}"
                     );
                 }
-                assert_eq!(state.walk.by_part > 0, grouped, "{}", state.walk.by_part);
+                assert_eq!(
+                    state.walk.probe.by_part > 0,
+                    grouped,
+                    "{}",
+                    state.walk.probe.by_part
+                );
             });
         }
     }
