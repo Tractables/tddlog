@@ -1782,8 +1782,13 @@ function timesGrid(s, f, rows, short, route) {
 // The system of a run by its name: a pipeline's run of tddlog by the
 // pipeline's, which its label starts with.
 const runName = (r) => r.label?.match(/^\S+\+tddlog\b/)?.[0] ?? data.names[r.system] ?? r.system;
-// The name tddlog reads an instance's programs under: its pipeline's, where its runs are one's.
-const mineReader = (inst) => (inst.runs ?? []).map(runName).find((n) => n === "tddlog" || n.endsWith("+tddlog")) ?? "tddlog";
+// The name tddlog reads an instance's programs under: its own where it ran
+// beside a pipeline (Roulette+tddlog on Geni's programs), the pipeline's
+// where its runs are only one's.
+const mineReader = (inst) => {
+  const names = (inst.runs ?? []).map(runName);
+  return names.includes("tddlog") ? "tddlog" : names.find((n) => n.endsWith("+tddlog")) ?? "tddlog";
+};
 
 // The systems that ran an instance but read none of its files on show, nor
 // translated any: their files were not captured. A run whose grounding
