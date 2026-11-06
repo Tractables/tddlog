@@ -202,6 +202,9 @@ fn partition_offset(logs: &[f64]) -> f64 {
     fsum(logs)
 }
 
+/// A variable's scope, its child last, and its table in that order.
+type ConditionalTable = (Vec<usize>, Vec<f64>);
+
 /// A Markov network that is a Bayesian network as written: each function
 /// a conditional table of one variable of its scope (its child: for each
 /// assignment of the others the entries over the child's values sum to one
@@ -211,8 +214,6 @@ fn partition_offset(logs: &[f64]) -> f64 {
 /// table in that order; `None` for another network. A function that is a
 /// table of two of its variables, an identity say, takes the child a
 /// matching of functions to variables gives it.
-type ConditionalTable = (Vec<usize>, Vec<f64>);
-
 fn conditional_tables(
     sizes: &[usize],
     scopes: &[Vec<usize>],
@@ -339,6 +340,9 @@ fn conditional_tables(
         .then_some(out)
 }
 
+/// The scopes and tables of a network's functions.
+type BrokenSymmetry = (Vec<Vec<usize>>, Vec<Vec<f64>>);
+
 /// The colour symmetry of a Markov network, broken. In a network whose
 /// variables all have the same k >= 2 values and whose functions are all
 /// over two variables and Potts tables (one entry on the diagonal, one off
@@ -353,8 +357,6 @@ fn conditional_tables(
 /// Returns the functions with v1's and v2's unary tables added and the
 /// table of v3 given v2 where there is a v3, whose Z is the network's
 /// divided by k; `None` for another network.
-type BrokenSymmetry = (Vec<Vec<usize>>, Vec<Vec<f64>>);
-
 fn colour_symmetry(
     sizes: &[usize],
     scopes: &[Vec<usize>],

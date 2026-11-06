@@ -871,7 +871,6 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// An atom or `\+ atom`, as `(atom, positive)`.
     /// The atom and sign that `query(A)`, `evidence(A)` or `evidence(A, V)`
     /// asks, its arguments on [`Parser::args`] from `start`, taken from
     /// there: the sign of `\+` in `A`, and for evidence its value `V`.

@@ -610,16 +610,15 @@ query(reach($3)).</pre>
 
 <section class="card prose" id="networks">
   <h2>Networks, Dice, Alea.jl and LPADs</h2>
-  <p>tddlog reads network files, Dice programs and LPADs itself, each as
-  a program, which <code>--program</code> prints, and a Julia script in
-  the repository's
-  <a href="https://github.com/Tractables/tddlog/tree/main/scripts"><code>scripts/</code></a>
-  writes Alea.jl programs as programs it reads. The command line takes a
+  <p>tddlog reads network files, Dice programs, Circulette netlists and
+  LPADs itself, each as a program, which <code>--program</code> prints;
+  Alea.jl's and Roulette's tddlog backends (below) write the circuits
+  those systems build as programs it reads. The command line takes a
   file's format from its extension; the playground's Format menu and the
   bindings (<a href="#library">below</a>) take its name:
   <code>problog</code> (an LPAD among them), <code>dice</code>,
-  <code>bif</code>, <code>hugin</code>, <code>xdsl</code> or
-  <code>uai</code>.</p>
+  <code>circulette</code>, <code>bif</code>, <code>hugin</code>,
+  <code>xdsl</code> or <code>uai</code>.</p>
 
   <h3 id="network-files">Bayesian and Markov networks</h3>
   <p>tddlog reads a discrete network file as a ground program, as in the
@@ -673,6 +672,22 @@ tddlog --program examples/car.net &gt; car.pl</pre>
   The bindings read a Dice program with the format <code>dice</code>.</p>
   <p class="try"><a href="../playground/?example=walk&amp;evidence=1">Open a random
   walk in the playground</a>.</p>
+
+  <h3 id="circulette">Circulette netlists</h3>
+  <p>tddlog reads a file with the extension <code>.cql</code> as a netlist
+  of <a href="https://github.com/sandialabs/circulette">Circulette</a>, a tool
+  for the fault analysis of digital circuits on Roulette. The circuit is
+  evaluated for one cycle with its inputs and registers false; each logic
+  gate the outputs read is faulty with probability <code>1 - p-clean</code>,
+  which flips its output, and the circuit fails where a bit of an output or
+  of a register's next value is one. The program states the netlist as
+  facts, one rule for each kind of gate over its operands' bits, the
+  failure as the evidence, and as queries every gate's fault and every
+  pair and triple of faults, as Circulette asks them.
+  <code>tddlog --program</code> prints it.
+  <a href="https://github.com/Tractables/tddlog/tree/main/tests/circulette"><code>tests/circulette</code></a>
+  holds netlists written for the tests. The bindings read a netlist with
+  the format <code>circulette</code>.</p>
 
   <h3 id="alea">Alea.jl programs</h3>
   <p>Alea.jl's tddlog backend, on the branch

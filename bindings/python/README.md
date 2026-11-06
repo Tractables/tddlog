@@ -15,9 +15,9 @@
 **Exact probabilistic inference from Python.**
 
 tddlog computes exact probabilities for ProbLog programs, LPADs, Dice
-programs and Bayesian and Markov networks, by compiling them into tree
-decision diagrams. This package calls the same Rust implementation as the
-[command line and Rust crate](https://github.com/Tractables/tddlog) and
+programs, Circulette netlists and Bayesian and Markov networks, by
+compiling them into tree decision diagrams. This package calls the same
+Rust implementation as the [command line and Rust crate](https://github.com/Tractables/tddlog) and
 the [C library](https://tractables.github.io/tddlog/c/).
 
 ## Install

@@ -12,8 +12,8 @@
 </p>
 
 The [playground](https://tractables.github.io/tddlog/playground/) runs tddlog in the
-tab: a ProbLog program goes in, or a Dice program or a network file with
-its format chosen, and the page answers its queries. The solver is the
+tab: a ProbLog program goes in, or a Dice program, a Circulette netlist or a
+network file with its format chosen, and the page answers its queries. The solver is the
 crate's [`read`](https://tractables.github.io/tddlog/api/tddlog/fn.read.html)
 and [`solve`](https://tractables.github.io/tddlog/api/tddlog/fn.solve.html),
 built for WebAssembly with Emscripten. It runs in a worker, so the page

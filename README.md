@@ -26,9 +26,9 @@ tddlog answers probabilistic Datalog programs exactly: probabilistic
 facts, annotated disjunctions, and recursive rules with negation,
 comparisons and arithmetic. [Front ends](#front-ends) reduce ProbLog
 programs with function symbols and lists, Bayesian and Markov networks,
-Dice programs and LPADs to it. tddlog grounds the program, simplifies
-it, compiles it bottom up into tree decision diagrams (TDDs) with the
-[tididi](https://github.com/Tractables/tididi) library, and reads every
+Dice programs, Circulette netlists and LPADs to it. tddlog grounds the
+program, simplifies it, compiles it bottom up into tree decision diagrams
+(TDDs) with the [tididi](https://github.com/Tractables/tididi) library, and reads every
 query's probability off the diagrams. It is a Rust library and
 command-line tool with Python, C and WebAssembly bindings, and it
 [runs in the browser](https://tractables.github.io/tddlog/playground/).

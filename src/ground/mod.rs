@@ -5,6 +5,10 @@
 //! leaves for those after it:
 //!
 //! 1. The front end, from the program to a ground program:
+//!    - `terms` (with `library`): compound terms, lists, findalls and the
+//!      library predicates the program calls lowered to Datalog with three
+//!      built-in literals; `normalize::ordered_heads` then puts the heads
+//!      of each distribution in one order.
 //!    - `table`: a program each of whose clauses is one row of a table is
 //!      ground from its rows, its noisy-or tables first written as
 //!      noisy-ors (`noisy_or`), and goes on at `finish`. Any other program
@@ -12,13 +16,21 @@
 //!    - `normalize`: annotated disjunctions and probabilistic rules become
 //!      *switch* facts and deterministic rules.
 //!    - `relevant`: the rules and facts of the predicates that no query or
-//!      observation reads dropped.
+//!      observation reads dropped; `unread`: the arguments no clause reads
+//!      dropped.
 //!    - `chain`: doubly recursive transitive closures written linear.
-//!    - `magic` and `schedule`: the magic-set rewrite, after which only
-//!      what the queries and the evidence demand is ground.
+//!    - The route (`ground_norm`): a program without variables is ground as
+//!      it stands; one whose queries reach a test before its variables are
+//!      bound is resolved top-down from its queries (`modes`,
+//!      `engine::topdown`); any other is ground bottom-up by levels where
+//!      its recursion has them (`engine::ground_by_levels`), else after the
+//!      magic-set rewrite (`magic`), after which only what the queries and
+//!      the evidence demand is ground, with the program as it stands, or
+//!      top-down, where the rewrite cannot be ground.
 //!    - `engine`: stratified semi-naive bottom-up evaluation with every
 //!      switch assumed true, which emits every ground rule whose positive
-//!      body atoms are all possible.
+//!      body atoms are all possible; `schedule` orders the bodies for it
+//!      and for the rewrites.
 //!    - `linear`: the program with its right-linear recursion evaluated
 //!      from its bound end is ground too, and kept where it is smaller.
 //! 2. `finish`, after the front end and after each layout rewrite:

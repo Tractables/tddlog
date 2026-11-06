@@ -163,7 +163,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
 | `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice.rs`, a Dice program read as the program its symbolic evaluation writes; `circulette.rs`, a Circulette netlist read as its gates' rules with a fault on each logic gate |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
-| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls; `topdown.rs`, top-down grounding; and `schedule.rs`, body order), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
+| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, min-fill, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies), `closed.rs` with `order.rs`, `nest.rs`, `families.rs`, `decision.rs` (with the names of its tree's contexts and of the atoms read outside it): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `trace.rs`: `CompileTrace`, each component's compile as a trace records it; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
@@ -527,8 +527,10 @@ against the script's programs for the files of `tests/networks/`,
 are tables; another kind of node is refused) and UAI (`.uai`). BIF and
 Hugin are read as the script's regular expressions read them, GeNIe's
 XML into a tree (`xml.rs`: the encoding the declaration names, comments,
-entities). A file that is not UTF-8 is read as ISO-8859-1, as Ace's
-water, pigs and mildew are written. A compressed file is refused.
+entities). A BIF, Hugin or UAI file that is not UTF-8 is read as
+ISO-8859-1, as Ace's water, pigs and mildew are written; an XML file (GeNIe's,
+Ace's `.inst`) is read as ISO-8859-1 where its declaration names it, and
+as UTF-8 otherwise. A compressed file is refused.
 
 Each variable gets one annotated disjunction per row of its table,
 `p1::x(v1); ...; pk::x(vk) :- p1(u1), ..., pm(um).`, in the order of a
@@ -707,7 +709,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
    cycle among its predicates, is a Bayesian network written one
    annotated disjunction per row (`tddlog --program` of a network;
    `examples/bn_cancer.pl`). What steps 1 to 4 make of it is known from
-   the rows, so `table::ground_rows` builds that output directly, the
+   the rows, so `table::Shape::ground` builds that output directly, the
    same atoms in the same order, and simplification onward is shared
    (`finish`). The shape (`Shape`) is decided before anything is built;
    any other program takes the generic steps. Equality with the generic
@@ -2588,10 +2590,11 @@ process's exit rather than free it (`std::mem::forget`).
 ## The browser build (`bindings/wasm`)
 
 The playground at tractables.github.io/tddlog runs the library in the
-browser. `bindings/wasm` is a crate of its own that calls `tddlog::solve`
-and writes the answers, `P(e)` and what each part's run did as JSON;
-nothing else of the library is wrapped, and the page's examples are
-programs the repository tests against ProbLog. It is built for
+browser. `bindings/wasm` is a crate of its own that reads the program with
+`tddlog::read`, answers it with `tddlog::solve` and writes the answers,
+`P(e)`, what each part's run did and, where asked, the run's `Trace` as
+JSON; the page's examples are programs the repository tests against
+ProbLog. It is built for
 `wasm32-unknown-emscripten`, as goatd's page is, because goatd's vendored
 FlowCutter is C++ that throws and catches: Emscripten compiles it with its
 libc++ and links it with the Rust code, whose standard library has a clock
@@ -2607,14 +2610,16 @@ worker, which Cancel ends.
 
 `bindings/python` (PyO3, built with maturin) and `bindings/c` (a C ABI,
 its header generated by cbindgen) are crates of their own, each over
-`solve` and nothing else: they take the program's text and the command
-line's options (`--vtree`, `--evidence-probability`, `--no-queries`),
-copy the answers and `P(e)` out of the `Solution`, and free it at once.
-The query's text is `QueryResult`'s `Display`, as the binary prints it.
-`Error`'s variants become exceptions or status codes: `Options` the
-caller's mistake (`ValueError`, `TDDLOG_ERROR_INVALID_INPUT`), `Parse`,
-`Ground`, and `Vtree`, `Compile` and `Trials` together as a compile
-error. They run under the host's allocator: the binary's jemalloc set-up
+`read` and `solve`: they take the program's text, its format by name, a
+network's evidence file and the program's arguments as `read` does, and
+the command line's options (`--vtree`, `--evidence-probability`,
+`--no-queries`), copy the answers and `P(e)` out of the `Solution`, and
+free it at once. The query's text is `QueryResult`'s `Display`, as the
+binary prints it. `Error`'s variants become exceptions or status codes:
+`Options` the caller's mistake (`ValueError`,
+`TDDLOG_ERROR_INVALID_INPUT`), `Parse` and `Network` a parse error,
+`Ground` (and `Cnf`, which only `weighted_cnf` gives) a grounding error,
+and `Vtree`, `Compile` and `Trials` together a compile error. They run under the host's allocator: the binary's jemalloc set-up
 (above) is not theirs.
 
 ## Testing
