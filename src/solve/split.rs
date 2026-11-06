@@ -21,13 +21,15 @@
 //! layout is a first filter, the weight of a min-fill elimination of the
 //! program and of each part ([`crate::vtree::min_fill_weight`]) a second
 //! ([`SplitBounds`]); whether the parts pay is decided on `auto`'s
-//! estimates of their layouts ([`super::split_check`]).
+//! estimates of their layouts ([`split_check`]).
 
+use crate::auto;
 use crate::ground::{self, AtomId, AtomKind, GroundProgram, deps};
+use crate::strategy::{Prepared, Strategy};
 use crate::vtree::{log2_add, min_fill_weight};
 
 /// When a program's queries are split ([`query_parts`],
-/// [`super::split_check`]). Weights are log2 of a min-fill elimination's
+/// [`split_check`]). Weights are log2 of a min-fill elimination's
 /// (`vtree::min_fill_weight`), pairs those of `auto`'s layout estimates.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct SplitBounds {
@@ -285,4 +287,79 @@ fn query_groups(gp: &GroundProgram) -> Option<Groups> {
         }
     }
     Some((groups, reached))
+}
+
+/// What [`split_check`] decided for a program: its queries in parts, or
+/// the program whole, with `auto`'s `families:0` trial where the check
+/// built it.
+pub(super) enum Answering {
+    Split(Split),
+    Whole(Option<Box<Prepared>>),
+}
+
+/// The program's queries in groups, each to be answered on its own part
+/// ([`query_parts`]), for a run under `strategy`, where the parts'
+/// layouts, as `auto`'s searched `families` trial lays them out, are
+/// estimated to hold `bounds.layout_gain` times fewer pairs together, each
+/// charged `bounds.part_pairs`, than the program's; the program whole
+/// where they are not, the program's `families:0` layout is estimated
+/// under `bounds.min_pairs` (the floor), or the weights rule a split out.
+/// A part that `families` does not lay out, without indicators, is charged
+/// 2 to its min-fill weight: the UAI network BN_15's 14th part, 3 atoms,
+/// has none, and refused its split, its other 13 estimated at 9.8e11 pairs
+/// together against 1.6e15 for the program, which is refused memory whole.
+///
+/// The floor is asked before the weights, which cost more where it
+/// refuses the split. Under `auto`, where its first trial is `families:0`,
+/// that trial's program and layout are built before the check, whose floor
+/// is their estimate, and a program kept whole is handed them for its run
+/// instead of building them again.
+///
+/// The min-fill weights over atoms are a filter and not the decision: they
+/// mislead where the searched decomposition is much narrower than
+/// min-fill's. pedigree7_10's parts weigh 2^50.4 against 2^61.0 and took
+/// 368.8 M units of trial work against 259.3 M; their layouts are
+/// estimated at 3.09e9 pairs against 2.53e9.
+pub(super) fn split_check(
+    gp: &GroundProgram,
+    bounds: &SplitBounds,
+    strategy: Strategy,
+) -> Answering {
+    let first = strategy == Strategy::Auto && auto::lays_families_first(gp);
+    let laid = if first {
+        auto::families(gp, false).map(Box::new)
+    } else {
+        None
+    };
+    let floor = || {
+        let estimate = if first {
+            laid.as_deref().and_then(Prepared::pairs)
+        } else {
+            auto::families_estimate(gp, false)
+        };
+        bounds.layout_gain <= 0.0 || estimate.is_some_and(|e| e >= bounds.min_pairs)
+    };
+    let Some(mut split) = query_parts(gp, bounds, floor) else {
+        return Answering::Whole(laid);
+    };
+    if bounds.layout_gain > 0.0 {
+        let Some(whole) = auto::families_estimate(gp, true) else {
+            return Answering::Whole(laid);
+        };
+        let mut parts = split.parts.len() as f64 * bounds.part_pairs;
+        for part in &split.parts {
+            if parts * bounds.layout_gain > whole {
+                return Answering::Whole(laid);
+            }
+            parts +=
+                auto::families_estimate(part, true).unwrap_or_else(|| min_fill_weight(part).exp2());
+        }
+        if parts * bounds.layout_gain > whole {
+            return Answering::Whole(laid);
+        }
+        split.note.push_str(&format!(
+            ", layouts estimated at {parts:.3e} pairs together against {whole:.3e}"
+        ));
+    }
+    Answering::Split(split)
 }

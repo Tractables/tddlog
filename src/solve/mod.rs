@@ -20,7 +20,7 @@ use crate::syntax::{self, Program};
 use crate::tp::{self, Projection};
 use crate::vtree::Kind;
 use crate::{Error, QueryResult, Run, eval};
-use split::{Split, SplitBounds};
+use split::{Answering, SplitBounds, split_check};
 
 /// What a run is asked to do.
 #[derive(Clone, Copy, Debug)]
@@ -445,77 +445,6 @@ pub(crate) fn run_prepared(
         results,
         spent: auto::Spent::default(),
     })
-}
-
-/// What [`split_check`] decided for a program: its queries in parts, or
-/// the program whole, with `auto`'s `families:0` trial where the check
-/// built it.
-enum Answering {
-    Split(Split),
-    Whole(Option<Box<Prepared>>),
-}
-
-/// The program's queries in groups, each to be answered on its own part
-/// ([`split::query_parts`]), for a run under `strategy`, where the parts'
-/// layouts, as `auto`'s searched `families` trial lays them out, are
-/// estimated to hold `bounds.layout_gain` times fewer pairs together, each
-/// charged `bounds.part_pairs`, than the program's; the program whole
-/// where they are not, the program's `families:0` layout is estimated
-/// under `bounds.min_pairs` (the floor), or the weights rule a split out.
-/// A part that `families` does not lay out, without indicators, is charged
-/// 2 to its min-fill weight: the UAI network BN_15's 14th part, 3 atoms,
-/// has none, and refused its split, its other 13 estimated at 9.8e11 pairs
-/// together against 1.6e15 for the program, which is refused memory whole.
-///
-/// The floor is asked before the weights, which cost more where it
-/// refuses the split. Under `auto`, where its first trial is `families:0`,
-/// that trial's program and layout are built before the check, whose floor
-/// is their estimate, and a program kept whole is handed them for its run
-/// instead of building them again.
-///
-/// The min-fill weights over atoms are a filter and not the decision: they
-/// mislead where the searched decomposition is much narrower than
-/// min-fill's. pedigree7_10's parts weigh 2^50.4 against 2^61.0 and took
-/// 368.8 M units of trial work against 259.3 M; their layouts are
-/// estimated at 3.09e9 pairs against 2.53e9.
-fn split_check(gp: &GroundProgram, bounds: &SplitBounds, strategy: Strategy) -> Answering {
-    let first = strategy == Strategy::Auto && auto::lays_families_first(gp);
-    let laid = if first {
-        auto::families(gp, false).map(Box::new)
-    } else {
-        None
-    };
-    let floor = || {
-        let estimate = if first {
-            laid.as_deref().and_then(Prepared::pairs)
-        } else {
-            auto::families_estimate(gp, false)
-        };
-        bounds.layout_gain <= 0.0 || estimate.is_some_and(|e| e >= bounds.min_pairs)
-    };
-    let Some(mut split) = split::query_parts(gp, bounds, floor) else {
-        return Answering::Whole(laid);
-    };
-    if bounds.layout_gain > 0.0 {
-        let Some(whole) = auto::families_estimate(gp, true) else {
-            return Answering::Whole(laid);
-        };
-        let mut parts = split.parts.len() as f64 * bounds.part_pairs;
-        for part in &split.parts {
-            if parts * bounds.layout_gain > whole {
-                return Answering::Whole(laid);
-            }
-            parts += auto::families_estimate(part, true)
-                .unwrap_or_else(|| crate::vtree::min_fill_weight(part).exp2());
-        }
-        if parts * bounds.layout_gain > whole {
-            return Answering::Whole(laid);
-        }
-        split.note.push_str(&format!(
-            ", layouts estimated at {parts:.3e} pairs together against {whole:.3e}"
-        ));
-    }
-    Answering::Split(split)
 }
 
 /// `ground` compiled as it is, without `kind`'s rewrite, under
