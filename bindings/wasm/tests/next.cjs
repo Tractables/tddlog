@@ -186,6 +186,16 @@ function drawn(page) {
     ...cats.categories.map((c) => [`#/category/${c.key}`, "category", async () => {
       assert.equal(await page.locator("section.split").count(), 2, `${c.key}: head-to-head and translated`);
       assert.equal(await page.locator(".note", { hasText: "were written from other results" }).count(), 0, `${c.key}: views.json is stale`);
+      // the translated table: a column for whom each translation was written where the type has more than one
+      // kind, and one for those not idiomatic only on all programs, whose totals hold them
+      const kinds = (c.key === "all-programs" ? "smbx" : "smb").split("").filter((k) => c.native.concat(c.key === "all-programs" ? c.systems : [])
+        .some((x) => x !== "tddlog" && views.categories[c.key].kinds[x]?.includes(k)));
+      const heads = await page.$$eval("section#translated table.board thead tr:last-child th", (ts) => ts.map((t) => t.textContent));
+      const named = { s: "it", m: "tddlog", b: "both" };
+      assert.deepEqual(heads.slice(0, -5), kinds.length > 1 ? kinds.filter((k) => k !== "x").map((k) => named[k]) : [],
+        `${c.key}: the translated table's columns of whom each translation was for`);
+      assert.equal(await page.locator("section#translated table.board thead th", { hasText: "not idiomatic" }).count(),
+        kinds.length > 1 && kinds.includes("x") ? 1 : 0, `${c.key}: the translations not idiomatic in the translated table`);
       // a system's name in the table opens its page
       for (const x of c.native) {
         const to = await page.locator("table.board tbody th a", { hasText: cats.names[x] }).first().getAttribute("href");

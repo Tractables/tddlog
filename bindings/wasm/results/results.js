@@ -762,16 +762,20 @@ const totals = (v, name) => `the ${plural(v.either, "instance")} ${name} is give
 // tally's), and with several of tddlog and its pipelines each one's of the
 // instances it was given (headMembers); the best native system's (the most
 // answers, then the least speed-up; on all programs and the circuits the best other system's)
-// and tddlog's speed-up over it.
+// of the instances it was given, and tddlog's speed-up over it on all of them,
+// head-to-head and translated together, which the speed-up's label says by
+// their number (a type's tables split them).
 function headline(c, rows, tal, only) {
   const best = ranked(c, c.native.filter((x) => tal[x]?.given > 0), tal, only)[0];
   const v = best && versus(c, best, only);
   // the circuits are no type: no system is native to them, every system on them is another
   const which = c.key === ALL || c.key === APART ? "other" : "native";
+  const given = best ? count(tal[best].given) : "";
   const box = cells([`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(rows.length)}`],
     ...headMembers(c, rows, tal).map(([x, label]) => [label, `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`]),
-    ...(v ? [[`best ${which}: ${data.names[best]}`, count(tal[best].answers), `the ${which} system with the most answers`],
-      [speedName("speed-up over it"), speedup(v), `${subject(v.me)}'s speed-up over ${data.names[best]}`]] : []));
+    ...(v ? [[`best ${which}: ${data.names[best]}`, `${count(tal[best].answers)} of ${given}`, `the ${which} system with the most answers, of the instances it was given`],
+      [speedName(`speed-up over it, on all ${given}`), speedup(v),
+        `${subject(v.me)}'s speed-up over ${data.names[best]} on every instance it was given, head-to-head and translated together`]] : []));
   box.classList.add("headline");
   return box;
 }
@@ -798,7 +802,7 @@ const twice = (par) => (par === 2 ? "twice" : `${par} times`);
 function stampLine() {
   const { date, source } = data.stamp;
   return element("p", { class: "muted small stamp" }, `Results as of ${date}, public main `,
-    element("a", { href: `https://github.com/Tractables/tddlog/commit/${source}` }, element("code", {}, source)), ".");
+    element("a", { href: `https://github.com/Tractables/tddlog/commit/${source}` }, source), ".");
 }
 
 function measureLine() {
@@ -1325,9 +1329,9 @@ function ownTable(list = data.own, head = "Each system on its own benchmarks") {
 }
 
 // A category's systems by their answers, then tddlog's speed-up over them,
-// against tddlog (rule 16), with how each was given the instances, `vs`'s
-// row marked; a system's name and its numbers open its page (tddlog's,
-// tddlog's own).
+// against tddlog (rule 16), with how each was given the instances and how
+// many it was not given, which together are all of them; `vs`'s row marked;
+// a system's name and its numbers open its page (tddlog's, tddlog's own).
 function scoreboard(c, rows, tal, n, vs, only) {
   const me = subject(subjectsOf(rows));
   const order = [...c.systems.filter((x) => isMine(x) && tal[x].given > 0), ...ranked(c, c.native.filter((x) => tal[x].given > 0), tal, only),
@@ -1339,6 +1343,7 @@ function scoreboard(c, rows, tal, n, vs, only) {
     const page = { view: "system", system: x };
     const cls = (k) => (!t.classes[k] ? "" : k === "own" && data.own.some((o) => o.system === x)
       ? link({ ...page, at: "original" }, count(t.classes[k])) : count(t.classes[k]));
+    const missing = rows.filter((r) => r.v[x] === null).length;
     body.append(element("tr", { class: isMine(x) ? "mine" : x === vs ? "vs" : null },
       element("th", { scope: "row" }, swatch(x), link(page, data.names[x])),
       element("td", {}, element("span", { class: "bar" }, element("i", { style: `width:${(100 * t.answers / Math.max(1, n)).toFixed(1)}%` })),
@@ -1347,7 +1352,8 @@ function scoreboard(c, rows, tal, n, vs, only) {
       element("td", { class: "num" }, v ? duration(v.tddlog_total) : ""),
       element("td", { class: v && (v.speedup ?? null) === null ? "num few" : "num" }, v ? speedup(v) : ""),
       element("td", { class: "num" }, cls("own")), element("td", { class: "num" }, cls("native")),
-      element("td", { class: "num" }, cls("translated")), element("td", { class: "num" }, cls("not idiomatic"))));
+      element("td", { class: "num" }, cls("translated")), element("td", { class: "num" }, cls("not idiomatic")),
+      element("td", { class: "num" }, missing ? count(missing) : "")));
   }
   return scroller(stacked(element("table", { class: "board" },
     element("thead", {}, element("tr", {}, element("th", { scope: "col" }, "system"),
@@ -1358,18 +1364,9 @@ function scoreboard(c, rows, tal, n, vs, only) {
       element("th", { scope: "col", class: "num", title: "instances from the system's own papers, benchmarks or distribution" }, "own"),
       element("th", { scope: "col", class: "num", title: "instances whose program is in the system's own language" }, "native"),
       element("th", { scope: "col", class: "num", title: "instances whose program a translator wrote, as its users would write it" }, "translated"),
-      element("th", { scope: "col", class: "num", title: `instances translated as its users would not write them: ${only !== undefined || c.key === ALL ? "in these totals" : "in no total"}` }, "not idiomatic"))),
+      element("th", { scope: "col", class: "num", title: `instances translated as its users would not write them: ${only !== undefined || c.key === ALL ? "in these totals" : "in no total"}` }, "not idiomatic"),
+      element("th", { scope: "col", class: "num", title: "instances the system was not given, unanswered in its count" }, "not given"))),
     body)), "whole");
-}
-
-// The systems that were not given some of the instances of a plot.
-function cannot(suite) {
-  const list = element("ul", { class: "cannot" });
-  suite.systems.forEach((key, i) => {
-    const n = suite.instances.filter((row) => row[i + 1] === null).length;
-    if (n) list.append(element("li", {}, `${data.names[key]} was not given ${count(n)} of the ${count(suite.instances.length)} ${suite.noun ?? "instances"}.`));
-  });
-  return list;
 }
 
 function categoryView(route) {
@@ -1426,8 +1423,7 @@ function categoryView(route) {
     element("div", { class: "pair" }, plotted(whole, data.names, { also: route.vs, colour: [...c.mine, ...c.named] }), scatter(rows, drawn, route.vs, true)),
     note(`Answers count over all ${count(rows.length)} ${c.noun}${only ? ` of ${filters.find((f) => f.key === only).title}` : ""}; `
       + "one not given counts as unanswered."
-      + (Object.keys(c.copies).length ? ` ${plural(Object.values(c.copies).flat().length, "copy", "copies")} of instances of other suites count once.` : "")),
-    cannot(whole));
+      + (Object.keys(c.copies).length ? ` ${plural(Object.values(c.copies).flat().length, "copy", "copies")} of instances of other suites count once.` : "")));
   // Each family of the instances shown: tddlog's answers, and the most of
   // another system; a family narrows the category to it.
   if (!g) {
@@ -1447,7 +1443,7 @@ function categoryView(route) {
       name.title = fam.about;
       body.append(element("tr", {}, element("th", { scope: "row" }, name), ...(c.key === ALL ? [] : [codeCell(mine)]),
         element("td", { class: "num" }, count(mine.length)), element("td", { class: "num" }, count(mine.filter((r) => myTime(r) !== null).length)),
-        element("td", {}, best ? `${data.names[best[0]]}, ${count(best[1])}` : ""), prose("td", fam.source, { class: "about" })));
+        element("td", {}, best?.[1] ? `${data.names[best[0]]}, ${count(best[1])}` : "none"), prose("td", fam.source, { class: "about" })));
     }
     out.push(famHead, scroller(stacked(element("table", { class: "board families" },
       element("thead", {}, element("tr", {}, element("th", { scope: "col" }, c.key === ALL ? "type" : "family"),
@@ -1607,8 +1603,7 @@ function headToHead(s, rows, paras) {
   const body = element("tbody");
   for (const { key, v } of rows) {
     const name = data.names[key];
-    const para = paras.get(name.replace(/'s process$/, " (with Julia's start-up and compilation)"))
-      ?? paras.get(name) ?? [...paras].find(([k]) => k.startsWith(`${data.names[base(key)]} (`) && dashed(key) === /start-up/.test(k) && !/without/.test(k))?.[1]
+    const para = paras.get(name) ?? [...paras].find(([k]) => k.startsWith(`${data.names[base(key)]} (`) && dashed(key) === /start-up/.test(k) && !/without/.test(k))?.[1]
       ?? [...paras].find(([k]) => k.startsWith(`${name} (`))?.[1];
     const tr = element("tr", {},
       element("th", { scope: "row" }, swatch(key), name),

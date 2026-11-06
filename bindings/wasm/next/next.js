@@ -493,32 +493,40 @@ function typeSplit(c, route) {
   const n = (x, keep) => [...v.kinds[x]].filter((k) => keep.includes(k)).length;
   const every = c.key === ALL;   // all programs: how every program was written, those of kind x too
   const out = [];
-  for (const [id, title, keep, field, text] of [
-    ["head", "Head-to-head", "h", "head", "both read the benchmark's program as its authors or its generator wrote it, or the same network in another network format"],
-    ["translated", "Translated", every ? "smbx" : "smb", "translated", "one of them, or both, read a translation (for the system, for tddlog, or for both)"]]) {
-    // a translation not idiomatic for the system is counted beside the translated ones, in the totals of all programs only
-    const have = xs.filter((x) => n(x, keep) > 0 || (keep !== "h" && n(x, "x") > 0));
+  // whom a translation was written for, by its kind; on all programs a translation not idiomatic for
+  // the system is in the totals too, a column of its own (a type leaves it out of its totals, and its
+  // board below counts it)
+  const FOR = { s: ["it", "a translation for the system", "the system"], m: ["tddlog", "a translation for tddlog", "tddlog"],
+    b: ["both", "a translation of the original for both", "both"] };
+  for (const [id, title, keep, field] of [["head", "Head-to-head", "h", "head"], ["translated", "Translated", every ? "smbx" : "smb", "translated"]]) {
+    const have = xs.filter((x) => n(x, keep) > 0);
+    // the kinds of translation the type has: a column each where it has more than one
+    const kinds = keep === "h" ? [] : [...keep].filter((k) => have.some((x) => n(x, k) > 0));
+    const split = kinds.length > 1 ? kinds : [];
+    const whom = [...new Set(kinds.map((k) => FOR[k === "x" ? "s" : k][2]))];
+    const text = keep === "h" ? "both read the benchmark's program as its authors or its generator wrote it, or the same network in another network format"
+      : whom.length === 1 && whom[0] === "the system" ? "the system read a translation and tddlog the benchmark's own program"
+        : `one of them, or both, read a translation (for ${whom.length > 1 ? `${whom.slice(0, -1).join(", ")} or ${whom.at(-1)}` : whom[0]})`;
     const body = element("tbody");
     for (const x of have) {
       const w = v[field][x];
       const num = (text) => element("td", { class: "num" }, text);
-      const dirs = keep === "h" ? [] : ["s", "m", "b", "x"].map((k) => num(count(n(x, k))));
       body.append(element("tr", { class: x === route.vs ? "vs" : null }, element("th", { scope: "row" }, systemLink(x)),
-        num(count(n(x, keep))), ...dirs,
+        num(count(n(x, keep))), ...split.map((k) => num(count(n(x, k)))),
         num(w ? count(w.answers) : ""), num(w ? duration(w.total) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.tddlog_total) : ""),
         num(w ? speedCell(w) : "")));
     }
     const sec = element("section", { class: "panel split", id }, element("h3", {}, title), note(`Where ${text}.`));
     if (have.length) {
       const par = `PAR-${data.measure.par}, over the instances the system is given and either answers`;
+      const cols = split.filter((k) => k !== "x").map((k) => [...FOR[k].slice(0, 2), "num"]);
       sec.append(scroller(stacked(element("table", { class: "board" }, head2(["system"], ["instances", null, "num"],
-        ...(keep === "h" ? [] : [{ group: "translated for", cols: [["it", "a translation for the system", "num"],
-          ["tddlog", "a translation for tddlog", "num"], ["both", "a translation of the original for both", "num"]] },
-          ["not idiomatic", `a translation its users would not write: ${every ? "in these totals" : "in its answers, in no total"}`, "num"]]),
+        ...(cols.length ? [{ group: "translated for", cols }] : []),
+        ...(split.includes("x") ? [["not idiomatic", "a translation its users would not write, in these totals", "num"]] : []),
         { group: "the system", cols: [["answers", null, "num"], ["total", par, "num"]] },
         { group: "tddlog", cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), "tddlog's speed-up", "num"]] }), body)), "whole"));
-      const x = have.includes(route.vs) && n(route.vs, keep) ? route.vs : have.find((y) => n(y, keep) > 0);
-      const rows = x ? kindRows(c, x).filter((r) => keep.includes(r.kind)) : [];
+      const x = have.includes(route.vs) ? route.vs : have[0];
+      const rows = kindRows(c, x).filter((r) => keep.includes(r.kind));
       if (rows.length) {
         sec.append(element("p", { class: "small" }, `tddlog against ${data.names[x]} on ${plural(rows.length, "instance")}:`),
           pairPlot(rows, x, v[field][x], id));
@@ -850,7 +858,7 @@ function methodsView() {
         ["X+tddlog", "X's own code, then tddlog's inference; its time includes X's after its warm-up, so that against X it differs only in the inference"],
         ["circuits", "Every circuit Alea.jl exports, read by every system and timed without its export; the functional programs among them are also in their type"],
         ["data", element("span", {}, `Processed ${date}, on public main `,
-          element("a", { href: `https://github.com/Tractables/tddlog/commit/${source}` }, element("code", {}, source)))]]))];
+          element("a", { href: `https://github.com/Tractables/tddlog/commit/${source}` }, source))]]))];
 }
 
 // ------------------------------------------------------------- the routes

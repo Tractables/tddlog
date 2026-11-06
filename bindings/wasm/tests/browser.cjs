@@ -1003,8 +1003,12 @@ function benchmarksOf(root) {
       const pageOf = (x) => (isMine(x) ? `../#/integrations/${x === "tddlog" ? x : x.replace(/-tddlog$/, "")}` : `../#/baselines/${x}`);
       assert.deepEqual(await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[0].querySelector("a").getAttribute("href"))),
         [...c.mine, ...c.native].map(pageOf), `${what}: each system's name opens its page`);
-      const missing = order.filter((x) => rows.some((r) => r.v[x] === null)).length;
-      assert.equal((await page.$$("#view ul.cannot li")).length, missing, `${what}: the systems not given some of its instances`);
+      // how many each system was not given, in the board's last column, empty for none
+      assert.deepEqual(await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[r.cells.length - 1].textContent.replace(/,/g, ""))),
+        [...c.mine, ...c.native].map((x) => {
+          const n = rows.filter((r) => r.v[x] === null).length;
+          return n ? String(n) : "";
+        }), `${what}: the instances each system was not given`);
       assert.equal((await page.$$("#view ul.losses li")).length, c.losses?.length ?? 0, `${what}: where tddlog is slower`);
       assert.deepEqual(await page.$eval("#view figure.scatter", (f) => [f.dataset.faster, f.dataset.slower]),
         sides(rows, c.drawn.filter((x) => !isMine(x))), `${what}: tddlog against the fastest other system`);
