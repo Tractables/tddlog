@@ -931,6 +931,78 @@ fn a_families_trial_that_spends_past_its_estimate_has_overspent_it() {
     }));
 }
 
+/// A families trial laid out with an estimate of `pairs`, of `weight`,
+/// having spent `spent`.
+fn with_estimate(kind: Kind, pairs: f64, weight: u64, spent: u64) -> Trial {
+    let mut t = Trial::new(kind);
+    t.estimate = Some(vtree::Estimate {
+        pairs,
+        search_units: 0,
+    });
+    (t.weight, t.spent) = (weight, spent);
+    t
+}
+
+#[test]
+fn a_weighted_families_attempt_spends_no_more_than_its_estimate_allows() {
+    let laid = Kind::Families { search: false };
+    let w = 100 * WORK_PER_ESTIMATED_PAIR;
+    // Weighted, it may spend what is left of the estimate's work, at least
+    // one unit, so that the attempt ends past it and the weight goes.
+    assert_eq!(
+        bet_left(&with_estimate(laid, 100.0, FAMILIES_WEIGHT, 0), 1 << 31),
+        w
+    );
+    assert_eq!(
+        bet_left(&with_estimate(laid, 100.0, FAMILIES_WEIGHT, w - 5), 1 << 31),
+        5
+    );
+    assert_eq!(
+        bet_left(&with_estimate(laid, 100.0, FAMILIES_WEIGHT, w), 1 << 31),
+        1
+    );
+    // The turn's own bound holds where it is the smaller.
+    assert_eq!(
+        bet_left(&with_estimate(laid, 100.0, FAMILIES_WEIGHT, 0), 10),
+        10
+    );
+    // Unweighted, past its estimate, or without one, only the turn bounds it.
+    assert_eq!(
+        bet_left(&with_estimate(laid, 100.0, 1, 0), 1 << 31),
+        1 << 31
+    );
+    assert_eq!(
+        bet_left(&with_estimate(laid, 100.0, FAMILIES_WEIGHT, w + 1), 1 << 31),
+        1 << 31
+    );
+    let unlaid = Trial {
+        weight: FAMILIES_WEIGHT,
+        ..Trial::new(laid)
+    };
+    assert_eq!(bet_left(&unlaid, 1 << 31), 1 << 31);
+    // Another trial's weight is no bet on an estimate.
+    let decision = Trial {
+        weight: FAMILIES_WEIGHT,
+        ..Trial::new(Kind::Decision)
+    };
+    assert_eq!(bet_left(&decision, 1 << 31), 1 << 31);
+}
+
+#[test]
+fn a_weighted_trials_horizon_is_that_of_its_level() {
+    let at = |weight, target| {
+        let mut t = Trial::new(Kind::Decision);
+        (t.weight, t.target) = (weight, target);
+        horizon(&t)
+    };
+    assert_eq!(at(1, 1 << 28), 28.0 + PROJECTED_DOUBLINGS);
+    assert_eq!(
+        at(FAMILIES_WEIGHT, FAMILIES_WEIGHT << 28),
+        28.0 + PROJECTED_DOUBLINGS
+    );
+    assert_eq!(at(FAMILIES_WEIGHT, 1 << 34), 31.0 + PROJECTED_DOUBLINGS);
+}
+
 #[test]
 fn a_searched_layout_that_would_not_search_is_not_built() {
     let gp = regress(include_str!("../../examples/bn_split.pl"));

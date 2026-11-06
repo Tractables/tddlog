@@ -2064,10 +2064,12 @@ would go ahead of a winner that has reached its query phase.
 **Turns that end on their projection.** Within a turn, a trial's compile
 reads its projection at the end of each component (`tp::Horizon`): the
 work the trial has spent times all the components for each one finished.
-Where that is past `PROJECTED_DOUBLINGS` (three) doublings of its target,
+Where that is past `PROJECTED_DOUBLINGS` (three) doublings of its target
+over its weight, the level its turns are taken at (`policy::horizon`),
 the turn cannot finish the compile, and it ends there as one that spent
 its target: the target doubles, and the other trials take their turns
-before it goes on. A stop between components loses nothing that the next
+before it goes on. The weight buys a trial a larger share of the turns,
+not a farther projection. A stop between components loses nothing that the next
 attempt builds again. The projection is read once the trial has spent
 the work of its first watch, 2^24 units, about a tenth of a second:
 before it the components done are too few to project from. This
@@ -2104,7 +2106,10 @@ are won by `closed` or `td`.
 layout's estimate loses its weight, tested after each attempt: the
 weight bets on the estimate, and the families trials that win spend far
 fewer units a pair than those that lose. Their formulas need not reach
-the watch, which grows with the target.
+the watch, which grows with the target. The bet costs what the estimate
+says, not a weighted turn: an attempt of a families trial that holds the
+weight spends no more than the estimate leaves it (`bet_left`), and the
+test then takes the weight before its next turn.
 
 **Refusals.** A walk that sums out and is refused starts over first,
 once, putting nothing off (`Evaluation::walk_again`, under Put-offs
@@ -2842,6 +2847,12 @@ compare only within the run they come from.
   the 1.7 GB of `program` alone). Over the three benchmark sets the two
   take about the same time (0.84, 1.03 and 1.00 of the rounds' time by
   suite).
+  Where `program` leads, `families:0` weighted once its estimate fits a
+  weighted first turn won noDice's brp sooner (brp4096 2.7 s to 1.7,
+  brp16384 10.5 s to 6.6) but lost more where the estimate failed and
+  the trial, past it, was projected ahead: Alea.jl's circuit of
+  arith_gcd_small 9.8 s to 14.7, and Dice's caesar-iter at 10 000 to
+  100 000 steps 1.1 to 1.6 times its time. It is not kept.
 - **Turns by projected finish.** With every compile record dropped as the
   query phase starts, trueskill_w10's `program` stopped with its compile
   done and two of its four query steps, then the four other trials took
@@ -2882,6 +2893,12 @@ compare only within the run they come from.
   components per doubling of work (the separated flag decides between
   every step's emission trees), at 2^34.3 to 2^38.7 at 2^24.9 units:
   their first turn of 2^31 units, 15 to 17 s, ends after 0.2 s.
+  With the horizon three doublings past the target rather than the target
+  over the weight, Roulette's hardware written first-order, whose
+  weighted `decision` is projected at 2^31 to 2^34 where `families:0`
+  wins in 2^25 to 2^29 units, ran on in its first turn: at 1 000 steps in
+  45.6 s against 28.2, at 10 000 in 43.1 s against 18.9, and at 3 000 out
+  of memory in 9 GB where it now answers in 15.1 s.
 - **The searched layout.** On GeNI's weather_n7 and n8, which `program`
   wins, a searched layout estimated about as large that bet at weight 8
   spent 2.1 G units in its first attempt. GeNI's link_12, at a gap of
@@ -2898,6 +2915,14 @@ compare only within the run they come from.
   they finish in their first turn (mnist_sum96); those that lose have
   spent 300 and more (GeNI's links and weather networks) or never finish
   (Dice's simpleCaesar).
+  Roulette's caesar written first-order has a `families:0` layout
+  estimated at 2.2e4 pairs whose formulas grow exponentially in the key's
+  copies; before the estimate bounded its attempt it spent its weighted
+  first turn, 2^31 units, where `closed` answers in 0.04 to 0.5 s: caesar_25
+  in 6.8 s against 0.04, caesar_300 in 7.0 s against 0.46, and
+  caesar_10000 ran out of memory in 9 GB, where it now answers in 24 s.
+  Held to its estimate, mnist_sum64's `families:0`, which wins at about
+  150 units a pair, takes 1.2 times its work.
 - **Refusals.** Freed for whichever trial was refused, the others paid
   for an early refusal of a cheap trial: on bb_spacex_w17 `program`,
   freed for `families:0`, did its 2 G units again (195 s against 124),
