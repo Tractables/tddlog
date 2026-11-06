@@ -1,0 +1,30 @@
+// disease: Cao, Garg, Holtzen, Van den Broeck, Millstein, "Scaling
+// Integer Arithmetic in Probabilistic Programs" (UAI 2023), Table 1
+// (disease-small and -medium; disease-large is not in the table). Ported
+// to Dice from experiments/dicejl/disease_small.jl, disease_medium.jl and
+// disease_large.jl of Tractables/Alea.jl, branch arithmetic, commit
+// 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), whose
+// Alea.jl forms are disease_small.jl, disease_medium.jl and
+// disease_large.jl here.
+//
+// The sizes differ in three numbers, the places: $1 and $2 the bounds of
+// the uniform parameter and $3 the binomials' max (small 50 101 100,
+// medium 100 501 500, large 500 1501 1500). The original's
+// binomial(n, p, max) is a loop over i from 0 to max - 1 that adds one
+// where i < n and a flip p holds: here an iterate over the state
+// (n, (i, count)), one for each p.
+fun meet(s: (int(12), (int(12), int(12)))) {
+  let n = fst s in
+  let i = fst (snd s) in
+  let count = snd (snd s) in
+  (n, (i + int(12, 1), if i < n && flip 0.5 then count + int(12, 1) else count))
+}
+fun infect(s: (int(12), (int(12), int(12)))) {
+  let n = fst s in
+  let i = fst (snd s) in
+  let count = snd (snd s) in
+  (n, (i + int(12, 1), if i < n && flip 0.3 then count + int(12, 1) else count))
+}
+let param = uniform(12, $1, $2) in
+let nummet = snd (snd (iterate(meet, (param, (int(12, 0), int(12, 0))), $3))) in
+snd (snd (iterate(infect, (nummet, (int(12, 0), int(12, 0))), $3)))

@@ -19,8 +19,10 @@ README this file replaces here.
   and appends a JSON line a run, `table` prints the tables
   (docs/benchmarks.md, Setup).
 - The scripts that feed a baseline: `problog2pita.py` (a ProbLog program
-  as a cplint LPAD, for PITA), `ground2scallop.py` (a ground program, as
-  `tddlog --ground` prints it, for Scallop), `dice2alea.py` (a Dice
+  as a cplint LPAD, for PITA), `problog2scallop.py` (a ProbLog program
+  written first order in Scallop), `ground2scallop.py` (a circuit's
+  ground program, as `tddlog --ground` prints it, for Scallop),
+  `dice2alea.py` (a Dice
   program as a Julia script for Alea.jl), `alea_bench.jl` (runs an
   Alea.jl program, or writes the circuit Alea builds for it as a ProbLog
   program, through Alea.jl's tddlog backend, and as Dice programs),
@@ -74,7 +76,7 @@ and the counters) and for the records made before the switch.
 |---|---|---|---|---|---|
 | ProbLog | 2.3.0, PySDD 1.0.6, pyeda 0.29.0 | the program suites and Geni's programs; a reference on the others | the program itself | `--problog`, `--kbs ddnnf,sdd,fsdd` | 1 |
 | PITA | the cplint pack on SWI-Prolog 9.2.9 | the program suites | `problog2pita.py` | `--pita`, `--pita-packs` | 2 |
-| Scallop | scallop-core 0.2.5, top-k proofs at the largest k, every proof kept (exact) | the program suites | `ground2scallop.py` | `--scallop` | 3 |
+| Scallop | scallop-core 0.2.5, top-k proofs at the largest k, every proof kept (exact) | the program suites | `problog2scallop.py`; a circuit's ground program, `ground2scallop.py` | `--scallop` | 3 |
 | Dice | 1.0, the binary of the sholtzen/dice image | `data/dice`, the networks, `data/nodice`, the circuits of `data/alea`, Geni's and Roulette's programs | the program, or `gen_bn.py --format dice`, `alea_bench.jl export`, `gen_geni.py`, `gen_roulette.py` | `--dice` | 4 |
 | Alea.jl | cf5e5b8 on Julia 1.11.9, CUDD 3.0.0; Alea.jl+tddlog's circuits by its branch tddlog, 12fe923 | the Dice programs above; the programs of `data/alea` | `dice2alea.py`; `alea_bench.jl run` | `--alea` | 5 |
 | aspmc | 1.1.1, sharpSAT-TD | the program suites; with evidence, the evidence asked as queries | the program itself | `--aspmc` | 6 |

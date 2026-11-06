@@ -12,6 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 root = Path(__file__).resolve().parents[1]
 scripts = root / 'scripts'
@@ -74,6 +75,27 @@ b(X) :- a(X).
 q :- b(_).
 query(q).
 """, {'q': 0.75}),
+    # between/3, ProbLog's built-in: an input relation of its rows where it
+    # binds X (of constant bounds, and of a bound n(N) states, the ProbLog
+    # tutorial's bayesian_dataflow), comparisons where p binds it, and one
+    # draw per X of a probabilistic rule whose body is between alone. dom is
+    # asked through g: asked itself, a relation whose every tuple is certain,
+    # PSouffle printed none of its tuples
+    'between': ("""dom(X) :- between(0,2,X).
+0.5::g(X) :- dom(X).
+n(2).
+0.5::a(I,1); 0.5::a(I,0) :- n(N), between(1,N,I).
+p(1). p(5).
+0.5::q(X) :- p(X), between(0,3,X).
+0.3::h(X) :- between(1,2,X).
+query(g(_)). query(a(1,1)). query(a(2,1)). query(q(_)). query(h(_)).
+""", {'g(0)': 0.5, 'g(1)': 0.5, 'g(2)': 0.5, 'a(1,1)': 0.5, 'a(2,1)': 0.5, 'q(1)': 0.5,
+      'h(1)': 0.3, 'h(2)': 0.3}),
+    # not/1, ProbLog's negation as \+ is
+    'not': ("""0.5::a. 0.4::b.
+c :- a, not(b).
+query(c).
+""", {'c': 0.3}),
 }
 
 
@@ -95,6 +117,46 @@ class TranslateTests(unittest.TestCase):
     def test_a_fact_given_twice_is_a_noisy_or(self):
         _, rows, probs, _, _ = translate('0.5::e(1).\n0.5::e(1).\nquery(e(1)).\n')
         self.assertEqual((rows['e'], probs['e']), (['1'], ['0.75']))
+
+    def test_runs_of_facts_read_as_the_parser_reads_each(self):
+        # the runs of facts read whole (fact_run: windows, a relation's rows
+        # at once, the run ending before a fact that is not of plain
+        # constants) translate as the facts read token by token do
+        import problog2scallop
+        many = ''.join(f'0.{k % 9 + 1}::r({k}, a{k % 7}, {k % 5}.5).\n' for k in range(3000))
+        programs = {
+            'spaces': '0.5 :: f( 1 , a ).\nf(2,b).  0.25::f(-3, c).\n0.5::f(1, a).\nquery(f(1,a)).\n',
+            'numbers': 'g(1.5). g(-0.0). g(2e3). g(007). 0.1::g(1.5). g(7).\nq(X) :- g(X).\nquery(q(7)).\n',
+            'stops': ("0.5::h(1).\n0.5::h(X) :- k(X).\n0.5::h('a b').\nk(2). % a comment\n"
+                      'k(3). /* c */ k(4).\nh(5) :- k(5).\nquery(h(_)).\n'),
+            'arities': 'p(1). p(1,2). p(a). 0.5::p(b). 0.3::p(1,2).\nquery(p(1,2)).\n',
+            'many': many + '0.5::r(1, a1, 1.5).\nquery(r(1, a1, 1.5)).\n',
+            'range': 'f(1). 1.5::f(2).\nquery(f(1)).\n',
+            'variable': 'f(1). f(X).\nquery(f(1)).\n',
+            'lines': 'f(1,\n 2).\n0.5::f(3,\n4). f(5,6).\nquery(f(3,4)).\n',
+            'comment': 'f(1). f(a % x).\n).\nquery(f(a)).\n',
+        }
+        self.assertGreater(sum(k == 'facts' for k, _ in problog2souffle.tokens(many)), 2)
+
+        def read(module, text):
+            try:
+                return module.translate(text)
+            except Refused as e:
+                return 'refused', str(e)
+
+        for name, text in programs.items():
+            for module in (problog2souffle, problog2scallop):
+                with self.subTest(name, module=module.__name__):
+                    fast = read(module, text)
+                    with mock.patch.object(problog2souffle, 'FACT_START', re.compile('(?!)')):
+                        self.assertEqual(fast, read(module, text))
+
+    def test_probabilities_are_written_without_exponents(self):
+        probs = [0.5, 1.2345e-05, 0.000123456, 1e-300, '0.1', 1.0]
+        texts = problog2souffle.prob_texts(probs)
+        self.assertEqual(texts, [problog2souffle.fmt_prob(p) for p in probs])
+        self.assertEqual(texts[:3], ['0.5', '0.000012345', '0.000123456'])
+        self.assertTrue(all('e' not in t for t in texts))
 
     def test_facts_and_rules_of_one_predicate(self):
         dl, rows, _, _, _ = translate('0.2::r(1).\n0.5::r(X) :- q(X).\nq(2).\nquery(r(_)).\n')
@@ -182,6 +244,45 @@ class TranslateTests(unittest.TestCase):
         # a body over a relation that is not certain is refused
         with self.assertRaisesRegex(Refused, 'not a relation of certain facts|has no facts'):
             translate('0.5::e(1).\nr(X) :- e(X).\n0.5::p(X) :- r(X).\nquery(p(X)) :- r(X).\n')
+
+    def test_between_is_an_input_relation_or_comparisons(self):
+        dl, rows, probs, _, _ = translate('dom(X) :- between(0,2,X).\nquery(dom(_)).\n')
+        self.assertIn('dom(X) :- between(0, 2, X).', dl)
+        self.assertIn('.input between', dl)
+        self.assertEqual((rows['between'], probs['between']), (['0\t2\t0', '0\t2\t1', '0\t2\t2'], ['1.0'] * 3))
+        # bounds that certain facts state: the rows of their values
+        _, rows, _, _, _ = translate('n(2).\nn(3).\n0.5::a(I,1); 0.5::a(I,0) :- n(N), between(1,N,I).\n'
+                                     'query(a(_,1)).\n')
+        self.assertEqual(sorted(rows['between']), ['1\t2\t1', '1\t2\t2', '1\t3\t1', '1\t3\t2', '1\t3\t3'])
+        # X bound by another atom: comparisons, and no relation
+        dl, rows, _, _, _ = translate('p(1).\n0.5::q(X) :- p(X), between(0,3,X).\nquery(q(_)).\n')
+        self.assertIn('0.5::q(X) :- p(X), 0 <= X, X <= 3.', dl)
+        self.assertNotIn('between', rows)
+        # a program that defines between/3 reads its own
+        _, rows, _, _, _ = translate('between(1,2,3).\np(X) :- between(1,2,X).\nquery(p(_)).\n')
+        self.assertEqual(rows['between'], ['1\t2\t3'])
+        for text, reason in [('q(1).\np(X) :- q(X), \\+ between(0,3,X).\n', 'negated between/3'),
+                             ('p(X) :- between(0,H,X).\n', 'between/3 whose bounds are not bound'),
+                             ('0.5::n(2).\np(X) :- n(N), between(1,N,X).\n', 'between/3 whose bounds are not integers'),
+                             ('n(2).\np(X) :- n(N), M is N + 1, between(1,M,X).\n',
+                              'between/3 whose bounds are not integers')]:
+            with self.subTest(text=text), self.assertRaisesRegex(Refused, reason):
+                translate(text)
+
+    def test_not_is_negation(self):
+        self.assertIn('c() :- a(), !b().', rules('0.5::a. 0.5::b.\nc :- a, not(b).\nquery(c).\n'))
+
+    def test_a_predicate_no_clause_defines_is_refused(self):
+        # ProbLog stops on an unknown clause; a relation of no rows in its place would answer
+        for text, name in [('q(1).\np(X) :- q(X), r(X).\nquery(p(_)).\n', 'r/1'),
+                           ('q(1).\np(X) :- q(X), \\+ r(X).\nquery(p(_)).\n', 'r/1'),
+                           ('q(1).\nquery(r(1)).\n', 'r/1'),
+                           ('0.5::q(1).\nevidence(r).\nquery(q(1)).\n', 'r/0'),
+                           ('q(1).\np(Y) :- q(X), succ(X,Y).\nquery(p(_)).\n', 'succ/2')]:
+            with self.subTest(text=text), self.assertRaisesRegex(Refused, f'^{name}, which no clause defines'):
+                translate(text)
+        # a relation a clause declares empty is one
+        self.assertIn('b(X) :- d(X), !z(X).', rules(CASES['empty'][0]))
 
     def test_quoted_atoms_are_symbols(self):
         _, rows, _, _, _ = translate("0.5::f('Hello world').\nquery(f(_)).\n")

@@ -2496,10 +2496,19 @@
      "grid15",
      "grid20",
      "grid25",
-     "grid30"
+     "grid30",
+     "grid40"
     ],
     "key": "grid",
     "title": "grids"
+   },
+   {
+    "instances": [
+     "grid15_ev",
+     "grid30_ev"
+    ],
+    "key": "gridev",
+    "title": "grids with evidence"
    },
    {
     "instances": [
@@ -2516,7 +2525,8 @@
      "g25_80",
      "g30_100",
      "g32_107",
-     "g34_113"
+     "g34_113",
+     "g40_140"
     ],
     "key": "graphs",
     "title": "random graphs"
@@ -2560,6 +2570,7 @@
      "uwcse6",
      "uwcse8",
      "uwcse10",
+     "uwcse12",
      "uwcse20",
      "uwcse80",
      "uwcse640",

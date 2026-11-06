@@ -181,7 +181,8 @@ sys.path.insert(0, HERE)
 import source_tree  # noqa: E402  (the source tree: its converters, examples and program)
 import gen_bn  # noqa: E402
 import memcap  # noqa: E402  (the resident memory cap of --mem-cap)
-import ground2scallop  # noqa: E402
+import ground2scallop  # noqa: E402  (Scallop's reading of a circuit)
+import problog2scallop  # noqa: E402
 import problog2pita  # noqa: E402
 import problog2souffle  # noqa: E402
 import gen_tpch  # noqa: E402  (FOLD's TPC-H program and relations)
@@ -297,9 +298,14 @@ for name in ['caesar-iter', 'simpleCaesar', 'pmc2', 'pmc1']:
 #     variables), each program's sizes smallest first (data/nodice/README.md;
 #     its diamonds and ladders are the Dice paper's, the roulette suite's
 #     rl_diamond and rl_ladder).
-# An Alea.jl program's instance is the Boolean circuit Alea builds for it,
-# written by alea_bench.jl as a ProbLog program and as Dice programs
-# (`gen` runs it under `--alea`).
+# An arith or pluck program is the model: Alea.jl reads
+# it (ALEA_OF, `alea_program`), and every other system a port of it
+# (data/alea/README.md, "Ports"). An arith instance is its port in Dice
+# (dice2problog.py), with the instance's arguments after it where the port
+# has places (ARITH_PLACES: tddlog reads the port and the arguments, the
+# Dice family the port with them in its places, NAME.dice); a pluck
+# instance its port in ProbLog (gen_pluck.py), with hmm's Dice port beside
+# it for the systems that read Dice (DICE_PORTS).
 ARITH = ['book', 'tugofwar', 'caesar_small', 'caesar_medium', 'caesar_large', 'caesar_huge',
          'ranking_small', 'ranking_medium', 'ranking_large', 'radar', 'fw_small', 'fw_medium', 'fw_large',
          'linext_small', 'linext_medium', 'linext_large', 'triangle_small', 'triangle_medium', 'triangle_large',
@@ -310,23 +316,50 @@ NODICE = ([f'coupon2-{n}-obs' for n in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 
           ['survey', 'hepar2', 'insurance', 'water', 'alarm', '3sat-0'] +
           [f'uf20-0{n}' for n in range(990, 1000)] + ['uf50-0999'] +
           [f'brp{n}-2' for n in [4, 6, 8, 10, 16, 64, 256, 1024, 4096, 16384]])
+ARITH_DIR, PLUCK_DIR = (os.path.join(ROOT, 'data', 'alea', d) for d in ('arith', 'pluck'))
+# The ports that are one program for every size: the sizes' values of its places
+ARITH_PLACES = {'disease': {'small': '50 101 100', 'medium': '100 501 500', 'large': '500 1501 1500'},
+                'triangle': {'small': '15 50 101 16384', 'medium': '15 100 201 16384',
+                             'large': '20 500 1001 524288'},
+                'gcd': {'small': '9 256 13', 'medium': '11 1024 16', 'large': '13 4096 19'}}
+# caesar-small to -huge are one Alea.jl program, the first LENGTH letters of
+# its text (each size's text in the paper's files is a prefix of the next's)
+CAESAR_LENGTH = {'small': 10, 'medium': 50, 'large': 100, 'huge': 250}
 PPL = {}
-for family, names in [('arith', ARITH), ('pluck', PLUCK)]:
-    for name in names:
-        PPL[f'{family}_{name}'] = (family, ['alea_bench.jl', os.path.join(ROOT, 'data', 'alea', family, f'{name}.jl')])
-# caesar-small to -huge are one program, the first LENGTH letters of its text
-# (each size's text in the paper's files is a prefix of the next's)
-for _name, _length in [('small', 10), ('medium', 50), ('large', 100), ('huge', 250)]:
-    PPL[f'arith_caesar_{_name}'] = ('arith', ['alea_bench.jl', os.path.join(ROOT, 'data', 'alea', 'arith', 'caesar.jl'),
-                                              f'LENGTH={_length}'])
+ALEA_OF = {}   # an instance's generator arguments -> its Alea.jl program and setting (alea_program)
+for name in ARITH:
+    _prog, _, _size = name.rpartition('_')
+    _port = (['dice2problog.py', os.path.join(ARITH_DIR, f'{_prog}.dice'), *ARITH_PLACES[_prog][_size].split()]
+             if _prog in ARITH_PLACES else ['dice2problog.py', os.path.join(ARITH_DIR, f'{name}.dice')])
+    PPL[f'arith_{name}'] = ('arith', _port)
+    ALEA_OF[tuple(_port)] = ([os.path.join(ARITH_DIR, 'caesar.jl'), f'LENGTH={CAESAR_LENGTH[_size]}']
+                             if _prog == 'caesar' else [os.path.join(ARITH_DIR, f'{name}.jl')])
+for name in PLUCK:
+    PPL[f'pluck_{name}'] = ('pluck', ['gen_pluck.py', os.path.join(PLUCK_DIR, f'{name}.pl')])
+    ALEA_OF[tuple(PPL[f'pluck_{name}'][1])] = [os.path.join(PLUCK_DIR, f'{name}.jl')]
 for name in NODICE:
     PPL[f'nodice_{name}'] = ('nodice', ['dice2problog.py', os.path.join(ROOT, 'data', 'nodice', f'{name}.dice')])
 # An instance whose generator is dice2problog.py is a Dice program (its
 # argument) translated by tddlog's reader (`write_program`: the program
 # the script wrote); one whose generator is alea_bench.jl is the circuit
 # of an Alea.jl program; the generators of DICE_WRITERS write a
-# Dice program beside the ProbLog one (`--dice`, NAME.dice).
+# Dice program beside the ProbLog one (`--dice`, NAME.dice), as gen_pluck.py
+# does for the Pluck programs of DICE_PORTS (`writes_dice`).
 DICE_WRITERS = ('gen_roulette.py', 'gen_geni.py')
+DICE_PORTS = {('gen_pluck.py', 'hmm.pl')}   # (generator, its argument's file name)
+# The generators whose every instance a system reads as a program of its own,
+# not one written from the instance's (no ground route): Alea.jl and Pluck
+# the Pluck programs' (alea_program, run_pluck).
+OWN_PROGRAMS = {'gen_pluck.py': ('alea', 'pluck')}
+
+
+def writes_dice(gargs):
+    """Whether the generator of an instance, its arguments `gargs`, writes a
+    Dice program beside its ProbLog one (`--dice`, NAME.dice). The port is
+    named by its file, so that the capture's rooted arguments name it too."""
+    return gargs[0] in DICE_WRITERS or (len(gargs) > 1 and (gargs[0], os.path.basename(gargs[1])) in DICE_PORTS)
+
+
 # The generators whose programs tddlog's reader writes (`tddlog --program`):
 # of a network, of a Dice program, of a cplint LPAD, whole or with its
 # students or families made anew, and of a Circulette netlist.
@@ -1068,9 +1101,10 @@ def unexpressed(r):
 # The systems the tables time by their own time in the process,
 # without their language's start, their packages' load and their
 # compilation: Alea.jl (and Alea.jl+tddlog), Pluck and TensorInference.jl in Julia, Roulette in
-# Racket. Their records' `seconds` stay the process's wall time, and a run
+# Racket, WebPPL in node (its compile and run of the program after a
+# warm-up). Their records' `seconds` stay the process's wall time, and a run
 # whose wall time passed the limit stays a timeout.
-OWN_TIME = ('alea', 'alea-tddlog', 'roulette', 'roulette-tddlog', 'pluck', 'tensorinference')
+OWN_TIME = ('alea', 'alea-tddlog', 'roulette', 'roulette-tddlog', 'pluck', 'tensorinference', 'webppl')
 
 
 def own_seconds(r):
@@ -1078,12 +1112,14 @@ def own_seconds(r):
     stats among its keys: warm where it ran so (`warm_seconds`: Alea.jl's,
     Pluck's and TensorInference.jl's second run in the process), else in
     the process less the compilation within it (`inproc_seconds` less
-    `jit_seconds` where it reports one), else the process's wall time
-    (TensorInference.jl's runs before its warm-up)."""
+    `jit_seconds` where it reports one) and less the load of the system's
+    library within it (`header_seconds`, WebPPL's compile of its header, as
+    Julia's packages and Racket's modules load outside it), else the
+    process's wall time (TensorInference.jl's runs before its warm-up)."""
     if r.get('warm_seconds') is not None:
         return r['warm_seconds']
     if r.get('inproc_seconds') is not None:
-        return max(r['inproc_seconds'] - r.get('jit_seconds', 0.0), 0.0)
+        return max(r['inproc_seconds'] - r.get('jit_seconds', 0.0) - r.get('header_seconds', 0.0), 0.0)
     return r['seconds']
 
 
@@ -1163,10 +1199,11 @@ def network_args(args, name, gargs, no_queries):
 def original(gargs, variant, stem=None):
     """The file tddlog reads itself where NAME.pl is its reader's
     conversion of a whole file (`write_program`): a Dice program
-    (dice2problog.py), a cplint LPAD (gen_cplint.py) or a Circulette netlist
-    (gen_circulette.py, NAME.cql beside NAME.pl: `stem` is DIR/NAME, the
-    instance's), so that reading it is part of tddlog's time, as a network's
-    is (`network_args`). None for another instance."""
+    (dice2problog.py; one with places is `folded`'s), a cplint LPAD
+    (gen_cplint.py) or a Circulette netlist (gen_circulette.py, NAME.cql
+    beside NAME.pl: `stem` is DIR/NAME, the instance's), so that reading it
+    is part of tddlog's time, as a network's is (`network_args`). None for
+    another instance."""
     if gargs[0] == 'dice2problog.py':
         return gargs[1]
     if gargs[0] == 'gen_cplint.py':
@@ -1185,7 +1222,11 @@ def folded(args, name, gargs, variant):
     tddlog's time. Of a scaled Dice loop, D/dice_LOOP_kK.dice (dice_scale.py)
     beside its count's file D/NAME.args, likewise the loop's
     program, whose iterate count is the place $1, (D/programs/LOOP.dice,
-    D/NAME.args). None for another instance."""
+    D/NAME.args). Of a Dice program with places, its arguments after it
+    (ARITH_PLACES), the program and DIR/NAME.args, which gen writes. None
+    for another instance."""
+    if gargs[0] == 'dice2problog.py' and len(gargs) > 2:
+        return gargs[1], os.path.join(args.dir, name + '.args')
     if gargs[0] == 'dice2problog.py':
         d, m = os.path.dirname(gargs[1]), SCALED_LOOP.fullmatch(name)
         given = os.path.join(d, name + '.args')
@@ -1349,6 +1390,30 @@ def uai_kind(path):
     return words[0] if words else None
 
 
+PLACE = re.compile(r'\$(\d+)')
+
+
+def fill_places(text, words):
+    """A Dice program's text with its places ($1, $2, ...) given `words`,
+    outside its `//` comments, as tddlog binds them: the program the
+    systems that take no arguments read, the same program. ValueError on a
+    place without a word or a word without a place."""
+    used, out = set(), []
+    for line in text.splitlines(keepends=True):
+        code, sep, comment = line.partition('//')
+
+        def word(m):
+            k = int(m.group(1))
+            if not 1 <= k <= len(words):
+                raise ValueError(f'place ${k} of a program given {len(words)} arguments')
+            used.add(k)
+            return words[k - 1]
+        out.append(PLACE.sub(word, code) + sep + comment)
+    if used != set(range(1, len(words) + 1)):
+        raise ValueError(f'{len(words)} arguments for the places {sorted(used)}')
+    return ''.join(out)
+
+
 def write_program(args, name, argv):
     """NAME.pl of instance `name`, the program tddlog reads a file as
     (`tddlog --program ARGV`, gen's --tddlog): a network's (`gen_network`),
@@ -1463,19 +1528,26 @@ def gen(args):
             gen_network(args, name, gargs)
             continue
         if gargs[0] == 'dice2problog.py':
-            write_program(args, name, [gargs[1]])
+            if len(gargs) > 2:
+                # a program with places: the instance's arguments, a line each (NAME.args, which
+                # tddlog reads beside the program), and the program with them in its places
+                # (NAME.dice, which the systems that take no arguments read)
+                write_new(os.path.join(args.dir, name + '.args'), ''.join(w + '\n' for w in gargs[2:]))
+                with open(gargs[1]) as f:
+                    write_new(os.path.join(args.dir, name + '.dice'), fill_places(f.read(), gargs[2:]))
+            write_program(args, name, gargs[1:])
             continue
         if gargs[0] == 'gen_circulette.py':
             gen_circulette(args, name, gargs)
             continue
         if fold_of(gargs):
             gen_folded(args, name, gargs, written)
-            if gargs[0] in DICE_WRITERS:   # the Dice paper's diamond and ladder: its own Dice program
+            if writes_dice(gargs):   # the Dice paper's diamond and ladder: its own Dice program
                 subprocess.run([sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:] +
                                ['--dice', os.path.join(args.dir, name + '.dice')], check=True)
             continue
         cmd = [sys.executable, str(source_tree.script(gargs[0]))] + gargs[1:]
-        if gargs[0] in DICE_WRITERS:
+        if writes_dice(gargs):
             cmd += ['--dice', os.path.join(args.dir, name + '.dice')]
         if gargs[0] in SOUFFLE_WRITERS:
             cmd += ['--souffle', os.path.join(args.dir, name + '.souffle')]
@@ -1579,7 +1651,7 @@ def program_offset(path):
 
 
 # The systems that read Dice programs.
-DICE_SYSTEMS = ('dice', 'alea', 'roulette', 'nodice', 'psi', 'genfer', 'sppl', 'geni', 'pluck')
+DICE_SYSTEMS = ('dice', 'alea', 'roulette', 'nodice', 'psi', 'genfer', 'sppl', 'geni', 'pluck', 'webppl')
 # Under --pr the systems that print no P(e) are asked it as a query of a
 # program of their own (`pe_program`), and the systems that read Dice
 # programs (Storm and PRISM their Markov chains, `run_translated`) the
@@ -1658,7 +1730,6 @@ UNDERFLOWS = {'ace'}
 CHECKED_SUITES = ('uai',)
 PR_REFS = [('exact', 'cliquetree'), ('merlin', 'bte-pr'), ('ganak', 'wmc'), ('tddlog', None)]
 
-
 def printed_error(system, variant, x):
     """e(x): half a unit in the last place system:variant prints of x (PRINTED), 0 in full."""
     p = PRINTED.get((system, variant)) or PRINTED.get(system)
@@ -1715,14 +1786,38 @@ def instances_of(q, keys):
     return out
 
 
+def left_out(rec, ref):
+    """The queries of reference ref's answers that record rec leaves out and
+    does not answer by leaving them out. A query rec does not print is
+    answered 0: the systems that print only what they derive mean it so
+    (aspmc, whose clingo grounding removes an atom that no rule derives;
+    PITA, whose prob/2 answers a query with variables for the instances it
+    derives; Scallop and PSouffle, which print the tuples they derive), and
+    that answer is right where the reference's is 0 to the check's noise and
+    its printed digits. A query left out where the reference's answer is not
+    0 is an answer dropped (a translator's empty relation, a truncated
+    output). Answers of rec's that are not a dict answer no query; none is
+    left out of a reference whose answers are not a dict."""
+    a, b = rec.get('answers'), ref.get('answers')
+    if not isinstance(b, dict):
+        return []
+    a = a if isinstance(a, dict) else {}
+    return [q for q in b if q not in a
+            and not answer_right(0.0, b[q], 0.0, printed_error(ref['system'], ref.get('variant'), b[q]))]
+
+
 def answers_check(rec, ref):
     """(right, the largest difference, the queries compared) of record rec's
     answers against reference ref's, over the queries both answer; None where
     they share none. A reference's query with variables at 0 (ProbLog derives
     none of its instances) is compared with each of rec's instances of it,
-    which must be 0 too (tddlog grounds them over the domain). Answers that
-    are not a dict (the evidence inconsistent to the system) are right where
-    both are equal."""
+    which must be 0 too (tddlog grounds them over the domain). A query of
+    ref's that rec leaves out where ref's answer is not 0 (left_out) makes
+    rec wrong, at an infinite difference: a record that drops answers (a
+    translator's empty relation, a truncated output) answers less than was
+    asked, whatever the queries both answer show. Answers that are not a dict
+    (the evidence inconsistent to the system) are right where both are
+    equal."""
     a, b = rec.get('answers'), ref.get('answers')
     if not isinstance(a, dict) or not isinstance(b, dict):
         return (a == b, 0.0 if a == b else math.inf, 1) if a is not None and b is not None else None
@@ -1731,10 +1826,11 @@ def answers_check(rec, ref):
     pairs = [(q, q) for q in qs] + [(k, q) for q, ks in zero.items() for k in ks]
     if not pairs:
         return None
-    right = all(answer_right(a[k], b[q], printed_error(rec['system'], rec.get('variant'), a[k]),
-                             printed_error(ref['system'], ref.get('variant'), b[q])) for k, q in pairs)
-    worst = max(answer_diff(a[k], b[q]) if all(isinstance(x, (int, float)) for x in (a[k], b[q]))
-                else (0.0 if a[k] == b[q] else math.inf) for k, q in pairs)
+    gone = left_out(rec, ref)
+    right = not gone and all(answer_right(a[k], b[q], printed_error(rec['system'], rec.get('variant'), a[k]),
+                                          printed_error(ref['system'], ref.get('variant'), b[q])) for k, q in pairs)
+    worst = max([answer_diff(a[k], b[q]) if all(isinstance(x, (int, float)) for x in (a[k], b[q]))
+                 else (0.0 if a[k] == b[q] else math.inf) for k, q in pairs] + [math.inf] * bool(gone))
     return right, worst, len(qs) + len(zero)
 
 
@@ -1759,15 +1855,28 @@ def reference_variant(r):
     return r.get('variant')
 
 
+def own_question(r):
+    """Whether record r answers a question of its own, not its instance's
+    queries: Psi's run on its own linear regression (run_psi_linreg), whose
+    E(a) and E(b) are the continuous model's posterior means, where the
+    circuit's queries are the bits of the discretized one. Such a record is
+    no reference (reference_records), and no reference holds it to the
+    instance's queries (full_reference): it shares none of them."""
+    return r['system'] == 'psi' and psi_linreg(str(r.get('instance', '')))
+
+
 def reference_records(records):
     """The records an answer is checked against, of `records` (one
     instance's): those that answered (ok, a non-empty dict of finite
     answers, reference_answers's), in REFERENCE_ORDER, then tddlog's
     default arm (`auto`; another arm may answer
     other queries). An Ace record stands with its reference_answers alone,
-    a copy. Where none answered so, those of the evidence found
-    inconsistent, in the same order. The first is the instance's reference."""
+    a copy. A record that answers a question of its own (own_question) is
+    none. Where none answered so, those of the evidence found inconsistent,
+    in the same order. The first is the instance's reference."""
     def rank(r):
+        if own_question(r):
+            return None
         for k, (s, v) in enumerate(REFERENCE_ORDER):
             if r['system'] == s and v in (None, reference_variant(r)):
                 return k
@@ -1817,7 +1926,10 @@ def full_reference(rec, refs):
     answer_reference's, else the first above rec, where rec shares a query
     with none. Not for another arm of tddlog's than its default, which may
     answer other queries (it may name its own: reference_records),
-    and is checked where it shares one."""
+    and is checked where it shares one; none for a record that answers a
+    question of its own (own_question)."""
+    if own_question(rec):
+        return None
     x = answer_reference(rec, refs)
     if x is not None or (rec['system'] == 'tddlog' and rec.get('variant') not in (None, 'auto')):
         return x
@@ -2167,8 +2279,8 @@ def dice_marginals(rows, n):
 
 def run_dice(args, name, path, tool='dice'):
     """Run Dice (or, with `tool`, another system that reads Dice programs and prints Dice's table: noDice, `--nodice`) on the program(s) behind a translated instance: the source
-    program of a `dice` or `nodice` instance, the program a generator of
-    DICE_WRITERS writes beside its instance, the programs of an Alea.jl
+    program of a dice2problog.py instance and the program a generator writes
+    beside its instance (`dice_source`), the programs of an Alea.jl
     program's circuit (`run_dice_circuit`), and for a network one generated
     program per queried variable (Dice returns one value; a tuple of them
     would print the joint; `gen_bn.dice_programs`), which observes the
@@ -2185,10 +2297,8 @@ def run_dice(args, name, path, tool='dice'):
         if source is None:
             return {'status': 'error', 'seconds': 0, 'error': f"--pr: no program of P(e) for family {family}"}
         programs = [(source, queries(path))]
-    elif gargs[0] == 'dice2problog.py':
-        programs = [(gargs[1], queries(path))]
-    elif gargs[0] in DICE_WRITERS:
-        programs = [(os.path.join(args.dir, name + '.dice'), queries(path))]
+    elif gargs[0] == 'dice2problog.py' or writes_dice(gargs):
+        programs = [(dice_source(args, name), queries(path))]
     elif gargs[0] == 'alea_bench.jl':
         return run_dice_circuit(args, name, os.path.join(args.dir, name + '.dicemap'), tool)
     elif gargs[0] == 'gen_bn.py':
@@ -2282,8 +2392,9 @@ def run_dice_circuit(args, name, dicemap, tool='dice'):
 
 
 def dice_source(args, name):
-    """The Dice program behind a `dice` or `nodice` instance (its source), an
-    instance of a generator of DICE_WRITERS (beside it) or a network (the
+    """The Dice program behind a dice2problog.py instance (its source, or
+    with its arguments in its places NAME.dice), an instance whose generator
+    writes one (writes_dice, beside it) or a network (the
     network and its observations, a Markov network's factors among them,
     with its queried variables returned as a tuple, gen_bn.py --format
     dice; not a program that asks nothing), as a path; for another program
@@ -2301,9 +2412,9 @@ def dice_source(args, name):
             write_new(out, gen_bn.dice_programs(gargs[1:], pe=True)[0][1])
             DICE_WRITTEN.add(out)
         return out
-    if gargs[0] == 'dice2problog.py':
+    if gargs[0] == 'dice2problog.py' and len(gargs) == 2:
         return gargs[1]
-    if gargs[0] in DICE_WRITERS:
+    if gargs[0] == 'dice2problog.py' or writes_dice(gargs):   # with its arguments in its places, or beside it
         return os.path.join(args.dir, name + '.dice')
     if gargs[0] == 'gen_bn.py' and '--query none' not in ' '.join(gargs):
         out = os.path.join(args.dir, f'{name}.dice')
@@ -2371,21 +2482,63 @@ ALEA_PROGRAMS = {f: os.path.join(ROOT, 'data', 'alea', 'verification', f'{f}.jl'
 
 
 def alea_program(args, gargs):
-    """The Alea.jl program of an instance of ALEA_PROGRAMS's families and its
-    setting, as alea_command takes them; None for another instance."""
+    """The Alea.jl program of an instance of ALEA_PROGRAMS's families, or of
+    the ppl suite's arith and pluck programs (ALEA_OF), and its setting, as
+    alea_command takes them; None for another instance."""
     if args.suite == 'roulette' and gargs[0] == 'gen_roulette.py' and gargs[1] in ALEA_PROGRAMS:
         return [ALEA_PROGRAMS[gargs[1]], f'N={gargs[2]}']
+    if args.suite == 'ppl':
+        return ALEA_OF.get(tuple(gargs))
     return None
 
 
-def alea_program_answers(path, answers):
+ALEA_ATOM = re.compile(r'q(\d+)(?:\((\d+)\))?')
+
+
+def alea_program_answers(path, answers, values=None):
     """The answers to the queries of the instance's program at `path` from
-    those of its Alea.jl program (alea_program), whose value is a tuple of
-    Booleans: the K-th component's `qK`, as Alea.jl names it and as the
-    circuit Alea.jl exports asks it, answers the K-th query. ValueError
+    those of its Alea.jl program (alea_program), named as Alea.jl names the
+    components of its value and as the circuit Alea.jl exports asks them,
+    in order: a Boolean's `qK` answers one query; a number's worlds of its
+    bits that are not constant, `qK(U)`, answer the queries that follow
+    with one predicate, PRED(0) ... PRED(N - 1) for the number's N values,
+    PRED(I) the mass of the worlds whose value (`values`, alea_bench.jl's
+    `alea_value qK(U) V`) is I modulo N, so that a signed value is its two's
+    complement, as the ports' integers number their values. ValueError
     where they do not line up (alea_answers)."""
-    comps = [{'true': answers[f'q{k}']} for k in range(1, len(answers) + 1) if f'q{k}' in answers]
-    return alea_answers(queries(path), comps)
+    values = values or {}
+    qs = [re.sub(r'\s+', '', q) for q in queries(path)]
+    bools, worlds = {}, {}
+    for atom, p in answers.items():
+        m = ALEA_ATOM.fullmatch(atom)
+        if m is None:
+            raise ValueError(f'{atom} names no component')
+        if m.group(2) is None:
+            bools[int(m.group(1))] = p
+        elif atom in values:
+            worlds.setdefault(int(m.group(1)), []).append((values[atom], p))
+        elif p == 0:   # a world `run` found no mass on, whose value it does not print
+            worlds.setdefault(int(m.group(1)), [])
+        else:
+            raise ValueError(f'no value of {atom}')
+    comps, i = [], 0
+    for k in range(1, len(set(bools) | set(worlds)) + 1):
+        if k in bools:
+            comps.append({'true': bools[k]})
+            i += 1
+            continue
+        if k not in worlds:
+            raise ValueError(f'no component q{k}')
+        pred, n = qs[i].split('(')[0] if i < len(qs) else None, 0
+        while i < len(qs) and '(' in qs[i] and qs[i].split('(')[0] == pred:
+            i, n = i + 1, n + 1
+        if n == 0:
+            raise ValueError(f'component q{k} is a number, and the queries that follow ask none')
+        dist = {str(v): 0.0 for v in range(n)}
+        for v, p in worlds[k]:
+            dist[str(v % n)] += p
+        comps.append(dist)
+    return alea_answers(qs, comps)
 
 
 def run_alea(args, name, path):
@@ -2393,9 +2546,9 @@ def run_alea(args, name, path):
     (`dice_source`), translated by dice2alea.py, or on the Alea.jl program
     of an instance written from one (`run_alea_program`): a network as one
     program whose value is the tuple of its queried variables, all answered
-    by one `pr`. On the families of ALEA_PROGRAMS, the Alea.jl program
-    there, its Boolean components' answers named as the instance's
-    queries, in order. The translation is not timed, but bounded by
+    by one `pr`. On the families of ALEA_PROGRAMS and ALEA_OF, the Alea.jl
+    program there, its components' answers named as the instance's queries,
+    in order (alea_program_answers). The translation is not timed, but bounded by
     translation_bound (a harness time-out past it, so that a lane cannot
     stall); the seconds are the Julia process's, and `inproc_seconds` what
     it reports for building the program and `pr`
@@ -2409,21 +2562,17 @@ def run_alea(args, name, path):
         if r['status'] != 'ok':
             return r
         try:
-            return dict(r, answers=alea_program_answers(path, r['answers']))
+            return dict(r, answers=alea_program_answers(path, r['answers'], r['values']))
         except ValueError as x:
             return {'status': 'error', 'seconds': r['seconds'], 'error': f'alea: {x}'}
     source = dice_source(args, name)
     if source is None:
         return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for family {family}'}
     jl = os.path.abspath(os.path.join(args.dir, f'{name}.alea.jl'))
-    try:
-        t = subprocess.run([sys.executable, os.path.join(HERE, 'dice2alea.py'), source], capture_output=True,
-                           text=True, timeout=translation_bound(args))
-    except subprocess.TimeoutExpired:
-        return harness_timeout_record('dice2alea.py', f'no translation within {translation_bound(args):g} s')
-    if t.returncode != 0:
-        return {'status': 'error', 'seconds': 0, 'error': 'dice2alea.py: ' + t.stderr.strip()[-2000:]}
-    write_new(jl, t.stdout)
+    out, err = translation(args, 'dice2alea.py', [source])
+    if err:
+        return err
+    write_new(jl, out)
     r = timed(args.alea.format(file=jl, dir=os.path.dirname(jl), base=os.path.basename(jl)).split(), args.timeout)
     if r['status'] != 'ok':
         return r
@@ -2483,7 +2632,7 @@ def run_alea_program(args, program):
     r = timed(alea_command(args, 'run', program, warm_below=args.timeout / 3), args.timeout)
     if r['status'] != 'ok':
         return r
-    answers, stats, printed = {}, {}, []
+    answers, values, stats, printed = {}, {}, {}, []
     keys = {'alea_seconds': 'inproc_seconds', 'alea_compile_seconds': 'jit_seconds',
             'alea_warm_seconds': 'warm_seconds'}
     sizes = {'alea_bdd_evidence': 'bdd_evidence', 'alea_bdd_query_max': 'bdd_query_max',
@@ -2493,6 +2642,8 @@ def run_alea_program(args, program):
         if len(f) == 3 and f[0] == 'alea_q':
             answers[f[1]] = float(f[2])
             continue
+        if len(f) == 3 and f[0] == 'alea_value':
+            values[f[1]] = int(f[2])
         if len(f) == 2 and f[0] in keys:
             stats[keys[f[0]]] = round(float(f[1]), 3)
         elif len(f) == 2 and f[0] in sizes:
@@ -2502,7 +2653,7 @@ def run_alea_program(args, program):
     # What Alea prints besides the answers (expectations, values of worlds,
     # times, sizes), the first 100 lines.
     stats['printed'] = printed
-    return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers, 'stats': stats}
+    return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers, 'values': values, 'stats': stats}
 
 
 ROULETTE_DATA = os.path.join(ROOT, 'data', 'roulette')
@@ -2673,15 +2824,10 @@ def roulette_translate(args, source, rkt, joint=False):
     """The Dice program `source` translated by dice2roulette.py (with
     `--joint` where `joint`) into rkt, untimed and bounded by
     translation_bound: an error record where it fails, else None."""
-    try:
-        t = subprocess.run([sys.executable, os.path.join(HERE, 'dice2roulette.py'), source]
-                           + (['--joint'] if joint else []), capture_output=True, text=True,
-                           timeout=translation_bound(args))
-    except subprocess.TimeoutExpired:
-        return harness_timeout_record('dice2roulette.py', f'no translation within {translation_bound(args):g} s')
-    if t.returncode != 0:
-        return {'status': 'error', 'seconds': 0, 'error': 'dice2roulette.py: ' + t.stderr.strip()[-2000:]}
-    write_new(rkt, t.stdout)
+    out, err = translation(args, 'dice2roulette.py', [source] + (['--joint'] if joint else []))
+    if err:
+        return err
+    write_new(rkt, out)
     return None
 
 
@@ -2787,10 +2933,11 @@ def roulette_tddlog_accepts(args, name):
     circulette (circulette.rkt on the netlist), the Bayesian networks
     Roulette reads in its BN language (`roulette_bif`), and the Dice
     programs Roulette runs through dice2roulette.py: the Dice paper's
-    (data/dice, --suite standard and indicators), noDice's (data/nodice,
-    --suite ppl) and Geni's (gen_geni.py's, --suite geni). Not a circuit's
-    Dice programs nor a Markov network's, whose Roulette+tddlog would be
-    Alea.jl's or the network's own reader with more steps between."""
+    (data/dice, --suite standard and indicators), noDice's (data/nodice)
+    and the arith programs' Dice ports (data/alea/arith; --suite ppl), and
+    Geni's (gen_geni.py's, --suite geni). Not a circuit's Dice programs nor
+    a Markov network's, whose Roulette+tddlog would be Alea.jl's or the
+    network's own reader with more steps between."""
     if args.suite in ('roulette', 'circulette'):
         return True
     gargs = instances(args)[name][1]
@@ -3230,7 +3377,8 @@ def harness_timeout_record(script, what):
 
 def translation(args, script, argv):
     """(the output of `script ARGV`, None) bounded by translation_bound, or
-    (None, the record of its failure)."""
+    (None, the record of its failure, whose error says how it ended:
+    `ended`). Every translator the harness runs runs through it."""
     bound = translation_bound(args)
     try:
         t = subprocess.run([sys.executable, str(source_tree.script(script)), *argv], capture_output=True, text=True,
@@ -3239,8 +3387,25 @@ def translation(args, script, argv):
         return None, harness_timeout_record(script, f'no translation within {bound:g} s')
     if t.returncode != 0:
         status = 'unsupported' if t.returncode == REFUSED else 'error'
-        return None, {'status': status, 'seconds': 0, 'error': f'{script}: ' + t.stderr.strip()[-2000:]}
+        return None, {'status': status, 'seconds': 0, 'error': f'{script}: ' + ended(t.returncode, t.stderr)}
     return t.stdout, None
+
+
+def ended(returncode, stderr):
+    """How a process that failed ended: the tail of its stderr, which for a
+    Python exception is its traceback, ending in the exception's type and
+    message; led by the signal that killed it, if one did, which leaves
+    nothing on stderr (a stack overflow's SIGSEGV; the SIGTERM or SIGKILL
+    of a box out of memory, as dice2roulette.py on taint at 80 GB before
+    `leaves`); its exit status where it printed nothing."""
+    tail = stderr.strip()[-2000:]
+    if returncode < 0:
+        try:
+            how = f'killed by {signal.Signals(-returncode).name}'
+        except ValueError:
+            how = f'killed by signal {-returncode}'
+        return f'{how}: {tail}' if tail else how
+    return tail or f'exit {returncode} with nothing on stderr'
 
 
 def translated(args, script, argv, out, what):
@@ -3255,12 +3420,12 @@ def translated(args, script, argv, out, what):
 
 
 # --- Dice programs through a translation --------------------------------------
-# Genfer, SPPL, Geni, Psi and Pluck run, besides their own programs, on every
-# instance that has Dice programs: the program behind the instance
-# (`dice_source`) or the Dice programs of an Alea.jl program's circuit
-# (NAME.dicemap), each translated into the system's language (dice2genfer.py,
-# dice2sppl.py, dice2geni.py, dice2psi.py, dice2pluck.py); noDice reads them
-# as Dice does.
+# Genfer, SPPL, Geni, Psi and Pluck run, besides their own programs, and
+# WebPPL run on every instance that has Dice programs: the program behind the
+# instance (`dice_source`) or the Dice programs of an Alea.jl program's
+# circuit (NAME.dicemap), each translated into the system's language
+# (dice2genfer.py, dice2sppl.py, dice2geni.py, dice2psi.py, dice2pluck.py,
+# dice2webppl.py); noDice reads them as Dice does.
 # A program the language cannot express is refused by the translator
 # (REFUSED) and recorded as `unsupported`.
 
@@ -3280,15 +3445,17 @@ def run_translated(args, name, path, system, masses):
     `bool` program answers its atom with the probability of true and a
     `joint` one, its value N Booleans, is asked as the int whose bits they
     are (the translators' --joint), PRED(U) the mass of U. The seconds add
-    up; `inproc_seconds` too, where the system gives them."""
-    total, inproc, answers = 0.0, None, {}
+    up; `inproc_seconds` and `header_seconds` (WebPPL's) too, where the
+    system gives them."""
+    total, inproc, answers = 0.0, {}, {}
 
     def ask(label, source, joint):
-        nonlocal total, inproc
+        nonlocal total
         comps, r = masses(args, label, source, joint, max(0.0, args.timeout - total))
         total += r['seconds']
-        if 'inproc_seconds' in r.get('stats', {}):
-            inproc = (inproc or 0.0) + r['stats']['inproc_seconds']
+        for key in ('inproc_seconds', 'header_seconds'):
+            if key in r.get('stats', {}):
+                inproc[key] = inproc.get(key, 0.0) + r['stats'][key]
         return comps, r
     if instances(args)[name][1][0] == 'alea_bench.jl':
         for line in open(os.path.join(args.dir, name + '.dicemap')):
@@ -3314,8 +3481,8 @@ def run_translated(args, name, path, system, masses):
         except ValueError as x:
             return {'status': 'error', 'seconds': total, 'error': f'{system}: {x}'}
     rec = {'status': 'ok', 'seconds': total, 'answers': answers}
-    if inproc is not None:
-        rec['stats'] = {'inproc_seconds': round(inproc, 3)}
+    if inproc:
+        rec['stats'] = {key: round(s, 3) for key, s in inproc.items()}
     return rec
 
 
@@ -3439,20 +3606,23 @@ program_system('geni', "Geni (gennifer; Li and Zhang, ICFP 2025) on the instance
                accepts_geni, run_geni)
 
 
-PSI_TERM = re.compile(r'(?:([^+δ]*)·)?δ\((-?\d+)\)\[')
+# a term `c·δ(v)[`: its coefficient c runs to the `+` before it, but for the
+# `+` of an exponent (`1.5e+00`, as Psi's --dp prints its numbers)
+PSI_TERM = re.compile(r'(?:((?:[^+δ]|(?<=\d[eE])\+)*)·)?δ\((-?\d+)\)\[')
 
 
 def parse_psi(out):
     """The distribution Psi prints for a program's value, `p(x) = c·δ(v)[x]+...`,
     as {value: probability}, or None where there is no such line. A coefficient
-    is a rational such as `3/10` or a product of them."""
+    is a rational such as `3/10`, a number such as `1.25e-03` (--dp) or a
+    product of them."""
     for line in out.splitlines():
         if not line.startswith('p('):
             continue
         dist = {}
         for coef, value in PSI_TERM.findall(line.split(' = ', 1)[1]):
             expr = coef.replace('·', '*').strip() or '1'
-            if not re.fullmatch(r'[0-9/*().\s-]+', expr):
+            if not re.fullmatch(r'[0-9/*().\s-]+', re.sub(r'(?<=\d)[eE][+-]?(?=\d)', '', expr)):
                 raise ValueError(f'psi: coefficient {coef!r}')
             dist[int(value)] = dist.get(int(value), 0.0) + eval(expr, {'__builtins__': {}})
         return dist
@@ -3474,8 +3644,30 @@ def psi_masses(out, n):
 PSI_MASSES = by_component('psi', 'dice2psi.py', 'psi', lambda n: [], psi_masses)
 
 
+def psi_linreg(name):
+    """Whether instance `name` is a circuit of Psi's own linear regression
+    (`bb_linreg_w*`), on which Psi runs its own program (run_psi_linreg)."""
+    return name.startswith('bb_linreg_w')
+
+
+# The Psi programs of the artifact of Cao et al. (UAI 2023) whose model is
+# Alea.jl's (data/alea/arith/psi/ARITH.psi, as they are but a header): Psi
+# reads its own program of those arith instances, and dice2psi.py's
+# translation of the port of the others (luhn, radar and tugofwar, whose Psi
+# programs are other models: docs/baselines.md).
+PSI_ARITH = os.path.join(ARITH_DIR, 'psi')
+# The last `return X;` of a program, main's
+PSI_RETURN = re.compile(r'^([ \t]*)return[ \t]+(\w+)[ \t]*;?[ \t]*$', re.M)
+
+
+def psi_program(name):
+    """The artifact's Psi program of arith instance `name`, or None."""
+    path = os.path.join(PSI_ARITH, name.removeprefix('arith_') + '.psi')
+    return path if name.startswith('arith_') and os.path.exists(path) else None
+
+
 def own_psi(args, name):
-    return name.startswith('bb_linreg_w') and name in instances(args)
+    return name in instances(args) and (psi_linreg(name) or psi_program(name) is not None)
 
 
 def accepts_psi(args, name):
@@ -3484,13 +3676,80 @@ def accepts_psi(args, name):
 
 def run_psi(args, name, path):
     """Psi (Gehr et al., CAV 2016) on its own linear regression (`bb_linreg`,
-    run_psi_linreg) and on the other instances' Dice programs, translated by
-    dice2psi.py (`run_translated`), one run for each component of a
-    program's value (PSI_MASSES): Psi prints a component's distribution in
-    exact rationals."""
-    if own_psi(args, name):
+    run_psi_linreg) and arith programs (run_psi_own), and on the other
+    instances' Dice programs, translated by dice2psi.py (`run_translated`),
+    one run for each component of a program's value (PSI_MASSES): Psi
+    prints a component's distribution in exact rationals, or in numbers
+    under its --dp backend (parse_psi reads both)."""
+    if psi_linreg(name) and own_psi(args, name):
         return run_psi_linreg(args, name, path)
+    if own_psi(args, name):
+        return run_psi_own(args, name, path)
     return run_translated(args, name, path, 'psi', PSI_MASSES)
+
+
+def query_components(path):
+    """The components of the value behind the queries of the program at
+    `path`, in order, as the ports' queries ask them (alea_answers): (None,
+    QUERY) for a Boolean, a query of its own without arguments, and (PRED,
+    N) for a number, the N queries PRED(0) ... PRED(N - 1) that follow."""
+    comps = []
+    for q in (re.sub(r'\s+', '', q) for q in queries(path)):
+        pred = q.split('(')[0] if '(' in q else None
+        if pred is not None and comps and comps[-1][0] == pred:
+            comps[-1][1] += 1
+        else:
+            comps.append([pred, 1 if pred is not None else q])   # a Boolean: its query
+    return [tuple(c) for c in comps]
+
+
+def run_psi_own(args, name, path):
+    """Psi on the artifact's program of arith instance `name` (psi_program),
+    one run for each component of its value, as Psi is asked on every
+    program (`run_translated`): a value that is an array (linext's and
+    ranking's `return ps;`) is asked one entry a run (`return ps[K];`). A
+    Boolean component answers its query with the mass of 1 (Psi's Booleans
+    are 0 and 1); a number answers its N queries, the I-th the mass of I,
+    every value it has lying in 0 ... N - 1 (a value outside them is an
+    error: the ports' numbers are unsigned where Psi reads its own
+    program). The seconds add up."""
+    comps = query_components(path)
+    with open(psi_program(name)) as f:
+        text = f.read()
+    ret = list(PSI_RETURN.finditer(text))
+    if len(comps) > 1 and not ret:
+        return {'status': 'error', 'seconds': 0, 'error': f'psi: {len(comps)} components and no `return X;` to index'}
+    total, answers, qs = 0.0, {}, [re.sub(r'\s+', '', q) for q in queries(path)]
+    for k, (pred, n) in enumerate(comps):
+        file = os.path.abspath(os.path.join(args.dir, f'{name}.psi{k}.psi'))
+        if len(comps) > 1:
+            m = ret[-1]
+            source = text[:m.start()] + f'{m.group(1)}return {m.group(2)}[{k}];' + text[m.end():]
+        else:
+            source = text
+        write_new(file, source)
+        r = timed(program_command(args, 'psi', file), max(0.0, args.timeout - total))
+        total += r['seconds']
+        if r['status'] != 'ok':
+            return {**r, 'seconds': total}
+        try:
+            dist = parse_psi(r['stdout'])
+        except ValueError as x:
+            return {'status': 'error', 'seconds': total, 'error': str(x)}
+        if not dist:
+            return {'status': 'error', 'seconds': total, 'error': 'psi: no distribution: ' + r['stdout'].strip()[-300:]}
+        if pred is None:
+            if not set(dist) <= {0, 1}:
+                return {'status': 'error', 'seconds': total, 'error': f'psi: values {sorted(dist)} of a Boolean'}
+            answers[n] = dist.get(1, 0.0)
+            continue
+        if not all(0 <= v < n for v in dist):
+            return {'status': 'error', 'seconds': total,
+                    'error': f'psi: values {sorted(dist)[:3]}... of a number with {n} values'}
+        for q in qs:
+            if q.split('(')[0] == pred:
+                answers[q] = dist.get(int(q.split('(')[1].rstrip(')')), 0.0)
+    return {'status': 'ok', 'seconds': total, 'answers': answers}
 
 
 def run_psi_linreg(args, name, path):
@@ -3606,7 +3865,7 @@ def run_pluck(args, name, path):
     family, gargs = instances(args)[name]
     if family != 'pluck':
         return run_translated(args, name, path, 'pluck', pluck_masses)
-    model = os.path.basename(gargs[1])[:-3]
+    model = os.path.basename(gargs[1]).removesuffix('.pl')   # gen_pluck.py data/alea/pluck/NAME.pl
     r = timed(program_command(args, 'pluck', os.path.join(HERE, 'pluck_bench.jl')) + [model], args.timeout)
     if r['status'] != 'ok':
         return r
@@ -3788,6 +4047,48 @@ program_system('sppl', "SPPL (Saad, Rinard and Mansinghka, PLDI 2021) on its own
                "and run by sppl_dice.py; e.g. 'SPPL/venv/bin/python -I {file}'", accepts_sppl, run_sppl)
 
 
+def webppl_masses(args, label, source, joint, budget):
+    """A translated Dice program's masses (`run_translated`): dice2webppl.py's
+    program, whose model WebPPL enumerates exactly (`Infer` with `method:
+    'enumerate'`), run by webppl_dice.js through WebPPL's API, which reads
+    each component's marginal from the one distribution of the value
+    (`webppl_c K VALUE P`). The seconds are the process's; its
+    `webppl_seconds`, WebPPL's compile and run of the program after a
+    warm-up, without node's start and the modules' load, `inproc_seconds`,
+    and `webppl_header_seconds`, the compile of WebPPL's header (its
+    library, compiled with every program) within them, `header_seconds`,
+    which own_seconds leaves out as the load of WebPPL's library."""
+    file = os.path.abspath(os.path.join(args.dir, f'{label}.wppl'))
+    err = translated(args, 'dice2webppl.py', [source] + (['--joint'] if joint else []), file, 'webppl')
+    if err:
+        return None, err
+    r = timed(program_command(args, 'webppl', os.path.join(HERE, 'webppl_dice.js')) + [file], budget)
+    if r['status'] != 'ok':
+        return None, r
+    comps, stats = {}, {}
+    keys = {'webppl_seconds': 'inproc_seconds', 'webppl_header_seconds': 'header_seconds'}
+    for line in r['stdout'].splitlines():
+        f = line.split()
+        if len(f) == 4 and f[0] == 'webppl_c':
+            comps.setdefault(int(f[1]), {})[f[2]] = float(f[3])
+        elif len(f) == 2 and f[0] in keys:
+            stats[keys[f[0]]] = float(f[1])
+    return [comps[k] for k in sorted(comps)], {'seconds': r['seconds'], 'stats': stats}
+
+
+def run_webppl(args, name, path):
+    """WebPPL (Goodman and Stuhlmüller, dippl.org) on the instances' Dice
+    programs, translated by dice2webppl.py and enumerated exactly
+    (`webppl_masses`)."""
+    return run_translated(args, name, path, 'webppl', webppl_masses)
+
+
+program_system('webppl', "WebPPL (Goodman and Stuhlmüller, dippl.org) by exact enumeration on the Dice programs, the "
+               "circuits' included, translated by dice2webppl.py and run by webppl_dice.js; e.g. 'env "
+               "NODE_PATH=WEBPPL/node_modules prlimit --stack=unlimited NODE --stack-size=65500 {file}'",
+               accepts_translated, run_webppl)
+
+
 def accepts_alea_tddlog(args, name):
     return alea_program(args, instances(args)[name][1]) is not None
 
@@ -3797,7 +4098,8 @@ ALEA_EXPORT_TIMES = ('alea_seconds', 'alea_compile_seconds', 'alea_warm_seconds'
 
 def run_alea_tddlog(args, name, path):
     """Alea.jl+tddlog on an instance of ALEA_PROGRAMS'
-    families, beside plain tddlog on the instance's ProbLog program:
+    families or of the ppl suite's arith and pluck programs (ALEA_OF),
+    beside plain tddlog on the instance's program:
     Alea.jl runs the instance's Alea.jl program (alea_program) up to the
     circuit it builds and writes it as a ProbLog program, by the export
     the bitblast suite's gen makes (alea_command's `export` under
@@ -3809,7 +4111,8 @@ def run_alea_tddlog(args, name, path):
     processes' wall times. The record holds the export: charge.py charges
     an export to the readers of the bitblast suite's circuits alone
     (TRANSLATE), so it adds nothing here. The circuit's answers are named
-    as Alea.jl's are (alea_program_answers); its files go once tddlog has
+    as Alea.jl's are (alea_program_answers, a number's worlds by the values
+    the export prints after its timed part); its files go once tddlog has
     read it, as Roulette+tddlog's do."""
     family, gargs = instances(args)[name]
     own = alea_program(args, gargs)
@@ -3822,11 +4125,13 @@ def run_alea_tddlog(args, name, path):
                                template=getattr(args, 'alea-tddlog')), args.timeout)
         if x['status'] != 'ok':
             return x
-        times = {}
+        times, values = {}, {}
         for line in x['stdout'].splitlines():
             f = line.split()
             if len(f) == 2 and f[0] in ALEA_EXPORT_TIMES:
                 times[f[0]] = float(f[1])
+            elif len(f) == 3 and f[0] == 'alea_value':   # the value of a world of a number's bits
+                values[f[1]] = int(f[2])
         if 'alea_seconds' not in times or not os.path.exists(pl):
             return {'status': 'error', 'seconds': x['seconds'], 'error': 'alea-tddlog: alea_bench.jl export wrote no circuit'}
         jit = times.get('alea_compile_seconds', 0.0)
@@ -3848,16 +4153,17 @@ def run_alea_tddlog(args, name, path):
     try:
         if answers == 'inconsistent':
             raise ValueError("the circuit's evidence is inconsistent")
-        answers = alea_program_answers(path, answers)
+        answers = alea_program_answers(path, answers, values)
     except ValueError as e:
         return {'status': 'error', 'seconds': seconds, 'error': f'alea-tddlog: {e}', 'stats': stats}
     return {'status': 'ok', 'seconds': seconds, 'answers': answers, 'stats': stats}
 
 
 program_system('alea-tddlog', "Alea.jl+tddlog on the roulette suite's diamond and ladder, Alea.jl's own diamond and "
-               "the ladder's port (ALEA_PROGRAMS), which Alea.jl runs up to the circuit it exports (alea_bench.jl "
-               "export) for tddlog to answer; the command template of --alea's Julia, e.g. "
-               "'env JULIA_DEPOT_PATH=... julia --project=ALEA {file}'", accepts_alea_tddlog, run_alea_tddlog)
+               "the ladder's port (ALEA_PROGRAMS), and on the ppl suite's arith and pluck programs (ALEA_OF), which "
+               "Alea.jl runs up to the circuit it exports (alea_bench.jl export) for tddlog to answer; the command "
+               "template of --alea's Julia, e.g. 'env JULIA_DEPOT_PATH=... julia --project=ALEA {file}'",
+               accepts_alea_tddlog, run_alea_tddlog)
 
 
 program_system('nodice', "noDice (Gürtler and Kaminski, OOPSLA 2026) on the Dice programs, the circuits' included, as "
@@ -3910,7 +4216,7 @@ def run_pita(args, name, path, own=None):
 # ordinary facts, and exits successfully with unconditional probabilities.
 # A program with evidence is given to it with the evidence asked as queries
 # (`aspmc_conditioned`), and P(q | e) is P(q and e) / P(e), as Scallop's
-# answers are (`parse_scallop`).
+# answers are (`problog2scallop.answers`).
 ASPMC_E = 'bench_e'
 ASPMC_QE = 'bench_qe_'
 
@@ -3931,10 +4237,10 @@ def aspmc_conditioned(text):
             kept.append(clause + '.')
         elif m.group(1) == 'query':
             if not re.match(r'[a-z]\w*\s*(\(|$)', m.group(2).strip()):
-                raise ValueError(f'a query that is not an atom, which aspmc cannot be asked conditioned: {clause}')
+                raise ValueError(f'a query that is not an atom, which the evidence as queries cannot ask: {clause}')
             queries.append((' '.join(m.group(2).split()), body and ' '.join(body.split())))
         elif body is not None:
-            raise ValueError(f'an observation with a body, which aspmc cannot be asked: {clause}')
+            raise ValueError(f'an observation with a body, which the evidence as queries cannot ask: {clause}')
         else:
             parts = split_top(' '.join(m.group(2).split()), ',')
             truth = parts[-1].strip() if len(parts) > 1 else 'true'
@@ -3972,13 +4278,18 @@ def parse_aspmc(out, conditioned=False):
 
 
 # aspmc's grammar reads a probability as 1, 1.0... or 0.digits, and not in
-# exponent notation, in which a small one is written (gen_bn.py's 1e-05).
+# exponent notation, in which a small one is written (gen_bn.py's 1e-05),
+# nor as a fraction (the ProbLog tutorial's `1/3::`).
 ASPMC_EXPONENT = re.compile(r'(?<![\w.])(\d+(?:\.\d*)?[eE][-+]?\d+)(?=\s*::)')
+ASPMC_FRACTION = re.compile(r'(?<![\w./])(\d+(?:\.\d+)?)\s*/\s*(\d+(?:\.\d+)?)(?=\s*::)')
 
 
 def aspmc_numbers(text):
     """The ProbLog program `text` with each probability in exponent notation
-    written out in positional notation, exactly: the same double."""
+    written out in positional notation, exactly: the same double; and each
+    fraction A/B as the double ProbLog divides it to, A / B, written so."""
+    text = ASPMC_FRACTION.sub(lambda m: format(decimal.Decimal(repr(float(m.group(1)) / float(m.group(2)))), 'f'),
+                              text)
     return ASPMC_EXPONENT.sub(lambda m: format(decimal.Decimal(m.group(1)), 'f'), text)
 
 
@@ -3990,6 +4301,20 @@ ASPMC_IS = re.compile(r'(?<![\w])([A-Z_]\w*)\s+is\s+')
 def aspmc_is(text):
     """The ProbLog program `text` with each `V is E` written `V = E`."""
     return ASPMC_IS.sub(r'\1 = ', text)
+
+
+# aspmc's grammar reads a `%` comment only with a character after the `%`: a
+# line that is a `%` alone, as the ProbLog tutorial and our ports write between
+# a comment's paragraphs, stops its lexer ("No terminal matches '%'").
+ASPMC_COMMENT = re.compile(r"""'(?:[^'\\]|\\.|'')*'|"(?:[^"\\]|\\.)*"|/\*.*?\*/|0'\\?.|%[^\n]*""", re.S)
+
+
+def aspmc_comments(text):
+    """The ProbLog program `text` without its empty `%` comments, which say
+    nothing and which aspmc's grammar cannot read; quoted atoms, strings and
+    the other comments are left as they are."""
+    return ASPMC_COMMENT.sub(lambda m: '' if m.group(0).startswith('%') and not m.group(0)[1:].strip()
+                             else m.group(0), text)
 
 
 # clingo projects an anonymous variable out of a body of two or more
@@ -4031,20 +4356,25 @@ def aspmc_variables(text):
     return ASPMC_VARIABLE.sub(name, text)
 
 
-# aspmc's ProbLog front end refuses much of what ProbLog reads: fractions as
-# probabilities (`1/3::`), lists, facts and queries with variables (its
-# grounder clingo's "unsafe variables"); it refused 109 of the ProbLog
-# tutorial's 122 programs. Where it stops with a KeyError reading clingo's
+# aspmc's ProbLog front end refuses much of what ProbLog reads: lists,
+# facts and queries with variables (its grounder clingo's "unsafe
+# variables"); it refused 109 of the ProbLog tutorial's 122 programs. A
+# program it refuses so is one it does not support, `unsupported` with its
+# reason (aspmc reads the program first order, and is given no ground
+# program in its place). Where it stops with a KeyError reading clingo's
 # grounding (problogprogram.py's _process_grounding) on the program
 # aspmc_variables writes, it fails on a program its language expresses,
-# ProbLog reading the same file: an error, not a refusal, and no ground
-# program is asked for. A program it
-# refuses so is given to it again as the ground program tddlog prints
-# (`tddlog --ground`, as Scallop reads it), every predicate and constant
-# renamed to a plain name (`aspmc_ground`); the grounding is part of that
-# run's time, and the refused run's is not.
+# ProbLog reading the same file: an error, not a refusal. A circuit
+# Alea.jl exports (an evaluation of its own, read as the circuit or a
+# translation of it) has no first-order source: one aspmc
+# refuses is given to it again as the ground program tddlog prints
+# (`tddlog --ground`), every predicate and constant renamed to a plain
+# name (`aspmc_ground`), the record marked `aspmc_route: ground`; the
+# grounding is part of that run's time, and the refused run's is not.
+# Records so marked on another instance (before 2026-11-04) read a
+# program's ground program.
 ASPMC_REFUSED = re.compile(r'lark\.exceptions\.|RuntimeError: (?:parsing failed|grounding stopped because of errors)'
-                           r'|error: (?:unsafe variables|syntax error)|which aspmc cannot be asked')
+                           r'|error: (?:unsafe variables|syntax error)')
 
 
 def aspmc_ground(text):
@@ -4096,13 +4426,17 @@ def aspmc_ground(text):
     return '\n'.join(lines) + '\n', names
 
 
-def run_aspmc(args, name, path):
-    """aspmc on the ProbLog program (`aspmc_run`), and where it refuses the
-    program (ASPMC_REFUSED) on its ground program (`aspmc_ground`), the
-    record marked `aspmc_route: ground`."""
+def run_aspmc(args, name, path, circuit=False):
+    """aspmc on the ProbLog program (`aspmc_run`). A program it refuses
+    (ASPMC_REFUSED), or whose evidence the harness cannot ask as queries,
+    is `unsupported`; a circuit is then given to it as its ground program
+    (`aspmc_ground`), the record marked `aspmc_route: ground`."""
     r = aspmc_run(args, name, path)
-    if r['status'] != 'error' or not ASPMC_REFUSED.search(str(r.get('error', ''))):
+    if r['status'] != 'unsupported' and not (r['status'] == 'error' and
+                                             ASPMC_REFUSED.search(str(r.get('error', '')))):
         return r
+    if not circuit:
+        return {**r, 'status': 'unsupported'}
     g = timed([args.tddlog, '--ground', path], args.timeout)
     if g['status'] != 'ok':
         g.pop('stdout', None)
@@ -4115,7 +4449,9 @@ def run_aspmc(args, name, path):
     os.makedirs(os.path.dirname(ground), exist_ok=True)
     write_new(ground, program)
     rargs = argparse.Namespace(**{**vars(args), 'timeout': max(1.0, args.timeout - g['seconds'])})
-    r = aspmc_run(rargs, name, ground)
+    # aspmc's form of the ground program, where it needs one, takes the ground program's place, apart
+    # from the form of the program it refused (the capture records each)
+    r = aspmc_run(rargs, name, ground, form=ground)
     r['seconds'] += g['seconds']
     r.setdefault('stats', {})['aspmc_route'] = 'ground'
     if isinstance(r.get('answers'), dict):
@@ -4123,11 +4459,12 @@ def run_aspmc(args, name, path):
     return r
 
 
-def aspmc_run(args, name, path):
-
+def aspmc_run(args, name, path, form=None):
     """aspmc on the ProbLog program, with its evidence asked as queries
-    (`aspmc_conditioned`) where it has any, and its probabilities and `is`
-    in the notation it reads (`aspmc_numbers`, `aspmc_is`). It writes
+    (`aspmc_conditioned`) where it has any, and its probabilities, `is` and
+    comments in the notation it reads (`aspmc_numbers`, `aspmc_is`,
+    `aspmc_comments`): that form of the program at `form` (default
+    aspmc-NAME/NAME.pl). It writes
     `out.cnf` and the decomposer's scratch into the working directory, so
     each instance gets one of its own. A ground query it does not print, an
     atom its grounder removed, answers 1 where the program states it as a
@@ -4146,10 +4483,11 @@ def aspmc_run(args, name, path):
     try:
         conditioned = aspmc_conditioned(text)
     except ValueError as e:
-        return {'status': 'error', 'seconds': 0.0, 'error': str(e)}
-    program = aspmc_variables(aspmc_is(aspmc_numbers(text if conditioned is None else conditioned)))
+        # the harness's rewrite of the evidence as queries cannot write it: its limit, not aspmc's
+        return {'status': 'unsupported', 'seconds': 0.0, 'error': f'translator: {e}'}
+    program = aspmc_variables(aspmc_is(aspmc_numbers(aspmc_comments(text) if conditioned is None else conditioned)))
     if program != text:
-        path = os.path.join(d, name + '.pl')
+        path = form or os.path.join(d, name + '.pl')
         write_new(path, program)
     python = os.path.abspath(args.aspmc) if os.sep in args.aspmc else args.aspmc
     r = timed([python, '-u', '-m', 'aspmc.main', '-m', 'problog', '-c', '-v', 'result',
@@ -4161,29 +4499,6 @@ def aspmc_run(args, name, path):
                 if not re.search(r'[(,][A-Z_]', q):
                     r['answers'].setdefault(q, 1.0 if q in facts else 0.0)
     return r
-
-
-def parse_scallop(out, scl):
-    """scli prints `<relation>: {<p>::()}` for a nullary relation, `{}` when
-    it has no proof. The query names map back through the comment lines
-    `ground2scallop.py` writes, and with evidence the answer is
-    `q<i>e / e`, 'inconsistent' where e has no proof."""
-    names = dict(re.findall(r'^// query (q\d+) (.*)$', scl, re.M))
-    probs = {}
-    for line in out.splitlines():
-        m = re.match(r'^(\w+): \{(?:([0-9.eE+-]+)::\(\))?\}\s*$', line)
-        if m:
-            probs[m.group(1)] = float(m.group(2)) if m.group(2) else 0.0
-    if probs.get('e', 1) == 0:
-        return 'inconsistent'
-    res = {}
-    for q, atom in names.items():
-        key = re.sub(r'\s+', '', atom)
-        if 'e' in probs:
-            res[key] = probs[q + 'e'] / probs['e'] if probs['e'] else float('nan')
-        elif q in probs:
-            res[key] = probs[q]
-    return res
 
 
 # Scallop's top-k proofs (`-p topkproofs -k K`) keep the K most probable
@@ -4227,15 +4542,54 @@ def held(hold_list, tag, system, instance):
                  if t == tag and s == system and pattern.fullmatch(instance)), None)
 
 
-def run_scallop(args, name, path, variant):
-    """Scallop on the ground program tddlog prints (`ground2scallop.py`),
-    under the top-k-proofs provenance at k = SCALLOP_K, which is exact.
-    The seconds are the grounding's and Scallop's together."""
+# A Scallop record's route: Scallop reads a program first order, as
+# problog2scallop.py writes it from the program the ProbLog family reads
+# (`first-order`). A circuit Alea.jl exports has no first-order source (an
+# evaluation of its own, read as the circuit or a translation of it):
+# Scallop reads the ground program tddlog prints of it, a relation per gate
+# (ground2scallop.py; `ground`), and its seconds
+# hold the grounding's. Scallop's records without the field (before
+# 2026-11-04) read the ground program on every instance.
+SCALLOP_ROUTE = 'first-order'
+SCALLOP_CIRCUIT_ROUTE = 'ground'
+
+
+def run_scallop(args, name, path, variant, circuit=False):
+    """Scallop on the program, translated first order into Scallop
+    (`problog2scallop.py`, the harness's translator, whose time is not
+    charged), or on a circuit's ground program (`run_scallop_ground`),
+    under the top-k-proofs provenance at k = SCALLOP_K, which is exact. A
+    program the translation refuses is `unsupported`, with its reason:
+    Scallop is given no ground program in its place."""
     if variant != SCALLOP_VARIANT:
         raise SystemExit(f'unknown Scallop variant {variant}')
+    if circuit:
+        return run_scallop_ground(args, name, path)
+    stats = {'scallop_route': SCALLOP_ROUTE}
+    scl_path = os.path.join(args.dir, name + '.scl')
+    err = translated(args, 'problog2scallop.py', [path], scl_path, 'scallop')
+    if err:
+        return err | {'stats': stats}
+    r = timed([args.scallop, '-p', 'topkproofs', '-k', str(SCALLOP_K), scl_path], args.timeout)
+    if r['status'] == 'ok':
+        with open(scl_path) as f:
+            head = ''.join(itertools.takewhile(lambda line: line.startswith('//'), f))
+        try:
+            r['answers'] = problog2scallop.answers(r['stdout'], head)
+        except ValueError as x:
+            r = {'status': 'error', 'seconds': r['seconds'], 'error': str(x)}
+    return r | {'stats': stats}
+
+
+def run_scallop_ground(args, name, path):
+    """Scallop on a circuit's ground program, as tddlog prints it, in
+    Scallop's relations (`ground2scallop.py`). The seconds are the
+    grounding's and Scallop's together."""
+    stats = {'scallop_route': SCALLOP_CIRCUIT_ROUTE}
     g = timed([args.tddlog, '--ground', path], args.timeout)
     if g['status'] != 'ok':
-        return g
+        g.pop('stdout', None)
+        return g | {'stats': stats}
     scl = ground2scallop.translate(g['stdout'])
     scl_path = os.path.join(args.dir, name + '.scl')
     write_new(scl_path, scl)
@@ -4243,8 +4597,8 @@ def run_scallop(args, name, path, variant):
               max(1.0, args.timeout - g['seconds']))
     r['seconds'] += g['seconds']
     if r['status'] == 'ok':
-        r['answers'] = parse_scallop(r['stdout'], scl)
-    return r
+        r['answers'] = ground2scallop.answers(r['stdout'], scl)
+    return r | {'stats': stats}
 
 
 # AceCompile's options as its own usage prints them, with whether each takes
@@ -4686,14 +5040,15 @@ def ground_dice(args, name):
     through its ground program: it has no Dice program of its own
     (`dice_source`) and is not a circuit, and the run does not ask log10 Z
     (--pr), which a ground program does not state."""
-    return not getattr(args, 'pr', False) and grounds_dice(instances(args)[name][1][0])
+    return not getattr(args, 'pr', False) and grounds_dice(instances(args)[name][1])
 
 
-def grounds_dice(gen):
-    """`ground_dice` on an instance that generator `gen` writes, outside --pr.
-    Not on Circulette's, which Roulette reads as its netlist and the Dice
-    family is not given (docs/baselines.md, "Circulette")."""
-    return gen not in ('dice2problog.py', 'gen_bn.py', 'alea_bench.jl', 'gen_circulette.py', *DICE_WRITERS)
+def grounds_dice(gargs):
+    """`ground_dice` on an instance whose generator arguments are `gargs`,
+    outside --pr: not where a Dice program of its own is beside it
+    (writes_dice), nor on Circulette's, which Roulette reads as its netlist
+    and the Dice family is not given (docs/baselines.md, "Circulette")."""
+    return not writes_dice(gargs) and gargs[0] not in ('dice2problog.py', 'gen_bn.py', 'alea_bench.jl', 'gen_circulette.py')
 
 
 def ground_format(args, name, system, variant):
@@ -4703,18 +5058,21 @@ def ground_format(args, name, system, variant):
     or 'dice' (the other systems that read Dice programs, one program, and
     Storm and PRISM, its Markov chain) where `ground_dice`; None otherwise,
     and under --pr, where the systems are asked log10 Z, which a ground
-    program does not state."""
-    return ground_form(instances(args)[name][1][0], system, variant, getattr(args, 'pr', False))
+    program does not state. Not for a system that reads a program of its own
+    (OWN_PROGRAMS)."""
+    return ground_form(instances(args)[name][1], system, variant, getattr(args, 'pr', False))
 
 
-def ground_form(gen, system, variant, pr=False):
-    """`ground_format` on an instance that generator `gen` writes, in a run
-    that asks log10 Z if `pr`."""
-    if pr or variant.endswith('-pr'):
+def ground_form(gargs, system, variant, pr=False):
+    """`ground_format` on an instance whose generator arguments are `gargs`
+    (the capture's, for the processing), in a run that asks log10 Z if
+    `pr`."""
+    gen = gargs[0]
+    if pr or variant.endswith('-pr') or system in OWN_PROGRAMS.get(gen, ()):
         return None
     if system in NETWORK_SYSTEMS and gen != 'gen_bn.py':
         return 'hugin' if system == 'ace' else 'uai'
-    if (system in DICE_SYSTEMS or system in MODEL_CHECKERS) and grounds_dice(gen):
+    if (system in DICE_SYSTEMS or system in MODEL_CHECKERS) and grounds_dice(gargs):
         return 'dicemap' if system in ('dice', 'nodice') else 'dice'
     return None
 
@@ -5447,10 +5805,12 @@ def run(args):
                              f'suite{"s" if EXTRA_SUITES else ""}, and the suite is ' + args.suite)
         if not (args.strategies or args.exact or args.merlin or args.ganak or getattr(args, 'sharpsat_td', '')
                 or args.ace or args.kbs or args.pita or args.aspmc or args.scallop
-                or any(getattr(args, s, '') for s in UAI_SYSTEMS)):
+                or any(getattr(args, s, '') for s in UAI_SYSTEMS)
+                or any(getattr(args, s.replace('-', '_'), '') for s in PE_SYSTEMS)):   # P(e) as a query
             raise SystemExit('--pr compares the partition functions of tddlog, --exact, --ace, --merlin, --agrum, '
-                             '--pgmpy, --libdai, --tensorinference, --kbs, --pita, --aspmc, --scallop, --ganak and '
-                             '--sharpsat-td, and none is run')
+                             '--pgmpy, --libdai, --tensorinference, --kbs, --ganak, --sharpsat-td and the systems '
+                             'that answer P(e) as a query ('
+                             + ', '.join('--' + s for s in PE_SYSTEMS if s != 'problog') + '), and none is run')
     if args.suite in EXTRA_SUITES:
         if not args.pr:
             raise SystemExit(f'the {args.suite} programs ask no query: their task is the weighted model count (--pr)')
@@ -5714,9 +6074,9 @@ def run_job(args, spec, systems, out, lock, names):
                 own = original(spec[name][1], '') if spec[name][1][0] == 'gen_cplint.py' else None
                 r = run_pita(args, name, src, own)
             elif system == 'aspmc':
-                r = run_aspmc(args, name, src)
+                r = run_aspmc(args, name, src, circuit=spec[name][1][0] == 'alea_bench.jl')
             elif system == 'scallop':
-                r = run_scallop(args, name, src, variant)
+                r = run_scallop(args, name, src, variant, circuit=spec[name][1][0] == 'alea_bench.jl')
             elif system == 'ace':
                 r = run_ace(rargs, name, rpath, variant)
             elif system == 'merlin':

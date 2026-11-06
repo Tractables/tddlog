@@ -1,10 +1,13 @@
-# Ported from PluckArtifact.jl/src/table1/sequence_models/dice/hmm.jl of
-# the artifact of Bowers et al., "Stochastic Lazy Knowledge Compilation for
-# Inference in Discrete Probabilistic Programs" (PLDI 2025), Zenodo
-# 10.5281/zenodo.15051140 (CC-BY-4.0): the Dice.jl baseline of the paper's
-# Table 1, row HMM. Mechanical port: Dice.List, Dice.Nil and Dice.Cons ->
-# Alea's List, Nil and Cons, @dice_ite -> @alea_ite, the add_benchmark!
-# harness dropped, `pr(E)` -> E, the query moved to QUERY and model().
+# hmm: the Pluck program PluckArtifact.jl/src/table1/sequence_models/pluck/
+# hmm.jl of the artifact of Bowers et al., "Stochastic Lazy Knowledge
+# Compilation for Inference in Discrete Probabilistic Programs" (PLDI
+# 2025), Zenodo 10.5281/zenodo.15051140 (CC-BY-4.0), the paper's Table 1,
+# row HMM, in the Dice.jl form the artifact gives it as a baseline,
+# sequence_models/dice/hmm.jl: the same model, its 50 emissions generated
+# and compared with 50 trues. Ported from that file. Mechanical port:
+# Dice.List, Dice.Nil and Dice.Cons -> Alea's List, Nil and Cons,
+# @dice_ite -> @alea_ite, the add_benchmark! harness dropped, `pr(E)` ->
+# E, the query moved to QUERY and model().
 using Alea
 
 const QUERY = :pr

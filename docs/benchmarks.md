@@ -6,10 +6,10 @@ not on main: it is on the repository's [`baselines` branch][baselines],
 whose README says which version of each baseline ran on which programs
 and which script reproduces each table. That branch holds the benchmark
 driver `scripts/bench.py`, the scripts that run or feed a baseline
-(`alea_bench.jl`, `dice2alea.py`, `problog2pita.py`, `ground2scallop.py`,
-`gen_geni.py`, `gen_roulette.py`), the scaled loops (`dice_scale.py`,
-`bench_one.py`) and the samplers (`scripts/samplers/`), the programs of
-Alea.jl's, Geni's, noDice's and Roulette's evaluations and the
+(`alea_bench.jl`, `dice2alea.py`, `problog2pita.py`, `problog2scallop.py`,
+`ground2scallop.py`, `gen_geni.py`, `gen_roulette.py`), the scaled loops
+(`dice_scale.py`, `bench_one.py`) and the samplers (`scripts/samplers/`), the
+programs of Alea.jl's, Geni's, noDice's and Roulette's evaluations and the
 bit-blasting artifact's (`data/alea`, `data/geni`, `data/nodice`,
 `data/roulette`, `data/hybit`) and docs/baselines.md, how to install and
 run each baseline, cited below as baselines.md.
@@ -3176,7 +3176,7 @@ answer in under 0.2 s is counted in neither's favour.
 | Pluck (Bowers et al., PLDI 2025) | exact | its four sequence models of the `ppl` suite |
 | PITA (cplint, SWI-Prolog 9.2.9) | exact, BDDs | the ProbLog programs tddlog reads, through `problog2pita.py` |
 | aspmc 1.1.1 with sharpSAT-TD | exact, knowledge compilation | the ProbLog programs tddlog reads, the evidence asked as queries |
-| Scallop 0.2.5 (668bfb6; Li, Huang and Naik, PLDI 2023) | exact, every proof kept (`allproofs`) | the ground program tddlog prints for each ProbLog program, through `ground2scallop.py` |
+| Scallop 0.2.5 (668bfb6; Li, Huang and Naik, PLDI 2023) | exact, every proof kept (`allproofs`) | each ProbLog program written first order in Scallop, through `problog2scallop.py`; a circuit Alea.jl exports as its ground program, through `ground2scallop.py` |
 | Storm 1.14 (stormpy), one Sylvan thread | exact | the weather factory's PRISM model, `P=? [F<=H "allStrike"]`, and every other program with a Dice program (the circuits' too) as a Markov chain, through `dice2prism.py`: the sparse engine in floating point (`sparse`), the sparse engine on rationals (`exact`) and the symbolic BDD engine (`dd`) |
 | PRISM 4.8.1 | exact | the weather factory's PRISM model and every other program with a Dice program, through `dice2prism.py`, with the sparse and the hybrid engine |
 | Ace 3.0 | exact, arithmetic circuits | the Bayesian networks of the Dice paper and of Roulette's, from their BIF files, and the Dice paper's programs as the network of their ground program, written by `ground2net.py` |

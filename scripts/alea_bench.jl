@@ -73,7 +73,9 @@
 # program and writing PREFIX.pl, and `alea_warm_seconds T` that of doing
 # both a second time, without compilation, if the first took less than S.
 # The Dice programs, a translation of the circuit for one family of
-# systems, are written outside the time.
+# systems, are written outside the time, and so are the values of the
+# worlds of each `:pr` number component, `alea_value qK(U) V` for every U,
+# which name the values of a reader's answers.
 # The probabilistic errors of a program not run with IGNORE_ERRORS are
 # left out: `run` stops (Alea throws) where an error has a positive
 # probability.
@@ -396,12 +398,31 @@ function main()
         circuit_of = () -> (m = build(ignore_errors); write_circuit(prefix, m, query, source); m)
         stats = @timed circuit_of()
         write_dice(prefix, stats.value, query, source)
+        print_values(stats.value, query)
         println("alea_seconds ", stats.time)
         println("alea_compile_seconds ", get(stats, :compile_time, NaN))
         stats.time < warm_below && println("alea_warm_seconds ", (@timed circuit_of()).time)
     else
         error(USAGE)
     end
+end
+
+# `alea_value qK(U) V` for every world U of the bits of a number component
+# that are not constant, as `run` prints it for the worlds it finds, so that
+# a reader of the circuit, whose atoms name the worlds, names their values.
+# Untimed, after the export's timed build.
+function print_values(model::Model, query)
+    query == :pr || return
+    for (k, c) in enumerate(model.comps)
+        isbool(c) && continue
+        bits = world_bits(c)
+        n = length(bits)
+        for u in 0:(2^n - 1)
+            world = Dict(b => isodd(u >> (n - i)) for (i, b) in enumerate(bits))
+            println("alea_value q$k($u) ", value(c, world))
+        end
+    end
+    flush(stdout)
 end
 
 write_circuit(prefix, model, query, source) =

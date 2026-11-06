@@ -1,0 +1,34 @@
+// fw_small: experiments/psi/fw_small.psi of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), the
+// Psi program of Cao et al. (UAI 2023); this header added.
+
+def main(){
+    MAX := 14;
+    nodes := 3;
+    dists := array(3, array(3, MAX:Z));
+
+    edges := [[0, 1, uniformInt(1, 2)], 
+              [0, 2, uniformInt(3, 4)],
+              [1, 2, uniformInt(2, 3)]];
+
+    for i in [0..nodes) {
+        dists[i][i] = 0;
+    }
+    for i in [0..edges.length) {
+        entry := edges[i];
+        dists[entry[0]][entry[1]] = entry[2];
+        dists[entry[1]][entry[0]] = entry[2];
+    }
+
+    for k in [0..nodes) {
+        for i in [0..nodes) {
+            for j in [0..nodes) {
+                sum := dists[i][k] + dists[k][j];
+                if (dists[i][j] > sum) {
+                    dists[i][j] = sum;
+                }
+            }
+        }
+    }
+    return dists[0][2];
+}

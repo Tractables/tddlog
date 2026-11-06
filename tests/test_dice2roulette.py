@@ -112,10 +112,30 @@ class Dice2RouletteTests(unittest.TestCase):
     def test_types_are_checked(self):
         for program, error in [('int(2, 1) + int(3, 1)', TypeError), ('flip 0.5 + int(2, 1)', TypeError),
                                ('int(3, 4) / int(3, 2)', NotImplementedError), ('fst flip 0.5', TypeError),
-                               ('fun f(x) { x } f(true)', TypeError)]:
+                               ('fun f(x) { x } f(true)', TypeError),
+                               ('nth_bit(int(3, 0), int(2, 1))', TypeError), ('nth_bit(int(2, 2), int(2, 1))', ValueError)]:
             with self.subTest(program=program):
                 with self.assertRaises(error):
                     translate(program)
+
+    # x is 0, 1, 2 or 3 with 0.1, 0.2, 0.3 and 0.4: its most significant bit is set with 0.7, its least with 0.6
+    NTH_BIT = 'let x = discrete(0.1, 0.2, 0.3, 0.4) in (nth_bit(int(2, 0), x), nth_bit(int(2, 1), x))\n'
+
+    def test_nth_bit_counts_from_the_most_significant(self):
+        # an int is its bits from the least significant (Roulette's lists): bit 0 of Dice's is the last
+        code = translate(self.NTH_BIT)
+        self.assertTrue(balanced(code))
+        self.assertIn('(list-ref x1-x 1)', code)
+        self.assertIn('(list-ref x1-x 0)', code)
+        with self.assertRaisesRegex(NotImplementedError, 'nth_bit is not supported'):
+            dice2problog.translate(self.NTH_BIT)
+
+    @unittest.skipUnless(RACKET, 'ROULETTE_RACKET is not set')
+    def test_roulette_gives_nth_bit(self):
+        comps = bench.parse_alea(run(translate(self.NTH_BIT)), 'roulette')[0]
+        self.assertEqual(len(comps), 2)
+        self.assertAlmostEqual(comps[0]['true'], 0.7, delta=1e-12)
+        self.assertAlmostEqual(comps[1]['true'], 0.6, delta=1e-12)
 
     def test_components_answer_the_queries_in_order(self):
         # A translated program prints each component's distribution, which
@@ -126,12 +146,39 @@ class Dice2RouletteTests(unittest.TestCase):
         self.assertEqual(bench.alea_answers(['result_1', 'c(0)', 'c(1)', 'c(2)'], comps),
                          {'result_1': 0.25, 'c(0)': 0.5, 'c(1)': 0.0, 'c(2)': 0.5})
 
+    def test_a_tuple_is_taken_apart_as_written(self):
+        # The value's elements are the components, a let in its tail
+        # included, each a variable or a constant: no nested list to take
+        # apart with car and cadr.
+        code = translate('let a = flip 0.25 in (a, let b = flip 0.5 in (b, (a && b, int(2, 3))))')
+        main = code.split('(define clock (start-clock))')[1]
+        self.assertRegex(main, r'\(define dists \(list \(distribution (x\d+-a)\) \(distribution (x\d+-b)\) '
+                               r"\(distribution (x\d+-result)\) \(distribution '\(#t #t\)\)\)\)")
+        self.assertRegex(main, r'\(define x\d+-result \(&& x\d+-a x\d+-b\)\)')
+        self.assertIn("(statement (report dists '(#f #f #f 2)))", main)
+        self.assertNotIn('(car ', main)
+        self.assertNotIn('(list-ref ', main)
+
+    def test_a_value_of_many_components_translates_in_linear_size(self):
+        # taint_ginger_master's ground route returns its 86,019 queries as
+        # nested pairs: their car and cadr chains made the module quadratic
+        # in their number (80 GB in the translator, its kill unreported).
+        n = 3000
+        lets = ''.join(f'let a{k} = flip 0.5 in\n' for k in range(n))
+        value = ''.join(f'(a{k}, ' for k in range(n - 1)) + f'a{n - 1}' + ')' * (n - 1)
+        code = translate(lets + value + '\n')
+        self.assertTrue(balanced(code))
+        main = code.split('(define clock (start-clock))')[1]
+        self.assertLess(len(main), 100 * n)
+        self.assertEqual(main.count('(distribution '), n)
+        self.assertRegex(main, r'\(define dists \(list \(distribution x1-a0\) \(distribution x2-a1\) ')
+
     JOINT = 'let x = flip 0.5 in let y = flip 0.25 in let o = observe (x || y) in (x, y)\n'
 
     def test_joint_asks_the_booleans_as_one_int(self):
         code = dice2roulette.translate(self.JOINT, 'test', joint=True)
         self.assertTrue(balanced(code))
-        self.assertEqual(code.count('(report-int 1 (list-ref dists 0) 2)'), 1)
+        self.assertEqual(code.count("(statement (report dists '(2)))"), 1)
         self.assertNotIn('report-bool', code.split('(define dists')[1])
         with self.assertRaisesRegex(NotImplementedError, r'--joint asks a value of Booleans.*int\(2\)'):
             dice2roulette.translate('let x = int(2, 1) in (x, true)\n', 'test', joint=True)

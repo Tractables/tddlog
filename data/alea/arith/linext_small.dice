@@ -1,0 +1,20 @@
+// linext_small: written by gen_arith_dice.py from linext_small.jl, the
+// Alea.jl form of experiments/dicejl/linext_small.jl of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0).
+// Cao, Garg, Holtzen, Van den Broeck, Millstein (UAI 2023), Table 1: linext-small.
+//
+// The integers are 6 bits. The original's ranks are signed and
+// from 0 to n - 1, where the signed x < y is the unsigned one.
+let r1 = uniform(6, 0, 4) in
+let r2 = uniform(6, 0, 4) in
+let r3 = uniform(6, 0, 4) in
+let r4 = uniform(6, 0, 4) in
+let distinct1_2 = observe r1 != r2 in
+let distinct1_3 = observe r1 != r3 in
+let distinct1_4 = observe r1 != r4 in
+let distinct2_3 = observe r2 != r3 in
+let distinct2_4 = observe r2 != r4 in
+let distinct3_4 = observe r3 != r4 in
+let before1 = observe r1 < r3 in
+let before2 = observe r1 < r4 in
+(r1, (r2, (r3, r4)))

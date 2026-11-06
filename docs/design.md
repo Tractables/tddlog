@@ -157,7 +157,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `lib.rs` | `Run`, `Error`, the public items |
 | `trace.rs` | `Trace`: a run's stages from `Progress`'s events, bounded, written as JSON (`tddlog --trace`, the browser build) |
 | `input.rs` | `Format` and `read`: every input (a ProbLog program or an LPAD, a Dice program, a Circulette netlist, a network file with its evidence file) read as the program `solve` takes, the one route of the binary and the bindings |
-| `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, what `auto` is handed ready, the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups |
+| `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, what `auto` is handed ready, the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups; `subquery.rs`: `subquery/2,3` answered before grounding |
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
@@ -255,6 +255,12 @@ The parser reads ProbLog without cut:
   `sum_list/2`, `member/2`, `sort/2`) agree; a goal that is
   a variable is read as a body, a conjunction or a disjunction included,
   as ProbLog reads it; `forall(C, A)`, which is `\+ (C, \+ A)`;
+- `subquery/2,3`, ProbLog's nested query: each call that the queries and
+  the evidence reach is answered before the program is ground, by the
+  one solver on the program with the call's goal as its query and its
+  list as evidence, and its answers are certain facts that the clause
+  reads (`solve/subquery.rs`); a semiring or an evaluator of its own
+  (`subquery/4,5`) is refused;
 - `library(aggregate)`'s aggregates, `h(G1, ..., Gn, f<V>) :- Body`, as
   its aggregate/5 computes them: all/3 of the solutions of the body,
   grouped by `[G1, ..., Gn]` with enum_groups/3, and `f` of the values

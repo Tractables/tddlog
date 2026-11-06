@@ -1067,7 +1067,8 @@ function instancePage(suite, name) {
 }
 // The column of a system in a suite's rows (its first is the instance).
 const column = (suite, key) => suite.systems.indexOf(key) + 1;
-// The record's system of a column: alea-process's runs are Alea.jl's.
+// The record's system of a column: alea-process's runs are Alea.jl's, and an
+// integration's are tddlog's where its records are tddlog's runs.
 const recorded = (key) => data.bench?.records?.[key] ?? base(key);
 // Whether a tab's reader is (a form of) the system of this name: "Ace auto"
 // and "Ace forceC2d" are Ace's.
@@ -1305,7 +1306,7 @@ function scoreboard(c, rows, tal, n, vs, only) {
       element("th", { scope: "col" }, `answers, of ${count(n)}`),
       element("th", { scope: "col", class: "num", title: `over the instances the system is given and either it or ${me} answers (PAR-${data.measure.par})` }, "its total time"),
       element("th", { scope: "col", class: "num", title: `over the same instances (PAR-${data.measure.par})` }, `${me}'s total time`),
-      element("th", { scope: "col", class: "num" }, `${me} faster`),
+      element("th", { scope: "col", class: "num" }, speedName(`${me} faster`)),
       element("th", { scope: "col", class: "num", title: "instances from the system's own papers, benchmarks or distribution" }, "own"),
       element("th", { scope: "col", class: "num", title: "instances whose program is in the system's own language" }, "native"),
       element("th", { scope: "col", class: "num", title: "instances whose program a translator wrote from another language" }, "translated"))),
@@ -1781,8 +1782,13 @@ function timesGrid(s, f, rows, short, route) {
 // The system of a run by its name: a pipeline's run of tddlog by the
 // pipeline's, which its label starts with.
 const runName = (r) => r.label?.match(/^\S+\+tddlog\b/)?.[0] ?? data.names[r.system] ?? r.system;
-// The name tddlog reads an instance's programs under: its pipeline's, where its runs are one's.
-const mineReader = (inst) => (inst.runs ?? []).map(runName).find((n) => n === "tddlog" || n.endsWith("+tddlog")) ?? "tddlog";
+// The name tddlog reads an instance's programs under: its own where it ran
+// beside a pipeline (Roulette+tddlog on Geni's programs), the pipeline's
+// where its runs are only one's.
+const mineReader = (inst) => {
+  const names = (inst.runs ?? []).map(runName);
+  return names.includes("tddlog") ? "tddlog" : names.find((n) => n.endsWith("+tddlog")) ?? "tddlog";
+};
 
 // The systems that ran an instance but read none of its files on show, nor
 // translated any: their files were not captured. A run whose grounding
@@ -1794,18 +1800,33 @@ function uncaptured(inst) {
     .filter((name) => !readers.some(readsAs(name)));
 }
 
+// The program of a family whose places ($1, $2, ...) take each instance's
+// arguments, as the playground opens it (app.js's filledFile): the
+// instance's program of its own name, with its arguments in their places and
+// its consults inlined, the one the ProbLog systems read where there are
+// several. Null where `file` has no places or there is no such program.
+function filledFile(inst, tab, file, texts) {
+  if (!/\$[1-9]/.test(texts[file.sha] ?? "")) return null;
+  const filled = (inst.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
+    .flatMap((t) => t.files.filter((x) => x.name === `${inst.name}.pl`).map((x) => ({ tab: t, file: x })));
+  return filled.find(({ tab: t, file: x }) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0] ?? null;
+}
+
 // The program tddlog read, for the playground: the one ProbLog file of the
-// language tddlog reads, as a link, or why the playground cannot open it.
-function playground(s, f, inst, name) {
-  const tab = (inst.tabs ?? []).find((t) => t.readers.includes(name) && t.files.some((file) => /\.pl$/.test(file.name)));
+// language tddlog reads (filled in where it has places), as a link, or why
+// the playground cannot open it.
+function playground(s, f, fam, inst, name) {
+  const read = (inst.tabs ?? []).find((t) => t.readers.includes(name) && t.files.some((file) => /\.pl$/.test(file.name)));
   // files of one name (a loop's two forms) each name their readers
-  const pl = tab?.files.filter((file) => /\.pl$/.test(file.name) && mayRead(file, (r) => r === name)) ?? [];
+  const pl = read?.files.filter((file) => /\.pl$/.test(file.name) && mayRead(file, (r) => r === name)) ?? [];
   if (pl.length !== 1) return null;
-  const [file] = pl;
+  const filled = filledFile(inst, read, pl[0], fam.texts);
+  const { tab, file } = filled ?? { tab: read, file: pl[0] };
   if (file.held) return element("span", { class: "no-try" }, "Not in the playground: the site does not show this program; its file says why.");
   if (file.part) return element("span", { class: "no-try" }, `Not in the playground: the site keeps the first ${size(file.part)} of this ${size(file.bytes)} program.`);
+  const places = filled ? ", with this instance's arguments in its places" : "";
   return element("span", { class: "try" }, element("a", { href: `${dataRoot}../playground/#bench=${[s.key, f.key, inst.name].map(encodeURIComponent).join("/")}` },
-    "Open in the playground"), element("span", { class: "muted" }, ` the ${tab.lang} program tddlog read, ${size(file.bytes)}`));
+    "Open in the playground"), element("span", { class: "muted" }, ` the ${tab.lang} program tddlog read${places}, ${size(file.bytes)}`));
 }
 
 // The systems that read a tab, each once: a form's label ("ProbLog -k sdd")
@@ -1896,7 +1917,7 @@ function instanceView(s, f, fam, route, short) {
         return a;
       }));
   out.push(element("h3", {}, "Programs"), element("div", { class: "pick" }, element("span", { class: "muted" }, "instance"), pick,
-    element("code", { class: "inst" }, inst.name), playground(s, f, inst, mineReader(inst))));
+    element("code", { class: "inst" }, inst.name), playground(s, f, fam, inst, mineReader(inst))));
   if (!inst.tabs) {
     if (inst.gen) out.push(markup("p", inst.gen, { class: "note" }));
     out.push(note("The programs of this instance were not captured."));
@@ -2146,7 +2167,9 @@ async function runs(route) {
   }
   if (ticket !== drawn) return;
   const inst = fam.instances.find((i) => i.name === name);
-  const rec = recorded(key);
+  // the column's own runs where the instance has them (an integration that ran on the program
+  // itself), else its records' system's (Alea.jl's for alea-process)
+  const rec = (inst?.runs ?? []).some((r) => r.system === key) ? key : recorded(key);
   const mine = (inst?.runs ?? []).filter((r) => r.system === rec);
   const parts = [];
   const about = [];
@@ -2174,7 +2197,7 @@ async function runs(route) {
   } else if (mine.some((r) => !r.ungrounded && !r.unhanded && !r.skipped)) {
     parts.push(note(`The command and the files ${name0} was given were not captured.`));
   }
-  const tryIt = rec === "tddlog" && inst ? playground(s, f, inst, name0) : null;
+  const tryIt = rec === "tddlog" && inst ? playground(s, f, fam, inst, name0) : null;
   if (tryIt) parts.push(element("p", {}, tryIt));
   // the runs, the latest first; the same outcome of the same form folded
   const shown = [];

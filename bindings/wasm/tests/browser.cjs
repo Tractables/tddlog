@@ -151,10 +151,22 @@ async function noSidewaysScroll(page, what) {
   assert.ok(scroll <= width, `${what}: the page is ${scroll} px wide in a window of ${width} (${out.join(", ")})`);
 }
 
+// The file the playground opens for tddlog's file `file` (in `tab`) of an
+// instance: where it has places ($1, $2, ...), the instance's program of its
+// own name in another ProbLog tab, with its arguments in their places, the
+// one a ProbLog system read where there are several; else `file`.
+function opensAs(inst, tab, file, texts) {
+  if (!/\$[1-9]/.test(texts[file.sha] ?? "")) return file;
+  const filled = (inst.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
+    .flatMap((t) => t.files.filter((x) => x.name === `${inst.name}.pl`).map((x) => [t, x]));
+  const read = filled.find(([t, x]) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0];
+  return read ? read[1] : file;
+}
+
 // The benchmarks of the results the playground can open, where the site
-// has their data: for each instance, the one .pl file tddlog read, whether
-// the site keeps it whole and its text, and tddlog's time in the release
-// run.
+// has their data: for each instance, the one .pl file tddlog read (filled
+// in where it has places), whether the site keeps it whole and its text,
+// and tddlog's time in the release run.
 function benchmarksOf(root) {
   const dir = path.join(root, "results", "benchmarks");
   if (!fs.existsSync(path.join(dir, "index.json"))) return [];
@@ -172,9 +184,10 @@ function benchmarksOf(root) {
       const famFile = path.join(dir, suite, `${f.key}.json`);
       const fam = JSON.parse(fs.readFileSync(famFile, "utf8"));
       for (const inst of fam.instances) {
-        const files = (inst.tabs ?? []).filter((t) => t.readers.includes("tddlog")).flatMap((t) => t.files.filter((x) => x.name.endsWith(".pl")));
+        const files = (inst.tabs ?? []).filter((t) => t.readers.includes("tddlog"))
+          .flatMap((t) => t.files.filter((x) => x.name.endsWith(".pl")).map((x) => [t, x]));
         if (files.length !== 1) continue;
-        const [file] = files;
+        const file = opensAs(inst, files[0][0], files[0][1], fam.texts);
         const inline = fam.texts[file.sha];
         const readable = !file.held && !file.part && (inline !== undefined || Boolean(file.src));
         const text = () => {
@@ -501,7 +514,8 @@ function benchmarksOf(root) {
         p.on("pageerror", (error) => errors.push(String(error)));
         await p.route(`**/results/benchmarks/${whole.suite}/${whole.family}.json*`, (route) => {
           const fam = structuredClone(family);
-          const file = fam.instances.find((i) => i.name === whole.name).tabs.find((t) => t.readers.includes("tddlog")).files.find((f) => f.sha === whole.file.sha);
+          // (the file the playground opens: tddlog's, or the instance's program filled in for it)
+          const file = fam.instances.find((i) => i.name === whole.name).tabs.flatMap((t) => t.files).find((f) => f.sha === whole.file.sha);
           delete fam.texts[file.sha];
           file.src = "files/routed.txt.gz";
           return route.fulfill({ json: fam });
@@ -809,16 +823,13 @@ function benchmarksOf(root) {
     const places = new Set(circuitRows.map((r) => `${r.suite}/${r.name}`));
     const onCircuit = new Set(circuitRows.flatMap((r) => cats.circuits.systems.filter((x, j) => r.cls[j] !== "-")
       .map((x) => `${r.suite}/${r.name}/${x}`)));
-    // The pipeline's instances: the places, and the programs whose circuits
-    // the places copy under the same name (the circuits of a suite's Alea.jl
-    // programs, an evaluation of their own beside the programs).
-    const copied = new Set(circuitRows.map((r) => r.name));
     // x's mate on an instance of suite s (panels.py's mate): tddlog where x
     // reads the circuit (a system's process where the system does), the
-    // exporter's pipeline elsewhere on the pipeline's instances, and tddlog
-    // off them.
+    // exporter's pipeline elsewhere on the places, and tddlog off them. On
+    // a suite's Alea.jl programs, whose circuits the places copy, tddlog
+    // reads a port of the program, and Alea.jl is compared with it there.
     const reads = (s, name, x) => onCircuit.has(`${s.key}/${name}/${x.replace(/-process$/, "")}`);
-    const mate = (s, name, x) => (reads(s, name, x) || !(places.has(`${s.key}/${name}`) || copied.has(name))
+    const mate = (s, name, x) => (reads(s, name, x) || !places.has(`${s.key}/${name}`)
       ? "tddlog" : cats.circuits.pipeline);
     // A suite's runs of x: [limit, its mate's record, x's record] where x
     // and its mate were given the row. The suite's other systems are those with such a run.
@@ -1282,7 +1293,8 @@ function benchmarksOf(root) {
             const ti = inst.tabs.findIndex((t) => !t.readers.some(readsAs("tddlog")) && t.files.length > 1
               && observed(t.files[0].name) && t.files.some((x) => !observed(x.name)));
             if (!multi && ti >= 0) multi = { ...at, ti, inst };
-            const pl = inst.tabs.find((t) => t.readers.includes("tddlog"))?.files.filter((file) => file.name.endsWith(".pl")) ?? [];
+            const mine = inst.tabs.find((t) => t.readers.includes("tddlog"));
+            const pl = (mine?.files.filter((file) => file.name.endsWith(".pl")) ?? []).map((file) => opensAs(inst, mine, file, fam.texts));
             if (pl.length === 1 && !pl[0].held && !pl[0].part && !tried) tried = at;
             if (pl.length === 1 && (pl[0].held || pl[0].part) && !kept) kept = at;
           }

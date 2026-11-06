@@ -144,6 +144,17 @@ class Dice2SpplTests(unittest.TestCase):
                 for q, w in zip(qs, want):
                     self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-9, msg=q)
 
+    def test_nth_bit_is_a_shift_and_a_comparison(self):
+        # x << i at least 2^(w - 1) (dice_ir.py)
+        dice2sppl.translate(reference.NTH_BIT)
+
+    @unittest.skipUnless(SPPL, 'SPPL is not set')
+    def test_sppl_gives_nth_bit(self):
+        qs = reference.queries(dice2problog.translate(reference.NTH_BIT_AS_SETS))
+        got = sppl_answers(reference.NTH_BIT, qs)
+        for q, w in zip(qs, reference.NTH_BIT_ANSWERS):
+            self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-9, msg=q)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -20,8 +20,13 @@ its arity) from a ProbLog program:
   reads its facts from an input relation of its own, R__f, through the rule
   R(x, ..) :- R__f(x, ..);
 - a rule keeps its probability, which PSouffle draws once per ground rule,
-  as ProbLog does; `\\+ A` is `!A`, the comparisons and `is` their Souffle
-  forms, and a rule whose body holds `fail` is left out;
+  as ProbLog does; `\\+ A` and `not(A)` are `!A`, the comparisons and `is`
+  their Souffle forms, and a rule whose body holds `fail` is left out;
+- between(L, H, X), ProbLog's built-in where the program does not define
+  between/3, is `L <= X, X <= H` where another literal binds X, and
+  otherwise an atom of the input relation between, whose rows (L, H, X)
+  are those of the values L and H take, integers or arguments of atoms of
+  certain relations;
 - an annotated disjunction p1::h1; ..; pn::hn :- B chooses its head in
   order: the choice c_k, of probability p_k / (1 - p1 - .. - p(k-1)), is
   drawn once per ground clause, and h_k holds where B, c_k and none of
@@ -41,13 +46,16 @@ symbols otherwise. A program that PSouffle cannot be given exits with
 status 3 (bench.py's REFUSED) and the reason: function symbols or lists,
 a disjunction or a directive in a body, arithmetic on symbols, an
 annotated disjunction whose body depends on its heads, a negation through
-recursion, a non-ground fact.
+recursion, a non-ground fact, a predicate that no clause defines (where
+ProbLog stops on an unknown clause), between/3 of other bounds.
 """
 import gzip
 import os
 import re
 import sys
 from decimal import Decimal
+from itertools import islice, repeat
+from operator import itemgetter
 
 REFUSED = 3
 
@@ -74,16 +82,117 @@ ORDERS = {'<', '>', '=<', '>='}
 ARITH = {'+': '+', '-': '-', '*': '*', '//': '/', 'mod': '%'}
 
 
+# A ground fact of plain constants, `P::name(c, ..).` or `name(c, ..).`,
+# where a clause starts begins a run of them that is read whole, a window of
+# the text at a time (fact_run), each window one token ('facts', (the
+# probabilities, the names, the rows of terms)) that parse adds at once. A
+# window is read by one findall of FACT_RUN, each fact's arguments as one
+# text, and each distinct argument text is read once (Constants); the run
+# ends before a fact with an argument that is no CONSTANT, which is read
+# token by token. A database of millions of rows (TPC-H at SF 1) then reads
+# in seconds, where token by token it took more than ten minutes.
+NUMBER = r'\d+(?:\.\d+)?(?:[eE][-+]?\d+)?'
+FACT_TEXT = (rf'(?:({NUMBER})\s*::\s*)?(?!query\(|evidence\()([a-z][A-Za-z0-9_]*)'
+             r'\(([^()]*)\)\s*\.(?=\s|%|$)')
+FACT_START = re.compile(FACT_TEXT)
+# a fact and the spaces after it, or the rest of the window, which ends the run
+FACT_RUN = re.compile(rf'{FACT_TEXT}\s*|([\s\S]+)')
+# an argument of a fact: an integer, a number that is no integer, or a name,
+# as the parser reads each (Parser.primary and unary)
+CONSTANT = re.compile(r'\s*(?:(-?)(?:(\d+)|(\d+\.\d+(?:[eE][-+]?\d+)?|\d+[eE][-+]?\d+))'
+                      r'|([a-z][A-Za-z0-9_]*))\s*')
+
+
 def tokens(text):
-    out, i = [], 0
+    out, i, start = [], 0, True
+    constants = Constants()
     while i < len(text):
+        if start and FACT_START.match(text, i):
+            j = fact_run(text, i, out, constants)
+            if j > i:
+                i = j
+                continue
         m = TOKEN.match(text, i)
         if not m:
             raise Refused(f'cannot read {text[i:i + 40]!r}')
         i = m.end()
         if m.lastgroup != 'ws':
             out.append((m.lastgroup, m.group()))
+            start = m.lastgroup == 'end'
     return out
+
+
+def fact_run(text, i, out, constants):
+    """Reads the run of facts at i into tokens of out, the windows growing
+    from 256 bytes to 4 MB as the run goes on, so that a short run reads
+    little past its end; the position after the run."""
+    size = 256
+    while i < len(text):
+        end = text.find('\n', i + size) + 1 or len(text)
+        got = FACT_RUN.findall(text, i, end)
+        rest = got.pop()[3] if got and got[-1][3] else ''
+        j = end - len(rest)
+        facts = read_facts(got, constants)
+        if facts is None:
+            # a fact whose arguments are not all constants: the facts before it, one at a time
+            got, j = [], i
+            while (m := FACT_RUN.match(text, j, end)) and m[2] and read_facts([m.groups('')], constants):
+                got.append(m.groups(''))
+                j = m.end()
+            rest, facts = 'the run ends', read_facts(got, constants)
+        if facts:
+            out.append(('facts', facts))
+            i = j
+        if rest or not facts:
+            break
+        size = min(2 * size, 1 << 22)
+    return i
+
+
+def read_facts(got, constants):
+    """(probabilities, names, rows of terms) of facts, each FACT_RUN's
+    groups, as the parser reads each fact; None if one has an argument that
+    is no CONSTANT, and () for no facts."""
+    if not got:
+        return ()
+    texts = list(map(itemgetter(0), got))
+    probs = list(map(float, texts)) if '' not in texts else [float(p) if p else 1.0 for p in texts]
+    argss = list(map(itemgetter(2), got))
+    try:
+        terms = list(map(constants.__getitem__, ','.join(argss).split(',')))
+    except NotConstant:
+        return None
+    commas = list(map(str.count, argss, repeat(',', len(argss))))
+    if min(commas) == max(commas):
+        rows = list(zip(*[iter(terms)] * (commas[0] + 1)))
+    else:
+        it = iter(terms)
+        rows = [tuple(islice(it, c + 1)) for c in commas]
+    return probs, list(map(itemgetter(1), got)), rows
+
+
+class NotConstant(Exception):
+    pass
+
+
+class Constants(dict):
+    """{the text of an argument of a fact (with the spaces around it): its
+    term, as the parser reads it}, filled as they are met; NotConstant for
+    a text that is no CONSTANT."""
+
+    def __missing__(self, text):
+        m = CONSTANT.fullmatch(text)
+        if not m:
+            raise NotConstant(text)
+        sign, digits, number, name = m.groups()
+        if name:
+            t = ('sym', name)
+        elif digits:
+            t = ('int', -int(digits) if sign else int(digits))
+        else:
+            t = ('num', -float(number) if sign else float(number))
+        self[text] = t
+        return t
 
 
 class Parser:
@@ -108,8 +217,10 @@ class Parser:
         return kind, val
 
     def clauses(self):
+        """Each clause, (heads, body), and each run of facts read whole, the
+        token ('facts', [...])."""
         while self.peek()[0] is not None:
-            yield self.clause()
+            yield self.take() if self.peek()[0] == 'facts' else self.clause()
 
     def clause(self):
         if self.peek()[1] == ':-':
@@ -144,8 +255,9 @@ class Parser:
         return prob, self.atom()
 
     def literal(self):
-        if self.peek()[1] == '\\+':
-            self.take('\\+')
+        # \+ G, and not(G), ProbLog's not/1, the same negation
+        if self.peek()[1] == '\\+' or self.peek() == ('name', 'not') and self.peek(1)[1] == '(':
+            self.take()
             if self.peek()[1] == '(':
                 self.take('(')
                 lit = self.literal()
@@ -333,20 +445,82 @@ class UnionFind:
             self.parent[a] = b
 
 
+def positional(text):
+    """A float's repr in positional notation: unchanged without an exponent."""
+    return text if 'e' not in text and 'n' not in text else format(Decimal(text), 'f')
+
+
 def fmt_prob(p):
-    return format(Decimal(repr(float(p))), 'f')
+    """A probability in positional notation, the shortest that reads back as the same double."""
+    return positional(repr(float(p)))
+
+
+def prob_texts(probs):
+    """[fmt_prob(p) for p in probs]: only the reprs with an exponent go through Decimal."""
+    return list(map(positional, map(repr, map(float, probs))))
+
+
+def row_texts(rows, types, const, sep):
+    """sep.join(const(t, type) for each term t of a row) for each of the
+    rows (tuples of terms) of a relation whose arguments' types are `types`:
+    by column, each distinct term of a column converted once."""
+    if not types:
+        return [''] * len(rows)
+    columns = []
+    for column, ty in zip(zip(*rows), types):
+        text = {t: const(t, ty) for t in dict.fromkeys(column)}
+        columns.append(map(text.__getitem__, column))
+    return list(map(sep.join, zip(*columns)))
 
 
 def translate(text):
     """(compute.dl's text, {relation: [rows]}, {relation: [probabilities]},
     [(Souffle relation, ProbLog name or a query's atom, arity)], [each query as
     tddlog prints its atom, `_` for a variable])."""
+    return emit(*parse(text))
+
+
+def parse(text):
+    """The program's clauses, as emit and problog2scallop.py read them:
+    (facts, rules, annotated disjunctions of facts, annotated disjunctions
+    with a body, queries, evidence). facts is {(name, arity): {args:
+    probability}}; a rule is (probability or None, head, body), its body's
+    anonymous variables named where it is probabilistic (`named`); an
+    annotated disjunction is ([(probability, head)], body); a query is a
+    ground atom or one with variables, a query with a body its ground
+    queries (`ground_queries`); a piece of evidence is (atom, value)."""
     p = Parser(tokens(text))
     facts = {}      # (name, arity) -> {args: probability}
     rules = []      # (prob, head, body)
     ads_fact, ads_rule = [], []
     queries, evidence, query_rules = [], [], []
-    for heads, body in p.clauses():
+
+    def fact(name, args, prob):
+        """A ground fact, a row of its predicate; a row given twice, both
+        independent, is a noisy-or."""
+        if not 0 <= prob <= 1:
+            raise Refused(f'the probability {prob}')
+        rows = facts.setdefault((name, len(args)), {})
+        rows[args] = 1 - (1 - rows[args]) * (1 - prob) if args in rows else prob
+
+    def run(probs, names, rows):
+        """A token of facts (read_facts), as fact() reads each in turn: at
+        once where they are rows of one relation, each new and in range."""
+        if names.count(names[0]) == len(names) and len(set(map(len, rows))) == 1 and \
+                0 <= min(probs) and max(probs) <= 1:
+            have = facts.setdefault((names[0], len(rows[0])), {})
+            new = dict(zip(rows, probs))
+            if len(new) == len(rows) and have.keys().isdisjoint(new.keys()):
+                have.update(new)
+                return
+        for name, args, prob in zip(names, rows, probs):
+            fact(name, args, prob)
+
+    for clause in p.clauses():
+        if clause[0] == 'facts':
+            run(*clause[1])
+            continue
+        heads, body = clause
         if len(heads) == 1 and heads[0][0] is None and heads[0][1][0] == 'query' and len(heads[0][1][1]) == 1 and body:
             query_rules.append((as_atom(heads[0][1][1][0]), body))
             continue
@@ -384,14 +558,11 @@ def translate(text):
         if not body:
             if any(t[0] not in ('int', 'sym', 'num') for t in head[1]):
                 raise Refused(f'a fact that is not ground: {head[0]}/{len(head[1])}')
-            rows = facts.setdefault((head[0], len(head[1])), {})
-            q = 1.0 if prob is None else prob
-            key = tuple(head[1])
-            rows[key] = 1 - (1 - rows[key]) * (1 - q) if key in rows else q
+            fact(head[0], tuple(head[1]), 1.0 if prob is None else prob)
             continue
         rules.append((prob, head, body if prob is None or prob >= 1 else named(body)))
     queries += ground_queries(query_rules, facts, rules, ads_fact + ads_rule)
-    return emit(facts, rules, ads_fact, ads_rule, queries, evidence)
+    return facts, rules, ads_fact, ads_rule, queries, evidence
 
 
 def ground_queries(query_rules, facts, rules, ads):
@@ -413,6 +584,87 @@ def ground_queries(query_rules, facts, rules, ads):
 
 
 BETWEEN = ('between', 3)
+
+
+def key(atom):
+    return (atom[0], len(atom[1]))
+
+
+def builtins(facts, rules, ads_fact, ads_rule, queries, evidence, enumerate_):
+    """(rules, annotated disjunctions with a body) with between/3, ProbLog's
+    built-in where the program does not define it, written by `between`
+    (enumerate_ its literals that enumerate a range). Any other predicate
+    that a clause, a query or the evidence reads and that the program
+    neither states facts of nor defines by a clause (`r(_) :- fail.`
+    included) is refused, as ProbLog stops on it (an unknown clause): a
+    relation of no rows in its place would answer where ProbLog does not,
+    and a built-in left as one would answer wrongly."""
+    defined = set(facts) | {key(h) for _, h, _ in rules} | {key(h) for alts, _ in ads_fact + ads_rule for _, h in alts}
+    builtin = {BETWEEN} - defined
+    read = {key(lit[1]) for body in [b for _, _, b in rules] + [b for _, b in ads_fact + ads_rule]
+            for lit in body if lit[0] in ('pos', 'not')}
+    asked = {key(a) for a in queries} | {key(a) for a, _ in evidence}
+    for k in sorted(((read - builtin) | asked) - defined):
+        raise Refused(f'{k[0]}/{k[1]}, which no clause defines (ProbLog stops on an unknown clause)')
+    if not builtin:
+        return rules, ads_rule
+    return ([(prob, head, between(body, enumerate_)) for prob, head, body in rules],
+            [(alts, between(body, enumerate_)) for alts, body in ads_rule])
+
+
+def between(body, enumerate_):
+    """The body with each between(L, H, X) written as a translation computes
+    it: L =< X, X =< H where another literal binds X (an atom's argument,
+    the variable an `is` sets, an earlier between's X), and otherwise the
+    literals enumerate_(L, H, X, body, k) returns, which bind X to L .. H
+    (k, the place they take, names any variable of their own). L and H are
+    integers or variables so bound, as ProbLog requires of them."""
+    bound = {t[1] for lit in body if lit[0] == 'pos' and key(lit[1]) != BETWEEN
+             for t in lit[1][1] if t[0] == 'var'}
+    bound |= {lit[1][1] for lit in body if lit[0] == 'is' and lit[1][0] == 'var'}
+    out = []
+    for lit in body:
+        if lit[0] not in ('pos', 'not') or key(lit[1]) != BETWEEN:
+            out.append(lit)
+            continue
+        if lit[0] == 'not':
+            raise Refused('a negated between/3')
+        lo, hi, x = lit[1][1]
+        if not all(t[0] == 'int' or t[0] == 'var' and t[1] in bound for t in (lo, hi)):
+            raise Refused('between/3 whose bounds are not bound integers')
+        if x[0] == 'int' or x[0] == 'var' and x[1] in bound:
+            out += [('cmp', '=<', lo, x), ('cmp', '=<', x, hi)]
+            continue
+        if x[0] != 'var':
+            raise Refused('between/3 of a value that is no integer')
+        out += enumerate_(lo, hi, x, body, len(out))
+        bound.add(x[1])
+    return out
+
+
+def between_rows(facts, rules, ads, rows):
+    """enumerate_ for `between` in PSouffle: between(L, H, X) an atom of the
+    input relation between/3, whose rows (L, H, X) of probability 1 it adds
+    to `rows` for each value of L and H, an integer or a variable of the
+    clause's atoms of certain relations (`certain`, which reads the
+    program's rules as ProbLog's grounding does)."""
+    def enumerate_(lo, hi, x, body, k):
+        refused = 'between/3 whose bounds are not integers of certain relations'
+        vs = {t[1] for t in (lo, hi) if t[0] == 'var'}
+        src = [lit for lit in body if lit[0] == 'pos' and key(lit[1]) != BETWEEN and
+               vs & {t[1] for t in lit[1][1] if t[0] == 'var'}]
+        try:
+            rel = certain(facts, rules, ads, [lit[1] for lit in src])
+            pairs = {(resolve(lo, b), resolve(hi, b)) for b in solutions(src, rel, {})}
+        except Refused:
+            raise Refused(refused) from None
+        for a, b in pairs:
+            if a is None or b is None or a[0] != 'int' or b[0] != 'int':
+                raise Refused(refused)
+            for i in range(a[1], b[1] + 1):
+                rows[(a, b, ('int', i))] = 1.0
+        return [('pos', ('between', [lo, hi, x]))]
+    return enumerate_
 
 
 def certain(facts, rules, ads, atoms):
@@ -559,6 +811,11 @@ def as_atom(t):
 
 
 def emit(facts, rules, ads_fact, ads_rule, queries, evidence):
+    rows = {}
+    rules, ads_rule = builtins(facts, rules, ads_fact, ads_rule, queries, evidence,
+                               between_rows(facts, rules, ads_fact + ads_rule, rows))
+    if rows:
+        facts = {**facts, BETWEEN: rows}
     preds = set(facts)
     for _, head, body in rules:
         preds.add((head[0], len(head[1])))
@@ -571,19 +828,7 @@ def emit(facts, rules, ads_fact, ads_rule, queries, evidence):
                 preds.add((lit[1][0], len(lit[1][1])))
     for atom in [a for a in queries] + [a for a, _ in evidence]:
         preds.add((atom[0], len(atom[1])))
-    arities = {}
-    for name, n in preds:
-        arities.setdefault(name, set()).add(n)
-    rel = {}
-    for name, n in sorted(preds):
-        base = name if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', name) else 'q_' + re.sub(r'\W', '_', name)
-        if len(arities[name]) > 1:
-            base = f'{base}__a{n}'
-        elif base in RESERVED:
-            base = base + '_'
-        rel[(name, n)] = base
-    if len(set(rel.values())) != len(rel) or any('__' in r and not re.search(r'__a\d+$', r) for r in rel.values()):
-        raise Refused('a predicate name that collides with the translation\'s own names')
+    rel = relation_names(preds, RESERVED, r'[A-Za-z_][A-Za-z0-9_]*')
     ruled = {(h[0], len(h[1])) for _, h, _ in rules} | {(h[0], len(h[1])) for alts, _ in ads_rule + ads_fact
                                                         for _, h in alts}
 
@@ -627,43 +872,10 @@ def emit(facts, rules, ads_fact, ads_rule, queries, evidence):
 
     for prob, head, body in rules:
         out_rules.append((prob, (rel[(head[0], len(head[1]))], head[1]), [lit_rel(b) for b in body]))
-    # annotated disjunctions of facts, by shape: their choices and heads are rows
-    shapes = {}
-    for alts, _ in ads_fact:
-        for _, h in alts:
-            if any(t[0] not in ('int', 'sym', 'num') for t in h[1]):
-                raise Refused(f'an annotated disjunction of facts that are not ground: {h[0]}/{len(h[1])}')
-        total = sum(pr for pr, _ in alts)
-        shape = (tuple((h[0], len(h[1])) for _, h in alts), total >= 1 - 1e-9)
-        shapes.setdefault(shape, []).append(alts)
-    for j, ((heads, certain), group) in enumerate(sorted(shapes.items(), key=lambda s: s[0])):
-        c = f'ad{j}_c'
-        own(c, ('ad', j, 'id'), ('ad', j, 'k'))
-        mark(('ad', j, 'id'), 'int')
-        mark(('ad', j, 'k'), 'int')
-        inputs[c] = {}
-        n = len(heads)
-        for k, (name, ar) in enumerate(heads, 1):
-            a = f'ad{j}_a{k}'
-            own(a, ('ad', j, 'id'), *[(name, ar, i) for i in range(ar)])
-            inputs[a] = {}
-        for ident, alts in enumerate(group):
-            left = 1.0
-            for k, (pr, h) in enumerate(alts, 1):
-                inputs[f'ad{j}_a{k}'][(('int', ident), *h[1])] = 1.0
-                if k < n or not certain:
-                    inputs[c][(('int', ident), ('int', k))] = min(1.0, pr / left) if left > 0 else 0.0
-                    left -= pr
-        for k, (name, ar) in enumerate(heads, 1):
-            xs = [('var', f'x{i}') for i in range(ar)]
-            body = [('pos', (f'ad{j}_a{k}', [('var', 'id')] + xs))]
-            body += [('not', (c, [('var', 'id'), ('int', i)])) for i in range(1, k)]
-            if k < n or not certain:
-                body.append(('pos', (c, [('var', 'id'), ('int', k)])))
-            out_rules.append((None, (rel[(name, ar)], xs), body))
+    shapes = ad_fact_shapes(ads_fact, rel, own, inputs, out_rules, lambda j, part: f'ad{j}_{part}')
     # annotated disjunctions with a body: a chain of choices over the clause's variables
     deps = dependencies(rules, ads_rule)
-    for j, (alts, body) in enumerate(ads_rule, len(shapes)):
+    for j, (alts, body) in enumerate(ads_rule, shapes):
         heads = {h[0] for _, h in alts}
         below = reach(deps, {lit[1][0] for lit in body if lit[0] in ('pos', 'not')})
         if heads & below:
@@ -685,59 +897,8 @@ def emit(facts, rules, ads_fact, ads_rule, queries, evidence):
                 hb.append(('pos', (c, [('int', k)] + vs)))
             out_rules.append((None, (rel[(h[0], len(h[1]))], h[1]), hb))
     stratified(out_rules)
-
-    # types: the positions joined through each clause's variables
-    for relation, cls in positions.items():
-        for i, cl in enumerate(cls):
-            uf.union((relation, i), cl)
-    for relation, rows in inputs.items():
-        for args in rows:
-            for i, t in enumerate(args):
-                mark(uf.find((relation, i)), t[0])
-    for ci, (_, head, body) in enumerate(out_rules):
-        def at(atom):
-            for i, t in enumerate(atom[1]):
-                walk(t, (atom[0], i))
-
-        def walk(t, node, kind=None):
-            if t[0] == 'var':
-                uf.union(('v', ci, t[1]), node)
-            elif t[0] in ('int', 'sym', 'num'):
-                mark(uf.find(node), t[0])
-            elif t[0] == 'op':
-                mark(uf.find(node), 'arith')
-                walk(t[2], node)
-                walk(t[3], node)
-            elif t[0] == 'neg':
-                mark(uf.find(node), 'arith')
-                walk(t[1], node)
-        at(head)
-        for lit in body:
-            if lit[0] in ('pos', 'not'):
-                at(lit[1])
-            elif lit[0] in ('cmp', 'is'):
-                a, bb = (lit[2], lit[3]) if lit[0] == 'cmp' else (lit[1], lit[2])
-                node = ('cmp', ci, id(lit))
-                walk(a, node)
-                walk(bb, node)
-                if lit[0] == 'is' or (lit[0] == 'cmp' and lit[1] in ORDERS):
-                    mark(uf.find(node), 'arith' if lit[0] == 'is' else 'order')
-    for atom in list(queries) + [a for a, _ in evidence]:
-        for i, t in enumerate(atom[1]):
-            if t[0] in ('int', 'sym', 'num'):
-                mark(uf.find((rel[(atom[0], len(atom[1]))], i)), t[0])
-    merged = {}
-    for node, ks in kinds.items():
-        merged.setdefault(uf.find(node), set()).update(ks)
-
-    def type_of(relation, i):
-        ks = merged.get(uf.find((relation, i)), set())
-        if 'sym' in ks or 'num' in ks:
-            if 'arith' in ks or 'order' in ks:
-                raise Refused(f'arithmetic or an order on symbols (argument {i + 1} of {relation})')
-            return 'symbol'
-        return 'number' if ks & {'int', 'arith', 'order'} else 'symbol'
-    types = {r: [type_of(r, i) for i in range(len(cls))] for r, cls in positions.items()}
+    types = infer_types(uf, kinds, positions, inputs, out_rules,
+                        [(rel[(a[0], len(a[1]))], a[1]) for a in list(queries) + [a for a, _ in evidence]])
     for r in list(types):
         if not any(r == x for x in inputs) and not any(r == h[0] for _, h, _ in out_rules) and \
                 r not in [rel[k] for k in preds]:
@@ -857,10 +1018,139 @@ def emit(facts, rules, ads_fact, ads_rule, queries, evidence):
     for r, rows in inputs.items():
         if not rows:
             continue
-        rows_out[r] = ['\t'.join(const(t, types[r][i]) for i, t in enumerate(args)) for args in rows]
-        probs_out[r] = [fmt_prob(q) for q in rows.values()]   # 1.0 for a certain row, as PSouffle's own inputs
+        rows_out[r] = row_texts(rows, types[r], const, '\t')
+        probs_out[r] = prob_texts(rows.values())   # 1.0 for a certain row, as PSouffle's own inputs
     table = [(rel[k], k[0], k[1]) for k in sorted(preds)] + [(name, text, 0) for name, text in aux]
     return '\n'.join(lines) + '\n', rows_out, probs_out, table, asked
+
+
+def relation_names(preds, reserved, ident):
+    """{(name, arity): relation}: each predicate a relation of its name where
+    that is an identifier (`ident`) and not `reserved`, with `_` appended
+    where it is, `q_` before a name that is no identifier, and `__a<arity>`
+    after a name of two arities. A translation's own relations have `__` in
+    their names, which no predicate's relation may then have."""
+    arities = {}
+    for name, n in preds:
+        arities.setdefault(name, set()).add(n)
+    rel = {}
+    for name, n in sorted(preds):
+        base = name if re.fullmatch(ident, name) else 'q_' + re.sub(r'\W', '_', name)
+        if len(arities[name]) > 1:
+            base = f'{base}__a{n}'
+        elif base in reserved:
+            base = base + '_'
+        rel[(name, n)] = base
+    if len(set(rel.values())) != len(rel) or any('__' in r and not re.search(r'__a\d+$', r) for r in rel.values()):
+        raise Refused('a predicate name that collides with the translation\'s own names')
+    return rel
+
+
+def ad_fact_shapes(ads_fact, rel, own, inputs, out_rules, name):
+    """The annotated disjunctions of facts, by shape (their heads'
+    predicates, and whether their probabilities sum to 1), each shape's
+    choices the rows of an input relation name(j, 'c') (an annotated
+    disjunction's number and k: the choice c_k, as for a body) and its heads
+    the rows of name(j, 'a<k>'), and a rule for each head. Adds the input
+    relations' positions (`own`), rows (`inputs`) and rules (`out_rules`);
+    returns the number of shapes."""
+    shapes = {}
+    for alts, _ in ads_fact:
+        for _, h in alts:
+            if any(t[0] not in ('int', 'sym', 'num') for t in h[1]):
+                raise Refused(f'an annotated disjunction of facts that are not ground: {h[0]}/{len(h[1])}')
+        total = sum(pr for pr, _ in alts)
+        shape = (tuple((h[0], len(h[1])) for _, h in alts), total >= 1 - 1e-9)
+        shapes.setdefault(shape, []).append(alts)
+    for j, ((heads, certain), group) in enumerate(sorted(shapes.items(), key=lambda s: s[0])):
+        c = name(j, 'c')
+        own(c, ('ad', j, 'id'), ('ad', j, 'k'))
+        inputs[c] = {}
+        n = len(heads)
+        for k, (pred, ar) in enumerate(heads, 1):
+            a = name(j, f'a{k}')
+            own(a, ('ad', j, 'id'), *[(pred, ar, i) for i in range(ar)])
+            inputs[a] = {}
+        for ident, alts in enumerate(group):
+            left = 1.0
+            for k, (pr, h) in enumerate(alts, 1):
+                inputs[name(j, f'a{k}')][(('int', ident), *h[1])] = 1.0
+                if k < n or not certain:
+                    inputs[c][(('int', ident), ('int', k))] = min(1.0, pr / left) if left > 0 else 0.0
+                    left -= pr
+        for k, (pred, ar) in enumerate(heads, 1):
+            xs = [('var', f'x{i}') for i in range(ar)]
+            body = [('pos', (name(j, f'a{k}'), [('var', 'id')] + xs))]
+            body += [('not', (c, [('var', 'id'), ('int', i)])) for i in range(1, k)]
+            if k < n or not certain:
+                body.append(('pos', (c, [('var', 'id'), ('int', k)])))
+            out_rules.append((None, (rel[(pred, ar)], xs), body))
+    return len(shapes)
+
+
+def infer_types(uf, kinds, positions, inputs, out_rules, atoms):
+    """{relation: ['number' or 'symbol' for each argument]}: the positions
+    (relation -> [the class of each argument], joined in `uf`) joined
+    through each rule's variables, a class numbers where every constant that
+    reaches it is an integer or arithmetic or an order applies to it, and
+    symbols otherwise. kinds holds the classes' marks so far; the rows of
+    the inputs and the constants of `atoms` ([(relation, args)], the
+    queries and the evidence) mark theirs. Arithmetic or an order on
+    symbols is refused."""
+    def mark(node, kind):
+        kinds.setdefault(node, set()).add(kind)
+
+    for relation, cls in positions.items():
+        for i, cl in enumerate(cls):
+            uf.union((relation, i), cl)
+    for relation, rows in inputs.items():
+        for i, column in enumerate(zip(*rows)):
+            for kind in set(map(itemgetter(0), column)):
+                mark(uf.find((relation, i)), kind)
+    for ci, (_, head, body) in enumerate(out_rules):
+        def at(atom):
+            for i, t in enumerate(atom[1]):
+                walk(t, (atom[0], i))
+
+        def walk(t, node):
+            if t[0] == 'var':
+                uf.union(('v', ci, t[1]), node)
+            elif t[0] in ('int', 'sym', 'num'):
+                mark(uf.find(node), t[0])
+            elif t[0] == 'op':
+                mark(uf.find(node), 'arith')
+                walk(t[2], node)
+                walk(t[3], node)
+            elif t[0] == 'neg':
+                mark(uf.find(node), 'arith')
+                walk(t[1], node)
+        at(head)
+        for lit in body:
+            if lit[0] in ('pos', 'not'):
+                at(lit[1])
+            elif lit[0] in ('cmp', 'is'):
+                a, bb = (lit[2], lit[3]) if lit[0] == 'cmp' else (lit[1], lit[2])
+                node = ('cmp', ci, id(lit))
+                walk(a, node)
+                walk(bb, node)
+                if lit[0] == 'is' or (lit[0] == 'cmp' and lit[1] in ORDERS):
+                    mark(uf.find(node), 'arith' if lit[0] == 'is' else 'order')
+    for relation, args in atoms:
+        for i, t in enumerate(args):
+            if t[0] in ('int', 'sym', 'num'):
+                mark(uf.find((relation, i)), t[0])
+    merged = {}
+    for node, ks in kinds.items():
+        merged.setdefault(uf.find(node), set()).update(ks)
+
+    def type_of(relation, i):
+        ks = merged.get(uf.find((relation, i)), set())
+        if 'sym' in ks or 'num' in ks:
+            if 'arith' in ks or 'order' in ks:
+                raise Refused(f'arithmetic or an order on symbols (argument {i + 1} of {relation})')
+            return 'symbol'
+        return 'number' if ks & {'int', 'arith', 'order'} else 'symbol'
+    return {r: [type_of(r, i) for i in range(len(cls))] for r, cls in positions.items()}
 
 
 def safe_vars(head, body):
@@ -934,9 +1224,9 @@ def write(outdir, text):
         f.write(dl)
     for r, lines in rows.items():
         with open(os.path.join(outdir, 'input', r + '.facts'), 'w') as f:
-            f.write(''.join(line + '\n' for line in lines))
+            f.write('\n'.join(lines) + '\n')
         with open(os.path.join(outdir, 'input', r + '.prob'), 'w') as f:
-            f.write(''.join(q + '\n' for q in probs[r]))
+            f.write('\n'.join(probs[r]) + '\n')
     with open(os.path.join(outdir, 'names.tsv'), 'w') as f:
         f.write(''.join(f'{r}\t{n}\t{a}\n' for r, n, a in table))
     with open(os.path.join(outdir, 'queries.txt'), 'w') as f:

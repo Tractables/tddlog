@@ -1,0 +1,34 @@
+// linext_medium: written by gen_arith_dice.py from linext_medium.jl, the
+// Alea.jl form of experiments/dicejl/linext_medium.jl of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0).
+// Cao, Garg, Holtzen, Van den Broeck, Millstein (UAI 2023), Table 1: linext-medium.
+//
+// The integers are 6 bits. The original's ranks are signed and
+// from 0 to n - 1, where the signed x < y is the unsigned one.
+let r1 = uniform(6, 0, 6) in
+let r2 = uniform(6, 0, 6) in
+let r3 = uniform(6, 0, 6) in
+let r4 = uniform(6, 0, 6) in
+let r5 = uniform(6, 0, 6) in
+let r6 = uniform(6, 0, 6) in
+let distinct1_2 = observe r1 != r2 in
+let distinct1_3 = observe r1 != r3 in
+let distinct1_4 = observe r1 != r4 in
+let distinct1_5 = observe r1 != r5 in
+let distinct1_6 = observe r1 != r6 in
+let distinct2_3 = observe r2 != r3 in
+let distinct2_4 = observe r2 != r4 in
+let distinct2_5 = observe r2 != r5 in
+let distinct2_6 = observe r2 != r6 in
+let distinct3_4 = observe r3 != r4 in
+let distinct3_5 = observe r3 != r5 in
+let distinct3_6 = observe r3 != r6 in
+let distinct4_5 = observe r4 != r5 in
+let distinct4_6 = observe r4 != r6 in
+let distinct5_6 = observe r5 != r6 in
+let before1 = observe r2 < r4 in
+let before2 = observe r3 < r4 in
+let before3 = observe r3 < r1 in
+let before4 = observe r4 < r5 in
+let before5 = observe r1 < r5 in
+(r1, (r2, (r3, (r4, (r5, r6)))))

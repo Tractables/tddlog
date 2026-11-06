@@ -1,0 +1,19 @@
+// hmm: ported to Dice from PluckArtifact.jl/src/table1/sequence_models/
+// pluck/hmm.jl of the artifact of Bowers, Lew, Tenenbaum, Solar-Lezama
+// and Mansinghka, "Stochastic Lazy Knowledge Compilation for Inference in
+// Discrete Probabilistic Programs" (PLDI 2025), Zenodo
+// 10.5281/zenodo.15051140 (CC-BY-4.0): the Pluck program of the paper's
+// Table 1, row HMM. The answer is the probability that the first 50
+// emissions are all true, of the chain
+//   hmm z0 = let z1 = flip (if z0 then 0.7 else 0.1)
+//            in Cons (flip (if z1 then 0.3 else 0.6)) (hmm z1)
+// from z0 false. The state is (z, whether every emission so far was
+// true).
+fun step(s: (bool, bool)) {
+  let z = fst s in
+  let seen = snd s in
+  let next = if z then flip 0.7 else flip 0.1 in
+  let shown = if next then flip 0.3 else flip 0.6 in
+  (next, seen && shown)
+}
+snd (iterate(step, (false, true), 50))

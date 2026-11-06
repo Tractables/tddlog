@@ -118,7 +118,7 @@ COLOURS = {
     'libdai': ('#2c4f9e', DASHDOT), 'tensorinference': ('#4f6fd0', DASH),
     'dice': ('#6a3fc0', DASH), 'alea': ('#a8327a', '-'), 'roulette': ('#8f5fd6', '-'), 'nodice': ('#4b2a8f', DOT),
     'psi': ('#c0508f', DASHDOT), 'genfer': ('#7b2c5c', DASH), 'sppl': ('#9b6fd0', DOT), 'geni': ('#d0569f', DOT),
-    'pluck': ('#5c3a9e', DASHDOT),
+    'pluck': ('#5c3a9e', DASHDOT), 'webppl': ('#9a3fb5', DASHDOT),
     'storm': ('#1a7f37', '-'), 'prism': ('#3f9a50', DASH),
     'provsql': ('#8a6a12', '-'),
 }

@@ -22,7 +22,8 @@ negation, `^` its negation. On integers, `+` is a ripple-carry adder as in
 the artifact's `bvadd`, `-` adds the complement and one, `*` adds x
 shifted by each bit of y, all modulo 2^w as Dice's; `==` compares bit by
 bit, `<` (and `<=`, `>`, `>=`) is an unsigned comparator from bit 0 up,
-`<<` and `>>` shift by a constant.
+`<<` and `>>` shift by a constant, and `nth_bit(int(w, i), x)` is bit i of x
+counted from the most significant, as Dice's (its lib/Passes.ml).
 
 `let` binds in program order, so Roulette creates the flips, which order
 its BDD's variables, in the order Dice does. `if c then a else b` is
@@ -54,8 +55,8 @@ where one function of a large network's statements took minutes to
 compile. Each query divides each value's probability with the
 observations by their sum, with no shortcut through the complement.
 
-Supported: what dice2problog.py supports. Not supported: lists, /, %,
-nth_bit, sample, functions that call each other in a cycle.
+Supported: what dice2problog.py supports, and nth_bit. Not supported: lists, /, %,
+sample, functions that call each other in a cycle.
 
 Usage: dice2roulette.py program.dice [--joint] > program.rkt
 """
@@ -181,6 +182,14 @@ class Translator:
             c, t = self.expr(e[1], env, out, hint)
             same(t, BOOL, '!')
             return {'#t': '#f', '#f': '#t'}.get(c, f'(! {c})'), BOOL
+        if kind == 'nth_bit':   # bit i counted from the most significant (Dice's nth_bit in lib/Passes.ml)
+            width, i = e[1], e[2]
+            c, t = self.expr(e[3], env, out, hint)
+            if t != ('int', width):
+                raise TypeError(f'nth_bit(int({width}, {i}), x) of {show(t)}')
+            if not 0 <= i < width:
+                raise ValueError(f'nth_bit(int({width}, {i}), x): no bit {i} of {width}')
+            return f'(list-ref {c} {width - 1 - i})', BOOL
         if kind == 'shift':
             c, t = self.expr(e[2], env, out, hint)
             if t[0] != 'int':
@@ -322,8 +331,30 @@ class Translator:
             return self.components(t[1], f'(car {code})') + self.components(t[2], f'(cadr {code})')
         return [(code, t)]
 
+    def leaves(self, e, env, out, hint):
+        """The leaves of e's value, (code, type) each, its statements in
+        out. A tuple written out is taken apart as it is written, each
+        element a value of its own, down its right spine in a loop; another
+        value, by its type (`components`). The program's value is the tuple
+        of its queries, of 86,019 on taint_ginger_master's ground route: as
+        one nested list, its leaves' car and cadr chains made the module
+        quadratic in that number (80 GB in this translator)."""
+        found = []
+        while True:
+            if e[0] == 'let':
+                env = dict(env)
+                while e[0] == 'let':
+                    env[e[1]] = self.value(e[2], env, out, e[1])
+                    e = e[3]
+            if e[0] != 'tuple':
+                break
+            found += self.leaves(e[1], env, out, hint)
+            e = e[2]
+        code, t = self.value(e, env, out, hint)
+        return found + self.components(t, code)
+
     def translate(self, text, source, joint=False):
-        parser = Parser(tokenize(text))
+        parser = Parser(tokenize(text), nth_bit=True)
         funs, body = parser.program()
         names = [f[0] for f in funs]
         for i, (fname, params, ret, fbody) in enumerate(funs):
@@ -337,20 +368,18 @@ class Translator:
         # large for its compiler (PLT_CS_COMPILE_LIMIT) as forms it
         # interprets, where one function of them all took minutes.
         out = []
-        value, t = self.value(body, {}, out, 'result')
-        comps = self.components(t, value)
+        comps = self.leaves(body, {}, out, 'result')
         if joint:   # the Booleans as one int, least significant bit first
             if any(ct != BOOL for _, ct in comps):
-                raise NotImplementedError("--joint asks a value of Booleans, and the value is " + show(t))
+                raise NotImplementedError("--joint asks a value of Booleans, and the value is "
+                                          + ', '.join(show(ct) for _, ct in comps))
             comps = [(f"(list {' '.join(c for c, _ in reversed(comps))})", ("int", len(comps)))]
         queries = ' '.join(f'(distribution {c})' for c, _ in comps)
-        reports = []
-        for k, (_, ct) in enumerate(comps, 1):
-            reports.append(f'(statement (report-bool {k} (list-ref dists {k - 1})))' if ct == BOOL else
-                           f'(statement (report-int {k} (list-ref dists {k - 1}) {ct[1]}))')
+        widths = ' '.join('#f' if ct == BOOL else str(ct[1]) for _, ct in comps)
         main = ['(define clock (start-clock))'] + out + [f'(define dists (list {queries}))',
-                                                         '(statement (print-time clock))']
-        return PRELUDE.format(source=source) + '\n\n'.join(self.defs) + '\n\n' + '\n'.join(main + reports) + '\n'
+                                                         '(statement (print-time clock))',
+                                                         f"(statement (report dists '({widths})))"]
+        return PRELUDE.format(source=source) + '\n\n'.join(self.defs) + '\n\n' + '\n'.join(main) + '\n'
 
 
 PRELUDE = '''\
@@ -473,6 +502,11 @@ PRELUDE = '''\
     (hash-set! by-value (bits->natural (car vp)) (cdr vp)))
   (for ([i (in-range (expt 2 w))])
     (printf "roulette ~a ~a ~a\\n" k i (real (hash-ref by-value i 0)))))
+;; The components' distributions in order, from 1: a Boolean's where its
+;; width is #f, else an int's of that width.
+(define (report dists widths)
+  (for ([dist (in-list dists)] [w (in-list widths)] [k (in-naturals 1)])
+    (if w (report-int k dist w) (report-bool k dist))))
 
 '''
 

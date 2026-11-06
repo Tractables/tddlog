@@ -1,0 +1,28 @@
+// ranking_small: written by gen_arith_dice.py from ranking_small.jl, the
+// Alea.jl form of experiments/dicejl/ranking_small.jl of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0).
+// Cao, Garg, Holtzen, Van den Broeck, Millstein (UAI 2023), Table 1: ranking-small.
+//
+// The integers are 6 bits, signed in two's complement: lt(x, y) is
+// x < y of signed integers, and the original's uniform(-4, 5) is
+// uniform(0, 9) minus 4. Each ranking draws a noisy rank of every
+// item, o<k>_<i> for ranking k and item i, and observes their order.
+fun lt(x: int(6), y: int(6)) { x + int(6, 32) < y + int(6, 32) }
+let r1 = uniform(6, 0, 4) in
+let r2 = uniform(6, 0, 4) in
+let r3 = uniform(6, 0, 4) in
+let r4 = uniform(6, 0, 4) in
+let distinct1_2 = observe r1 != r2 in
+let distinct1_3 = observe r1 != r3 in
+let distinct1_4 = observe r1 != r4 in
+let distinct2_3 = observe r2 != r3 in
+let distinct2_4 = observe r2 != r4 in
+let distinct3_4 = observe r3 != r4 in
+let o1_1 = r1 + (uniform(6, 0, 9) - int(6, 4)) in
+let o1_2 = r2 + (uniform(6, 0, 9) - int(6, 4)) in
+let o1_3 = r3 + (uniform(6, 0, 9) - int(6, 4)) in
+let o1_4 = r4 + (uniform(6, 0, 9) - int(6, 4)) in
+let seen1_1 = observe lt(o1_4, o1_3) in
+let seen1_2 = observe lt(o1_3, o1_2) in
+let seen1_3 = observe lt(o1_2, o1_1) in
+(r1, (r2, (r3, r4)))

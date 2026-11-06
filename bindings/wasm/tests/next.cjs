@@ -142,7 +142,10 @@ function drawn(page) {
         await page.waitForSelector("#view figure svg");
         const line = await page.locator("#view .versus").first().textContent();
         assert.ok(line.includes(cats.names[i.pipeline]) && line.includes(cats.names[i.system]), `${k}: ${i.pipeline} against ${i.system}`);
-        assert.equal(await page.locator("table.board tbody tr").count(), i.groups.length, `${k}: a row a family`);
+        // the families last, after a row for each other system on a program of its own of the model
+        const others = i.systems.filter((y) => y !== "tddlog" && !y.endsWith("-tddlog") && y !== i.system).length;
+        assert.equal(await page.locator("table.board").last().locator("tbody tr").count(), i.groups.length, `${k}: a row a family`);
+        assert.equal(await page.locator("table.board tbody tr").count(), i.groups.length + others, `${k}: a row each other system`);
         // a line names the families where the system is faster, as the scatter counts it
         const t = (row, y) => (typeof row[4 + i.systems.indexOf(y)] === "number" ? row[4 + i.systems.indexOf(y)] : null);
         const faster = i.rows.filter((row) => {

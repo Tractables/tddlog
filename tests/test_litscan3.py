@@ -136,7 +136,16 @@ class Litscan3Tests(unittest.TestCase):
                 self.assertEqual(Path(bench.original(gargs, '')).resolve(), root / 'data' / where / f'{gargs[1]}.pl', name)
                 self.assertTrue(Path(bench.original(gargs, '')).exists(), name)
 
-    def test_aspmc_reads_the_ground_program_with_plain_names(self):
+    def test_what_aspmc_refuses_is_unsupported(self):
+        # what aspmc printed on the scan's programs it refused
+        for err in ["lark.exceptions.UnexpectedCharacters: No terminal matches '[' in the current parser context",
+                    '<block>:9:1-34: error: unsafe variables in:\n  query_atom(throws(#Anon0))',
+                    'RuntimeError: grounding stopped because of errors',
+                    '<block>:7:37-40: error: syntax error, unexpected not']:
+            self.assertTrue(bench.ASPMC_REFUSED.search(err), err)
+        self.assertIsNone(bench.ASPMC_REFUSED.search('Killed'))
+
+    def test_aspmc_reads_a_circuits_ground_program_with_plain_names(self):
         # tddlog --ground's syntax: switches, plain facts and rules, ground
         # queries and evidence
         ground = ("0.5::'$sw0'(mary).\nthrows(john).\nthrows(mary) :- '$sw0'(mary).\n"
@@ -149,14 +158,6 @@ class Litscan3Tests(unittest.TestCase):
         self.assertEqual(names['p1(c0)'], 'throws(mary)')
         self.assertEqual(names['p2'], 'brk')
         self.assertIn('evidence(p0,false).', bench.aspmc_ground('0.5::a.\nevidence(\\+a).\n')[0])
-        # what aspmc printed on the scan's programs it refused
-        for err in ["lark.exceptions.UnexpectedCharacters: No terminal matches '[' in the current parser context",
-                    '<block>:9:1-34: error: unsafe variables in:\n  query_atom(throws(#Anon0))',
-                    'RuntimeError: grounding stopped because of errors',
-                    '<block>:7:37-40: error: syntax error, unexpected not']:
-            self.assertTrue(bench.ASPMC_REFUSED.search(err), err)
-        self.assertIsNone(bench.ASPMC_REFUSED.search('Killed'))
-
 
 
 if __name__ == '__main__':

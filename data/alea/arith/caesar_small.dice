@@ -1,0 +1,35 @@
+// caesar_small: written by gen_arith_dice.py from caesar.jl with LENGTH=10, the
+// Alea.jl form of experiments/dicejl/caesar_small.jl of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0).
+// Cao, Garg, Holtzen, Van den Broeck, Millstein (UAI 2023), Table 1: caesar-small
+// to caesar-huge.
+//
+// The integers are 7 bits. The original's discrete over 7 bits has
+// 26 values, a Dice discrete of 5 bits, which widen writes in 7. Its
+// ifelse subtracts 26 from every sum, an underflow where the sum is
+// below 26, which the original's run ignores (IGNORE_ERRORS) and no
+// branch reads here. Each letter of the text is one call of send.
+fun widen(x: int(5)) {
+  (if nth_bit(int(5, 0), x) then int(7, 16) else int(7, 0))
+  + (if nth_bit(int(5, 1), x) then int(7, 8) else int(7, 0))
+  + (if nth_bit(int(5, 2), x) then int(7, 4) else int(7, 0))
+  + (if nth_bit(int(5, 3), x) then int(7, 2) else int(7, 0))
+  + (if nth_bit(int(5, 4), x) then int(7, 1) else int(7, 0))
+}
+fun send(key: int(7), c: int(7)) {
+  let enc = key + widen(discrete(0.082, 0.018, 0.024, 0.04, 0.123, 0.022, 0.022, 0.066, 0.069, 0.001, 0.008, 0.045, 0.024, 0.069, 0.073, 0.018, 0.002, 0.055, 0.067, 0.092, 0.028, 0.009, 0.023, 0.001, 0.018, 0.001)) in
+  let shifted = if enc > int(7, 25) then enc - int(7, 26) else enc in
+  observe shifted == c
+}
+let key = uniform(7, 0, 26) in
+let c1 = send(key, int(7, 9)) in
+let c2 = send(key, int(7, 11)) in
+let c3 = send(key, int(7, 8)) in
+let c4 = send(key, int(7, 21)) in
+let c5 = send(key, int(7, 20)) in
+let c6 = send(key, int(7, 21)) in
+let c7 = send(key, int(7, 2)) in
+let c8 = send(key, int(7, 5)) in
+let c9 = send(key, int(7, 2)) in
+let c10 = send(key, int(7, 12)) in
+key

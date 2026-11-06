@@ -1,0 +1,36 @@
+// tugofwar: Cao, Garg, Holtzen, Van den Broeck, Millstein, "Scaling
+// Integer Arithmetic in Probabilistic Programs" (UAI 2023), Table 1.
+// Ported to Dice from experiments/dicejl/tugofwar.jl of
+// Tractables/Alea.jl, branch arithmetic, commit
+// 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), whose
+// Alea.jl form is tugofwar.jl here.
+//
+// The integers are 9 bits. The original's discrete over 9 bits has 7
+// values, a Dice discrete of 3 bits, which widen writes in 9.
+fun widen(x: int(3)) {
+  (if nth_bit(int(3, 0), x) then int(9, 4) else int(9, 0))
+  + (if nth_bit(int(3, 1), x) then int(9, 2) else int(9, 0))
+  + (if nth_bit(int(3, 2), x) then int(9, 1) else int(9, 0))
+}
+// A player's strength: ten more where the player cheats.
+fun strength(x: int(9), who: int(3), c1: int(3), c2: int(3)) {
+  if c1 == who || c2 == who then x + int(9, 10) else x
+}
+let p1 = widen(discrete(0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625)) + int(9, 142) in
+let p2 = widen(discrete(0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625)) + int(9, 146) in
+let p3 = widen(discrete(0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625)) + int(9, 150) in
+let p4 = widen(discrete(0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625)) + int(9, 143) in
+let p5 = widen(discrete(0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625)) + int(9, 145) in
+let p6 = widen(discrete(0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625)) + int(9, 140) in
+let c1 = uniform(3, 0, 6) in
+let c2 = uniform(3, 0, 6) in
+let distinct = observe c1 != c2 in
+let a = strength(p1, int(3, 0), c1, c2) in
+let b = strength(p2, int(3, 1), c1, c2) in
+let c = strength(p3, int(3, 2), c1, c2) in
+let d = strength(p4, int(3, 3), c1, c2) in
+let e = strength(p5, int(3, 4), c1, c2) in
+let f = strength(p6, int(3, 5), c1, c2) in
+let won = observe a + b + e < c + d + f && a + c + d < b + e + f
+  && a + c + e < b + d + f && a + e + f < b + c + d in
+c1 == int(3, 5) || c2 == int(3, 5)

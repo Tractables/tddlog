@@ -1,0 +1,22 @@
+// gcd_large: experiments/psi/gcd_large.psi of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), the
+// Psi program of Cao et al. (UAI 2023); this header added.
+def main(){
+    a := uniformInt(1, 4096);
+    b := uniformInt(1, 4096);
+repeat 19 
+    {
+        converged := (b == 0);
+        amb := (a % b);
+        if converged {
+            a = a;
+            b = b;
+        }
+        else {
+            a = b;
+            b = amb;
+        }
+    }
+    answer := (a == 1);
+    return answer;
+}

@@ -11,7 +11,10 @@ a Psi tuple. `discrete(...)` is `categorical([...])` and `uniform(w, lo,
 hi)` `uniformInt(lo, hi - 1)`, so Psi sums over the values where Dice
 draws bits; the answer is the same distribution. `observe e` is
 `observe(e)`, which Psi renormalizes by. A Dice function is a Psi
-function, `iterate(f, x, k)` a `for` loop of k calls.
+function, `iterate(f, x, k)` a `for` loop of k calls. `x << k` is the
+product by 2^k modulo 2^w, `x >> k` the floor of the quotient, and
+`nth_bit(int(w, i), x)`, bit i of x from the most significant, `x << i`
+compared with 2^(w-1).
 
 Psi returns the distribution of one expression, and a tuple's value would
 come out as the joint. The program's value is therefore asked one
@@ -25,7 +28,7 @@ circuit's `joint` lines (bench.py's dicemap). A program Psi cannot express
 is refused (exit 3).
 
 Supported: what dice2problog.py supports except `/`, `%`, `::`, lists, and
-recursive functions (Psi has no recursion).
+recursive functions (Psi has no recursion), and `nth_bit`.
 
 Usage: dice2psi.py program.dice K [--joint] > program.psi
        dice2psi.py program.dice --components [--joint]
@@ -64,6 +67,12 @@ def same(a, b, what):
     if a != b:
         raise TypeError(f'{what}: {show(a)} and {show(b)}')
     return a
+
+
+def shl(c, k, width):
+    """c << k on an int(width): the product modulo 2^width."""
+    m = 2 ** width
+    return f'(({c} * {2 ** k}) - {m} * floor({c} * {2 ** k} / {m}))'
 
 
 def show(t):
@@ -155,10 +164,18 @@ class Translator:
             c, t = self.value(e[2], env, out, hint)
             if t[0] != 'int':
                 raise TypeError(f'{e[1]} of {show(t)}')
-            k, m = e[3], 2 ** t[1]
             if e[1] == '<<':
-                return f'(({c} * {2 ** k}) - {m} * floor({c} * {2 ** k} / {m}))', t
-            return f'floor({c} / {2 ** k})', t
+                return shl(c, e[3], t[1]), t
+            return f'floor({c} / {2 ** e[3]})', t
+        if kind == 'nth_bit':
+            # bit i from the most significant: x << i compared with 2^(w-1), as dice_ir.py has it
+            width, i = e[1], e[2]
+            c, t = self.value(e[3], env, out, hint)
+            if t != ('int', width):
+                raise TypeError(f'nth_bit(int({width}, {i})) of {show(t)}')
+            if not 0 <= i < width:
+                raise ValueError(f'nth_bit: bit {i} of {width}')
+            return f'({shl(c, i, width)} >= {2 ** (width - 1)})', BOOL
         if kind == 'bin':
             a, ta = self.value(e[2], env, out, hint)
             b, tb = self.value(e[3], env, out, hint)
@@ -289,7 +306,7 @@ class Translator:
         """(the Psi program asking component k, the components' types). With
         joint, the value, a tuple of Booleans, is one int(N) whose bits they
         are, the first the most significant: their joint distribution."""
-        parser = Parser(tokenize(text))
+        parser = Parser(tokenize(text), nth_bit=True)
         funs, body = parser.program()
         names = [f[0] for f in funs]
         for i, (fname, params, ret, fbody) in enumerate(funs):

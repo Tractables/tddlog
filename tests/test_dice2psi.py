@@ -95,6 +95,16 @@ class Dice2PsiTests(unittest.TestCase):
         self.assertEqual(bench.parse_psi('p(r) = δ(2)[r]\n'), {2: 1.0})
         self.assertEqual(bench.parse_psi('p(r) = (1/2)·(1/4)·δ(0)[r]+7/8·δ(1)[r]\n'), {0: 0.125, 1: 0.875})
         self.assertIsNone(bench.parse_psi('Pr[error] = 1\n'))
+        # --dp's numbers, an exponent's sign not a term's (caesar_small.psi's output)
+        dist = bench.parse_psi('p(key) = 1.0579820436719924e-03·δ(14)[key]+2.5e+00·(1/5)·δ(21)[key]'
+                               '+1.1959376439790302e-06·δ(11)[key]+1E-1·δ(3)[key]\n')
+        self.assertEqual(sorted(dist), [3, 11, 14, 21])
+        self.assertAlmostEqual(dist[14], 1.0579820436719924e-03, delta=1e-18)
+        self.assertAlmostEqual(dist[21], 0.5, delta=1e-15)
+        self.assertAlmostEqual(dist[11], 1.1959376439790302e-06, delta=1e-21)
+        self.assertAlmostEqual(dist[3], 0.1, delta=1e-15)
+        with self.assertRaises(ValueError):
+            bench.parse_psi('p(x) = exp(-1)·δ(0)[x]\n')
 
     def test_a_joint_is_one_integer(self):
         # the Booleans are the integer's bits, the first the most significant
@@ -137,6 +147,21 @@ class Dice2PsiTests(unittest.TestCase):
                 got = psi_answers(text, qs)
                 for q, w in zip(qs, want):
                     self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-9, msg=q)
+
+    def test_nth_bit_is_a_shift_and_a_comparison(self):
+        _, types = dice2psi.translate(reference.NTH_BIT, None)
+        self.assertEqual(types, [dice2psi.BOOL] * 3)
+        # bit 1 of an int(3): x * 2 modulo 8, at least 4
+        self.assertIn('(((v1_x * 2) - 8 * floor(v1_x * 2 / 8)) >= 4)', dice2psi.translate(reference.NTH_BIT, 1)[0])
+        with self.assertRaises(TypeError):
+            dice2psi.translate('nth_bit(int(4, 0), int(3, 1))', 0)
+
+    @unittest.skipUnless(PSI, 'PSI is not set')
+    def test_psi_gives_nth_bit(self):
+        qs = reference.queries(dice2problog.translate(reference.NTH_BIT_AS_SETS))
+        got = psi_answers(reference.NTH_BIT, qs)
+        for q, w in zip(qs, reference.NTH_BIT_ANSWERS):
+            self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-12, msg=q)
 
     @unittest.skipUnless(PSI, 'PSI is not set')
     def test_integer_operations_wrap_as_dices(self):

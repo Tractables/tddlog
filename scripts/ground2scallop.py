@@ -3,12 +3,17 @@
 
     tddlog --ground prog.pl | ground2scallop.py > prog.scl
 
+It is Scallop's reading of the circuits Alea.jl exports, an evaluation of
+their own that every system reads as the circuit or a translation of it:
+a circuit has no first-order source, and its ground program is the
+circuit, a relation per gate. Every other program is written first order,
+by `problog2scallop.py`.
+
 The input is ground and its probabilities sit on independent facts only:
 `--ground` has already turned every annotated disjunction and every
-probabilistic rule into switch facts and plain rules. That matters for
-Scallop, whose rule-level probabilities are not ProbLog's (a probability on
-a rule is a fresh random variable per derivation there, `docs/baselines.md`),
-so a translation from the source program would change the answers.
+probabilistic rule into switch facts and plain rules, so Scallop's
+rule-level probabilities (a fresh random variable per derivation,
+`docs/baselines.md`) never arise.
 
 Every relation is renamed `r_<name>` so that no ProbLog predicate collides
 with a Scallop keyword, every constant becomes a string, and every relation
@@ -186,6 +191,30 @@ def translate(text):
     else:
         out += [f'query {q}' for q, _ in qs]
     return '\n'.join(out) + '\n'
+
+
+def answers(out, scl):
+    """The answers of Scallop's output `out` on the program `scl` that
+    `translate` wrote: scli prints `<relation>: {<p>::()}` for a nullary
+    relation, `{}` when it has no proof. The query names map back through
+    the comment lines `// query q<i> ATOM` of `scl`, and with evidence the
+    answer is `q<i>e / e`, 'inconsistent' where e has no proof."""
+    names = dict(re.findall(r'^// query (q\d+) (.*)$', scl, re.M))
+    probs = {}
+    for line in out.splitlines():
+        m = re.match(r'^(\w+): \{(?:([0-9.eE+-]+)::\(\))?\}\s*$', line)
+        if m:
+            probs[m.group(1)] = float(m.group(2)) if m.group(2) else 0.0
+    if probs.get('e', 1) == 0:
+        return 'inconsistent'
+    res = {}
+    for q, atom in names.items():
+        key = re.sub(r'\s+', '', atom)
+        if 'e' in probs:
+            res[key] = probs[q + 'e'] / probs['e'] if probs['e'] else float('nan')
+        elif q in probs:
+            res[key] = probs[q]
+    return res
 
 
 def main():

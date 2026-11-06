@@ -160,6 +160,20 @@ class Dice2GeniTests(unittest.TestCase):
                 for q, w in zip(qs, want):
                     self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-5, msg=q)
 
+    def test_nth_bit_is_a_shift_and_a_comparison(self):
+        # x << i at least 2^(w - 1) (dice_ir.py)
+        _, types = dice2geni.translate(reference.NTH_BIT, None)
+        self.assertEqual(len(types), 3)
+        for k in range(3):
+            dice2geni.translate(reference.NTH_BIT, k)
+
+    @unittest.skipUnless(GENI, 'GENI is not set')
+    def test_geni_gives_nth_bit(self):
+        qs = reference.queries(dice2problog.translate(reference.NTH_BIT_AS_SETS))
+        got = geni_answers(reference.NTH_BIT, qs)
+        for q, w in zip(qs, reference.NTH_BIT_ANSWERS):
+            self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-5, msg=q)
+
 
 if __name__ == '__main__':
     unittest.main()

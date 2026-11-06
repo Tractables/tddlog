@@ -1,0 +1,37 @@
+// gcd: Cao, Garg, Holtzen, Van den Broeck, Millstein, "Scaling Integer
+// Arithmetic in Probabilistic Programs" (UAI 2023), Table 1 (gcd-small,
+// -medium and -large). Ported to Dice from examples/gcd_8.jl, gcd_10.jl
+// and gcd_12.jl of Tractables/Alea.jl, branch arithmetic, commit
+// 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), whose
+// Alea.jl forms are gcd_small.jl, gcd_medium.jl and gcd_large.jl here.
+//
+// The probability that two numbers uniform from 1 to 2^n are coprime, by
+// Euclid's algorithm. The sizes differ in three numbers, the places: $1
+// the width W = n + 1, $2 the 2^n values of each number, $3 the rounds
+// of Euclid's algorithm, 1 + W / log2 of the golden ratio rounded down
+// (small 9 256 13, medium 11 1024 16, large 13 4096 19). The original
+// draws its two numbers' bits interleaved; here each is a uniform.
+//
+// a mod b is the original's unsafemod, restoring division over the W
+// bits of a from the most significant: the remainder r, shifted left,
+// takes the next bit of a, and loses b where it is at least b. The state
+// is (b, (the bits of a not yet taken, shifted to the top, r)).
+// Dice's `fst e` and `snd e` take the longest e (its lib/Parser.mly), so a
+// projection that is an operand of `<<` or `==` is in parentheses.
+fun divide(s: (int($1), (int($1), int($1)))) {
+  let b = fst s in
+  let rest = fst (snd s) in
+  let shifted = (snd (snd s)) << 1 in
+  let r = if nth_bit(int($1, 0), rest) then shifted + int($1, 1) else shifted in
+  (b, (rest << 1, if b > r then r else r - b))
+}
+// One round: (a, b) becomes (b, a mod b), and (b, b) where a mod b is 0.
+fun round(s: (int($1), int($1))) {
+  let a = fst s in
+  let b = snd s in
+  let m = snd (snd (iterate(divide, (b, (a, int($1, 0))), $1))) in
+  (b, if m == int($1, 0) then b else m)
+}
+let a = uniform($1, 0, $2) + int($1, 1) in
+let b = uniform($1, 0, $2) + int($1, 1) in
+(fst (iterate(round, (a, b), $3))) == int($1, 1)

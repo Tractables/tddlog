@@ -6,7 +6,8 @@
 # (webppl-package.json, webppl-package-lock.json), which pins every package
 # by version and SHA-512 integrity; npm refuses a tarball whose hash differs.
 # WebPPL 0.9.15 runs on node 18 (tested with 18.19.1); it declares node >= 4.
-# If the box has no node >= 12, a pinned node v18.20.4 tarball from nodejs.org is
+# If the box has no node >= 12, or WEBPPL_PINNED_NODE=1 (bench.py's timed runs: one
+# node on every box), a pinned node v18.20.4 tarball from nodejs.org is
 # installed under $BASE/node and checked against nodejs.org's SHASUMS256.txt
 # and the SHA-256 recorded here (the SHASUMS file is not GPG-verified).
 #
@@ -29,7 +30,7 @@ for t in curl tar sha256sum; do
 done
 NODE=$(command -v node || true)
 nodemajor() { "$1" -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0; }
-if [ -z "$NODE" ] || [ "$(nodemajor "$NODE")" -lt 12 ]; then
+if [ "${WEBPPL_PINNED_NODE:-0}" = 1 ] || [ -z "$NODE" ] || [ "$(nodemajor "$NODE")" -lt 12 ]; then
   NODE=$BASE/node/node-$NV-linux-x64/bin/node
   if [ ! -x "$NODE" ]; then
     mkdir -p node || exit 1
@@ -43,6 +44,7 @@ if [ -z "$NODE" ] || [ "$(nodemajor "$NODE")" -lt 12 ]; then
   fi
 fi
 export PATH="$(dirname "$NODE"):$PATH"
+mkdir -p bin && ln -sfn "$NODE" bin/node || exit 1   # the node this install chose, $BASE/bin/node
 NPM=$(dirname "$NODE")/npm
 echo "### node $("$NODE" --version) ($NODE), npm $("$NPM" --version)"
 if [ "$(grep -o '"version": "[^"]*"' node_modules/webppl/package.json 2>/dev/null | head -1)" != "\"version\": \"$WV\"" ]; then
@@ -71,4 +73,4 @@ v=$(echo "$out" | tr '\n' ' ' | sed -n 's/.*value: \([^,}]*\),.*/\1/p')
 [ -n "$v" ] && awk -v v="$v" 'BEGIN{exit !(v > 0.30 && v < 0.55)}' \
   || { echo "### smoke test failed: $out" >&2; exit 1; }
 du -sh "$BASE" | sed 's/^/### du /'
-echo "### installed: webppl $WV in $BASE (WEBPPL_HOME for webppl.sh), node $NODE"
+echo "### installed: webppl $WV in $BASE (WEBPPL_HOME for webppl.sh), node $NODE ($BASE/bin/node)"

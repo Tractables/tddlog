@@ -176,6 +176,20 @@ class Dice2GenferTests(unittest.TestCase):
                 for q, w in zip(qs, want):
                     self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-12, msg=q)
 
+    def test_nth_bit_is_a_shift_and_a_comparison(self):
+        # x << i, a product reduced modulo 2^w here, at least 2^(w - 1) (dice_ir.py)
+        _, types = dice2genfer.translate(reference.NTH_BIT, None)
+        self.assertEqual(types, [dice_ir.BOOL] * 3)
+        for k in range(3):
+            dice2genfer.translate(reference.NTH_BIT, k)
+
+    @unittest.skipUnless(GENFER, 'GENFER is not set')
+    def test_genfer_gives_nth_bit(self):
+        qs = reference.queries(dice2problog.translate(reference.NTH_BIT_AS_SETS))
+        got = genfer_answers(reference.NTH_BIT, qs)
+        for q, w in zip(qs, reference.NTH_BIT_ANSWERS):
+            self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-12, msg=q)
+
 
 if __name__ == '__main__':
     unittest.main()

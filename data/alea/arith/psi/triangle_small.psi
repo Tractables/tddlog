@@ -1,0 +1,29 @@
+// triangle_small: experiments/psi/triangle_small.psi of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), the
+// Psi program of Cao et al. (UAI 2023); this header added.
+def check(a, b, c) {
+    if ((a <= 0) || (b <= 0) || (c <= 0)) {
+      return 3;
+    }
+    else if ((a+b<=c) || (a+c<=b) || (b+c <= a)) {
+        return 3;
+    }
+    else if ((a == b) && (b == c) && (a == c)) {
+        return 2;
+    }
+    else if ((a == b) || (b == c) || (a == c)) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+
+def main(){
+    a := uniformInt(-50, 50);
+    b := uniformInt(-50, 50);
+    c := uniformInt(-50, 50);
+
+    return check(a, b, c);
+}

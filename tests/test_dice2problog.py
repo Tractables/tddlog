@@ -226,6 +226,19 @@ BY_HAND = {
     'nested': [('c(0)', 73 / 300), ('c(1)', 134 / 300), ('c(2)', 93 / 300)],
 }
 
+# nth_bit(int(3, i), x), bit i of x from the most significant, for the
+# translators that write it (dice_ir.py, dice2roulette.py), and the same
+# bits as sets of values, a program dice2problog.py and `exact` read: x is
+# j with probability (j + 1)/36, observed other than 0, so the bits from
+# the most significant have probabilities 26/35, 22/35 and 20/35.
+X3 = ', '.join(str(k / 36) for k in range(1, 9))
+NTH_BIT = (f'let x = discrete({X3}) in let o = observe (x != int(3, 0)) in '
+           '(nth_bit(int(3, 0), x), (nth_bit(int(3, 1), x), nth_bit(int(3, 2), x)))\n')
+NTH_BIT_AS_SETS = (f'let x = discrete({X3}) in let o = observe (x != int(3, 0)) in '
+                   '(int(3, 4) <= x, (x == int(3, 2) || x == int(3, 3) || x == int(3, 6) || x == int(3, 7), '
+                   'x == int(3, 1) || x == int(3, 3) || x == int(3, 5) || x == int(3, 7)))\n')
+NTH_BIT_ANSWERS = [26 / 35, 22 / 35, 20 / 35]
+
 
 class DiceTests(unittest.TestCase):
     def test_exact_gives_dices_answers(self):
@@ -245,6 +258,25 @@ class DiceTests(unittest.TestCase):
                 got = answers(exact((translations / f'{name}.dice').read_text()), queries(text))
                 for (q, x), g in zip(expected, got):
                     self.assertAlmostEqual(g, x, delta=1e-15, msg=q)
+
+    def test_nth_bit_is_refused_and_its_sets_answer_by_hand(self):
+        with self.assertRaises(NotImplementedError):
+            dice2problog.translate(NTH_BIT)
+        qs = queries(dice2problog.translate(NTH_BIT_AS_SETS))
+        self.assertEqual(len(qs), 3)
+        for g, x in zip(answers(exact(NTH_BIT_AS_SETS), qs), NTH_BIT_ANSWERS):
+            self.assertAlmostEqual(g, x, delta=1e-15)
+
+    def test_projections_take_the_longest_expression_as_dices_do(self):
+        # Dice's parser shifts after `fst` and `snd`: `fst s == x` is
+        # `fst (s == x)` and `snd s << 1` is `snd (s << 1)`, type errors.
+        s = 'let s = (int(2, 1), int(2, 1)) in '
+        for text in (s + 'fst s == int(2, 1)', s + '(snd s << 1) == int(2, 2)'):
+            with self.subTest(text=text), self.assertRaises(TypeError):
+                dice2problog.translate(text)
+        for text in (s + '(fst s) == int(2, 1)', s + '((snd s) << 1) == int(2, 2)'):
+            with self.subTest(text=text):
+                dice2problog.translate(text)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,33 @@
+// ranking_medium: experiments/psi/ranking_medium.psi of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), the
+// Psi program of Cao et al. (UAI 2023); this header added.
+def update(ps:Z[], dp:Z[]) {
+    ns := array(4, 0:Z);
+    for i in [0..4) {
+        ns[i] = ps[i] + uniformInt(-4, 4);
+    }
+    for i in [0..3) {
+        observe(ns[dp[i]] < ns[dp[i+1]]);
+    }
+}
+
+def main(){
+    ps := array(4, 0:Z);
+    
+    for i in [0..4) {
+        ps[i] = uniformInt(0, 3);
+    }
+    for i in [0..4) {
+        for j in [i+1..4) {
+            observe(ps[i] != ps[j]);
+        }
+    }
+
+    data:Z[][] := [[3, 2, 1, 0], 
+                [1, 3, 2, 0],
+                [1, 2, 3, 0]];
+    for i in [0..data.length) {
+        update(ps, data[i]);
+    }
+    return ps;
+}

@@ -1,0 +1,50 @@
+// linext_large: written by gen_arith_dice.py from linext_large.jl, the
+// Alea.jl form of experiments/dicejl/linext_large.jl of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0).
+// Cao, Garg, Holtzen, Van den Broeck, Millstein (UAI 2023), Table 1: linext-large.
+//
+// The integers are 7 bits. The original's ranks are signed and
+// from 0 to n - 1, where the signed x < y is the unsigned one.
+let r1 = uniform(7, 0, 8) in
+let r2 = uniform(7, 0, 8) in
+let r3 = uniform(7, 0, 8) in
+let r4 = uniform(7, 0, 8) in
+let r5 = uniform(7, 0, 8) in
+let r6 = uniform(7, 0, 8) in
+let r7 = uniform(7, 0, 8) in
+let r8 = uniform(7, 0, 8) in
+let distinct1_2 = observe r1 != r2 in
+let distinct1_3 = observe r1 != r3 in
+let distinct1_4 = observe r1 != r4 in
+let distinct1_5 = observe r1 != r5 in
+let distinct1_6 = observe r1 != r6 in
+let distinct1_7 = observe r1 != r7 in
+let distinct1_8 = observe r1 != r8 in
+let distinct2_3 = observe r2 != r3 in
+let distinct2_4 = observe r2 != r4 in
+let distinct2_5 = observe r2 != r5 in
+let distinct2_6 = observe r2 != r6 in
+let distinct2_7 = observe r2 != r7 in
+let distinct2_8 = observe r2 != r8 in
+let distinct3_4 = observe r3 != r4 in
+let distinct3_5 = observe r3 != r5 in
+let distinct3_6 = observe r3 != r6 in
+let distinct3_7 = observe r3 != r7 in
+let distinct3_8 = observe r3 != r8 in
+let distinct4_5 = observe r4 != r5 in
+let distinct4_6 = observe r4 != r6 in
+let distinct4_7 = observe r4 != r7 in
+let distinct4_8 = observe r4 != r8 in
+let distinct5_6 = observe r5 != r6 in
+let distinct5_7 = observe r5 != r7 in
+let distinct5_8 = observe r5 != r8 in
+let distinct6_7 = observe r6 != r7 in
+let distinct6_8 = observe r6 != r8 in
+let distinct7_8 = observe r7 != r8 in
+let before1 = observe r1 < r2 in
+let before2 = observe r3 < r2 in
+let before3 = observe r1 < r4 in
+let before4 = observe r5 < r8 in
+let before5 = observe r6 < r5 in
+let before6 = observe r3 < r4 in
+(r1, (r2, (r3, (r4, (r5, (r6, (r7, r8)))))))

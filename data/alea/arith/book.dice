@@ -1,0 +1,34 @@
+// book: Cao, Garg, Holtzen, Van den Broeck, Millstein, "Scaling Integer
+// Arithmetic in Probabilistic Programs" (UAI 2023), Table 1. Ported to
+// Dice from experiments/dicejl/book_mod.jl of Tractables/Alea.jl, branch
+// arithmetic, commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache
+// License 2.0), whose Alea.jl form is book.jl here.
+//
+// The integers are 14 bits, signed in two's complement: lt(x, y) is
+// x < y and neg(x) is -x of signed integers, and the original's
+// uniform(lo, hi) with lo < 0 is uniform(0, hi - lo) minus -lo. The
+// original's loop runs once and is written out. Its ifelse draws the
+// uniforms of both sides; a draw no branch reads changes no answer.
+fun lt(x: int(14), y: int(14)) { x + int(14, 8192) < y + int(14, 8192) }
+fun neg(x: int(14)) { int(14, 0) - x }
+fun near(d: int(14)) { lt(d, int(14, 5)) && lt(neg(int(14, 5)), d) }
+let cur = uniform(14, 1, 501) in
+let tgt = uniform(14, 1, 501) in
+let delta = tgt - cur in
+let d =
+  if near(delta) then int(14, 0)
+  else if lt(delta, int(14, 0)) then
+    (if lt(neg(int(14, 25)), delta) then delta + (uniform(14, 0, 21) - int(14, 10))
+     else if lt(neg(int(14, 50)), delta) then delta + (uniform(14, 0, 41) - int(14, 20))
+     else if lt(neg(int(14, 100)), delta) then delta + (uniform(14, 0, 101) - int(14, 50))
+     else delta + (uniform(14, 0, 201) - int(14, 100)))
+  else if lt(delta, int(14, 25)) then delta + (uniform(14, 0, 21) - int(14, 10))
+  else if lt(delta, int(14, 50)) then delta + (uniform(14, 0, 41) - int(14, 20))
+  else if lt(delta, int(14, 100)) then delta + (uniform(14, 0, 101) - int(14, 50))
+  else delta + (uniform(14, 0, 201) - int(14, 100)) in
+let moved = cur + d in
+let next =
+  if lt(int(14, 500), moved) then int(14, 500)
+  else if lt(moved, int(14, 1)) then int(14, 1)
+  else moved in
+near(tgt - next)

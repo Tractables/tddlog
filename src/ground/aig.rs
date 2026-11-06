@@ -28,7 +28,11 @@
 //! candidate proved among them: the calls after would mostly tell apart
 //! what simulation could not (bb_weekend_w30: 7 762 calls, none proved, a
 //! second of the ground time; Roulette's hmm at 900 steps, 461 calls and
-//! 4.7 M steps, none proved, against 64 calls). Where the calls still
+//! 4.7 M steps, none proved, against 64 calls). That stop is for good: the
+//! steps a [`Pruner`] adds with each gate it builds do not take the search
+//! up again (noDice's brp4096-2, grounded level by level: 978 305 calls,
+//! 263 M steps and 7 gates proved, against 128 calls and 124 k steps,
+//! none proved). Where the calls still
 //! prove, the search goes on within its steps, the counterexamples no
 //! longer simulated once [`MAX_WORDS`] words are (dice_pmc1 written as
 //! recursion: 1 088 gates proved where the search stopped at 770, 3 256
@@ -225,6 +229,11 @@ struct Sweep {
     pending: Vec<Vec<(usize, bool)>>,
     /// Steps left.
     budget: u64,
+    /// Whether the search has stopped for good: its counterexamples told
+    /// apart what simulation could not, with no candidate proved among
+    /// them, or the solver faulted. The steps the pruner gives with each
+    /// gate after that do not take it up again.
+    stopped: bool,
     /// The candidates proved when the counterexamples pending began.
     proved_before: u64,
     stats: SweepStats,
@@ -248,6 +257,7 @@ impl Sweep {
             candidates: Vec::new(),
             pending: Vec::new(),
             budget: STEPS_FLOOR + STEPS_PER_LITERAL * literals,
+            stopped: false,
             proved_before: 0,
             stats: SweepStats::default(),
             solver: Solver::new(0),
@@ -267,7 +277,7 @@ impl Sweep {
     /// A literal of an earlier candidate that `l` is proved equal to,
     /// within the search's steps.
     fn find(&mut self, g: &mut Graph, l: Lit) -> Option<Lit> {
-        if self.budget == 0 {
+        if self.stopped || self.budget == 0 {
             return None;
         }
         let n = node(l);
@@ -281,7 +291,7 @@ impl Sweep {
             .take(TRIES)
             .collect();
         for c in tries {
-            if self.budget == 0 {
+            if self.stopped || self.budget == 0 {
                 return None;
             }
             // `l` is `c` where their phases agree, its complement otherwise.
@@ -327,7 +337,7 @@ impl Sweep {
                 consistent &= self.solver.add_clause(&[va, vb ^ 1]);
                 debug_assert!(consistent, "the sweep's clauses have no model");
                 if !consistent {
-                    self.budget = 0;
+                    self.stopped = true;
                     return None;
                 }
                 Some(true)
@@ -417,7 +427,7 @@ impl Sweep {
         let pending = std::mem::take(&mut self.pending);
         let before = std::mem::replace(&mut self.proved_before, self.stats.proved);
         if before == self.stats.proved {
-            self.budget = 0;
+            self.stopped = true;
             return;
         }
         if g.sim.len() >= MAX_WORDS {
@@ -763,7 +773,8 @@ fn rewrite(gp: &mut GroundProgram, into: &[GLit], fixed: &[Option<bool>]) {
 /// ([`super::engine`]'s `evaluate_by_levels`): the sweep proves a gate
 /// constant over the complete atoms before it, which its readers then
 /// need not be grounded on. One graph and one sweep serve the grounding,
-/// its budget growing with the literals of the gates built.
+/// its budget growing with the literals of the gates built until its
+/// counterexamples stop it.
 pub(super) struct Pruner {
     g: Graph,
     sweep: Sweep,

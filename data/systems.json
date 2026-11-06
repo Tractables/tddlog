@@ -4,8 +4,8 @@
     ["machines", "Lab and cloud machines with 16 to 96 physical cores and 125 to 1 488 GB of memory"],
     ["lanes", "Every run single-threaded and pinned to a physical core of its own, beside other runs in lanes; a suite's systems in one job, tddlog in that job or a later one"],
     ["memory", "Each process capped at its lane's share of the machine's memory, the same for every system: its address space before 2026-10-28, its memory (a cgroup without swap) since"],
-    ["runs", "2026-10-12 to 2026-11-04"],
-    ["tddlog", "tddlog {version} with its default strategy (auto), linked statically: builds of 2026-10-20 to 2026-11-04, each table's named on the baselines branch; the release's main has every solver change they have"],
+    ["runs", "2026-10-12 to 2026-11-05"],
+    ["tddlog", "tddlog {version} with its default strategy (auto), linked statically: builds of 2026-10-20 to 2026-11-05, each table's named on the baselines branch; the release's main has every solver change they have"],
     ["baselines", "Each one's version and settings on its page"],
     ["reference", "An exact method written for the suite where one answers, else a system in exact arithmetic (Psi, Storm's exact engine, Genfer's rationals), else Alea.jl, ProbLog, Merlin or Ace, in doubles; each instance's page names it"],
     ["tolerance", "A marginal within 1e-9 of the reference, absolute (the UAI MAR convention), or within both 1e-6 and 0.1% of it beyond the digits either prints; log10 Z within 1e-6 of it, relative to max(1, |log10 Z|)"]
@@ -54,7 +54,7 @@
     "aspmc": {
       "about": "Algebraic answer set counting: it reads ProbLog, breaks cycles by Tp-unfolding and counts a Clark completion guided by a tree decomposition.",
       "version": "aspmc 1.1.1 with sharpSAT-TD",
-      "settings": "The ProbLog program (-m problog), counted by the knowledge compiler sharpSAT-TD.",
+      "settings": "The ProbLog program (-m problog), a fraction such as 1/3 as a probability written as a decimal, counted by the knowledge compiler sharpSAT-TD.",
       "notgiven": "",
       "cite": {"authors": "Thomas Eiter, Markus Hecher and Rafael Kiesel", "title": "Treewidth-aware cycle breaking for algebraic answer set counting", "venue": "KR", "year": 2021},
       "link": "https://github.com/raki123/aspmc"
@@ -179,6 +179,14 @@
       "cite": {"authors": "Maddy Bowers, Alexander K. Lew, Joshua B. Tenenbaum, Armando Solar-Lezama and Vikash K. Mansinghka", "title": "Stochastic lazy knowledge compilation for inference in discrete probabilistic programs", "venue": "PLDI", "year": 2025, "doi": "10.1145/3729325"},
       "link": "https://doi.org/10.5281/zenodo.15051140"
     },
+    "webppl": {
+      "about": "A probabilistic programming language embedded in JavaScript; here its exact inference, which enumerates every path through a program's random choices.",
+      "version": "WebPPL 0.9.15 on node 18.20.4",
+      "settings": "Dice programs through dice2webppl.py, one Infer with method 'enumerate' and no limit; its time is its compile and run of the program in the process, after a warm-up, without node's start, the modules' load and the compile of its header.",
+      "notgiven": "",
+      "cite": {"authors": "Noah D. Goodman and Andreas Stuhlmüller", "title": "The Design and Implementation of Probabilistic Programming Languages", "venue": "dippl.org (electronic book)", "year": 2014},
+      "link": "https://github.com/probmods/webppl"
+    },
     "storm": {
       "about": "A probabilistic model checker; here it computes the probability of a program's result on the program's Markov chain.",
       "version": "Storm 1.14 through stormpy, one Sylvan thread",
@@ -214,8 +222,8 @@
     "scallop": {
       "about": "A Datalog language for neurosymbolic programming whose provenance semirings tag each tuple: for probabilities its top-k proofs keep the k most probable proofs of each tuple and count the weighted models of their disjunction with an SDD.",
       "version": "Scallop 0.2.5 (668bfb6)",
-      "settings": "The ground program tddlog --ground prints, as Scallop relations and rules (ground2scallop.py), under its top-k proofs (-p topkproofs) at the largest k its command line takes, 2^64 - 1, so that no proof is dropped and the answer is exact (allproofs); its time includes the grounding. Scallop does not condition: with evidence the harness divides the probability of the query and the evidence by that of the evidence, and for a partition function it is asked the probability of the evidence as a query, as ProbLog is.",
-      "notgiven": "",
+      "settings": "The ProbLog program written first order as a Scallop program (problog2scallop.py): its relations, facts and rules, each probabilistic rule drawn once per ground clause, as in ProbLog, its probability written as a string, which Scallop reads as a double (a number there is read as an f32). A circuit Alea.jl exports, which has no first-order source, is read as the ground program tddlog --ground prints of it, a relation per gate (ground2scallop.py), its time including the grounding. It runs under its top-k proofs (-p topkproofs) at the largest k its command line takes, 2^64 - 1, so that no proof is dropped and the answer is exact (allproofs). Scallop does not condition: with evidence the harness divides the probability of the query and the evidence by that of the evidence, and for a partition function it is asked the probability of the evidence as a query, as ProbLog is.",
+      "notgiven": "The programs its language cannot express (a negation through recursion, a rule that no positive literal binds, arithmetic on an argument that also holds symbols), and those its translator does not write (lists, function symbols, disjunctive bodies, flexible probabilities).",
       "cite": {"authors": "Ziyang Li, Jiani Huang and Mayur Naik", "title": "Scallop: A Language for Neurosymbolic Programming", "venue": "PLDI", "year": 2023},
       "link": "https://github.com/scallop-lang/scallop"
     }

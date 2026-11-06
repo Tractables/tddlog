@@ -1,0 +1,26 @@
+// luhn_medium: written by gen_arith_dice.py from luhn_medium.jl, the
+// Alea.jl form of experiments/dicejl/luhn_medium.jl of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0).
+// Cao, Garg, Holtzen, Van den Broeck, Millstein (UAI 2023), Table 1: luhn-medium.
+//
+// The integers are 7 bits. The original's ifelse computes 2x - 9 of
+// every digit x, an underflow below 5, which the original's run
+// ignores (IGNORE_ERRORS) and no branch reads here. Its sum % 10 is
+// the sum less the largest multiple of 10 it reaches, at most 40.
+fun double(x: int(7)) { if x > int(7, 4) then int(7, 2) * x - int(7, 9) else int(7, 2) * x }
+let id1 = uniform(7, 0, 10) in
+let id2 = uniform(7, 0, 10) in
+let id3 = uniform(7, 0, 10) in
+let id4 = uniform(7, 0, 10) in
+let id5 = uniform(7, 0, 10) in
+let id6 = uniform(7, 0, 10) in
+let seen1 = observe (if flip 0.5 then id1 == int(7, 2) else true) in
+let seen2 = observe (if flip 0.5 then id2 == int(7, 0) else true) in
+let seen3 = observe (if flip 0.5 then id3 == int(7, 5) else true) in
+let seen4 = observe (if flip 0.5 then id4 == int(7, 6) else true) in
+let seen5 = observe (if flip 0.5 then id5 == int(7, 0) else true) in
+let seen6 = observe (if flip 0.5 then id6 == int(7, 0) else true) in
+let sum = id2 + double(id3) + id4 + double(id5) + id6 in
+let mod = if sum >= int(7, 40) then sum - int(7, 40) else if sum >= int(7, 30) then sum - int(7, 30) else if sum >= int(7, 20) then sum - int(7, 20) else if sum >= int(7, 10) then sum - int(7, 10) else sum in
+let check = observe id1 == (int(7, 10) - mod) in
+(id1, (id2, (id3, (id4, (id5, id6)))))

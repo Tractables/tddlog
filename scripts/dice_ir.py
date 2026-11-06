@@ -24,7 +24,8 @@ An argument is a `Var` or a `Const`. The pure operators are `not`, `and`,
 2^w, as Dice's), `shl` and `shr` (by a constant, the second argument a
 Python int), `ite` (c, a, b) and `copy`. Each variable carries the values
 it can take (`support`), and a variable with one value is that constant:
-operations on constants are folded. A tuple is a `Tup` of values, resolved
+operations on constants are folded. `nth_bit(int(w, i), x)`, bit i of x
+counted from the most significant, is `le` of 2^(w-1) and x `shl` i. A tuple is a `Tup` of values, resolved
 statically; a function is inlined at each call (no recursion), and
 `iterate(f, x, k)` is a loop of k inlined calls. A flip inside a branch
 stays in it, as does an observe.
@@ -314,6 +315,18 @@ class Lower:
             if v.t[0] != 'int':
                 raise TypeError(f'{e[1]} of {show(v.t)}')
             return self.op(out, 'shl' if e[1] == '<<' else 'shr', v.t, [v, e[3]])
+        if kind == 'nth_bit':
+            # bit i counted from the most significant (Dice's nth_bit in
+            # lib/Passes.ml): x << i has it as its most significant bit,
+            # which is set where x << i is at least 2^(width - 1)
+            width, i = e[1], e[2]
+            v = self.value(e[3], env, out)
+            if v.t != ('int', width):
+                raise TypeError(f'nth_bit(int({width}, {i}), x) of {show(v.t)}')
+            if not 0 <= i < width:
+                raise ValueError(f'nth_bit(int({width}, {i}), x): no bit {i} of {width}')
+            shifted = self.op(out, 'shl', v.t, [v, i])
+            return self.op(out, 'le', BOOL, [Const(v.t, 1 << (width - 1)), shifted])
         if kind == 'bin':
             a = self.value(e[2], env, out)
             b = self.value(e[3], env, out)
@@ -429,7 +442,7 @@ class Lower:
         return self.funs[fname]
 
     def program(self, text):
-        parser = Parser(tokenize(text))
+        parser = Parser(tokenize(text), nth_bit=True)
         funs, body = parser.program()
         names = [f[0] for f in funs]
         for i, (fname, params, ret, fbody) in enumerate(funs):

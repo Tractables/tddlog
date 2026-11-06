@@ -1,0 +1,36 @@
+// radar: Cao, Garg, Holtzen, Van den Broeck, Millstein, "Scaling Integer
+// Arithmetic in Probabilistic Programs" (UAI 2023), Table 1 (radar1).
+// Ported to Dice from experiments/dicejl/radar.jl of Tractables/Alea.jl,
+// branch arithmetic, commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5
+// (Apache License 2.0), whose Alea.jl form is radar.jl here.
+//
+// The integers are 10 bits, signed in two's complement: lt(x, y) is
+// x < y of signed integers, and the original's uniform(lo, hi) with
+// lo < 0 is uniform(0, hi - lo) minus -lo. The original's T(mu, l, r)
+// draws x, a uniform from -l to 0 plus one from 0 to l, and y likewise
+// for r, observes x <= 0 < y and returns x or y, by a flip l / (l + r),
+// plus mu: here t, given the draws. Its ifelse calls both T's, whose
+// observations both hold, as here, where both are called before either
+// is chosen.
+fun lt(x: int(10), y: int(10)) { x + int(10, 512) < y + int(10, 512) }
+fun t(mu: int(10), x: int(10), y: int(10), pick: bool) {
+  let seen = observe !lt(int(10, 0), x) && lt(int(10, 0), y) in
+  (if pick then x else y) + mu
+}
+let b1 = flip 0.2 in
+let b2 = if b1 then true else flip 0.2 in
+let x1 = uniform(10, 0, 11) in
+let x2 = (uniform(10, 0, 5) - int(10, 2)) + x1 in
+let t1 = t(x1, (uniform(10, 0, 6) - int(10, 5)) + uniform(10, 0, 6),
+  (uniform(10, 0, 2) - int(10, 1)) + uniform(10, 0, 2), flip 0.8333333333333334) in
+let t2 = t(x1, (uniform(10, 0, 6) - int(10, 5)) + uniform(10, 0, 6),
+  (uniform(10, 0, 6) - int(10, 5)) + uniform(10, 0, 6), flip 0.5) in
+let o1 = x1 + (if b1 then t1 else t2) in
+let t3 = t(x2, (uniform(10, 0, 6) - int(10, 5)) + uniform(10, 0, 6),
+  (uniform(10, 0, 2) - int(10, 1)) + uniform(10, 0, 2), flip 0.8333333333333334) in
+let t4 = t(x2, (uniform(10, 0, 6) - int(10, 5)) + uniform(10, 0, 6),
+  (uniform(10, 0, 6) - int(10, 5)) + uniform(10, 0, 6), flip 0.5) in
+let o2 = x2 + (if b2 then t3 else t4) in
+let seen1 = observe o1 == int(10, 5) in
+let seen2 = observe b1 in
+x2

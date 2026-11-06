@@ -99,19 +99,21 @@ class Parser:
       atom   := 'flip' num | 'flip' '(' num ')' | 'discrete' '(' nums ')'
               | 'int' '(' num ',' num ')' | 'uniform' '(' num ',' num ',' num ')'
               | 'iterate' '(' id ',' expr ',' num ')'
-              | 'fst' atom | 'snd' atom | 'true' | 'false' | id ['(' args ')']
+              | 'fst' expr | 'snd' expr | 'true' | 'false' | id ['(' args ')']
               | '(' expr [',' expr] ')'
-    `let`, `if` and `observe` extend as far right as they can, as Dice's
-    parser resolves those conflicts by shifting. Dice's `fst e` and `snd e`
-    also take the longest e, which a well-typed program never uses (no
-    binary operator returns a tuple), so here they take an atom.
+    `let`, `if`, `observe`, `fst` and `snd` extend as far right as they can,
+    as Dice's parser resolves those conflicts by shifting: `fst s == x` is
+    `fst (s == x)`, a type error, as Dice reads it.
     """
 
-    def __init__(self, tokens):
+    def __init__(self, tokens, nth_bit=False):
         self.toks = tokens
         self.i = 0
         # A function's parameter types, by name (None where not declared).
         self.param_types = {}
+        # `nth_bit(int(w, i), e)` read as ('nth_bit', w, i, e), for a translator that
+        # writes it (dice2roulette.py); refused otherwise (UNSUPPORTED)
+        self.nth_bit = nth_bit
 
     def peek(self, k=0):
         return self.toks[self.i + k] if self.i + k < len(self.toks) else ('eof', None)
@@ -260,7 +262,15 @@ class Parser:
         if t == ('id', 'iterate'):
             return ('iterate', *self.args(lambda: self.take('id')[1], self.expr, self.integer))
         if t in (('id', 'fst'), ('id', 'snd')):
-            return (t[1], self.atom())
+            return (t[1], self.expr())
+        if t == ('id', 'nth_bit') and self.nth_bit:
+            self.take('op', '(')
+            self.take('id', 'int')
+            width, i = self.args(self.integer, self.integer)
+            self.take('op', ',')
+            e = self.expr()
+            self.take('op', ')')
+            return ('nth_bit', width, i, e)
         if t == ('id', 'true'):
             return ('bool', True)
         if t == ('id', 'false'):

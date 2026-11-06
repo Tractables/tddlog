@@ -1,0 +1,18 @@
+// plankton: from Cao, Garg, Holtzen, Van den Broeck, Millstein, "Scaling
+// Integer Arithmetic in Probabilistic Programs" (UAI 2023), not in its
+// Table 1. Ported to Dice from experiments/dicejl/plankton.jl of
+// Tractables/Alea.jl, branch arithmetic, commit
+// 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), whose
+// Alea.jl form is plankton.jl here.
+//
+// The original's binomial(n, p, max) is a loop over i from 0 to max - 1
+// that adds one where i < n and a flip p holds: here an iterate over the
+// state (n, (i, count)).
+fun grow(s: (int(7), (int(7), int(7)))) {
+  let n = fst s in
+  let i = fst (snd s) in
+  let count = snd (snd s) in
+  (n, (i + int(7, 1), if i < n && flip 0.5 then count + int(7, 1) else count))
+}
+let param = uniform(7, 10, 51) in
+snd (snd (iterate(grow, (param, (int(7, 0), int(7, 0))), 50)))

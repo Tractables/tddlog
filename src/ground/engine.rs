@@ -2393,7 +2393,7 @@ fn resolve_queries_and_evidence(
                 d.pattern
                     .args
                     .iter()
-                    .map(|t| substitute(t, &binding))
+                    .map(|t| t.substituted(&binding))
                     .collect::<Args>(),
             );
             let asked = if d.evidence {
@@ -2609,18 +2609,6 @@ fn matches<'t>(g: &Grounder, pat: &'t Term, v: Val, binding: &mut FxHashMap<&'t 
                     .zip(&key[1..])
                     .all(|(p, &a)| matches(g, p, a, binding))
         }
-    }
-}
-
-/// The term `t` with the variables of `binding` replaced.
-fn substitute(t: &Term, binding: &FxHashMap<&Term, &Term>) -> Term {
-    match t {
-        Term::Var(_) => binding.get(t).map_or_else(|| t.clone(), |&b| b.clone()),
-        Term::Compound(c) if !t.is_ground() => Compound::term(
-            c.name.clone(),
-            c.args.iter().map(|a| substitute(a, binding)).collect(),
-        ),
-        _ => t.clone(),
     }
 }
 

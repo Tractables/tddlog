@@ -1,0 +1,26 @@
+// triangle: Cao, Garg, Holtzen, Van den Broeck, Millstein, "Scaling
+// Integer Arithmetic in Probabilistic Programs" (UAI 2023), Table 1
+// (triangle-small, -medium and -large). Ported to Dice from
+// experiments/dicejl/triangle_small.jl, triangle_medium.jl and
+// triangle_large.jl of Tractables/Alea.jl, branch arithmetic, commit
+// 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), whose
+// Alea.jl forms are triangle_small.jl, triangle_medium.jl and
+// triangle_large.jl here.
+//
+// The integers are signed in two's complement, and the sizes differ in
+// four numbers, the places: $1 the width, $2 the bound m of the sides,
+// each uniform from -m to m, $3 the number 2m + 1 of their values, and
+// $4 the offset 2^($1 - 1) of lt, x < y of signed integers (small 15 50
+// 101 16384, medium 15 100 201 16384, large 20 500 1001 524288). The
+// original's uniform(-m, m + 1) is uniform(0, 2m + 1) minus m.
+fun lt(x: int($1), y: int($1)) { x + int($1, $4) < y + int($1, $4) }
+fun le(x: int($1), y: int($1)) { !lt(y, x) }
+let a = uniform($1, 0, $3) - int($1, $2) in
+let b = uniform($1, 0, $3) - int($1, $2) in
+let c = uniform($1, 0, $3) - int($1, $2) in
+let zero = int($1, 0) in
+if le(a, zero) || le(b, zero) || le(c, zero) then int(2, 3)
+else if le(a + b, c) || le(a + c, b) || le(b + c, a) then int(2, 3)
+else if a == b && a == c && b == c then int(2, 2)
+else if a == b || a == c || b == c then int(2, 1)
+else int(2, 0)

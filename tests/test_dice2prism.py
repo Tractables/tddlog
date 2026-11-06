@@ -187,6 +187,22 @@ class Dice2PrismTests(unittest.TestCase):
                 for u, p in JOINT_MASSES.items():
                     self.assertAlmostEqual(comp[str(u)], p, delta=1e-12, msg=u)
 
+    def test_nth_bit_is_a_shift_and_a_comparison(self):
+        # x << i at least 2^(w - 1) (dice_ir.py), << a product modulo 2^w here
+        _, _, tys = dice2prism.translate(reference.NTH_BIT, None)
+        self.assertEqual(len(tys), 3)
+        for k in range(3):
+            dice2prism.translate(reference.NTH_BIT, k)
+
+    @unittest.skipUnless(STORM and PRISM, 'STORM_PYTHON or PRISM_DIR is not set')
+    def test_the_checkers_give_nth_bit(self):
+        qs = reference.queries(dice2problog.translate(reference.NTH_BIT_AS_SETS))
+        for system, engine in [('storm', 'exact'), ('storm', 'sparse'), ('prism', 'sparse')]:
+            with self.subTest(system=system, engine=engine):
+                got = bench.alea_answers(qs, checker_answers(reference.NTH_BIT, qs, system, engine))
+                for q, w in zip(qs, reference.NTH_BIT_ANSWERS):
+                    self.assertAlmostEqual(got[re.sub(r'\s+', '', q)], w, delta=1e-12, msg=q)
+
 
 if __name__ == '__main__':
     unittest.main()

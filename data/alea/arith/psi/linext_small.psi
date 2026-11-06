@@ -1,0 +1,24 @@
+// linext_small: experiments/psi/linext_small.psi of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0), the
+// Psi program of Cao et al. (UAI 2023); this header added.
+        
+def main(){
+    ps := array(4, 0:Z);
+    
+    for i in [0..ps.length) {
+        ps[i] = uniformInt(0, 3);
+    }
+    for i in [0..ps.length) {
+        for j in [i+1..ps.length) {
+            observe(ps[i] != ps[j]);
+        }
+    }
+    
+    data := [[0, 2], [0, 3]];
+
+    for i in [0..data.length) {
+        observe(ps[data[i][0]] < ps[data[i][1]]);
+    }
+    
+    return ps;
+}

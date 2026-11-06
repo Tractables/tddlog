@@ -52,10 +52,13 @@ PREFIX = 'problog2pita_'
 _NAME = re.compile(r"(?<![\w$'])([a-z][a-zA-Z0-9_]*)(?![\w'])")
 # The predicates PITA calls as plain Prolog wherever a program names them
 # (cplint's swi_builtin/1: SWI-Prolog's built-ins and the exports of
-# library(lists) and library(apply)), as name/arity. A program that defines
-# one has it renamed as RESERVED's names are: the ProbLog tutorial's
-# tutslides/01_basic 3 defines `break/0`, and PITA asked `prob(break, P)`
-# called SWI's break/0 and answered 1 for 0.76.
+# library(lists), library(apply) and library(clpfd)), as name/arity. A
+# program that defines one has it renamed as RESERVED's names are: the
+# ProbLog tutorial's tutslides/01_basic 3 defines `break/0`, and PITA asked
+# `prob(break, P)` called SWI's break/0 and answered 1 for 0.76; the port of
+# Pluck's string editing (pluck_string_editing) defines `in/2`, clpfd's, and
+# PITA called it as the built-in, which its program does not load ("Unknown
+# procedure: in/2").
 SWI_BUILTIN = frozenset((
     'abort/0 break/0 fail/0 false/0 garbage_collect/0 halt/0 listing/0 nl/0 nodebug/0 notrace/0 prolog/0 '
     'repeat/0 seen/0 told/0 trace/0 true/0 tracing/0 debugging/0 statistics/0 version/0 ttyflush/0 '
@@ -73,7 +76,12 @@ SWI_BUILTIN = frozenset((
     'select/3 selectchk/3 select/4 nth0/3 nth1/3 nth0/4 nth1/4 last/2 reverse/2 permutation/2 flatten/2 '
     'sum_list/2 sumlist/2 max_list/2 min_list/2 numlist/3 list_to_set/2 max_member/2 min_member/2 '
     'nextto/3 proper_length/2 exclude/3 include/3 partition/4 maplist/2 maplist/3 maplist/4 maplist/5 '
-    'foldl/4 foldl/5 foldl/6').split())
+    'foldl/4 foldl/5 foldl/6 '
+    # the exports of library(clpfd) named by an atom (its operators, #= and the like, are no atoms)
+    'in/2 ins/2 indomain/1 label/1 labeling/2 all_different/1 all_distinct/1 sum/3 scalar_product/4 '
+    'tuples_in/2 lex_chain/1 serialized/2 global_cardinality/2 global_cardinality/3 circuit/1 '
+    'cumulative/1 cumulative/2 disjoint2/1 element/3 automaton/3 automaton/8 transpose/2 zcompare/3 '
+    'chain/2 fd_var/1 fd_inf/2 fd_sup/2 fd_size/2 fd_dom/2 fd_degree/2').split())
 
 
 def rename(text, names=()):

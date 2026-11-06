@@ -1,0 +1,56 @@
+// ranking_large: written by gen_arith_dice.py from ranking_large.jl, the
+// Alea.jl form of experiments/dicejl/ranking_large.jl of Tractables/Alea.jl, branch arithmetic,
+// commit 7e9ff23517086eb4518845e50218bf18b4d9f2a5 (Apache License 2.0).
+// Cao, Garg, Holtzen, Van den Broeck, Millstein (UAI 2023), Table 1: ranking-large.
+//
+// The integers are 6 bits, signed in two's complement: lt(x, y) is
+// x < y of signed integers, and the original's uniform(-4, 5) is
+// uniform(0, 9) minus 4. Each ranking draws a noisy rank of every
+// item, o<k>_<i> for ranking k and item i, and observes their order.
+fun lt(x: int(6), y: int(6)) { x + int(6, 32) < y + int(6, 32) }
+let r1 = uniform(6, 0, 4) in
+let r2 = uniform(6, 0, 4) in
+let r3 = uniform(6, 0, 4) in
+let r4 = uniform(6, 0, 4) in
+let distinct1_2 = observe r1 != r2 in
+let distinct1_3 = observe r1 != r3 in
+let distinct1_4 = observe r1 != r4 in
+let distinct2_3 = observe r2 != r3 in
+let distinct2_4 = observe r2 != r4 in
+let distinct3_4 = observe r3 != r4 in
+let o1_1 = r1 + (uniform(6, 0, 9) - int(6, 4)) in
+let o1_2 = r2 + (uniform(6, 0, 9) - int(6, 4)) in
+let o1_3 = r3 + (uniform(6, 0, 9) - int(6, 4)) in
+let o1_4 = r4 + (uniform(6, 0, 9) - int(6, 4)) in
+let seen1_1 = observe lt(o1_4, o1_3) in
+let seen1_2 = observe lt(o1_3, o1_2) in
+let seen1_3 = observe lt(o1_2, o1_1) in
+let o2_1 = r1 + (uniform(6, 0, 9) - int(6, 4)) in
+let o2_2 = r2 + (uniform(6, 0, 9) - int(6, 4)) in
+let o2_3 = r3 + (uniform(6, 0, 9) - int(6, 4)) in
+let o2_4 = r4 + (uniform(6, 0, 9) - int(6, 4)) in
+let seen2_1 = observe lt(o2_2, o2_4) in
+let seen2_2 = observe lt(o2_4, o2_3) in
+let seen2_3 = observe lt(o2_3, o2_1) in
+let o3_1 = r1 + (uniform(6, 0, 9) - int(6, 4)) in
+let o3_2 = r2 + (uniform(6, 0, 9) - int(6, 4)) in
+let o3_3 = r3 + (uniform(6, 0, 9) - int(6, 4)) in
+let o3_4 = r4 + (uniform(6, 0, 9) - int(6, 4)) in
+let seen3_1 = observe lt(o3_2, o3_3) in
+let seen3_2 = observe lt(o3_3, o3_4) in
+let seen3_3 = observe lt(o3_4, o3_1) in
+let o4_1 = r1 + (uniform(6, 0, 9) - int(6, 4)) in
+let o4_2 = r2 + (uniform(6, 0, 9) - int(6, 4)) in
+let o4_3 = r3 + (uniform(6, 0, 9) - int(6, 4)) in
+let o4_4 = r4 + (uniform(6, 0, 9) - int(6, 4)) in
+let seen4_1 = observe lt(o4_4, o4_2) in
+let seen4_2 = observe lt(o4_2, o4_3) in
+let seen4_3 = observe lt(o4_3, o4_1) in
+let o5_1 = r1 + (uniform(6, 0, 9) - int(6, 4)) in
+let o5_2 = r2 + (uniform(6, 0, 9) - int(6, 4)) in
+let o5_3 = r3 + (uniform(6, 0, 9) - int(6, 4)) in
+let o5_4 = r4 + (uniform(6, 0, 9) - int(6, 4)) in
+let seen5_1 = observe lt(o5_4, o5_3) in
+let seen5_2 = observe lt(o5_3, o5_2) in
+let seen5_3 = observe lt(o5_2, o5_1) in
+(r1, (r2, (r3, r4)))

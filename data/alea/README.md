@@ -74,6 +74,33 @@ become Alea's `List`, `Nil` and `Cons`, `@dice_ite` `@alea_ite`, the
 function becomes `E`, which `model()` returns. The programs use Alea's
 inductive types (`@inductive`, `match`, `Nat`) with fuel, as in Dice.jl.
 
+## Ports of arith and pluck
+
+An arith or pluck program is the model, which Alea.jl reads (`bench.py
+--suite ppl`, its ALEA_OF); every other system reads a port of it, written
+by hand as a user of the port's language would write the model. Each
+port's header names its source and says what it writes differently.
+
+- arith: a Dice program, `arith/NAME.dice`, that tddlog reads itself and
+  the ProbLog family reads as the program tddlog writes from it (`tddlog
+  --program`). The integers have the original's widths, signed ones in
+  two's complement. disease, triangle and gcd are one program each, whose
+  sizes differ in a few numbers, its places `$1`, `$2`, ..., given as the
+  instance's arguments (bench.py's ARITH_PLACES). The ports of the
+  programs that hold their data (caesar's text, luhn's digits, ranking's
+  rankings, linext's partial order, fw's graph) are written for each
+  instance by `scripts/gen_arith_dice.py` from its Alea.jl program, since
+  a Dice program has no arrays.
+- pluck: a ProbLog program, `pluck/NAME.pl`, ported from the Pluck program
+  of the paper's Table 1 (the artifact's `sequence_models/pluck/`), the
+  model where the paper's Dice.jl baseline writes it differently; hmm has
+  a Dice port too, `pluck/hmm.dice`, which the systems
+  that read Dice programs read. `scripts/gen_pluck.py` writes an instance's
+  programs.
+- `arith/psi/`: the Psi programs of Cao et al.'s artifact
+  (`experiments/psi/` at 7e9ff23), as they are but a header, of the
+  instances whose model they are; Psi reads them (docs/baselines.md, Psi).
+
 ## bitblast: the bit-blasting paper's Section 2
 
 The three programs of Section 2 of the bit-blasting paper (above),

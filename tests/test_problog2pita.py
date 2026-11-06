@@ -127,6 +127,9 @@ class TranslationTests(unittest.TestCase):
         self.assertIn("atomic_list_concat(Qs, 'problog2pita_', Q0)", main)
         # a built-in the program only calls keeps its name
         self.assertIn('a :- member(1,[1]).', self.clauses('a :- member(1,[1]).\n'))
+        # pluck_string_editing's port defines in/2, which PITA takes for clpfd's
+        text = 'in(0,e).\n0.1::deleted(K) :- in(K,_).\nquery(deleted(0)).\n'
+        self.assertEqual(self.clauses(text), ['problog2pita_in(0,e).', 'deleted(K):0.1 :- problog2pita_in(K,_).'])
 
     def test_pita_reads_its_own_program_with_a_driver(self):
         lpad = ':- use_module(library(pita)).\n:- pita.\n:- begin_lpad.\nheads:0.5.\n:- end_lpad.\n'
