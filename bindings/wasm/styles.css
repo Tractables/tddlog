@@ -1190,10 +1190,6 @@ svg.cactus:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .tip span { display: flex; align-items: center; gap: 0.4rem; }
 .tip span.picked { font-weight: 600; }
 
-/* The systems that were not given some of the instances of a plot. */
-ul.cannot { margin: 0.6rem 0 0; padding-left: 1.2rem; max-width: 80ch; color: var(--muted); font-size: 13px; }
-ul.cannot li { margin: 0.2rem 0; }
-
 /* Every instance's times of a suite, sortable. */
 details.instances { margin-top: 2rem; }
 details.instances .check { margin: 0.7rem 0 0.5rem; }
