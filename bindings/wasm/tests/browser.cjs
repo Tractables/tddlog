@@ -488,7 +488,8 @@ function benchmarksOf(root) {
       // a family's program with places opens with this instance's arguments in them, and says so
       const places = "the program tddlog was given in the release run, with this instance's arguments in its places";
       assert.equal((await page.textContent("#source")).includes(places), whole.filled, `${whole.path}: the note on its places`);
-      if (whole.filled) assert.doesNotMatch(await page.inputValue("#program"), /\$[1-9]/, `${whole.path}: a place left in the program`);
+      // places are filled outside the comments, as tddlog binds them (a family's comment may name its places)
+      if (whole.filled) assert.doesNotMatch((await page.inputValue("#program")).replace(/%.*$/gm, ""), /\$[1-9]/, `${whole.path}: a place left in the program`);
       assert.equal(await page.getAttribute("#source a", "href"), `${base}results/#/${whole.path}`);
       assert.ok(page.url().endsWith(`#bench=${whole.path}`), page.url());
       await page.reload();
