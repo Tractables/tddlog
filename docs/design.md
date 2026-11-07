@@ -983,7 +983,16 @@ are skipped. Several steps have a program in `examples/` that shows them.
    The sweep's solver at a level is given the cones of that level's
    gates and the level's before alone, the older nodes inputs of its
    calls, and a new level takes a new solver: a call costs as much at a
-   loop's last step as at its first, and every step is swept alike.
+   loop's last step as at its first, and every step is swept alike. A
+   gate of an older level is a candidate where the gate's cone reads it.
+   The window's model may give the older nodes values that no assignment
+   of the facts gives them, so a pair it tells apart is asked again of a
+   second solver over the cones down to the facts, kept from level to
+   level, whose models are the counterexamples. That solver is asked
+   only while it proves as many pairs as it tells apart, over each 64
+   counterexamples: where the pairs are apart its models must reach the
+   facts, at a cost that grows with each step. Once it stops, the
+   window's models are the counterexamples.
 5. **Simplify** (`simplify.rs`): propagate certain atoms; merge each atom
    the grounder introduced into another atom with the same rule bodies
    (atoms the program writes wait for the exclusive sets, below;

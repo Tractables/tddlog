@@ -49,7 +49,25 @@
 //! `iterate` builds a tautology at each step, and at 1 000 days the sweep
 //! proved 4 059 gates over those cones against 51 011 over each level's,
 //! which leaves a ground program of 505 497 atoms rather than 743 872.
-//! A gate equal to one of an older level is not proved so.
+//! A gate of an older level is a candidate where the gate's cone reads
+//! it, as a loop's step reads a value an earlier step left as it was.
+//!
+//! A pair the window tells apart may be equal all the same: its model
+//! may give the nodes at its floor values that no assignment of the
+//! facts gives them. The pair is asked again of a second solver, over
+//! the cones down to the facts and kept from level to level, and only a
+//! model there is a counterexample. Without it dice_pmc2 at 1 600 steps
+//! left each step's pairs apart and built 1.27 M gates rather than
+//! 445 k (10.7 s against 1.2 s). Where those pairs are apart, the second
+//! solver's models must reach the facts, and its calls cost more at each
+//! step: on dice_pmc1 at 300 steps they spent the steps by the 62nd, the
+//! steps after went unswept and the program kept 121 435 atoms rather
+//! than 404 (67 s against 3.5 s). So the second solver is asked only
+//! while it proves as many pairs as it tells apart: once [`PATTERNS`]
+//! counterexamples hold more pairs it told apart than it proved since the
+//! last were, the window's models are the counterexamples from then on,
+//! and the stop above holds for them (dice_pmc1: the second solver
+//! stopped at the 49th step, the search at the 53rd).
 //!
 //! The atoms of a cyclic component are inputs here, so gates proved equal
 //! are equal however those atoms come out, and the facts are free,
@@ -295,6 +313,12 @@ struct Sweep {
     /// floor values no assignment of the facts gives them.
     window: Cnf,
     deep: Cnf,
+    /// The pairs the deep solver proved equal and told apart since the
+    /// counterexamples pending began, while it is still asked; `None` once
+    /// it told apart more than it proved: the window then told those pairs
+    /// apart rightly, and a refutation over the cones down to the facts
+    /// costs more at each step of a loop.
+    deep_tally: Option<(u64, u64)>,
 }
 
 /// A solver over the clauses of the nodes encoded so far and what its
@@ -408,6 +432,7 @@ impl Sweep {
             stats: SweepStats::default(),
             window: Cnf::new(0),
             deep: Cnf::new(0),
+            deep_tally: Some((0, 0)),
         };
         sweep.add(g, 0);
         sweep
@@ -469,13 +494,22 @@ impl Sweep {
             let c_phase = g.sim[0][c] & 1 == 1;
             let target = 2 * c as Lit + Lit::from(phase ^ c_phase ^ (l & 1 == 1));
             // A pair the window tells apart is asked again over the cones
-            // down to the facts, where a floor cut them: the window's model
-            // may give the nodes at the floor values that no assignment of
-            // the facts gives them.
-            let outcome = match self.prove(g, l, target, false, floor == 0) {
-                Some(false) if floor > 0 => {
+            // down to the facts, where a floor cut them and while that solver
+            // proves as many pairs as it tells apart: the window's model may
+            // give the nodes at the floor values that no assignment of the
+            // facts gives them.
+            let deep = floor > 0 && self.deep_tally.is_some();
+            let outcome = match self.prove(g, l, target, false, !deep) {
+                Some(false) if deep => {
                     self.stats.deep += 1;
-                    self.prove(g, l, target, true, true)
+                    let outcome = self.prove(g, l, target, true, true);
+                    if let (Some(t), Some(proved)) = (self.deep_tally.as_mut(), outcome) {
+                        match proved {
+                            true => t.0 += 1,
+                            false => t.1 += 1,
+                        }
+                    }
+                    outcome
                 }
                 outcome => outcome,
             };
@@ -548,10 +582,13 @@ impl Sweep {
             }
         }
     }
+
     /// Keeps a counterexample, and once there are [`PATTERNS`] of them stops
-    /// the search where no candidate was proved since the last were, and
-    /// otherwise simulates them as a word of their own, which splits the
-    /// classes, or drops them where [`MAX_WORDS`] are simulated.
+    /// the search where no candidate was proved since the last were, stops
+    /// asking the deep solver where it told apart more pairs than it proved
+    /// since then, and otherwise simulates them as a word of their own,
+    /// which splits the classes, or drops them where [`MAX_WORDS`] are
+    /// simulated.
     fn counterexample(&mut self, g: &mut Graph, pattern: Vec<(usize, bool)>) {
         self.pending.push(pattern);
         if self.pending.len() < PATTERNS {
@@ -562,6 +599,9 @@ impl Sweep {
         if before == self.stats.proved {
             self.stopped = true;
             return;
+        }
+        if let Some((proved, refuted)) = self.deep_tally {
+            self.deep_tally = (proved >= refuted).then_some((0, 0));
         }
         if g.sim.len() >= MAX_WORDS {
             return;
