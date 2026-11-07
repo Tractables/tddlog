@@ -54,7 +54,13 @@
 //! scope's vtree on top of its own pairs. A spine of nodes, each with a
 //! small factor beside the result coming up, then puts the factors off
 //! and joins them among themselves before they meet the result, where
-//! each met it at its own node.
+//! each met it at its own node. A summing walk drops the subtrees a join
+//! summed out from its result's scope but for a level over two leaves
+//! (`SumOut::collapse`), and the test charges such a result the nodes the
+//! dropped variables had as well: they stand for the factors it has met,
+//! which the plan reads, not for levels a join walks. Charged at its
+//! smaller scope, a result passes up less, and factors that put off would
+//! meet among themselves first are joined into it at their own nodes.
 //!
 //! The factors a child put off are conjoined among themselves, a batch,
 //! and their product meets the child's result, the batch's target. A node
@@ -991,18 +997,21 @@ impl EvidenceWalk {
     }
 
     /// What the put-off test charges slot `id`: its pairs, and
-    /// [`LEVEL_PAIRS`] per node of its scope's vtree.
+    /// [`LEVEL_PAIRS`] per node of its scope's vtree with the variables
+    /// collapses dropped from it put back (see the module documentation).
     fn charged(&self, id: usize) -> usize {
         self.slot_pairs[id] + LEVEL_PAIRS * self.scope_nodes(id)
     }
 
-    /// The nodes of the vtree of slot `id`'s scope, or for a waiting join's
-    /// result, of the larger of its operands' scopes.
+    /// The nodes of the vtree of slot `id`'s scope, two more for each
+    /// variable collapses dropped from it, or for a waiting join's result,
+    /// of the larger of its operands'.
     fn scope_nodes(&self, id: usize) -> usize {
         let of = |s: usize| {
+            let dropped = self.sum_out.as_ref().map_or(0, |so| so.dropped_from(s));
             self.slots[s]
                 .as_ref()
-                .map_or(0, |(_, scope)| scope.vtree().num_nodes())
+                .map_or(0, |(_, scope)| scope.vtree().num_nodes() + 2 * dropped)
         };
         match self.waiting.get(&id) {
             Some(&(a, b)) => of(a).max(of(b)),

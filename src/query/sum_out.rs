@@ -49,8 +49,10 @@ type Refused = Box<(CompileError, Part, Part)>;
 /// sum them out under (see the module documentation).
 pub(super) struct SumOut {
     /// Per slot, the program variables of the observations conjoined into
-    /// it, ascending.
+    /// it, ascending, and how many more of them collapses dropped
+    /// ([`SumOut::collapse`]).
     support: Vec<Vec<VarId>>,
+    dropped_from: Vec<usize>,
     /// The global vtree's leaves from left to right: each program
     /// variable's position, each node's positions `[lo, hi)`, each node's
     /// depth, and for position `k`, the node whose children split `k` from
@@ -67,10 +69,12 @@ pub(super) struct SumOut {
     held: Vec<i64>,
     /// The facts' weights, by program variable less one.
     weights: Vec<LiteralWeights<BigRational>>,
-    /// The join begun: its result's variables, and the variables its
-    /// operands share, whose holdings it dropped.
+    /// The join begun: its result's variables, the variables its
+    /// operands share, whose holdings it dropped, and the variables
+    /// collapses dropped from its operands and its result.
     merged: Vec<VarId>,
     shared: Vec<VarId>,
+    merged_dropped: usize,
     /// By program variable: summed out and dropped from its result's scope
     /// ([`SumOut::collapse`]), so that no later scope may hold it.
     dropped: Vec<bool>,
@@ -154,6 +158,7 @@ impl SumOut {
             .collect();
         SumOut {
             support: Vec::new(),
+            dropped_from: Vec::new(),
             position,
             range,
             depth,
@@ -164,6 +169,7 @@ impl SumOut {
             weights,
             merged: Vec::new(),
             shared: Vec::new(),
+            merged_dropped: 0,
             dropped: vec![false; tree.num_vars() as usize + 1],
             any_dropped: false,
             scoped: vec![0; tree.num_vars() as usize + 1],
@@ -280,6 +286,13 @@ impl SumOut {
         }
         self.merged = merged;
         self.shared = shared;
+        self.merged_dropped = self.dropped_from(a) + self.dropped_from(b);
+    }
+
+    /// The variables of slot `id`'s observations that collapses dropped
+    /// from its scope.
+    pub(super) fn dropped_from(&self, id: usize) -> usize {
+        self.dropped_from.get(id).copied().unwrap_or(0)
     }
 
     pub(super) fn undo(&mut self) {
@@ -299,6 +312,13 @@ impl SumOut {
         self.support[b] = Vec::new();
         self.support[out] = std::mem::take(&mut self.merged);
         self.shared.clear();
+        let need = a.max(b).max(out) + 1;
+        if self.dropped_from.len() < need {
+            self.dropped_from.resize(need, 0);
+        }
+        self.dropped_from[a] = 0;
+        self.dropped_from[b] = 0;
+        self.dropped_from[out] = self.merged_dropped;
     }
 
     /// The join begun's result `f`, on `scope`, moved onto the scope of the
@@ -403,6 +423,7 @@ impl SumOut {
                 self.hold(v, -1);
                 self.dropped[v.0 as usize] = true;
                 self.collapsed += 1;
+                self.merged_dropped += 1;
             }
         }
         self.any_dropped = true;
