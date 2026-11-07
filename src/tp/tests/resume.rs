@@ -404,3 +404,64 @@ fn a_loop_at_the_end_of_its_turn_goes_on_in_the_next_run() {
         "{work_paused} units in turns against {work_once} in one run"
     );
 }
+
+#[test]
+fn a_projected_stop_reads_the_rules_of_the_components_finished() {
+    // `big`, the first component, holds eight of the program's ten rules,
+    // and the queries `s1` and `s2` read it (one of them may be answered
+    // through a template rather than compiled). A horizon that stops the
+    // run at its first read stops it once `big` is finished: one component,
+    // eight rules, and the projection is the work spent times all the
+    // rules over eight, not times the components over one.
+    let mut source: String = (1..=8).map(|i| format!("0.5::f{i}.\n")).collect();
+    source += "0.5::g1.\n0.5::g2.\n";
+    source += &(1..=8)
+        .map(|i| format!("big :- f{i}.\n"))
+        .collect::<String>();
+    source += "s1 :- big, g1.\ns2 :- big, g1, g2.\nquery(s1).\nquery(s2).\n";
+    let gp = ground(
+        &parse_program(&source).expect("parses"),
+        &GroundOptions::default(),
+    )
+    .expect("grounds");
+    let deps = Deps::of(&gp);
+    let (vtree::Layout { vtree, order, .. }, _) =
+        vtree::build(&gp, &deps, Kind::Closed).expect("builds");
+    vtree.context().run(|engine| {
+        let backend = TddBackend::new(engine, vtree.clone());
+        let var_of = fact_variables(&gp, &order);
+        let mut compilation = Compilation::new(
+            &gp,
+            &deps,
+            var_of,
+            Formulation::Dual,
+            &backend,
+            Projection::Off,
+        )
+        .expect("maps every fact");
+        let (_, all) = compilation.progress();
+        assert!(all >= 9, "{all}");
+        compilation.horizon = Some(Horizon {
+            origin: 0,
+            from: 0,
+            limit: f64::NEG_INFINITY,
+            mark: 0,
+        });
+        let stopped = compilation.run(&gp, &backend, Some(usize::MAX));
+        let Err(CompileError::Projected { work }) = stopped else {
+            panic!("{stopped:?}");
+        };
+        let (finished, components) = compilation.components();
+        assert!(
+            finished == 1 && components >= 2,
+            "{finished} of {components}"
+        );
+        assert_eq!(compilation.progress(), (8, all));
+        let spent = backend.work_units() as f64;
+        let projected = (spent * all as f64 / 8.0).log2();
+        assert!(
+            (work - projected).abs() < 1e-9,
+            "{work} against {projected}"
+        );
+    });
+}
