@@ -1291,7 +1291,7 @@ impl EvidenceWalk {
         let pairs = self.slot_pairs[a] + self.slot_pairs[b];
         let targets = match &mut self.sum_out {
             Some(so) => {
-                so.begin(a, b);
+                so.begin(a, b, &fa.1, &fb.1);
                 so.targets(&scope, pairs)
             }
             None => Vec::new(),
@@ -1457,8 +1457,13 @@ impl EvidenceWalk {
         fb: Part,
         backend: &TddBackend,
     ) -> Result<(), CompileError> {
-        self.slots[a] = Some(fa.owned(backend)?);
-        self.slots[b] = Some(fb.owned(backend)?);
+        let (fa, fb) = (fa.owned(backend)?, fb.owned(backend)?);
+        if let Some(so) = &mut self.sum_out {
+            so.enter(&fa.1);
+            so.enter(&fb.1);
+        }
+        self.slots[a] = Some(fa);
+        self.slots[b] = Some(fb);
         Ok(())
     }
 
@@ -1544,7 +1549,7 @@ impl EvidenceWalk {
         pending.reduced = true;
         let size = counted.unwrap_or_else(|| backend.size(&pending.formula.0));
         if let Some(so) = &mut self.sum_out {
-            so.commit(a, b, out);
+            so.commit(a, b, out, &pending.formula.1);
         }
         self.slots[out] = Some(self.pending.take().unwrap().formula);
         self.slot_pairs[out] = size;

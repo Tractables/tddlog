@@ -75,6 +75,14 @@ pub(super) struct SumOut {
     /// ([`SumOut::collapse`]), so that no later scope may hold it.
     dropped: Vec<bool>,
     any_dropped: bool,
+    /// By program variable: the live slots whose scope holds it, a join
+    /// begun's operands left out, and the live slots on the global scope,
+    /// which holds every variable. A slot's scope can hold variables its
+    /// observations do not read (a group's joins are built on the scope of
+    /// the whole group, an operand given back goes back on the join's
+    /// scope), and a collapse drops only a variable no scope holds.
+    scoped: Vec<i32>,
+    global_scopes: i32,
     /// The joins that summed out as they were built, the other joins with
     /// an operand that carries weights, and the variables collapses
     /// dropped.
@@ -158,6 +166,8 @@ impl SumOut {
             shared: Vec::new(),
             dropped: vec![false; tree.num_vars() as usize + 1],
             any_dropped: false,
+            scoped: vec![0; tree.num_vars() as usize + 1],
+            global_scopes: 0,
             summing: 0,
             weighted: 0,
             collapsed: 0,
@@ -215,12 +225,35 @@ impl SumOut {
             self.hold(v, 1);
         }
         self.support[id] = vars;
+        self.enter(scope);
     }
 
-    /// Before the join of slots `a` and `b`: their variables merged, and
-    /// the holdings of those they share dropped to the result's one.
-    /// [`SumOut::undo`] puts them back where the join does not happen.
-    pub(super) fn begin(&mut self, a: usize, b: usize) {
+    /// A slot on `scope` joins the live slots ([`SumOut::collapse`]): an
+    /// observation, a join's result, or an operand given back.
+    pub(super) fn enter(&mut self, scope: &VtreeScope) {
+        self.count_scope(scope, 1);
+    }
+
+    fn count_scope(&mut self, scope: &VtreeScope, delta: i32) {
+        match scope.vars() {
+            Some(vars) => {
+                for v in vars {
+                    self.scoped[v.0 as usize] += delta;
+                }
+            }
+            None => self.global_scopes += delta,
+        }
+    }
+
+    /// Before the join of slots `a` and `b`, on `scope_a` and `scope_b`:
+    /// their variables merged, the holdings of those they share dropped to
+    /// the result's one, and their scopes out of the live ones.
+    /// [`SumOut::undo`] puts the holdings back where the join does not
+    /// happen, and the walk enters the scopes the operands are given back
+    /// on.
+    pub(super) fn begin(&mut self, a: usize, b: usize, scope_a: &VtreeScope, scope_b: &VtreeScope) {
+        self.count_scope(scope_a, -1);
+        self.count_scope(scope_b, -1);
         let need = a.max(b) + 1;
         if self.support.len() < need {
             self.support.resize_with(need, Vec::new);
@@ -256,8 +289,9 @@ impl SumOut {
         self.merged.clear();
     }
 
-    /// The join begun is done, into slot `out`.
-    pub(super) fn commit(&mut self, a: usize, b: usize, out: usize) {
+    /// The join begun is done, into slot `out` on `scope`.
+    pub(super) fn commit(&mut self, a: usize, b: usize, out: usize, scope: &VtreeScope) {
+        self.enter(scope);
         if self.support.len() <= out {
             self.support.resize_with(out + 1, Vec::new);
         }
@@ -288,9 +322,16 @@ impl SumOut {
         };
         let tree = scope.vtree();
         // Local variables to drop: under a topmost marginal level, all but
-        // the first leaf of each side.
+        // the first leaf of each side, where no other live slot's scope
+        // holds one of them. A scope can hold variables its slot does not
+        // read, and a later join on the union with it would bring a
+        // dropped variable back, its weights counted again.
+        if self.global_scopes > 0 {
+            return Ok((f, scope));
+        }
         let mut gone = vec![false; vars.len() + 1];
         let mut any = false;
+        let mut leaves = Vec::new();
         let first_leaf = |mut t: VtreeIdx| {
             while !tree.node(t).is_leaf() {
                 t = tree.children(t).0;
@@ -310,16 +351,25 @@ impl SumOut {
             }
             let keep = [first_leaf(l), first_leaf(r)];
             let mut under = vec![t];
+            leaves.clear();
             while let Some(u) = under.pop() {
                 if tree.node(u).is_leaf() {
                     if !keep.contains(&u) {
-                        gone[tree.leaf_var(u).0 as usize] = true;
-                        any = true;
+                        leaves.push(tree.leaf_var(u).0 as usize);
                     }
                 } else {
                     let (a, b) = tree.children(u);
                     under.push(a);
                     under.push(b);
+                }
+            }
+            if leaves
+                .iter()
+                .all(|&local| self.scoped[vars[local - 1].0 as usize] == 0)
+            {
+                for &local in &leaves {
+                    gone[local] = true;
+                    any = true;
                 }
             }
         }
