@@ -8,6 +8,8 @@ use std::alloc::{GlobalAlloc, Layout};
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
+use crate::budget;
+
 // jemalloc rather than glibc's malloc: faster on the benchmark programs at
 // the same peak memory.
 #[global_allocator]
@@ -170,16 +172,21 @@ fn purge() {
     }
 }
 
-/// `request`'s block, or where jemalloc refuses it, `request`'s block
-/// after a [`purge`]; a request refused again is noted in [`REFUSED`].
+/// `request`'s block of `bytes`, or where jemalloc refuses it, `request`'s
+/// block after a [`purge`], and then after the address-space limit has
+/// risen by half the room the cgroups still leave ([`budget::raise`]); a request
+/// refused still is noted in [`REFUSED`].
 #[inline(always)]
-fn or_after_purge(request: impl Fn() -> *mut u8) -> *mut u8 {
+fn or_after_purge(bytes: usize, request: impl Fn() -> *mut u8) -> *mut u8 {
     let block = request();
     if !block.is_null() {
         return block;
     }
     purge();
-    let block = request();
+    let mut block = request();
+    if block.is_null() && budget::raise(bytes) {
+        block = request();
+    }
     if block.is_null() {
         REFUSED.store(true, Ordering::Relaxed);
     }
@@ -248,17 +255,23 @@ unsafe impl GlobalAlloc for HugeLater {
     #[inline]
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         note(layout.size());
-        or_after_purge(|| unsafe { tikv_jemallocator::Jemalloc.alloc(layout) })
+        or_after_purge(layout.size(), || unsafe {
+            tikv_jemallocator::Jemalloc.alloc(layout)
+        })
     }
     #[inline]
     unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
         note(layout.size());
-        or_after_purge(|| unsafe { tikv_jemallocator::Jemalloc.alloc_zeroed(layout) })
+        or_after_purge(layout.size(), || unsafe {
+            tikv_jemallocator::Jemalloc.alloc_zeroed(layout)
+        })
     }
     #[inline]
     unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
         note(new_size);
-        or_after_purge(|| unsafe { tikv_jemallocator::Jemalloc.realloc(ptr, layout, new_size) })
+        or_after_purge(new_size, || unsafe {
+            tikv_jemallocator::Jemalloc.realloc(ptr, layout, new_size)
+        })
     }
     #[inline]
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {

@@ -338,15 +338,17 @@ fn refused() -> tddlog::Error {
 
 /// Reads the command line and answers it.
 fn command() -> ExitCode {
-    // A debug build's request that cannot give up, of TDDLOG_TEST_ALLOCATE
-    // bytes, for tests/it/out_of_memory.rs; a release build reads no such
-    // variable.
+    // A debug build's requests that cannot give up, of the bytes
+    // TDDLOG_TEST_ALLOCATE lists (comma separated), held together, for
+    // tests/it/out_of_memory.rs; a release build reads no such variable.
     #[cfg(debug_assertions)]
-    if let Some(bytes) = std::env::var("TDDLOG_TEST_ALLOCATE")
-        .ok()
-        .and_then(|b| b.parse::<usize>().ok())
-    {
-        std::hint::black_box(vec![0u8; bytes]);
+    if let Ok(list) = std::env::var("TDDLOG_TEST_ALLOCATE") {
+        let blocks: Vec<Vec<u8>> = list
+            .split(',')
+            .filter_map(|b| b.parse::<usize>().ok())
+            .map(|b| vec![0u8; b])
+            .collect();
+        std::hint::black_box(blocks);
     }
     let args = match parse_args() {
         Ok(Request::Run(a)) => a,

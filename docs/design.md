@@ -2621,10 +2621,36 @@ a limit on the address space (`ulimit -v`) is at the limit. A cgroup's
 `memory.max` bounds resident memory instead, and the kernel kills a
 process that reaches it without refusing anything first, so `auto` could
 not give up one trial and keep another. The binary therefore lowers its
-address-space limit to the room its cgroups leave, `memory.max` less
-`memory.current`, the least over its cgroup and those above it
-(`src/bin/tddlog/budget.rs`), and is refused there as under `ulimit -v`:
-resident memory never exceeds the address space that holds it.
+address-space limit to the room its cgroups leave, the least over its
+cgroup and those above it (`src/bin/tddlog/budget.rs`), and is refused
+there as under `ulimit -v`. A cgroup's room is `memory.max` less
+`memory.current` less a reserve of a 64th of `memory.max`. The kernel
+charges the cgroup for more than the process's mappings (page tables,
+kernel stacks and the like), and the reserve keeps room for those
+charges, so that the process is refused before they take the cgroup to
+its limit.
+
+The address space also holds memory that is reserved and not yet
+written, which is not resident: the capacity a `Vec` has grown into, a
+zeroed table not yet filled, address space the allocator has mapped
+ahead. With the limit fixed at the room, that memory failed runs below
+the cgroup's limit (a Roulette circuit of caesar-iter's loop at 100000
+steps was refused at 36.7 GiB resident under 41.9 GiB, its address
+space full). So the limit follows the cgroups' room: where a request is
+refused at it after the purge, the limit rises by half the room the
+cgroups still show (`budget::raise`), up to the limit the process
+started with, and the request is made again; it is refused once that
+half is under the request. While the reserved memory stays unwritten,
+each rise takes half of what is left, and resident memory nears the
+reserve without reaching `memory.max`. A rise by the whole room put the
+address space past `memory.max` by the reserved memory, and a rise by
+half with no reserve took the room down to nothing; in both, resident
+memory reached `memory.max` and the kernel killed the run where `auto`
+could have given up a trial. The raise allocates nothing: the cgroups'
+files are opened as the process starts and read again into a buffer on
+the stack. Without a cgroup that sets `memory.max` the limit never
+rises. Where reserved memory is written after all, the kernel can still
+end the run at that limit.
 
 A run that is refused memory ends one way wherever the refusal falls: with
 a refused TDD operation's error and exit status 1. tididi's operations ask
