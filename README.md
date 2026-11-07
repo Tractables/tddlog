@@ -39,7 +39,7 @@ command-line tool with Python, C and WebAssembly bindings, and it
 </p>
 
 <!-- results:overview -->
-<sub>Results as of 2026-11-06, public main [213741873](https://github.com/Tractables/tddlog/commit/213741873). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
+<sub>Results as of 2026-11-06, public main [2d30569ce](https://github.com/Tractables/tddlog/commit/2d30569ce). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
 <!-- /results:overview -->
 
 On every type of program, tddlog answers more instances than each
@@ -229,8 +229,8 @@ times faster tddlog is. The
 instance, time and program, and a page for each system.
 
 <!-- results:setup -->
-<!-- written from bindings/wasm/results/categories.json, sha256 5a5de2a09a93b3d5fff2911472b4050e14d3396e9f6fb1364f9f8c97eb7c5bc8 -->
-Results as of 2026-11-06, public main [213741873](https://github.com/Tractables/tddlog/commit/213741873). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
+<!-- written from bindings/wasm/results/categories.json, sha256 2aff20e4d18c6b870e8335463e5eda2de271062f310a58d4ba812882c4b0515d -->
+Results as of 2026-11-06, public main [2d30569ce](https://github.com/Tractables/tddlog/commit/2d30569ce). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
 <!-- /results:setup -->
 
 The [methods table](https://tractables.github.io/tddlog/#/methods) says
@@ -259,7 +259,7 @@ ProbLog's and cplint's examples.
 <!-- results:logic-programs-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| ProbLog | 255 | 15 h | 28 min | 156× |
+| ProbLog | 255 | 15 h | 28 min | 157× |
 | PITA | 226 | 20 h | 28 min | 187× |
 | aspmc | 120 | 38 h | 28 min | 279× |
 | PSouffle | 112 | 41 h | 28 min | 694× |
@@ -324,7 +324,7 @@ blockmap, Mastermind and fs networks, and the classic networks).
 | Merlin | 292 | 57 h | 1.5 h | 34× |
 | libDAI | 290 | 58 h | 1.5 h | 33× |
 | pyAgrum | 261 | 63 h | 1.5 h | 37× |
-| 15 others: PITA, pgmpy, aspmc, Alea.jl, Roulette, Pluck, ProbLog, Dice, Genfer, noDice, SPPL, Psi, Geni, WebPPL, Scallop | 12 to 236 | over 1.6 h each | 13 s to 1.5 h | at least 42× |
+| 15 others: PITA, pgmpy, aspmc, Alea.jl, Pluck, Roulette, ProbLog, Dice, Genfer, noDice, SPPL, Psi, Geni, WebPPL, Scallop | 12 to 236 | over 1.6 h each | 13 s to 1.5 h | at least 42× |
 
 PSouffle was given 11 of the networks and answers 6.
 <!-- /results:bayesian-networks-table -->
@@ -392,12 +392,12 @@ circuits are [below](#circuits) too.
 <!-- results:functional-programs-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Roulette | 195 | 35 h | 1.3 h | 19× |
-| Alea.jl | 191 | 24 h | 1.2 h | 13× |
-| Dice | 137 | 42 h | 1.2 h | 44× |
-| Pluck | 123 | 31 h | 32 min | 375× |
-| Genfer | 83 | 59 h | 1.2 h | 428× |
-| 5 others: Geni, noDice, SPPL, WebPPL, Psi | 19 to 79 | over 20 min each | 1.8 s to 1.4 h | at least 24× |
+| Roulette | 198 | 35 h | 1.3 h | 19× |
+| Alea.jl | 190 | 24 h | 1.2 h | 14× |
+| Dice | 138 | 41 h | 1.2 h | 43× |
+| Pluck | 129 | 25 h | 32 min | 353× |
+| Geni | 103 | 52 h | 1.2 h | 62× |
+| 5 others: Genfer, WebPPL, noDice, SPPL, Psi | 54 to 81 | over 20 min each | 1.8 s to 1.5 h | at least 23× |
 <!-- /results:functional-programs-table -->
 
 ### All programs
@@ -417,12 +417,12 @@ it is given, natively or through a translation.
 <!-- results:all-programs-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 919 | 157 h | 4.7 h | 39× |
-| libDAI | 875 | 170 h | 5.0 h | 43× |
-| TensorInference.jl | 865 | 183 h | 6.0 h | 33× |
-| pyAgrum | 820 | 179 h | 5.0 h | 43× |
-| Merlin | 809 | 186 h | 5.2 h | 40× |
-| 19 others: PITA, pgmpy, ProbLog, aspmc, Alea.jl, Roulette, Storm, Dice, Pluck, PSouffle, ProvSQL, PRISM, noDice, WebPPL, Genfer, SPPL, Geni, Scallop, Psi | 100 to 724 | over 9.6 h each | 21 min to 5.2 h | at least 25× |
+| Ace | 925 | 156 h | 4.7 h | 40× |
+| libDAI | 880 | 169 h | 5.0 h | 43× |
+| TensorInference.jl | 867 | 182 h | 6.0 h | 33× |
+| pyAgrum | 828 | 177 h | 5.0 h | 43× |
+| Merlin | 814 | 185 h | 5.2 h | 39× |
+| 19 others: PITA, pgmpy, ProbLog, aspmc, Alea.jl, Roulette, Storm, Dice, Pluck, PSouffle, PRISM, ProvSQL, WebPPL, noDice, Genfer, Geni, SPPL, Psi, Scallop | 117 to 724 | over 9.6 h each | 21 min to 5.2 h | at least 25× |
 <!-- /results:all-programs-table -->
 
 - Where others win: pgmpy answers grid25, a logic program's path query
@@ -477,8 +477,8 @@ fork of neuppl/roulette.
 <!-- results:integrations -->
 | Integration | Instances | Answers | Total time | Faster |
 |---|--:|--:|--:|--:|
-| Alea.jl+tddlog against Alea.jl | 971 | 644 (Alea.jl 373) | 4.6 h (Alea.jl 87 h) | 13× |
-| Roulette+tddlog against Roulette | 1245 | 795 (Roulette 504) | 9.0 h (Roulette 80 h) | 6.1× |
+| Alea.jl+tddlog against Alea.jl | 997 | 647 (Alea.jl 378) | 6.5 h (Alea.jl 92 h) | 10× |
+| Roulette+tddlog against Roulette | 1270 | 797 (Roulette 509) | 9.4 h (Roulette 90 h) | 6.8× |
 <!-- /results:integrations -->
 
 ## Building and testing
