@@ -782,10 +782,10 @@ function benchmarksOf(root) {
     // either answers, a run that does not answer counted as twice its limit
     // (PAR-2), and the speed-up: the ratio of the totals over those both
     // answer (but those both answer in under 0.2 s), tddlog's failures at the
-    // limit and the system's timeouts at the limit where that bound is at
-    // least the ratio on those both answer; none with fewer than 20 both
-    // answer. A time under 0.2 s counts as 0.2 s. (0.2, 2 and 20: the data's
-    // measure, panels.py's parameters.)
+    // limit and the system's timeouts at the limit, each whose bound (the
+    // limit over tddlog's time) raises the speed-up, the largest bound
+    // first; none with fewer than 20 both answer. A time under 0.2 s counts
+    // as 0.2 s. (0.2, 2 and 20: the data's measure, panels.py's parameters.)
     const { floor, par: times, common } = cats.measure;
     const compare = (runs) => {
       const f = (t) => Math.max(t, floor);
@@ -799,9 +799,11 @@ function benchmarksOf(root) {
       if (both.length < common) return out;
       let mine = both.reduce((s, [, t]) => s + f(t), 0), theirs = both.reduce((s, [, , x]) => s + f(x), 0);
       const r = theirs / mine;
-      for (const [l, t, x] of either) {
-        if (number(x) && !number(t)) [mine, theirs] = [mine + l, theirs + f(x)];
-        else if (number(t) && !number(x) && l / f(t) >= r) [mine, theirs] = [mine + f(t), theirs + l];
+      for (const [l, t, x] of either) if (number(x) && !number(t)) [mine, theirs] = [mine + l, theirs + f(x)];
+      const timeouts = either.filter(([, t, x]) => number(t) && !number(x)).map(([l, t]) => [f(t), l]).sort(([t, l], [u, m]) => m / u - l / t);
+      for (const [t, l] of timeouts) {
+        if (l * mine <= theirs * t) break;
+        [mine, theirs] = [mine + t, theirs + l];
       }
       return { ...out, ratio: r, speedup: theirs / mine };
     };
