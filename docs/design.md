@@ -1725,17 +1725,20 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   compile is unprojected, since a projected scope stops being a projection
   after the first move. A stopped compile resumes inside a cyclic
   component at the update that stopped.
-- **`program`** (`auto`'s first trial where views were inlined, its last
-  elsewhere): right-linear over the facts in the reverse of the order the
-  program states them. A right-linear vtree over x1 .. xn is read as an
-  OBDD reading xn first, so the diagram reads the facts in program order.
-  A bit-blasted circuit exported with its flips in creation order
-  (Alea's) is then laid out in the variable order its BDD package built it
-  in, and on some circuits this is the one layout that compiles. On
-  programs with something to order it is `auto`'s first trial where the
-  grounder inlined views, which the exported circuits all have and the
-  networks, grids and graphs do not, and its last elsewhere, where it
-  takes its share of the work until another trial wins.
+- **`program`** (`auto`'s first trial on a program built gate by gate,
+  its last elsewhere): right-linear over the facts in the reverse of the
+  order the program states them. A right-linear vtree over x1 .. xn is
+  read as an OBDD reading xn first, so the diagram reads the facts in
+  program order. A bit-blasted circuit exported with its flips in creation
+  order (Alea's) is then laid out in the variable order its BDD package
+  built it in, and on some circuits this is the one layout that compiles.
+  On programs with something to order it is `auto`'s first trial where
+  the program is built gate by gate (`built_of_gates`): a quarter of its
+  rules read derived atoms alone, or half its derived atoms are views,
+  atoms of one rule read by one rule. The exported circuits are; the
+  networks, grids and graphs, whose rules each read a fact, are not. It
+  is the last trial elsewhere, where it takes its share of the work until
+  another trial wins.
 
   Where the order has narrow cuts, `program` and `program:fanin` name the
   derived atoms that cross them (`vtree/naming.rs`). The width of the
@@ -1784,8 +1787,8 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   and the copies at its start, and the evidence holds the links, the
   history, once. On a Markov chain such as GeNI's weather the cut is the
   day's frontier, the 11 state bits and the goal of 42 facts a day.
-- **`program:fanin`** (`auto`'s second trial where views were inlined,
-  absent elsewhere): right-linear as `program`, over the facts in the
+- **`program:fanin`** (`auto`'s second trial on a program built gate by
+  gate, absent elsewhere): right-linear as `program`, over the facts in the
   fan-in order of BDD variable ordering (Malik, Wang, Brayton and
   Sangiovanni-Vincentelli, ICCAD 1988), interleaved over the roots, the
   observed and queried atoms, as Fujii, Ootomo and Hori interleave it
@@ -1803,8 +1806,8 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   after both). The walk loses where the file states the facts in the
   order of a model's time (a hidden Markov model, trueskill, a grammar, a
   grid of link failures). Since neither order wins everywhere, `auto`
-  tries both where views were inlined. Every atom comes after the atoms
-  it reads, which the names along the order need (above): an atom that
+  tries both on a program built gate by gate. Every atom comes after the
+  atoms it reads, which the names along the order need (above): an atom that
   reads one this walk placed after its anchor and one an earlier walk
   placed before it moves to right after the last atom it reads. The
   grounder sorts each ground body by atom id, so the walk reads a rule's
@@ -1870,7 +1873,7 @@ A program gets these trials (`candidates`), in order:
 | `nothing_to_order`, every rule reads facts alone | `td`, `dynamic`, `closed` |
 | `nothing_to_order`, otherwise | `dynamic`, `closed`, `td` |
 | a CNF over facts the conditioning copied | `td`, `closed` |
-| otherwise | `program` and `program:fanin` where views were inlined, `families:0`, `closed`, `td` where no view was inlined, `families`, `program` where no view was inlined |
+| otherwise | `program` and `program:fanin` where built gate by gate, `families:0`, `closed`, `td` where not, `families`, `program` where not |
 
 The CNF over facts is the conditioning's (Grounding, step 9). `closed`
 comes before `families:0` where the program has `FEW_FACTS` facts or
@@ -1887,15 +1890,20 @@ its facts to them, and a grid's boundary chains, views over facts, are
 then read by every later row, which widens the cuts and leaves fewer of
 them to name. `program:fanin`, whose order comes from the rules, reads
 the inlined program, which serves it better. `program` comes first where
-the grounder inlined views (Grounding: atoms of one rule read once), the
-gates of a circuit built gate by gate, and last elsewhere: first on every
-program, it costs the networks and grids, which have no views, several
-times their time. Where it comes first, `program:fanin`, the facts in the
-order the gates read them, comes second. A front end that bit-blasts a
-program states the bits of each variable together and the variables in
-the source's order, the order Alea and Dice hand CUDD and their own
-diagrams. On circuits whose every other layout runs out of memory it may
-be small, and `program:fanin` compiles Alea's adders in a hundredth of
+the program is built gate by gate (`built_of_gates`), as a circuit is,
+and last elsewhere: first on every program, it costs the networks and
+grids, whose rules each read a fact, several times their time. The
+property is read off the program as ground, whatever the grounder
+inlined, so that a program and the ground program `tddlog --ground`
+prints of it get the same trials. The benchmark programs did, all but 3
+of 383; whether the grounder had inlined views, the earlier test, gave
+the two writings different trials on 168 of them. Where it comes first,
+`program:fanin`, the facts in the order the gates read them, comes
+second. A front end that bit-blasts a program states the bits of each
+variable together and the variables in the source's order, the order
+Alea and Dice hand CUDD and their own diagrams. On circuits whose every
+other layout runs out of memory it may be small, and `program:fanin`
+compiles Alea's adders in a hundredth of
 `program`'s work (Vtrees). Their layouts cost nothing to build; as the
 last trial `program` has its turn after the others, and as the first the
 two and the trial after them start with short turns (`LEAD_SHARE`,
@@ -2015,8 +2023,8 @@ walk that sums out its whole scope: it makes a weight, its nodes are
 folded away as it builds them, and it runs under the work stop and the
 memory budget alone. Where `program` goes first, it,
 `program:fanin` and the trial after them start at a 256th of their first
-targets (`LEAD_SHARE`): the circuits whose views were inlined are won by
-one of the three. The trial left alone runs without bounds (`attempt`).
+targets (`LEAD_SHARE`): the circuits built gate by gate are won by one
+of the three. The trial left alone runs without bounds (`attempt`).
 Every bound is in pairs or work, never seconds, so the winner is the same
 on every machine. At equal shares the run spends on each other trial
 about its weight's share of twice the winner's work, which costs most
@@ -2879,9 +2887,9 @@ compare only within the run they come from.
   finished, `auto` with the walk in place of `program`'s order took 0.895
   of `auto`'s time in geometric mean and answered 15 programs more and
   one fewer. In the timed runs of the circuits, GeNI's networks and
-  Roulette's programs, all built with views, `td` won none, and its turns
-  took a fifth of what the losing trials spent on the circuits of a
-  second or more.
+  Roulette's programs, on which `program` then went first, `td` won none,
+  and its turns took a fifth of what the losing trials spent on the
+  circuits of a second or more.
 - **The `decision` trial.** The full weekend circuit of the bit-blasting
   paper runs out of memory under every other trial and compiles under
   `decision`; its conditioning makes 578 k atoms for 160 k derived.

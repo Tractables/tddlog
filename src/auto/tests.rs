@@ -98,8 +98,8 @@ fn assert_turns(notes: &[String], trials: &[Kind]) {
 
 #[test]
 fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
-    // The programs as written: with their views inlined, a chain of
-    // atoms each read once is one rule (`GroundOptions::views`).
+    // The programs as written, with no view inlined
+    // (`GroundOptions::views`).
     let options = crate::GroundOptions {
         views: false,
         ..crate::GroundOptions::default()
@@ -112,19 +112,21 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
         .expect("grounds")
     };
     let strategies = |gp: &GroundProgram| candidates(gp);
-    // A chain of derived atoms, each reading the one before it and a
-    // fact of its own: four components in a dependency order, which is
-    // an order the search can move things in.
-    let chain = |n: usize| {
-        let mut src = String::new();
-        for i in 0..n {
-            let before = if i == 0 {
-                String::new()
-            } else {
-                format!("a{}, ", i - 1)
-            };
-            src += &format!("0.5::f{i}. a{i} :- {before}f{i}.\n");
+    // A chain of derived atoms, each the one before it equal to a fact
+    // of its own: components in a dependency order, which is an order
+    // the search can move things in. Each atom has two rules, each
+    // reading a fact, and is read by two, so the chain is not built gate
+    // by gate (`built_of_gates`).
+    let step = |i: usize| {
+        if i == 0 {
+            "0.5::f0. a0 :- f0.\n".to_string()
+        } else {
+            let p = i - 1;
+            format!("0.5::f{i}. a{i} :- a{p}, f{i}. a{i} :- \\+a{p}, \\+f{i}.\n")
         }
+    };
+    let chain = |n: usize| {
+        let src: String = (0..n).map(step).collect();
         ground(&format!("{src}query(a{}).", n - 1))
     };
     let laid = Kind::Families { search: false };
@@ -143,19 +145,13 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
     // layout still comes first.
     assert_eq!(candidates(&chain(4))[0], laid);
     // With few facts and many derived atoms per fact `closed` comes
-    // first: the chain of four, read by a chain of 36 atoms of no fact.
-    let mut src = String::new();
-    for i in 0..4 {
-        let before = if i == 0 {
-            String::new()
-        } else {
-            format!("a{}, ", i - 1)
-        };
-        src += &format!("0.5::f{i}. a{i} :- {before}f{i}.\n");
-    }
+    // first: the chain of four, read by a chain of 36 derived atoms over
+    // the same four facts.
+    let mut src: String = (0..4).map(step).collect();
     src += "c0 :- a0, a1.\n";
     for j in 1..36 {
-        src += &format!("c{j} :- c{}, a{}.\n", j - 1, j % 4);
+        let (p, a, f) = (j - 1, j % 4, (j + 1) % 4);
+        src += &format!("c{j} :- c{p}, a{a}, f{a}. c{j} :- c{p}, \\+a{a}, f{f}.\n");
     }
     let gp = ground(&format!("{src}query(c35)."));
     assert!(
@@ -204,43 +200,54 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
 
 #[test]
 fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
-    // A mux and a gate of one rule read once, which the grounder
-    // inlines as a view: `program` is the first trial and
-    // `program:fanin` the second, and `td` is none. The same program
-    // ground without inlining has no view, and `program` alone goes
-    // last.
-    let src = "0.5::f0. 0.5::f1. 0.5::f2. 0.5::f3. 0.5::f4. 0.5::f5.
+    // A two-bit adder and a test that its sum is 7: its sum and carry
+    // gates read other gates, and the test reads a gate `p` of one rule
+    // read once, a view, which the grounder inlines where views are on.
+    // Both writings are built gate by gate (`built_of_gates`): `program`
+    // is the first trial and `program:fanin` the second, and `td` is none.
+    let adder = "0.5::x0. 0.5::x1. 0.5::y0. 0.5::y1.
+                 s0 :- x0, \\+y0. s0 :- \\+x0, y0.
+                 c0 :- x0, y0.
+                 t1 :- x1, \\+y1. t1 :- \\+x1, y1.
+                 s1 :- t1, \\+c0. s1 :- \\+t1, c0.
+                 c1 :- x1, y1. c1 :- t1, c0.
+                 p :- s0, s1. seven :- p, c1.
+                 query(s0). query(s1). query(c1). query(seven).";
+    // A mux whose rules each read a fact, with a view `g2`: neither
+    // writing is, and `program` alone goes last.
+    let mux = "0.5::f0. 0.5::f1. 0.5::f2. 0.5::f3. 0.5::f4. 0.5::f5.
                g1 :- f0, f1. g1 :- f2, \\+f0.
                g2 :- g1, f3.
                q :- g2, f4. q :- f5, \\+g1.
                query(q).";
-    let program = crate::syntax::parse_program(src).expect("parses");
-    let laid = Kind::Families { search: false };
-    let searched = Kind::Families { search: true };
-    let gp = crate::ground::ground(&program, &crate::GroundOptions::default()).expect("grounds");
-    assert_eq!(gp.stats.inlined, 1);
-    assert_eq!(
-        candidates(&gp),
-        vec![
-            Kind::Program { fan_in: false },
-            Kind::Program { fan_in: true },
-            laid,
-            Kind::Closed,
-            searched,
-        ],
-    );
-    let options = crate::GroundOptions {
-        views: false,
-        ..crate::GroundOptions::default()
+    let ground = |src: &str, views: bool| {
+        let options = crate::GroundOptions {
+            views,
+            ..crate::GroundOptions::default()
+        };
+        crate::ground::ground(
+            &crate::syntax::parse_program(src).expect("parses"),
+            &options,
+        )
+        .expect("grounds")
     };
-    let gp = crate::ground::ground(&program, &options).expect("grounds");
-    assert_eq!(gp.stats.inlined, 0);
-    assert_eq!(
-        candidates(&gp).last(),
-        Some(&Kind::Program { fan_in: false })
-    );
-    assert!(!candidates(&gp).contains(&Kind::Program { fan_in: true }));
-    assert!(candidates(&gp).contains(&Kind::Td));
+    for views in [true, false] {
+        let gp = ground(adder, views);
+        assert_eq!(gp.stats.inlined, usize::from(views));
+        assert_eq!(candidates(&gp), program_leads());
+        let gp = ground(mux, views);
+        assert_eq!(gp.stats.inlined, usize::from(views));
+        assert_eq!(
+            candidates(&gp),
+            vec![
+                Kind::Families { search: false },
+                Kind::Closed,
+                Kind::Td,
+                Kind::Families { search: true },
+                Kind::Program { fan_in: false },
+            ],
+        );
+    }
 }
 
 /// Where `decision` is no trial, the conditioned program goes to
@@ -306,10 +313,26 @@ fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
     }
 }
 
+/// The trials [`candidates`] gives a program built gate by gate with
+/// fewer than [`DERIVED_PER_FACT`] derived atoms per fact: `program`
+/// leads, `program:fanin` second.
+fn program_leads() -> Vec<Kind> {
+    vec![
+        Kind::Program { fan_in: false },
+        Kind::Program { fan_in: true },
+        Kind::Families { search: false },
+        Kind::Closed,
+        Kind::Families { search: true },
+    ]
+}
+
 /// A Dice diamond loop of `steps` steps, unrolled as Dice programs were
 /// translated before a loop became recursion over a step index: each
 /// step drops the signal with probability 1e-4 on one of its two routes,
-/// so that the query keeps it with probability (1 - 0.5e-4)^steps.
+/// so that the query keeps it with probability (1 - 0.5e-4)^steps. Its
+/// views inlined, each step's two rules read facts of their own, and
+/// `auto` puts `program` last (`built_of_gates`); the tests of the turns
+/// give it [`program_leads`]' trials, where `program` leads.
 fn diamond_loop(steps: usize) -> GroundProgram {
     let mut src = String::from(
         "0.5::route.\n0.0001::drop.\nresult :- \\+route, \\+drop.\nresult_1 :- route.\nresult_1 :- result.\n",
@@ -332,9 +355,8 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
     // it in the square of the steps (24 M units under `program` at 400
     // steps); `program` now names each step's result at a cut of width one
     // (src/vtree/naming.rs), as `families:0` cuts each step at an
-    // indicator, and both are linear. `program` leads (the grounder
-    // inlines each step's views), `program:fanin` lays out the same named
-    // order and is dropped, and `program` and `families:0` take turns of
+    // indicator, and both are linear. `program` leads ([`program_leads`]),
+    // `program:fanin` lays out the same named order and is dropped, and `program` and `families:0` take turns of
     // doubling work from 2^15 units (a first watch of 2^15 pairs): one of
     // them finishes (`program`, projected to finish its compile within
     // two doublings, takes its turns ahead), and neither has spent more
@@ -342,18 +364,9 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
     // move it ahead, and one more for its turn.
     let steps = 400;
     let gp = diamond_loop(steps);
-    assert!(gp.stats.inlined > 0);
-    assert_eq!(
-        candidates(&gp)[..3],
-        [
-            Kind::Program { fan_in: false },
-            Kind::Program { fan_in: true },
-            Kind::Families { search: false }
-        ]
-    );
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        program_leads(),
         Projection::default(),
         1 << 15,
         tp::DYNAMIC_FIRST_PAIRS,
@@ -424,7 +437,7 @@ fn a_turn_projected_past_its_horizon_ends_between_components() {
     let gp = diamond_loop(steps);
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        program_leads(),
         Projection::default(),
         1 << 4,
         tp::DYNAMIC_FIRST_PAIRS,
@@ -469,7 +482,7 @@ fn settling_past_its_budget_is_the_trials_work() {
     let gp = diamond_loop(steps);
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        program_leads(),
         Projection::default(),
         1 << 15,
         tp::DYNAMIC_FIRST_PAIRS,

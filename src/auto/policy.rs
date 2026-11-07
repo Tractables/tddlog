@@ -56,8 +56,8 @@ pub(super) fn projected_from(first_pairs: usize) -> u64 {
 
 /// Where `program` goes first, its first turn and those of the two trials
 /// after it (`program:fanin` and a families or `closed` trial) are this
-/// much shorter than a first turn: the circuits whose views were inlined
-/// are won by one of them, and the turns double, so the run costs about
+/// much shorter than a first turn: the circuits built gate by gate are won
+/// by one of them, and the turns double, so the run costs about
 /// twice the winner's work for each.
 pub(super) const LEAD_SHARE: u64 = 256;
 
@@ -69,8 +69,8 @@ pub(super) const LEAD_SHARE: u64 = 256;
 /// families trial, and on those the other trials' work was most of the
 /// run; where they spend past their estimates (the weather networks) they
 /// lose the weight ([`WORK_PER_ESTIMATED_PAIR`]). The bet is on networks:
-/// where `program` goes first, on the programs whose views the grounder
-/// inlined ([`candidates`]), the families trials hold the weight only if
+/// where `program` goes first, on the programs built gate by gate
+/// ([`candidates`]), the families trials hold the weight only if
 /// `families:0`'s rewrite ties some table by clauses, as a network's does
 /// ([`weight`]). Without the weight `program` took up to five times main's
 /// time beside it on the UAI mastermind networks (06_08_03_0014 1.0 s to
@@ -274,30 +274,30 @@ pub(super) fn families_weighted(lead: Kind, laid: Option<&Trial>) -> bool {
 /// and databases and the TPC-H queries, where `td` first takes less trial
 /// work.
 ///
-/// Where the grounder inlined views (atoms of one rule read once,
-/// `src/ground/inline.rs`), the program is built gate by gate, as the
-/// circuits Alea, Dice and pluck export are: each gate is a derived atom
-/// of one rule, and the program states its flips in the order its front
-/// end created them. `program` comes first there, then `program:fanin`,
-/// ahead of the families trials, and `program` alone comes last
-/// elsewhere: on the programs with views, the circuits compile best in
-/// the order their front end built them (triangle_small 24 s to 0.7) or
-/// in the order their gates read the facts (`program:fanin`: an adder's
-/// operand bits side by side, addFun_sum at 19 bits in 42 M units of work
-/// against 4.3 G; pluck_hmm in 1 280 pairs in the file's order, out of
-/// memory in the walk's), while first on every program `program` cost the
-/// networks and grids, which have no views, 3 to 60 times. `td` is no
-/// trial there: its order comes from a decomposition of the undirected
-/// interaction graph, which does not see the gates' direction, where the
-/// program's two orders and `closed`'s search over dependency orders
-/// follow it. In the timed runs of the circuits, GeNI's networks and
-/// Roulette's programs, all built with views, `td` won none, and its
-/// turns took a fifth of the time the losing trials spent on the
-/// circuits of a second or more. The atoms of chains inlined (recursive
-/// predicates, `stats.chained`) are no views here: a chain is a loop
-/// written as recursion, as Roulette's hmm conjoins its outcomes, not a
-/// circuit's gate (hmm-filtering-joint-900 in 0.80 G instructions, 1.45 G
-/// with its chain counted, `program` first).
+/// Where the program is built gate by gate ([`built_of_gates`]), as the
+/// circuits Alea, Dice and pluck export are, and states its flips in the
+/// order its front end created them, `program` comes first, then
+/// `program:fanin`, ahead of the families trials, and `program` alone
+/// comes last elsewhere: the circuits compile best in the order their
+/// front end built them (triangle_small 24 s to 0.7) or in the order their
+/// gates read the facts (`program:fanin`: an adder's operand bits side by
+/// side, addFun_sum at 19 bits in 42 M units of work against 4.3 G;
+/// pluck_hmm in 1 280 pairs in the file's order, out of memory in the
+/// walk's), while first on every program `program` cost the networks and
+/// grids 3 to 60 times. `td` is no trial there: its order comes from a
+/// decomposition of the undirected interaction graph, which does not see
+/// the gates' direction, where the program's two orders and `closed`'s
+/// search over dependency orders follow it. In the timed runs of the
+/// circuits, GeNI's networks and Roulette's programs `td` won none, and
+/// its turns took a fifth of the time the losing trials spent on the
+/// circuits of a second or more. The property is read off the program as
+/// ground, whatever the grounder inlined, so that a program and the
+/// ground program `tddlog --ground` prints of it get the same trials. The
+/// benchmark programs did, all but 3 of 383, where the earlier test,
+/// whether the grounder had inlined views, gave the two writings different
+/// trials on 168 of them. Against that test it took 2.8% off the total
+/// time of 60 s runs of both writings of 454 programs, and 57% off that of
+/// the circuits whose trials it changed.
 ///
 /// Where the program is a CNF over its facts and there are several units
 /// ([`shape::clauses_over_facts`]: every derived atom a copy of a fact or
@@ -347,7 +347,7 @@ pub(super) fn candidates(gp: &GroundProgram) -> Vec<Kind> {
         } else {
             vec![laid, Kind::Closed, Kind::Td, searched]
         };
-    if gp.stats.inlined > 0 {
+    if built_of_gates(gp) {
         trials.retain(|&kind| kind != Kind::Td);
         trials.splice(
             0..0,
@@ -372,3 +372,51 @@ pub(super) fn candidates(gp: &GroundProgram) -> Vec<Kind> {
 /// more.
 pub(super) const FEW_FACTS: usize = 64;
 pub(super) const DERIVED_PER_FACT: usize = 8;
+
+/// Whether `gp` is built gate by gate ([`candidates`]): at least one rule
+/// in [`RULES_PER_GATE`] reads derived atoms alone, or at least one derived
+/// atom in [`DERIVED_PER_VIEW`] has one rule and is read by one rule. A
+/// circuit's gates above its flips read other gates, and an expression
+/// written node by node is a tree of atoms each read once, where a
+/// network's or a graph's rules each read a fact of their own (an entry of
+/// a table, an edge) and its atoms are read by many rules. The atoms of one
+/// rule read once are views, which the grounder inlines where it can
+/// (`src/ground/inline.rs`): those counted are the ones it leaves, members
+/// of exclusive sets and views whose inlining would grow the program, such
+/// as dnahmm's hidden states, 92% of its derived atoms at 16 steps, where
+/// its rules over derived atoms alone fall from 27% of its rules at 4
+/// steps to 7% at 16.
+pub(super) fn built_of_gates(gp: &GroundProgram) -> bool {
+    let gates = gp
+        .rules
+        .iter()
+        .filter(|r| !r.body.is_empty() && r.body.iter().all(|l| !gp.is_fact(l.atom())))
+        .count();
+    if gates > 0 && RULES_PER_GATE * gates >= gp.rules.len() {
+        return true;
+    }
+    let n = gp.num_atoms();
+    let (mut rules, mut readers, mut last) = (vec![0u32; n], vec![0u32; n], vec![usize::MAX; n]);
+    for (i, r) in gp.rules.iter().enumerate() {
+        rules[r.head as usize] += 1;
+        for l in &r.body {
+            let a = l.atom() as usize;
+            if last[a] != i {
+                last[a] = i;
+                readers[a] += 1;
+            }
+        }
+    }
+    let views = (0..n).filter(|&a| rules[a] == 1 && readers[a] == 1).count();
+    views > 0 && DERIVED_PER_VIEW * views >= gp.num_derived()
+}
+
+/// Rules per rule over derived atoms alone, and derived atoms per view, at
+/// which a program is built gate by gate ([`built_of_gates`]). 132 of the
+/// 141 benchmark circuits that Alea, Dice and pluck export are, the others
+/// small or networks written as circuits. A network whose deterministic
+/// entries are rules over derived atoms alone can be too (pathfinder's are
+/// 76% of its rules), and takes `program` first at little cost; no
+/// network's or grid's views reach a fifth of its derived atoms.
+pub(super) const RULES_PER_GATE: usize = 4;
+pub(super) const DERIVED_PER_VIEW: usize = 2;
