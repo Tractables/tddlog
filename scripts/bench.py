@@ -1095,7 +1095,7 @@ def memout(r):
     """Whether record r failed for want of memory: an error whose text says
     that an allocation failed, or that the memory cap killed the run
     (MEMOUT). An error that names memory otherwise is one of the known
-    texts of NOT_MEMOUT, and raises Unclassed where it is not (rule 3: a
+    texts of NOT_MEMOUT, and raises Unclassed where it is not (a
     new text is read and listed, not guessed)."""
     if r['status'] != 'error':
         return False
@@ -1106,6 +1106,31 @@ def memout(r):
         raise Unclassed(f'{r.get("system", "?")} on {r.get("instance", "?")}: an error that names memory and is '
                         f'neither an allocation failure nor one of the known texts (bench.py NOT_MEMOUT): {e[-400:]!r}')
     return False
+
+
+# A run that a signal from outside ended before its time limit (`timed`):
+# neither the harness's own kill at the limit (a timeout) nor the memory
+# cap's (a memout), but the box's out-of-memory guard (earlyoom's SIGTERM
+# to the largest process when the box's free memory runs low, whatever that
+# process's own cap), the kernel's out-of-memory killer (SIGKILL) or another
+# process. Such a run is not the system's failure: its record has status
+# `stopped`, its returncode and what the run printed, and the run is done
+# again.
+STOP_SIGNALS = (-signal.SIGTERM, -signal.SIGKILL)
+# The same stop in a record written before the status `stopped`, an error:
+# a process that printed nothing (`exit -15`, `exit -9`), or Julia's report
+# of the SIGTERM it was sent.
+STOPPED_TEXT = re.compile(r'exit -(?:15|9)$|\[\d+\] signal 15: Terminated\n')
+
+
+def stopped(r):
+    """Whether record r is a run stopped from outside before its time
+    limit (STOP_SIGNALS): status `stopped`, or an earlier error whose text
+    is such a stop's (STOPPED_TEXT) and no allocation failure's (MEMOUT)."""
+    if r['status'] == 'stopped':
+        return True
+    e = str(r.get('error') or '')
+    return r['status'] == 'error' and bool(STOPPED_TEXT.match(e)) and not MEMOUT.search(e)
 
 
 # A translator for one system that did not finish within the time limit
@@ -2323,7 +2348,10 @@ def timed(cmd, timeout, cwd=None, env=None):
         # including allocation failures, without unbounded trace records.
         if len(err) > 8192:
             err = err[:4096] + '\n... output truncated ...\n' + err[-4096:]
-        return {'status': 'error', 'seconds': dt, 'error': err, 'returncode': p.returncode}
+        r = {'status': 'error', 'seconds': dt, 'error': err, 'returncode': p.returncode}
+        if p.returncode in STOP_SIGNALS and dt < timeout and not MEMOUT.search(err):
+            r['status'] = 'stopped'     # a signal from outside, before the limit (STOP_SIGNALS)
+        return r
     return {'status': 'ok', 'seconds': dt, 'stdout': stdout, 'stderr': stderr}
 
 
@@ -3431,7 +3459,7 @@ def run_circulette(args, name, path, variant):
     return {'status': 'ok', 'seconds': r['seconds'], 'answers': answers, 'stats': stats}
 
 
-# --- Systems for probabilistic programs (rule 15: every exact method with an
+# --- Systems for probabilistic programs (every exact method with an
 # implementation is a baseline). Each is a command template given by
 # `--NAME CMD` ({file}, {dir}, {base}), runs the instances it accepts, and
 # answers the instance's queries; PROGRAM_SYSTEMS maps NAME to its
@@ -4356,7 +4384,7 @@ def run_pita(args, name, path, own=None):
     """PITA (cplint) on the LPAD translation of the program, or where the
     instance is an LPAD written for PITA (`own`, cplint's examples) on that
     program as it is, with a driver that asks the converted program's
-    queries (`problog2pita.own`; rule 15: its own system's program is the
+    queries (`problog2pita.own`; its own system's program is the
     model). One swipl process consults the program and asks `prob/2` for
     every query, so the seconds cover parsing, transformation and every
     query, as the other systems' do. PITA answers one query at a time and
@@ -5542,7 +5570,7 @@ def run_uai_system(args, name, path, system, variant):
     tree) or TensorInference.jl (tensor network contraction) on the UAI file
     of a gen_bn.py instance (`uai_inputs`), the observations applied by
     slicing the tables. The marginals asked are the program's query atoms
-    (rule 19: what the others are asked), and the `-pr` variant gives
+    (what the others are asked), and the `-pr` variant gives
     `log10_z`, the natural logarithm the driver writes over ln 10. The
     record keeps the seconds of the inference proper, without the start of
     the interpreter and the libraries. TensorInference.jl's driver times it
@@ -5600,7 +5628,7 @@ def run_uai_system(args, name, path, system, variant):
 
 
 # The systems that read networks or Dice programs are given a program that
-# is neither through its ground program (rule 15: every system tries every
+# is neither through its ground program (every system tries every
 # problem): `tddlog --ground` prints it, and ground2net.py writes it as a
 # Bayesian network of Boolean variables (UAI for Merlin and the UAI
 # systems, Hugin for Ace) or as Dice programs. Both steps are timed and
@@ -6223,7 +6251,9 @@ def accepts_model_checker(args, name):
 
 def checker_command(args, system, variant, model, props, dice=True):
     """The command of Storm or PRISM on a model and its properties (a file, or
-    for PRISM with dice=False one property, -pf). PRISM's iterations on
+    for PRISM with dice=False one property, -pf). PRISM's Java heap and its
+    decision diagrams' memory are both --prism-heap, on every model (CUDD's
+    own default of 1 GB filled on the weather factory). PRISM's iterations on
     dice2prism.py's chains (unbounded reachability; the weather factory's is
     bounded) run to a relative change of 1e-15 and without its default cap of
     10 000 iterations: on an acyclic chain they stop once nothing changes,
@@ -6231,8 +6261,8 @@ def checker_command(args, system, variant, model, props, dice=True):
     if system == 'storm':
         return [args.storm, os.path.join(HERE, 'storm_check.py'), model, variant, props]
     cmd = [os.path.join(os.path.abspath(args.prism), 'bin', 'prism'), model] + ([props] if dice else ['-pf', props]) + \
-        ['-' + variant, '-javamaxmem', args.prism_heap]
-    return cmd + (['-cuddmaxmem', args.prism_heap, '-epsilon', '1e-15', '-maxiters', '1000000000'] if dice else [])
+        ['-' + variant, '-javamaxmem', args.prism_heap, '-cuddmaxmem', args.prism_heap]
+    return cmd + (['-epsilon', '1e-15', '-maxiters', '1000000000'] if dice else [])
 
 
 CHECKER_RESULT = {'storm': re.compile(r'^result ([0-9.eE+-]+)(?: (\d+(?:/\d+)?))?\s*$', re.M),
@@ -6954,6 +6984,8 @@ def run_job(args, spec, systems, out, lock, names):
                     m = re.search(r'^(?:parse|grounding|vtree|indicator|compilation) error: .*', r['error'], re.M | re.S)
                     if m:
                         rec['error'] = m.group(0)
+            if r['status'] == 'stopped':    # stopped from outside before the limit (STOP_SIGNALS)
+                rec['error'], rec['returncode'] = r['error'], r.get('returncode')
             r = take_usage(rec, r)
             # out of time or memory on one size of a program: its larger sizes
             # are skipped; another failure says nothing of them
@@ -6981,6 +7013,8 @@ def fmt(rec):
         return '-'
     if rec['status'] == 'unsupported':
         return 'n/a'
+    if rec['status'] == 'stopped':
+        return 'stop'
     return 'err'
 
 
@@ -7269,9 +7303,8 @@ def main():
     r.add_argument('--prism', default='', help="PRISM's directory (bin/prism), for the weather factory and the "
                    'Markov chains of the Dice programs; empty = not run')
     r.add_argument('--prism-variants', type=lambda s: s.split(','), help='the engines sparse, hybrid (both by default)')
-    r.add_argument('--prism-heap', help="the Java heap of PRISM's process (-javamaxmem), and on the Dice "
-                   "programs' chains its decision diagrams' memory (-cuddmaxmem), by default 4g, or a third of "
-                   "--mem-cap")
+    r.add_argument('--prism-heap', help="the Java heap of PRISM's process (-javamaxmem) and its decision "
+                   "diagrams' memory (-cuddmaxmem), by default 4g, or 0.8 of --mem-cap")
     r.add_argument('--weather-models', default='', help="the directory with Rubicon's weatherfactoryN.prism, for --storm and --prism")
     r.add_argument('--provsql', default='', help="the directory install_provsql.sh installs ProvSQL in (pg/bin/initdb, ...), "
                    'for the programs of tuple-independent tables (TPC-H; pdb, noisyor, liftsep and rgraph of --suite lit); empty = not run')

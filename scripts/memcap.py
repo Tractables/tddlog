@@ -67,6 +67,27 @@ def size(text):
         raise ValueError(f'not a size: {text!r} (a number of bytes, or one with k, m, g or t)') from None
 
 
+def cgroup_max(cgroup_file='/proc/self/cgroup', root=CGROUP):
+    """The least `memory.max` over the process's cgroup v2 and the cgroups
+    above it, in bytes: the memory the process may take under a cap (a
+    command in its `Cap`, a run in a scope with a limit). None where none of
+    them caps memory, or there is no cgroup v2."""
+    try:
+        rel = next((line[3:].strip() for line in read(cgroup_file).splitlines() if line.startswith('0::')), None)
+    except OSError:
+        return None
+    least = None
+    while rel is not None:
+        try:
+            value = read(os.path.join(root, rel.lstrip('/'), 'memory.max')).strip()
+        except OSError:
+            value = 'max'   # the root cgroup has no memory.max
+        if value != 'max':
+            least = int(value) if least is None else min(least, int(value))
+        rel = None if rel in ('/', '') else os.path.dirname(rel)
+    return least
+
+
 class Root:
     """The delegated cgroup of the run: its processes in the leaf `driver`,
     the memory controller handed to its children. Several drivers of one

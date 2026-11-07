@@ -467,7 +467,7 @@ function benchmarksOf(root) {
     };
     if (benches.length > 0) {
       const quick = (b) => b.readable && b.file.bytes <= 1024 * 1024 && typeof b.native === "number" && b.native <= 2;
-      const whole = benches.find((b) => b.path === "std/grid/grid4" && quick(b) && b.reference && b.inline)
+      const whole = benches.find((b) => b.path === "std/grids/grid4" && quick(b) && b.reference && b.inline)
         ?? benches.find((b) => quick(b) && b.reference && b.inline);
       assert.ok(whole, "a benchmark to open");
       const opened = async (p, bench) => {
@@ -525,7 +525,8 @@ function benchmarksOf(root) {
       await opened(gz, whole);
       assert.equal(await gz.inputValue("#program"), header + text);
       await gz.close();
-      const wrong = await routed(text.replace(/\d/, (d) => String((Number(d) + 1) % 10)));
+      // its last digit changed: a header the site puts above a file (Biomine's, Ace's) is not part of it
+      const wrong = await routed(text.replace(/\d(?=\D*$)/, (d) => String((Number(d) + 1) % 10)));
       await visit(wrong, `#bench=${whole.path}`);
       await wrong.waitForFunction(() => /does not match/.test(document.getElementById("source").textContent));
       await wrong.close();
@@ -782,10 +783,10 @@ function benchmarksOf(root) {
     // either answers, a run that does not answer counted as twice its limit
     // (PAR-2), and the speed-up: the ratio of the totals over those both
     // answer (but those both answer in under 0.2 s), tddlog's failures at the
-    // limit and the system's timeouts at the limit where that bound is at
-    // least the ratio on those both answer; none with fewer than 20 both
-    // answer. A time under 0.2 s counts as 0.2 s. (0.2, 2 and 20: the data's
-    // measure, panels.py's parameters.)
+    // limit and the system's timeouts at the limit, each whose bound (the
+    // limit over tddlog's time) raises the speed-up, the largest bound
+    // first; none with fewer than 20 both answer. A time under 0.2 s counts
+    // as 0.2 s. (0.2, 2 and 20: the data's measure, panels.py's parameters.)
     const { floor, par: times, common } = cats.measure;
     const compare = (runs) => {
       const f = (t) => Math.max(t, floor);
@@ -799,9 +800,11 @@ function benchmarksOf(root) {
       if (both.length < common) return out;
       let mine = both.reduce((s, [, t]) => s + f(t), 0), theirs = both.reduce((s, [, , x]) => s + f(x), 0);
       const r = theirs / mine;
-      for (const [l, t, x] of either) {
-        if (number(x) && !number(t)) [mine, theirs] = [mine + l, theirs + f(x)];
-        else if (number(t) && !number(x) && l / f(t) >= r) [mine, theirs] = [mine + f(t), theirs + l];
+      for (const [l, t, x] of either) if (number(x) && !number(t)) [mine, theirs] = [mine + l, theirs + f(x)];
+      const timeouts = either.filter(([, t, x]) => number(t) && !number(x)).map(([l, t]) => [f(t), l]).sort(([t, l], [u, m]) => m / u - l / t);
+      for (const [t, l] of timeouts) {
+        if (l * mine <= theirs * t) break;
+        [mine, theirs] = [mine + t, theirs + l];
       }
       return { ...out, ratio: r, speedup: theirs / mine };
     };
@@ -969,13 +972,19 @@ function benchmarksOf(root) {
       "the menu: the integrations");
     assert.deepEqual(menu[2].slice(1), [...categories.map((c) => `#/category/${c.key}`), "../#/coverage"],
       "the menu: the categories and the programs tddlog does not run");
-    assert.deepEqual(menu[3].slice(1), (cats.circuits?.groups ?? []).map((g) => `#/category/circuits/in/${encodeURIComponent(g.key)}`),
-      "the menu: the circuits' families");
+    // the circuits' families only where the view is among the circuits, as a type's under the type on show
+    assert.deepEqual(menu[3].slice(1), [], "the menu: the circuits, without their families on the overview");
     const walks = fs.readdirSync(path.join(site, "next", "walk")).filter((f) => f.endsWith(".json")).map((f) => `../#/how/${f.slice(0, -5)}`);
     assert.deepEqual(menu[4].slice(-1), ["../#/methods"], "the menu: the methods table, last");
     assert.deepEqual(menu[4].slice(1, -1).sort(), walks.sort(), "the menu: every walkthrough");
     assert.deepEqual(await page.$$eval("#tree li.legend", (ls) => ls.map((l) => l.textContent)),
-      ["instances answered", "instances", ...(cats.circuits ? ["instances"] : [])], "the menu: what its counts count");
+      ["instances answered", "instances"], "the menu: what its counts count");
+    if (cats.circuits) {
+      await visit("#/circuits", "figure.plot svg.cactus path.line");
+      const circuits = await page.$$eval("#tree .tree > li.group", (lis) => [...lis.find((li) => li.querySelector(":scope > a").dataset.section === "#/circuits")
+        .querySelectorAll(":scope > ul > li > a")].map((a) => a.getAttribute("href")));
+      assert.deepEqual(circuits, cats.circuits.groups.map((g) => `#/category/circuits/in/${encodeURIComponent(g.key)}`), "the menu: the circuits' families among the circuits");
+    }
     for (const c of categories) {
       const what = `the category ${c.key}`;
       await visit(`#/category/${c.key}`, "figure.plot svg.cactus path.line");
@@ -997,8 +1006,12 @@ function benchmarksOf(root) {
       const pageOf = (x) => (isMine(x) ? `../#/integrations/${x === "tddlog" ? x : x.replace(/-tddlog$/, "")}` : `../#/baselines/${x}`);
       assert.deepEqual(await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[0].querySelector("a").getAttribute("href"))),
         [...c.mine, ...c.native].map(pageOf), `${what}: each system's name opens its page`);
-      const missing = order.filter((x) => rows.some((r) => r.v[x] === null)).length;
-      assert.equal((await page.$$("#view ul.cannot li")).length, missing, `${what}: the systems not given some of its instances`);
+      // how many each system was not given, in the board's last column, empty for none
+      assert.deepEqual(await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[r.cells.length - 1].textContent.replace(/,/g, ""))),
+        [...c.mine, ...c.native].map((x) => {
+          const n = rows.filter((r) => r.v[x] === null).length;
+          return n ? String(n) : "";
+        }), `${what}: the instances each system was not given`);
       assert.equal((await page.$$("#view ul.losses li")).length, c.losses?.length ?? 0, `${what}: where tddlog is slower`);
       assert.deepEqual(await page.$eval("#view figure.scatter", (f) => [f.dataset.faster, f.dataset.slower]),
         sides(rows, c.drawn.filter((x) => !isMine(x))), `${what}: tddlog against the fastest other system`);
@@ -1277,6 +1290,17 @@ function benchmarksOf(root) {
       const observed = (name) => /\.(inst|evid)$/.test(name);
       // (a copy of another suite's instance, categories.json's copies, may have no page of its own)
       const copied = new Set(categories.flatMap((c) => Object.values(c.copies ?? {}).flat()));
+      // each instance's family on the types' views and the circuits' (categories.json's groups), a
+      // copy's its instance's: the benchmarks' pages list it in that family, under its key and title
+      const familyAt = new Map();
+      for (const c of [...types, ...(cats.circuits ? [cats.circuits] : [])]) {
+        for (const g of c.groups) {
+          for (const i of g.rows) {
+            const key = `${c.rows[i][0]}/${c.rows[i][1]}`;
+            for (const k of [key, ...(c.copies?.[key] ?? [])]) familyAt.set(k, g);
+          }
+        }
+      }
       for (const [suite, fams] of Object.entries(index.suites)) {
         const s = bySuite.get(suite);
         assert.ok(s, `benchmarks/index.json: the suite ${suite} is in the results' data`);
@@ -1285,6 +1309,11 @@ function benchmarksOf(root) {
         assert.deepEqual(held.sort(), s.instances.map((row) => row[0]).filter((i) => placed.has(i) || !copied.has(`${suite}/${i}`)).sort(),
           `${suite}: its families hold its instances, but copies without a page`);
         for (const f of fams) {
+          for (const i of f.instances) {
+            const g = familyAt.get(`${suite}/${i}`);
+            assert.ok(g, `${suite}/${i}: in a family of the types' views`);
+            assert.deepEqual([f.key, f.title], [g.key, g.title], `${suite}/${i}: its family on the types' views`);
+          }
           const fam = JSON.parse(fs.readFileSync(path.join(benchmarks, suite, `${f.key}.json`), "utf8"));
           assert.deepEqual(fam.instances.map((i) => i.name), f.instances, `${suite}/${f.key}: its instances`);
           for (const inst of fam.instances) {

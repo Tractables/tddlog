@@ -32,6 +32,7 @@ mod negations;
 mod networks;
 mod observed_query;
 mod or_route;
+mod out_of_memory;
 mod problog_suite;
 mod query_count;
 mod query_rules;

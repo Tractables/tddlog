@@ -1627,6 +1627,14 @@ class SkipTests(unittest.TestCase):
         self.assertEqual(bench.julia_heap_hint(cmd[:3] + ['--heap-size-hint=1G'], 10 << 30), cmd[:3] + ['--heap-size-hint=1G'])
         self.assertEqual(bench.julia_heap_hint(['java', '-Xmx1g'], 10 << 30), ['java', '-Xmx1g'])
 
+    def test_prism_gets_its_heap_for_its_decision_diagrams_on_every_model(self):
+        args = SimpleNamespace(prism='/p', prism_heap='24576m')
+        for dice, props in [(True, 'm.props'), (False, 'P=? [F<=10 "allStrike"]')]:
+            cmd = bench.checker_command(args, 'prism', 'hybrid', 'm.prism', props, dice=dice)
+            self.assertEqual(cmd[cmd.index('-javamaxmem') + 1], '24576m')
+            self.assertEqual(cmd[cmd.index('-cuddmaxmem') + 1], '24576m')   # not CUDD's default of 1 GB
+            self.assertEqual('-epsilon' in cmd, dice)
+
     def test_a_record_keeps_its_commands_memory(self):
         bench.LANE.usage = {}
         r = bench.timed([sys.executable, '-c', 'b = bytearray(64 << 20); print(len(b))'], 60)
@@ -1980,7 +1988,7 @@ class AspmcTests(unittest.TestCase):
 
     def test_an_observation_with_a_body_is_unsupported(self):
         # the harness's rewrite of the evidence cannot write it, and there is no ground fallback
-        # (rule 20: aspmc reads the first-order program)
+        # (aspmc reads the first-order program)
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, 'coin.pl')
             with open(path, 'w') as f:
@@ -3370,6 +3378,44 @@ class ProcessTests(unittest.TestCase):
         self.assertEqual(result['status'], 'error')
         self.assertEqual(result['error'], 'failed')
         self.assertEqual(result['returncode'], 2)
+
+    @unittest.skipUnless(bench.os.name == 'posix', 'signals are POSIX')
+    def test_a_run_a_signal_ends_before_its_limit_is_stopped(self):
+        # the box's out-of-memory guard (earlyoom's SIGTERM, the kernel's SIGKILL) ended the run before
+        # its limit: no failure of the system's, status stopped with the returncode, and no skip
+        for sig in ('SIGTERM', 'SIGKILL'):
+            r = bench.timed([sys.executable, '-c', f'import os, signal; os.kill(os.getpid(), signal.{sig})'], 30)
+            self.assertEqual((r['status'], r['returncode'], r['error']),
+                             ('stopped', -getattr(bench.signal, sig), f'exit {r["returncode"]}'), sig)
+            self.assertTrue(bench.stopped(r))
+            self.assertFalse(bench.memout(r) or bench.ran_out(r))
+        # what the run printed is kept: Julia's report of the SIGTERM it was sent
+        report = '[2340709] signal 15: Terminated\nAllocations: 12625286 (Pool: 12624805; Big: 481); GC: 10'
+        r = bench.timed([sys.executable, '-c', f'import os, signal, sys; print({report!r}, file=sys.stderr); '
+                         'sys.stderr.flush(); os.kill(os.getpid(), signal.SIGTERM)'], 30)
+        self.assertEqual((r['status'], r['error']), ('stopped', report))
+        # an allocation failure before the signal stays the memout it is
+        r = bench.timed([sys.executable, '-c', 'import os, signal, sys; print("Fatal error: out of memory", '
+                         'file=sys.stderr); sys.stderr.flush(); os.kill(os.getpid(), signal.SIGKILL)'], 30)
+        self.assertEqual(r['status'], 'error')
+        self.assertTrue(bench.memout(r) and not bench.stopped(r))
+        # another signal is the program's own failure (a stack overflow's SIGSEGV)
+        r = bench.timed([sys.executable, '-c', 'import os, signal; os.kill(os.getpid(), signal.SIGSEGV)'], 30)
+        self.assertEqual(r['status'], 'error')
+        self.assertFalse(bench.stopped(r))
+
+    def test_an_earlier_record_of_a_stop_is_stopped(self):
+        # records written before the status: a bare exit by SIGTERM or SIGKILL, or Julia's report of a SIGTERM
+        for text in ['exit -15', 'exit -9', '[2043848] signal 15: Terminated\nin expression starting at none:0\n'
+                     'Allocations: 33002010 (Pool: 33000276; Big: 1734); GC: 29']:
+            r = {'status': 'error', 'seconds': 38.2, 'error': text}
+            self.assertTrue(bench.stopped(r), text)
+            self.assertFalse(bench.memout(r) or bench.ran_out(r), text)
+        for r in [{'status': 'error', 'error': 'exit -11'}, {'status': 'error', 'error': 'exit -150'},
+                  {'status': 'error', 'error': 'scli: exit -15 in a child'},
+                  {'status': 'error', 'error': bench.cap_error(31 << 20)},
+                  {'status': 'timeout', 'seconds': 300}, {'status': 'ok', 'seconds': 1}]:
+            self.assertFalse(bench.stopped(r), r)
 
     def test_error_keeps_the_cause_before_a_backtrace_hint(self):
         message = 'memory allocation failed\nnote: run with RUST_BACKTRACE=1'

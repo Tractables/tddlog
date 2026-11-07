@@ -2886,15 +2886,16 @@ explicit engines solve unbounded reachability with Storm's topological
 solver, which on an acyclic chain computes each state's value once from
 its successors' (Storm's default for doubles, GMRES to 1e-6, would not
 be exact); `dd` iterates to a relative precision of 1e-15, with Sylvan's
-tables given half of the process's address space where it is limited
-(its default of 4 GB filled on circuits). PRISM with `-sparse` or
-`-hybrid` (`-exact` refuses bounded until), `-javamaxmem` (`--prism-heap`,
-4g by default, a third of `--mem-cap` under the cap; the release runs
-give it a third of the lane's memory,
-as 4g ran out parsing the larger networks' chains) and on the chains
-`-cuddmaxmem` (the same), `-epsilon 1e-15` and no cap on the iterations:
-on an acyclic chain they reach the exact values after as many as the
-chain is long, and stop. In doubles, a long chain's probability of its
+tables given half of the memory the process may take where it is bounded,
+its address-space limit or else its cgroup's `memory.max` (its default of
+4 GB filled on circuits). PRISM with `-sparse` or `-hybrid` (`-exact`
+refuses bounded until), `-javamaxmem` and `-cuddmaxmem` both
+`--prism-heap` on every model (4g by default, 0.8 of `--mem-cap` under the
+cap; the release runs gave it a third of the lane's memory, as 4g ran out
+parsing the larger networks' chains, and CUDD's own default of 1 GB filled
+on the weather factory), and on the chains `-epsilon 1e-15` and no cap on
+the iterations: on an acyclic chain they reach the exact values after as
+many as the chain is long, and stop. In doubles, a long chain's probability of its
 observations can underflow to 0 (the long hidden Markov models and
 loops): that is the engine's failure, which Storm's `exact` does not
 have. The answers are `result X` and `Result: X`; the time is the

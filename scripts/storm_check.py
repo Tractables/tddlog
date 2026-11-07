@@ -10,8 +10,8 @@ PROPERTIES is a file of properties, one a line (an optional `"name":`, a
 `;` at the end and `//` comments, as dice2prism.py writes them), or one
 property. ENGINE is `sparse` (the explicit model in double precision),
 `exact` (the explicit model in rational numbers) or `dd` (the model as
-decision diagrams, Sylvan on one thread with half the process's address
-space where it is limited, double precision). The explicit
+decision diagrams, Sylvan on one thread with half the memory the process
+may take where it is bounded, double precision). The explicit
 engines solve unbounded reachability with Storm's topological solver, which
 on an acyclic chain computes each state's value once from its successors'
 (Storm's default for doubles, GMRES to a precision of 1e-6, would not be
@@ -27,6 +27,8 @@ import time
 
 import stormpy
 
+import memcap   # beside this script
+
 model_path, engine, spec = sys.argv[1:4]
 if engine not in ('sparse', 'exact', 'dd'):
     sys.exit(f'engine {engine}: sparse, exact or dd')
@@ -39,9 +41,12 @@ for line in lines:
     if line:
         formulas.append(line)
 # Sylvan's tables grow to --sylvan:maxmem (4096 MB by default): half the
-# address space where the process's is limited, as in a lane
+# memory the process may take where it is bounded, as in a lane: its
+# address-space limit (ulimit -v), else its cgroup's memory.max (bench.py
+# --mem-cap runs each command in a cgroup of its own)
 limit = resource.getrlimit(resource.RLIMIT_AS)[0]
-maxmem = max(4096, limit // 2 // 2 ** 20) if limit != resource.RLIM_INFINITY else 4096
+limit = memcap.cgroup_max() if limit == resource.RLIM_INFINITY else limit
+maxmem = max(4096, limit // 2 // 2 ** 20) if limit is not None else 4096
 stormpy.set_settings(['--sylvan:threads', '1'] +
                      (['--precision', '1e-15', '--sylvan:maxmem', str(maxmem)] if engine == 'dd'
                       else ['--eqsolver', 'topological']))

@@ -31,7 +31,7 @@
 
 use rustc_hash::FxHashMap;
 
-use super::normalize::{head_total, switch_name, switch_probabilities};
+use super::normalize::{head_total, switch_name, switch_prefix, switch_probabilities};
 use super::program::{KeptRules, Lists};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::syntax::{Atom, Clause, HeadChoice, Literal, Program, Term, same_name};
@@ -404,6 +404,7 @@ impl<'a> Shape<'a> {
         let mut switches: Vec<AtomId> = Vec::new();
         let mut qs: Vec<Prob> = Vec::new();
         let mut name = String::new();
+        let prefix = switch_prefix(self.names.iter().copied());
         for &x in order {
             // A table of facts alone makes its atoms facts, without a
             // switch or a rule each ([`super::normalize::Facts`]).
@@ -446,7 +447,7 @@ impl<'a> Shape<'a> {
                 for (i, (h, &q)) in clause.heads.iter().zip(&qs).enumerate() {
                     let switch = gp.atoms.len() as AtomId;
                     gp.atoms.push(Atom::new(
-                        switch_name(&mut name, self.names[x], group, i),
+                        switch_name(&mut name, &prefix, self.names[x], group, i),
                         Vec::new(),
                     ));
                     gp.kinds.push(AtomKind::Fact(q));

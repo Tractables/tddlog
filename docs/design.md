@@ -2603,6 +2603,22 @@ address-space limit to the room its cgroups leave, `memory.max` less
 (`src/bin/tddlog/budget.rs`), and is refused there as under `ulimit -v`:
 resident memory never exceeds the address space that holds it.
 
+A run that is refused memory ends one way wherever the refusal falls: with
+a refused TDD operation's error and exit status 1. tididi's operations ask
+with `try_reserve` and give up; every other request (a `Vec` of the
+grounder's that grows, a table of the compile's) cannot, and std prints
+`memory allocation of N bytes failed` and aborts, with no hook on stable
+Rust in between. The allocator notes each request it refuses after its
+purge, and the binary's SIGABRT handler, after such a refusal, writes the
+operation's error and exits with status 1; before one, it raises the
+signal again with its default action, so that another abort still dumps
+core (`end_refusals_as_errors`). The run takes a thread of its own whose
+stack, as large as the main thread's limit (`ulimit -s`, 8 MiB by
+default), is mapped whole as it starts: the main thread's stack grows a
+page at a time against the same limit, so that once the allocator has
+filled the address space, a call deeper than any before it can find its
+next page refused and die of a SIGSEGV, with no message.
+
 Huge pages go on once the process has asked for `HUGE_FROM` (16 MB), and
 off for good where the kernel stalls (`kernel_stalls`, looked at every
 `HUGE_FROM` bytes asked for): where it has taken more than a tenth of a

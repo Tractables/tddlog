@@ -10,7 +10,9 @@
 //! binary lowers its address-space limit to the room its cgroups leave
 //! (`memory.max` less `memory.current`, the least over its cgroup and
 //! those above it), and is refused there as under `ulimit -v`: resident
-//! memory never exceeds the address space that holds it.
+//! memory never exceeds the address space that holds it. The run itself
+//! takes a thread whose stack is mapped whole as it starts ([`stack_bytes`]),
+//! so that the stack never has to grow against that limit.
 
 /// Lowers the process's address-space limit to the room its cgroups
 /// leave, where that is less. Without a cgroup v2 hierarchy, or where no
@@ -38,6 +40,27 @@ pub fn limit_to_cgroups() {
             }
         }
     }
+}
+
+/// The stack of the thread that runs the command: the main thread's limit
+/// (`RLIMIT_STACK`, `ulimit -s`), or 8 MiB, the usual one, where it has
+/// none. The thread's stack is mapped whole as it starts, so that under a
+/// limit on the address space it never has to grow (`main`).
+pub fn stack_bytes() -> usize {
+    const USUAL: usize = 8 << 20;
+    #[cfg(target_os = "linux")]
+    {
+        let mut limit = libc::rlimit {
+            rlim_cur: 0,
+            rlim_max: 0,
+        };
+        // SAFETY: getrlimit writes the struct it is given.
+        let read = unsafe { libc::getrlimit(libc::RLIMIT_STACK, &mut limit) } == 0;
+        if read && limit.rlim_cur != libc::RLIM_INFINITY {
+            return usize::try_from(limit.rlim_cur).unwrap_or(USUAL);
+        }
+    }
+    USUAL
 }
 
 /// The least, over the cgroup v2 that `own` (the text of

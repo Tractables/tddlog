@@ -87,9 +87,27 @@ pub(crate) struct Driver {
     pub(crate) evidence: bool,
 }
 
-/// Marks switch predicate names. Cannot clash with user predicates because a
-/// user name never contains this character.
+/// Starts the switches' names, followed by as many `$` as keep them apart
+/// from the program's own names ([`switch_prefix`]).
 pub(crate) const SWITCH_PREFIX: &str = "$sw";
+
+/// The start of the switches' names in a program whose predicates are
+/// `names`: [`SWITCH_PREFIX`], then as many `$` as make it start none of
+/// them, so that no switch takes the name of one of the program's
+/// predicates. A quoted name can be any text, and a program `--ground`
+/// printed names its switches; read again with its clauses in another
+/// order, it numbers switches of its own anew.
+pub(super) fn switch_prefix<'n>(names: impl IntoIterator<Item = &'n str>) -> String {
+    let taken: Vec<&str> = names
+        .into_iter()
+        .filter(|n| n.starts_with(SWITCH_PREFIX))
+        .collect();
+    let mut prefix = String::from(SWITCH_PREFIX);
+    while taken.iter().any(|n| n.starts_with(&prefix)) {
+        prefix.push('$');
+    }
+    prefix
+}
 
 /// How far from one the probabilities of an annotated disjunction may sum
 /// and still be read as a full distribution.
@@ -253,6 +271,9 @@ pub(crate) fn normalize(
     let mut last = None;
     // The non-ground probabilistic facts, by their predicates' places.
     let mut open_facts: Vec<(usize, f64)> = Vec::new();
+    // The names the clauses call that a switch's could take, which
+    // `:- unknown(fail).` lets a program call without clauses.
+    let mut called: Vec<&str> = Vec::new();
     for c in &program.clauses {
         let is_fact = fact(c).is_some();
         let open = c.heads.len() == 1 && c.body.is_empty() && !is_fact;
@@ -270,7 +291,15 @@ pub(crate) fn normalize(
                 open_facts.push((k, p));
             }
         }
+        for l in &c.body {
+            if let Literal::Pos(a) | Literal::Neg(a) = l
+                && a.name.starts_with(SWITCH_PREFIX)
+            {
+                called.push(&a.name);
+            }
+        }
     }
+    let prefix = switch_prefix(defined.iter().map(|&((name, _), _, _)| name).chain(called));
 
     // Non-ground probabilistic facts become switch predicates outright, if the
     // predicate has no other clause.
@@ -389,7 +418,7 @@ pub(crate) fn normalize(
         };
         let mut guards: Vec<Literal> = Vec::new();
         for (i, head) in heads.into_iter().enumerate() {
-            let sw_name = switch_name(&mut name, &head.atom.name, clause.group, i);
+            let sw_name = switch_name(&mut name, &prefix, &head.atom.name, clause.group, i);
             let sw = Atom::new(sw_name.clone(), vars.iter().cloned().collect::<Args>());
             let weights = match &flexible {
                 None => Weights::Fixed(qs[i]),
@@ -506,9 +535,10 @@ fn residual(masses: &[f64]) -> f64 {
     (sum + carry).max(0.0)
 }
 
-/// `$sw<name>_<group>_<i>`, the switch of head `i` of a clause, written
-/// in `s` without the formatting machinery, which is slow at this volume.
-pub(super) fn switch_name(s: &mut String, name: &str, group: u32, i: usize) -> Name {
+/// `<prefix><name>_<group>_<i>`, the switch of head `i` of a clause
+/// ([`switch_prefix`]), written in `s` without the formatting machinery,
+/// which is slow at this volume.
+pub(super) fn switch_name(s: &mut String, prefix: &str, name: &str, group: u32, i: usize) -> Name {
     fn push_decimal(s: &mut String, mut n: u64) {
         let mut digits = [0u8; 20];
         let mut k = digits.len();
@@ -523,7 +553,7 @@ pub(super) fn switch_name(s: &mut String, name: &str, group: u32, i: usize) -> N
         s.push_str(std::str::from_utf8(&digits[k..]).expect("decimal digits"));
     }
     s.clear();
-    s.push_str(SWITCH_PREFIX);
+    s.push_str(prefix);
     s.push_str(name);
     s.push('_');
     push_decimal(s, u64::from(group));

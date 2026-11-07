@@ -14,6 +14,43 @@
   "ace": [
    {
     "instances": [
+     "ace_hailfinder",
+     "ace_pigs"
+    ],
+    "key": "bnlearn",
+    "title": "bnlearn's networks"
+   },
+   {
+    "instances": [
+     "ace_alarm",
+     "ace_diabetes",
+     "ace_mildew",
+     "ace_munin1",
+     "ace_munin2",
+     "ace_munin3",
+     "ace_munin4",
+     "ace_pathfinder",
+     "ace_water"
+    ],
+    "key": "ace",
+    "title": "Ace's copies of bnlearn's networks"
+   },
+   {
+    "instances": [
+     "ace_mastermind_03_08_03",
+     "ace_mastermind_03_08_04",
+     "ace_mastermind_03_08_05",
+     "ace_mastermind_04_08_03",
+     "ace_mastermind_04_08_04",
+     "ace_mastermind_05_08_03",
+     "ace_mastermind_06_08_03",
+     "ace_mastermind_10_08_03"
+    ],
+    "key": "mastermind",
+    "title": "Mastermind"
+   },
+   {
+    "instances": [
      "ace_blockmap_05_01",
      "ace_blockmap_05_02",
      "ace_blockmap_05_03",
@@ -31,7 +68,7 @@
      "ace_blockmap_22_03"
     ],
     "key": "blockmap",
-    "title": "blockmap"
+    "title": "Blockmap"
    },
    {
     "instances": [
@@ -48,45 +85,14 @@
      "ace_fs_29"
     ],
     "key": "fs",
-    "title": "fs"
-   },
-   {
-    "instances": [
-     "ace_mastermind_03_08_03",
-     "ace_mastermind_03_08_04",
-     "ace_mastermind_03_08_05",
-     "ace_mastermind_04_08_03",
-     "ace_mastermind_04_08_04",
-     "ace_mastermind_05_08_03",
-     "ace_mastermind_06_08_03",
-     "ace_mastermind_10_08_03"
-    ],
-    "key": "mastermind",
-    "title": "mastermind"
-   },
-   {
-    "instances": [
-     "ace_alarm",
-     "ace_diabetes",
-     "ace_hailfinder",
-     "ace_mildew",
-     "ace_munin1",
-     "ace_munin2",
-     "ace_munin3",
-     "ace_munin4",
-     "ace_pathfinder",
-     "ace_pigs",
-     "ace_water"
-    ],
-    "key": "bn",
-    "title": "networks"
+    "title": "Friends and smokers"
    },
    {
     "instances": [
      "ace_students_03_02"
     ],
-    "key": "others",
-    "title": "other programs"
+    "key": "students",
+    "title": "Students"
    }
   ],
   "biomine": [
@@ -104,106 +110,106 @@
      "biomine64"
     ],
     "key": "biomine",
-    "title": "biomine"
+    "title": "Biomine's paths"
    }
   ],
   "bitblast": [
    {
-    "instances": [
-     "bb_addFun_max_p4",
-     "bb_addFun_max_p16",
-     "bb_addFun_max_p64",
-     "bb_addFun_max_p256",
-     "bb_addFun_max_p1024",
-     "bb_addFun_max_w17",
-     "bb_addFun_max_w19",
-     "bb_addFun_max_w21",
-     "bb_addFun_max_w23",
-     "bb_addFun_max_w25",
-     "bb_addFun_max_w27",
-     "bb_addFun_max_w29"
+    "axes": [
+     "genes",
+     "width"
     ],
-    "key": "addFun_max",
-    "title": "addFun_max"
-   },
-   {
     "instances": [
-     "bb_addFun_sum_w17",
-     "bb_addFun_sum_w19",
-     "bb_addFun_sum_w21",
-     "bb_addFun_sum_w23",
-     "bb_addFun_sum_w25",
-     "bb_addFun_sum_w27",
-     "bb_addFun_sum_w29"
+     "bb_genes5_w17",
+     "bb_genes5_w19",
+     "bb_genes5_w21",
+     "bb_genes5_w23",
+     "bb_genes5_w25",
+     "bb_genes5_w27",
+     "bb_genes_t5",
+     "bb_genes_t10",
+     "bb_genes_t15",
+     "bb_genes_t20",
+     "bb_genes_t25",
+     "bb_genes_t30",
+     "bb_genes_t40",
+     "bb_genes_t50",
+     "bb_genes_t60",
+     "bb_genes_t80",
+     "bb_genes_t100"
     ],
-    "key": "addFun_sum",
-    "title": "addFun_sum"
-   },
-   {
-    "instances": [
-     "bb_altermu2_p4",
-     "bb_altermu2_p16",
-     "bb_altermu2_p64",
-     "bb_altermu2_p1024",
-     "bb_altermu2_w11",
-     "bb_altermu2_w13",
-     "bb_altermu2_w15",
-     "bb_altermu2_w17",
-     "bb_altermu2_w19",
-     "bb_altermu2_w21",
-     "bb_altermu2_w23"
-    ],
-    "key": "altermu2",
-    "title": "altermu2"
-   },
-   {
-    "instances": [
-     "bb_clickGraph_w4",
-     "bb_clickGraph_w6",
-     "bb_clickGraph_w8",
-     "bb_clickGraph_w10",
-     "bb_clickGraph_w12",
-     "bb_clickGraph_w14",
-     "bb_clickGraph_w16"
-    ],
-    "key": "clickGraph",
-    "title": "clickGraph"
-   },
-   {
-    "instances": [
-     "bb_clinicalTrial1_w4",
-     "bb_clinicalTrial1_w6",
-     "bb_clinicalTrial1_w8",
-     "bb_clinicalTrial1_w10",
-     "bb_clinicalTrial1_w12",
-     "bb_clinicalTrial1_w14"
-    ],
-    "key": "clinicalTrial1",
-    "title": "clinicalTrial1"
-   },
-   {
-    "instances": [
-     "bb_clinicalTrial2_w6",
-     "bb_clinicalTrial2_w8",
-     "bb_clinicalTrial2_w10",
-     "bb_clinicalTrial2_w12",
-     "bb_clinicalTrial2_w14",
-     "bb_clinicalTrial2_w16",
-     "bb_clinicalTrial2_w18"
-    ],
-    "key": "clinicalTrial2",
-    "title": "clinicalTrial2"
-   },
-   {
-    "instances": [
-     "bb_coinBias_w16",
-     "bb_coinBias_w18",
-     "bb_coinBias_w20",
-     "bb_coinBias_w22",
-     "bb_coinBias_w24"
-    ],
-    "key": "coinBias",
-    "title": "coinBias"
+    "key": "genes",
+    "title": "Gene expression",
+    "values": {
+     "bb_genes5_w17": [
+      "5",
+      "17"
+     ],
+     "bb_genes5_w19": [
+      "5",
+      "19"
+     ],
+     "bb_genes5_w21": [
+      "5",
+      "21"
+     ],
+     "bb_genes5_w23": [
+      "5",
+      "23"
+     ],
+     "bb_genes5_w25": [
+      "5",
+      "25"
+     ],
+     "bb_genes5_w27": [
+      "5",
+      "27"
+     ],
+     "bb_genes_t10": [
+      "10",
+      "29"
+     ],
+     "bb_genes_t100": [
+      "100",
+      "29"
+     ],
+     "bb_genes_t15": [
+      "15",
+      "29"
+     ],
+     "bb_genes_t20": [
+      "20",
+      "29"
+     ],
+     "bb_genes_t25": [
+      "25",
+      "29"
+     ],
+     "bb_genes_t30": [
+      "30",
+      "29"
+     ],
+     "bb_genes_t40": [
+      "40",
+      "29"
+     ],
+     "bb_genes_t5": [
+      "5",
+      "29"
+     ],
+     "bb_genes_t50": [
+      "50",
+      "29"
+     ],
+     "bb_genes_t60": [
+      "60",
+      "29"
+     ],
+     "bb_genes_t80": [
+      "80",
+      "29"
+     ]
+    }
    },
    {
     "axes": [
@@ -228,7 +234,7 @@
      "bb_conjugate_gaussians_w29"
     ],
     "key": "conjugate",
-    "title": "conjugate",
+    "title": "Conjugate Gaussians",
     "values": {
      "bb_conjugate_ex3_w18": [
       "8, 9",
@@ -304,152 +310,117 @@
    },
    {
     "instances": [
-     "bb_fair_dt14_w12",
-     "bb_fair_dt14_w16",
-     "bb_fair_dt14_w20",
-     "bb_fair_dt14_w24",
-     "bb_fair_dt14_w28",
-     "bb_fair_dt14_w32",
-     "bb_fair_dt14_w36",
-     "bb_fair_dt14_w40"
+     "bb_multimodal_w11",
+     "bb_multimodal_w13"
     ],
-    "key": "fair_dt14",
-    "title": "fair_dt14"
+    "key": "multimodal",
+    "title": "Multimodal model"
    },
    {
     "instances": [
-     "bb_fair_dt16_w12",
-     "bb_fair_dt16_w16",
-     "bb_fair_dt16_w20",
-     "bb_fair_dt16_w24",
-     "bb_fair_dt16_w28",
-     "bb_fair_dt16_w32"
+     "bb_laplace_w13",
+     "bb_laplace_w15",
+     "bb_laplace_w17"
     ],
-    "key": "fair_dt16",
-    "title": "fair_dt16"
+    "key": "laplace",
+    "title": "Laplace mixture"
    },
    {
     "instances": [
-     "bb_fair_dt4_w12",
-     "bb_fair_dt4_w16",
-     "bb_fair_dt4_w20",
-     "bb_fair_dt4_w24",
-     "bb_fair_dt4_w28",
-     "bb_fair_dt4_w32",
-     "bb_fair_dt4_w36",
-     "bb_fair_dt4_w40"
+     "bb_addFun_max_p4",
+     "bb_addFun_max_p16",
+     "bb_addFun_max_p64",
+     "bb_addFun_max_p256",
+     "bb_addFun_max_p1024",
+     "bb_addFun_max_w17",
+     "bb_addFun_max_w19",
+     "bb_addFun_max_w21",
+     "bb_addFun_max_w23",
+     "bb_addFun_max_w25",
+     "bb_addFun_max_w27",
+     "bb_addFun_max_w29"
     ],
-    "key": "fair_dt4",
-    "title": "fair_dt4"
+    "key": "addFun_max",
+    "title": "Maximum of two normals"
    },
    {
     "instances": [
-     "bb_fair_dt44_w12",
-     "bb_fair_dt44_w16",
-     "bb_fair_dt44_w20",
-     "bb_fair_dt44_w24",
-     "bb_fair_dt44_w28",
-     "bb_fair_dt44_w32"
+     "bb_addFun_sum_w17",
+     "bb_addFun_sum_w19",
+     "bb_addFun_sum_w21",
+     "bb_addFun_sum_w23",
+     "bb_addFun_sum_w25",
+     "bb_addFun_sum_w27",
+     "bb_addFun_sum_w29"
     ],
-    "key": "fair_dt44",
-    "title": "fair_dt44"
+    "key": "addFun_sum",
+    "title": "Sum of two normals"
    },
    {
-    "axes": [
-     "genes",
-     "width"
-    ],
     "instances": [
-     "bb_genes5_w17",
-     "bb_genes5_w19",
-     "bb_genes5_w21",
-     "bb_genes5_w23",
-     "bb_genes5_w25",
-     "bb_genes5_w27",
-     "bb_genes_t5",
-     "bb_genes_t10",
-     "bb_genes_t15",
-     "bb_genes_t20",
-     "bb_genes_t25",
-     "bb_genes_t30",
-     "bb_genes_t40",
-     "bb_genes_t50",
-     "bb_genes_t60",
-     "bb_genes_t80",
-     "bb_genes_t100"
+     "bb_altermu2_p4",
+     "bb_altermu2_p16",
+     "bb_altermu2_p64",
+     "bb_altermu2_p1024",
+     "bb_altermu2_w11",
+     "bb_altermu2_w13",
+     "bb_altermu2_w15",
+     "bb_altermu2_w17",
+     "bb_altermu2_w19",
+     "bb_altermu2_w21",
+     "bb_altermu2_w23"
     ],
-    "key": "genes",
-    "title": "genes",
-    "values": {
-     "bb_genes5_w17": [
-      "5",
-      "17"
-     ],
-     "bb_genes5_w19": [
-      "5",
-      "19"
-     ],
-     "bb_genes5_w21": [
-      "5",
-      "21"
-     ],
-     "bb_genes5_w23": [
-      "5",
-      "23"
-     ],
-     "bb_genes5_w25": [
-      "5",
-      "25"
-     ],
-     "bb_genes5_w27": [
-      "5",
-      "27"
-     ],
-     "bb_genes_t10": [
-      "10",
-      "29"
-     ],
-     "bb_genes_t100": [
-      "100",
-      "29"
-     ],
-     "bb_genes_t15": [
-      "15",
-      "29"
-     ],
-     "bb_genes_t20": [
-      "20",
-      "29"
-     ],
-     "bb_genes_t25": [
-      "25",
-      "29"
-     ],
-     "bb_genes_t30": [
-      "30",
-      "29"
-     ],
-     "bb_genes_t40": [
-      "40",
-      "29"
-     ],
-     "bb_genes_t5": [
-      "5",
-      "29"
-     ],
-     "bb_genes_t50": [
-      "50",
-      "29"
-     ],
-     "bb_genes_t60": [
-      "60",
-      "29"
-     ],
-     "bb_genes_t80": [
-      "80",
-      "29"
-     ]
-    }
+    "key": "altermu2",
+    "title": "Mean as a sum of two uniforms"
+   },
+   {
+    "instances": [
+     "bb_clickGraph_w4",
+     "bb_clickGraph_w6",
+     "bb_clickGraph_w8",
+     "bb_clickGraph_w10",
+     "bb_clickGraph_w12",
+     "bb_clickGraph_w14",
+     "bb_clickGraph_w16"
+    ],
+    "key": "clickGraph",
+    "title": "Click graph"
+   },
+   {
+    "instances": [
+     "bb_clinicalTrial1_w4",
+     "bb_clinicalTrial1_w6",
+     "bb_clinicalTrial1_w8",
+     "bb_clinicalTrial1_w10",
+     "bb_clinicalTrial1_w12",
+     "bb_clinicalTrial1_w14"
+    ],
+    "key": "clinicalTrial1",
+    "title": "Clinical trial, 100 patients a group"
+   },
+   {
+    "instances": [
+     "bb_clinicalTrial2_w6",
+     "bb_clinicalTrial2_w8",
+     "bb_clinicalTrial2_w10",
+     "bb_clinicalTrial2_w12",
+     "bb_clinicalTrial2_w14",
+     "bb_clinicalTrial2_w16",
+     "bb_clinicalTrial2_w18"
+    ],
+    "key": "clinicalTrial2",
+    "title": "Clinical trial, 5 patients a group"
+   },
+   {
+    "instances": [
+     "bb_coinBias_w16",
+     "bb_coinBias_w18",
+     "bb_coinBias_w20",
+     "bb_coinBias_w22",
+     "bb_coinBias_w24"
+    ],
+    "key": "coinBias",
+    "title": "Coin bias"
    },
    {
     "instances": [
@@ -462,52 +433,7 @@
      "bb_GPA_w31"
     ],
     "key": "GPA",
-    "title": "GPA"
-   },
-   {
-    "instances": [
-     "bb_laplace_w13",
-     "bb_laplace_w15",
-     "bb_laplace_w17"
-    ],
-    "key": "laplace",
-    "title": "laplace"
-   },
-   {
-    "instances": [
-     "bb_linreg_w8",
-     "bb_linreg_w9",
-     "bb_linreg_w10",
-     "bb_linreg_w11",
-     "bb_linreg_w12",
-     "bb_linreg_w13",
-     "bb_linreg_w14",
-     "bb_linreg_w15"
-    ],
-    "key": "linreg",
-    "title": "linreg"
-   },
-   {
-    "instances": [
-     "bb_markov_n10",
-     "bb_markov_n20",
-     "bb_markov_n50",
-     "bb_markov_n100",
-     "bb_markov_n200",
-     "bb_markov_n500",
-     "bb_markov_n1000",
-     "bb_markov_n2000"
-    ],
-    "key": "markov",
-    "title": "markov"
-   },
-   {
-    "instances": [
-     "bb_multimodal_w11",
-     "bb_multimodal_w13"
-    ],
-    "key": "multimodal",
-    "title": "multimodal"
+    "title": "GPA by country"
    },
    {
     "axes": [
@@ -528,7 +454,7 @@
      "bb_normal_mixture_theta_w11"
     ],
     "key": "normal_mixture",
-    "title": "normal_mixture",
+    "title": "Normal mixture",
     "values": {
      "bb_normal_mixture_mu1_w11": [
       "E[\u03bc1]",
@@ -584,22 +510,6 @@
    },
    {
     "instances": [
-     "bb_pedestrian_s4",
-     "bb_pedestrian_s6",
-     "bb_pedestrian_s8",
-     "bb_pedestrian_s10",
-     "bb_pedestrian_s12",
-     "bb_pedestrian_s16",
-     "bb_pedestrian_s20",
-     "bb_pedestrian_s24",
-     "bb_pedestrian_s32",
-     "bb_pedestrian_s40"
-    ],
-    "key": "pedestrian",
-    "title": "pedestrian"
-   },
-   {
-    "instances": [
      "bb_pi_w8",
      "bb_pi_w10",
      "bb_pi_w12",
@@ -610,25 +520,7 @@
      "bb_pi_w22"
     ],
     "key": "pi",
-    "title": "pi"
-   },
-   {
-    "instances": [
-     "bb_population_s1",
-     "bb_population_s2",
-     "bb_population_s3",
-     "bb_population_s4",
-     "bb_population_s6",
-     "bb_population_s8",
-     "bb_population_s12",
-     "bb_population_s16",
-     "bb_population_s24",
-     "bb_population_s32",
-     "bb_population_s48",
-     "bb_population_s64"
-    ],
-    "key": "population",
-    "title": "population"
+    "title": "Estimating pi"
    },
    {
     "instances": [
@@ -643,7 +535,7 @@
      "bb_spacex_w21"
     ],
     "key": "spacex",
-    "title": "spacex"
+    "title": "Rocket completion time"
    },
    {
     "instances": [
@@ -652,7 +544,7 @@
      "bb_trueskill_w12"
     ],
     "key": "trueskill",
-    "title": "trueskill"
+    "title": "TrueSkill"
    },
    {
     "instances": [
@@ -665,7 +557,7 @@
      "bb_tug_of_war_w28"
     ],
     "key": "tug_of_war",
-    "title": "tug_of_war"
+    "title": "Tug of war"
    },
    {
     "instances": [
@@ -686,39 +578,7 @@
      "bb_weekend_w30"
     ],
     "key": "weekend",
-    "title": "weekend"
-   },
-   {
-    "instances": [
-     "bb_wmi_path_n16",
-     "bb_wmi_path_n32",
-     "bb_wmi_path_n64",
-     "bb_wmi_path_n128",
-     "bb_wmi_path_n256",
-     "bb_wmi_path_n512",
-     "bb_wmi_path_n1024",
-     "bb_wmi_path_n4096",
-     "bb_wmi_path_n16384",
-     "bb_wmi_path_n65536"
-    ],
-    "key": "wmi_path",
-    "title": "wmi_path"
-   },
-   {
-    "instances": [
-     "bb_wmi_star_n16",
-     "bb_wmi_star_n32",
-     "bb_wmi_star_n64",
-     "bb_wmi_star_n128",
-     "bb_wmi_star_n256",
-     "bb_wmi_star_n512",
-     "bb_wmi_star_n1024",
-     "bb_wmi_star_n4096",
-     "bb_wmi_star_n16384",
-     "bb_wmi_star_n65536"
-    ],
-    "key": "wmi_star",
-    "title": "wmi_star"
+    "title": "Weekend or weekday"
    },
    {
     "axes": [
@@ -749,7 +609,7 @@
      "bb_zeroone_w2_w31"
     ],
     "key": "zeroone",
-    "title": "zeroone",
+    "title": "Zero-one loss classifier",
     "values": {
      "bb_zeroone_w1_w10": [
       "E[w1]",
@@ -836,6 +696,152 @@
       "31"
      ]
     }
+   },
+   {
+    "instances": [
+     "bb_fair_dt4_w12",
+     "bb_fair_dt4_w16",
+     "bb_fair_dt4_w20",
+     "bb_fair_dt4_w24",
+     "bb_fair_dt4_w28",
+     "bb_fair_dt4_w32",
+     "bb_fair_dt4_w36",
+     "bb_fair_dt4_w40"
+    ],
+    "key": "fair_dt4",
+    "title": "Fairness of decision tree DT_V2_D2_N4"
+   },
+   {
+    "instances": [
+     "bb_fair_dt14_w12",
+     "bb_fair_dt14_w16",
+     "bb_fair_dt14_w20",
+     "bb_fair_dt14_w24",
+     "bb_fair_dt14_w28",
+     "bb_fair_dt14_w32",
+     "bb_fair_dt14_w36",
+     "bb_fair_dt14_w40"
+    ],
+    "key": "fair_dt14",
+    "title": "Fairness of decision tree DT_V2_D3_N14"
+   },
+   {
+    "instances": [
+     "bb_fair_dt16_w12",
+     "bb_fair_dt16_w16",
+     "bb_fair_dt16_w20",
+     "bb_fair_dt16_w24",
+     "bb_fair_dt16_w28",
+     "bb_fair_dt16_w32"
+    ],
+    "key": "fair_dt16",
+    "title": "Fairness of decision tree DT_V2_D2_N16"
+   },
+   {
+    "instances": [
+     "bb_fair_dt44_w12",
+     "bb_fair_dt44_w16",
+     "bb_fair_dt44_w20",
+     "bb_fair_dt44_w24",
+     "bb_fair_dt44_w28",
+     "bb_fair_dt44_w32"
+    ],
+    "key": "fair_dt44",
+    "title": "Fairness of decision tree DT_V3_D2_N44"
+   },
+   {
+    "instances": [
+     "bb_linreg_w8",
+     "bb_linreg_w9",
+     "bb_linreg_w10",
+     "bb_linreg_w11",
+     "bb_linreg_w12",
+     "bb_linreg_w13",
+     "bb_linreg_w14",
+     "bb_linreg_w15"
+    ],
+    "key": "linreg",
+    "title": "Linear regression"
+   },
+   {
+    "instances": [
+     "bb_markov_n10",
+     "bb_markov_n20",
+     "bb_markov_n50",
+     "bb_markov_n100",
+     "bb_markov_n200",
+     "bb_markov_n500",
+     "bb_markov_n1000",
+     "bb_markov_n2000"
+    ],
+    "key": "markov",
+    "title": "Markov switching"
+   },
+   {
+    "instances": [
+     "bb_pedestrian_s4",
+     "bb_pedestrian_s6",
+     "bb_pedestrian_s8",
+     "bb_pedestrian_s10",
+     "bb_pedestrian_s12",
+     "bb_pedestrian_s16",
+     "bb_pedestrian_s20",
+     "bb_pedestrian_s24",
+     "bb_pedestrian_s32",
+     "bb_pedestrian_s40"
+    ],
+    "key": "pedestrian",
+    "title": "Pedestrian"
+   },
+   {
+    "instances": [
+     "bb_population_s1",
+     "bb_population_s2",
+     "bb_population_s3",
+     "bb_population_s4",
+     "bb_population_s6",
+     "bb_population_s8",
+     "bb_population_s12",
+     "bb_population_s16",
+     "bb_population_s24",
+     "bb_population_s32",
+     "bb_population_s48",
+     "bb_population_s64"
+    ],
+    "key": "population",
+    "title": "Population model"
+   },
+   {
+    "instances": [
+     "bb_wmi_path_n16",
+     "bb_wmi_path_n32",
+     "bb_wmi_path_n64",
+     "bb_wmi_path_n128",
+     "bb_wmi_path_n256",
+     "bb_wmi_path_n512",
+     "bb_wmi_path_n1024",
+     "bb_wmi_path_n4096",
+     "bb_wmi_path_n16384",
+     "bb_wmi_path_n65536"
+    ],
+    "key": "wmi_path",
+    "title": "Path (weighted model integration)"
+   },
+   {
+    "instances": [
+     "bb_wmi_star_n16",
+     "bb_wmi_star_n32",
+     "bb_wmi_star_n64",
+     "bb_wmi_star_n128",
+     "bb_wmi_star_n256",
+     "bb_wmi_star_n512",
+     "bb_wmi_star_n1024",
+     "bb_wmi_star_n4096",
+     "bb_wmi_star_n16384",
+     "bb_wmi_star_n65536"
+    ],
+    "key": "wmi_star",
+    "title": "Star (weighted model integration)"
    }
   ],
   "circulette": [
@@ -867,19 +873,7 @@
      "ct_serial-crc"
     ],
     "key": "netlists",
-    "title": "Circulette's netlists"
-   },
-   {
-    "instances": [
-     "ct_mac1",
-     "ct_mac2",
-     "ct_mac3",
-     "ct_mac4",
-     "ct_mac5",
-     "ct_mac6"
-    ],
-    "key": "mac",
-    "title": "multiply-accumulate units"
+    "title": "Fault analysis of netlists"
    },
    {
     "instances": [
@@ -897,23 +891,22 @@
      "ct_fulladder48"
     ],
     "key": "fulladder",
-    "title": "ripple-carry adders"
+    "title": "Ripple-carry adder (fault analysis)"
+   },
+   {
+    "instances": [
+     "ct_mac1",
+     "ct_mac2",
+     "ct_mac3",
+     "ct_mac4",
+     "ct_mac5",
+     "ct_mac6"
+    ],
+    "key": "mac",
+    "title": "Multiply-accumulate (fault analysis)"
    }
   ],
   "dice": [
-   {
-    "instances": [
-     "dice_caesar-iter_k100",
-     "dice_caesar-iter_k1000",
-     "dice_caesar-iter_k3000",
-     "dice_caesar-iter_k10000",
-     "dice_caesar-iter_k30000",
-     "dice_caesar-iter_k100000",
-     "dice_caesar-iter_k300000"
-    ],
-    "key": "caesar-iter",
-    "title": "caesar-iter"
-   },
    {
     "instances": [
      "bn_alarm",
@@ -934,8 +927,34 @@
      "bn_water",
      "bn_win95pts"
     ],
-    "key": "bn",
-    "title": "networks"
+    "key": "bnlearn",
+    "title": "bnlearn's networks"
+   },
+   {
+    "instances": [
+     "dice_caesar-iter_k100",
+     "dice_caesar-iter_k1000",
+     "dice_caesar-iter_k3000",
+     "dice_caesar-iter_k10000",
+     "dice_caesar-iter_k30000",
+     "dice_caesar-iter_k100000",
+     "dice_caesar-iter_k300000"
+    ],
+    "key": "caesar_iter",
+    "title": "Caesar cipher, 4 letters"
+   },
+   {
+    "instances": [
+     "dice_simpleCaesar_k100",
+     "dice_simpleCaesar_k300",
+     "dice_simpleCaesar_k1000",
+     "dice_simpleCaesar_k3000",
+     "dice_simpleCaesar_k10000",
+     "dice_simpleCaesar_k30000",
+     "dice_simpleCaesar_k100000"
+    ],
+    "key": "simple_caesar",
+    "title": "Caesar cipher, 32 letters"
    },
    {
     "instances": [
@@ -948,7 +967,7 @@
      "dice_pmc1_k600"
     ],
     "key": "pmc1",
-    "title": "pmc1"
+    "title": "Contract signing, 40 components"
    },
    {
     "instances": [
@@ -961,20 +980,7 @@
      "dice_pmc2_k1600"
     ],
     "key": "pmc2",
-    "title": "pmc2"
-   },
-   {
-    "instances": [
-     "dice_simpleCaesar_k100",
-     "dice_simpleCaesar_k300",
-     "dice_simpleCaesar_k1000",
-     "dice_simpleCaesar_k3000",
-     "dice_simpleCaesar_k10000",
-     "dice_simpleCaesar_k30000",
-     "dice_simpleCaesar_k100000"
-    ],
-    "key": "simpleCaesar",
-    "title": "simpleCaesar"
+    "title": "Contract signing, 24 components"
    },
    {
     "instances": [
@@ -988,7 +994,7 @@
      "dice_twocoins"
     ],
     "key": "small",
-    "title": "small programs"
+    "title": "Small Dice programs"
    }
   ],
   "geni": [
@@ -1008,7 +1014,7 @@
      "geni_link_32"
     ],
     "key": "link",
-    "title": "link"
+    "title": "Router grid, failing links"
    },
    {
     "instances": [
@@ -1031,7 +1037,7 @@
      "geni_router_72"
     ],
     "key": "router",
-    "title": "router"
+    "title": "Router grid, failing routers"
    },
    {
     "axes": [
@@ -1076,7 +1082,7 @@
      "geni_weather_n19"
     ],
     "key": "weather",
-    "title": "weather",
+    "title": "Weather factory",
     "values": {
      "geni_weather_h1": [
       "10",
@@ -1239,192 +1245,11 @@
      "bn_munin4",
      "bn_munin4_ev"
     ],
-    "key": "bn",
-    "title": "networks"
+    "key": "bnlearn",
+    "title": "bnlearn's networks"
    }
   ],
   "lit": [
-   {
-    "instances": [
-     "cplint_alarm",
-     "cplint_bag_game",
-     "cplint_coin",
-     "cplint_coin2",
-     "cplint_coinmsw",
-     "cplint_dice",
-     "cplint_earthquake",
-     "cplint_epidemic",
-     "cplint_eruption",
-     "cplint_event_calculus",
-     "cplint_flexprob",
-     "cplint_jail",
-     "cplint_light",
-     "cplint_markov_chaindb",
-     "cplint_markov_factor",
-     "cplint_markov_network",
-     "cplint_mendel",
-     "cplint_mendelc",
-     "cplint_mln",
-     "cplint_monty",
-     "cplint_multiple_paths",
-     "cplint_multiple_paths_simple",
-     "cplint_path",
-     "cplint_pathdb",
-     "cplint_pcfg",
-     "cplint_pcfglrdb",
-     "cplint_persons",
-     "cplint_simpson",
-     "cplint_sneezing",
-     "cplint_swish_admission",
-     "cplint_swish_smoking",
-     "cplint_swish_sneezing_simple",
-     "cplint_swish_viraltab",
-     "cplint_testdb",
-     "cplint_trigger",
-     "cplint_var_objdb",
-     "cplint_viral"
-    ],
-    "key": "cplintpita",
-    "title": "cplint's examples"
-   },
-   {
-    "instances": [
-     "dnahmm4",
-     "dnahmm8",
-     "dnahmm12",
-     "dnahmm16",
-     "dnahmm20",
-     "dnahmm24",
-     "dnahmm28"
-    ],
-    "key": "dnahmm",
-    "title": "dnahmm"
-   },
-   {
-    "instances": [
-     "eventcalc4_250",
-     "eventcalc4_500",
-     "eventcalc4_1000",
-     "eventcalc4_2000",
-     "eventcalc4_4000",
-     "eventcalc4_8000"
-    ],
-    "key": "eventcalc",
-    "title": "eventcalc"
-   },
-   {
-    "instances": [
-     "hmmpos1",
-     "hmmpos2",
-     "hmmpos3",
-     "hmmpos4",
-     "hmmpos5"
-    ],
-    "key": "hmmpos",
-    "title": "hmmpos"
-   },
-   {
-    "instances": [
-     "hwf3",
-     "hwf5",
-     "hwf7",
-     "hwf9",
-     "hwf11"
-    ],
-    "key": "hwf",
-    "title": "hwf"
-   },
-   {
-    "instances": [
-     "liftsep3",
-     "liftsep4",
-     "liftsep6",
-     "liftsep8",
-     "liftsep11",
-     "liftsep16",
-     "liftsep23",
-     "liftsep32"
-    ],
-    "key": "liftsep",
-    "title": "liftsep"
-   },
-   {
-    "instances": [
-     "mastermind4_4_8",
-     "mastermind4_5_8",
-     "mastermind6_4_8",
-     "mastermind6_5_8",
-     "mastermind8_4_8",
-     "mastermind8_5_8",
-     "mastermind8_8_8",
-     "mastermind10_4_8",
-     "mastermind16_5_8",
-     "mastermind32_5_8",
-     "mastermind64_5_8"
-    ],
-    "key": "mastermind",
-    "title": "mastermind"
-   },
-   {
-    "instances": [
-     "mnist_sum4",
-     "mnist_sum8",
-     "mnist_sum16",
-     "mnist_sum32",
-     "mnist_sum64",
-     "mnist_sum96",
-     "mnist_sum192",
-     "mnist_sum384",
-     "mnist_sum768"
-    ],
-    "key": "mnist_sum",
-    "title": "mnist_sum"
-   },
-   {
-    "instances": [
-     "noisyor6_9",
-     "noisyor8_12",
-     "noisyor10_15",
-     "noisyor15_22",
-     "noisyor20_30",
-     "noisyor30_45",
-     "noisyor60_90",
-     "noisyor120_180",
-     "noisyor240_360",
-     "noisyor300_450",
-     "noisyor360_540"
-    ],
-    "key": "noisyor",
-    "title": "noisyor"
-   },
-   {
-    "instances": [
-     "pcfg8",
-     "pcfg12",
-     "pcfg16",
-     "pcfg20",
-     "pcfg24",
-     "pcfg28",
-     "pcfg32"
-    ],
-    "key": "pcfg",
-    "title": "pcfg"
-   },
-   {
-    "instances": [
-     "pdb10",
-     "pdb15",
-     "pdb20",
-     "pdb30",
-     "pdb40",
-     "pdb80",
-     "pdb160",
-     "pdb320",
-     "pdb640"
-    ],
-    "key": "pdb",
-    "title": "pdb"
-   },
    {
     "instances": [
      "pedigree4_4",
@@ -1443,78 +1268,7 @@
      "pedigree32_6"
     ],
     "key": "pedigree",
-    "title": "pedigree"
-   },
-   {
-    "instances": [
-     "pgrid16_4",
-     "pgrid16_5",
-     "pgrid16_6",
-     "pgrid16_7",
-     "pgrid16_8",
-     "pgrid16_10",
-     "pgrid16_12",
-     "pgrid16_15",
-     "pgrid18_17",
-     "pgrid20_19"
-    ],
-    "key": "pgrid",
-    "title": "pgrid"
-   },
-   {
-    "instances": [
-     "plcg4",
-     "plcg6",
-     "plcg8",
-     "plcg10",
-     "plcg12",
-     "plcg14",
-     "plcg16"
-    ],
-    "key": "plcg",
-    "title": "plcg"
-   },
-   {
-    "instances": [
-     "problogex_3_tossing_coin",
-     "problogex_4_1_bayesian_net",
-     "problogex_4_bayesian_net",
-     "problogex_5_bayesian_net",
-     "problogex_6_hmm_weather",
-     "problogex_7_probabilistic_graph",
-     "problogex_8_smokers_network",
-     "problogex_9_packing_problem",
-     "problogex_10_cards",
-     "problogex_11_ads_numerical",
-     "problogex_12_holidays",
-     "problogex_add",
-     "problogex_advars_smokers",
-     "problogex_advars_smokers_alt",
-     "problogex_coin",
-     "problogex_generated",
-     "problogex_negation",
-     "problogex_smokers_or",
-     "problogex_swap",
-     "problogex_tc_1",
-     "problogex_tc_2",
-     "problogex_tc_3"
-    ],
-    "key": "problogex",
-    "title": "ProbLog's examples"
-   },
-   {
-    "instances": [
-     "rgraph6",
-     "rgraph8",
-     "rgraph10",
-     "rgraph12",
-     "rgraph14",
-     "rgraph17",
-     "rgraph20",
-     "rgraph24"
-    ],
-    "key": "rgraph",
-    "title": "rgraph"
+    "title": "Pedigrees"
    },
    {
     "instances": [
@@ -1528,7 +1282,51 @@
      "sickness240_40"
     ],
     "key": "sickness",
-    "title": "sickness"
+    "title": "Sickness"
+   },
+   {
+    "instances": [
+     "mastermind4_4_8",
+     "mastermind4_5_8",
+     "mastermind6_4_8",
+     "mastermind6_5_8",
+     "mastermind8_4_8",
+     "mastermind8_5_8",
+     "mastermind8_8_8",
+     "mastermind10_4_8",
+     "mastermind16_5_8",
+     "mastermind32_5_8",
+     "mastermind64_5_8"
+    ],
+    "key": "mastermind",
+    "title": "Mastermind"
+   },
+   {
+    "instances": [
+     "mnist_sum4",
+     "mnist_sum8",
+     "mnist_sum16",
+     "mnist_sum32",
+     "mnist_sum64",
+     "mnist_sum96",
+     "mnist_sum192",
+     "mnist_sum384",
+     "mnist_sum768"
+    ],
+    "key": "mnist",
+    "title": "MNIST addition"
+   },
+   {
+    "instances": [
+     "eventcalc4_250",
+     "eventcalc4_500",
+     "eventcalc4_1000",
+     "eventcalc4_2000",
+     "eventcalc4_4000",
+     "eventcalc4_8000"
+    ],
+    "key": "eventcalc",
+    "title": "Event calculus"
    },
    {
     "instances": [
@@ -1549,7 +1347,7 @@
      "taint_yaaic"
     ],
     "key": "taint",
-    "title": "taint analyses"
+    "title": "Taint analysis of Android apps"
    },
    {
     "instances": [
@@ -1670,7 +1468,78 @@
      "problogtut_various_17_taxonomy_1"
     ],
     "key": "problogtut",
-    "title": "the ProbLog tutorial's programs"
+    "title": "The ProbLog tutorial"
+   },
+   {
+    "instances": [
+     "problogex_3_tossing_coin",
+     "problogex_4_1_bayesian_net",
+     "problogex_4_bayesian_net",
+     "problogex_5_bayesian_net",
+     "problogex_6_hmm_weather",
+     "problogex_7_probabilistic_graph",
+     "problogex_8_smokers_network",
+     "problogex_9_packing_problem",
+     "problogex_10_cards",
+     "problogex_11_ads_numerical",
+     "problogex_12_holidays",
+     "problogex_add",
+     "problogex_advars_smokers",
+     "problogex_advars_smokers_alt",
+     "problogex_coin",
+     "problogex_generated",
+     "problogex_negation",
+     "problogex_smokers_or",
+     "problogex_swap",
+     "problogex_tc_1",
+     "problogex_tc_2",
+     "problogex_tc_3"
+    ],
+    "key": "problogex",
+    "title": "ProbLog's examples"
+   },
+   {
+    "instances": [
+     "cplint_alarm",
+     "cplint_bag_game",
+     "cplint_coin",
+     "cplint_coin2",
+     "cplint_coinmsw",
+     "cplint_dice",
+     "cplint_earthquake",
+     "cplint_epidemic",
+     "cplint_eruption",
+     "cplint_event_calculus",
+     "cplint_flexprob",
+     "cplint_jail",
+     "cplint_light",
+     "cplint_markov_chaindb",
+     "cplint_markov_factor",
+     "cplint_markov_network",
+     "cplint_mendel",
+     "cplint_mendelc",
+     "cplint_mln",
+     "cplint_monty",
+     "cplint_multiple_paths",
+     "cplint_multiple_paths_simple",
+     "cplint_path",
+     "cplint_pathdb",
+     "cplint_pcfg",
+     "cplint_pcfglrdb",
+     "cplint_persons",
+     "cplint_simpson",
+     "cplint_sneezing",
+     "cplint_swish_admission",
+     "cplint_swish_smoking",
+     "cplint_swish_sneezing_simple",
+     "cplint_swish_viraltab",
+     "cplint_testdb",
+     "cplint_trigger",
+     "cplint_var_objdb",
+     "cplint_viral"
+    ],
+    "key": "cplintpita",
+    "title": "cplint's examples"
    },
    {
     "axes": [
@@ -1685,7 +1554,7 @@
      "threedie1500"
     ],
     "key": "threedie",
-    "title": "threedie",
+    "title": "Three-sided die",
     "values": {
      "cplint_threesideddice": [
       "on(0,1) to on(3,1)"
@@ -1706,52 +1575,314 @@
       "on(300,1)"
      ]
     }
+   },
+   {
+    "instances": [
+     "pcfg8",
+     "pcfg12",
+     "pcfg16",
+     "pcfg20",
+     "pcfg24",
+     "pcfg28",
+     "pcfg32"
+    ],
+    "key": "pcfg",
+    "title": "A grammar, by its stack"
+   },
+   {
+    "instances": [
+     "dnahmm4",
+     "dnahmm8",
+     "dnahmm12",
+     "dnahmm16",
+     "dnahmm20",
+     "dnahmm24",
+     "dnahmm28"
+    ],
+    "key": "dnahmm",
+    "title": "An HMM of DNA"
+   },
+   {
+    "instances": [
+     "plcg4",
+     "plcg6",
+     "plcg8",
+     "plcg10",
+     "plcg12",
+     "plcg14",
+     "plcg16"
+    ],
+    "key": "plcg",
+    "title": "A left-corner grammar"
+   },
+   {
+    "instances": [
+     "hmmpos1",
+     "hmmpos2",
+     "hmmpos3",
+     "hmmpos4",
+     "hmmpos5"
+    ],
+    "key": "hmmpos",
+    "title": "Part-of-speech tagging"
+   },
+   {
+    "instances": [
+     "hwf3",
+     "hwf5",
+     "hwf7",
+     "hwf9",
+     "hwf11"
+    ],
+    "key": "hwf",
+    "title": "Handwritten formulas"
+   },
+   {
+    "instances": [
+     "pgrid16_4",
+     "pgrid16_5",
+     "pgrid16_6",
+     "pgrid16_7",
+     "pgrid16_8",
+     "pgrid16_10",
+     "pgrid16_12",
+     "pgrid16_15",
+     "pgrid18_17",
+     "pgrid20_19"
+    ],
+    "key": "pgrid",
+    "title": "Probabilistic grid"
+   },
+   {
+    "instances": [
+     "liftsep3",
+     "liftsep4",
+     "liftsep6",
+     "liftsep8",
+     "liftsep11",
+     "liftsep16",
+     "liftsep23",
+     "liftsep32"
+    ],
+    "key": "liftsep",
+    "title": "Queries QW and Q9"
+   },
+   {
+    "instances": [
+     "rgraph6",
+     "rgraph8",
+     "rgraph10",
+     "rgraph12",
+     "rgraph14",
+     "rgraph17",
+     "rgraph20",
+     "rgraph24"
+    ],
+    "key": "rgraph",
+    "title": "Paths of two edges"
+   },
+   {
+    "instances": [
+     "pdb10",
+     "pdb15",
+     "pdb20",
+     "pdb30",
+     "pdb40",
+     "pdb80",
+     "pdb160",
+     "pdb320",
+     "pdb640"
+    ],
+    "key": "pdb",
+    "title": "Queries h0 and h1"
+   },
+   {
+    "instances": [
+     "noisyor6_9",
+     "noisyor8_12",
+     "noisyor10_15",
+     "noisyor15_22",
+     "noisyor20_30",
+     "noisyor30_45",
+     "noisyor60_90",
+     "noisyor120_180",
+     "noisyor240_360",
+     "noisyor300_450",
+     "noisyor360_540"
+    ],
+    "key": "noisyor",
+    "title": "Noisy-or networks"
    }
   ],
   "ppl": [
    {
     "instances": [
-     "nodice_3sat-0",
-     "nodice_uf20-0990",
-     "nodice_uf20-0991",
-     "nodice_uf20-0992",
-     "nodice_uf20-0993",
-     "nodice_uf20-0994",
-     "nodice_uf20-0995",
-     "nodice_uf20-0996",
-     "nodice_uf20-0997",
-     "nodice_uf20-0998",
-     "nodice_uf20-0999",
-     "nodice_uf50-0999"
+     "nodice_alarm",
+     "nodice_hepar2",
+     "nodice_insurance",
+     "nodice_survey",
+     "nodice_water"
     ],
-    "key": "3sat",
-    "title": "3-SAT"
+    "key": "bnlearn",
+    "title": "bnlearn's networks"
    },
    {
     "instances": [
-     "nodice_brp4-2",
-     "nodice_brp6-2",
-     "nodice_brp8-2",
-     "nodice_brp10-2",
-     "nodice_brp16-2",
-     "nodice_brp64-2",
-     "nodice_brp256-2",
-     "nodice_brp1024-2",
-     "nodice_brp4096-2",
-     "nodice_brp16384-2"
-    ],
-    "key": "brp",
-    "title": "bounded retransmission"
-   },
-   {
-    "instances": [
-     "arith_caesar_huge",
-     "arith_caesar_large",
+     "arith_caesar_small",
      "arith_caesar_medium",
-     "arith_caesar_small"
+     "arith_caesar_large",
+     "arith_caesar_huge"
     ],
-    "key": "caesar",
-    "title": "caesar"
+    "key": "caesar_arith",
+    "title": "Caesar cipher, 26 letters"
+   },
+   {
+    "instances": [
+     "pluck_hmm"
+    ],
+    "key": "pluck_hmm",
+    "title": "Pluck's hidden Markov model"
+   },
+   {
+    "instances": [
+     "pluck_pcfg",
+     "pluck_sorted_list",
+     "pluck_string_editing"
+    ],
+    "key": "sequence",
+    "title": "Sequence models"
+   },
+   {
+    "axes": [
+     "program",
+     "size"
+    ],
+    "instances": [
+     "arith_book",
+     "arith_disease_small",
+     "arith_disease_medium",
+     "arith_disease_large",
+     "arith_fw_small",
+     "arith_fw_medium",
+     "arith_fw_large",
+     "arith_gcd_small",
+     "arith_gcd_medium",
+     "arith_gcd_large",
+     "arith_linext_small",
+     "arith_linext_medium",
+     "arith_linext_large",
+     "arith_luhn_small",
+     "arith_luhn_medium",
+     "arith_plankton",
+     "arith_radar",
+     "arith_ranking_small",
+     "arith_ranking_medium",
+     "arith_ranking_large",
+     "arith_triangle_small",
+     "arith_triangle_medium",
+     "arith_triangle_large",
+     "arith_tugofwar"
+    ],
+    "key": "arith",
+    "title": "Integer arithmetic",
+    "values": {
+     "arith_book": [
+      "book",
+      ""
+     ],
+     "arith_disease_large": [
+      "disease",
+      "large"
+     ],
+     "arith_disease_medium": [
+      "disease",
+      "medium"
+     ],
+     "arith_disease_small": [
+      "disease",
+      "small"
+     ],
+     "arith_fw_large": [
+      "fw",
+      "large"
+     ],
+     "arith_fw_medium": [
+      "fw",
+      "medium"
+     ],
+     "arith_fw_small": [
+      "fw",
+      "small"
+     ],
+     "arith_gcd_large": [
+      "gcd",
+      "large"
+     ],
+     "arith_gcd_medium": [
+      "gcd",
+      "medium"
+     ],
+     "arith_gcd_small": [
+      "gcd",
+      "small"
+     ],
+     "arith_linext_large": [
+      "linext",
+      "large"
+     ],
+     "arith_linext_medium": [
+      "linext",
+      "medium"
+     ],
+     "arith_linext_small": [
+      "linext",
+      "small"
+     ],
+     "arith_luhn_medium": [
+      "luhn",
+      "medium"
+     ],
+     "arith_luhn_small": [
+      "luhn",
+      "small"
+     ],
+     "arith_plankton": [
+      "plankton",
+      ""
+     ],
+     "arith_radar": [
+      "radar",
+      ""
+     ],
+     "arith_ranking_large": [
+      "ranking",
+      "large"
+     ],
+     "arith_ranking_medium": [
+      "ranking",
+      "medium"
+     ],
+     "arith_ranking_small": [
+      "ranking",
+      "small"
+     ],
+     "arith_triangle_large": [
+      "triangle",
+      "large"
+     ],
+     "arith_triangle_medium": [
+      "triangle",
+      "medium"
+     ],
+     "arith_triangle_small": [
+      "triangle",
+      "small"
+     ],
+     "arith_tugofwar": [
+      "tugofwar",
+      ""
+     ]
+    }
    },
    {
     "instances": [
@@ -1772,198 +1903,220 @@
      "nodice_coupon2-18-obs",
      "nodice_coupon2-20-obs"
     ],
-    "key": "coupon2",
-    "title": "coupon2"
+    "key": "coupon",
+    "title": "Coupon collector"
    },
    {
     "instances": [
-     "arith_disease_large",
-     "arith_disease_medium",
-     "arith_disease_small"
+     "nodice_3sat-0",
+     "nodice_uf20-0990",
+     "nodice_uf20-0991",
+     "nodice_uf20-0992",
+     "nodice_uf20-0993",
+     "nodice_uf20-0994",
+     "nodice_uf20-0995",
+     "nodice_uf20-0996",
+     "nodice_uf20-0997",
+     "nodice_uf20-0998",
+     "nodice_uf20-0999",
+     "nodice_uf50-0999"
     ],
-    "key": "disease",
-    "title": "disease"
+    "key": "sat",
+    "title": "3-SAT"
    },
    {
     "instances": [
-     "arith_fw_large",
-     "arith_fw_medium",
-     "arith_fw_small"
+     "nodice_brp4-2",
+     "nodice_brp6-2",
+     "nodice_brp8-2",
+     "nodice_brp10-2",
+     "nodice_brp16-2",
+     "nodice_brp64-2",
+     "nodice_brp256-2",
+     "nodice_brp1024-2",
+     "nodice_brp4096-2",
+     "nodice_brp16384-2"
     ],
-    "key": "fw",
-    "title": "fw"
-   },
-   {
-    "instances": [
-     "arith_gcd_large",
-     "arith_gcd_medium",
-     "arith_gcd_small"
-    ],
-    "key": "gcd",
-    "title": "gcd"
-   },
-   {
-    "instances": [
-     "arith_linext_large",
-     "arith_linext_medium",
-     "arith_linext_small"
-    ],
-    "key": "linext",
-    "title": "linext"
-   },
-   {
-    "instances": [
-     "arith_luhn_medium",
-     "arith_luhn_small"
-    ],
-    "key": "luhn",
-    "title": "luhn"
-   },
-   {
-    "instances": [
-     "nodice_alarm",
-     "nodice_hepar2",
-     "nodice_insurance",
-     "nodice_survey",
-     "nodice_water"
-    ],
-    "key": "bn",
-    "title": "noDice's networks"
-   },
-   {
-    "instances": [
-     "pluck_hmm",
-     "pluck_pcfg",
-     "pluck_sorted_list",
-     "pluck_string_editing"
-    ],
-    "key": "pluck",
-    "title": "Pluck's models"
-   },
-   {
-    "instances": [
-     "arith_ranking_large",
-     "arith_ranking_medium",
-     "arith_ranking_small"
-    ],
-    "key": "ranking",
-    "title": "ranking"
-   },
-   {
-    "instances": [
-     "arith_triangle_large",
-     "arith_triangle_medium",
-     "arith_triangle_small"
-    ],
-    "key": "triangle",
-    "title": "triangle"
-   },
-   {
-    "instances": [
-     "arith_book",
-     "arith_plankton",
-     "arith_radar",
-     "arith_tugofwar"
-    ],
-    "key": "others",
-    "title": "other programs"
+    "key": "brp",
+    "title": "Bounded retransmission"
    }
   ],
   "ppl_circuits": [
    {
     "instances": [
-     "arith_caesar_huge",
-     "arith_caesar_large",
+     "arith_caesar_small",
      "arith_caesar_medium",
-     "arith_caesar_small"
+     "arith_caesar_large",
+     "arith_caesar_huge"
     ],
-    "key": "caesar",
-    "title": "caesar"
+    "key": "caesar_arith",
+    "title": "Caesar cipher, 26 letters"
    },
    {
     "instances": [
-     "arith_disease_large",
-     "arith_disease_medium",
-     "arith_disease_small"
+     "pluck_hmm"
     ],
-    "key": "disease",
-    "title": "disease"
+    "key": "pluck_hmm",
+    "title": "Pluck's hidden Markov model"
    },
    {
     "instances": [
-     "arith_fw_large",
-     "arith_fw_medium",
-     "arith_fw_small"
-    ],
-    "key": "fw",
-    "title": "fw"
-   },
-   {
-    "instances": [
-     "arith_gcd_large",
-     "arith_gcd_medium",
-     "arith_gcd_small"
-    ],
-    "key": "gcd",
-    "title": "gcd"
-   },
-   {
-    "instances": [
-     "arith_linext_large",
-     "arith_linext_medium",
-     "arith_linext_small"
-    ],
-    "key": "linext",
-    "title": "linext"
-   },
-   {
-    "instances": [
-     "arith_luhn_medium",
-     "arith_luhn_small"
-    ],
-    "key": "luhn",
-    "title": "luhn"
-   },
-   {
-    "instances": [
-     "pluck_hmm",
      "pluck_pcfg",
      "pluck_sorted_list",
      "pluck_string_editing"
     ],
-    "key": "pluck",
-    "title": "Pluck's models"
+    "key": "sequence",
+    "title": "Sequence models"
    },
    {
-    "instances": [
-     "arith_ranking_large",
-     "arith_ranking_medium",
-     "arith_ranking_small"
+    "axes": [
+     "program",
+     "size"
     ],
-    "key": "ranking",
-    "title": "ranking"
-   },
-   {
-    "instances": [
-     "arith_triangle_large",
-     "arith_triangle_medium",
-     "arith_triangle_small"
-    ],
-    "key": "triangle",
-    "title": "triangle"
-   },
-   {
     "instances": [
      "arith_book",
+     "arith_disease_small",
+     "arith_disease_medium",
+     "arith_disease_large",
+     "arith_fw_small",
+     "arith_fw_medium",
+     "arith_fw_large",
+     "arith_gcd_small",
+     "arith_gcd_medium",
+     "arith_gcd_large",
+     "arith_linext_small",
+     "arith_linext_medium",
+     "arith_linext_large",
+     "arith_luhn_small",
+     "arith_luhn_medium",
      "arith_plankton",
      "arith_radar",
+     "arith_ranking_small",
+     "arith_ranking_medium",
+     "arith_ranking_large",
+     "arith_triangle_small",
+     "arith_triangle_medium",
+     "arith_triangle_large",
      "arith_tugofwar"
     ],
-    "key": "others",
-    "title": "other programs"
+    "key": "arith",
+    "title": "Integer arithmetic",
+    "values": {
+     "arith_book": [
+      "book",
+      ""
+     ],
+     "arith_disease_large": [
+      "disease",
+      "large"
+     ],
+     "arith_disease_medium": [
+      "disease",
+      "medium"
+     ],
+     "arith_disease_small": [
+      "disease",
+      "small"
+     ],
+     "arith_fw_large": [
+      "fw",
+      "large"
+     ],
+     "arith_fw_medium": [
+      "fw",
+      "medium"
+     ],
+     "arith_fw_small": [
+      "fw",
+      "small"
+     ],
+     "arith_gcd_large": [
+      "gcd",
+      "large"
+     ],
+     "arith_gcd_medium": [
+      "gcd",
+      "medium"
+     ],
+     "arith_gcd_small": [
+      "gcd",
+      "small"
+     ],
+     "arith_linext_large": [
+      "linext",
+      "large"
+     ],
+     "arith_linext_medium": [
+      "linext",
+      "medium"
+     ],
+     "arith_linext_small": [
+      "linext",
+      "small"
+     ],
+     "arith_luhn_medium": [
+      "luhn",
+      "medium"
+     ],
+     "arith_luhn_small": [
+      "luhn",
+      "small"
+     ],
+     "arith_plankton": [
+      "plankton",
+      ""
+     ],
+     "arith_radar": [
+      "radar",
+      ""
+     ],
+     "arith_ranking_large": [
+      "ranking",
+      "large"
+     ],
+     "arith_ranking_medium": [
+      "ranking",
+      "medium"
+     ],
+     "arith_ranking_small": [
+      "ranking",
+      "small"
+     ],
+     "arith_triangle_large": [
+      "triangle",
+      "large"
+     ],
+     "arith_triangle_medium": [
+      "triangle",
+      "medium"
+     ],
+     "arith_triangle_small": [
+      "triangle",
+      "small"
+     ],
+     "arith_tugofwar": [
+      "tugofwar",
+      ""
+     ]
+    }
    }
   ],
   "roulette": [
+   {
+    "instances": [
+     "rl_bn_alarm",
+     "rl_bn_cancer",
+     "rl_bn_hailfinder",
+     "rl_bn_hepar2",
+     "rl_bn_insurance",
+     "rl_bn_munin",
+     "rl_bn_pigs",
+     "rl_bn_survey",
+     "rl_bn_water"
+    ],
+    "key": "bnlearn",
+    "title": "bnlearn's networks"
+   },
    {
     "instances": [
      "rl_caesar_25",
@@ -1980,8 +2133,8 @@
      "rl_caesar_50000",
      "rl_caesar_100000"
     ],
-    "key": "caesar",
-    "title": "caesar"
+    "key": "caesar_noisy",
+    "title": "Caesar cipher, noisy"
    },
    {
     "instances": [
@@ -1998,182 +2151,55 @@
      "rl_diamond_6000000"
     ],
     "key": "diamond",
-    "title": "diamond"
+    "title": "Diamonds"
    },
    {
-    "axes": [
-     "bit width",
-     "n",
-     "fuel"
-    ],
     "instances": [
-     "rl_hardware_10",
-     "rl_hardware_30",
-     "rl_hardware_100",
-     "rl_hardware_300",
-     "rl_hardware_1000",
-     "rl_hardware_3000",
-     "rl_hardware_10000",
-     "rl_hardware_30000",
-     "rl_hardware_100000",
-     "rl_hardware_300000",
-     "rl_hardware_1000000",
-     "rl_hardware_bitwidth_5",
-     "rl_hardware_bitwidth_10",
-     "rl_hardware_bitwidth_20",
-     "rl_hardware_bitwidth_50",
-     "rl_hardware_bitwidth_100",
-     "rl_hardware_bitwidth_300",
-     "rl_hardware_bitwidth_1000",
-     "rl_hardware_bitwidth_3000",
-     "rl_hardware_bitwidth_10000",
-     "rl_hardware_bitwidth_30000",
-     "rl_hardware_bitwidth_100000",
-     "rl_hardware_bitwidth_300000",
-     "rl_hardware_bitwidth_1000000",
-     "rl_hardware_bitwidth_3000000",
-     "rl_hardware_bitwidth_10000000",
-     "rl_hardware_bitwidth_100000000"
+     "rl_ladder_100",
+     "rl_ladder_300",
+     "rl_ladder_1000",
+     "rl_ladder_3000",
+     "rl_ladder_10000",
+     "rl_ladder_30000",
+     "rl_ladder_100000",
+     "rl_ladder_300000",
+     "rl_ladder_1000000",
+     "rl_ladder_3000000"
     ],
-    "key": "hardware",
-    "title": "hardware",
-    "values": {
-     "rl_hardware_10": [
-      "2",
-      "8",
-      "10"
-     ],
-     "rl_hardware_100": [
-      "2",
-      "98",
-      "100"
-     ],
-     "rl_hardware_1000": [
-      "2",
-      "998",
-      "1000"
-     ],
-     "rl_hardware_10000": [
-      "2",
-      "9998",
-      "10000"
-     ],
-     "rl_hardware_100000": [
-      "2",
-      "99998",
-      "100000"
-     ],
-     "rl_hardware_1000000": [
-      "2",
-      "999998",
-      "1000000"
-     ],
-     "rl_hardware_30": [
-      "2",
-      "28",
-      "30"
-     ],
-     "rl_hardware_300": [
-      "2",
-      "298",
-      "300"
-     ],
-     "rl_hardware_3000": [
-      "2",
-      "2998",
-      "3000"
-     ],
-     "rl_hardware_30000": [
-      "2",
-      "29998",
-      "30000"
-     ],
-     "rl_hardware_300000": [
-      "2",
-      "299998",
-      "300000"
-     ],
-     "rl_hardware_bitwidth_10": [
-      "10",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_100": [
-      "100",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_1000": [
-      "1000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_10000": [
-      "10000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_100000": [
-      "100000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_1000000": [
-      "1000000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_10000000": [
-      "10000000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_100000000": [
-      "100000000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_20": [
-      "20",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_300": [
-      "300",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_3000": [
-      "3000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_30000": [
-      "30000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_300000": [
-      "300000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_3000000": [
-      "3000000",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_5": [
-      "5",
-      "2",
-      "3"
-     ],
-     "rl_hardware_bitwidth_50": [
-      "50",
-      "2",
-      "3"
-     ]
-    }
+    "key": "ladder",
+    "title": "Ladders"
+   },
+   {
+    "instances": [
+     "rl_network_10",
+     "rl_network_30",
+     "rl_network_100",
+     "rl_network_300",
+     "rl_network_1000",
+     "rl_network_3000",
+     "rl_network_10000",
+     "rl_network_30000",
+     "rl_network_100000",
+     "rl_network_300000",
+     "rl_network_1000000"
+    ],
+    "key": "network",
+    "title": "Lossy network"
+   },
+   {
+    "instances": [
+     "rl_motivating_1000",
+     "rl_motivating_3000",
+     "rl_motivating_10000",
+     "rl_motivating_30000",
+     "rl_motivating_100000",
+     "rl_motivating_300000",
+     "rl_motivating_1000000",
+     "rl_motivating_3000000",
+     "rl_motivating_9000000"
+    ],
+    "key": "markov",
+    "title": "Markov chain"
    },
    {
     "axes": [
@@ -2227,7 +2253,7 @@
      "rl_hmm_smoothing_marginal_3000000"
     ],
     "key": "hmm",
-    "title": "hmm",
+    "title": "Hidden Markov model",
     "values": {
      "rl_hmm_filtering_joint_100": [
       "filtering joint",
@@ -2408,110 +2434,182 @@
     }
    },
    {
-    "instances": [
-     "rl_ladder_100",
-     "rl_ladder_300",
-     "rl_ladder_1000",
-     "rl_ladder_3000",
-     "rl_ladder_10000",
-     "rl_ladder_30000",
-     "rl_ladder_100000",
-     "rl_ladder_300000",
-     "rl_ladder_1000000",
-     "rl_ladder_3000000"
+    "axes": [
+     "bit width",
+     "n",
+     "fuel"
     ],
-    "key": "ladder",
-    "title": "ladder"
-   },
-   {
     "instances": [
-     "rl_motivating_1000",
-     "rl_motivating_3000",
-     "rl_motivating_10000",
-     "rl_motivating_30000",
-     "rl_motivating_100000",
-     "rl_motivating_300000",
-     "rl_motivating_1000000",
-     "rl_motivating_3000000",
-     "rl_motivating_9000000"
+     "rl_hardware_10",
+     "rl_hardware_30",
+     "rl_hardware_100",
+     "rl_hardware_300",
+     "rl_hardware_1000",
+     "rl_hardware_3000",
+     "rl_hardware_10000",
+     "rl_hardware_30000",
+     "rl_hardware_100000",
+     "rl_hardware_300000",
+     "rl_hardware_1000000",
+     "rl_hardware_bitwidth_5",
+     "rl_hardware_bitwidth_10",
+     "rl_hardware_bitwidth_20",
+     "rl_hardware_bitwidth_50",
+     "rl_hardware_bitwidth_100",
+     "rl_hardware_bitwidth_300",
+     "rl_hardware_bitwidth_1000",
+     "rl_hardware_bitwidth_3000",
+     "rl_hardware_bitwidth_10000",
+     "rl_hardware_bitwidth_30000",
+     "rl_hardware_bitwidth_100000",
+     "rl_hardware_bitwidth_300000",
+     "rl_hardware_bitwidth_1000000",
+     "rl_hardware_bitwidth_3000000",
+     "rl_hardware_bitwidth_10000000",
+     "rl_hardware_bitwidth_100000000"
     ],
-    "key": "motivating",
-    "title": "motivating"
-   },
-   {
-    "instances": [
-     "rl_network_10",
-     "rl_network_30",
-     "rl_network_100",
-     "rl_network_300",
-     "rl_network_1000",
-     "rl_network_3000",
-     "rl_network_10000",
-     "rl_network_30000",
-     "rl_network_100000",
-     "rl_network_300000",
-     "rl_network_1000000"
-    ],
-    "key": "network",
-    "title": "network"
-   },
-   {
-    "instances": [
-     "rl_bn_alarm",
-     "rl_bn_cancer",
-     "rl_bn_hailfinder",
-     "rl_bn_hepar2",
-     "rl_bn_insurance",
-     "rl_bn_munin",
-     "rl_bn_pigs",
-     "rl_bn_survey",
-     "rl_bn_water"
-    ],
-    "key": "bn",
-    "title": "networks"
+    "key": "hardware",
+    "title": "Perturbed-memory interpreter",
+    "values": {
+     "rl_hardware_10": [
+      "2",
+      "8",
+      "10"
+     ],
+     "rl_hardware_100": [
+      "2",
+      "98",
+      "100"
+     ],
+     "rl_hardware_1000": [
+      "2",
+      "998",
+      "1000"
+     ],
+     "rl_hardware_10000": [
+      "2",
+      "9998",
+      "10000"
+     ],
+     "rl_hardware_100000": [
+      "2",
+      "99998",
+      "100000"
+     ],
+     "rl_hardware_1000000": [
+      "2",
+      "999998",
+      "1000000"
+     ],
+     "rl_hardware_30": [
+      "2",
+      "28",
+      "30"
+     ],
+     "rl_hardware_300": [
+      "2",
+      "298",
+      "300"
+     ],
+     "rl_hardware_3000": [
+      "2",
+      "2998",
+      "3000"
+     ],
+     "rl_hardware_30000": [
+      "2",
+      "29998",
+      "30000"
+     ],
+     "rl_hardware_300000": [
+      "2",
+      "299998",
+      "300000"
+     ],
+     "rl_hardware_bitwidth_10": [
+      "10",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_100": [
+      "100",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_1000": [
+      "1000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_10000": [
+      "10000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_100000": [
+      "100000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_1000000": [
+      "1000000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_10000000": [
+      "10000000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_100000000": [
+      "100000000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_20": [
+      "20",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_300": [
+      "300",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_3000": [
+      "3000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_30000": [
+      "30000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_300000": [
+      "300000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_3000000": [
+      "3000000",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_5": [
+      "5",
+      "2",
+      "3"
+     ],
+     "rl_hardware_bitwidth_50": [
+      "50",
+      "2",
+      "3"
+     ]
+    }
    }
   ],
   "std": [
-   {
-    "instances": [
-     "cora10",
-     "cora50",
-     "cora200",
-     "cora500",
-     "cora1000",
-     "cora2000",
-     "cora4000",
-     "cora8000"
-    ],
-    "key": "cora",
-    "title": "Cora"
-   },
-   {
-    "instances": [
-     "grid4",
-     "grid5",
-     "grid6",
-     "grid7",
-     "grid8",
-     "grid10",
-     "grid12",
-     "grid15",
-     "grid20",
-     "grid25",
-     "grid30",
-     "grid40"
-    ],
-    "key": "grid",
-    "title": "grids"
-   },
-   {
-    "instances": [
-     "grid15_ev",
-     "grid30_ev"
-    ],
-    "key": "gridev",
-    "title": "grids with evidence"
-   },
    {
     "instances": [
      "g10_25",
@@ -2531,7 +2629,33 @@
      "g40_140"
     ],
     "key": "graphs",
-    "title": "random graphs"
+    "title": "Paths in random graphs"
+   },
+   {
+    "instances": [
+     "grid4",
+     "grid5",
+     "grid6",
+     "grid7",
+     "grid8",
+     "grid10",
+     "grid12",
+     "grid15",
+     "grid20",
+     "grid25",
+     "grid30",
+     "grid40"
+    ],
+    "key": "grids",
+    "title": "Paths in grids"
+   },
+   {
+    "instances": [
+     "grid15_ev",
+     "grid30_ev"
+    ],
+    "key": "gridev",
+    "title": "Paths in grids with evidence"
    },
    {
     "instances": [
@@ -2548,7 +2672,7 @@
      "s30000"
     ],
     "key": "smokers",
-    "title": "smokers"
+    "title": "Smokers"
    },
    {
     "instances": [
@@ -2561,7 +2685,7 @@
      "nsym16"
     ],
     "key": "symsmokers",
-    "title": "symmetric smokers"
+    "title": "Symmetric smokers"
    },
    {
     "instances": [
@@ -2583,10 +2707,24 @@
    },
    {
     "instances": [
+     "cora10",
+     "cora50",
+     "cora200",
+     "cora500",
+     "cora1000",
+     "cora2000",
+     "cora4000",
+     "cora8000"
+    ],
+    "key": "cora",
+    "title": "Cora's citation matching"
+   },
+   {
+    "instances": [
      "bloodtype"
     ],
-    "key": "others",
-    "title": "other programs"
+    "key": "bloodtype",
+    "title": "Blood type"
    }
   ],
   "std_bn": [
@@ -2627,8 +2765,8 @@
      "bn_win95pts",
      "bn_win95pts_ev"
     ],
-    "key": "bn",
-    "title": "networks"
+    "key": "bnlearn",
+    "title": "bnlearn's networks"
    }
   ],
   "tpch": [
@@ -2656,325 +2794,7 @@
      "tpch_q1v_1000"
     ],
     "key": "q1",
-    "title": "q1"
-   },
-   {
-    "instances": [
-     "tpch_q10_1",
-     "tpch_q10_2",
-     "tpch_q10_5",
-     "tpch_q10_10",
-     "tpch_q10_20",
-     "tpch_q10_50",
-     "tpch_q10_100",
-     "tpch_q10_200",
-     "tpch_q10_500",
-     "tpch_q10_1000",
-     "tpch_q10v_1",
-     "tpch_q10v_2",
-     "tpch_q10v_5",
-     "tpch_q10v_10",
-     "tpch_q10v_20",
-     "tpch_q10v_50",
-     "tpch_q10v_100",
-     "tpch_q10v_200",
-     "tpch_q10v_500",
-     "tpch_q10v_1000"
-    ],
-    "key": "q10",
-    "title": "q10"
-   },
-   {
-    "instances": [
-     "tpch_q11_5",
-     "tpch_q11_10",
-     "tpch_q11_20",
-     "tpch_q11_50",
-     "tpch_q11_100",
-     "tpch_q11_200",
-     "tpch_q11_500",
-     "tpch_q11_1000",
-     "tpch_q11v_5",
-     "tpch_q11v_10",
-     "tpch_q11v_20",
-     "tpch_q11v_50",
-     "tpch_q11v_100",
-     "tpch_q11v_200",
-     "tpch_q11v_500",
-     "tpch_q11v_1000"
-    ],
-    "key": "q11",
-    "title": "q11"
-   },
-   {
-    "instances": [
-     "tpch_q12_1",
-     "tpch_q12_2",
-     "tpch_q12_5",
-     "tpch_q12_10",
-     "tpch_q12_20",
-     "tpch_q12_50",
-     "tpch_q12_100",
-     "tpch_q12_200",
-     "tpch_q12_500",
-     "tpch_q12_1000",
-     "tpch_q12v_1",
-     "tpch_q12v_2",
-     "tpch_q12v_5",
-     "tpch_q12v_10",
-     "tpch_q12v_20",
-     "tpch_q12v_50",
-     "tpch_q12v_100",
-     "tpch_q12v_200",
-     "tpch_q12v_500",
-     "tpch_q12v_1000"
-    ],
-    "key": "q12",
-    "title": "q12"
-   },
-   {
-    "instances": [
-     "tpch_q14_1",
-     "tpch_q14_2",
-     "tpch_q14_5",
-     "tpch_q14_10",
-     "tpch_q14_20",
-     "tpch_q14_50",
-     "tpch_q14_100",
-     "tpch_q14_200",
-     "tpch_q14_500",
-     "tpch_q14_1000",
-     "tpch_q14v_1",
-     "tpch_q14v_2",
-     "tpch_q14v_5",
-     "tpch_q14v_10",
-     "tpch_q14v_20",
-     "tpch_q14v_50",
-     "tpch_q14v_100",
-     "tpch_q14v_200",
-     "tpch_q14v_500",
-     "tpch_q14v_1000"
-    ],
-    "key": "q14",
-    "title": "q14"
-   },
-   {
-    "instances": [
-     "tpch_q15_1",
-     "tpch_q15_2",
-     "tpch_q15_5",
-     "tpch_q15_10",
-     "tpch_q15_20",
-     "tpch_q15_50",
-     "tpch_q15_100",
-     "tpch_q15_200",
-     "tpch_q15_500",
-     "tpch_q15_1000",
-     "tpch_q15v_1",
-     "tpch_q15v_2",
-     "tpch_q15v_5",
-     "tpch_q15v_10",
-     "tpch_q15v_20",
-     "tpch_q15v_50",
-     "tpch_q15v_100",
-     "tpch_q15v_200",
-     "tpch_q15v_500",
-     "tpch_q15v_1000"
-    ],
-    "key": "q15",
-    "title": "q15"
-   },
-   {
-    "instances": [
-     "tpch_q16_1",
-     "tpch_q16_2",
-     "tpch_q16_5",
-     "tpch_q16_10",
-     "tpch_q16_20",
-     "tpch_q16_50",
-     "tpch_q16_100",
-     "tpch_q16_200",
-     "tpch_q16_500",
-     "tpch_q16_1000",
-     "tpch_q16v_1",
-     "tpch_q16v_2",
-     "tpch_q16v_5",
-     "tpch_q16v_10",
-     "tpch_q16v_20",
-     "tpch_q16v_50",
-     "tpch_q16v_100",
-     "tpch_q16v_200",
-     "tpch_q16v_500",
-     "tpch_q16v_1000"
-    ],
-    "key": "q16",
-    "title": "q16"
-   },
-   {
-    "instances": [
-     "tpch_q17_5",
-     "tpch_q17_10",
-     "tpch_q17_20",
-     "tpch_q17_50",
-     "tpch_q17_100",
-     "tpch_q17_200",
-     "tpch_q17_500",
-     "tpch_q17_1000",
-     "tpch_q17v_5",
-     "tpch_q17v_10",
-     "tpch_q17v_20",
-     "tpch_q17v_50",
-     "tpch_q17v_100",
-     "tpch_q17v_200",
-     "tpch_q17v_500",
-     "tpch_q17v_1000"
-    ],
-    "key": "q17",
-    "title": "q17"
-   },
-   {
-    "instances": [
-     "tpch_q18_1",
-     "tpch_q18_2",
-     "tpch_q18_5",
-     "tpch_q18_10",
-     "tpch_q18_20",
-     "tpch_q18_50",
-     "tpch_q18_100",
-     "tpch_q18_200",
-     "tpch_q18_500",
-     "tpch_q18_1000",
-     "tpch_q18v_1",
-     "tpch_q18v_2",
-     "tpch_q18v_5",
-     "tpch_q18v_10",
-     "tpch_q18v_20",
-     "tpch_q18v_50",
-     "tpch_q18v_100",
-     "tpch_q18v_200",
-     "tpch_q18v_500",
-     "tpch_q18v_1000"
-    ],
-    "key": "q18",
-    "title": "q18"
-   },
-   {
-    "instances": [
-     "tpch_q2_2",
-     "tpch_q2_5",
-     "tpch_q2_10",
-     "tpch_q2_20",
-     "tpch_q2_50",
-     "tpch_q2_100",
-     "tpch_q2_200",
-     "tpch_q2_500",
-     "tpch_q2_1000",
-     "tpch_q2v_2",
-     "tpch_q2v_5",
-     "tpch_q2v_10",
-     "tpch_q2v_20",
-     "tpch_q2v_50",
-     "tpch_q2v_100",
-     "tpch_q2v_200",
-     "tpch_q2v_500",
-     "tpch_q2v_1000"
-    ],
-    "key": "q2",
-    "title": "q2"
-   },
-   {
-    "instances": [
-     "tpch_q20_2",
-     "tpch_q20_5",
-     "tpch_q20_10",
-     "tpch_q20_20",
-     "tpch_q20_50",
-     "tpch_q20_100",
-     "tpch_q20_200",
-     "tpch_q20_500",
-     "tpch_q20_1000",
-     "tpch_q20v_2",
-     "tpch_q20v_5",
-     "tpch_q20v_10",
-     "tpch_q20v_20",
-     "tpch_q20v_50",
-     "tpch_q20v_100",
-     "tpch_q20v_200",
-     "tpch_q20v_500",
-     "tpch_q20v_1000"
-    ],
-    "key": "q20",
-    "title": "q20"
-   },
-   {
-    "instances": [
-     "tpch_q21_2",
-     "tpch_q21_5",
-     "tpch_q21_10",
-     "tpch_q21_20",
-     "tpch_q21_50",
-     "tpch_q21_100",
-     "tpch_q21v_2",
-     "tpch_q21v_5",
-     "tpch_q21v_10",
-     "tpch_q21v_20",
-     "tpch_q21v_50",
-     "tpch_q21v_100"
-    ],
-    "key": "q21",
-    "title": "q21"
-   },
-   {
-    "instances": [
-     "tpch_q3_1",
-     "tpch_q3_2",
-     "tpch_q3_5",
-     "tpch_q3_10",
-     "tpch_q3_20",
-     "tpch_q3_50",
-     "tpch_q3_100",
-     "tpch_q3_200",
-     "tpch_q3_500",
-     "tpch_q3_1000",
-     "tpch_q3v_1",
-     "tpch_q3v_2",
-     "tpch_q3v_5",
-     "tpch_q3v_10",
-     "tpch_q3v_20",
-     "tpch_q3v_50",
-     "tpch_q3v_100",
-     "tpch_q3v_200",
-     "tpch_q3v_500",
-     "tpch_q3v_1000"
-    ],
-    "key": "q3",
-    "title": "q3"
-   },
-   {
-    "instances": [
-     "tpch_q4_1",
-     "tpch_q4_2",
-     "tpch_q4_5",
-     "tpch_q4_10",
-     "tpch_q4_20",
-     "tpch_q4_50",
-     "tpch_q4_100",
-     "tpch_q4_200",
-     "tpch_q4_500",
-     "tpch_q4_1000",
-     "tpch_q4v_1",
-     "tpch_q4v_2",
-     "tpch_q4v_5",
-     "tpch_q4v_10",
-     "tpch_q4v_20",
-     "tpch_q4v_50",
-     "tpch_q4v_100",
-     "tpch_q4v_200",
-     "tpch_q4v_500",
-     "tpch_q4v_1000"
-    ],
-    "key": "q4",
-    "title": "q4"
+    "title": "TPC-H Q1"
    },
    {
     "instances": [
@@ -3000,7 +2820,307 @@
      "tpch_q6v_1000"
     ],
     "key": "q6",
-    "title": "q6"
+    "title": "TPC-H Q6"
+   },
+   {
+    "instances": [
+     "tpch_q4_1",
+     "tpch_q4_2",
+     "tpch_q4_5",
+     "tpch_q4_10",
+     "tpch_q4_20",
+     "tpch_q4_50",
+     "tpch_q4_100",
+     "tpch_q4_200",
+     "tpch_q4_500",
+     "tpch_q4_1000",
+     "tpch_q4v_1",
+     "tpch_q4v_2",
+     "tpch_q4v_5",
+     "tpch_q4v_10",
+     "tpch_q4v_20",
+     "tpch_q4v_50",
+     "tpch_q4v_100",
+     "tpch_q4v_200",
+     "tpch_q4v_500",
+     "tpch_q4v_1000"
+    ],
+    "key": "q4",
+    "title": "TPC-H Q4"
+   },
+   {
+    "instances": [
+     "tpch_q12_1",
+     "tpch_q12_2",
+     "tpch_q12_5",
+     "tpch_q12_10",
+     "tpch_q12_20",
+     "tpch_q12_50",
+     "tpch_q12_100",
+     "tpch_q12_200",
+     "tpch_q12_500",
+     "tpch_q12_1000",
+     "tpch_q12v_1",
+     "tpch_q12v_2",
+     "tpch_q12v_5",
+     "tpch_q12v_10",
+     "tpch_q12v_20",
+     "tpch_q12v_50",
+     "tpch_q12v_100",
+     "tpch_q12v_200",
+     "tpch_q12v_500",
+     "tpch_q12v_1000"
+    ],
+    "key": "q12",
+    "title": "TPC-H Q12"
+   },
+   {
+    "instances": [
+     "tpch_q14_1",
+     "tpch_q14_2",
+     "tpch_q14_5",
+     "tpch_q14_10",
+     "tpch_q14_20",
+     "tpch_q14_50",
+     "tpch_q14_100",
+     "tpch_q14_200",
+     "tpch_q14_500",
+     "tpch_q14_1000",
+     "tpch_q14v_1",
+     "tpch_q14v_2",
+     "tpch_q14v_5",
+     "tpch_q14v_10",
+     "tpch_q14v_20",
+     "tpch_q14v_50",
+     "tpch_q14v_100",
+     "tpch_q14v_200",
+     "tpch_q14v_500",
+     "tpch_q14v_1000"
+    ],
+    "key": "q14",
+    "title": "TPC-H Q14"
+   },
+   {
+    "instances": [
+     "tpch_q15_1",
+     "tpch_q15_2",
+     "tpch_q15_5",
+     "tpch_q15_10",
+     "tpch_q15_20",
+     "tpch_q15_50",
+     "tpch_q15_100",
+     "tpch_q15_200",
+     "tpch_q15_500",
+     "tpch_q15_1000",
+     "tpch_q15v_1",
+     "tpch_q15v_2",
+     "tpch_q15v_5",
+     "tpch_q15v_10",
+     "tpch_q15v_20",
+     "tpch_q15v_50",
+     "tpch_q15v_100",
+     "tpch_q15v_200",
+     "tpch_q15v_500",
+     "tpch_q15v_1000"
+    ],
+    "key": "q15",
+    "title": "TPC-H Q15"
+   },
+   {
+    "instances": [
+     "tpch_q16_1",
+     "tpch_q16_2",
+     "tpch_q16_5",
+     "tpch_q16_10",
+     "tpch_q16_20",
+     "tpch_q16_50",
+     "tpch_q16_100",
+     "tpch_q16_200",
+     "tpch_q16_500",
+     "tpch_q16_1000",
+     "tpch_q16v_1",
+     "tpch_q16v_2",
+     "tpch_q16v_5",
+     "tpch_q16v_10",
+     "tpch_q16v_20",
+     "tpch_q16v_50",
+     "tpch_q16v_100",
+     "tpch_q16v_200",
+     "tpch_q16v_500",
+     "tpch_q16v_1000"
+    ],
+    "key": "q16",
+    "title": "TPC-H Q16"
+   },
+   {
+    "instances": [
+     "tpch_q17_5",
+     "tpch_q17_10",
+     "tpch_q17_20",
+     "tpch_q17_50",
+     "tpch_q17_100",
+     "tpch_q17_200",
+     "tpch_q17_500",
+     "tpch_q17_1000",
+     "tpch_q17v_5",
+     "tpch_q17v_10",
+     "tpch_q17v_20",
+     "tpch_q17v_50",
+     "tpch_q17v_100",
+     "tpch_q17v_200",
+     "tpch_q17v_500",
+     "tpch_q17v_1000"
+    ],
+    "key": "q17",
+    "title": "TPC-H Q17"
+   },
+   {
+    "instances": [
+     "tpch_q3_1",
+     "tpch_q3_2",
+     "tpch_q3_5",
+     "tpch_q3_10",
+     "tpch_q3_20",
+     "tpch_q3_50",
+     "tpch_q3_100",
+     "tpch_q3_200",
+     "tpch_q3_500",
+     "tpch_q3_1000",
+     "tpch_q3v_1",
+     "tpch_q3v_2",
+     "tpch_q3v_5",
+     "tpch_q3v_10",
+     "tpch_q3v_20",
+     "tpch_q3v_50",
+     "tpch_q3v_100",
+     "tpch_q3v_200",
+     "tpch_q3v_500",
+     "tpch_q3v_1000"
+    ],
+    "key": "q3",
+    "title": "TPC-H Q3"
+   },
+   {
+    "instances": [
+     "tpch_q10_1",
+     "tpch_q10_2",
+     "tpch_q10_5",
+     "tpch_q10_10",
+     "tpch_q10_20",
+     "tpch_q10_50",
+     "tpch_q10_100",
+     "tpch_q10_200",
+     "tpch_q10_500",
+     "tpch_q10_1000",
+     "tpch_q10v_1",
+     "tpch_q10v_2",
+     "tpch_q10v_5",
+     "tpch_q10v_10",
+     "tpch_q10v_20",
+     "tpch_q10v_50",
+     "tpch_q10v_100",
+     "tpch_q10v_200",
+     "tpch_q10v_500",
+     "tpch_q10v_1000"
+    ],
+    "key": "q10",
+    "title": "TPC-H Q10"
+   },
+   {
+    "instances": [
+     "tpch_q11_5",
+     "tpch_q11_10",
+     "tpch_q11_20",
+     "tpch_q11_50",
+     "tpch_q11_100",
+     "tpch_q11_200",
+     "tpch_q11_500",
+     "tpch_q11_1000",
+     "tpch_q11v_5",
+     "tpch_q11v_10",
+     "tpch_q11v_20",
+     "tpch_q11v_50",
+     "tpch_q11v_100",
+     "tpch_q11v_200",
+     "tpch_q11v_500",
+     "tpch_q11v_1000"
+    ],
+    "key": "q11",
+    "title": "TPC-H Q11"
+   },
+   {
+    "instances": [
+     "tpch_q18_1",
+     "tpch_q18_2",
+     "tpch_q18_5",
+     "tpch_q18_10",
+     "tpch_q18_20",
+     "tpch_q18_50",
+     "tpch_q18_100",
+     "tpch_q18_200",
+     "tpch_q18_500",
+     "tpch_q18_1000",
+     "tpch_q18v_1",
+     "tpch_q18v_2",
+     "tpch_q18v_5",
+     "tpch_q18v_10",
+     "tpch_q18v_20",
+     "tpch_q18v_50",
+     "tpch_q18v_100",
+     "tpch_q18v_200",
+     "tpch_q18v_500",
+     "tpch_q18v_1000"
+    ],
+    "key": "q18",
+    "title": "TPC-H Q18"
+   },
+   {
+    "instances": [
+     "tpch_q2_2",
+     "tpch_q2_5",
+     "tpch_q2_10",
+     "tpch_q2_20",
+     "tpch_q2_50",
+     "tpch_q2_100",
+     "tpch_q2_200",
+     "tpch_q2_500",
+     "tpch_q2_1000",
+     "tpch_q2v_2",
+     "tpch_q2v_5",
+     "tpch_q2v_10",
+     "tpch_q2v_20",
+     "tpch_q2v_50",
+     "tpch_q2v_100",
+     "tpch_q2v_200",
+     "tpch_q2v_500",
+     "tpch_q2v_1000"
+    ],
+    "key": "q2",
+    "title": "TPC-H Q2"
+   },
+   {
+    "instances": [
+     "tpch_q20_2",
+     "tpch_q20_5",
+     "tpch_q20_10",
+     "tpch_q20_20",
+     "tpch_q20_50",
+     "tpch_q20_100",
+     "tpch_q20_200",
+     "tpch_q20_500",
+     "tpch_q20_1000",
+     "tpch_q20v_2",
+     "tpch_q20v_5",
+     "tpch_q20v_10",
+     "tpch_q20v_20",
+     "tpch_q20v_50",
+     "tpch_q20v_100",
+     "tpch_q20v_200",
+     "tpch_q20v_500",
+     "tpch_q20v_1000"
+    ],
+    "key": "q20",
+    "title": "TPC-H Q20"
    },
    {
     "instances": [
@@ -3021,44 +3141,70 @@
      "tpch_q7v_200"
     ],
     "key": "q7",
-    "title": "q7"
+    "title": "TPC-H Q7"
+   },
+   {
+    "instances": [
+     "tpch_q21_2",
+     "tpch_q21_5",
+     "tpch_q21_10",
+     "tpch_q21_20",
+     "tpch_q21_50",
+     "tpch_q21_100",
+     "tpch_q21v_2",
+     "tpch_q21v_5",
+     "tpch_q21v_10",
+     "tpch_q21v_20",
+     "tpch_q21v_50",
+     "tpch_q21v_100"
+    ],
+    "key": "q21",
+    "title": "TPC-H Q21"
    }
   ],
   "uai": [
    {
     "instances": [
-     "uai_csp_11",
-     "uai_csp_12",
-     "uai_csp_13"
+     "uai_promedus_11",
+     "uai_promedus_12",
+     "uai_promedus_13",
+     "uai_promedus_14",
+     "uai_promedus_15",
+     "uai_promedus_16",
+     "uai_promedus_17",
+     "uai_promedus_18",
+     "uai_promedus_19",
+     "uai_promedus_20",
+     "uai_promedus_21",
+     "uai_promedus_22",
+     "uai_promedus_23",
+     "uai_promedus_24",
+     "uai_promedus_25",
+     "uai_promedus_26",
+     "uai_promedus_27",
+     "uai_promedus_28",
+     "uai_promedus_29",
+     "uai_promedus_30",
+     "uai_promedus_31",
+     "uai_promedus_32",
+     "uai_promedus_33",
+     "uai_promedus_34",
+     "uai_promedus_35",
+     "uai_promedus_36",
+     "uai_promedus_37",
+     "uai_promedus_38"
     ],
-    "key": "csp",
-    "title": "csp"
+    "key": "promedus",
+    "title": "Promedus"
    },
    {
     "instances": [
-     "uai_dbn_11",
-     "uai_dbn_12",
-     "uai_dbn_13",
-     "uai_dbn_14",
-     "uai_dbn_15",
-     "uai_dbn_16"
+     "uai_pedigree_11",
+     "uai_pedigree_12",
+     "uai_pedigree_13"
     ],
-    "key": "dbn",
-    "title": "dbn"
-   },
-   {
-    "instances": [
-     "uai_grids_11",
-     "uai_grids_12",
-     "uai_grids_13",
-     "uai_grids_14",
-     "uai_grids_15",
-     "uai_grids_16",
-     "uai_grids_17",
-     "uai_grids_18"
-    ],
-    "key": "grids",
-    "title": "grids"
+    "key": "pedigree",
+    "title": "Pedigrees"
    },
    {
     "instances": [
@@ -3129,50 +3275,21 @@
      "uai_objectdetection_75"
     ],
     "key": "objectdetection",
-    "title": "objectdetection"
+    "title": "Object detection"
    },
    {
     "instances": [
-     "uai_pedigree_11",
-     "uai_pedigree_12",
-     "uai_pedigree_13"
+     "uai_grids_11",
+     "uai_grids_12",
+     "uai_grids_13",
+     "uai_grids_14",
+     "uai_grids_15",
+     "uai_grids_16",
+     "uai_grids_17",
+     "uai_grids_18"
     ],
-    "key": "pedigree",
-    "title": "pedigree"
-   },
-   {
-    "instances": [
-     "uai_promedus_11",
-     "uai_promedus_12",
-     "uai_promedus_13",
-     "uai_promedus_14",
-     "uai_promedus_15",
-     "uai_promedus_16",
-     "uai_promedus_17",
-     "uai_promedus_18",
-     "uai_promedus_19",
-     "uai_promedus_20",
-     "uai_promedus_21",
-     "uai_promedus_22",
-     "uai_promedus_23",
-     "uai_promedus_24",
-     "uai_promedus_25",
-     "uai_promedus_26",
-     "uai_promedus_27",
-     "uai_promedus_28",
-     "uai_promedus_29",
-     "uai_promedus_30",
-     "uai_promedus_31",
-     "uai_promedus_32",
-     "uai_promedus_33",
-     "uai_promedus_34",
-     "uai_promedus_35",
-     "uai_promedus_36",
-     "uai_promedus_37",
-     "uai_promedus_38"
-    ],
-    "key": "promedus",
-    "title": "promedus"
+    "key": "grids",
+    "title": "Grids"
    },
    {
     "instances": [
@@ -3184,198 +3301,38 @@
      "uai_segmentation_16"
     ],
     "key": "segmentation",
-    "title": "segmentation"
+    "title": "Image segmentation"
+   },
+   {
+    "instances": [
+     "uai_dbn_11",
+     "uai_dbn_12",
+     "uai_dbn_13",
+     "uai_dbn_14",
+     "uai_dbn_15",
+     "uai_dbn_16"
+    ],
+    "key": "dbn",
+    "title": "Dynamic Bayesian networks"
+   },
+   {
+    "instances": [
+     "uai_csp_11",
+     "uai_csp_12",
+     "uai_csp_13"
+    ],
+    "key": "csp",
+    "title": "Constraint satisfaction problems"
    },
    {
     "instances": [
      "uai_alchemy_11"
     ],
-    "key": "others",
-    "title": "other programs"
+    "key": "alchemy",
+    "title": "Markov logic networks"
    }
   ],
   "uaiihler": [
-   {
-    "instances": [
-     "uai_bn_0",
-     "uai_bn_1",
-     "uai_bn_2",
-     "uai_bn_3",
-     "uai_bn_4",
-     "uai_bn_5",
-     "uai_bn_6",
-     "uai_bn_7",
-     "uai_bn_8",
-     "uai_bn_9",
-     "uai_bn_10",
-     "uai_bn_11",
-     "uai_bn_14",
-     "uai_bn_16",
-     "uai_bn_17",
-     "uai_bn_18",
-     "uai_bn_19",
-     "uai_bn_20",
-     "uai_bn_21",
-     "uai_bn_22",
-     "uai_bn_23",
-     "uai_bn_24",
-     "uai_bn_25",
-     "uai_bn_26",
-     "uai_bn_27",
-     "uai_bn_28",
-     "uai_bn_29",
-     "uai_bn_30",
-     "uai_bn_31",
-     "uai_bn_32",
-     "uai_bn_33",
-     "uai_bn_34",
-     "uai_bn_35",
-     "uai_bn_36",
-     "uai_bn_37",
-     "uai_bn_38",
-     "uai_bn_39",
-     "uai_bn_40",
-     "uai_bn_41",
-     "uai_bn_42",
-     "uai_bn_43",
-     "uai_bn_44",
-     "uai_bn_45",
-     "uai_bn_46",
-     "uai_bn_47",
-     "uai_bn_48",
-     "uai_bn_49",
-     "uai_bn_50",
-     "uai_bn_51",
-     "uai_bn_52",
-     "uai_bn_53",
-     "uai_bn_54",
-     "uai_bn_55",
-     "uai_bn_56",
-     "uai_bn_57",
-     "uai_bn_58",
-     "uai_bn_59",
-     "uai_bn_60",
-     "uai_bn_61",
-     "uai_bn_62",
-     "uai_bn_63",
-     "uai_bn_64",
-     "uai_bn_65",
-     "uai_bn_66",
-     "uai_bn_67",
-     "uai_bn_68",
-     "uai_bn_69",
-     "uai_bn_70",
-     "uai_bn_71",
-     "uai_bn_72",
-     "uai_bn_73",
-     "uai_bn_75",
-     "uai_bn_76",
-     "uai_bn_77",
-     "uai_bn_78",
-     "uai_bn_79",
-     "uai_bn_80",
-     "uai_bn_81",
-     "uai_bn_82",
-     "uai_bn_83",
-     "uai_bn_84",
-     "uai_bn_85",
-     "uai_bn_86",
-     "uai_bn_87",
-     "uai_bn_88",
-     "uai_bn_89",
-     "uai_bn_90",
-     "uai_bn_91",
-     "uai_bn_92",
-     "uai_bn_93",
-     "uai_bn_95",
-     "uai_bn_97",
-     "uai_bn_99",
-     "uai_bn_101",
-     "uai_bn_103",
-     "uai_bn_105",
-     "uai_bn_107",
-     "uai_bn_109",
-     "uai_bn_111",
-     "uai_bn_113",
-     "uai_bn_115",
-     "uai_bn_117",
-     "uai_bn_119",
-     "uai_bn_121",
-     "uai_bn_123",
-     "uai_bn_125",
-     "uai_bn_126",
-     "uai_bn_127",
-     "uai_bn_128",
-     "uai_bn_129",
-     "uai_bn_130",
-     "uai_bn_131",
-     "uai_bn_132",
-     "uai_bn_133",
-     "uai_bn_134"
-    ],
-    "key": "bn",
-    "title": "BN"
-   },
-   {
-    "instances": [
-     "uai_alarm",
-     "uai_andes",
-     "uai_asia",
-     "uai_barley",
-     "uai_cancer",
-     "uai_cpcs54",
-     "uai_diabetes",
-     "uai_diagnose_a",
-     "uai_diagnose_b",
-     "uai_emdec6g",
-     "uai_fire_alarm",
-     "uai_hepar2",
-     "uai_link",
-     "uai_mildew",
-     "uai_munin1",
-     "uai_munin2",
-     "uai_spect",
-     "uai_tcc4e"
-    ],
-    "key": "classics",
-    "title": "classics"
-   },
-   {
-    "instances": [
-     "uai_grid20x20_f5_wrap",
-     "uai_grid20x20_f10_wrap",
-     "uai_grid20x20_f15_wrap"
-    ],
-    "key": "grids",
-    "title": "Grids"
-   },
-   {
-    "instances": [
-     "uai_pedigree1",
-     "uai_pedigree7",
-     "uai_pedigree9",
-     "uai_pedigree13",
-     "uai_pedigree18",
-     "uai_pedigree19",
-     "uai_pedigree20",
-     "uai_pedigree23",
-     "uai_pedigree25",
-     "uai_pedigree30",
-     "uai_pedigree31",
-     "uai_pedigree33",
-     "uai_pedigree34",
-     "uai_pedigree37",
-     "uai_pedigree38",
-     "uai_pedigree39",
-     "uai_pedigree40",
-     "uai_pedigree41",
-     "uai_pedigree42",
-     "uai_pedigree44",
-     "uai_pedigree50"
-    ],
-    "key": "pedigree",
-    "title": "pedigree"
-   },
    {
     "instances": [
      "uai_or_chain_2_fg",
@@ -3592,30 +3549,222 @@
      "uai_or_chain_248_fg",
      "uai_or_chain_249_fg"
     ],
-    "key": "promedas",
-    "title": "promedas"
+    "key": "or_chain",
+    "title": "Promedas noisy-or chains"
+   },
+   {
+    "instances": [
+     "uai_bn_0",
+     "uai_bn_1",
+     "uai_bn_2",
+     "uai_bn_3",
+     "uai_bn_4",
+     "uai_bn_5",
+     "uai_bn_6",
+     "uai_bn_7",
+     "uai_bn_8",
+     "uai_bn_9",
+     "uai_bn_10",
+     "uai_bn_11",
+     "uai_bn_14",
+     "uai_bn_16",
+     "uai_bn_17",
+     "uai_bn_18",
+     "uai_bn_19",
+     "uai_bn_20",
+     "uai_bn_21",
+     "uai_bn_22",
+     "uai_bn_23",
+     "uai_bn_24",
+     "uai_bn_25",
+     "uai_bn_26",
+     "uai_bn_27",
+     "uai_bn_28",
+     "uai_bn_29",
+     "uai_bn_30",
+     "uai_bn_31",
+     "uai_bn_32",
+     "uai_bn_33",
+     "uai_bn_34",
+     "uai_bn_35",
+     "uai_bn_36",
+     "uai_bn_37",
+     "uai_bn_38",
+     "uai_bn_39",
+     "uai_bn_40",
+     "uai_bn_41",
+     "uai_bn_42",
+     "uai_bn_43",
+     "uai_bn_44",
+     "uai_bn_45",
+     "uai_bn_46",
+     "uai_bn_47",
+     "uai_bn_48",
+     "uai_bn_49",
+     "uai_bn_50",
+     "uai_bn_51",
+     "uai_bn_52",
+     "uai_bn_53",
+     "uai_bn_54",
+     "uai_bn_55",
+     "uai_bn_56",
+     "uai_bn_57",
+     "uai_bn_58",
+     "uai_bn_59",
+     "uai_bn_60",
+     "uai_bn_61",
+     "uai_bn_62",
+     "uai_bn_63",
+     "uai_bn_64",
+     "uai_bn_65",
+     "uai_bn_66",
+     "uai_bn_67",
+     "uai_bn_68",
+     "uai_bn_69",
+     "uai_bn_70",
+     "uai_bn_71",
+     "uai_bn_72",
+     "uai_bn_73",
+     "uai_bn_75",
+     "uai_bn_76",
+     "uai_bn_77",
+     "uai_bn_78",
+     "uai_bn_79",
+     "uai_bn_80",
+     "uai_bn_81",
+     "uai_bn_82",
+     "uai_bn_83",
+     "uai_bn_84",
+     "uai_bn_85",
+     "uai_bn_86",
+     "uai_bn_87",
+     "uai_bn_88",
+     "uai_bn_89",
+     "uai_bn_90",
+     "uai_bn_91",
+     "uai_bn_92",
+     "uai_bn_93",
+     "uai_bn_95",
+     "uai_bn_97",
+     "uai_bn_99",
+     "uai_bn_101",
+     "uai_bn_103",
+     "uai_bn_105",
+     "uai_bn_107",
+     "uai_bn_109",
+     "uai_bn_111",
+     "uai_bn_113",
+     "uai_bn_115",
+     "uai_bn_117",
+     "uai_bn_119",
+     "uai_bn_121",
+     "uai_bn_123",
+     "uai_bn_125",
+     "uai_bn_126",
+     "uai_bn_127",
+     "uai_bn_128",
+     "uai_bn_129",
+     "uai_bn_130",
+     "uai_bn_131",
+     "uai_bn_132",
+     "uai_bn_133",
+     "uai_bn_134"
+    ],
+    "key": "bn",
+    "title": "UAI 2006 networks"
+   },
+   {
+    "instances": [
+     "uai_alarm",
+     "uai_andes",
+     "uai_asia",
+     "uai_barley",
+     "uai_cancer",
+     "uai_cpcs54",
+     "uai_diabetes",
+     "uai_diagnose_a",
+     "uai_diagnose_b",
+     "uai_emdec6g",
+     "uai_fire_alarm",
+     "uai_hepar2",
+     "uai_link",
+     "uai_mildew",
+     "uai_munin1",
+     "uai_munin2",
+     "uai_spect",
+     "uai_tcc4e"
+    ],
+    "key": "classics",
+    "title": "Ihler's classic networks"
+   },
+   {
+    "instances": [
+     "uai_grid20x20_f5_wrap",
+     "uai_grid20x20_f10_wrap",
+     "uai_grid20x20_f15_wrap"
+    ],
+    "key": "grids",
+    "title": "Grids"
+   },
+   {
+    "instances": [
+     "uai_pedigree1",
+     "uai_pedigree7",
+     "uai_pedigree9",
+     "uai_pedigree13",
+     "uai_pedigree18",
+     "uai_pedigree19",
+     "uai_pedigree20",
+     "uai_pedigree23",
+     "uai_pedigree25",
+     "uai_pedigree30",
+     "uai_pedigree31",
+     "uai_pedigree33",
+     "uai_pedigree34",
+     "uai_pedigree37",
+     "uai_pedigree38",
+     "uai_pedigree39",
+     "uai_pedigree40",
+     "uai_pedigree41",
+     "uai_pedigree42",
+     "uai_pedigree44",
+     "uai_pedigree50"
+    ],
+    "key": "pedigree",
+    "title": "Pedigrees"
    }
   ],
   "uaipr": [
    {
     "instances": [
-     "uai_blockmap_10_01_0006",
-     "uai_blockmap_10_01_0009",
-     "uai_blockmap_10_02_0009",
-     "uai_blockmap_10_03_0009",
-     "uai_blockmap_10_03_0010",
-     "uai_blockmap_15_01_0008",
-     "uai_blockmap_15_02_0008",
-     "uai_blockmap_15_03_0008",
-     "uai_blockmap_15_03_0010",
-     "uai_blockmap_20_01_0009",
-     "uai_blockmap_20_02_0009",
-     "uai_blockmap_20_03_0010",
-     "uai_blockmap_22_01_0006",
-     "uai_blockmap_22_03_0009"
+     "uai_or_chain_1_fg",
+     "uai_or_chain_4_fg",
+     "uai_or_chain_12_fg",
+     "uai_or_chain_15_fg",
+     "uai_or_chain_53_fg",
+     "uai_or_chain_61_fg",
+     "uai_or_chain_64_fg",
+     "uai_or_chain_90_fg",
+     "uai_or_chain_102_fg",
+     "uai_or_chain_106_fg",
+     "uai_or_chain_107_fg",
+     "uai_or_chain_128_fg",
+     "uai_or_chain_132_fg",
+     "uai_or_chain_138_fg",
+     "uai_or_chain_140_fg",
+     "uai_or_chain_149_fg",
+     "uai_or_chain_150_fg",
+     "uai_or_chain_153_fg",
+     "uai_or_chain_155_fg",
+     "uai_or_chain_161_fg",
+     "uai_or_chain_186_fg",
+     "uai_or_chain_188_fg",
+     "uai_or_chain_198_fg",
+     "uai_or_chain_209_fg",
+     "uai_or_chain_242_fg"
     ],
-    "key": "blockmap",
-    "title": "blockmap"
+    "key": "or_chain",
+    "title": "Promedas noisy-or chains"
    },
    {
     "instances": [
@@ -3626,7 +3775,7 @@
      "uai_bn_74"
     ],
     "key": "bn",
-    "title": "bn"
+    "title": "UAI 2006 networks"
    },
    {
     "instances": [
@@ -3699,54 +3848,59 @@
      "uai_mastermind_10_08_03_0010"
     ],
     "key": "mastermind",
-    "title": "mastermind"
+    "title": "Mastermind"
    },
    {
     "instances": [
-     "uai_myciel5g_3_wcsp",
-     "uai_myciel5g_4_wcsp"
+     "uai_blockmap_10_01_0006",
+     "uai_blockmap_10_01_0009",
+     "uai_blockmap_10_02_0009",
+     "uai_blockmap_10_03_0009",
+     "uai_blockmap_10_03_0010",
+     "uai_blockmap_15_01_0008",
+     "uai_blockmap_15_02_0008",
+     "uai_blockmap_15_03_0008",
+     "uai_blockmap_15_03_0010",
+     "uai_blockmap_20_01_0009",
+     "uai_blockmap_20_02_0009",
+     "uai_blockmap_20_03_0010",
+     "uai_blockmap_22_01_0006",
+     "uai_blockmap_22_03_0009"
     ],
-    "key": "myciel",
-    "title": "myciel"
+    "key": "blockmap",
+    "title": "Blockmap"
    },
    {
     "instances": [
-     "uai_or_chain_1_fg",
-     "uai_or_chain_4_fg",
-     "uai_or_chain_12_fg",
-     "uai_or_chain_15_fg",
-     "uai_or_chain_53_fg",
-     "uai_or_chain_61_fg",
-     "uai_or_chain_64_fg",
-     "uai_or_chain_90_fg",
-     "uai_or_chain_102_fg",
-     "uai_or_chain_106_fg",
-     "uai_or_chain_107_fg",
-     "uai_or_chain_128_fg",
-     "uai_or_chain_132_fg",
-     "uai_or_chain_138_fg",
-     "uai_or_chain_140_fg",
-     "uai_or_chain_149_fg",
-     "uai_or_chain_150_fg",
-     "uai_or_chain_153_fg",
-     "uai_or_chain_155_fg",
-     "uai_or_chain_161_fg",
-     "uai_or_chain_186_fg",
-     "uai_or_chain_188_fg",
-     "uai_or_chain_198_fg",
-     "uai_or_chain_209_fg",
-     "uai_or_chain_242_fg"
+     "uai_fs_07"
     ],
-    "key": "or",
-    "title": "or"
+    "key": "fs",
+    "title": "Friends and smokers"
    },
    {
     "instances": [
-     "uai_queen5_5_3_wcsp",
-     "uai_queen5_5_4_wcsp"
+     "uai_1a7w",
+     "uai_1aie",
+     "uai_1b2v",
+     "uai_1bxv",
+     "uai_1cpq",
+     "uai_1ctj",
+     "uai_1cxy",
+     "uai_1f94",
+     "uai_1fas",
+     "uai_1g6x",
+     "uai_1jer",
+     "uai_1kp6",
+     "uai_1nkd",
+     "uai_1npl",
+     "uai_1qt9",
+     "uai_1rfs",
+     "uai_1svy",
+     "uai_1vfy",
+     "uai_2rta"
     ],
-    "key": "queen",
-    "title": "queen"
+    "key": "protein",
+    "title": "Protein side chains"
    },
    {
     "instances": [
@@ -3812,72 +3966,70 @@
      "uai_rus_20_40_9_3"
     ],
     "key": "rus",
-    "title": "rus"
+    "title": "Binary pairwise networks"
    },
    {
     "instances": [
-     "uai_1a7w",
-     "uai_1aie",
-     "uai_1b2v",
-     "uai_1bxv",
-     "uai_1cpq",
-     "uai_1ctj",
-     "uai_1cxy",
-     "uai_1f94",
-     "uai_1fas",
-     "uai_1g6x",
-     "uai_1jer",
-     "uai_1kp6",
-     "uai_1nkd",
-     "uai_1npl",
-     "uai_1qt9",
-     "uai_1rfs",
-     "uai_1svy",
-     "uai_1vfy",
-     "uai_2rta",
      "uai_bwt3ac_wcsp",
-     "uai_fs_07",
+     "uai_myciel5g_3_wcsp",
+     "uai_myciel5g_4_wcsp",
+     "uai_queen5_5_3_wcsp",
+     "uai_queen5_5_4_wcsp"
+    ],
+    "key": "wcsp",
+    "title": "Weighted CSPs"
+   },
+   {
+    "instances": [
      "uai_pedigree51"
     ],
-    "key": "others",
-    "title": "other programs"
+    "key": "pedigree",
+    "title": "Pedigrees"
    }
   ],
   "uaitpr": [
    {
     "instances": [
-     "uai_csp_11",
-     "uai_csp_12",
-     "uai_csp_13"
+     "uai_promedus_11",
+     "uai_promedus_12",
+     "uai_promedus_13",
+     "uai_promedus_14",
+     "uai_promedus_15",
+     "uai_promedus_16",
+     "uai_promedus_17",
+     "uai_promedus_18",
+     "uai_promedus_19",
+     "uai_promedus_20",
+     "uai_promedus_21",
+     "uai_promedus_22",
+     "uai_promedus_23",
+     "uai_promedus_24",
+     "uai_promedus_25",
+     "uai_promedus_26",
+     "uai_promedus_27",
+     "uai_promedus_28",
+     "uai_promedus_29",
+     "uai_promedus_30",
+     "uai_promedus_31",
+     "uai_promedus_32",
+     "uai_promedus_33",
+     "uai_promedus_34",
+     "uai_promedus_35",
+     "uai_promedus_36",
+     "uai_promedus_37",
+     "uai_promedus_38"
     ],
-    "key": "csp",
-    "title": "csp"
+    "key": "promedus",
+    "title": "Promedus"
    },
    {
     "instances": [
-     "uai_dbn_11",
-     "uai_dbn_12",
-     "uai_dbn_13",
-     "uai_dbn_14",
-     "uai_dbn_15",
-     "uai_dbn_16"
+     "uai_pedigree_11",
+     "uai_pedigree_12",
+     "uai_pedigree_13"
     ],
-    "key": "dbn",
-    "title": "dbn"
-   },
-   {
-    "instances": [
-     "uai_grids_11",
-     "uai_grids_12",
-     "uai_grids_13",
-     "uai_grids_14",
-     "uai_grids_15",
-     "uai_grids_16",
-     "uai_grids_17",
-     "uai_grids_18"
-    ],
-    "key": "grids",
-    "title": "grids"
+    "key": "pedigree",
+    "title": "Pedigrees"
    },
    {
     "instances": [
@@ -3948,50 +4100,22 @@
      "uai_objectdetection_75"
     ],
     "key": "objectdetection",
-    "title": "objectdetection"
+    "title": "Object detection"
    },
    {
     "instances": [
-     "uai_pedigree_11",
-     "uai_pedigree_12",
-     "uai_pedigree_13"
+     "uai_grid10x10_f10",
+     "uai_grids_11",
+     "uai_grids_12",
+     "uai_grids_13",
+     "uai_grids_14",
+     "uai_grids_15",
+     "uai_grids_16",
+     "uai_grids_17",
+     "uai_grids_18"
     ],
-    "key": "pedigree",
-    "title": "pedigree"
-   },
-   {
-    "instances": [
-     "uai_promedus_11",
-     "uai_promedus_12",
-     "uai_promedus_13",
-     "uai_promedus_14",
-     "uai_promedus_15",
-     "uai_promedus_16",
-     "uai_promedus_17",
-     "uai_promedus_18",
-     "uai_promedus_19",
-     "uai_promedus_20",
-     "uai_promedus_21",
-     "uai_promedus_22",
-     "uai_promedus_23",
-     "uai_promedus_24",
-     "uai_promedus_25",
-     "uai_promedus_26",
-     "uai_promedus_27",
-     "uai_promedus_28",
-     "uai_promedus_29",
-     "uai_promedus_30",
-     "uai_promedus_31",
-     "uai_promedus_32",
-     "uai_promedus_33",
-     "uai_promedus_34",
-     "uai_promedus_35",
-     "uai_promedus_36",
-     "uai_promedus_37",
-     "uai_promedus_38"
-    ],
-    "key": "promedus",
-    "title": "promedus"
+    "key": "grids",
+    "title": "Grids"
    },
    {
     "instances": [
@@ -4003,15 +4127,35 @@
      "uai_segmentation_16"
     ],
     "key": "segmentation",
-    "title": "segmentation"
+    "title": "Image segmentation"
    },
    {
     "instances": [
-     "uai_alchemy_11",
-     "uai_grid10x10_f10"
+     "uai_dbn_11",
+     "uai_dbn_12",
+     "uai_dbn_13",
+     "uai_dbn_14",
+     "uai_dbn_15",
+     "uai_dbn_16"
     ],
-    "key": "others",
-    "title": "other programs"
+    "key": "dbn",
+    "title": "Dynamic Bayesian networks"
+   },
+   {
+    "instances": [
+     "uai_csp_11",
+     "uai_csp_12",
+     "uai_csp_13"
+    ],
+    "key": "csp",
+    "title": "Constraint satisfaction problems"
+   },
+   {
+    "instances": [
+     "uai_alchemy_11"
+    ],
+    "key": "alchemy",
+    "title": "Markov logic networks"
    }
   ]
  },
