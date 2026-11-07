@@ -1159,3 +1159,35 @@ fn a_chain_written_step_by_step_answers_as_its_recurrence() {
         }
     }
 }
+
+/// A step recursion answers alike with its recursive call written before
+/// its step or after it: the bound-end rewrite reads both alike
+/// (src/ground/linear.rs). `s(p, T)` holds from `h(p, T - 1)`, or from
+/// `s(p, T - 1)` where `q(p, T - 1)` does not hold; by hand,
+/// P(s(p, 2)) = 1 - 0.5 (1 - 0.5 x 0.7) and P(s(p, 3)) = 1 - 0.5 (1 -
+/// P(s(p, 2))).
+#[test]
+fn a_step_recursion_answers_alike_with_its_call_before_its_step() {
+    let s2 = 1.0 - 0.5 * (1.0 - 0.5 * 0.7);
+    let expected = [
+        ("s(p,2)".to_string(), s2),
+        ("s(p,3)".to_string(), 1.0 - 0.5 * (1.0 - s2)),
+    ];
+    for step in [
+        "s(P,T1) :- next(T,T1), s(P,T), \\+ q(P,T).",
+        "s(P,T1) :- s(P,T), \\+ q(P,T), next(T,T1).",
+    ] {
+        let source = format!(
+            "0.5::h(p,0). 0.5::h(p,1). 0.5::h(p,2).\n0.3::q(p,1).\n\
+             next(0,1). next(1,2). next(2,3).\n\
+             s(P,T1) :- h(P,T), next(T,T1).\n{step}\n\
+             query(s(p,2)).\nquery(s(p,3)).\n"
+        );
+        for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+            let what = format!("{step}, {strategy:?}");
+            let run = common::run(&source, &common::options(strategy, Projection::default()))
+                .unwrap_or_else(|e| panic!("{what}: {e}"));
+            assert_answers(&what, &run.results.expect("no evidence"), &expected, 1e-12);
+        }
+    }
+}
