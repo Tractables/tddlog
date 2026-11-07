@@ -1,7 +1,7 @@
 //! The count of the conjunction of two diagrams, one on a projection of
 //! the other's vtree, without building it ([`conjunction_count`]).
 
-use std::cell::Cell;
+use std::cell::{Cell, OnceCell};
 
 use tididi::vtree::VarId;
 
@@ -84,10 +84,52 @@ impl<V: Value> Table<V> {
 
 type Poll<'a> = &'a mut dyn FnMut(u64) -> Result<(), tididi::OperationError>;
 
+/// Multiply-adds per unit of the engine's work clock, beside the unit each
+/// pair a table's loop reads costs ([`work`]).
+const MULTIPLY_ADDS_PER_UNIT: usize = 8;
+
+/// The work of a table's loop over `pairs` pairs, each with a row of `row`
+/// multiply-adds: a unit for each pair it reads, as the engine charges a
+/// product pair, and one for each [`MULTIPLY_ADDS_PER_UNIT`]
+/// multiply-adds. A pair costs its unit however short its row: read from
+/// an implicit level, it is enumerated from the level's description.
+fn work(pairs: usize, row: usize) -> u64 {
+    (pairs + (pairs * row).div_ceil(MULTIPLY_ADDS_PER_UNIT)) as u64
+}
+
+/// What the walks against one evidence formula read of its vtree and
+/// levels, for every query counted against it: the vtree's pre-order spans
+/// ([`spans`]), for the ancestor tests, and the pairs of each internal
+/// level a lift or a product charges for, counted at its first walk
+/// ([`Shape::pairs`]). A level's pairs are counted node by node, which on
+/// an implicit level reads its description.
+pub(crate) struct Shape {
+    spans: Vec<(u32, u32)>,
+    pairs: Vec<OnceCell<usize>>,
+}
+
+impl Shape {
+    pub(crate) fn of(e: &tididi::Tdd) -> Self {
+        let vtree = e.vtree();
+        Shape {
+            spans: spans(vtree),
+            pairs: vec![OnceCell::new(); vtree.num_nodes()],
+        }
+    }
+
+    /// The pairs of level `t` of `e`, the formula it is the shape of,
+    /// counted once: the queries' walks lift through the levels near the
+    /// queries alone, and an evidence formula's other levels may hold most
+    /// of its pairs.
+    fn pairs(&self, e: &tididi::Tdd, t: tididi::vtree::VtreeIdx) -> usize {
+        *self.pairs[t.idx()].get_or_init(|| level_pairs(e, t))
+    }
+}
+
 struct ConjunctionWalk<'a, V> {
     e: &'a tididi::Tdd,
     counted: &'a Counted<V>,
-    spans: &'a [(u32, u32)],
+    shape: &'a Shape,
     f: &'a tididi::Tdd,
     f_counted: &'a Counted<V>,
     image: Vec<Option<tididi::vtree::VtreeIdx>>,
@@ -111,8 +153,8 @@ impl<V: Value> ConjunctionWalk<'_, V> {
     }
 
     fn under(&self, a: tididi::vtree::VtreeIdx, t: tididi::vtree::VtreeIdx) -> bool {
-        self.spans[t.idx()].0 <= self.spans[a.idx()].0
-            && self.spans[a.idx()].0 <= self.spans[t.idx()].1
+        self.shape.spans[t.idx()].0 <= self.shape.spans[a.idx()].0
+            && self.shape.spans[a.idx()].0 <= self.shape.spans[t.idx()].1
     }
 
     /// Each child's table lifted to the child of `t` on its side.
@@ -139,7 +181,7 @@ impl<V: Value> ConjunctionWalk<'_, V> {
             let (x, on) = (w[0], w[1]);
             let (xl, xr) = ev.children(x);
             let (on_left, off) = if on == xl { (true, xr) } else { (false, xl) };
-            poll((level_pairs(self.e, x) * cols) as u64)?;
+            poll(work(self.shape.pairs(self.e, x), cols))?;
             table.fit(self.counted.ranges[off.idx()], true);
             let source = &table;
             self.check(
@@ -203,7 +245,7 @@ impl<V: Value> ConjunctionWalk<'_, V> {
             }),
         )?;
         let cols = self.f_counted.up[s.idx()].len();
-        poll((level_pairs(self.e, t) * f_flat.len()) as u64)?;
+        poll(work(self.shape.pairs(self.e, t), f_flat.len()))?;
         a_table.fit(b_table.range, false);
         b_table.fit(a_table.range, false);
         self.check(a_table.range.times(b_table.range));
@@ -243,7 +285,7 @@ impl<V: Value> ConjunctionWalk<'_, V> {
             self.counted.up[t.idx()].len(),
             self.f_counted.up[s.idx()].len(),
         );
-        poll((rows * level_pairs(self.f, s)) as u64)?;
+        poll(work(level_pairs(self.f, s), rows))?;
         let mut out = Table::new(
             rows,
             cols,
@@ -273,7 +315,7 @@ impl<V: Value> ConjunctionWalk<'_, V> {
         let up_e = &self.counted.up;
         let t = self.image[x.idx()].expect("tested above");
         let (rows, cols) = (up_e[t.idx()].len(), self.f_counted.up[x.idx()].len());
-        poll((rows * cols) as u64)?;
+        poll(work(rows, cols))?;
         // Each entry a count of `e`'s at `t`, or one of `f`'s at `x`
         // times `e`'s weight over `f`'s: under `t`'s power either way.
         let mut table = Table::new(rows, cols, self.counted.exps[t.idx()])?;
@@ -366,8 +408,8 @@ impl<V: Value> ConjunctionWalk<'_, V> {
 
 /// The weighted count of `e ∧ f`, without building the conjunction.
 ///
-/// `e` is counted (`counted`, both passes) on a vtree whose pre-order
-/// `spans` these are; `f` is counted on its own vtree, a projection of
+/// `e` is counted (`counted`, both passes), its vtree and levels read
+/// through `shape` ([`Shape::of`] `e`); `f` is counted on its own vtree, a projection of
 /// `e`'s: `leaf_in_e` maps each of its variables to that variable's leaf
 /// in `e`'s vtree. Every internal node of `f`'s vtree then has an image in
 /// `e`'s, the lowest common ancestor of its leaves' images, and `f`
@@ -404,7 +446,7 @@ impl<V: Value> ConjunctionWalk<'_, V> {
 /// variables.
 ///
 /// The walk is outside the engine's operations, so it reports its own work:
-/// `poll` is called with the multiply-adds of each table before it is
+/// `poll` is called with the work of each table ([`work`]) before it is
 /// computed, and an error from it stops the walk.
 ///
 /// The count comes under a power of two, the sum of those of the levels
@@ -413,7 +455,7 @@ impl<V: Value> ConjunctionWalk<'_, V> {
 pub(crate) fn conjunction_count<V: Value>(
     e: &tididi::Tdd,
     counted: &Counted<V>,
-    spans: &[(u32, u32)],
+    shape: &Shape,
     f: &tididi::Tdd,
     f_counted: &Counted<V>,
     leaf_in_e: impl Fn(VarId) -> Option<tididi::vtree::VtreeIdx>,
@@ -439,7 +481,7 @@ pub(crate) fn conjunction_count<V: Value>(
     let walk = ConjunctionWalk {
         e,
         counted,
-        spans,
+        shape,
         f,
         f_counted,
         image,

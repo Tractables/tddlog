@@ -145,13 +145,6 @@ pub(crate) fn query_probabilities(
     QueryEvaluation::new(gp, backend, compiled).run(gp, backend, compiled, None)
 }
 
-/// Multiply-adds of the dense walk that counts a query against the evidence
-/// ([`crate::eval::conjunction_count`]) per unit of the engine's work clock,
-/// whose unit is about one product pair of a conjunction. The walk does
-/// four to nine times as many multiply-adds a second as the engine does
-/// units, so eight cost about one unit.
-const MULTIPLY_ADDS_PER_UNIT: u64 = 8;
-
 /// State belongs to one immutable ground program, compilation and vtree.
 /// The engine may change between calls, but these three inputs must not,
 /// other than by the formulas the phase takes ([`Self::take_last_reads`]).
@@ -373,7 +366,7 @@ impl QueryEvaluation {
                 sizes.record(sizes.evidence, None)?;
                 if mass.is_none() {
                     let t = Instant::now();
-                    *mass = Some(evidence_mass(backend, e, scope, &w, counted, sizes)?);
+                    *mass = Some(evidence_mass(backend, e, &w, counted, sizes)?);
                     sizes.count_seconds += t.elapsed().as_secs_f64();
                 }
                 let mass = mass.unwrap();
@@ -490,7 +483,7 @@ struct Evidence<'a> {
     mass: Count,
 }
 
-/// The mass of the evidence formula `e` on `scope` under its weights `w`.
+/// The mass of the evidence formula `e` on its scope under its weights `w`.
 /// Where the walk summed the evidence out as it built it (no query reads
 /// it), the mass is the weighted value it left. Otherwise it is the
 /// count's pass up: its levels under powers of two keep a count in floats
@@ -500,7 +493,6 @@ struct Evidence<'a> {
 fn evidence_mass(
     backend: &TddBackend,
     e: &Tdd,
-    scope: &VtreeScope,
     w: &Probabilities,
     counted: &mut Option<CountedEvidence>,
     sizes: &mut QuerySizes,
@@ -521,7 +513,7 @@ fn evidence_mass(
         });
     }
     if counted.is_none() {
-        let c = CountedEvidence::new(e, scope, w, &mut sizes.recounts)?;
+        let c = CountedEvidence::new(e, w, &mut sizes.recounts)?;
         sizes.grid_pairs = c.counted.grid_pairs();
         *counted = Some(c);
     }
@@ -719,7 +711,7 @@ impl Answers<'_> {
                     .expect("a scope's variables are its leaves"),
             )
         };
-        // The walk's multiply-adds charged to the engine's work clock, so a
+        // The walk's work charged to the engine's work clock, so a
         // trial's work budget covers them, once: a walk again in counts is
         // not charged.
         let host = |units: u64| self.backend.engine.limits().poll_host_work(units);
@@ -728,7 +720,7 @@ impl Answers<'_> {
             let p = match &c.counted {
                 Counts::Plain(plain) => joint_ratio(
                     (ev.e, plain),
-                    &c.spans,
+                    &c.shape,
                     (q, &q_w),
                     &leaf_in_e,
                     ev.mass,
@@ -737,7 +729,7 @@ impl Answers<'_> {
                 )?,
                 Counts::Wide(wide) => joint_ratio(
                     (ev.e, wide),
-                    &c.spans,
+                    &c.shape,
                     (q, &q_w),
                     &leaf_in_e,
                     ev.mass,
@@ -808,21 +800,20 @@ struct CountedEvidence {
     counted: Counts,
     /// The routes of a count this one replaced ([`CountedEvidence::widen`]).
     widened: crate::eval::Routes,
-    /// The pre-order spans of the scope's vtree, for the walk's ancestor tests.
-    spans: Vec<(u32, u32)>,
+    /// What the walks of the queries read of the formula's vtree and levels.
+    shape: crate::eval::Shape,
 }
 
 impl CountedEvidence {
     fn new(
         e: &Tdd,
-        scope: &VtreeScope,
         w: &Probabilities,
         recounts: &mut usize,
     ) -> Result<Self, tididi::OperationError> {
         Ok(CountedEvidence {
             counted: crate::eval::count_exact(e, w, recounts)?,
             widened: crate::eval::Routes::default(),
-            spans: crate::eval::spans(scope.vtree()),
+            shape: crate::eval::Shape::of(e),
         })
     }
 
@@ -869,7 +860,7 @@ fn literal_ratio<V: Value>(
 /// finishes sets it.
 fn joint_ratio<V: Value>(
     (e, c): (&Tdd, &Counted<V>),
-    spans: &[(u32, u32)],
+    shape: &crate::eval::Shape,
     (q, q_w): (&Tdd, &Probabilities),
     leaf_in_e: &impl Fn(VarId) -> Option<VtreeIdx>,
     mass: Count,
@@ -878,15 +869,9 @@ fn joint_ratio<V: Value>(
 ) -> Result<Option<f64>, tididi::OperationError> {
     let q_counted = crate::eval::count::<V>(q, q_w)?;
     let charge = !*charged;
-    let poll = |madds: u64| {
-        if charge {
-            host(madds.div_ceil(MULTIPLY_ADDS_PER_UNIT))
-        } else {
-            Ok(())
-        }
-    };
+    let poll = |units: u64| if charge { host(units) } else { Ok(()) };
     let (joint, exact) =
-        crate::eval::conjunction_count(e, c, spans, q, &q_counted, leaf_in_e, poll)?;
+        crate::eval::conjunction_count(e, c, shape, q, &q_counted, leaf_in_e, poll)?;
     *charged = true;
     Ok(exact.then(|| joint.ratio(mass)))
 }

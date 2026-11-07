@@ -35,7 +35,7 @@ use count::*;
 use grid::Grid;
 use number::*;
 
-pub(crate) use conjunction::conjunction_count;
+pub(crate) use conjunction::{Shape, conjunction_count};
 pub use count::{Counted, Routes, count};
 pub(crate) use count::{Counts, count_exact, spans};
 pub use number::{Count, Range, Scaled, Value};

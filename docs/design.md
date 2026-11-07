@@ -2487,10 +2487,20 @@ query is counted against the evidence without a product
 down, and each query's formula, on its own cone vtree, against it in one
 dense table per level, a row per evidence node and a column per query
 node; a memoized walk would reach nearly every pair at a hash entry each.
-The dense count is charged to the work clock at `MULTIPLY_ADDS_PER_UNIT`
-multiply-adds per unit. A query is counted in the polarity asked where
-that costs nothing: a literal of the evidence reads its own leaves, and a
-fact's literal is built as asked. A query of the polarity the formulation
+The dense count is charged to the work clock a unit for each pair a
+table's loop reads, as the engine charges a product pair, and one for
+each `MULTIPLY_ADDS_PER_UNIT` multiply-adds (`eval::conjunction::work`):
+a pair read off an implicit level is enumerated from its description,
+which costs more than a short row's multiply-adds. On cora8000 read back
+from its ground program, the walks of its 8 000 queries read a pair in
+about 7 ns, with rows of about one column; charged by their
+multiply-adds alone, `families:0` spent 130 s of query products within
+a first turn of 2^31 units, where `closed` answers in 0.2 s. The evidence's
+vtree spans are read once for all its queries, and each level's pairs
+once, at the first walk that reads them (`eval::Shape`). A query is
+counted in the polarity asked where that costs nothing: a literal of the
+evidence reads its own leaves, and a fact's literal is built as asked. A
+query of the polarity the formulation
 does not store is `1 - m` from the stored formula's count `m`, except
 where `1 - m` is under `eval::COMPLEMENT_FLOOR` (1e-4): the subtraction
 keeps the count's absolute error, some 1e-14, and a posterior of 2.8e-121
