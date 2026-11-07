@@ -111,6 +111,9 @@ pub(in crate::ground) struct Propagation<'a> {
     /// zero and empty between calls.
     in_rules: Vec<u32>,
     shared: Vec<GLit>,
+    /// The true atoms an atom's value killed rules of, as it is
+    /// propagated, each tested once after them all.
+    due: Vec<AtomId>,
 }
 
 impl<'a> Propagation<'a> {
@@ -159,6 +162,7 @@ impl<'a> Propagation<'a> {
             work: 0,
             in_rules: vec![0; 2 * n],
             shared: Vec::new(),
+            due: Vec::new(),
         }
     }
 
@@ -299,6 +303,7 @@ impl<'a> Propagation<'a> {
             // The counters first, and then what they leave: an atom's
             // counters change all at once, which `undo` takes back whole.
             self.fired.clear();
+            self.due.clear();
             self.work += self.readers[a as usize].len() as u64;
             for &(ri, l) in &self.readers[a as usize] {
                 if self.killer[ri as usize] != u32::MAX {
@@ -327,10 +332,20 @@ impl<'a> Propagation<'a> {
                 } else {
                     match (self.live[h as usize], self.val[h as usize]) {
                         (0, _) => self.assign(h, false)?,
-                        (_, Val::True) => self.shared_literals_hold(h)?,
+                        (_, Val::True) => self.due.push(h),
                         _ => {}
                     }
                 }
+            }
+            // A value that kills many of a true atom's rules, as a parent's
+            // value kills half the rows of a table whose head is observed,
+            // would otherwise count the live rules' shared literals once per
+            // rule it kills.
+            self.due.sort_unstable();
+            self.due.dedup();
+            for i in 0..self.due.len() {
+                let h = self.due[i];
+                self.shared_literals_hold(h)?;
             }
             if !derived {
                 continue;
