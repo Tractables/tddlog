@@ -3168,6 +3168,7 @@ the same model) has the class of the program it is written from.
 | pita | std | `bloodtype$` | own | cplint's blood type example, which PITA ships |
 | provsql | tpch | all | own | the TPC-H queries, ProvSQL's own evaluation |
 | dice | dice | all | own | the Dice paper's programs and networks (OOPSLA 2020) and its repository's loops |
+| dice | roulette | `rl_(diamond\|ladder)_` | own | the Dice paper's diamond and ladder networks (OOPSLA 2020) |
 | alea | bitblast | all | own | the bit-blasting paper's programs (PLDI 2024), Alea.jl's own |
 | alea | ppl | `arith_` | own | Cao et al.'s integer programs (UAI 2023), on Alea.jl's arithmetic branch |
 | roulette | roulette | all | own | the Roulette paper's programs and networks (PLDI 2025), from its artifact |
@@ -3222,9 +3223,8 @@ the same model) has the class of the program it is written from.
 | tddlog | lit | `cplint_` | native | cplint's example, an LPAD, read by tddlog's LPAD reader |
 | tddlog, problog, pita, aspmc | lit | `cplint_` | translated | cplint's LPAD translated by lpad2problog.py, or tddlog --program, the same program, in the runs since tddlog reads LPADs itself |
 | pita | std, lit, tpch, biomine | all | translated | the ProbLog program translated by problog2pita.py |
-| tddlog | std, dice | `dice_(?!(caesar-iter\|simpleCaesar\|pmc))` | native | the Dice paper's program, read by tddlog's Dice reader |
+| tddlog | std, dice | `dice_` | native | the Dice paper's program, read by tddlog's Dice reader |
 | tddlog | ppl | `nodice_` | native | noDice's programs, which are Dice programs, read by tddlog's Dice reader |
-| tddlog | dice | `dice_(caesar-iter_k[13]0{4,}\|simpleCaesar_k(3000\|[13]0{4,})\|pmc1_k(150\|300\|600)\|pmc2_k(200\|400\|800\|1600))$` | native | the Dice paper's loop programs at their growth sizes, read by tddlog's Dice reader |
 | tddlog, problog, pita, aspmc | std | `dice_` | translated | the Dice paper's program translated line for line by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | std, lit, tpch, biomine | all | native | a ProbLog program |
 | provsql | lit | all | translated | tuple-independent tables and non-recursive views (tpch2provsql.py) |
@@ -3239,6 +3239,7 @@ the same model) has the class of the program it is written from.
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | std, lit, tpch, biomine | all | translated | Dice programs of the ground program (ground2net.py) |
 | dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
 | nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
+| nodice | roulette | `rl_(diamond\|ladder)_` | native | the Dice paper's diamond and ladder, which noDice reads as they are |
 | alea | ppl | `pluck_` | translated | the Dice.jl versions of Pluck's sequence models in the paper's artifact, ported to Alea.jl (Pluck's own programs are the models) |
 | alea-tddlog | ppl | `pluck_` | translated | the Alea.jl port of Pluck's sequence model (Pluck's own programs are the models), which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog as ProbLog (Alea.jl's tddlog backend) |
 | alea, alea-tddlog | roulette | `rl_diamond_` | native | the diamond of Alea.jl's tour at the instance's size (data/alea/verification/diamond.jl), which Alea.jl runs up to the Boolean circuit it builds, handed to tddlog by Alea.jl+tddlog |
@@ -3633,8 +3634,15 @@ network in BIF, Hugin, GeNIe, XMLBIF or UAI counts as native to every
 system that reads one of these formats), and the translations into its
 language whose output is a program a user of that language would write
 for the model. A translation that is not idiomatic keeps the instance in
-the system's coverage and leaves it out of the headline. Five cases are
-settled in advance:
+the system's coverage and leaves it out of the headline.
+
+A translation keeps the order of its source. A translation of a first- or
+higher-order program is idiomatic only if it is itself first- or
+higher-order, unless the target language cannot express the source at
+that level, where the ground program is idiomatic: a network format; Dice,
+which has no relations and no recursion over data; Geni's language, which
+has no loops. A ground source (a network, a circuit, a netlist) may be
+translated ground. Within that rule, five cases are settled in advance:
 
 - a language with first-order rules (the ProbLog family, Scallop,
   PSouffle) is given a first-order program written from the source, never
@@ -3699,8 +3707,8 @@ Three sets of instances recur in the table:
 | `gen_geni.py --dice`, `--gir` | Dice, noDice; Geni | `geni` | yes | Geni's own programs: its surface programs in Dice's syntax, and its intermediate language |
 | `ground2net.py --format dice`, `--format dicemap` | Dice, noDice | `lit`, `std`, `tpch`, `biomine`; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` | yes | Dice has no relations and no recursion over data: the ground program as a `let` per gate (`let n92 = n2 && n62 in`), one program per query, what a Dice user writes out for a ground program |
 | `ground2net.py --format dice`, then `dice2geni.py`, `dice2genfer.py`, `dice2prism.py` | Geni, Genfer, Storm, PRISM | `lit`, `std`, `tpch`, `biomine`; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` | yes | Geni's intermediate language, Genfer's language and a PRISM module have no relations or recursion over data either: the gates written out |
-| `ground2net.py --format dice`, then `dice2pluck.py`, `dice2psi.py`, `dice2roulette.py`, `dice2sppl.py` | Pluck, Psi, Roulette, SPPL | `tpch` for Pluck and Psi; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` for Psi, Roulette and SPPL | no | each language has loops or recursion over data (Pluck's recursive functions over lists, Psi's arrays and `for` loops, Roulette's `for/fold` and recursion, SPPL's `for`): a user writes the model over the program's facts, not a list of anonymous gates |
-| `problog2ppl.py` | Alea.jl, Roulette, WebPPL, SPPL, Pluck, Psi | `lit`, `std`, `tpch`, `biomine` for Alea.jl, Roulette, WebPPL and SPPL; `lit`, `std`, `biomine` for Pluck and Psi | yes | the program first order over its facts (section 30): a relation a table of the rows of a facts file, a rule a loop over the relations its body joins, a recursive component a loop of stages to its fixpoint (in Pluck and Psi the rows held in the program), as a user of these languages writes a Datalog program over a database |
+| `ground2net.py --format dice`, then `dice2pluck.py`, `dice2psi.py`, `dice2roulette.py`, `dice2sppl.py`, `dice2webppl.py` | Pluck, Psi, Roulette, SPPL, WebPPL | `tpch` for Pluck and Psi; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` for Psi, Roulette and SPPL, `pluck_sorted_list` for WebPPL | no | each language has loops or recursion over data (Pluck's recursive functions over lists, Psi's arrays and `for` loops, Roulette's `for/fold` and recursion, SPPL's `for`, WebPPL's recursive functions): a user writes the model over the program's facts, not a list of anonymous gates |
+| `problog2ppl.py` | Alea.jl, Roulette, WebPPL, SPPL, Pluck, Psi | `lit`, `std`, `tpch`, `biomine` for Alea.jl, Roulette, WebPPL, SPPL and Pluck; `lit`, `std`, `biomine` for Psi | yes | the program first order over its facts (section 30): a relation a table of the rows of a facts file, a rule a loop over the relations its body joins, a recursive component a loop of stages to its fixpoint (in Pluck and Psi the rows held in the program), as a user of these languages writes a Datalog program over a database |
 | `dice2alea.py` | Alea.jl | `dice`, `ppl`, `geni`, `roulette`, the network suites | yes, as its source | integers as `DistUInt`, Dice's iterations as `for` loops, `ifelse`: the form of Alea.jl's own programs |
 | `dice2roulette.py` | Roulette | `dice`, `ppl`, `geni`, the Markov networks of the network suites | yes, as its source | an integer as a list of Booleans with a ripple-carry adder, as Roulette's own caesar and network programs hold their bit vectors, and iterations as `for/fold` |
 | `dice2psi.py` | Psi | `dice`, `ppl`, `geni`, `roulette`, the network suites | yes, as its source | functions, `categorical`, `for` loops and integer arithmetic; one program per component of the value |
@@ -3788,8 +3796,13 @@ integers cannot hold, and `//` and `mod`, which this translation does not write 
 Pluck is a lazy functional language over algebraic data, with recursion
 and lists and no loops, tables or files: the program holds its facts too.
 A relation is a list of its tuples, each paired with whether it holds; a
-symbol is a constructor of its own, compared by `constructor=?`, and an
-integer one of Pluck's naturals, compared by `==`; a rule is a
+symbol is a constructor of its own, compared by `constructor=?`, and so is
+an integer that the program only compares for equality (a key), as a user
+writes a symbol; an integer used in arithmetic is one of Pluck's naturals,
+compared by `==`. Integers that are only compared, by order too, are
+written as their ranks among the values they are compared with, as a user
+would write a day number in place of yyyymmdd; the translation is the
+harness's and its time is not charged to Pluck. A rule is a
 `concat_map` over the relations its body joins, a tuple looked up by a
 scan; a recursive component is a recursion (Pluck's `Y`) over its stages.
 A probabilistic fact is a `flip`, an annotated disjunction a chain of
@@ -3800,12 +3813,12 @@ and until a stage adds no tuple. Query K is the program's `cK`,
 `(Posterior QUERY EVIDENCE)` (`Marginal` without evidence), and
 `pluck_dice.jl` runs them all in one process, as on the Dice programs
 (section 12). Pluck's naturals are unary, `(S (S ... (O)))`, so an
-integer above 10000 is refused (`translator:`). This leaves out TPC-H,
-whose dates are integers such as 19980124. Also refused: a negative
-integer, a number that is not an integer, an operation other than `+`,
-`-`, `*` and `mod`, a position of a relation that holds both symbols and
-integers, and an annotated disjunction over several predicates in a
-recursion. Pluck's `-` stops at zero where ProbLog's goes below it, so a
+integer above 10000 in arithmetic, or more than 10001 integers compared
+with each other, is refused (`translator:`). Also refused: a negative
+integer in arithmetic, a number that is not an integer, an operation other
+than `+`, `-`, `*` and `mod`, a position that holds symbols and is
+compared by order or used in arithmetic, and an annotated disjunction over
+several predicates in a recursion. Pluck's `-` stops at zero where ProbLog's goes below it, so a
 program whose subtraction goes below zero would be answered wrong and
 counted so.
 

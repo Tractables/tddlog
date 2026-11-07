@@ -123,11 +123,38 @@ class Translation(unittest.TestCase):
                       translate('pluck', PATHS + 'evidence(edge(a, b), true).\n')[0])
         for program, why in [('0.5::p(1.5). query(p(1.5)).', 'not an integer'),
                              ('0.5::e(4). p(Y) :- e(X), Y is X // 2. query(p(2)).', 'integer operation //'),
-                             ('0.5::e(a). 0.5::e(1). query(e(a)).', 'both symbols and integers'),
-                             ('0.5::e(20000). query(e(20000)).', 'above 10000')]:
+                             ('0.5::e(a). 0.5::e(1). p :- e(X), X > 0. query(p).', 'holds symbols and is compared'),
+                             ('0.5::e(20000). p(Y) :- e(X), Y is X + 1. query(p(20001)).', 'above 10000 in arithmetic'),
+                             ('0.5::e(3). p(Y) :- e(X), Y is X * -2. query(p(0)).', 'negative integer in arithmetic')]:
             with self.assertRaises(Refused) as e:
                 translate('pluck', program)
             self.assertIn(why, str(e.exception))
+
+    def test_pluck_writes_keys_as_constructors_and_compared_integers_as_ranks(self):
+        # TPC-H's shape: keys only joined, a date column compared with a constant that no fact holds
+        program = ('0.6::ship(1, 19950315). 0.7::ship(2, 19960101). 0.5::ship(3, 19940101).\n'
+                   '0.4::order(1, 100000). 0.3::order(2, 100001). 0.2::order(3, 100000).\n'
+                   'late(O) :- order(O, _), ship(O, D), D >= 19950201.\n'
+                   'q :- late(_).\nquery(q). query(late(2)).\n')
+        text, _, _ = translate('pluck', program)
+        self.assertIn('(define-type sym (c_1) (c_2) (c_3) (c_100000) (c_100001))', text)
+        ranks = problog2ppl.Pluck(problog2ppl.read(program), 'p.pl').ranks
+        self.assertEqual(list(ranks.values()), [{19940101: 0, 19950201: 1, 19950315: 2, 19960101: 3}])
+        self.assertIn('(Pair (T2 (c_1) 2) (Chance 0.6))', text)
+        self.assertIn('(Pair (T2 (c_3) 0) (Chance 0.5))', text)
+        self.assertIn('(>= vD 1)', text)   # 19950201, which no fact holds, between the dates it parts
+        self.assertIn('(T1 (c_2))', text)   # the query's key a constructor
+        # the program with each date its rank answers as the program does
+        ranked = program
+        for v, r in ranks[next(iter(ranks))].items():
+            ranked = ranked.replace(str(v), str(r))
+        want = [1 - (1 - 0.4 * 0.6) * (1 - 0.3 * 0.7), 0.3 * 0.7]
+        for p in (program, ranked):
+            for got, w in zip(sppl_answers(translate('sppl', p)[0]), want):
+                self.assertAlmostEqual(got, w)
+        # a class that meets arithmetic keeps its values: no ranks
+        self.assertEqual(problog2ppl.Pluck(problog2ppl.read(
+            '0.5::e(3). p(Y) :- e(X), X > 1, Y is X + 1. query(p(4)).'), 'p.pl').ranks, {})
 
     def test_sppl_programs_compute_their_joins_before_their_samples(self):
         text, _, _ = translate('sppl', PATHS, 'paths.pl')
@@ -221,6 +248,36 @@ class Translation(unittest.TestCase):
         with self.assertRaises(Refused) as e:
             translate('alea', '0.5::p(X) :- X > 1.\nq :- p(_).\nquery(q).\n')
         self.assertIn('leaves an argument', str(e.exception))
+
+    def test_an_anonymous_head_variable_is_evaluated_for_its_callers_arguments(self):
+        # Pluck's sorted list: `list(N, _) :- elements(N), ends(N).`, called with its second argument bound
+        program = ('0.4::ends(1).\n0.3::ok(0).\nat(0, 3).\n'
+                   'list(1, _) :- ends(1).\n'
+                   'list(I, Min) :- at(I, V), V >= Min, ok(I), I1 is I + 1, list(I1, V).\n'
+                   'query(list(0, 2)).\nquery(list(1, 7)).\n')
+        for lang in problog2ppl.LANGS:
+            text, _, queries = translate(lang, program)
+            self.assertIn('demand_', text, lang)
+            self.assertEqual(queries, ['list(0,2)', 'list(1,7)'], lang)
+        # list(0, 2) through ok(0) and list(1, 3), list(1, 7) on ends(1) alone
+        for got, want in zip(sppl_answers(translate('sppl', program)[0]), [0.3 * 0.4, 0.4]):
+            self.assertAlmostEqual(got, want)
+
+    def test_a_head_variable_a_test_reads_before_the_recursive_call_is_demanded(self):
+        # Pluck's sorted list's step: D is bound only by the recursive call, which K < D bounds
+        program = ('0.5::stops(K) :- between(0, 3, K).\n'
+                   'step(D, D) :- stops(D).\n'
+                   'step(K, D) :- K < D, \\+stops(K), K1 is K + 1, step(K1, D).\n'
+                   'query(step(0, 2)).\n')
+        prog = problog2ppl.read(program)
+        self.assertEqual([r.heads[0][0][1] for r in prog.rules if r.demand][:1], [2])   # demand_N(K, D)
+        for lang in problog2ppl.LANGS:
+            self.assertIn('demand_', translate(lang, program)[0], lang)
+        self.assertAlmostEqual(sppl_answers(translate('sppl', program)[0])[0], 0.5 ** 3)
+        # and the port itself, in the languages its logic-program route gives it in
+        port = (scripts.parent / 'data' / 'alea' / 'pluck' / 'sorted_list.pl').read_text()
+        for lang in ('roulette', 'webppl', 'psi', 'sppl'):
+            self.assertEqual(translate(lang, port)[2], ['generated'], lang)
 
     def test_refusals(self):
         for program, why in [('p([1, 2]). query(p(_)).', ''),

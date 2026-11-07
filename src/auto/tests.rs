@@ -1004,6 +1004,47 @@ fn a_weighted_trials_horizon_is_that_of_its_level() {
 }
 
 #[test]
+fn a_trial_that_loses_its_bet_at_a_kept_step_takes_its_turns_at_its_level() {
+    // A weighted families trial at its first target, stopped by the bet
+    // just past its estimate's work, beside an unweighted trial at its
+    // first target.
+    let laid = Kind::Families { search: false };
+    let w = 100 * WORK_PER_ESTIMATED_PAIR;
+    let first = 1u64 << 28;
+    let stopped = |lost| {
+        let mut t = with_estimate(laid, 100.0, FAMILIES_WEIGHT, w + 1);
+        (t.target, t.lost) = (FAMILIES_WEIGHT * first, lost);
+        assert!(overspent_estimate(&t));
+        t.lose_weight();
+        t
+    };
+    let level = Trial {
+        target: first,
+        ..Trial::new(Kind::Closed)
+    };
+    // Stopped at a step it kept, it lost nothing: the bet ended the
+    // attempt before its turn did, and it takes its next turn at the
+    // other's level, not three doublings behind it (Circulette's mac5,
+    // whose `families:0` answers in 2.7e8 units where `closed` took 5.6e9).
+    let kept = stopped(0);
+    assert_eq!((kept.weight, kept.target), (1, first));
+    assert_eq!(kept.key(0.0), level.key(0.0));
+    // Where the guard cut an operation short, that operation outgrew the
+    // whole bet: the trial keeps its target (Roulette's caesar).
+    let cut = stopped(w);
+    assert_eq!((cut.weight, cut.target), (1, FAMILIES_WEIGHT * first));
+    assert_eq!(
+        cut.key(0.0),
+        level.key(0.0) + (FAMILIES_WEIGHT as f64).log2()
+    );
+    // Its target stays past what it has spent.
+    let mut spent = with_estimate(laid, 100.0, FAMILIES_WEIGHT, 3 * first);
+    spent.target = FAMILIES_WEIGHT * first;
+    spent.lose_weight();
+    assert_eq!((spent.weight, spent.target), (1, 4 * first));
+}
+
+#[test]
 fn a_searched_layout_that_would_not_search_is_not_built() {
     let gp = regress(include_str!("../../examples/bn_split.pl"));
     let programs = Programs {

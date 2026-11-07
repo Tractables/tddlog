@@ -67,9 +67,11 @@ The languages differ in how a tuple's holding is held:
   entry a run, since Psi prints the joint distribution of what it returns.
 - Pluck is lazy and functional, with algebraic data and recursion and no
   loops or tables: a relation is a list of (tuple, holding) pairs, a tuple
-  a constructor of its arity, a symbol a constructor of its own and an
-  integer one of Pluck's unary naturals (so that a position holds symbols
-  or integers, not both, and integers up to Pluck.LIMIT); a rule is a
+  a constructor of its arity, a symbol or an integer only compared for
+  equality (a key) a constructor of its own, an integer only compared, by
+  order too, its rank among the integers it is compared with, and one in
+  arithmetic one of Pluck's unary naturals, up to Pluck.LIMIT
+  (Pluck.kinds); a rule is a
   `concat_map` over the relations its body joins, a tuple is looked up by
   a scan, and a recursive component's stages are a recursion that carries
   the coins of its probabilistic rules by instance. Pluck compiles each
@@ -95,7 +97,9 @@ A clause whose head has a variable that its callers bind and its body does
 not (ProbLog grounds from the queries: `weather(sun,T) <- T>0, Tprev is
 T-1, weather(sun,Tprev).` asked weather(sun,10)) is evaluated for the
 arguments it is called with, a relation of them that its body reads first
-(`demand`, magic sets); a tuple of it holds in every world.
+(`demand`, magic sets); a tuple of it holds in every world. An anonymous
+variable in a head is such a variable (`list(N, _) :- elements(N),
+ends(N).`), named as no other variable of its clause is.
 
 A program the translation cannot be given exits with status 3 (bench.py's
 REFUSED) and the reason; a reason that begins `translator:` is this
@@ -104,6 +108,7 @@ ground, a negation through recursion, whose well-founded model the
 languages could compute and this translation does not).
 """
 from decimal import Decimal
+import itertools
 import os
 import re
 import sys
@@ -284,8 +289,6 @@ def plan(heads, body, preds):
                 raise Refused('arithmetic in the head of a clause (a compound term in ProbLog)')
             if t[0] == 'var' and t[1] not in bound:
                 raise Refused(f'the variable {t[1]} of {what} that its body does not bind')
-            if t[0] == 'anon':
-                raise Refused(f'an anonymous variable in the head of {what}')
     return steps
 
 
@@ -363,51 +366,74 @@ def demand(clauses, queries, evidence):
     negations) its rule's body. A tuple of demand_n holds whatever the
     coins (Rule.demand): it is an argument a call may ask for, the rule's
     instance for it holding as the clause's does, so that the answers are
-    ProbLog's."""
+    ProbLog's. A head variable that the body binds only after a call, which
+    a test before the call reads (`step(I,K,D) :- K < D, K1 is K+1,
+    step(I,K1,D).`, D bound by the recursive call), is demanded too, so
+    that the call's demand reads the test."""
     unsafe = {}
     for n, (heads, _, body) in enumerate(clauses):
         free = dict.fromkeys(v for h in heads for t in h[1] for v in sorted(term_vars(t)) if v not in bound_by(body))
         if free:
             unsafe[n] = list(free)
-    if not unsafe:
-        return clauses, set()
-    names = {f'{DEMAND}{n + 1}' for n in unsafe}
-    if any(h[0] in names for heads, _, _ in clauses for h in heads):
-        raise Refused(f'translator: a predicate named {DEMAND}N, the name of a relation of the demand')
+    while unsafe:
+        names = {f'{DEMAND}{n + 1}' for n in unsafe}
+        if any(h[0] in names for heads, _, _ in clauses for h in heads):
+            raise Refused(f'translator: a predicate named {DEMAND}N, the name of a relation of the demand')
 
-    def guard(n):
-        return ('pos', (f'{DEMAND}{n + 1}', [('var', v) for v in unsafe[n]]))
-    calls = {}   # a predicate: (n, the positions of unsafe[n]'s variables in its head)
-    for n, free in unsafe.items():
-        for h in clauses[n][0]:
-            at = {}
-            for i, t in enumerate(h[1]):
-                if t[0] == 'var':
-                    at.setdefault(t[1], i)
-            if not set(free) <= set(at):
-                raise Refused(f'translator: a variable of an annotated disjunction of {h[0]}/{len(h[1])} '
-                              'that is bound by its callers and not in each head')
-            # an annotated disjunction's heads of one predicate call it once
-            entry = (n, [at[v] for v in free])
-            if entry not in calls.setdefault(key(h), []):
-                calls[key(h)].append(entry)
-    out = []
-    for atom in list(queries) + [a for a, _ in evidence]:
-        for n, at in calls.get(key(atom), []):
-            out.append(([(f'{DEMAND}{n + 1}', [atom[1][i] for i in at])], None, []))
-    for m, (_, _, body) in enumerate(clauses):
-        before = [guard(m)] if m in unsafe else []
-        for lit in body:
-            for n, at in calls.get(key(lit[1]), []) if lit[0] in ('pos', 'not') else []:
-                args = [lit[1][1][i] for i in at]
-                if any(t[0] == 'anon' for t in args):
-                    raise Refused(f'translator: a call of {lit[1][0]}/{len(lit[1][1])} that leaves an argument '
-                                  'its clause needs unbound')
-                out.append(([(f'{DEMAND}{n + 1}', args)], None, list(before)))
-            if lit[0] != 'not':
-                before.append(lit)
-    return [(heads, probs, [guard(n)] + body if n in unsafe else body)
-            for n, (heads, probs, body) in enumerate(clauses)] + out, names
+        def guard(n):
+            return ('pos', (f'{DEMAND}{n + 1}', [('var', v) for v in unsafe[n]]))
+        calls = {}   # a predicate: (n, the positions of unsafe[n]'s variables in its head)
+        for n, free in unsafe.items():
+            for h in clauses[n][0]:
+                at = {}
+                for i, t in enumerate(h[1]):
+                    if t[0] == 'var':
+                        at.setdefault(t[1], i)
+                if not set(free) <= set(at):
+                    raise Refused(f'translator: a variable of an annotated disjunction of {h[0]}/{len(h[1])} '
+                                  'that is bound by its callers and not in each head')
+                # an annotated disjunction's heads of one predicate call it once
+                entry = (n, [at[v] for v in free])
+                if entry not in calls.setdefault(key(h), []):
+                    calls[key(h)].append(entry)
+        out, more = [], {}
+        for atom in list(queries) + [a for a, _ in evidence]:
+            for n, at in calls.get(key(atom), []):
+                out.append(([(f'{DEMAND}{n + 1}', [atom[1][i] for i in at])], None, []))
+        for m, (heads, _, body) in enumerate(clauses):
+            before = [guard(m)] if m in unsafe else []
+            mine = {v for h in heads for t in h[1] for v in term_vars(t)}
+            for lit in body:
+                for n, at in calls.get(key(lit[1]), []) if lit[0] in ('pos', 'not') else []:
+                    args = [lit[1][1][i] for i in at]
+                    if any(t[0] == 'anon' for t in args):
+                        raise Refused(f'translator: a call of {lit[1][0]}/{len(lit[1][1])} that leaves an argument '
+                                      'its clause needs unbound')
+                    out.append(([(f'{DEMAND}{n + 1}', args)], None, list(before)))
+                    tested = set().union(*(term_vars(t) for x in before if x[0] != 'pos' for t in x[1:]
+                                           if isinstance(t, tuple)))
+                    more.setdefault(m, set()).update((tested - bound_by(before)) & mine)
+                if lit[0] != 'not':
+                    before.append(lit)
+        more = {m: sorted(vs) for m, vs in more.items() if vs}
+        if not more:
+            return [(heads, probs, [guard(n)] + body if n in unsafe else body)
+                    for n, (heads, probs, body) in enumerate(clauses)] + out, names
+        for m, vs in more.items():
+            unsafe[m] = unsafe.get(m, []) + vs
+    return clauses, set()
+
+
+def named_heads(clause):
+    """The clause, each anonymous variable of its heads a variable of its
+    own, named as no variable of the clause is (`list(N, _) :- elements(N),
+    ends(N).`), so that `demand` evaluates it for the arguments its callers
+    ask, as ProbLog grounds it."""
+    heads, probs, body = clause
+    taken = set(p2s.clause_variables(heads, body))
+    names = (f'Anon{k}' for k in itertools.count(1) if f'Anon{k}' not in taken)
+    return [(name, [('var', next(names)) if t[0] == 'anon' else t for t in args])
+            for name, args in heads], probs, body
 
 
 def read(text):
@@ -430,7 +456,7 @@ def read(text):
         alts = [(p, h) for p, h in alts if p > 0]
         if alts:
             clauses.append(([h for _, h in alts], [p for p, _ in alts], body))
-    clauses, demanded = demand(clauses, queries, evidence)
+    clauses, demanded = demand([named_heads(c) for c in clauses], queries, evidence)
     preds = dict(facts)
     for heads, _, _ in clauses:
         for h in heads:
@@ -1675,36 +1701,22 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
         super().__init__(prog, source)
         self.rel = idents(prog.preds, self.RESERVED, self.OWN)
         self.kinds(prog)
-        syms = set()
-        for k, rows in prog.preds.items():
-            for args in rows:
-                syms.update(t[1] for t in args if t[0] == 'sym')
-        for r in prog.rules:
-            for _, args in r.heads:
-                syms.update(t[1] for t in args if t[0] == 'sym')
-            for s in r.steps:
-                if isinstance(s, Atom):
-                    syms.update(role[1][1] for role in s.roles if role[0] == 'const' and role[1][0] == 'sym')
-                else:
-                    syms.update(t[1] for t in s[2:] if isinstance(t, tuple) and t[0] == 'sym')
-        for a in list(prog.queries) + [a for a, _ in prog.evidence]:
-            syms.update(t[1] for t in a[1] if t[0] == 'sym')
-        self.sym, taken = {}, set()
-        for s in sorted(syms):
-            base = 'c_' + re.sub(r'\W', '_', s)
-            name, n = base, 1
-            while name in taken:
-                n += 1
-                name = f'{base}_{n}'
-            taken.add(name)
-            self.sym[s] = name
 
     def kinds(self, prog):
-        """Whether each relation's position and each rule's variable holds
-        symbols or integers: Pluck compares a symbol by its constructor
-        (`constructor=?`) and a natural by its value (`==`), and a position
-        holding both is refused."""
-        parent, kind, fresh = {}, {}, [0]
+        """How each relation's position and each rule's variable holds its
+        values, by the class of the positions the program unifies or
+        compares with it (`mode`), and the names of the constructors
+        (`sym`). A class that meets arithmetic (an operation or a range)
+        holds Pluck's naturals, the integers' values (`nat`); one whose
+        integers are only compared, by order too, holds the ranks of its
+        integers among them, from 0 (`rank`), which keep every comparison,
+        as a user writes a day number in place of yyyymmdd; any other holds
+        constructors (`con`): its symbols, and its integers, which the
+        program compares only for equality (keys), each a constructor of its
+        own, as a user writes a symbol. Pluck compares a constructor by
+        `constructor=?` and a natural by its value (`==`); a class holding
+        symbols and naturals is refused."""
+        parent, kind, fresh, consts = {}, {}, [0], []
 
         def find(x):
             parent.setdefault(x, x)
@@ -1727,15 +1739,9 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
                 return ('var', r, t[1])
             fresh[0] += 1
             x = ('term', fresh[0])
-            if t[0] == 'sym':
-                mark(x, 'sym')
-            elif t[0] == 'int':
-                if t[1] < 0:
-                    raise Refused('translator: a negative integer, which Pluck\'s naturals do not hold')
-                if t[1] > self.LIMIT:
-                    raise Refused(f'translator: an integer above {self.LIMIT}, which Pluck holds in unary, '
-                                  '(S (S ... (O)))')
-                mark(x, 'int')
+            if t[0] in ('sym', 'int'):
+                mark(x, t[0])
+                consts.append((x, t))
             elif t[0] == 'num':
                 raise Refused('translator: a number that is not an integer, which Pluck\'s naturals do not hold')
             elif t[0] == 'neg':
@@ -1743,20 +1749,21 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
             elif t[0] == 'op':
                 if t[1] not in self.ARITH:
                     raise Refused(f'translator: the integer operation {t[1]} in Pluck')
-                mark(x, 'int')
+                mark(x, 'arith')
                 for u in t[2:]:
-                    mark(node(u, r), 'int')
+                    mark(node(u, r), 'arith')
             return x
         for k, rows in prog.preds.items():
             for args in rows:
                 for i, t in enumerate(args):
                     union(('col', k, i), node(t, None))
+        self.test_at = {}   # (rule, step): a node of the class of a test's two sides
         for r in prog.rules:
             n = r.number
             for h, args in r.heads:
                 for i, t in enumerate(args):
                     union(('col', h, i), node(t, n))
-            for s in r.steps:
+            for j, s in enumerate(r.steps):
                 if isinstance(s, Atom):
                     for i, role in enumerate(s.roles):
                         if role[0] == 'const':
@@ -1766,29 +1773,68 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
                 elif s[0] == 'test':
                     a, b = node(s[2], n), node(s[3], n)
                     union(a, b)
-                    if s[1] not in ('eq', 'neq'):
-                        mark(a, 'int')
+                    self.test_at[n, j] = a
+                    if s[1] not in ('eq', 'neq'):   # an order or an arithmetic comparison (=:=)
+                        mark(a, 'order')
                 elif s[0] == 'let':
                     union(('var', n, s[1]), node(s[2], n))
                 else:
-                    mark(('var', n, s[1]), 'int')
-                    mark(node(s[2], n), 'int')
-                    mark(node(s[3], n), 'int')
+                    mark(('var', n, s[1]), 'arith')
+                    mark(node(s[2], n), 'arith')
+                    mark(node(s[3], n), 'arith')
         for a in list(prog.queries) + [a for a, _ in prog.evidence]:
             for i, t in enumerate(a[1]):
                 union(('col', key(a), i), node(t, None))
-        for x in list(parent):
-            if kind.get(find(x), set()) == {'sym', 'int'}:
-                what = f'{x[1][0]}/{x[1][1]}' if x[0] == 'col' else 'a variable'
-                raise Refused(f'translator: a position of {what} that holds both symbols and integers, which '
-                              "Pluck's values do not mix")
-        self.kind_of = lambda x: 'int' if 'int' in kind.get(find(x), set()) else 'sym'
 
-    def const(self, t):
-        if t[0] == 'int':
+        def mode(x):
+            marks = kind.get(find(x), set())
+            return 'nat' if 'arith' in marks else 'rank' if 'order' in marks else 'con'
+        for x in list(parent):
+            if 'sym' in kind.get(find(x), set()) and mode(x) != 'con':
+                what = f'{x[1][0]}/{x[1][1]}' if x[0] == 'col' else 'a variable'
+                raise Refused(f'translator: a position of {what} that holds symbols and is compared by order or '
+                              "used in arithmetic, which Pluck's values do not mix")
+        domains, cons = {}, set()
+        for x, t in consts:
+            if t[0] == 'sym' or mode(x) == 'con':
+                cons.add(t)
+            elif mode(x) == 'rank':
+                domains.setdefault(find(x), set()).add(t[1])
+            elif t[1] < 0:
+                raise Refused('translator: a negative integer in arithmetic, which Pluck\'s naturals do not hold')
+            elif t[1] > self.LIMIT:
+                raise Refused(f'translator: an integer above {self.LIMIT} in arithmetic, which Pluck holds in '
+                              'unary, (S (S ... (O)))')
+        self.ranks = {c: {v: i for i, v in enumerate(sorted(vs))} for c, vs in domains.items()}
+        if any(len(r) > self.LIMIT + 1 for r in self.ranks.values()):
+            raise Refused(f'translator: more than {self.LIMIT + 1} integers compared with each other, whose ranks '
+                          'Pluck holds in unary, (S (S ... (O)))')
+        self.sym, taken = {}, set()
+        for t in sorted(cons):
+            base = 'c_' + re.sub(r'\W', '_', str(t[1]))
+            name, k = base, 1
+            while name in taken:
+                k += 1
+                name = f'{base}_{k}'
+            taken.add(name)
+            self.sym[t] = name
+        self.class_of, self.mode = find, mode
+        self.kind_of = lambda x: 'sym' if mode(x) == 'con' else 'int'
+
+    def term(self, t, names, at=None):
+        """A term at the position of node `at` of `kinds` (None: in arithmetic)."""
+        return self.const(t, at) if t[0] in GROUND else super().term(t, names)
+
+    def const(self, t, at=None):
+        """A constant at the position of node `at` of `kinds` (None: in
+        arithmetic): an integer its value, its rank or its constructor, as
+        the position's mode says, and a symbol its constructor."""
+        if t[0] == 'int' and (at is None or self.mode(at) == 'nat'):
             return str(t[1])
-        if t[0] == 'sym':
-            return f'({self.sym[t[1]]})'
+        if t[0] == 'int' and self.mode(at) == 'rank':
+            return str(self.ranks[self.class_of(at)][t[1]])
+        if t in self.sym:
+            return f'({self.sym[t]})'
         raise Refused(f'translator: the constant {t}')
 
     def arith(self, op, a, b):
@@ -1852,9 +1898,9 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
                         continue
                     a = fresh('a')
                     pats.append(a)
-                    if role[0] in ('const', 'match'):
-                        conds.append(self.eq(k, a, self.role_value(role, names)))
-                    elif role[0] == 'same':
+                    if role[0] == 'const':
+                        conds.append(self.eq(k, a, self.const(role[1], ('col', s.pred, j))))
+                    elif role[0] in ('match', 'same'):
                         conds.append(self.eq(k, a, names[role[1]]))
                 arity = len(s.roles)
                 if s.negated:
@@ -1868,9 +1914,9 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
                 return (f'(concat_map (lambda {e} -> (match (fst {e}) T{arity}{"".join(" " + p for p in pats)} => '
                         f'{inner})) {rel})')
             if s[0] == 'test':
-                kind = self.kind_of(('var', n, s[2][1])) if s[2][0] == 'var' else (
-                    'sym' if s[2][0] == 'sym' else 'int')
-                a, b = self.term(s[2], names), self.term(s[3], names)
+                at = self.test_at[n, i]
+                kind = self.kind_of(at)
+                a, b = self.term(s[2], names, at), self.term(s[3], names, at)
                 if s[1] in ('eq', 'neq'):
                     cond = self.eq(kind, a, b)
                 elif s[1] in ('aeq', 'aneq'):
@@ -1881,7 +1927,7 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
                     cond = f'(not {cond})'
                 return f'(if {cond} {go(i + 1, vals)} (Nil))'
             if s[0] == 'let':
-                return f'(let ({names[s[1]]} {self.term(s[2], names)}) {go(i + 1, vals)})'
+                return f'(let ({names[s[1]]} {self.term(s[2], names, ("var", n, s[1]))}) {go(i + 1, vals)})'
             return (f'(concat_map (lambda {names[s[1]]} -> {go(i + 1, vals)}) '
                     f'(between {self.term(s[2], names)} {self.term(s[3], names)}))')
         return go(0, [])
@@ -1914,7 +1960,7 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
             if not rows:
                 continue
             out.append(f';; {k[0]}/{k[1]}: {len(rows)} facts')
-            items = [f'(Pair {self.tup([self.const(t) for t in args])} '
+            items = [f'(Pair {self.tup([self.const(t, ("col", k, i)) for i, t in enumerate(args)])} '
                      f'{"(Sure)" if p >= 1 else f"(Chance {literal(p)})"})' for args, p in rows]
             out.append(f'(define {rel[k]}_facts')
             out.append('  ' + ''.join(f'(Cons {x}\n  ' for x in items) + '(Nil)' + ')' * len(items) + ')')
@@ -1932,7 +1978,7 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
 
         def rule_list(r, names, read):
             """The list of r's instances, each the list of its heads (Pair TUPLE HOLDING)."""
-            heads = [self.tup([self.term(t, names) for t in args]) for _, args in r.heads]
+            heads = [self.tup([self.term(t, names, ('col', h, i)) for i, t in enumerate(args)]) for h, args in r.heads]
 
             def leaf(vals):
                 body = self.conj([] if r.demand else vals)
@@ -1947,7 +1993,7 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
 
         def instances(r, names, read):
             """The instances of probabilistic rule r in a recursive component, each (Pair KEY (Pair BODY HEADS))."""
-            heads = [self.tup([self.term(t, names) for t in args]) for _, args in r.heads]
+            heads = [self.tup([self.term(t, names, ('col', h, i)) for i, t in enumerate(args)]) for h, args in r.heads]
             keyt = self.tup([names[v] for v in r.variables])
             hs = ''.join(f'(Cons {h} ' for h in heads) + '(Nil)' + ')' * len(heads)
             return self.body(r, names, read, lambda vals: f'(Cons (Pair {keyt} (Pair {self.conj(vals)} {hs})) (Nil))',
@@ -2011,7 +2057,8 @@ draw_all size_of coin_of attach program found table2 more body rec size before r
                 bind(rel[k], f'(index {i} (fst {loop}))')
 
         def holds(a):
-            return f'(holds eq_{rel[key(a)]} {rel[key(a)]} {self.tup([self.const(t) for t in a[1]])})'
+            args = self.tup([self.const(t, ('col', key(a), i)) for i, t in enumerate(a[1])])
+            return f'(holds eq_{rel[key(a)]} {rel[key(a)]} {args})'
         qs = []
         for a in prog.queries:
             q = fresh('q')

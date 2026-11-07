@@ -1532,6 +1532,27 @@
    },
    {
     "instances": [
+     "taint_and_roc",
+     "taint_andors_trail",
+     "taint_angulo",
+     "taint_app_018",
+     "taint_app_ca7",
+     "taint_app_kQm",
+     "taint_barcode",
+     "taint_ginger_master",
+     "taint_noisy_sounds",
+     "taint_savage_knife",
+     "taint_tilt_mazes",
+     "taint_tom_droid",
+     "taint_tuio_droid",
+     "taint_video_game",
+     "taint_yaaic"
+    ],
+    "key": "taint",
+    "title": "taint analyses"
+   },
+   {
+    "instances": [
      "problogtut_advanced_10_urnballmodel_1",
      "problogtut_basic_01_coins_1",
      "problogtut_basic_01_coins_2",
@@ -1685,27 +1706,6 @@
       "on(300,1)"
      ]
     }
-   },
-   {
-    "instances": [
-     "taint_and_roc",
-     "taint_andors_trail",
-     "taint_angulo",
-     "taint_app_018",
-     "taint_app_ca7",
-     "taint_app_kQm",
-     "taint_barcode",
-     "taint_ginger_master",
-     "taint_noisy_sounds",
-     "taint_savage_knife",
-     "taint_tilt_mazes",
-     "taint_tom_droid",
-     "taint_tuio_droid",
-     "taint_video_game",
-     "taint_yaaic"
-    ],
-    "key": "others",
-    "title": "other programs"
    }
   ],
   "ppl": [

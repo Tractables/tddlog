@@ -142,8 +142,8 @@ roulette suite's families rl_diamond and rl_ladder, N their argument
 (`alea_bench.jl --set N=...`). `diamond.jl` is Alea.jl's own, from its
 tour (`tutorial/tour_1_core.jl` at cf5e5b8, Apache License 2.0), N
 diamonds where the tour runs 5. Alea.jl has no ladder: `ladder.jl` is a
-port of the Dice paper's, its flips made before the rungs, the last
-rung's first, as Roulette's artifact makes them (its header says why).
+port of the Dice paper's, written by hand, each rung making its flips
+when it runs, in the paper's text's order (its header says how).
 
 ## Programs of other papers, written in Alea.jl
 

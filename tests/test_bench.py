@@ -1,6 +1,6 @@
 """Benchmark statistics must include the work after atom compilation."""
 import importlib.util
-from contextlib import redirect_stdout
+from contextlib import ExitStack, redirect_stdout
 import fcntl
 import io
 import math
@@ -555,6 +555,94 @@ class PplTests(unittest.TestCase):
         head, _, row = out.getvalue().splitlines()
         self.assertIn('alea:cudd in-process | alea:cudd warm', head)
         self.assertIn('| 20.00 | 12.50 | 0.06 | 0.10 |', row)
+
+
+class ScratchTests(unittest.TestCase):
+    """A translation written for one call of a system (a query's, a
+    component's or a variable's program, the program of one of a circuit's
+    Dice programs, a logic program's) is gone once the run returns, whether
+    its calls succeeded or failed: one kept for each query or component
+    leaves a copy of the program for each beside the instance, and a run
+    over many instances fills the disk."""
+
+    OK = {'status': 'ok', 'seconds': 1.0, 'stdout': '', 'stderr': ''}
+    FAILED = {'status': 'error', 'seconds': 1.0, 'error': 'killed by SIGSEGV', 'stdout': '', 'stderr': ''}
+
+    def args(self, d):
+        return SimpleNamespace(dir=d, timeout=30, translation_timeout=None, pr=False, suite='ppl', psi='psi {file}',
+                               geni='geni {file}', pluck='julia {file}', sppl='python {file}', webppl='node {file}',
+                               dice='dice {file}')
+
+    def assert_leaves_nothing(self, run, stdout='', **patches):
+        """Runs run(args) in an empty directory, its system's calls answered
+        with `stdout` and then failed, and checks that it leaves no file
+        there. Each of `patches` replaces that name of bench.py: a function
+        as its side effect, another value as what it returns."""
+        for outcome in ({**self.OK, 'stdout': stdout}, dict(self.FAILED)):
+            with self.subTest(status=outcome['status']), tempfile.TemporaryDirectory() as d, ExitStack() as stack:
+                stack.enter_context(patch.object(bench, 'timed', return_value=outcome))
+                for name, value in patches.items():
+                    how = {'side_effect': value} if callable(value) else {'return_value': value}
+                    stack.enter_context(patch.object(bench, name, **how))
+                run(self.args(d))
+                self.assertEqual(os.listdir(d), [])
+
+    def test_psi_on_a_logic_programs_queries(self):
+        # problog2ppl.py's program, then a copy of it a query (NAME.lp.psiK.psi)
+        def translation(args, script, argv):
+            Path(argv[2]).write_text('def main() {\n  return queries;\n}\n')
+            return 'q1\nq2\n', None
+        self.assert_leaves_nothing(lambda args: bench.run_lp(args, 'p', 'p.pl', 'psi'), 'p(x) = δ(1)[x]\n',
+                                   translation=translation)
+
+    def test_webppl_on_a_logic_programs_program_and_facts(self):
+        def translation(args, script, argv):
+            for f in argv[2:]:
+                Path(f).write_text('x\n')
+            return 'q1\n', None
+        self.assert_leaves_nothing(lambda args: bench.run_lp(args, 'p', 'p.pl', 'webppl'), translation=translation)
+
+    def test_psi_on_its_own_programs_components(self):
+        with tempfile.TemporaryDirectory() as own:
+            Path(own, 'p.psi').write_text('def main() {\n  ps := [a, b];\n  return ps;\n}\n')
+            self.assert_leaves_nothing(lambda args: bench.run_psi_own(args, 'arith_p', 'p.pl'), 'p(x) = δ(1)[x]\n',
+                                       psi_program=str(Path(own, 'p.psi')),
+                                       query_components=[(None, 'q1'), (None, 'q2')], queries=['q1', 'q2'])
+
+    def test_psi_on_its_linear_regressions_variables(self):
+        self.assert_leaves_nothing(lambda args: bench.run_psi_linreg(args, 'bb_linreg_w4', 'p.pl'), 'E[a] = 1/2\n',
+                                   translation=('def main() {}\n', None))
+
+    def test_a_system_run_by_component(self):
+        # every component the translation listed, and the one it left
+        # unfinished where it failed
+        late = bench.harness_timeout_record('dice2geni.py', 'no translation within 30 s')
+        masses = bench.by_component('geni', 'dice2geni.py', 'gir', lambda n: [], lambda out, n: {0: 0.5, 1: 0.5})
+        for failed in (None, late):
+            def translation(args, script, argv):
+                for k in range(3):
+                    Path(f'{argv[2]}{k}.gir').write_text('x\n')
+                return 'bool\nbool\n' if failed else 'bool\nbool\nbool\n', failed
+            self.assert_leaves_nothing(lambda args: masses(args, 'p', '/p.dice', False, 30.0),
+                                       translation=translation)
+
+    def test_the_program_of_a_circuits_dice_program(self):
+        for masses in (bench.pluck_masses, bench.sppl_masses, bench.webppl_masses):
+            with self.subTest(system=masses.__name__):
+                self.assert_leaves_nothing(lambda args: masses(args, 'p__d1.dice', '/p__d1.dice', False, 30.0),
+                                           translation=('bool\n', None))
+        for outcome in (self.OK, self.FAILED):
+            with self.subTest(system='roulette', status=outcome['status']), tempfile.TemporaryDirectory() as d, \
+                    patch.object(bench, 'translation', return_value=('#lang roulette\n', None)), \
+                    patch.object(bench, 'roulette_timed', return_value={**outcome, 'inproc_seconds': 0.5}):
+                bench.roulette_masses(self.args(d), 'p__d1.dice', '/p__d1.dice', False, 30.0)
+                self.assertEqual(os.listdir(d), [])
+
+    def test_dice_on_a_networks_variables(self):
+        # a program a queried variable (NAME__V.dice)
+        with patch.object(bench.gen_bn, 'dice_programs', return_value=[('a', 'A\n'), ('b', 'B\n')]):
+            self.assert_leaves_nothing(lambda args: bench.run_dice(args, 'n', 'n.pl'),
+                                       instances={'n': ('bn', ['gen_bn.py', 'n.bif'])}, queries=['a(0)', 'b(0)'])
 
 
 class BitblastTests(unittest.TestCase):
@@ -3811,6 +3899,26 @@ class PsouffleTests(unittest.TestCase):
         self.assertEqual((r['status'], r['answers'], r['seconds']), ('ok', 'inconsistent', 0.5))
         self.assertRegex("InconsistentEvidenceError: Inconsistent evidence detected: 'evidence(failure,true)'.",
                          bench.INCONSISTENT)
+
+
+class HoldTests(unittest.TestCase):
+    def test_a_hold_names_a_run_a_system_and_its_instances(self):
+        """A hold TAG=SYSTEM[@INSTANCES] keeps the earlier records in place of a run's on the
+        instances its expression matches whole; marked !, it withdraws them, and may leave an
+        instance without a record."""
+        plain, marked, every = bench.holds(['r2=ace@^(a_3|a_10)$', 'r2=agrum@^a_(30|100)$!', 'r3=pita'], '--hold')
+        self.assertEqual(plain[:2] + plain[3:], ('r2', 'ace', False, 'r2=ace@^(a_3|a_10)$'))
+        self.assertEqual(marked[:2] + marked[3:], ('r2', 'agrum', True, 'r2=agrum@^a_(30|100)$!'))
+        self.assertEqual(every[:2] + every[3:], ('r3', 'pita', False, 'r3=pita'))
+        hold = [plain, marked, every]
+        self.assertEqual(bench.held(hold, 'r2', 'ace', 'a_10'), 'r2=ace@^(a_3|a_10)$')
+        self.assertIsNone(bench.held(hold, 'r2', 'ace', 'a_100'))
+        self.assertEqual(bench.held(hold, 'r2', 'agrum', 'a_100'), 'r2=agrum@^a_(30|100)$!')
+        self.assertIsNone(bench.held(hold, 'r2', 'agrum', 'a_1000'))
+        self.assertEqual(bench.held(hold, 'r3', 'pita', 'b_7'), 'r3=pita')
+        for spec in ('r2', 'r2=', '=ace', 'r2=ace@', 'r2=ace@!', 'r2=!'):
+            with self.assertRaises(SystemExit):
+                bench.holds([spec], '--hold')
 
 
 if __name__ == '__main__':

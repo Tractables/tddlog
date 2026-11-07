@@ -152,6 +152,7 @@ Timed numbers are meant to come from a machine with nothing else running,
 or from lanes of one `--cpus` run, all systems under the same load.
 """
 import argparse
+import contextlib
 import decimal
 import fcntl
 import fractions
@@ -2382,9 +2383,9 @@ def run_dice(args, name, path, tool='dice'):
         source = dice_source(args, name, tool)
         if source is None:
             return {'status': 'error', 'seconds': 0, 'error': f"--pr: no program of P(e) for family {family}"}
-        programs = [(source, queries(path))]
+        programs = [(source, queries(path), None)]
     elif gargs[0] == 'dice2problog.py' or writes_dice(gargs):
-        programs = [(dice_source(args, name, tool), queries(path))]
+        programs = [(dice_source(args, name, tool), queries(path), None)]
     elif gargs[0] == 'alea_bench.jl':
         return run_dice_circuit(args, name, os.path.join(args.dir, name + '.dicemap'), tool)
     elif gargs[0] == 'gen_bn.py':
@@ -2393,21 +2394,22 @@ def run_dice(args, name, path, tool='dice'):
             per_variable = gen_bn.dice_programs(gargs[1:], joint=joint)
         except SystemExit as x:
             return {'status': 'error', 'seconds': 0, 'error': f'gen_bn.py --format dice: {x}'}
-        programs = []
-        for v, text in per_variable:
-            dice_path = os.path.join(args.dir, f'{name}__{v}.dice')
-            write_new(dice_path, text)
-            programs.append((dice_path, [q for q in queries(path) if q.split('(')[0] == v]))
+        # each written just before its run and removed after it (scratch)
+        programs = [(os.path.join(args.dir, f'{name}__{v}.dice'), [q for q in queries(path) if q.split('(')[0] == v],
+                     text) for v, text in per_variable]
     elif ground_dice(args, name):
         return run_dice_circuit(args, name, GROUNDED[(name, 'dicemap')]['stem'] + '.dicemap', tool)
     else:
         return {'status': 'error', 'seconds': 0, 'error': f'no Dice program for family {family}'}
     total, answers, error = 0.0, {}, None
-    for program, qs in programs:
+    for program, qs, text in programs:
         program = os.path.abspath(program)
         cmd = getattr(args, tool).format(file=program, dir=os.path.dirname(program),
                                          base=os.path.basename(program)).split()
-        r = timed(cmd, max(0.0, args.timeout - total))
+        with scratch(*([program] if text is not None else [])):
+            if text is not None:
+                write_new(program, text)
+            r = timed(cmd, max(0.0, args.timeout - total))
         total += r['seconds']
         if r['status'] != 'ok':
             r['seconds'] = total
@@ -2937,10 +2939,11 @@ def roulette_masses(args, label, source, joint, budget):
     asks it: the distributions of its value's components, and its seconds
     and `inproc_seconds`."""
     rkt = os.path.abspath(os.path.join(args.dir, label.removesuffix('.dice') + '.roulette.rkt'))
-    err = roulette_translate(args, source, rkt, joint)
-    if err:
-        return None, err
-    r = roulette_timed(args, rkt, [], budget)
+    with scratch(rkt):
+        err = roulette_translate(args, source, rkt, joint)
+        if err:
+            return None, err
+        r = roulette_timed(args, rkt, [], budget)
     if r['status'] != 'ok':
         return None, r
     return parse_alea(r['stdout'], 'roulette')[0], \
@@ -3619,28 +3622,30 @@ def by_component(system, script, ext, flags, masses_of):
         j = ['--joint'] if joint else []
         prefix = os.path.abspath(os.path.join(args.dir, f'{label}.{system}'))
         listing, failed = translation(args, script, [source, '--each', prefix] + j)
-        comps, total = [], 0.0
-        for k, line in enumerate(listing.splitlines()):
-            ty = line.split()
-            n = 2 if ty[0] == 'bool' else 2 ** int(ty[1])
-            file = f'{prefix}{k}.{ext}'
-            r = timed(program_command(args, system, file) + flags(n), max(0.0, budget - total))
-            total += r['seconds']
-            if r['status'] != 'ok':
-                return None, {**r, 'seconds': total}
-            got = masses_of(r['stdout'], n)
-            why = (f'masses of {sorted(got)} for {n} values' if sorted(got) != list(range(n)) else
-                   'a mass is NaN as printed' if any(math.isnan(p) for p in got.values()) else
-                   'every value has mass 0 as printed: the observations\' probability is below its precision'
-                   if sum(got.values()) == 0 else None)
-            if why:
-                return None, {'status': 'error', 'seconds': total,
-                              'error': f'{system}: {why}: ' + r['stdout'].strip()[-300:]}
-            comps.append({'true': got[1], 'false': got[0]} if ty[0] == 'bool' else
-                         {str(v): got[v] for v in range(n)})
-        if failed:
-            return None, {**failed, 'seconds': total}
-        return comps, {'seconds': total}
+        # the components' files, the one a translation that failed left unfinished among them
+        with scratch(*(f'{prefix}{k}.{ext}' for k in range(len(listing.splitlines()) + 1))):
+            comps, total = [], 0.0
+            for k, line in enumerate(listing.splitlines()):
+                ty = line.split()
+                n = 2 if ty[0] == 'bool' else 2 ** int(ty[1])
+                file = f'{prefix}{k}.{ext}'
+                r = timed(program_command(args, system, file) + flags(n), max(0.0, budget - total))
+                total += r['seconds']
+                if r['status'] != 'ok':
+                    return None, {**r, 'seconds': total}
+                got = masses_of(r['stdout'], n)
+                why = (f'masses of {sorted(got)} for {n} values' if sorted(got) != list(range(n)) else
+                       'a mass is NaN as printed' if any(math.isnan(p) for p in got.values()) else
+                       'every value has mass 0 as printed: the observations\' probability is below its precision'
+                       if sum(got.values()) == 0 else None)
+                if why:
+                    return None, {'status': 'error', 'seconds': total,
+                                  'error': f'{system}: {why}: ' + r['stdout'].strip()[-300:]}
+                comps.append({'true': got[1], 'false': got[0]} if ty[0] == 'bool' else
+                             {str(v): got[v] for v in range(n)})
+            if failed:
+                return None, {**failed, 'seconds': total}
+            return comps, {'seconds': total}
     return masses
 
 
@@ -3834,8 +3839,9 @@ def run_psi_own(args, name, path):
             source = text[:m.start()] + f'{m.group(1)}return {m.group(2)}[{k}];' + text[m.end():]
         else:
             source = text
-        write_new(file, source)
-        r = timed(program_command(args, 'psi', file), max(0.0, args.timeout - total))
+        with scratch(file):
+            write_new(file, source)
+            r = timed(program_command(args, 'psi', file), max(0.0, args.timeout - total))
         total += r['seconds']
         if r['status'] != 'ok':
             return {**r, 'seconds': total}
@@ -3870,12 +3876,13 @@ def run_psi_linreg(args, name, path):
     total, answers = 0.0, {}
     for v in 'ab':
         file = os.path.abspath(os.path.join(args.dir, f'{name}.{v}.psi'))
-        err = translated(args, 'gen_psi_linreg.py', [v], file, 'psi')
-        if err:
-            return err
-        cmd = args.psi.replace('{file}', '--expectation {file}')
-        r = timed(cmd.format(file=file, dir=os.path.dirname(file), base=os.path.basename(file)).split(),
-                  max(0.0, args.timeout - total))
+        with scratch(file):
+            err = translated(args, 'gen_psi_linreg.py', [v], file, 'psi')
+            if err:
+                return err
+            cmd = args.psi.replace('{file}', '--expectation {file}')
+            r = timed(cmd.format(file=file, dir=os.path.dirname(file), base=os.path.basename(file)).split(),
+                      max(0.0, args.timeout - total))
         total += r['seconds']
         if r['status'] != 'ok':
             r['seconds'] = total
@@ -3935,10 +3942,11 @@ def pluck_masses(args, label, source, joint, budget):
     if err:
         return None, err
     file = os.path.abspath(os.path.join(args.dir, f'{label}.pluck'))
-    err = translated(args, 'dice2pluck.py', [source] + j, file, 'pluck')
-    if err:
-        return None, err
-    r = timed(program_command(args, 'pluck', os.path.join(HERE, 'pluck_dice.jl')) + [file], budget)
+    with scratch(file):
+        err = translated(args, 'dice2pluck.py', [source] + j, file, 'pluck')
+        if err:
+            return None, err
+        r = timed(program_command(args, 'pluck', os.path.join(HERE, 'pluck_dice.jl')) + [file], budget)
     if r['status'] != 'ok':
         return None, r
     dists = parse_pluck(r['stdout'])
@@ -4112,10 +4120,11 @@ def sppl_masses(args, label, source, joint, budget):
     each assignment of its Booleans (sppl_run). The seconds are the
     process's."""
     file = os.path.abspath(os.path.join(args.dir, f'{label}.sppl'))
-    err = translated(args, 'dice2sppl.py', [source] + (['--joint'] if joint else []), file, 'sppl')
-    if err:
-        return None, err
-    r, comps, stats = sppl_run(args, file, budget)
+    with scratch(file):
+        err = translated(args, 'dice2sppl.py', [source] + (['--joint'] if joint else []), file, 'sppl')
+        if err:
+            return None, err
+        r, comps, stats = sppl_run(args, file, budget)
     if r['status'] != 'ok':
         return None, r
     return comps, {'seconds': r['seconds'], 'stats': stats}
@@ -4181,10 +4190,11 @@ def webppl_masses(args, label, source, joint, budget):
     library, compiled with every program) within them, `header_seconds`,
     which own_seconds leaves out as the load of WebPPL's library."""
     file = os.path.abspath(os.path.join(args.dir, f'{label}.wppl'))
-    err = translated(args, 'dice2webppl.py', [source] + (['--joint'] if joint else []), file, 'webppl')
-    if err:
-        return None, err
-    r = timed(program_command(args, 'webppl', os.path.join(HERE, 'webppl_dice.js')) + [file], budget)
+    with scratch(file):
+        err = translated(args, 'dice2webppl.py', [source] + (['--joint'] if joint else []), file, 'webppl')
+        if err:
+            return None, err
+        r = timed(program_command(args, 'webppl', os.path.join(HERE, 'webppl_dice.js')) + [file], budget)
     if r['status'] != 'ok':
         return None, r
     comps, stats = webppl_output(r['stdout'])
@@ -4322,6 +4332,24 @@ def write_new(path, text):
     with open(part, 'w') as f:
         f.write(text)
     os.replace(part, path)
+
+
+@contextlib.contextmanager
+def scratch(*paths):
+    """Removes the files PATHS when the block ends, whether the call in it
+    succeeded, failed or raised: a translation written for one call of a
+    system (a query's, a component's or a variable's program, or the
+    program of one of a circuit's Dice programs), which nothing reads after
+    that call. A run that writes one for each query or component of an
+    instance and keeps it leaves a copy of the program for each beside the
+    instance, so that a run over many instances fills the disk. A file
+    already gone (one the translation did not write) is passed over."""
+    try:
+        yield
+    finally:
+        for path in paths:
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(path)
 
 
 def run_pita(args, name, path, own=None):
@@ -5062,25 +5090,29 @@ def scallop_variant(system, variant):
 
 
 def holds(specs, what):
-    """The holds TAG=SYSTEM[@INSTANCES] of the processing (rerun.py --system-hold,
-    capmerge.py --hold): TAG's records or calls of SYSTEM on the instances the
-    regular expression INSTANCES matches whole (every instance without it) are
-    left out, so that an earlier run's stay in their place. `what` names the
-    option in the error a spec of another form stops with."""
+    """The holds TAG=SYSTEM[@INSTANCES][!] of the processing (rerun.py
+    --system-hold, capmerge.py --hold): TAG's records or calls of SYSTEM on the
+    instances the regular expression INSTANCES matches whole (every instance
+    without it) are left out, so that an earlier run's stay in their place.
+    A hold marked `!` may leave nothing in place, a withdrawal: an instance no
+    earlier run gave SYSTEM (its record withdrawn until a later run gives it
+    one, its call with it). `what` names the option in the error a spec of
+    another form stops with. A hold is (TAG, SYSTEM, INSTANCES, marked, spec)."""
     out = []
     for spec in specs:
         tag, eq, rest = spec.partition('=')
-        system, at, pattern = rest.partition('@')
+        marked = rest.endswith('!')
+        system, at, pattern = rest.removesuffix('!').partition('@')
         if not eq or not tag or not system or (at and not pattern):
-            raise SystemExit(f'{what} {spec}: not TAG=SYSTEM[@INSTANCES]')
-        out.append((tag, system, re.compile(pattern if at else '.*'), spec))
+            raise SystemExit(f'{what} {spec}: not TAG=SYSTEM[@INSTANCES][!]')
+        out.append((tag, system, re.compile(pattern if at else '.*'), marked, spec))
     return out
 
 
 def held(hold_list, tag, system, instance):
     """The spec of the first hold of `hold_list` (holds) on TAG's record or call of
     `system` on `instance`, or None."""
-    return next((spec for t, s, pattern, spec in hold_list
+    return next((spec for t, s, pattern, _, spec in hold_list
                  if t == tag and s == system and pattern.fullmatch(instance)), None)
 
 
@@ -5737,22 +5769,22 @@ def run_lp(args, name, path, system):
     (run_lp_psi), which holds its facts, by `psi --dp`, Pluck's by pluck_dice.jl
     (run_lp_pluck), SPPL's by sppl_dice.py (run_lp_sppl). The
     answers are keyed as the queries problog2ppl.py lists; the stats as
-    those of the system's own programs. The facts file is removed after
-    the run."""
+    those of the system's own programs. The program and its facts file are
+    removed after the run (scratch)."""
     lang = LP_SYSTEMS[system]
     prog = os.path.abspath(os.path.join(args.dir, f'{name}.lp.{lang}.{LP_EXT[lang]}'))
     facts = os.path.abspath(os.path.join(args.dir, f'{name}.lp.{lang}.facts'))
-    out, err = translation(args, 'problog2ppl.py', [lang, path, prog] + ([] if lang in LP_INLINE else [facts]))
-    if err:
-        return err
-    qs = out.splitlines()
-    if system == 'psi':
-        return run_lp_psi(args, name, prog, qs)
-    if system == 'pluck':
-        return run_lp_pluck(args, prog, qs)
-    if system == 'sppl':
-        return run_lp_sppl(args, prog, qs)
-    try:
+    with scratch(prog, facts):
+        out, err = translation(args, 'problog2ppl.py', [lang, path, prog] + ([] if lang in LP_INLINE else [facts]))
+        if err:
+            return err
+        qs = out.splitlines()
+        if system == 'psi':
+            return run_lp_psi(args, name, prog, qs)
+        if system == 'pluck':
+            return run_lp_pluck(args, prog, qs)
+        if system == 'sppl':
+            return run_lp_sppl(args, prog, qs)
         if system == 'alea-tddlog':
             return run_alea_tddlog(args, name, path, ([prog, ('FACTS', facts)], qs))
         if system == 'roulette-tddlog':
@@ -5777,9 +5809,6 @@ def run_lp(args, name, path, system):
             if r['status'] != 'ok':
                 return r
             comps, stats = webppl_output(r['stdout'])
-    finally:
-        if os.path.exists(facts):
-            os.remove(facts)
     try:
         answers = lp_named(qs, comps)
     except ValueError as e:
@@ -5805,11 +5834,12 @@ def run_lp_psi(args, name, prog, qs):
     total, comps = 0.0, []
     for k in range(len(qs)):
         file = os.path.abspath(os.path.join(args.dir, f'{name}.lp.psi{k}.psi'))
-        write_new(file, text.replace('return queries;', f'return queries[{k}];'))
         cmd = program_command(args, 'psi', file)
         if '--dp' not in cmd:
             cmd.insert(cmd.index(file), '--dp')
-        r = timed(cmd, max(0.0, args.timeout - total))
+        with scratch(file):
+            write_new(file, text.replace('return queries;', f'return queries[{k}];'))
+            r = timed(cmd, max(0.0, args.timeout - total))
         total += r['seconds']
         if r['status'] != 'ok':
             return {**r, 'seconds': total}

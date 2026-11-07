@@ -11,7 +11,8 @@
 // language, its runs and its answers.
 //
 // The page is one view at a time, named by the address's hash:
-//   #/                       the README's figures: each type's totals and speed-ups, cactus and scatter plots
+//   #/                       by program type (the front page's #/types): the README's figures, each type's
+//                            totals and speed-ups, cactus and scatter plots
 //   #/category/C[/in/FAMILY][/vs/SYSTEM]
 //                            a category: its systems' answers, totals and speed-ups, its plots (tddlog against
 //                            SYSTEM), narrowed to FAMILY (the program or model whose sizes they are)
@@ -380,17 +381,19 @@ function linesOf(suite) {
 // The instances each system answers within a time limit, the limit on a
 // linear scale from 0 to the suite's; a line further up and to the left is
 // better. Drawn at the width of its box; the lines not `coloured` grey and
-// under the others. Each line is named at its end, by its system where there
-// is room, else by its number in the legend (the coloured lines only).
+// under the others. Each coloured line is named at its end, by its system
+// where there is room, else by its number in the legend; a grey line's name
+// shows while it is picked out: under the pointer, or its legend entry's.
 // Returns whether the plot is narrow.
 function cactus(box, suite, names, series, coloured) {
   const width = Math.max(280, Math.floor(box.clientWidth));
   const narrow = width < 480;
-  const height = narrow ? 300 : Math.max(380, series.length * 14 + 22 + 46);
-  const n = suite.instances.length;
-  const hi = suite.limit;
   const ends = series.map(({ key, times }, i) => ({ key, y: times.length, text: narrow ? String(i + 1) : `${names[key]} ${times.length}` }))
     .filter((end) => !narrow || coloured.has(end.key));
+  const named = ends.filter((end) => coloured.has(end.key));
+  const height = narrow ? 300 : Math.max(380, named.length * 14 + 22 + 46);
+  const n = suite.instances.length;
+  const hi = suite.limit;
   // The end labels' room: the longest at 7 px a character; the counts' on
   // the left, at about 6.5 px a digit, clear of the axis's name.
   const left = Math.max(46, 28 + 6.5 * String(n).length), right = narrow ? 30 : Math.max(128, 16 + 7 * Math.max(0, ...ends.map((end) => end.text.length))), top = 22, bottom = 46;
@@ -446,33 +449,54 @@ function cactus(box, suite, names, series, coloured) {
   // two would overlap: pushed down, the lowest kept above the time axis's
   // last number and those over it pushed up, so that a crowd at the bottom
   // moves up only as far as it must.
-  const labels = ends.map((end) => ({ ...end, y: ly(end.y) })).sort((a, b) => a.y - b.y);
+  const labels = named.map((end) => ({ ...end, y: ly(end.y) })).sort((a, b) => a.y - b.y);
   for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 14);
   if (labels.length) labels[labels.length - 1].y = Math.min(labels[labels.length - 1].y, y1 - 3);
   for (let i = labels.length - 2; i >= 0; i--) labels[i].y = Math.min(labels[i].y, labels[i + 1].y - 14);
-  for (const l of labels) {
-    plot.append(svg("text", { class: `end${coloured.has(l.key) ? "" : " grey"}`, x: x1 + 8, y: l.y + 4, "data-key": l.key }, l.text));
+  for (const l of labels) plot.append(svg("text", { class: "end", x: x1 + 8, y: l.y + 4, "data-key": l.key }, l.text));
+  // a grey line's name, at its own end, shown while the line is picked out
+  for (const end of ends.filter((e) => !coloured.has(e.key))) {
+    plot.append(svg("text", { class: "end grey quiet", x: x1 + 8, y: Math.min(ly(end.y), y1 - 3) + 4, "data-key": end.key }, end.text));
   }
 
   // The hover layer: a line at a time limit, and how many each system
   // answers within it; the limit under the pointer, where a finger taps (it
-  // stays until the next tap), or moved by the arrow keys.
+  // stays until the next tap), or moved by the arrow keys. The line nearest
+  // the pointer, within 12 px, is picked out: drawn in its colour, its name
+  // at its end and first in the list, the others faint.
   const cross = svg("line", { class: "cross", x1: 0, y1: y0, x2: 0, y2: y1, visibility: "hidden" });
   plot.append(cross);
   const area = svg("rect", { class: "hit", x: x0, y: y0, width: x1 - x0, height: y1 - y0 });
   plot.append(area);
   const tip = element("div", { class: "tip", hidden: true, "aria-live": "polite" });
+  const pick = (key) => {
+    for (const mark of plot.querySelectorAll("[data-key]")) {
+      mark.classList.toggle("dim", key !== null && mark.dataset.key !== key);
+      mark.classList.toggle("hl", key !== null && mark.dataset.key === key);
+    }
+  };
   let cx = null;
-  const at = (x) => {
+  const at = (x, y = null) => {
     cx = Math.min(Math.max(x, x0), x1);
     // a time under 0.2 s counts as 0.2 s
     const t = Math.max(FLOOR, (cx - x0) / (x1 - x0) * hi);
     cross.setAttribute("x1", cx);
     cross.setAttribute("x2", cx);
     cross.setAttribute("visibility", "visible");
+    const rows = series.map(({ key, times }) => [key, times.filter((s) => s <= t).length]);
+    let near = null;
+    if (y !== null) {
+      for (const [key, k] of rows) {
+        const d = Math.abs(ly(k) - y);
+        if (d <= 12 && (near === null || d < near.d)) near = { key, d };
+      }
+    }
+    pick(near?.key ?? null);
     tip.replaceChildren(element("b", {}, `within ${seconds(t)} s`));
-    const rows = series.map(({ key, times }) => [key, times.filter((s) => s <= t).length]).sort((a, b) => b[1] - a[1]);
-    for (const [key, k] of rows) tip.append(element("span", {}, swatch(key, !coloured.has(key)), `${names[key]} ${k}`));
+    rows.sort((a, b) => (b[0] === near?.key) - (a[0] === near?.key) || b[1] - a[1]);
+    for (const [key, k] of rows) {
+      tip.append(element("span", { class: key === near?.key ? "picked" : null }, swatch(key, !coloured.has(key) && key !== near?.key), `${names[key]} ${k}`));
+    }
     tip.hidden = false;
     const w = tip.offsetWidth;
     const px = cx + 12 + w > width ? cx - 12 - w : cx + 12;
@@ -482,8 +506,12 @@ function cactus(box, suite, names, series, coloured) {
   const hide = () => {
     cross.setAttribute("visibility", "hidden");
     tip.hidden = true;
+    pick(null);
   };
-  const pointer = (event) => at(event.clientX - plot.getBoundingClientRect().left);
+  const pointer = (event) => {
+    const r = plot.getBoundingClientRect();
+    at(event.clientX - r.left, event.clientY - r.top);
+  };
   area.addEventListener("pointermove", pointer);
   area.addEventListener("pointerdown", pointer);
   area.addEventListener("pointerleave", (event) => {
@@ -505,15 +533,19 @@ function cactus(box, suite, names, series, coloured) {
 // instances it answers, and in a kind's plot tddlog's speed-up over it
 // (faster: {system: text}, the data's); in a narrow plot, the number its line
 // ends with. A name is a button that colours its line or greys it, and a
-// name under the pointer or the keyboard brings its line forward.
+// name under the pointer or the keyboard brings its line forward. A bare
+// plot's (recolour null) lists its coloured lines only, without buttons: the
+// grey ones are named under the pointer in the plot.
 function legend(series, names, n, figure, faster, coloured, narrow, recolour) {
   const list = element("ul", { class: "legend" });
   series.forEach(({ key, times }, i) => {
+    if (!recolour && !coloured.has(key)) return;
     const counts = `answers ${count(times.length)} of ${count(n)}${faster?.[key] === undefined ? "" : `, ${faster[key]}`}`;
-    const button = element("button", { type: "button", class: "bare", "data-system": key, "aria-pressed": String(coloured.has(key)),
-      onclick: () => recolour(key) },
-      narrow ? element("span", { class: "no" }, String(i + 1)) : null, swatch(key, !coloured.has(key)),
-      element("span", {}, names[key]), element("span", { class: "n" }, counts));
+    const parts = [narrow ? element("span", { class: "no" }, String(i + 1)) : null, swatch(key, !coloured.has(key)),
+      element("span", {}, names[key]), element("span", { class: "n" }, counts)];
+    const button = !recolour ? element("span", { class: "bare", "data-system": key }, ...parts)
+      : element("button", { type: "button", class: "bare", "data-system": key, "aria-pressed": String(coloured.has(key)),
+        onclick: () => recolour(key) }, ...parts);
     const focus = (on) => {
       for (const mark of figure.querySelectorAll("svg [data-key]")) {
         mark.classList.toggle("dim", on && mark.dataset.key !== key);
@@ -540,17 +572,19 @@ function onWidth(box, draw) {
 }
 
 // A plot with its legend, drawn again when its box changes width or a line
-// is coloured or greyed. Where there are more than five lines, tddlog's and
-// the three that answer the most are in colour, and `also`'s, and the others
-// grey until asked for; with `all`, every line is in colour (a category's,
-// each system in its own colour). The figure names the systems it draws and the
-// number of its instances; a category's legend gives tddlog's speed-up
-// over each other system too (suite.faster). A `bare` plot has no legend where its lines are
-// named at their ends, nor a button to colour them all.
-function plotted(suite, names, { also, bare, all, colour } = {}) {
+// is coloured or greyed. The lines `colour` names are in colour, or else,
+// where there are more than five lines, tddlog's and the three that answer
+// the most; `also`'s too, and the others grey until asked for (a category's:
+// tddlog's and its five best native systems', each system in its own
+// colour). The figure names the systems it draws and the number of its
+// instances; a category's legend gives tddlog's speed-up over each other
+// system too (suite.faster). A `bare` plot has no legend where its lines are
+// named at their ends, nor a button to colour them all: a line under it
+// counts its grey lines.
+function plotted(suite, names, { also, bare, colour } = {}) {
   const series = linesOf(suite);
   const top = colour ? series.map((s) => s.key).filter((key) => colour.includes(key))
-    : all ? series.map((s) => s.key) : series.slice(0, series.length > 5 ? 4 : series.length).map((s) => s.key);
+    : series.slice(0, series.length > 5 ? 4 : series.length).map((s) => s.key);
   if (also && !top.includes(also)) top.push(also);
   let coloured = new Set(top);
   const figure = element("figure", { class: "plot", "data-systems": suite.systems.join(" "),
@@ -560,15 +594,20 @@ function plotted(suite, names, { also, bare, all, colour } = {}) {
     coloured = new Set(coloured.size === series.length ? top : series.map((s) => s.key));
     draw();
   } }) : null;
+  const greys = bare && series.length > top.length ? element("figcaption", { class: "greys" },
+    `${plural(series.length - top.length, "more system")} in grey: point at a line to name it.`) : null;
   figure.append(box);
   const draw = () => {
     const narrow = cactus(box, suite, names, series, coloured);
+    // a bare plot names its coloured lines at their ends, or in a legend where it is narrow, and its
+    // grey ones under the pointer; its colours are not chosen
+    if (greys) figure.append(greys);
     if (bare && !narrow) {
       figure.querySelector(".legend")?.remove();
       return;
     }
     const focused = figure.contains(document.activeElement) ? document.activeElement.closest(".legend button")?.dataset.system : undefined;
-    const fresh = legend(series, names, suite.instances.length, figure, suite.faster, coloured, narrow, (key) => {
+    const fresh = legend(series, names, suite.instances.length, figure, suite.faster, coloured, narrow, bare ? null : (key) => {
       coloured = new Set(coloured);
       if (coloured.has(key)) coloured.delete(key);
       else coloured.add(key);
@@ -1224,14 +1263,18 @@ function crumbs(...items) {
 
 // ------------------------------------------------------------- the views
 
-// The overview: the README's figures, each part a link to its details:
+// By program type, the results page's opening view (#/ here, #/types on
+// the front page): the README's figures, each part a link to its details:
 // each type's native systems against tddlog (total times and speed-ups), then for each
 // category its headline, its cactus plot beside tddlog's times against the
 // fastest other system's, and each system on its own benchmarks.
 function home() {
-  const out = [element("div", { class: "fig-head" }, element("h2", {}, "Each type of program against the systems native to it"),
-    element("span", { class: "dots" }, element("i", { class: "me" }), subject(subjectsOf(data.types.flatMap((c) => catRows(c)))),
-      element("i", { class: "you" }), "a native system")),
+  const out = [crumbs(HOME, [sectionName("types")]), element("h2", {}, sectionName("types")),
+    element("p", { class: "lede" }, "Each instance counts in one type, that of the model it is; all programs is their union, with every system. ",
+      link({ view: "section", key: "coverage" }, COVERAGE), ": what the systems' own sources hold that tddlog does not run, and why."),
+    element("div", { class: "fig-head" }, element("h3", {}, "Each type of program against the systems native to it"),
+      element("span", { class: "dots" }, element("i", { class: "me" }), subject(subjectsOf(data.types.flatMap((c) => catRows(c)))),
+        element("i", { class: "you" }), "a native system")),
   overview(), stampLine()];
   for (const c of data.categories) {
     const to = { view: "category", category: c.key };
@@ -1243,7 +1286,7 @@ function home() {
         element("span", { class: "n" }, `${count(c.instances)} ${c.noun}, ${others}`),
         link(to, c.key === ALL ? "Every system and type" : "Every native system and family")),
       headline(c, rows, tal),
-      element("div", { class: "pair" }, plotted(catSuite(c, rows, c.drawn, tal), data.names, { bare: true, all: true }),
+      element("div", { class: "pair" }, plotted(catSuite(c, rows, c.drawn, tal), data.names, { bare: true, colour: [...c.mine, ...c.named] }),
         scatter(rows, c.drawn))));
   }
   out.push(...ownTable(), note(measureLine()), raw("categories.json"));
@@ -1376,7 +1419,7 @@ function categoryView(route) {
     ...(foreign.length ? [note(`Given some of these ${c.noun} through a translation, but not native to them: `,
       `${and(foreign.map((x) => data.names[x]))}; `, link({ view: "category", category: ALL }, "all programs"), " has every system.")] : []),
     element("h3", { id: "figures" }, `Instances answered within each time limit, and ${me}'s times against another system's`),
-    element("div", { class: "pair" }, plotted(whole, data.names, { also: route.vs, all: true }), scatter(rows, drawn, route.vs, true)),
+    element("div", { class: "pair" }, plotted(whole, data.names, { also: route.vs, colour: [...c.mine, ...c.named] }), scatter(rows, drawn, route.vs, true)),
     note(`Answers count over all ${count(rows.length)} ${c.noun}${only ? ` of ${filters.find((f) => f.key === only).title}` : ""}; `
       + "one not given counts as unanswered."
       + (Object.keys(c.copies).length ? ` ${plural(Object.values(c.copies).flat().length, "copy", "copies")} of instances of other suites count once.` : "")),
@@ -1452,10 +1495,10 @@ function solverParts(x) {
       ...["own", "native", "translated", "not idiomatic"].map((key) => element("td", { class: "num" }, k(key))),
       element("td", { class: "num" }, count(v.answers)), element("td", { class: "num" }, duration(v.total)),
       element("td", { class: "num" }, count(v.tddlog_answers)), element("td", { class: "num" }, duration(v.tddlog_total)),
-      element("td", { class: "num" }, speedup(v))));
+      element("td", { class: (v.speedup ?? null) === null ? "num few" : "num" }, speedup(v))));
   }
   const cms = subjectsOf(all);
-  const types = [scroller(stacked(element("table", { class: "board" },
+  const types = [scroller(stacked(element("table", { class: "board per-type" },
     head2(["type"], ["instances", null, "num"],
       { group: "given", cols: [["all", null, "num"], ["own", "from its own papers, benchmarks or distribution", "num"],
         ["native", "in its own language", "num"], ["translated", "translated for it as its users would write it", "num"],
@@ -1493,11 +1536,11 @@ function findings(list) {
   return box;
 }
 
+// How the runs were made: the methods table (next.js's), one line under a
+// category, not the suites' own paragraphs again.
 function setup(home) {
-  const dl = element("dl");
-  for (const [term, text] of home.setup) dl.append(element("dt", {}, term), prose("dd", text));
-  return element("details", { class: "setup" }, element("summary", {}, "How the runs were made"), dl,
-    note("Every table and its details: ", element("a", { href: home.docs }, "docs/benchmarks.md"), "."));
+  return note(element("a", { href: `${front}#/methods` }, "How the runs were made"), "; every table and its details: ",
+    element("a", { href: home.docs }, "docs/benchmarks.md"), ".");
 }
 
 function suiteView(route) {
@@ -1715,7 +1758,8 @@ function timesGrid(s, f, rows, short, route) {
   const cols = showAll ? s.systems : given;
   const axes = f.axes ?? ["instance"];
   const head = element("tr", {}, ...axes.map((a) => element("th", { scope: "col" }, a)),
-    ...cols.map((x) => element("th", { scope: "col", class: `sys${isMine(x) ? " mine" : ""}`, title: data.names[x] }, element("span", {}, data.names[x]))));
+    ...cols.map((x) => element("th", { scope: "col", class: `sys${isMine(x) ? " mine" : ""}`,
+      title: dashed(x) ? `${data.names[x]}: the whole process, with the language's start and compilation` : data.names[x] }, element("span", {}, data.names[x]))));
   const body = element("tbody");
   const seen = new Set();
   for (const name of f.instances) {
@@ -1862,15 +1906,19 @@ function fileRoute(inst, ti, fi) {
   return ti === t && fi === f ? undefined : [ti, fi];
 }
 
-// A tab in the menu: its language, and who reads it.
+// A tab in the menu: its language, what its files are to the original in a
+// few words (the original, a translation and the script that wrote it, a
+// change of format, a system's own form), and who reads it.
 function versionLabel(tab) {
   const who = readersOf(tab);
-  const what = who.length ? `read by ${and(who)}` : tab.translations?.length ? "an intermediate step, read by no system" : "read by no system";
-  return `${tab.lang}${tab.original ? ", the original" : ""}: ${what}`;
+  const read = who.length ? `read by ${and(who)}` : tab.translations?.length ? "an intermediate step, read by no system" : "read by no system";
+  const what = tab.what ?? (tab.original ? "the original" : "");
+  return `${tab.lang}: ${what ? `${what}, ` : ""}${read}`;
 }
 
-const UNFAIR = "Note: this is an automatic translation from the original program, which might have performance "
-  + "implications that make the comparison unfair.";
+// The note on a translation a system read: automatic, or a port written by hand (by_hand).
+const unfair = (tab) => `Note: this is ${tab.by_hand ? "a translation by hand" : "an automatic translation"} from the original `
+  + "program, which might have performance implications that make the comparison unfair.";
 
 // An instance of a family: its programs (the one tddlog read, and a menu of
 // every other system's), then its answers. `route` names the file to show.
@@ -1944,7 +1992,7 @@ function showFile(view, fam, inst, ti, fi) {
     panes.append(original(shownFiles(inst.tabs[0])[0]));
   }
   // a network converted to another network format is native: no note
-  const cap = tab.translated && !tab.conversion && readersOf(tab).length ? element("p", { class: "unfair" }, UNFAIR)
+  const cap = tab.translated && !tab.conversion && readersOf(tab).length ? element("p", { class: "unfair" }, unfair(tab))
     : two ? element("p", { class: "cap" }, tab.lang) : null;
   panes.append(filePane(fam, tab, fi, (k) => {
     open(ti, k);
@@ -2146,10 +2194,7 @@ async function runs(route) {
   const about = [];
   if (dashed(key)) about.push("The whole process's time, with the language's start and compilation; the other time of the same system leaves them out, as its paper times it.");
   if (inst?.reps > 1) about.push("A time is the median of the repetitions, a failed one counted as infinite.");
-  if (new Set(mine.map((r) => r.label)).size > 1) {
-    about.push(isMine(key) ? `The table has ${data.names[key]}'s default, auto; its other forms are diagnostics, in no total.`
-      : "A system run in several forms has the time of its fastest form.");
-  }
+  if (new Set(mine.map((r) => r.label)).size > 1) about.push("A system run in several forms has the time of its fastest form.");
   if (inst?.notes?.[rec]) about.push(inst.notes[rec]);
   if (about.length) parts.push(note(about.join(" ")));
   const name0 = isMine(key) ? data.names[key] : data.names[rec] ?? data.names[key];
@@ -2190,7 +2235,6 @@ async function runs(route) {
   if (answered(v)) {
     let gap = Infinity;
     for (const e of shown) {
-      if (e.r.label.endsWith(", diagnostic)")) continue;   // a form of tddlog no table counts
       const m = med(e.r);
       if (m !== null && Math.abs(m - v) < gap) [gap, inTable] = [Math.abs(m - v), e];
     }
@@ -2240,8 +2284,8 @@ async function runs(route) {
 // By program type, the types and all programs, the one on show (or that
 // holds the family or instance on show) with its families, then the
 // programs tddlog does not run; How it works, its walkthroughs and the
-// methods table. The results page's own overview is under By program
-// type; the logo above is the front page.
+// methods table. By program type's heading opens the results page's
+// figures; the logo above is the front page.
 const MENU_TOP = 10;
 // The page of the programs tddlog does not run, the last entry under By program type.
 const COVERAGE = "Programs tddlog does not run";
@@ -2300,7 +2344,6 @@ function rail(route) {
   // of its instance, and the menu marks that family as it marks a category
   // narrowed to it
   const types = element("ul", {}, legend("instances"));
-  if (front) types.append(element("li", {}, link({ view: "home" }, "Overview")));
   const at = route.view === "family" ? data.place.get(`${route.suite}/${route.instance}`) : undefined;
   const current = route.view === "category" ? route.category : at ? at.c.key : route.suite ? categoryFor(route.suite)?.key : undefined;
   const family = route.view === "category" ? route.only : at?.g.key;

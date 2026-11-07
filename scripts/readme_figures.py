@@ -60,7 +60,8 @@ Writes, as SVG:
                     speed-ups;
   results-CATEGORY  the cactus plot of the category's drawn systems over
                     all its instances (how many each answers within each
-                    time limit), each system its colour and line, beside
+                    time limit), tddlog and the five best native systems
+                    each in its colour and line, the others grey, beside
                     the scatter plot of tddlog's time against the fastest
                     other drawn system's, instance by instance; the legend
                     under them, ordered by answers, each system's answers
@@ -83,6 +84,7 @@ time limit; the scatter plots' are logarithmic from 0.2 s, shorter runs
 drawn at 0.2 s. Alea.jl's and Roulette's times are their in-process
 times, without their language's start-up. Needs matplotlib."""
 import collections
+import decimal
 import hashlib
 import json
 import math
@@ -125,6 +127,9 @@ COLOURS = {
 ALL = 'all-programs'  # all programs, the union of the types: a category of its own, not on the overview
 APART = 'circuits'    # the circuits, apart from the types: written as a category, not on the overview
 THEME = dict(bg='#ffffff', text='#1f2328', muted='#59636e', grid='#d8dee4')
+# a line past tddlog's and the type's five best native systems': the results page's
+# --grey-line, its muted colour 45% over the background
+GREY = '#b4b9be'
 FONTS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
 
 
@@ -252,10 +257,24 @@ def ordered(cat):
     return sorted(cat['drawn'], key=lambda s: (-cat['answers'][s], rank.index(s)))
 
 
+def lit(cat):
+    """The systems whose lines are in colour: tddlog's (and its pipelines')
+    and the five best native systems', the overview's rows; the others grey."""
+    return set(cat['mine']) | set(cat['named'])
+
+
+def line(s, cat, col):
+    """A system's line: its colour, its dash and its width."""
+    if s not in lit(cat):
+        return GREY, '-', 1.2
+    return col[s][0], col[s][1], 3.2 if is_mine(s) else 1.7
+
+
 def cactus(ax, cat, systems, hi, c, col):
     """The instances each system answers within each time limit, an
     instance a system does not answer (or was not given) counted as
-    unanswered; returns {system: answered}."""
+    unanswered, the lines past lit()'s grey and under the others; returns
+    {system: answered}."""
     n = cat['instances']
     solved = {}
     for s in reversed(systems):
@@ -263,9 +282,9 @@ def cactus(ax, cat, systems, hi, c, col):
         solved[s] = len(ts)
         xs = [0] + ts + [hi]
         ys = [0] + list(range(1, len(ts) + 1)) + [len(ts)]
-        lead = is_mine(s)
-        ax.step(xs, ys, where='post', color=col[s][0], ls=col[s][1], lw=3.2 if lead else 1.7,
-                zorder=10 if lead else 5)
+        colour, ls, lw = line(s, cat, col)
+        ax.step(xs, ys, where='post', color=colour, ls=ls, lw=lw,
+                zorder=10 if is_mine(s) else 5 if s in lit(cat) else 3)
     ax.axhline(n, color=c['muted'], lw=0.9, zorder=1)
     ax.text(hi * 0.01, n * 1.01, f'all {n}', va='bottom', ha='left', color=c['muted'], fontsize=11)
     ticks = linear_ticks(hi)
@@ -289,10 +308,11 @@ LEGEND_COLUMNS = [('answers', 2.8), ('tddlog faster', 4.35)]
 FEW = 'too few in common'  # a comparison with fewer than 20 instances both answer
 
 
-def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col):
+def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col, cat):
     """A legend as a table, in ncol blocks side by side from (x, top), inches
-    from the figure's top left: each system's line, its name, how many of the
-    n instances it answers and tddlog's speed-up over it."""
+    from the figure's top left: each system's line (grey past lit()'s), its
+    name, how many of the n instances it answers and tddlog's speed-up over
+    it."""
     per = math.ceil(len(entries) / ncol)
     for b in range(ncol):
         x0 = x + b * LEGEND_BLOCK
@@ -306,11 +326,11 @@ def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col):
             fig.text((x0 + right) / WIDTH, y, head, ha='right', va='center', fontsize=10, color=c['muted'])
         for k, (s, name, numbers) in enumerate(part):
             y = 1 - (top + LEGEND_HEAD + (k + 0.5) * LEGEND_ROW) / h
-            lead = is_mine(s)
-            fig.add_artist(plt.Line2D([(x0 + 0.02) / WIDTH, (x0 + 0.3) / WIDTH], [y, y], color=col[s][0],
-                                      ls=col[s][1], lw=3.2 if lead else 1.7, transform=fig.transFigure))
+            colour, ls, lw = line(s, cat, col)
+            fig.add_artist(plt.Line2D([(x0 + 0.02) / WIDTH, (x0 + 0.3) / WIDTH], [y, y], color=colour,
+                                      ls=ls, lw=lw, transform=fig.transFigure))
             fig.text((x0 + 0.4) / WIDTH, y, name, ha='left', va='center', fontsize=11.5,
-                     fontweight='bold' if lead else 'normal')
+                     fontweight='bold' if is_mine(s) else 'normal', color=c['text'] if s in lit(cat) else c['muted'])
             for j, ((_, right), v) in enumerate(zip(LEGEND_COLUMNS, numbers)):
                 fig.text((x0 + right) / WIDTH, y, str(v), ha='right', va='center', fontsize=9.5 if v == FEW else 11.5,
                          color=c['text'] if j == 0 else c['muted'])
@@ -395,19 +415,25 @@ def results(cat, names, col, out):
                  'fastest other system' if cat['key'] in (ALL, APART) else 'fastest native system', subject(cat, names))
     legend = [(s, names[s], [solved[s], '' if is_mine(s) else faster(cat['vs'][s])]) for s in systems]
     legend_table(fig, h, (WIDTH - ncol * LEGEND_BLOCK) / 2, legend_top, legend, cat['instances'], cat['noun'],
-                 ncol, c, col)
+                 ncol, c, col, cat)
     save(fig, out, f'results-{cat["key"]}')
     return solved, sc
 
 
+def fixed(x, digits):
+    """x with digits decimals, as the results page writes it (JavaScript's
+    toFixed): a tie rounded up, not to even, so that 156.5 is 157 on both."""
+    return str(decimal.Decimal(x).quantize(decimal.Decimal(1).scaleb(-digits), rounding=decimal.ROUND_HALF_UP))
+
+
 def seconds(t):
     if t >= 36000:
-        return f'{t / 3600:.0f} h'
+        return f'{fixed(t / 3600, 0)} h'
     if t >= 3600:
-        return f'{t / 3600:.1f} h'
+        return f'{fixed(t / 3600, 1)} h'
     if t >= 60:
-        return f'{t / 60:.0f} min'
-    return f'{t:.0f} s' if t >= 10 else f'{t:.1f} s'
+        return f'{fixed(t / 60, 0)} min'
+    return f'{fixed(t, 0)} s' if t >= 10 else f'{fixed(t, 1)} s'
 
 
 def times(lo, hi):
@@ -426,7 +452,7 @@ def ratio_text(r, least=False):
         x = math.floor(x) if x >= 10 else math.floor(x * 10) / 10
         if r < 1:
             x = math.ceil(1 / r) if 1 / r >= 10 else math.ceil(10 / r) / 10
-    text = f'{x:.0f}×' if x >= 10 else f'{x:.1f}×'
+    text = f'{fixed(x, 0 if x >= 10 else 1)}×'
     if r < 1:
         return ('≤' if least else '') + text + ' slower'
     return ('≥' if least else '') + text
@@ -674,7 +700,7 @@ def blocks(data, numbers, names, digest):
         'overview': (f"<sub>{stamp_text(data)} Each row: a native system's answers of the type's instances, its "
                      f"total time (its colour) and tddlog's (teal) over the instances it is given as its users would "
                      f"write them and either answers, "
-                     f"and how many times faster tddlog is ([how it is counted](#performance)).</sub>"),
+                     f"and how many times faster tddlog is ([how it is counted]({SITE}/#/methods)).</sub>"),
         'setup': (f"<!-- written from bindings/wasm/results/categories.json, sha256 {digest} -->\n"
                   f"{stamp_text(data)} Runs are single-threaded, under a time limit of {in_words(limits)} s by "
                   f"suite; a run that does not answer counts as {times_par(m)} its limit, and a time under "
