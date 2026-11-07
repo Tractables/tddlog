@@ -303,8 +303,9 @@ impl Cnf {
 
     /// The solver's literal of `l`, the clauses of the nodes of its cone
     /// given where they were not yet. `None` where the steps run out, the
-    /// cone then left as it was: the pruner gives the search more steps
-    /// with each gate it builds, and a later call encodes the cone anew.
+    /// cone then left as it was and the steps spent: the pruner gives the
+    /// search more steps with each gate it builds, and a later call
+    /// encodes the cone anew.
     fn encode(
         &mut self,
         g: &Graph,
@@ -323,7 +324,12 @@ impl Cnf {
             let (mut fresh, inputs) = (vec![root], self.inputs.len());
             self.var[root] = 2 * vars;
             vars += 1;
+            // A cone that does not fit the steps left is not walked further:
+            // its clauses are built only as far as the steps they would cost.
             while let Some(n) = todo.pop() {
+                if 7 * (clauses.len() as u64) / 3 >= *budget {
+                    break;
+                }
                 let v = self.var[n];
                 let [a, b] = g.fanins[n];
                 if n == 0 {
