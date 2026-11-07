@@ -91,6 +91,24 @@ fn node(l: Lit) -> usize {
     (l >> 1) as usize
 }
 
+/// The gates below `floor` that the cone of `n` reads, its walk stopping
+/// at them and at the inputs.
+fn reads_below(g: &Graph, n: usize, floor: usize) -> FxHashSet<usize> {
+    let (mut seen, mut reads) = (FxHashSet::default(), FxHashSet::default());
+    let mut todo = vec![n];
+    while let Some(m) = todo.pop() {
+        if !seen.insert(m) || g.fanins[m][0] == NO {
+            continue;
+        }
+        if m < floor {
+            reads.insert(m);
+            continue;
+        }
+        todo.extend(g.fanins[m].iter().map(|&f| node(f)));
+    }
+    reads
+}
+
 /// What the sweep did, for `--stats`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SweepStats {
@@ -309,15 +327,21 @@ impl Sweep {
         }
         let n = node(l);
         let (h, phase) = g.signature(n);
-        let tries: Vec<usize> = self
-            .classes
-            .get(&h)?
+        let class = self.classes.get(&h)?;
+        // A gate below the floor is an input of the calls: `n` can be proved
+        // equal to it only where `n`'s cone reads it, as a step of a loop
+        // reads the value an earlier step left unchanged. Any other call
+        // would fail and cost a counterexample.
+        let floor = self.floor;
+        let below = |c: usize| c != 0 && c < floor && g.fanins[c][0] != NO;
+        let reads = match class.iter().any(|&c| below(c)) {
+            true => reads_below(g, n, floor),
+            false => FxHashSet::default(),
+        };
+        let tries: Vec<usize> = class
             .iter()
             .copied()
-            // A gate below the floor is an input of the calls: a gate is
-            // seldom proved equal to it, and each call that fails costs a
-            // counterexample.
-            .filter(|&c| c != n && (c == 0 || c >= self.floor || g.fanins[c][0] == NO))
+            .filter(|&c| c != n && (!below(c) || reads.contains(&c)))
             .filter(|&c| g.alike(n, c))
             .take(TRIES)
             .collect();
