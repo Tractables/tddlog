@@ -19,7 +19,7 @@ use std::sync::{Arc, LazyLock};
 
 use super::interned::Interned;
 use super::normalize::{Facts, NormProgram, Weights, switch_weights};
-use super::schedule::{Order, literal_vars, schedule_body};
+use super::schedule::{Order, literal_vars, schedule_keyed};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::by_hash::ByHash;
 use crate::syntax::{
@@ -732,6 +732,9 @@ struct Grounder<'a> {
     /// and atom.
     clauses: &'a [Clause],
     from_delta: FxHashMap<(usize, usize), FromDelta>,
+    /// The keys of the relations of predicates given by facts that the
+    /// rules' bodies may join on ([`fact_keys`]), by name and arity.
+    keys: FxHashMap<(&'a str, usize), Vec<usize>>,
     /// The size of `ground_rules`, a term per head and body literal, and
     /// the size past which the grounding is given up.
     size: usize,
@@ -855,6 +858,7 @@ impl<'a> Grounder<'a> {
             walk: Walk::default(),
             clauses,
             from_delta: FxHashMap::default(),
+            keys: FxHashMap::default(),
             size: 0,
             bound: bound.unwrap_or(usize::MAX),
             refused: false,
@@ -925,6 +929,14 @@ impl<'a> Grounder<'a> {
     /// A known predicate, and whether it is a switch.
     fn pred_id(&self, name: &str, arity: usize) -> Option<(PredId, bool)> {
         self.pred_ids.get(&(name, arity)).copied()
+    }
+
+    /// The keys of the relation a positive literal reads ([`fact_keys`]).
+    fn keys_of(&self, l: &'a Literal) -> &[usize] {
+        match l {
+            Literal::Pos(a) => self.keys.get(&(&*a.name, a.args.len())).map_or(&[], |k| k),
+            _ => &[],
+        }
     }
 
     fn pred(&mut self, name: &'a Name, arity: usize, switch: Option<Weights>) -> PredId {
@@ -1334,7 +1346,11 @@ fn compile_rule<'a>(
         Literal::Pos(a) | Literal::Neg(a) => g.pred_id(&a.name, a.args.len()),
         _ => None,
     }));
-    let ordered = schedule_rule(clause, |i| known[i].is_some_and(|(_, switch)| switch))?;
+    let ordered = schedule_rule(
+        clause,
+        |i| known[i].is_some_and(|(_, switch)| switch),
+        |i| g.keys_of(&clause.body[i]),
+    )?;
     let mut body: Vec<ILit> = Vec::with_capacity(ordered.len());
     for &i in &ordered {
         match &clause.body[i] {
@@ -2126,16 +2142,18 @@ fn flexible_weights(
 }
 
 /// The order in which `clause`'s body is ground, every literal with the
-/// variables it needs bound by those before it ([`schedule_body`]),
-/// `switch` saying which of its atoms are switches; an unsafe rule's error
-/// where a literal or a head variable is left unbound.
-fn schedule_rule(
+/// variables it needs bound by those before it ([`schedule_keyed`]),
+/// `switch` saying which of its atoms are switches and `keys` the keys of
+/// the relation each reads; an unsafe rule's error where a literal or a
+/// head variable is left unbound.
+fn schedule_rule<'k>(
     clause: &Clause,
     switch: impl Fn(usize) -> bool,
+    keys: impl Fn(usize) -> &'k [usize],
 ) -> Result<Vec<usize>, GroundError> {
     let mut bound: FxHashSet<String> = FxHashSet::default();
     let ordered =
-        schedule_body(&clause.body, &mut bound, switch, Order::Join).map_err(|stuck| {
+        schedule_keyed(&clause.body, &mut bound, switch, keys, Order::Join).map_err(|stuck| {
             GroundError::Unsafe(format!(
                 "{clause}: literal {} has variables not bound by a positive body atom",
                 clause.body[stuck]
@@ -2156,18 +2174,78 @@ fn schedule_rule(
 
 /// Whether every rule of `norm` is safe, as the grounder schedules it
 /// ([`schedule_rule`]): the check that chooses a program's route before
-/// any of it is ground (`super::ground_norm`).
+/// any of it is ground (`super::ground_norm`). The order of the atoms,
+/// which the keys of their relations change, does not change what the
+/// body binds.
 pub(crate) fn safe(norm: &NormProgram) -> bool {
     let switches: FxHashSet<(&str, usize)> =
         norm.switches.keys().map(|(n, k)| (&**n, *k)).collect();
     norm.rules.iter().all(|c| {
         super::magic::ground_clause(c)
-            || schedule_rule(c, |i| match &c.body[i] {
-                Literal::Pos(a) | Literal::Neg(a) => switches.contains(&a.signature()),
-                _ => false,
-            })
+            || schedule_rule(
+                c,
+                |i| match &c.body[i] {
+                    Literal::Pos(a) | Literal::Neg(a) => switches.contains(&a.signature()),
+                    _ => false,
+                },
+                |_| &[],
+            )
             .is_ok()
     })
+}
+
+/// The keys of the relations of the predicates given by facts: the
+/// argument positions at which no two of a predicate's facts agree, so
+/// that an atom with a variable bound there yields at most one tuple
+/// ([`schedule_keyed`]), as a successor relation's facts `next(T, T1)` do
+/// at each argument. A position counts only where a rule reads the
+/// predicate with a variable there that another of its body literals also
+/// reads, the one place a join can bind it before the atom; there, its
+/// values are read once, and a value seen twice ends the reading. A table's
+/// columns a rule reads only once, a comment for one, are not read.
+fn fact_keys(norm: &NormProgram) -> FxHashMap<(&str, usize), Vec<usize>> {
+    let facts: FxHashMap<(&str, usize), &Facts> = norm
+        .facts
+        .iter()
+        .filter(|(_, f)| f.arity >= 2)
+        .map(|(_, f)| ((&*f.name, f.arity), &**f))
+        .collect();
+    let mut asked: FxHashMap<(&str, usize), Vec<usize>> = FxHashMap::default();
+    for c in &norm.rules {
+        let reads = |l: &Literal| matches!(l, Literal::Pos(a) if facts.contains_key(&(&*a.name, a.args.len())));
+        if !c.body.iter().any(reads) {
+            continue;
+        }
+        // The number of the body's literals that read each variable.
+        let vars: Vec<Vec<String>> = c.body.iter().map(literal_vars).collect();
+        let mut readers: FxHashMap<&str, usize> = FxHashMap::default();
+        for v in vars.iter().flatten() {
+            *readers.entry(v).or_default() += 1;
+        }
+        for l in c.body.iter().filter(|l| reads(l)) {
+            let Literal::Pos(a) = l else { continue };
+            let at = asked.entry((&*a.name, a.args.len())).or_default();
+            for (k, t) in a.args.iter().enumerate() {
+                if matches!(t, Term::Var(v) if readers[v.as_str()] > 1) && !at.contains(&k) {
+                    at.push(k);
+                }
+            }
+        }
+    }
+    asked
+        .into_iter()
+        .filter_map(|(sig, at)| {
+            let f = facts[&sig];
+            let keys: Vec<usize> = at
+                .into_iter()
+                .filter(|&k| {
+                    let mut seen = FxHashSet::default();
+                    f.tuples().all(|(args, _)| seen.insert(&args[k]))
+                })
+                .collect();
+            (!keys.is_empty()).then_some((sig, keys))
+        })
+        .collect()
 }
 
 /// Predicate dependency graph → strata (lists of predicate ids), lowest first.
@@ -2307,6 +2385,9 @@ fn register_program<'a>(
         let p = g.pred(name, *arity, None);
         g.preds[p as usize].control = true;
     }
+    // The keys of the facts' relations, for every rule's schedule
+    // ([`compile_rule`], [`from_delta`]) wherever the facts are written.
+    g.keys = fact_keys(norm);
     // The predicates numbered as the rules and facts name them, each
     // predicate's facts where the first of them was.
     let mut facts = norm.facts.iter().peekable();
@@ -2678,30 +2759,127 @@ fn load(g: &mut Grounder, p: PredId, f: &Facts, demanded: bool) {
 ///
 /// Round 0 grounds every rule against the relations as they are (the
 /// stratum's own empty, but for its facts); then [`rounds`] over the
-/// tuples each round adds.
+/// tuples each round adds, each visiting the literals that can read one
+/// of them ([`Readers`]).
 fn evaluate_stratum(g: &mut Grounder, stratum: &[PredId]) {
     let rule_ids = rules_of(g, stratum);
-    let slot: FxHashMap<PredId, usize> = stratum.iter().enumerate().map(|(s, &p)| (p, s)).collect();
-    // reads[s]: the rules, as places in `rule_ids`, and the literals in
-    // which the stratum's predicate `s` is read positively.
-    let mut reads: Vec<Vec<(usize, usize)>> = vec![Vec::new(); stratum.len()];
-    for (k, &r) in rule_ids.iter().enumerate() {
-        for (i, l) in g.rules[r].body.iter().enumerate() {
-            if let ILit::Pos(p, _) = l
-                && let Some(&s) = slot.get(p)
-            {
-                reads[s].push((k, i));
-            }
-        }
-    }
+    let mut readers = Readers::of(g, &rule_ids, stratum);
     let mut from = lens(g, stratum);
     g.new_round();
     for &r in &rule_ids {
         eval_rule(g, r, None);
     }
-    rounds(g, &rule_ids, stratum, &mut from, |s, due| {
-        due.extend_from_slice(&reads[s])
+    rounds(g, &rule_ids, stratum, &mut from, |g, s, range, due| {
+        readers.due(g, stratum[s], s, range, due)
     });
+}
+
+/// The literals that read each predicate of a stratum positively, as
+/// places (rule in the stratum's rules, literal), and those among them
+/// that can read some of the tuples a round adds. A literal with a
+/// constant argument reads only the tuples with that value there. A chain
+/// written step by step, each step's rules at its number, adds a step's
+/// few tuples in each of as many rounds as it has steps: its ground
+/// program with the rules in another order than the steps', or a loop
+/// unrolled, which the magic rewrite's demand walks down a step a round.
+/// A round that visited every literal of the predicate, a few for each
+/// step, made the stratum quadratic in its steps: a ladder of 8 000
+/// steps, its ground program's rules shuffled, took 116 s to ground
+/// against 0.26 s as printed.
+struct Readers {
+    /// Of each predicate, by place in the stratum: every literal that
+    /// reads it, those with no constant argument, and the positions of
+    /// the others' first constant argument.
+    all: Vec<Vec<(usize, usize)>>,
+    open: Vec<Vec<(usize, usize)>>,
+    at: Vec<Vec<usize>>,
+    /// The literals whose first constant argument is a value at a position
+    /// of a predicate.
+    by_value: FxHashMap<(usize, usize, Val), ByValue>,
+    calls: u32,
+}
+
+/// The literals of [`Readers::by_value`] under one key, and the call of
+/// [`Readers::due`] that last took them.
+#[derive(Default)]
+struct ByValue {
+    taken: u32,
+    lits: Vec<(usize, usize)>,
+}
+
+impl Readers {
+    fn of(g: &Grounder, rule_ids: &[usize], stratum: &[PredId]) -> Self {
+        let slot: FxHashMap<PredId, usize> =
+            stratum.iter().enumerate().map(|(s, &p)| (p, s)).collect();
+        let n = stratum.len();
+        let mut readers = Readers {
+            all: vec![Vec::new(); n],
+            open: vec![Vec::new(); n],
+            at: vec![Vec::new(); n],
+            by_value: FxHashMap::default(),
+            calls: 0,
+        };
+        for (k, &r) in rule_ids.iter().enumerate() {
+            for (i, l) in g.rules[r].body.iter().enumerate() {
+                let ILit::Pos(p, args) = l else { continue };
+                let Some(&s) = slot.get(p) else { continue };
+                readers.all[s].push((k, i));
+                let constant = args.iter().enumerate().find_map(|(pos, a)| match a {
+                    Arg::Val(v) => Some((pos, *v)),
+                    Arg::Var(_) => None,
+                });
+                match constant {
+                    Some((pos, v)) => {
+                        if !readers.at[s].contains(&pos) {
+                            readers.at[s].push(pos);
+                        }
+                        readers
+                            .by_value
+                            .entry((s, pos, v))
+                            .or_default()
+                            .lits
+                            .push((k, i));
+                    }
+                    None => readers.open[s].push((k, i)),
+                }
+            }
+        }
+        readers
+    }
+
+    /// Adds to `due` the literals that can read the tuples `from..e` of
+    /// `p`, the stratum's predicate `s`: those with no constant argument,
+    /// and those whose first constant is a tuple's value there. Where
+    /// looking the tuples up takes more steps than there are literals
+    /// with a constant, it adds them all.
+    fn due(
+        &mut self,
+        g: &Grounder,
+        p: PredId,
+        s: usize,
+        (from, e): (usize, usize),
+        due: &mut Vec<(usize, usize)>,
+    ) {
+        let keyed = self.all[s].len() - self.open[s].len();
+        if (e - from).saturating_mul(self.at[s].len()) >= keyed {
+            due.extend_from_slice(&self.all[s]);
+            return;
+        }
+        due.extend_from_slice(&self.open[s]);
+        self.calls += 1;
+        let rel = &g.rels[p as usize];
+        for t in from..e {
+            let tuple = rel.tuple(t);
+            for &pos in &self.at[s] {
+                if let Some(b) = self.by_value.get_mut(&(s, pos, tuple[pos]))
+                    && b.taken != self.calls
+                {
+                    b.taken = self.calls;
+                    due.extend_from_slice(&b.lits);
+                }
+            }
+        }
+    }
 }
 
 /// The rules of the predicates of `stratum`.
@@ -2721,18 +2899,18 @@ fn lens(g: &Grounder, preds: &[PredId]) -> Vec<usize> {
 /// nothing. Each grounds the rules again against the tuples the round
 /// before added (those since `from` in the first), a rule once per
 /// positive literal of `group` whose predicate gained tuples, in the order
-/// of the rules and their literals. `reads(s, due)` adds the rules, as
-/// places in `rule_ids`, and the literals that read `group[s]`: a round
-/// visits those, not every rule. A chain over a time index takes a round
-/// per step where it is one stratum, as the magic rewrite's demand makes
-/// it (pmc1's step, 1 400 rules, for each of 75 steps a few dozen rounds
-/// deep).
+/// of the rules and their literals. `reads(g, s, range, due)` adds the
+/// rules, as places in `rule_ids`, and the literals that read `group[s]`
+/// and can read its new tuples `range`: a round visits those, not every
+/// rule. A chain over a time index takes a round per step where it is one
+/// stratum, as the magic rewrite's demand makes it (pmc1's step, 1 400
+/// rules, for each of 75 steps a few dozen rounds deep).
 fn rounds(
     g: &mut Grounder,
     rule_ids: &[usize],
     group: &[PredId],
     from: &mut [usize],
-    reads: impl Fn(usize, &mut Vec<(usize, usize)>),
+    mut reads: impl FnMut(&Grounder, usize, (usize, usize), &mut Vec<(usize, usize)>),
 ) {
     let mut delta: Vec<(usize, usize)> = vec![(0, 0); group.len()];
     let mut lits: Vec<(usize, usize)> = Vec::new();
@@ -2744,7 +2922,7 @@ fn rounds(
             delta[s] = (from[s], e);
             if e > from[s] {
                 lits.clear();
-                reads(s, &mut lits);
+                reads(g, s, (from[s], e), &mut lits);
                 due.extend(lits.iter().map(|&(k, i)| (k, i, s)));
             }
             from[s] = e;
@@ -2996,7 +3174,7 @@ fn evaluate_by_levels(
         }
         if cyclic {
             let mut from = start.clone();
-            rounds(g, &rule_ids, group, &mut from, |s, due| {
+            rounds(g, &rule_ids, group, &mut from, |_, s, _, due| {
                 due.extend(read_at(&within, group[s], key.0))
             });
         }
@@ -3170,7 +3348,8 @@ fn from_delta(g: &Grounder, r: usize, i: usize) -> FromDelta {
         _ => false,
     };
     let schedule = |order| {
-        schedule_body(&clause.body, &mut FxHashSet::default(), switch, order)
+        let keys = |j: usize| g.keys_of(&clause.body[j]);
+        schedule_keyed(&clause.body, &mut FxHashSet::default(), switch, keys, order)
             .expect("a compiled rule's body is scheduled from any of its atoms")
     };
     // The rule's body is compiled in this order ([`compile_rule`]).

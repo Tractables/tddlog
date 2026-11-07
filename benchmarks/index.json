@@ -1010,8 +1010,7 @@
      "geni_link_18",
      "geni_link_20",
      "geni_link_24",
-     "geni_link_28",
-     "geni_link_32"
+     "geni_link_28"
     ],
     "key": "link",
     "title": "Router grid, failing links"

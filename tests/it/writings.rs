@@ -1034,3 +1034,228 @@ query(strike(1, 3)).
         common::assert_close(&renamed, &answers(&renamed), &expected, 1e-12);
     }
 }
+
+/// The ground program of a ladder of `n` steps, as its printed writing
+/// lists it (rl_ladder's): the facts, then the rules of each step, `o1`
+/// and `o2` its two states, `b(j)` a fair coin and `breaks(j)` a rare one;
+/// with `seed`, the facts and rules in an order drawn from it. The queries
+/// come last.
+fn ladder(n: usize, seed: Option<u64>) -> String {
+    let mut lines: Vec<String> = (0..n)
+        .map(|j| format!("0.001::breaks({j})."))
+        .chain((0..n).map(|j| format!("0.5::b({j}).")))
+        .collect();
+    lines.push("o2(1) :- \\+breaks(0), \\+b(0).".into());
+    lines.push("o1(1) :- b(0), \\+breaks(0).".into());
+    for k in 2..=n {
+        let j = k - 1;
+        lines.push(format!("o2({k}) :- o2({j}), \\+b({j}), \\+o1({j})."));
+        lines.push(format!("o2({k}) :- o1({j}), \\+breaks({j}), \\+b({j})."));
+        lines.push(format!("o1({k}) :- b({j}), o2({j})."));
+        lines.push(format!("o1({k}) :- b({j}), o1({j}), \\+breaks({j})."));
+    }
+    if let Some(mut x) = seed {
+        for i in (1..lines.len()).rev() {
+            x = x
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            lines.swap(i, (x >> 33) as usize % (i + 1));
+        }
+    }
+    lines.push(format!("query(o1({n}))."));
+    lines.push(format!("query(o2({n}))."));
+    lines.join("\n")
+}
+
+/// P(o1(n)) and P(o2(n)) of [`ladder`], from the joint of the two states
+/// step by step: `o1` true before the first.
+fn ladder_answers(n: usize) -> [f64; 2] {
+    let (coin, breaks) = (0.5, 0.001);
+    let mut p = [[0.0; 2]; 2];
+    p[1][0] = 1.0;
+    for _ in 0..n {
+        let mut q = [[0.0; 2]; 2];
+        for (o1, o2, b, br) in (0..16).map(|w| (w & 1 == 1, w & 2 == 2, w & 4 == 4, w & 8 == 8)) {
+            let w = p[o1 as usize][o2 as usize]
+                * if b { coin } else { 1.0 - coin }
+                * if br { breaks } else { 1.0 - breaks };
+            let next2 = !b && ((o2 && !o1) || (o1 && !br));
+            let next1 = b && (o2 || (o1 && !br));
+            q[next1 as usize][next2 as usize] += w;
+        }
+        p = q;
+    }
+    [p[1][0] + p[1][1], p[0][1] + p[1][1]]
+}
+
+/// The parity of the flips `f(j, B)` of each of two bits over `n` steps,
+/// the loop unrolled: each step's rules carry its number, which leaves
+/// the bit `B` the last argument of each atom.
+fn unrolled_parity(n: usize) -> String {
+    let mut s = String::from("w(0). w(1).\non(0, B) :- w(B).\n");
+    for k in 1..=n {
+        let j = k - 1;
+        s += &format!("on({k}, B) :- on({j}, B), \\+f({j}, B).\n");
+        s += &format!("on({k}, B) :- off({j}, B), f({j}, B).\n");
+        s += &format!("off({k}, B) :- off({j}, B), \\+f({j}, B).\n");
+        s += &format!("off({k}, B) :- on({j}, B), f({j}, B).\n");
+    }
+    for j in 0..n {
+        s += &format!("0.1::f({j}, 0). 0.1::f({j}, 1).\n");
+    }
+    s + &format!("query(on({n}, 0)).\nquery(off({n}, 1)).\n")
+}
+
+/// A chain written step by step, each step's number in its rules: the
+/// ground program of a ladder, as printed and with its clauses shuffled,
+/// and a loop unrolled. Each grounds in walks linear in its steps: a
+/// round of the grounder adds a step's few atoms and visits the rules
+/// that read them, not every rule of their predicates. A ladder of 8 000
+/// steps took 116 s to ground shuffled, against 0.26 s as printed, and a
+/// loop of 3 000 steps 34 s unrolled, against 0.39 s as a recursion.
+#[test]
+fn a_chain_written_step_by_step_grounds_in_walks_linear_in_its_steps() {
+    let n = 600;
+    let walked: Vec<(&str, u64)> = [
+        ("the ladder as printed", ladder(n, None)),
+        ("the ladder shuffled", ladder(n, Some(7))),
+        ("the parity unrolled", unrolled_parity(n)),
+    ]
+    .into_iter()
+    .map(|(writing, source)| {
+        (
+            writing,
+            common::ground(&source, Rows::Apart, false).stats.walked,
+        )
+    })
+    .collect();
+    assert!(
+        walked.iter().all(|&(_, w)| w <= 100 * n as u64),
+        "body literals walked: {walked:?}"
+    );
+}
+
+#[test]
+fn a_chain_written_step_by_step_answers_as_its_recurrence() {
+    let n = 20;
+    let [o1, o2] = ladder_answers(n);
+    let states = [(format!("o1({n})"), o1), (format!("o2({n})"), o2)];
+    let even = (1.0 + 0.8f64.powi(n as i32)) / 2.0;
+    let parities = [
+        (format!("on({n},0)"), even),
+        (format!("off({n},1)"), 1.0 - even),
+    ];
+    for (writing, source, expected) in [
+        ("the ladder as printed", ladder(n, None), &states),
+        ("the ladder shuffled", ladder(n, Some(7)), &states),
+        ("the parity unrolled", unrolled_parity(n), &parities),
+    ] {
+        for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+            let what = format!("{writing}, {strategy:?}");
+            let run = common::run(&source, &common::options(strategy, Projection::default()))
+                .unwrap_or_else(|e| panic!("{what}: {e}"));
+            let results = run.results.expect("no evidence");
+            assert_answers(&what, &results, expected, 1e-9);
+        }
+    }
+}
+
+/// A step recursion answers alike with its recursive call written before
+/// its step or after it: the bound-end rewrite reads both alike
+/// (src/ground/linear.rs). `s(p, T)` holds from `h(p, T - 1)`, or from
+/// `s(p, T - 1)` where `q(p, T - 1)` does not hold; by hand,
+/// P(s(p, 2)) = 1 - 0.5 (1 - 0.5 x 0.7) and P(s(p, 3)) = 1 - 0.5 (1 -
+/// P(s(p, 2))).
+#[test]
+fn a_step_recursion_answers_alike_with_its_call_before_its_step() {
+    let s2 = 1.0 - 0.5 * (1.0 - 0.5 * 0.7);
+    let expected = [
+        ("s(p,2)".to_string(), s2),
+        ("s(p,3)".to_string(), 1.0 - 0.5 * (1.0 - s2)),
+    ];
+    for step in [
+        "s(P,T1) :- next(T,T1), s(P,T), \\+ q(P,T).",
+        "s(P,T1) :- s(P,T), \\+ q(P,T), next(T,T1).",
+    ] {
+        let source = format!(
+            "0.5::h(p,0). 0.5::h(p,1). 0.5::h(p,2).\n0.3::q(p,1).\n\
+             next(0,1). next(1,2). next(2,3).\n\
+             s(P,T1) :- h(P,T), next(T,T1).\n{step}\n\
+             query(s(p,2)).\nquery(s(p,3)).\n"
+        );
+        for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+            let what = format!("{step}, {strategy:?}");
+            let run = common::run(&source, &common::options(strategy, Projection::default()))
+                .unwrap_or_else(|e| panic!("{what}: {e}"));
+            assert_answers(&what, &run.results.expect("no evidence"), &expected, 1e-12);
+        }
+    }
+}
+
+/// A chain of `n` steps, `f(J, K)` for two lanes `K` and each step `J`
+/// taken with the probability `b(J)`, `c(J, K)` reading `f` at `J` and at
+/// the step before, the step written as `is` or as a successor relation's
+/// facts `next(J, J1)`. `f(J, K)` holds with the product of `b(0)` to
+/// `b(J - 1)`.
+fn two_steps(n: usize, succ: bool) -> String {
+    let mut s = String::from("f(0, 0). f(0, 1).\nc(0, K) :- f(0, K).\n");
+    for j in 0..n {
+        s += &format!("0.9::b({j}).\n");
+    }
+    if succ {
+        for j in 1..n {
+            s += &format!("next({}, {j}).\n", j - 1);
+        }
+        s += "f(J1, K) :- c(J, K), next(J, J1), b(J).\n";
+        s += "c(J, K) :- f(J, K), next(P, J), f(P, K).\n";
+    } else {
+        s += &format!("f(J1, K) :- c(J, K), J1 is J + 1, J1 < {n}, b(J).\n");
+        s += "c(J, K) :- f(J, K), P is J - 1, f(P, K).\n";
+    }
+    s + &format!("query(f({}, 0)).\nquery(f({}, 1)).\n", n - 1, n - 1)
+}
+
+/// A step written as `P is J - 1` or as a successor fact `next(P, J)`
+/// grounds in walks linear in the steps. A join from a new tuple of `f(P,
+/// K)` looks `c(J, K)`'s `f(J, K)` up by `J`: `next(P, J)` yields one
+/// tuple for the `P` bound, as `is` does, and comes first, where `f(J, K)`,
+/// written first and sharing as many bound variables, walked every `f`
+/// with that `K` (rl_hardware's carry chain read from its successor facts:
+/// 30 000 steps past 120 s, against 8 s with `is`).
+#[test]
+fn a_step_read_from_successor_facts_grounds_as_one_computed() {
+    let n = 600;
+    let walked: Vec<(bool, u64)> = [false, true]
+        .into_iter()
+        .map(|succ| {
+            let source = two_steps(n, succ);
+            (
+                succ,
+                common::ground(&source, Rows::Apart, false).stats.walked,
+            )
+        })
+        .collect();
+    assert!(
+        walked.iter().all(|&(_, w)| w <= 100 * n as u64),
+        "body literals walked (with successor facts or not): {walked:?}"
+    );
+}
+
+#[test]
+fn a_step_read_from_successor_facts_answers_as_one_computed() {
+    let n = 8;
+    let p = 0.9f64.powi(n as i32 - 1);
+    let expected = [
+        (format!("f({},0)", n - 1), p),
+        (format!("f({},1)", n - 1), p),
+    ];
+    for succ in [false, true] {
+        let source = two_steps(n, succ);
+        for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+            let what = format!("successor facts {succ}, {strategy:?}");
+            let run = common::run(&source, &common::options(strategy, Projection::default()))
+                .unwrap_or_else(|e| panic!("{what}: {e}"));
+            assert_answers(&what, &run.results.expect("no evidence"), &expected, 1e-12);
+        }
+    }
+}
