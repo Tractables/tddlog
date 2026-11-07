@@ -39,7 +39,7 @@ command-line tool with Python, C and WebAssembly bindings, and it
 </p>
 
 <!-- results:overview -->
-<sub>Results as of 2026-11-06, public main [213741873](https://github.com/Tractables/tddlog/commit/213741873). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](#performance)).</sub>
+<sub>Results as of 2026-11-06, public main [213741873](https://github.com/Tractables/tddlog/commit/213741873). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
 <!-- /results:overview -->
 
 On every type of program, tddlog answers more instances than each
@@ -233,7 +233,8 @@ instance, time and program, and a page for each system.
 Results as of 2026-11-06, public main [213741873](https://github.com/Tractables/tddlog/commit/213741873). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
 <!-- /results:setup -->
 
-The results page says how the speed-up is counted, and the
+The [methods table](https://tractables.github.io/tddlog/#/methods) says
+how the runs were made and the speed-up counted, and the
 [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
 how each system was run.
 
@@ -265,8 +266,9 @@ ProbLog's and cplint's examples.
 | Scallop | 67 | 47 h | 28 min | too few in common |
 <!-- /results:logic-programs-table -->
 
-- On Biomine, ProbLog's own benchmark, tddlog answers all 10 queries and
-  ProbLog 4.
+- On Biomine, ProbLog's own benchmark, each program the K most probable
+  paths from Alzheimer's disease to four genes, K from 1 to 64, tddlog
+  answers all 10 programs and ProbLog 4.
 
 ### Probabilistic databases
 

@@ -7,13 +7,13 @@
 // added through its `extend`:
 //   #/                     the home page: what tddlog is, each type of program against its best baselines, the integrations
 //   #/baselines            by baseline: every other system, what it is native to and what it answers
-//   #/baselines/SYSTEM[/AT]
-//                          tddlog against SYSTEM over its idiomatic programs (by family), in each type of
-//                          program, coverage, and how it was run; AT names one of these, which the page
-//                          scrolls to, or `original`: the page limited to its original programs
+//   #/baselines/SYSTEM[/TAB]
+//                          tddlog against SYSTEM, a tab on show: its idiomatic programs (by family), its
+//                          original programs (`original`), each type of program (`types`), coverage
+//                          (`coverage`), and how it was run (`run`)
 //   #/integrations         by integration: tddlog alone, and in a pipeline after another system's own code
 //   #/integrations/KEY     one of them: tddlog alone's answers by type; X+tddlog against X on X's programs
-//   #/types                by program type: the five types and all programs, against the systems native to each
+//   #/types                by program type: results.js's opening view, the README's figures, each a link to its type
 //   #/circuits             the circuits Alea.jl exports, every system on them (results.js's view of a category)
 //   #/coverage             the programs each system's sources hold that tddlog does not run, and why
 //   #/how[/WALK[/N]]       how a program is answered: a run's stages, a walkthrough at its step N
@@ -76,8 +76,10 @@ function scriptLink(name, path) {
 
 // ------------------------------------------------------------- the parts
 
-// tddlog's speed-up in a cell: "too few" where too few instances both answer.
-const speedCell = (v) => (v?.speedup == null ? "too few" : speedup(v));
+// tddlog's speed-up in a table's cell: a dash, its title saying why, where too few instances both
+// answer.
+const speedCell = (v) => (v?.speedup == null
+  ? element("span", { class: "few", title: `fewer than ${data.measure.common} instances both answer` }, "–") : speedup(v));
 
 // A comparison in cells, each side's under its name: the instances; the
 // system's answers and its PAR-2 total over the instances it is given and
@@ -89,7 +91,7 @@ function versusCells(v, name, n) {
   const side = (who, ...items) => element("div", { class: "side" }, element("span", { class: "who" }, who), cells(...items));
   return element("div", { class: "versus" }, side("", ["instances", count(n ?? v.given)]),
     side(name, ["answers", count(v.answers)], [`total (PAR-${data.measure.par})`, duration(v.total), over]),
-    side(me, ["answers", count(v.tddlog_answers)], [`total (PAR-${data.measure.par})`, duration(v.tddlog_total), over], [speedName("speed-up"), speedCell(v), speedup(v, true)]));
+    side(me, ["answers", count(v.tddlog_answers)], [`total (PAR-${data.measure.par})`, duration(v.tddlog_total), over], [speedName("speed-up"), speedup(v), speedup(v, true)]));
 }
 
 // The cactus plot of x and the members it is with over rows (kindRows' me,
@@ -99,7 +101,7 @@ function pairPlot(rows, x, v, key) {
   const name = data.names[x], me = subject(v?.me);
   const both = { key: `${x}-${key}`, title: `${name} and ${me}`, noun: "instances", systems: ["tddlog", x],
     instances: rows.map((r) => [r.name, r.v[r.me], r.v[x]]), limit: Math.max(...rows.map((r) => r.limit)) };
-  return element("div", { class: "pair" }, plotted(both, { ...data.names, tddlog: me }, { all: true }), scatter(rows, ["tddlog", x], x, false, (r) => r.me));
+  return element("div", { class: "pair" }, plotted(both, { ...data.names, tddlog: me }), scatter(rows, ["tddlog", x], x, false, (r) => r.me));
 }
 
 // The families rows are of, by how many each: a family opens in its type of
@@ -199,23 +201,26 @@ function baselinesView() {
 // A list of nodes in prose: "A", "A and B", "A, B and C".
 const andNodes = (items) => items.flatMap((x, i) => [i === 0 ? "" : i === items.length - 1 ? " and " : ", ", x]);
 
-// What one side read on a baseline's idiomatic instances (views.json's
-// read), in a few words: the programs as written, those the scripts wrote,
-// other translations.
-function whatRead(side) {
-  const out = [];
-  if (side.original) out.push(["the programs as their sources wrote them"]);
-  if (side.by.length) out.push(["programs written by ", ...andNodes(side.by.map(([n, path]) => scriptLink(n, path)))]);
-  if (side.other) out.push([side.by.length ? "other translations" : "translations"]);
-  return out.flatMap((part, i) => [i ? " or " : "", ...part]);
+// One line on what the two sides read on a baseline's idiomatic instances
+// (views.json's read): the scripts that wrote their translations, and where
+// each family's are shown.
+function readLine(read) {
+  const by = new Map([...read.system.by, ...read.mine.by]);
+  const other = read.system.other || read.mine.other;
+  if (!by.size && !other) return note("Both read the programs as their sources wrote them. Each family's page shows them.");
+  const scripts = [...by].map(([n, path]) => scriptLink(n, path));
+  return note(...(by.size ? ["Translations by ", ...andNodes(other ? [...scripts, "others"] : scripts)] : ["Some of the programs are translations"]),
+    ". Each family's page shows what each side read.");
 }
 
 // A baseline's idiomatic instances by family (views.json's families, as
 // the types name them, most first; those of few instances in one row, their
 // names its title): the instances, each side's answers and total, and
 // tddlog's speed-up; a family opens on its program's page, where its type
-// has several, on the type's view of it. Under it, one line on what each
+// has several, on the type's view of it. Past the first FAMILY_ROWS, the rest
+// show on asking. Under it, one line on what each
 // side read.
+const FAMILY_ROWS = 12;
 function familyTable(v, name, rows) {
   const me = subject(v.idiomatic.me), par = `over the instances ${name} is given and either answers (PAR-${data.measure.par})`;
   const num = (text) => element("td", { class: "num" }, text);
@@ -235,98 +240,105 @@ function familyTable(v, name, rows) {
     const pages = pagesOf(of.get(f.join("/")) ?? []);
     return link(pages.length === 1 ? pages[0].route : { view: "category", category: f[0], only: f[1] }, title(f));
   };
-  const body = element("tbody", {}, ...v.families.map((f) => element("tr", {},
+  const body = element("tbody", {}, ...v.families.map((f, i) => element("tr", { class: i < FAMILY_ROWS ? null : "more" },
     f.families ? element("th", { scope: "row", title: f.families.map((k) => group(k).title).join(", ") }, `other families (${f.families.length})`)
       : element("th", { scope: "row" }, familyLink(f.family)),
     ...[count(f.n), count(f.vs.answers), duration(f.vs.total), count(f.vs.tddlog_answers), duration(f.vs.tddlog_total), speedCell(f.vs)].map(num))));
-  return [scroller(stacked(element("table", { class: "board fams-tr" },
+  const table = element("table", { class: `board fams-tr${v.families.length > FAMILY_ROWS ? " folded" : ""}` },
     head2(["family", "each family's page shows the programs both read"], ["instances", null, "num"],
       { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
-      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up`, "num"]] }), body)), "whole"),
-  note(`${name} read `, ...whatRead(v.read.system), `; ${me} read `, ...whatRead(v.read.mine), ". Each family's page shows both.")];
+      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up, a dash where fewer than ${data.measure.common} instances both answer`, "num"]] }), body);
+  // past the first rows, the rest on asking
+  const more = v.families.length > FAMILY_ROWS ? element("button", { type: "button", class: "plain more-rows", "aria-expanded": "false", onclick: () => {
+    const open = table.classList.toggle("folded") === false;
+    more.setAttribute("aria-expanded", String(open));
+    more.textContent = open ? `Only the first ${FAMILY_ROWS} families` : `All ${count(v.families.length)} families`;
+  } }, `All ${count(v.families.length)} families`) : null;
+  return [scroller(stacked(table), "whole"), more,
+    readLine(v.read)];
 }
 
-// The sections of a baseline's page, by the ids a link names (#/baselines/X/AT);
-// ORIGINAL (#/baselines/X/original) is the page limited to its original programs.
-const BASELINE_AT = [["idiomatic", "Idiomatic programs"], ["types", "In each type"], ["coverage", "Coverage"], ["run", "How it was run"]];
+// The tabs of a baseline's page, by the ids a link names (#/baselines/X/TAB;
+// the first, its every idiomatic program, at #/baselines/X): one on show at a
+// time. ORIGINAL limits the page to its original programs.
 const ORIGINAL = "original";
+const BASELINE_TABS = [["idiomatic", "Idiomatic programs"], [ORIGINAL, "Original programs"], ["types", "In each type"],
+  ["coverage", "Coverage"], ["run", "How it was run"]];
 const IDIOMS_HREF = `${BRANCH}baselines/docs/baselines.md`;
 
-// tddlog against one baseline: over every idiomatic program it was given
-// (its own language's, and the translations its users would write), in each
-// type of program, coverage, how it was run; or limited to its original
-// programs (route.at ORIGINAL): those its authors wrote, and the others in
-// its language that it read as their sources wrote them (views.json's originals).
+// tddlog against one baseline, its numbers above a row of tabs: every
+// idiomatic program it was given (its own language's, and the translations
+// its users would write); its original programs, those its authors wrote and
+// the others in its language that it read as their sources wrote them
+// (views.json's originals); each type of program; coverage; how it was run.
 function baselineView(route) {
   const x = route.system, s = data.systems.find((y) => y.key === x), v = draft.views.systems[x], name = data.names[x];
-  const original = route.at === ORIGINAL;
+  const tab = route.tab ?? "idiomatic";
   const rows = systemRows(x).filter((r) => r.kind !== "x");
   const originals = new Set(Object.entries(v.originals ?? {}).flatMap(([c, is]) => is.map((i) => `${c}/${i}`)));
   const own = rows.filter((r) => originals.has(`${r.c.key}/${r.i}`));
-  const parts = solverParts(x);
   const site = s.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
   const page = { view: "baseline", system: x };
-  const pill = (on, to, text, n) => {
-    const a = link(to, text, element("span", { class: "n" }, count(n)));
-    if (on) a.setAttribute("aria-current", "page");
-    return a;
-  };
-  const out = [crumbs(HOME, inSection("baselines"), ...(original ? [[name, page], ["original programs"]] : [[name]])),
+  const counts = { idiomatic: rows.length, [ORIGINAL]: own.length };
+  const tabs = BASELINE_TABS.filter(([id]) => id !== ORIGINAL || own.length || tab === ORIGINAL);
+  const out = [crumbs(HOME, inSection("baselines"), ...(tab === "idiomatic" ? [[name]]
+    : [[name, page], [BASELINE_TABS.find(([id]) => id === tab)[1]]])),
     element("h2", { class: "solver" }, swatch(x), `tddlog against ${name}`),
     element("p", { class: "lede" }, `${s.about} `, element("a", { href: s.link }, site)),
     cells(["given", count(s.given), `instances of ${and(typesOf(x).map((c) => lower(c.title)))}`], ["answers", count(s.answers)],
       ["answers tddlog misses", count(v.beyond.length), `instances ${name} answers that tddlog does not`],
       ...(v.n.x ? [["not idiomatic", count(v.n.x), `translations a user of ${name}'s language would not write: in its answers, in no total`]] : [])),
-    ...(own.length ? [element("nav", { class: "filters", "aria-label": "Programs" }, pill(!original, page, "idiomatic programs", rows.length),
-      pill(original, { ...page, at: ORIGINAL }, "original programs", own.length))] : [])];
-  if (original) {
-    out.push(element("section", { class: "panel", id: ORIGINAL }, element("h3", {}, "Original programs"),
-      note(`Programs by ${name}'s authors, and others written in its language, read as written.`),
-      versusCells(v.original, name, own.length), ...(own.length ? [pairPlot(own, x, v.original, "o"), familyCounts(own)] : [])));
-    return out;
-  }
-  // the sections after the first, which follows at once
-  out.push(element("nav", { class: "panels-nav", "aria-label": "Sections" }, ...BASELINE_AT.slice(1).map(([id, text]) => link({ ...page, at: id }, text))));
-  // every idiomatic program, by family
-  out.push(element("section", { class: "panel", id: "idiomatic" }, element("h3", {}, "Idiomatic programs"),
-    note("Its own language's programs and the translations its users would write (",
+    element("nav", { class: "tabs", "aria-label": `${name}'s page` }, ...tabs.map(([id, text]) => {
+      const a = link(id === "idiomatic" ? page : { ...page, tab: id }, text, id in counts ? element("span", { class: "n" }, count(counts[id])) : null);
+      if (id === tab) a.setAttribute("aria-current", "page");
+      return a;
+    }))];
+  const panel = element("section", { class: "panel", id: tab });
+  out.push(panel);
+  if (tab === ORIGINAL) {
+    panel.append(note(`Programs by ${name}'s authors, and others written in its language, read as written.`),
+      versusCells(v.original, name, own.length), ...(own.length ? [pairPlot(own, x, v.original, "o"), familyCounts(own)] : []));
+  } else if (tab === "idiomatic") {
+    panel.append(note("Its own language's programs and the translations its users would write (",
       element("a", { href: IDIOMS_HREF }, "docs/baselines.md"), ", Idiomatic translations)."),
-    versusCells(v.idiomatic, name, rows.length), ...(rows.length ? [pairPlot(rows, x, v.idiomatic, "i"), ...familyTable(v, name, rows)] : [])));
-  out.push(element("section", { class: "panel", id: "types" }, element("h3", {}, "In each type of program it was given"), ...parts.types));
-  // coverage: what it answers that tddlog does not, what tddlog answers that it cannot be given, each in a cell;
-  // then the programs of its own sources that tddlog does not run, and why
-  const p3 = element("section", { class: "panel", id: "coverage" }, element("h3", {}, "Coverage"));
-  const unexp = Object.entries(v.unexpressed).filter(([, [a, b]]) => a + b > 0);
-  const [refused, missing] = unexp.reduce(([a, b], [, [c, d]]) => [a + c, b + d], [0, 0]);
-  p3.append(cells(["it answers, tddlog does not", count(v.beyond.length), `instances ${name} answers that tddlog does not`],
-    ...(refused ? [["tddlog answers, it cannot express", count(refused), "its translator refuses what its language lacks"]] : []),
-    ["tddlog answers, it was not given", count(missing)]));
-  const fails = new Map();
-  for (const [cat, suite, inst, rec] of v.beyond) {
-    const key = typeof rec === "string" ? rec : "other";
-    if (!fails.has(key)) fails.set(key, []);
-    fails.get(key).push([cat, suite, inst]);
+    versusCells(v.idiomatic, name, rows.length), ...(rows.length ? [pairPlot(rows, x, v.idiomatic, "i"), ...familyTable(v, name, rows)] : []));
+  } else if (tab === "types") {
+    panel.append(...solverParts(x).types);
+  } else if (tab === "coverage") {
+    // what it answers that tddlog does not, what tddlog answers that it cannot be given, each in a cell;
+    // then the programs of its own sources that tddlog does not run, and why
+    const unexp = Object.entries(v.unexpressed).filter(([, [a, b]]) => a + b > 0);
+    const [refused, missing] = unexp.reduce(([a, b], [, [c, d]]) => [a + c, b + d], [0, 0]);
+    panel.append(cells(["it answers, tddlog does not", count(v.beyond.length), `instances ${name} answers that tddlog does not`],
+      ...(refused ? [["tddlog answers, it cannot express", count(refused), "its translator refuses what its language lacks"]] : []),
+      ["tddlog answers, it was not given", count(missing)]));
+    const fails = new Map();
+    for (const [cat, suite, inst, rec] of v.beyond) {
+      const key = typeof rec === "string" ? rec : "other";
+      if (!fails.has(key)) fails.set(key, []);
+      fails.get(key).push([cat, suite, inst]);
+    }
+    for (const [key, list] of fails) {
+      const what = FAILURES[key]?.[1].split(":")[0] ?? key;
+      panel.append(element("details", { class: "beyond" }, element("summary", {}, `${count(list.length)} it answers where tddlog's run: ${what}`),
+        element("ul", { class: "insts" }, ...list.map(([, suite, inst]) => element("li", {}, element("a", { href: instanceHref(suite, inst) }, inst))))));
+    }
+    if (unexp.length) {
+      panel.append(fold(`What tddlog answers that ${name} cannot be given, by type`, ...unexp.flatMap(([cat, [r, m]], i) => [i ? "; " : "",
+        `${data.categories.find((c) => c.key === cat)?.title ?? cat}: `, [r ? `${count(r)} it cannot express` : "", m ? `${count(m)} it was not given` : ""]
+          .filter(Boolean).join(", ")]), "."));
+    }
+    const census = draft.views.census.sources.filter((src) => src.system === x);
+    panel.append(element("h4", {}, `Programs of ${name}'s own that tddlog does not run`));
+    if (census.length) panel.append(...census.map((src) => censusSource(src, false, true)));
+    else panel.append(note(`The census has no source of ${name}'s; its programs are the suites'.`));
+    panel.append(element("p", { class: "small" }, "Every system's: ", element("a", { href: "#/coverage" }, COVERAGE), "."));
+  } else {
+    const facts = solverParts(x).facts;
+    facts.append(element("dt", {}, "Counted"), element("dd", {}, measureLine()),
+      element("dt", {}, "Commands"), element("dd", {}, "Each instance's page shows the commands each system ran and the files it read."));
+    panel.append(element("div", { class: "facts" }, facts));
   }
-  for (const [key, list] of fails) {
-    const what = FAILURES[key]?.[1].split(":")[0] ?? key;
-    p3.append(element("details", { class: "beyond" }, element("summary", {}, `${count(list.length)} it answers where tddlog's run: ${what}`),
-      element("ul", { class: "insts" }, ...list.map(([, suite, inst]) => element("li", {}, element("a", { href: instanceHref(suite, inst) }, inst))))));
-  }
-  if (unexp.length) {
-    p3.append(fold(`What tddlog answers that ${name} cannot be given, by type`, ...unexp.flatMap(([cat, [r, m]], i) => [i ? "; " : "",
-      `${data.categories.find((c) => c.key === cat)?.title ?? cat}: `, [r ? `${count(r)} it cannot express` : "", m ? `${count(m)} it was not given` : ""]
-        .filter(Boolean).join(", ")]), "."));
-  }
-  const census = draft.views.census.sources.filter((src) => src.system === x);
-  p3.append(element("h4", {}, `Programs of ${name}'s own that tddlog does not run`));
-  if (census.length) p3.append(...census.map((src) => censusSource(src, false, true)));
-  else p3.append(note(`The census has no source of ${name}'s; its programs are the suites'.`));
-  p3.append(element("p", { class: "small" }, "Every system's: ", element("a", { href: "#/coverage" }, COVERAGE), "."));
-  out.push(p3);
-  // how it was run
-  parts.facts.append(element("dt", {}, "Counted"), element("dd", {}, measureLine()),
-    element("dt", {}, "Commands"), element("dd", {}, "Each instance's page shows the commands each system ran and the files it read."));
-  out.push(element("section", { class: "panel", id: "run" }, element("h3", {}, "How it was run"), element("div", { class: "facts" }, parts.facts)));
   return out;
 }
 
@@ -386,8 +398,9 @@ function integrationView(route) {
       ...(i.code ? [" The integration's code: ", element("a", { href: i.code }, i.code.replace("https://github.com/", ""))] : [])),
     versusCells(v, name, i.instances), note(measureLine()), integrationPlot(i, rows, `int-${k}`), ...whereWins(i, rows, x, me));
   if (alone) {
-    out.push(note(`Plain tddlog read another program of each model than ${name} did, with its own front ends; `
-      + `it counts as unanswered on the ${plural(i.classes.tddlog.unread, "instance")} it does not read.`));
+    const unread = i.classes.tddlog.unread;
+    out.push(note(`Plain tddlog read another program of each model than ${name} did, with its own front ends`
+      + (unread ? `; it counts as unanswered on the ${plural(unread, "instance")} it does not read.` : ".")));
   }
   out.push(...othersOf(i));
   // the families
@@ -433,7 +446,7 @@ function integrationPlot(i, rows, key) {
   if (!i.systems.includes("tddlog")) return pairPlot(rows, x, i.vs[x], key);
   const three = { key: `${x}-${key}`, title: `${i.title}, ${data.names[x]} and tddlog`, noun: "instances", systems: [me, x, "tddlog"],
     instances: rows.map((r) => [r.name, r.v[me], r.v[x], r.v.tddlog]), limit: Math.max(...rows.map((r) => r.limit)) };
-  return element("div", { class: "pair" }, plotted(three, { ...data.names, tddlog: "tddlog (its own program)" }, { all: true }),
+  return element("div", { class: "pair" }, plotted(three, { ...data.names, tddlog: "tddlog (its own program)" }),
     scatter(rows, ["tddlog", x], x, false, (r) => r.me));
 }
 
@@ -455,8 +468,10 @@ function othersOf(i) {
   const xs = i.systems.filter((y) => !isMine(y) && y !== i.system).sort((a, b) => i.answers[b] - i.answers[a]);
   if (!xs.length) return out;
   const par = `PAR-${data.measure.par}, over the instances the system is given and either answers`;
+  // totals over no instance (neither answers any the system is given) are no time
+  const total = (y, t) => (i.vs[y].total || i.vs[y].tddlog_total ? duration(t) : "–");
   const body = element("tbody", {}, ...xs.map((y) => element("tr", {}, element("th", { scope: "row" }, systemLink(y)),
-    num(count(i.given[y])), num(count(i.answers[y])), num(duration(i.vs[y].total)), num(duration(i.vs[y].tddlog_total)), num(speedup(i.vs[y])))));
+    num(count(i.given[y])), num(count(i.answers[y])), num(total(y, i.vs[y].total)), num(total(y, i.vs[y].tddlog_total)), num(speedCell(i.vs[y])))));
   out.push(element("h3", {}, "On a program of their own of the model"),
     scroller(stacked(element("table", { class: "board" }, head2(["system"], ["given", null, "num"], ["answers", null, "num"],
       { group: "against " + data.names[me], cols: [["total", par, "num"], [data.names[me], par, "num"], [speedName("speed-up"), null, "num"]] }), body)), "whole"));
@@ -491,7 +506,7 @@ function typeSplit(c, route) {
       body.append(element("tr", { class: x === route.vs ? "vs" : null }, element("th", { scope: "row" }, systemLink(x)),
         num(count(n(x, keep))), ...dirs,
         num(w ? count(w.answers) : ""), num(w ? duration(w.total) : ""), num(w ? count(w.tddlog_answers) : ""), num(w ? duration(w.tddlog_total) : ""),
-        num(w ? speedup(w) : "")));
+        num(w ? speedCell(w) : "")));
     }
     const sec = element("section", { class: "panel split", id }, element("h3", {}, title), note(`Where ${text}.`));
     if (have.length) {
@@ -513,32 +528,6 @@ function typeSplit(c, route) {
   }
   out.push(element("h3", { class: "every" }, "Every instance of the type, each system's answers over all of them"));
   return out;
-}
-
-function typesView() {
-  const body = element("tbody");
-  for (const c of data.categories) {
-    const v = draft.views.categories[c.key];
-    const xs = (c.key === ALL ? c.systems : c.native).filter((x) => x !== "tddlog" && v.kinds[x]);
-    const kinds = (k) => xs.filter((x) => v.kinds[x].includes(k)).length;
-    body.append(element("tr", {}, element("th", { scope: "row" }, link({ view: "category", category: c.key }, c.title)),
-      element("td", { class: "num" }, count(c.instances)), element("td", { class: "num" }, count(answeredBy(catRows(c)))),
-      element("td", { class: "about" }, c.key === ALL ? "every system" : element("div", { class: "chips" }, ...c.native.map((x) => element("span", { class: "chip" }, systemLink(x))))),
-      element("td", { class: "num" }, count(kinds("h"))), element("td", { class: "num" }, count(xs.filter((x) => /[smb]/.test(v.kinds[x])).length))));
-  }
-  return [crumbs(HOME, [sectionName("types")]), element("h2", {}, sectionName("types")),
-    element("p", { class: "lede" }, "Each instance counts in one type, that of the model it is; all programs is their union, with every system."),
-    element("p", { class: "small" }, element("a", { href: "#/coverage" }, COVERAGE), ": from the systems' own tutorials, tests, papers and repositories, and why."),
-    scroller(stacked(element("table", { class: "board types-t" }, element("thead", {}, element("tr", {},
-      element("th", { scope: "col" }, "type"), element("th", { scope: "col", class: "num" }, "instances"),
-      element("th", { scope: "col", class: "num", title: "an instance only another system's front end reads counts as unanswered" }, "tddlog answers"),
-      element("th", { scope: "col" }, "native systems"),
-      element("th", { scope: "col", class: "num", title: "the systems compared head-to-head on some instance" }, "systems head\u2011to\u2011head"),
-      element("th", { scope: "col", class: "num", title: "the systems compared through a translation on some instance" }, "systems translated"))),
-    body)), "whole"),
-    element("div", { class: "fig-head" }, element("h3", {}, "Each type against the systems native to it"),
-      element("span", { class: "dots" }, element("i", { class: "me" }), "tddlog", element("i", { class: "you" }), "a native system")),
-    overview()];
 }
 
 // ------------------------------------------------------------- coverage
@@ -582,7 +571,7 @@ function coverageView() {
     if (!v) continue;
     const [refused, missing] = sums(v);
     // a count opens the system's coverage, which lists those instances
-    const cell = (n) => element("td", { class: "num" }, n ? link({ view: "baseline", system: s.key, at: "coverage" }, count(n)) : count(n));
+    const cell = (n) => element("td", { class: "num" }, n ? link({ view: "baseline", system: s.key, tab: "coverage" }, count(n)) : count(n));
     body.append(element("tr", {}, element("th", { scope: "row" }, systemLink(s.key)),
       cell(v.beyond.length), ...(refusals ? [cell(refused)] : []), cell(missing)));
   }
@@ -886,7 +875,7 @@ const staleNote = (stale) => note(`These views (views.json) were written from ot
   + "views.py writes them again from the results page's data.");
 
 const DRAFT_VIEWS = { "draft-home": draftHome, baselines: baselinesView, baseline: baselineView, integrations: integrationsView,
-  integration: integrationView, types: typesView, coverage: coverageView, how: howView, methods: methodsView };
+  integration: integrationView, types: home, coverage: coverageView, how: howView, methods: methodsView };
 
 Object.assign(extend, {
   load: async () => {
@@ -904,7 +893,9 @@ Object.assign(extend, {
       if (parts.length === 1) return { view: "baselines" };
       const route = baseline(key);
       if (route && parts.length === 2) return route;
-      return route && parts.length === 3 && (at === ORIGINAL || BASELINE_AT.some(([id]) => id === at)) ? { ...route, at } : null;
+      // a tab, not a section scrolled to: another tab is another view
+      if (!route || parts.length !== 3 || !BASELINE_TABS.some(([id]) => id === at)) return null;
+      return at === "idiomatic" ? route : { ...route, tab: at };
     }
     if (first === "system" && parts.length === 2) {
       return isMine(key) ? (data.integrations?.[integrationOf(key)] ? { view: "integration", key: integrationOf(key) } : { view: "integrations" }) : baseline(key);
@@ -923,13 +914,13 @@ Object.assign(extend, {
     return null;
   },
   href: (route) => ({ "draft-home": "#/", baselines: "#/baselines",
-    baseline: `#/baselines/${encodeURIComponent(route.system)}${route.at ? `/${route.at}` : ""}`,
+    baseline: `#/baselines/${encodeURIComponent(route.system)}${route.tab ? `/${route.tab}` : ""}`,
     integrations: "#/integrations", integration: `#/integrations/${route.key}`, types: "#/types", coverage: "#/coverage", methods: "#/methods",
     how: route.walk ? `#/how/${route.walk}${route.step ? `/${route.step + 1}` : ""}` : "#/how" })[route.view] ?? null,
   draw: (route) => {
     if (!(route.view in DRAFT_VIEWS)) return null;
     const stale = staleViews();
-    if (stale.length && !["draft-home", "how", "methods"].includes(route.view) && !route.view.startsWith("integration")) return [staleNote(stale)];
+    if (stale.length && !["draft-home", "types", "how", "methods"].includes(route.view) && !route.view.startsWith("integration")) return [staleNote(stale)];
     return DRAFT_VIEWS[route.view](route);
   },
   title: (route) => ({ "draft-home": null, baselines: sectionName("baselines"), baseline: `tddlog against ${data.names[route.system]}`,
