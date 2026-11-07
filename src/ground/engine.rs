@@ -19,7 +19,7 @@ use std::sync::{Arc, LazyLock};
 
 use super::interned::Interned;
 use super::normalize::{Facts, NormProgram, Weights, switch_weights};
-use super::schedule::{Order, literal_vars, schedule_body};
+use super::schedule::{Order, literal_vars, schedule_keyed};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::by_hash::ByHash;
 use crate::syntax::{
@@ -732,6 +732,9 @@ struct Grounder<'a> {
     /// and atom.
     clauses: &'a [Clause],
     from_delta: FxHashMap<(usize, usize), FromDelta>,
+    /// The keys of the relations of predicates given by facts that the
+    /// rules' bodies may join on ([`fact_keys`]), by name and arity.
+    keys: FxHashMap<(&'a str, usize), Vec<usize>>,
     /// The size of `ground_rules`, a term per head and body literal, and
     /// the size past which the grounding is given up.
     size: usize,
@@ -855,6 +858,7 @@ impl<'a> Grounder<'a> {
             walk: Walk::default(),
             clauses,
             from_delta: FxHashMap::default(),
+            keys: FxHashMap::default(),
             size: 0,
             bound: bound.unwrap_or(usize::MAX),
             refused: false,
@@ -925,6 +929,14 @@ impl<'a> Grounder<'a> {
     /// A known predicate, and whether it is a switch.
     fn pred_id(&self, name: &str, arity: usize) -> Option<(PredId, bool)> {
         self.pred_ids.get(&(name, arity)).copied()
+    }
+
+    /// The keys of the relation a positive literal reads ([`fact_keys`]).
+    fn keys_of(&self, l: &'a Literal) -> &[usize] {
+        match l {
+            Literal::Pos(a) => self.keys.get(&(&*a.name, a.args.len())).map_or(&[], |k| k),
+            _ => &[],
+        }
     }
 
     fn pred(&mut self, name: &'a Name, arity: usize, switch: Option<Weights>) -> PredId {
@@ -1334,7 +1346,11 @@ fn compile_rule<'a>(
         Literal::Pos(a) | Literal::Neg(a) => g.pred_id(&a.name, a.args.len()),
         _ => None,
     }));
-    let ordered = schedule_rule(clause, |i| known[i].is_some_and(|(_, switch)| switch))?;
+    let ordered = schedule_rule(
+        clause,
+        |i| known[i].is_some_and(|(_, switch)| switch),
+        |i| g.keys_of(&clause.body[i]),
+    )?;
     let mut body: Vec<ILit> = Vec::with_capacity(ordered.len());
     for &i in &ordered {
         match &clause.body[i] {
@@ -2126,16 +2142,18 @@ fn flexible_weights(
 }
 
 /// The order in which `clause`'s body is ground, every literal with the
-/// variables it needs bound by those before it ([`schedule_body`]),
-/// `switch` saying which of its atoms are switches; an unsafe rule's error
-/// where a literal or a head variable is left unbound.
-fn schedule_rule(
+/// variables it needs bound by those before it ([`schedule_keyed`]),
+/// `switch` saying which of its atoms are switches and `keys` the keys of
+/// the relation each reads; an unsafe rule's error where a literal or a
+/// head variable is left unbound.
+fn schedule_rule<'k>(
     clause: &Clause,
     switch: impl Fn(usize) -> bool,
+    keys: impl Fn(usize) -> &'k [usize],
 ) -> Result<Vec<usize>, GroundError> {
     let mut bound: FxHashSet<String> = FxHashSet::default();
     let ordered =
-        schedule_body(&clause.body, &mut bound, switch, Order::Join).map_err(|stuck| {
+        schedule_keyed(&clause.body, &mut bound, switch, keys, Order::Join).map_err(|stuck| {
             GroundError::Unsafe(format!(
                 "{clause}: literal {} has variables not bound by a positive body atom",
                 clause.body[stuck]
@@ -2156,18 +2174,78 @@ fn schedule_rule(
 
 /// Whether every rule of `norm` is safe, as the grounder schedules it
 /// ([`schedule_rule`]): the check that chooses a program's route before
-/// any of it is ground (`super::ground_norm`).
+/// any of it is ground (`super::ground_norm`). The order of the atoms,
+/// which the keys of their relations change, does not change what the
+/// body binds.
 pub(crate) fn safe(norm: &NormProgram) -> bool {
     let switches: FxHashSet<(&str, usize)> =
         norm.switches.keys().map(|(n, k)| (&**n, *k)).collect();
     norm.rules.iter().all(|c| {
         super::magic::ground_clause(c)
-            || schedule_rule(c, |i| match &c.body[i] {
-                Literal::Pos(a) | Literal::Neg(a) => switches.contains(&a.signature()),
-                _ => false,
-            })
+            || schedule_rule(
+                c,
+                |i| match &c.body[i] {
+                    Literal::Pos(a) | Literal::Neg(a) => switches.contains(&a.signature()),
+                    _ => false,
+                },
+                |_| &[],
+            )
             .is_ok()
     })
+}
+
+/// The keys of the relations of the predicates given by facts: the
+/// argument positions at which no two of a predicate's facts agree, so
+/// that an atom with a variable bound there yields at most one tuple
+/// ([`schedule_keyed`]), as a successor relation's facts `next(T, T1)` do
+/// at each argument. A position counts only where a rule reads the
+/// predicate with a variable there that another of its body literals also
+/// reads, the one place a join can bind it before the atom; there, its
+/// values are read once, and a value seen twice ends the reading. A table's
+/// columns a rule reads only once, a comment for one, are not read.
+fn fact_keys(norm: &NormProgram) -> FxHashMap<(&str, usize), Vec<usize>> {
+    let facts: FxHashMap<(&str, usize), &Facts> = norm
+        .facts
+        .iter()
+        .filter(|(_, f)| f.arity >= 2)
+        .map(|(_, f)| ((&*f.name, f.arity), &**f))
+        .collect();
+    let mut asked: FxHashMap<(&str, usize), Vec<usize>> = FxHashMap::default();
+    for c in &norm.rules {
+        let reads = |l: &Literal| matches!(l, Literal::Pos(a) if facts.contains_key(&(&*a.name, a.args.len())));
+        if !c.body.iter().any(reads) {
+            continue;
+        }
+        // The number of the body's literals that read each variable.
+        let vars: Vec<Vec<String>> = c.body.iter().map(literal_vars).collect();
+        let mut readers: FxHashMap<&str, usize> = FxHashMap::default();
+        for v in vars.iter().flatten() {
+            *readers.entry(v).or_default() += 1;
+        }
+        for l in c.body.iter().filter(|l| reads(l)) {
+            let Literal::Pos(a) = l else { continue };
+            let at = asked.entry((&*a.name, a.args.len())).or_default();
+            for (k, t) in a.args.iter().enumerate() {
+                if matches!(t, Term::Var(v) if readers[v.as_str()] > 1) && !at.contains(&k) {
+                    at.push(k);
+                }
+            }
+        }
+    }
+    asked
+        .into_iter()
+        .filter_map(|(sig, at)| {
+            let f = facts[&sig];
+            let keys: Vec<usize> = at
+                .into_iter()
+                .filter(|&k| {
+                    let mut seen = FxHashSet::default();
+                    f.tuples().all(|(args, _)| seen.insert(&args[k]))
+                })
+                .collect();
+            (!keys.is_empty()).then_some((sig, keys))
+        })
+        .collect()
 }
 
 /// Predicate dependency graph → strata (lists of predicate ids), lowest first.
@@ -2307,6 +2385,9 @@ fn register_program<'a>(
         let p = g.pred(name, *arity, None);
         g.preds[p as usize].control = true;
     }
+    // The keys of the facts' relations, for every rule's schedule
+    // ([`compile_rule`], [`from_delta`]) wherever the facts are written.
+    g.keys = fact_keys(norm);
     // The predicates numbered as the rules and facts name them, each
     // predicate's facts where the first of them was.
     let mut facts = norm.facts.iter().peekable();
@@ -3267,7 +3348,8 @@ fn from_delta(g: &Grounder, r: usize, i: usize) -> FromDelta {
         _ => false,
     };
     let schedule = |order| {
-        schedule_body(&clause.body, &mut FxHashSet::default(), switch, order)
+        let keys = |j: usize| g.keys_of(&clause.body[j]);
+        schedule_keyed(&clause.body, &mut FxHashSet::default(), switch, keys, order)
             .expect("a compiled rule's body is scheduled from any of its atoms")
     };
     // The rule's body is compiled in this order ([`compile_rule`]).

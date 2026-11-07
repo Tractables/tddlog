@@ -1191,3 +1191,71 @@ fn a_step_recursion_answers_alike_with_its_call_before_its_step() {
         }
     }
 }
+
+/// A chain of `n` steps, `f(J, K)` for two lanes `K` and each step `J`
+/// taken with the probability `b(J)`, `c(J, K)` reading `f` at `J` and at
+/// the step before, the step written as `is` or as a successor relation's
+/// facts `next(J, J1)`. `f(J, K)` holds with the product of `b(0)` to
+/// `b(J - 1)`.
+fn two_steps(n: usize, succ: bool) -> String {
+    let mut s = String::from("f(0, 0). f(0, 1).\nc(0, K) :- f(0, K).\n");
+    for j in 0..n {
+        s += &format!("0.9::b({j}).\n");
+    }
+    if succ {
+        for j in 1..n {
+            s += &format!("next({}, {j}).\n", j - 1);
+        }
+        s += "f(J1, K) :- c(J, K), next(J, J1), b(J).\n";
+        s += "c(J, K) :- f(J, K), next(P, J), f(P, K).\n";
+    } else {
+        s += &format!("f(J1, K) :- c(J, K), J1 is J + 1, J1 < {n}, b(J).\n");
+        s += "c(J, K) :- f(J, K), P is J - 1, f(P, K).\n";
+    }
+    s + &format!("query(f({}, 0)).\nquery(f({}, 1)).\n", n - 1, n - 1)
+}
+
+/// A step written as `P is J - 1` or as a successor fact `next(P, J)`
+/// grounds in walks linear in the steps. A join from a new tuple of `f(P,
+/// K)` looks `c(J, K)`'s `f(J, K)` up by `J`: `next(P, J)` yields one
+/// tuple for the `P` bound, as `is` does, and comes first, where `f(J, K)`,
+/// written first and sharing as many bound variables, walked every `f`
+/// with that `K` (rl_hardware's carry chain read from its successor facts:
+/// 30 000 steps past 120 s, against 8 s with `is`).
+#[test]
+fn a_step_read_from_successor_facts_grounds_as_one_computed() {
+    let n = 600;
+    let walked: Vec<(bool, u64)> = [false, true]
+        .into_iter()
+        .map(|succ| {
+            let source = two_steps(n, succ);
+            (
+                succ,
+                common::ground(&source, Rows::Apart, false).stats.walked,
+            )
+        })
+        .collect();
+    assert!(
+        walked.iter().all(|&(_, w)| w <= 100 * n as u64),
+        "body literals walked (with successor facts or not): {walked:?}"
+    );
+}
+
+#[test]
+fn a_step_read_from_successor_facts_answers_as_one_computed() {
+    let n = 8;
+    let p = 0.9f64.powi(n as i32 - 1);
+    let expected = [
+        (format!("f({},0)", n - 1), p),
+        (format!("f({},1)", n - 1), p),
+    ];
+    for succ in [false, true] {
+        let source = two_steps(n, succ);
+        for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+            let what = format!("successor facts {succ}, {strategy:?}");
+            let run = common::run(&source, &common::options(strategy, Projection::default()))
+                .unwrap_or_else(|e| panic!("{what}: {e}"));
+            assert_answers(&what, &run.results.expect("no evidence"), &expected, 1e-12);
+        }
+    }
+}

@@ -15,7 +15,14 @@
 //! ([`Order::From`]), joins `lc_call(G, A, L1, L2, Der1, Der)` to
 //! `g_call(RHS2, L, L1, [..|Der0], Der1)`, which shares the rest of the
 //! word and the derivation, rather than to the demand of `lc_call(G, B, L,
-//! Der0)`, which shares the nonterminal `G` with every demand. A switch
+//! Der0)`, which shares the nonterminal `G` with every demand. An atom
+//! with a variable bound at a key of its relation (a position at which no
+//! two of its tuples agree) yields at most one tuple, as a lookup does, and
+//! ranks with the lookups. From a new tuple of `f(P, K)` in `c(J, K1) :-
+//! c(J, K), next(P, J), f(P, K), ...`, the successor fact `next(P, J)` binds
+//! `J` as `P is J - 1` would, and `c(J, K)` is then a lookup; joined first,
+//! the one written first of two atoms that share one bound variable each,
+//! `c(J, K)` walked every tuple of `c` with that `K`. A switch
 //! atom (a probabilistic choice), positive or negated, comes last, in
 //! source order: it binds nothing and rejects no binding, so earlier it
 //! would only make the walk create its atom for bindings that a later
@@ -129,16 +136,29 @@ pub(crate) enum Order {
 /// ordered. On success returns the order, as positions in `body`, and
 /// updates `bound` with everything the body binds. On failure gives the
 /// position of the stuck literal.
+pub(crate) fn schedule_body(
+    body: &[Literal],
+    bound: &mut FxHashSet<String>,
+    switch: impl Fn(usize) -> bool,
+    order: Order,
+) -> Result<Vec<usize>, usize> {
+    schedule_keyed(body, bound, switch, |_| &[], order)
+}
+
+/// [`schedule_body`], where `keys` gives of the positive atom at a position
+/// the argument positions that are keys of its relation: the grounder reads
+/// them from a predicate's facts.
 ///
 /// Each literal's variables are read once, and binding one updates only
 /// the literals that read it, so that a body of `n` literals takes about
 /// `n log n` steps: a test of a wide number bit by bit has a literal for
 /// each bit, and ranking every atom left after each one placed took
 /// `n^2`.
-pub(crate) fn schedule_body(
+pub(crate) fn schedule_keyed<'k>(
     body: &[Literal],
     bound: &mut FxHashSet<String>,
     switch: impl Fn(usize) -> bool,
+    keys: impl Fn(usize) -> &'k [usize],
     order: Order,
 ) -> Result<Vec<usize>, usize> {
     let binding = |i: usize| matches!(body[i], Literal::Pos(_)) && !switch(i);
@@ -146,7 +166,7 @@ pub(crate) fn schedule_body(
     let pending: Vec<usize> = (0..body.len())
         .filter(|&i| !binding(i) && !switch(i))
         .collect();
-    let mut s = Schedule::new(body, bound, &atoms, pending);
+    let mut s = Schedule::new(body, bound, &atoms, pending, keys);
     // In the order of the source a literal waits for the atoms written
     // before it, as a call in ProbLog's resolution does: a demand it makes
     // reads them. Otherwise it goes as early as its variables allow. With
@@ -194,11 +214,17 @@ struct Schedule<'a> {
     placed: Vec<bool>,
     /// Of each atom, how many of its variables are bound.
     shared: Vec<usize>,
-    /// The atoms by rank: a lookup first, then the atom that shares the
-    /// most bound variables, the first in source order among equals. One
-    /// that shares none, after some are bound, would pair each of its
-    /// tuples with each binding so far. Each change of a count pushes the
-    /// new rank, and an entry that is no longer its atom's is passed over.
+    /// Of each atom, the variables at the keys of its relation, and
+    /// whether a key holds a constant: with one of those bound, or with
+    /// the constant, it yields at most one tuple.
+    keyed: Vec<Vec<u32>>,
+    fixed: Vec<bool>,
+    /// The atoms by rank: a lookup, or an atom that yields at most one
+    /// tuple, first, then the atom that shares the most bound variables,
+    /// the first in source order among equals. One that shares none, after
+    /// some are bound, would pair each of its tuples with each binding so
+    /// far. Each change of a count pushes the new rank, and an entry that
+    /// is no longer its atom's is passed over.
     ranks: BinaryHeap<(bool, usize, Reverse<usize>)>,
     /// The other literals, each placed as early as its variables allow, in
     /// source order; `waiting` holds, by place in `pending`, those whose
@@ -218,11 +244,12 @@ struct Schedule<'a> {
 }
 
 impl<'a> Schedule<'a> {
-    fn new(
+    fn new<'k>(
         body: &'a [Literal],
         bound: &FxHashSet<String>,
         atoms: &[usize],
         pending: Vec<usize>,
+        keys: impl Fn(usize) -> &'k [usize],
     ) -> Self {
         let vars: Vec<Vec<String>> = body.iter().map(literal_vars).collect();
         let mut number: FxHashMap<&str, u32> = FxHashMap::default();
@@ -250,8 +277,19 @@ impl<'a> Schedule<'a> {
             .map(|row| row.iter().filter(|&&v| is_bound[v as usize]).count())
             .collect();
         let mut atom = vec![false; body.len()];
+        let (mut keyed, mut fixed) = (vec![Vec::new(); body.len()], vec![false; body.len()]);
         for &l in atoms {
             atom[l] = true;
+            let Literal::Pos(a) = &body[l] else {
+                unreachable!("an atom that binds is positive")
+            };
+            for &k in keys(l) {
+                match &a.args[k] {
+                    Term::Var(v) => keyed[l].push(number[v.as_str()]),
+                    Term::Compound(_) => {}
+                    _ => fixed[l] = true,
+                }
+            }
         }
         let mut place_of = vec![usize::MAX; body.len()];
         for (p, &l) in pending.iter().enumerate() {
@@ -278,6 +316,8 @@ impl<'a> Schedule<'a> {
             atom,
             placed: vec![false; body.len()],
             shared,
+            keyed,
+            fixed,
             ranks: BinaryHeap::new(),
             waiting: (0..pending.len()).collect(),
             pending,
@@ -291,7 +331,10 @@ impl<'a> Schedule<'a> {
 
     fn rank(&self, l: usize) -> (bool, usize, Reverse<usize>) {
         let shared = self.shared[l];
-        (shared == self.numbers[l].len(), shared, Reverse(l))
+        let one = shared == self.numbers[l].len()
+            || self.fixed[l]
+            || self.keyed[l].iter().any(|&v| self.is_bound[v as usize]);
+        (one, shared, Reverse(l))
     }
 
     /// The atom of the highest rank not placed.
@@ -426,5 +469,26 @@ mod tests {
             Order::From(3),
         );
         assert_eq!(order, Ok(vec![3, 2, 0, 1]));
+    }
+
+    /// An atom with a variable bound at a key of its relation ranks with
+    /// the lookups: from the new tuples of `f(P, K)`, the successor fact
+    /// `next(P, J)`, each of whose arguments is a key, comes before `c(J,
+    /// K)`, which is written first and shares as many bound variables, and
+    /// makes it a lookup.
+    #[test]
+    fn an_atom_bound_at_a_key_ranks_with_the_lookups() {
+        let p = parse_program("c(J, K1) :- c(J, K), next(P, J), f(P, K), s(K, K1).\n").unwrap();
+        let order = |next: &'static [usize]| {
+            schedule_keyed(
+                &p.clauses[0].body,
+                &mut FxHashSet::default(),
+                |_| false,
+                |i| if i == 1 { next } else { &[] },
+                Order::From(2),
+            )
+        };
+        assert_eq!(order(&[]), Ok(vec![2, 0, 1, 3]));
+        assert_eq!(order(&[0, 1]), Ok(vec![2, 1, 0, 3]));
     }
 }
