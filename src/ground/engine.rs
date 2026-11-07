@@ -2678,30 +2678,127 @@ fn load(g: &mut Grounder, p: PredId, f: &Facts, demanded: bool) {
 ///
 /// Round 0 grounds every rule against the relations as they are (the
 /// stratum's own empty, but for its facts); then [`rounds`] over the
-/// tuples each round adds.
+/// tuples each round adds, each visiting the literals that can read one
+/// of them ([`Readers`]).
 fn evaluate_stratum(g: &mut Grounder, stratum: &[PredId]) {
     let rule_ids = rules_of(g, stratum);
-    let slot: FxHashMap<PredId, usize> = stratum.iter().enumerate().map(|(s, &p)| (p, s)).collect();
-    // reads[s]: the rules, as places in `rule_ids`, and the literals in
-    // which the stratum's predicate `s` is read positively.
-    let mut reads: Vec<Vec<(usize, usize)>> = vec![Vec::new(); stratum.len()];
-    for (k, &r) in rule_ids.iter().enumerate() {
-        for (i, l) in g.rules[r].body.iter().enumerate() {
-            if let ILit::Pos(p, _) = l
-                && let Some(&s) = slot.get(p)
-            {
-                reads[s].push((k, i));
-            }
-        }
-    }
+    let mut readers = Readers::of(g, &rule_ids, stratum);
     let mut from = lens(g, stratum);
     g.new_round();
     for &r in &rule_ids {
         eval_rule(g, r, None);
     }
-    rounds(g, &rule_ids, stratum, &mut from, |s, due| {
-        due.extend_from_slice(&reads[s])
+    rounds(g, &rule_ids, stratum, &mut from, |g, s, range, due| {
+        readers.due(g, stratum[s], s, range, due)
     });
+}
+
+/// The literals that read each predicate of a stratum positively, as
+/// places (rule in the stratum's rules, literal), and those among them
+/// that can read some of the tuples a round adds. A literal with a
+/// constant argument reads only the tuples with that value there. A chain
+/// written step by step, each step's rules at its number, adds a step's
+/// few tuples in each of as many rounds as it has steps: its ground
+/// program with the rules in another order than the steps', or a loop
+/// unrolled, which the magic rewrite's demand walks down a step a round.
+/// A round that visited every literal of the predicate, a few for each
+/// step, made the stratum quadratic in its steps: a ladder of 8 000
+/// steps, its ground program's rules shuffled, took 116 s to ground
+/// against 0.26 s as printed.
+struct Readers {
+    /// Of each predicate, by place in the stratum: every literal that
+    /// reads it, those with no constant argument, and the positions of
+    /// the others' first constant argument.
+    all: Vec<Vec<(usize, usize)>>,
+    open: Vec<Vec<(usize, usize)>>,
+    at: Vec<Vec<usize>>,
+    /// The literals whose first constant argument is a value at a position
+    /// of a predicate.
+    by_value: FxHashMap<(usize, usize, Val), ByValue>,
+    calls: u32,
+}
+
+/// The literals of [`Readers::by_value`] under one key, and the call of
+/// [`Readers::due`] that last took them.
+#[derive(Default)]
+struct ByValue {
+    taken: u32,
+    lits: Vec<(usize, usize)>,
+}
+
+impl Readers {
+    fn of(g: &Grounder, rule_ids: &[usize], stratum: &[PredId]) -> Self {
+        let slot: FxHashMap<PredId, usize> =
+            stratum.iter().enumerate().map(|(s, &p)| (p, s)).collect();
+        let n = stratum.len();
+        let mut readers = Readers {
+            all: vec![Vec::new(); n],
+            open: vec![Vec::new(); n],
+            at: vec![Vec::new(); n],
+            by_value: FxHashMap::default(),
+            calls: 0,
+        };
+        for (k, &r) in rule_ids.iter().enumerate() {
+            for (i, l) in g.rules[r].body.iter().enumerate() {
+                let ILit::Pos(p, args) = l else { continue };
+                let Some(&s) = slot.get(p) else { continue };
+                readers.all[s].push((k, i));
+                let constant = args.iter().enumerate().find_map(|(pos, a)| match a {
+                    Arg::Val(v) => Some((pos, *v)),
+                    Arg::Var(_) => None,
+                });
+                match constant {
+                    Some((pos, v)) => {
+                        if !readers.at[s].contains(&pos) {
+                            readers.at[s].push(pos);
+                        }
+                        readers
+                            .by_value
+                            .entry((s, pos, v))
+                            .or_default()
+                            .lits
+                            .push((k, i));
+                    }
+                    None => readers.open[s].push((k, i)),
+                }
+            }
+        }
+        readers
+    }
+
+    /// Adds to `due` the literals that can read the tuples `from..e` of
+    /// `p`, the stratum's predicate `s`: those with no constant argument,
+    /// and those whose first constant is a tuple's value there. Where
+    /// looking the tuples up takes more steps than there are literals
+    /// with a constant, it adds them all.
+    fn due(
+        &mut self,
+        g: &Grounder,
+        p: PredId,
+        s: usize,
+        (from, e): (usize, usize),
+        due: &mut Vec<(usize, usize)>,
+    ) {
+        let keyed = self.all[s].len() - self.open[s].len();
+        if (e - from).saturating_mul(self.at[s].len()) >= keyed {
+            due.extend_from_slice(&self.all[s]);
+            return;
+        }
+        due.extend_from_slice(&self.open[s]);
+        self.calls += 1;
+        let rel = &g.rels[p as usize];
+        for t in from..e {
+            let tuple = rel.tuple(t);
+            for &pos in &self.at[s] {
+                if let Some(b) = self.by_value.get_mut(&(s, pos, tuple[pos]))
+                    && b.taken != self.calls
+                {
+                    b.taken = self.calls;
+                    due.extend_from_slice(&b.lits);
+                }
+            }
+        }
+    }
 }
 
 /// The rules of the predicates of `stratum`.
@@ -2721,18 +2818,18 @@ fn lens(g: &Grounder, preds: &[PredId]) -> Vec<usize> {
 /// nothing. Each grounds the rules again against the tuples the round
 /// before added (those since `from` in the first), a rule once per
 /// positive literal of `group` whose predicate gained tuples, in the order
-/// of the rules and their literals. `reads(s, due)` adds the rules, as
-/// places in `rule_ids`, and the literals that read `group[s]`: a round
-/// visits those, not every rule. A chain over a time index takes a round
-/// per step where it is one stratum, as the magic rewrite's demand makes
-/// it (pmc1's step, 1 400 rules, for each of 75 steps a few dozen rounds
-/// deep).
+/// of the rules and their literals. `reads(g, s, range, due)` adds the
+/// rules, as places in `rule_ids`, and the literals that read `group[s]`
+/// and can read its new tuples `range`: a round visits those, not every
+/// rule. A chain over a time index takes a round per step where it is one
+/// stratum, as the magic rewrite's demand makes it (pmc1's step, 1 400
+/// rules, for each of 75 steps a few dozen rounds deep).
 fn rounds(
     g: &mut Grounder,
     rule_ids: &[usize],
     group: &[PredId],
     from: &mut [usize],
-    reads: impl Fn(usize, &mut Vec<(usize, usize)>),
+    mut reads: impl FnMut(&Grounder, usize, (usize, usize), &mut Vec<(usize, usize)>),
 ) {
     let mut delta: Vec<(usize, usize)> = vec![(0, 0); group.len()];
     let mut lits: Vec<(usize, usize)> = Vec::new();
@@ -2744,7 +2841,7 @@ fn rounds(
             delta[s] = (from[s], e);
             if e > from[s] {
                 lits.clear();
-                reads(s, &mut lits);
+                reads(g, s, (from[s], e), &mut lits);
                 due.extend(lits.iter().map(|&(k, i)| (k, i, s)));
             }
             from[s] = e;
@@ -2996,7 +3093,7 @@ fn evaluate_by_levels(
         }
         if cyclic {
             let mut from = start.clone();
-            rounds(g, &rule_ids, group, &mut from, |s, due| {
+            rounds(g, &rule_ids, group, &mut from, |_, s, _, due| {
                 due.extend(read_at(&within, group[s], key.0))
             });
         }
