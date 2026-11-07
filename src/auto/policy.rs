@@ -288,9 +288,11 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// circuits of a second or more. The property is read off the program as
 /// ground, whatever the grounder inlined, so that a program and the
 /// ground program `tddlog --ground` prints of it get the same trials. The
-/// benchmark programs did, all but 3 of 383, where the earlier test,
-/// whether the grounder had inlined views, gave the two writings different
-/// trials on 168 of them. Against that test it took 2.8% off the total
+/// benchmark programs did, all but 5 of the 449 whose two writings both
+/// come to this choice (munin's networks, and a weather network of three
+/// derived atoms), where the earlier test, whether the grounder had
+/// inlined views, gave the two writings different trials on 221 of them.
+/// Against that test it took 2.8% off the total
 /// time of 60 s runs of both writings of 454 programs, and 57% off that of
 /// the circuits whose trials it changed.
 ///
@@ -370,17 +372,20 @@ pub(super) const DERIVED_PER_FACT: usize = 8;
 
 /// Whether `gp` is built gate by gate ([`candidates`]): at least one rule
 /// in [`RULES_PER_GATE`] reads derived atoms alone, or at least one derived
-/// atom in [`DERIVED_PER_VIEW`] has one rule and is read by one rule. A
-/// circuit's gates above its flips read other gates, and an expression
-/// written node by node is a tree of atoms each read once, where a
-/// network's or a graph's rules each read a fact of their own (an entry of
-/// a table, an edge) and its atoms are read by many rules. The atoms of one
-/// rule read once are views, which the grounder inlines where it can
-/// (`src/ground/inline.rs`): those counted are the ones it leaves, members
-/// of exclusive sets and views whose inlining would grow the program, such
-/// as dnahmm's hidden states, 92% of its derived atoms at 16 steps, where
-/// its rules over derived atoms alone fall from 27% of its rules at 4
-/// steps to 7% at 16.
+/// atom in [`DERIVED_PER_READ_ONCE`] is read by one rule. A circuit's
+/// gates above its flips read other gates, and an expression written node
+/// by node is a tree of atoms each read once, where a network's or a
+/// graph's rules each read a fact of their own (an entry of a table, an
+/// edge) and its atoms are read by many rules. The atoms read once are
+/// counted whatever their rules: those of one rule are views, which the
+/// grounder inlines where it can (`src/ground/inline.rs`), and those it
+/// leaves are members of exclusive sets and views whose inlining would
+/// grow the program, such as dnahmm's hidden states, 92% of its derived
+/// atoms at 16 steps, where its rules over derived atoms alone fall from
+/// 27% of its rules at 4 steps to 7% at 16; an atom of several rules is a
+/// gate that reads facts, an or of ands, which the grounder keeps
+/// (clinicalTrial1_w4's, 75% of its derived atoms, and string_editing's,
+/// 85%, whose rules over derived atoms alone are 23% and 10%).
 pub(super) fn built_of_gates(gp: &GroundProgram) -> bool {
     let gates = gp
         .rules
@@ -391,9 +396,8 @@ pub(super) fn built_of_gates(gp: &GroundProgram) -> bool {
         return true;
     }
     let n = gp.num_atoms();
-    let (mut rules, mut readers, mut last) = (vec![0u32; n], vec![0u32; n], vec![usize::MAX; n]);
+    let (mut readers, mut last) = (vec![0u32; n], vec![usize::MAX; n]);
     for (i, r) in gp.rules.iter().enumerate() {
-        rules[r.head as usize] += 1;
         for l in &r.body {
             let a = l.atom() as usize;
             if last[a] != i {
@@ -402,16 +406,20 @@ pub(super) fn built_of_gates(gp: &GroundProgram) -> bool {
             }
         }
     }
-    let views = (0..n).filter(|&a| rules[a] == 1 && readers[a] == 1).count();
-    views > 0 && DERIVED_PER_VIEW * views >= gp.num_derived()
+    let read_once = (0..n)
+        .filter(|&a| readers[a] == 1 && !gp.is_fact(a as ground::AtomId))
+        .count();
+    read_once > 0 && DERIVED_PER_READ_ONCE * read_once >= gp.num_derived()
 }
 
-/// Rules per rule over derived atoms alone, and derived atoms per view, at
-/// which a program is built gate by gate ([`built_of_gates`]). 132 of the
-/// 141 benchmark circuits that Alea, Dice and pluck export are, the others
-/// small or networks written as circuits. A network whose deterministic
-/// entries are rules over derived atoms alone can be too (pathfinder's are
-/// 76% of its rules), and takes `program` first at little cost; no
-/// network's or grid's views reach a fifth of its derived atoms.
+/// Rules per rule over derived atoms alone, and derived atoms per atom
+/// read once, at which a program is built gate by gate
+/// ([`built_of_gates`]). 135 of the 141 benchmark circuits that Alea,
+/// Dice and pluck export are, the others small or networks written as
+/// circuits. A network whose deterministic entries are rules over derived
+/// atoms alone can be too (pathfinder's are 76% of its rules), and takes
+/// `program` first at little cost; of the other networks and grids, the
+/// most atoms read once are the 4 × 4 grid's, 46% of its derived atoms, a
+/// share that falls as a grid grows.
 pub(super) const RULES_PER_GATE: usize = 4;
-pub(super) const DERIVED_PER_VIEW: usize = 2;
+pub(super) const DERIVED_PER_READ_ONCE: usize = 2;

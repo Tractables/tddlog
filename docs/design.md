@@ -1734,8 +1734,8 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   built it in, and on some circuits this is the one layout that compiles.
   On programs with something to order it is `auto`'s first trial where
   the program is built gate by gate (`built_of_gates`): a quarter of its
-  rules read derived atoms alone, or half its derived atoms are views,
-  atoms of one rule read by one rule. The exported circuits are; the
+  rules read derived atoms alone, or half its derived atoms are read by
+  one rule each, whatever their own rules. The exported circuits are; the
   networks, grids and graphs, whose rules each read a fact, are not. It
   is the last trial elsewhere, where it takes its share of the work until
   another trial wins.
@@ -1895,9 +1895,10 @@ and last elsewhere: first on every program, it costs the networks and
 grids, whose rules each read a fact, several times their time. The
 property is read off the program as ground, whatever the grounder
 inlined, so that a program and the ground program `tddlog --ground`
-prints of it get the same trials. The benchmark programs did, all but 3
-of 383; whether the grounder had inlined views, the earlier test, gave
-the two writings different trials on 168 of them. Where it comes first,
+prints of it get the same trials. The benchmark programs did, all but 5
+of the 449 whose two writings both come to this choice; whether the
+grounder had inlined views, the earlier test, gave the two writings
+different trials on 221 of them. Where it comes first,
 `program:fanin`, the facts in the order the gates read them, comes
 second. A front end that bit-blasts a program states the bits of each
 variable together and the variables in the source's order, the order

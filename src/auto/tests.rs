@@ -213,6 +213,16 @@ fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
                  c1 :- x1, y1. c1 :- t1, c0.
                  p :- s0, s1. seven :- p, c1.
                  query(s0). query(s1). query(c1). query(seven).";
+    // A chain of ors of ands over facts, each read negated by one rule of
+    // the next: gates that read facts, none a view, which the grounder
+    // keeps, so both writings are the same program.
+    let ors = "0.5::f0. 0.5::f1. 0.5::f2. 0.5::f3. 0.5::f4. 0.5::f5. 0.5::f6.
+               0.5::f7. 0.5::f8. 0.5::f9. 0.5::f10. 0.5::f11. 0.5::f12.
+               a :- f0, f1. a :- f2, f3.
+               b :- \\+a, f4. b :- f5, f6.
+               c :- \\+b, f7. c :- f8, f9.
+               q :- \\+c, f10. q :- f11, f12.
+               query(q).";
     // A mux whose rules each read a fact, with a view `g2`: neither
     // writing is, and `program` alone goes last.
     let mux = "0.5::f0. 0.5::f1. 0.5::f2. 0.5::f3. 0.5::f4. 0.5::f5.
@@ -234,6 +244,9 @@ fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
     for views in [true, false] {
         let gp = ground(adder, views);
         assert_eq!(gp.stats.inlined, usize::from(views));
+        assert_eq!(candidates(&gp), program_leads());
+        let gp = ground(ors, views);
+        assert_eq!(gp.stats.inlined, 0);
         assert_eq!(candidates(&gp), program_leads());
         let gp = ground(mux, views);
         assert_eq!(gp.stats.inlined, usize::from(views));
