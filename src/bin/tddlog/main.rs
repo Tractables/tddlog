@@ -302,6 +302,52 @@ fn once<T>(slot: &mut Option<T>, value: T, option: &str) -> Result<(), String> {
 
 fn main() -> ExitCode {
     budget::limit_to_cgroups();
+    #[cfg(all(unix, not(target_env = "msvc")))]
+    alloc::end_refusals_as_errors(format!("{}\n", refused()));
+    // The run takes a thread whose stack is mapped whole as it starts. The
+    // main thread's stack grows a page at a time, and a limit on the
+    // address space counts each page: once the allocator has taken the
+    // room under the limit, the kernel can refuse the stack its next page,
+    // and the process then dies of a SIGSEGV where it should have ended in
+    // an allocation error.
+    let run = std::thread::Builder::new()
+        .name("main".into())
+        .stack_size(budget::stack_bytes())
+        .spawn(command);
+    match run.map(std::thread::JoinHandle::join) {
+        Ok(Ok(code)) => code,
+        // The panic's message is out; the process ends as a panic of the
+        // main thread does.
+        Ok(Err(panic)) => std::panic::resume_unwind(panic),
+        // The process's first thread fails to start where the mapping of
+        // its stack is refused.
+        Err(_) => {
+            eprintln!("{}", refused());
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// The error a run ends with where it is refused memory: a refused TDD
+/// operation's.
+fn refused() -> tddlog::Error {
+    tddlog::Error::Compile(tddlog::tp::CompileError::Tdd(
+        tididi::OperationError::OverBudget,
+    ))
+}
+
+/// Reads the command line and answers it.
+fn command() -> ExitCode {
+    // A debug build's request that cannot give up, of TDDLOG_TEST_ALLOCATE
+    // bytes, for tests/it/out_of_memory.rs; a release build reads no such
+    // variable.
+    #[cfg(debug_assertions)]
+    if let Some(bytes) = std::env::var("TDDLOG_TEST_ALLOCATE")
+        .ok()
+        .and_then(|b| b.parse::<usize>().ok())
+    {
+        std::hint::black_box(vec![0u8; bytes]);
+    }
     let args = match parse_args() {
         Ok(Request::Run(a)) => a,
         Ok(Request::Help) => {

@@ -1,7 +1,11 @@
 //! The binary's allocator: jemalloc, with transparent huge pages from the
-//! first [`HUGE_FROM`] bytes until the kernel's time says otherwise.
+//! first [`HUGE_FROM`] bytes until the kernel's time says otherwise, and a
+//! run that it refuses memory ended as an allocation error
+//! ([`end_refusals_as_errors`]).
 
 use std::alloc::{GlobalAlloc, Layout};
+#[cfg(unix)]
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 // jemalloc rather than glibc's malloc: faster on the benchmark programs at
@@ -167,7 +171,7 @@ fn purge() {
 }
 
 /// `request`'s block, or where jemalloc refuses it, `request`'s block
-/// after a [`purge`].
+/// after a [`purge`]; a request refused again is noted in [`REFUSED`].
 #[inline(always)]
 fn or_after_purge(request: impl Fn() -> *mut u8) -> *mut u8 {
     let block = request();
@@ -175,7 +179,66 @@ fn or_after_purge(request: impl Fn() -> *mut u8) -> *mut u8 {
         return block;
     }
     purge();
-    request()
+    let block = request();
+    if block.is_null() {
+        REFUSED.store(true, Ordering::Relaxed);
+    }
+    block
+}
+
+/// Whether the allocator has refused a request, after a [`purge`].
+static REFUSED: AtomicBool = AtomicBool::new(false);
+/// What the process writes to stderr as it ends where std aborts on a
+/// refused allocation ([`end_refusals_as_errors`]).
+#[cfg(unix)]
+static REFUSAL: OnceLock<String> = OnceLock::new();
+
+/// Makes a refused allocation end the process as a refused TDD operation
+/// ends it: `message` on stderr and exit status 1, wherever the request
+/// was made.
+///
+/// tididi's operations ask for memory with `try_reserve` and give up where
+/// the allocator refuses: `auto` retires the trial that asked and goes on,
+/// and the run ends with the operation's error where no trial is left.
+/// Every other request (a `Vec` of the grounder's or of the compile's
+/// tables that grows) cannot give up, and std prints `memory allocation of
+/// N bytes failed` and aborts; stable Rust has no hook between the two. So
+/// the process catches SIGABRT: after a refusal, the handler writes
+/// `message` and exits with status 1. Without one, it restores the default
+/// action and raises the signal again, so that any other abort (a failed
+/// assertion, a panic that cannot unwind) still dumps core with its
+/// message.
+#[cfg(unix)]
+pub fn end_refusals_as_errors(message: String) {
+    let _ = REFUSAL.set(message);
+    // SAFETY: a zeroed sigaction is a valid one with an empty mask and no
+    // flags; the handler is an `extern "C" fn(c_int)`.
+    unsafe {
+        let mut action: libc::sigaction = std::mem::zeroed();
+        action.sa_sigaction = on_abort as extern "C" fn(libc::c_int) as libc::sighandler_t;
+        libc::sigaction(libc::SIGABRT, &action, std::ptr::null_mut());
+    }
+}
+
+/// SIGABRT's handler ([`end_refusals_as_errors`]). It only reads atomics
+/// and calls write(2), _exit(2), signal(2) and raise(3), which a signal
+/// handler may.
+#[cfg(unix)]
+extern "C" fn on_abort(_: libc::c_int) {
+    if REFUSED.load(Ordering::Relaxed) {
+        if let Some(message) = REFUSAL.get() {
+            // SAFETY: `message` lives as long as the process.
+            unsafe { libc::write(2, message.as_ptr().cast(), message.len()) };
+        }
+        // SAFETY: _exit ends the process at once.
+        unsafe { libc::_exit(1) };
+    }
+    // SAFETY: SIGABRT is blocked while its handler runs, so the signal
+    // raised again is delivered, with the default action, as it returns.
+    unsafe {
+        libc::signal(libc::SIGABRT, libc::SIG_DFL);
+        libc::raise(libc::SIGABRT);
+    }
 }
 
 // SAFETY: every method forwards to jemalloc with the caller's arguments; a
