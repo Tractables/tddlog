@@ -1081,13 +1081,16 @@ function benchmarksOf(root) {
             await page.waitForSelector("#view section#programs .viewer .pane, #view section#programs p.note:not(:first-child)");
             const order = await page.$$eval("#view > *", (es) => es.map((e) => (e.id === "programs" ? "P" : e.tagName === "H3" ? "H" : "")).join(""));
             assert.ok(order.indexOf("P") >= 0 && order.indexOf("P") < order.indexOf("H"), `${c.key} narrowed to ${only}: its program first, ${order}`);
-            const picks = await page.$$eval("#view section#programs .pick select option, #view section#programs .pick .seg a", (os) => os.length);
+            // the instance picker, not the menu of the instance's programs beside it
+            const menu = '#view section#programs select[aria-label="Instance"]';
+            const seg = '#view section#programs .seg[aria-label="Instance"]';
+            const picks = await page.$$eval(`${menu} option, ${seg} a`, (os) => os.length);
             assert.ok(g.rows.length === 1 ? picks === 0 : picks > 1 && picks <= g.rows.length, `${c.key} narrowed to ${only}: ${picks} instances to pick`);
             if (picks > 1) {
-              if (await page.$("#view section#programs .pick select")) await page.selectOption("#view section#programs .pick select", "1");
-              else await page.click("#view section#programs .pick .seg a:nth-child(2)");
+              if (await page.$(menu)) await page.selectOption(menu, "1");
+              else await page.click(`${seg} a:nth-child(2)`);
               await page.waitForFunction((h) => location.hash.startsWith(`${h}/program/`), h);
-              await page.waitForSelector("#view section#programs .pick [aria-current], #view section#programs .pick select");
+              await page.waitForSelector(`${seg} [aria-current], ${menu}`);
               assert.equal(await page.$eval("#view h2", (e) => e.textContent), g.title, `${c.key} narrowed to ${only}: another instance in place`);
             }
           }
