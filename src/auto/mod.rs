@@ -80,8 +80,8 @@ use tididi::limits::{LimitConfig, StopAt, StopRules};
 
 use policy::{
     FAMILIES_WEIGHT, FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR,
-    bet_left, candidates, families_weighted, horizon, overspent_estimate, projected_from,
-    search_due, search_rent, weight,
+    bet_left, candidates, horizon, overspent_estimate, projected_from, search_due, search_rent,
+    weight,
 };
 use trial::Trial;
 
@@ -387,12 +387,14 @@ fn same_rewrite(a: &Trial, b: &Trial, programs: &Programs) -> bool {
 /// Gives trial `i` its rewrite of its program ([`Programs::of`]), written
 /// without its linear recursion ([`Kind::rewrite_eliminated`]), taken from
 /// an earlier trial of the same rewrite that compiles it as it is where
-/// there is one. False where the trial is disabled, having nothing an
-/// earlier trial lacks or a rewrite the allocator refuses room.
+/// there is one, and weighs the trial on it ([`weight`]) before its first
+/// attempt. False where the trial is disabled, having nothing an earlier
+/// trial lacks or a rewrite the allocator refuses room.
 fn rewrite(trials: &mut [Trial], i: usize, programs: &Programs, ledger: &mut Ledger) -> bool {
     if trials[i].disabled {
         return false;
     }
+    let given = trials[i].ground.is_none();
     let program = programs.of(trials[i].kind);
     // A program consisting only of independent facts has no rule
     // interaction graph for td to improve. Closed already handles
@@ -433,6 +435,13 @@ fn rewrite(trials: &mut [Trial], i: usize, programs: &Programs, ledger: &mut Led
             return false;
         }
         trials[i].ground = Some(gp);
+    }
+    // The weight scales the target the trial starts with.
+    if given {
+        let t = &mut trials[i];
+        let w = weight(t);
+        t.target = t.target / t.weight * w;
+        t.weight = w;
     }
     true
 }
@@ -570,22 +579,10 @@ fn run_within(
     let Some(lead) = trials.first().map(|t| t.kind) else {
         return Err(Error::Vtree("auto has no trial left".into()));
     };
-    // Where `program` leads, whether the families trials hold their weight
-    // turns on `families:0`'s rewrite ([`families_weighted`]). Its layout
-    // waits for its first attempt, which a run that another trial answers
-    // first never makes (dice_pmc1: 3.8 s for a layout of width 345, where
-    // `program` answers in 0.3 s).
-    let laid = trials
-        .iter()
-        .position(|t| t.kind == (Kind::Families { search: false }));
-    if matches!(lead, Kind::Program { .. })
-        && let Some(i) = laid
-    {
-        rewrite(&mut trials, i, &programs, &mut ledger);
-    }
-    let weighted = families_weighted(lead, laid.map(|i| &trials[i]).filter(|t| !t.disabled));
+    // `families:0`'s weight turns on its rewrite, which it is given before
+    // its first attempt ([`rewrite`]), where `ready` did not lay it out.
     for t in &mut trials {
-        t.weight = weight(t.kind, weighted);
+        t.weight = weight(t);
         t.target = first_work.saturating_mul(t.weight);
     }
     // Where `program` goes first, it and the two trials after it start
@@ -794,15 +791,15 @@ fn run_within(
 /// ([`search_due`]) or at the searched trial's own turn: where the
 /// searched layout is estimated [`SEARCHED_GAP`] times smaller, its trial
 /// takes `families:0`'s place in the order, just before it, with
-/// [`FAMILIES_WEIGHT`] whichever trial leads, at the first target of that
-/// weight, and so takes the next attempt, and `families:0` loses its
-/// weight, the bet now being on the searched layout (pedigree51, where
-/// `families:0` otherwise spent eight shares beside it; geni_router_24,
-/// where it spent them until it was refused memory). Where `program`
-/// leads the gap is the bet's evidence: on GeNI's routers, which `program`
-/// leads and whose rewrite ties no table by clauses, the searched layout
-/// wins, and at weight 1 the other trials' equal shares took router_20
-/// from 12 s to 21 and router_24 past its memory.
+/// [`FAMILIES_WEIGHT`] whether or not `families:0` held it, at the first
+/// target of that weight, and so takes the next attempt, and `families:0`
+/// loses its weight, the bet now being on the searched layout (pedigree51,
+/// where `families:0` otherwise spent eight shares beside it;
+/// geni_router_24, where it spent them until it was refused memory).
+/// Where `families:0`'s rewrite ties no table by clauses the gap is the
+/// bet's evidence: on GeNI's routers, whose rewrite ties none, the
+/// searched layout wins, and at weight 1 the other trials' equal shares
+/// took router_20 from 12 s to 21 and router_24 past its memory.
 fn weigh_searched(
     trials: &mut Vec<Trial>,
     programs: &Programs,

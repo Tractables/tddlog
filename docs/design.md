@@ -1981,12 +1981,15 @@ guards gives the `decision` layout (`ground::Decisions`).
 
 **Turns.** Each trial has a weight, 8 (`FAMILIES_WEIGHT`) for
 `families:0`, a `decision` trial, or the searched families trial in
-`families:0`'s place (below), 1 otherwise. Where `program` leads,
-`families:0` and `decision` hold it only where `families:0`'s rewrite
-ties tables by clauses (`families_weighted`), which reads the rewrite
-alone, so the layout waits for `families:0`'s first attempt. Weighted
-otherwise, on the circuits that `program` leads, layouts over the
-families took the weight's share for nothing. Each trial also has a target, the engine work
+`families:0`'s place (below), 1 otherwise. The weight is a bet on
+networks, and `families:0` holds it only where its rewrite ties tables
+by clauses (`policy::weight`), whichever trial goes first: it is
+weighed as it is given its rewrite, before its first attempt, and its
+layout waits for that attempt too. Weighted otherwise, on the circuits
+that `program` leads, layouts over the families took the weight's share
+for nothing, and on relational programs that `closed` wins its first
+turn took eight shares (cora8000: 2^31 units in 13 s, where `closed` then
+answered in 9.6 M). Each trial also has a target, the engine work
 it may have spent by the end of its turn, at first its weight times
 `FIRST_PAIRS` times `WORK_PER_PAIR` (2^28) units. Each attempt goes to
 the trial whose target is least for its weight, the first in the

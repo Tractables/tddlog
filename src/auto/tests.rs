@@ -654,6 +654,36 @@ fn a_trial_with_indicators_ties_tables_by_clauses() {
     }
 }
 
+#[test]
+fn families_0_holds_the_weight_only_where_its_rewrite_ties_tables_by_clauses() {
+    // A network's rewrite ties its tables by clauses, and `families:0`'s
+    // first watch is that of a weighted first target; UW-CSE's ties none,
+    // and its first watch is any trial's. A first round of two pairs.
+    let first_watch = |gp: GroundProgram| {
+        let trials = candidates(&gp);
+        let run = run_with_watch(
+            gp,
+            trials,
+            Projection::default(),
+            2,
+            tp::DYNAMIC_FIRST_PAIRS,
+        )
+        .unwrap();
+        let laid = Kind::Families { search: false };
+        let laid = format!("{laid} indicators={}", laid.indicators_name());
+        attempts(&run.vtree_notes)
+            .into_iter()
+            .find(|(_, t)| *t == laid)
+            .map(|(w, _)| w)
+            .unwrap_or_else(|| panic!("{:#?}", run.vtree_notes))
+    };
+    let unweighted = (2 * WORK_PER_PAIR / WORK_PER_HELD_PAIR) as usize;
+    let network = regress(include_str!("../../examples/bn_split.pl"));
+    assert_eq!(first_watch(network), FAMILIES_WEIGHT as usize * unweighted);
+    let relational = regress(include_str!("../../examples/uwcse.pl"));
+    assert_eq!(first_watch(relational), unweighted);
+}
+
 /// Trial `strategy` on `gp` written without its linear recursion, in
 /// attempts held to the bounds a trial gets beside others, round after
 /// round from two pairs. A trial alone runs unbounded, so this is how a

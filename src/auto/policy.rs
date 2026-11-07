@@ -69,15 +69,16 @@ pub(super) const LEAD_SHARE: u64 = 256;
 /// families trial, and on those the other trials' work was most of the
 /// run; where they spend past their estimates (the weather networks) they
 /// lose the weight ([`WORK_PER_ESTIMATED_PAIR`]). The bet is on networks:
-/// where `program` goes first, on the programs built gate by gate
-/// ([`candidates`]), the families trials hold the weight only if
-/// `families:0`'s rewrite ties some table by clauses, as a network's does
-/// ([`weight`]). Without the weight `program` took up to five times main's
-/// time beside it on the UAI mastermind networks (06_08_03_0014 1.0 s to
-/// 5.0), which `families:0` wins; with it `families:0` spent eight shares
-/// on circuits it does not win, which tie no table by clauses, its layouts
-/// estimated at up to 1e14 pairs, which no overspending reaches (Alea's
-/// pi_w12 8 s to 57, disease_small 66 s to 401, sorted_list 66 s to 102).
+/// `families:0` holds the weight only where its rewrite ties some table by
+/// clauses, as a network's does ([`weight`]), whichever trial goes first.
+/// Without the weight `program` took up to five times main's time beside it
+/// on the UAI mastermind networks (06_08_03_0014 1.0 s to 5.0), which
+/// `families:0` wins; with it `families:0` spent eight shares on circuits
+/// it does not win, which tie no table by clauses, its layouts estimated
+/// at up to 1e14 pairs, which no overspending reaches (Alea's pi_w12 8 s
+/// to 57, disease_small 66 s to 401, sorted_list 66 s to 102), and its
+/// first turn of eight shares on relational programs that `closed` wins
+/// (cora8000, 2^31 units in 13 s, where `closed` then answers in 9.6 M).
 /// The searched trial otherwise weighs 1: its layout
 /// estimated about as large as `families:0`'s, the bet is `families:0`'s,
 /// and at the weight its first attempt spent 2.1 G units on GeNI's
@@ -205,22 +206,16 @@ pub(super) fn ties_tables_by_clauses(t: &Trial) -> bool {
         .is_some_and(|gp| !crate::indicators::clause_links(gp).is_empty())
 }
 
-/// The weight of a trial of `kind`: [`FAMILIES_WEIGHT`] for `families:0`
-/// and `decision` where the families trials are `weighted`
-/// ([`families_weighted`]).
-pub(super) fn weight(kind: Kind, weighted: bool) -> u64 {
-    match kind {
-        Kind::Families { search: false } | Kind::Decision if weighted => FAMILIES_WEIGHT,
+/// The weight of `t`: [`FAMILIES_WEIGHT`] for `decision`, which goes first
+/// where the conditioning decided ([`super::run`]), and for `families:0`
+/// once it has its rewrite, where that ties tables by clauses
+/// ([`ties_tables_by_clauses`]); 1 otherwise.
+pub(super) fn weight(t: &Trial) -> u64 {
+    match t.kind {
+        Kind::Decision => FAMILIES_WEIGHT,
+        Kind::Families { search: false } if ties_tables_by_clauses(t) => FAMILIES_WEIGHT,
         _ => 1,
     }
-}
-
-/// Whether the families trials of a run led by `lead`, the first in order,
-/// hold [`FAMILIES_WEIGHT`]: unless `program` leads and `laid`, the
-/// `families:0` trial with its rewrite, ties no table by clauses
-/// ([`ties_tables_by_clauses`]) or is missing.
-pub(super) fn families_weighted(lead: Kind, laid: Option<&Trial>) -> bool {
-    !matches!(lead, Kind::Program { .. }) || laid.is_some_and(ties_tables_by_clauses)
 }
 
 /// Concrete layouts in trial order. The families entries use rewritten
