@@ -10,6 +10,9 @@ jobs:
           components: clippy, rustfmt
       - run: cargo fmt --check
       - run: cargo test --profile quick --locked
+      # The run that is refused memory ends with the allocation error: these
+      # tests need a debug build, which the quick profile is not.
+      - run: cargo test --locked --test it out_of_memory
       - run: cargo run --profile quick --locked --example sprinkler
       - run: cargo clippy --all-targets --locked -- -D warnings
       - run: cargo doc --no-deps --locked
