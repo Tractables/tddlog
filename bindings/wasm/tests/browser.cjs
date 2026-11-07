@@ -467,7 +467,7 @@ function benchmarksOf(root) {
     };
     if (benches.length > 0) {
       const quick = (b) => b.readable && b.file.bytes <= 1024 * 1024 && typeof b.native === "number" && b.native <= 2;
-      const whole = benches.find((b) => b.path === "std/grid/grid4" && quick(b) && b.reference && b.inline)
+      const whole = benches.find((b) => b.path === "std/grids/grid4" && quick(b) && b.reference && b.inline)
         ?? benches.find((b) => quick(b) && b.reference && b.inline);
       assert.ok(whole, "a benchmark to open");
       const opened = async (p, bench) => {
@@ -525,7 +525,8 @@ function benchmarksOf(root) {
       await opened(gz, whole);
       assert.equal(await gz.inputValue("#program"), header + text);
       await gz.close();
-      const wrong = await routed(text.replace(/\d/, (d) => String((Number(d) + 1) % 10)));
+      // its last digit changed: a header the site puts above a file (Biomine's, Ace's) is not part of it
+      const wrong = await routed(text.replace(/\d(?=\D*$)/, (d) => String((Number(d) + 1) % 10)));
       await visit(wrong, `#bench=${whole.path}`);
       await wrong.waitForFunction(() => /does not match/.test(document.getElementById("source").textContent));
       await wrong.close();
