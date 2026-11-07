@@ -291,7 +291,8 @@ function tddlogFile(instance) {
   const tabs = instance.tabs ?? [];
   const tddlog = tabs.some((tab) => tab.readers.some(plain)) ? plain : (r) => r.endsWith("+tddlog");
   let files = tabs.filter((tab) => tab.readers.some(tddlog))
-    .flatMap((tab) => tab.files.filter((file) => file.name.endsWith(".pl")).map((file) => ({ tab, file })));
+    // (not the data a program consults at a place, $1, beside it in its tab)
+    .flatMap((tab) => tab.files.filter((file) => file.name.endsWith(".pl") && !file.data).map((file) => ({ tab, file })));
   // files of one name (a loop's two forms) each name their readers
   if (files.length > 1) files = files.filter(({ file }) => !(file.readers || file.for) || (file.readers ?? []).some(tddlog));
   if (files.length === 1) return files[0];
