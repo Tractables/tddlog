@@ -821,8 +821,8 @@ impl CountedEvidence {
     /// against its count in floats was not exact ([`Counts::widen`]);
     /// `recounts` counts it.
     fn widen(&mut self, recounts: &mut usize) -> Result<(), tididi::OperationError> {
-        *recounts += 1;
         self.widened = self.counted.widen()?;
+        *recounts += 1;
         Ok(())
     }
 
