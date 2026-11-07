@@ -91,6 +91,12 @@ fn node(l: Lit) -> usize {
     (l >> 1) as usize
 }
 
+/// Whether node `c` is a gate built before `floor`: an input of a level's
+/// calls ([`Pruner::level`]).
+fn below_floor(g: &Graph, c: usize, floor: usize) -> bool {
+    c != 0 && c < floor && g.fanins[c][0] != NO
+}
+
 /// The gates below `floor` that the cone of `n` reads, its walk stopping
 /// at them and at the inputs.
 fn reads_below(g: &Graph, n: usize, floor: usize) -> FxHashSet<usize> {
@@ -253,11 +259,22 @@ impl Graph {
     }
 }
 
+/// The candidates of one signature: the inputs and the gates from the
+/// floor on, in the order added, and whether a gate of the signature is
+/// below the floor. The floor only rises: a gate below it leaves the
+/// class for good the first time a lookup meets it, and is found again
+/// only through a cone that reads it ([`Sweep::find`]).
+#[derive(Default)]
+struct Class {
+    members: Vec<usize>,
+    older: bool,
+}
+
 /// The search for nodes equal in function: the candidates by signature,
 /// and one solver for every call.
 struct Sweep {
     /// The candidate nodes by the hash of their signatures.
-    classes: FxHashMap<u64, Vec<usize>>,
+    classes: FxHashMap<u64, Class>,
     /// Every candidate, in the order added.
     candidates: Vec<usize>,
     /// The counterexamples not yet simulated: values of input nodes.
@@ -404,7 +421,11 @@ impl Sweep {
 
     /// Adds node `n` as a candidate for the nodes after it.
     fn add(&mut self, g: &Graph, n: usize) {
-        self.classes.entry(g.signature(n).0).or_default().push(n);
+        self.classes
+            .entry(g.signature(n).0)
+            .or_default()
+            .members
+            .push(n);
         self.candidates.push(n);
     }
 
@@ -416,22 +437,28 @@ impl Sweep {
         }
         let n = node(l);
         let (h, phase) = g.signature(n);
-        let class = self.classes.get(&h)?;
         // A gate below the floor is an input of the calls: `n` can be proved
         // equal to it only where `n`'s cone reads it, as a step of a loop
         // reads the value an earlier step left unchanged. Any other call
-        // would fail and cost a counterexample.
+        // would fail and cost a counterexample. Those gates are found through
+        // the cone, where the class held one, and not by walking the class.
         let floor = self.window.floor;
-        let below = |c: usize| c != 0 && c < floor && g.fanins[c][0] != NO;
-        let reads = match class.iter().any(|&c| below(c)) {
-            true => reads_below(g, n, floor),
-            false => FxHashSet::default(),
+        let class = self.classes.get_mut(&h)?;
+        let before = class.members.len();
+        class.members.retain(|&c| !below_floor(g, c, floor));
+        class.older |= class.members.len() < before;
+        let mut reads: Vec<usize> = match class.older {
+            true => reads_below(g, n, floor)
+                .into_iter()
+                .filter(|&c| g.signature(c).0 == h)
+                .collect(),
+            false => Vec::new(),
         };
-        let tries: Vec<usize> = class
-            .iter()
-            .copied()
-            .filter(|&c| c != n && (!below(c) || reads.contains(&c)))
-            .filter(|&c| g.alike(n, c))
+        reads.sort_unstable();
+        let tries: Vec<usize> = reads
+            .into_iter()
+            .chain(class.members.iter().copied())
+            .filter(|&c| c != n && g.alike(n, c))
             .take(TRIES)
             .collect();
         for c in tries {
@@ -541,8 +568,13 @@ impl Sweep {
         }
         g.add_word(&pending);
         self.classes.clear();
+        let floor = self.window.floor;
         for &c in &self.candidates {
-            self.classes.entry(g.signature(c).0).or_default().push(c);
+            let class = self.classes.entry(g.signature(c).0).or_default();
+            match below_floor(g, c, floor) {
+                true => class.older = true,
+                false => class.members.push(c),
+            }
         }
     }
 }
