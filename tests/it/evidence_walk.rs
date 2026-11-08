@@ -132,7 +132,7 @@ fn a_chain_without_queries_is_summed_out_as_it_is_walked() {
     // steps no later join reads (src/query/sum_out.rs), and P(o) is the
     // last join's weighted value, against the forward pass's. Nothing is
     // detached, so that P(o) is counted (`GroundOptions::detach`).
-    let mut summing = 0;
+    let (mut summing, mut collapsed) = (0, 0);
     for (strategy, steps) in RUNS {
         let program = tddlog::syntax::parse_program(&chain(steps))
             .unwrap()
@@ -153,6 +153,91 @@ fn a_chain_without_queries_is_summed_out_as_it_is_walked() {
             p.to_f64()
         );
         summing += run.query_sizes.summing_joins;
+        collapsed += run.query_sizes.collapsed_variables;
     }
     assert!(summing > 0, "no join summed out");
+    assert!(collapsed > 0, "no summed-out subtree left the scope");
+}
+
+/// A tree of `n` hidden states of three values, h_0 at the root and h_i
+/// the child of h_{(i - 1) / 2}, each drawn from its parent's value as
+/// the chain's steps are and observed as they are, with no query.
+fn tree(n: usize) -> String {
+    let heads = |i: usize, row: &[f64; 3]| {
+        row.iter()
+            .enumerate()
+            .map(|(v, p)| format!("{p}::h_{i}(v{v})"))
+            .collect::<Vec<_>>()
+            .join("; ")
+    };
+    let mut source = format!("{}.\n", heads(0, &PRIOR));
+    for i in 1..n {
+        for (v, row) in MOVE.iter().enumerate() {
+            source += &format!("{} :- h_{}(v{v}).\n", heads(i, row), (i - 1) / 2);
+        }
+    }
+    for i in 0..n {
+        for (v, p) in SEEN.iter().enumerate() {
+            source += &format!("{p}::o_{i} :- h_{i}(v{v}).\n");
+        }
+        source += &format!("evidence(o_{i}, {}).\n", observed(i));
+    }
+    source
+}
+
+/// P(o) for the tree of `n` states, by the pass up from the leaves: the
+/// probability of the observations under h_i given each value of h_i.
+fn upward(n: usize) -> f64 {
+    let seen = |i: usize, v: usize| if observed(i) { SEEN[v] } else { 1.0 - SEEN[v] };
+    let mut below = vec![[0.0; 3]; n];
+    for i in (0..n).rev() {
+        for v in 0..3 {
+            below[i][v] = seen(i, v)
+                * [2 * i + 1, 2 * i + 2]
+                    .iter()
+                    .filter(|&&c| c < n)
+                    .map(|&c| (0..3).map(|w| MOVE[v][w] * below[c][w]).sum::<f64>())
+                    .product::<f64>();
+        }
+    }
+    (0..3).map(|v| PRIOR[v] * below[0][v]).sum()
+}
+
+#[test]
+fn a_tree_without_queries_drops_the_subtrees_it_summed_out() {
+    // Each subtree of the tree is summed out once it is built, and leaves
+    // the scopes of the joins after it but for one leaf of each side of
+    // its summed level (`SumOut::collapse`): P(o) against the pass up.
+    use Kind::*;
+    let runs = [
+        (Strategy::Auto, 31),
+        (Strategy::Trial(Families { search: true }), 31),
+        (Strategy::Trial(Families { search: false }), 31),
+        (Strategy::Trial(Dynamic), 15),
+        (Strategy::Trial(Closed), 15),
+        (Strategy::Trial(Td), 7),
+    ];
+    let mut collapsed = 0;
+    for (strategy, n) in runs {
+        let program = tddlog::syntax::parse_program(&tree(n))
+            .unwrap()
+            .without_queries();
+        let options = GroundOptions {
+            detach: false,
+            ..Rows::Classes.options()
+        };
+        let gp = tddlog::ground::ground(&program, &options).unwrap();
+        let run = solve(gp, strategy, n);
+        let p = run
+            .evidence_probability
+            .unwrap_or_else(|| panic!("{strategy:?}, {n} states: no P(o)"));
+        let want = upward(n);
+        assert!(
+            (p.log10() - want.log10()).abs() < 1e-12,
+            "{strategy:?}, {n} states: P(o) = {} against {want}",
+            p.to_f64()
+        );
+        collapsed += run.query_sizes.collapsed_variables;
+    }
+    assert!(collapsed > 0, "no summed-out subtree left the scope");
 }

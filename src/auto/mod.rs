@@ -1007,6 +1007,7 @@ fn attempt(
                     .rounds()
                     .map(|r| format!(" at round {r}"))
                     .unwrap_or_default();
+                let (done, all) = c.components();
                 format!(", components {done}/{all}{round}")
             }
             None => format!(", steps {done}/{all}"),

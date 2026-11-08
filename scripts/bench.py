@@ -2562,7 +2562,10 @@ def dice_source(args, name, system=None):
             DICE_WRITTEN.add(out)
         return out
     if ground_dice(args, name):
-        return os.path.join(ground_dir(args, name), f'{name}.dice.dice')
+        # problog2ppl.py's program, or ground2net.py's where it refused (dice_route); ground2net.py's name
+        # before the route has run
+        stem = GROUNDED.get((name, 'dice'), {}).get('stem') or os.path.join(ground_dir(args, name), f'{name}.dice')
+        return stem + '.dice'
     return None
 
 
@@ -5650,9 +5653,16 @@ def run_uai_system(args, name, path, system, variant):
 # is neither through its ground program (every system tries every
 # problem): `tddlog --ground` prints it, and ground2net.py writes it as a
 # Bayesian network of Boolean variables (UAI for Merlin and the UAI
-# systems, Hugin for Ace) or as Dice programs. Both steps are timed and
-# their seconds added to the system's, as Scallop's grounding is.
+# systems, Hugin for Ace). Both steps are timed and their seconds added to
+# the system's, as Scallop's grounding is. The systems that read Dice
+# programs are given the logic program as problog2ppl.py writes it in Dice
+# instead (`dice_route`): over the tuples of its relations, a recursion over
+# a step a function `iterate`d, as a Dice user writes it. That translation
+# is the harness's and is not charged, as problog2ppl.py's others are not
+# (`lp_route`). Where problog2ppl.py refuses the program, they are given the
+# Dice programs ground2net.py writes of its ground program, charged as above.
 NETWORK_SYSTEMS = ('ace', 'merlin', *UAI_SYSTEMS)
+DICE_FORMS = ('dice', 'dicemap')   # the forms of ground_format that dice_route writes
 GROUNDED = {}   # (instance, format) -> the ground route's record, once a run
 
 
@@ -5720,14 +5730,20 @@ def ground_route(args, name, path, form):
     the files ground2net.py wrote (`stem`), the network's variables in
     order (`order`) and the queries' cells (`cells`). A translation
     ground2net.py refuses (a component with negation through recursion, a
-    network too large) is `unsupported`. Run once a run per instance and
-    format; the instance's directory is removed once its systems have run
-    (`drop_ground`)."""
+    network too large) is `unsupported`. A Dice format is problog2ppl.py's
+    first (`dice_route`), and ground2net.py's only where that refuses the
+    program. Run once a run per instance and format; the instance's
+    directory is removed once its systems have run (`drop_ground`)."""
     key = (name, form)
     if key in GROUNDED:
         return GROUNDED[key]
     d = ground_dir(args, name)
     os.makedirs(d, exist_ok=True)
+    if form in DICE_FORMS:
+        rec = dice_route(args, name, path, form)
+        if rec is not None:
+            GROUNDED[key] = rec
+            return rec
     ground = os.path.join(d, name + '.ground.pl')
     g = GROUNDED.get((name, 'ground'))
     if g is None:
@@ -5750,6 +5766,25 @@ def ground_route(args, name, path, form):
                        cells={q: (v, ['false', 'true'].index(u)) for q, (v, u) in net['queries'].items()})
     GROUNDED[key] = rec
     return rec
+
+
+def dice_route(args, name, path, form):
+    """The Dice programs problog2ppl.py writes of logic program `path` in
+    format `form` (DICE_FORMS: one program, NAME.lp.dice, or a program a
+    query listed in NAME.lp.dicemap), as ground_route's record: the
+    harness's translation, so its seconds are 0; `ground` a file of the
+    queries in the order the programs return them, which the systems'
+    answers follow; `stem`. None where problog2ppl.py refuses the program,
+    which then takes the ground program's route. A translation past its
+    bound is the harness's error (translation)."""
+    os.makedirs(ground_dir(args, name), exist_ok=True)
+    stem = os.path.join(ground_dir(args, name), f'{name}.lp')
+    out, err = translation(args, 'problog2ppl.py', [form, path, f'{stem}.{form}'])
+    if err is not None:
+        return None if err['status'] == 'unsupported' else err
+    asked = os.path.join(ground_dir(args, name), f'{name}.lp.queries.pl')
+    write_new(asked, ''.join(f'query({q}).\n' for q in out.splitlines()))
+    return {'status': 'ok', 'seconds': 0.0, 'ground': asked, 'stem': stem}
 
 
 def drop_ground(args, name):

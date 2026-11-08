@@ -1,8 +1,10 @@
 """problog2ppl.py writes ProbLog programs over their facts in Alea.jl,
-Roulette, WebPPL, Psi, Pluck and SPPL: the program's text, its facts file (Psi's,
-Pluck's and SPPL's programs hold their facts) and the queries it answers, in order, and the
-programs it refuses. The answers are checked
-on each run against the instance's reference (bench.py's checks)."""
+Roulette, WebPPL, Psi, Pluck and SPPL, and over their tuples in Dice: the
+program's text, its facts file (Psi's, Pluck's, SPPL's and Dice's programs
+hold their facts) and the queries it answers, in order, and the programs it
+refuses. SPPL's and Dice's programs are answered here by enumeration; the
+answers are checked on each run against the instance's reference (bench.py's
+checks)."""
 import ast
 import itertools
 import math
@@ -18,6 +20,11 @@ scripts = root / 'scripts'
 sys.path.insert(0, str(scripts))
 import problog2ppl  # noqa: E402
 from problog2ppl import Refused, translate  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from test_dice2problog import exact  # noqa: E402
+
+# the languages whose programs hold relations: Dice's holds the tuples of the demand's relations as true
+RELATIONAL = [lang for lang in problog2ppl.LANGS if lang != 'dice']
 
 PATHS = """0.6::edge(a, b). 0.7::edge(b, c). 0.5::edge(a, c).
 path(X, Y) :- edge(X, Y).
@@ -77,6 +84,16 @@ def sppl_answers(text):
             holds = [bool(e) for e in names['queries_']()]
             mass = [m + weight * h for m, h in zip(mass or [0.0] * len(holds), holds)]
     return [m / total for m in mass]
+
+
+def dice_answers(text):
+    """The probabilities that the Booleans a Dice program problog2ppl.py
+    wrote returns (nested pairs) are true, given its observations, by
+    enumeration (test_dice2problog.py's `exact`)."""
+    def leaves(v):
+        return leaves(v[0]) + leaves(v[1]) if isinstance(v, tuple) else [v]
+    dist = exact(text)
+    return [float(sum(p for v, p in dist.items() if leaves(v)[k])) for k in range(len(leaves(next(iter(dist)))))]
 
 
 class Translation(unittest.TestCase):
@@ -209,6 +226,81 @@ class Translation(unittest.TestCase):
         self.assertLess(depth(ast.parse(text.replace('~=', '='))), 200)
         self.assertAlmostEqual(sppl_answers(text)[0], 0.5)
 
+    def test_dice_programs_spell_out_the_relations_and_iterate_the_steps(self):
+        text, rows, queries = translate('dice', PATHS, 'paths.pl')
+        self.assertTrue(text.startswith('// paths.pl: a ProbLog program written in Dice'))
+        self.assertIn('// path/2: a recursion through data', text)
+        self.assertIn('let edge_a_b = flip 0.6 in', text)
+        self.assertNotIn('fun ', text)
+        for program, want in [(PATHS, [0.5 + 0.5 * 0.42, 0.7]),
+                              (PATHS + 'evidence(edge(a, b), true).\n', [0.5 + 0.5 * 0.7, 0.7])]:
+            for got, w in zip(dice_answers(translate('dice', program)[0]), want):
+                self.assertAlmostEqual(got, w)
+        # a probabilistic rule, an annotated disjunction, a negation, a cycle, a symbol that is no name
+        program = PATHS + ("0.3::edge(c, a).\n0.7::reach(X) :- path(a, X).\npick(b).\n"
+                           "0.2::color(X, red) ; 0.5::color(X, blue) :- pick(X).\n"
+                           "node(a). node(b). node(c).\nlonely(X) :- node(X), \\+ path(X, _).\n"
+                           "0.5::s('x ~= y').\nquery(reach(c)). query(color(b, blue)). query(lonely(b)).\n"
+                           "query(path(c, b)). query(s('x ~= y')).\n")
+        pc = 0.5 + 0.5 * 0.42
+        text = translate('dice', program)[0]
+        self.assertIn('discrete(0.2, 0.5, 0.3)', text)
+        for got, want in zip(dice_answers(text), [pc, 0.7, 0.7 * pc, 0.5, 0.3, 0.3 * 0.6, 0.5]):
+            self.assertAlmostEqual(got, want)
+        # a step recursion whose steps are alike: infected(T) of infected(T - 1), a coin of each step's own
+        # (cure(T), spread(T)) a flip in the function; the first step its fact, the others iterated from it
+        sick = ('0.3::infected(0).\n0.4::cure(T) :- between(1, 3, T).\n'
+                'infected(T) :- between(1, 3, T), T0 is T - 1, infected(T0), \\+ cure(T).\n'
+                '0.2::infected(T) :- between(1, 3, T).\nquery(infected(1)).\nquery(infected(3)).\n')
+        text = translate('dice', sick)[0]
+        self.assertIn('// infected/1: a recursion over a step (infected/1 argument 1), f_infected from step 1, '
+                      'iterated between the steps the program reads\n', text)
+        self.assertIn('fun f_infected(s: bool) {', text)
+        self.assertIn('iterate(f_infected, ', text)
+        p, want = 0.3, []
+        for _ in range(3):
+            p = 1 - (1 - p * 0.6) * 0.8
+            want.append(p)
+        for got, w in zip(dice_answers(text), [want[0], want[2]]):
+            self.assertAlmostEqual(got, w)
+        # steps that differ, keep(T)'s probability: an argument of the function, a call a step
+        keep = ('0.5::x(0).\n0.9::keep(1). 0.8::keep(2). 0.7::keep(3).\n'
+                'x(T) :- between(1, 3, T), T0 is T - 1, x(T0), keep(T).\nquery(x(3)).\n')
+        text = translate('dice', keep)[0]
+        self.assertIn('fun f_x_(s: bool, a1: bool) {', text)
+        self.assertNotIn('iterate(', text)
+        self.assertAlmostEqual(dice_answers(text)[0], 0.5 * 0.9 * 0.8 * 0.7)
+        # a recursion none of whose tuples holds: said so, its query false
+        text = translate('dice', PATHS + 'r(X) :- edge(X, Y), r(Y).\nquery(r(a)).\n')[0]
+        self.assertIn('// r/1: a recursion none of whose tuples holds in any world\n', text)
+        self.assertAlmostEqual(dice_answers(text)[-1], 0.0)
+        # an observation of a step between: the state read there, the iteration resumed from it
+        weather = ('0.5::weather(sun,0) ; 0.5::weather(rain,0) <- true.\n'
+                   '0.6::weather(sun,T) ; 0.4::weather(rain,T) <- T>0, Tprev is T-1, weather(sun,Tprev).\n'
+                   '0.2::weather(sun,T) ; 0.8::weather(rain,T) <- T>0, Tprev is T-1, weather(rain,Tprev).\n'
+                   'evidence(weather(rain,2), true).\nquery(weather(sun,4)).\nquery(weather(sun,1)).\n')
+        sun = [0.5]
+        for _ in range(4):
+            sun.append(sun[-1] * 0.6 + (1 - sun[-1]) * 0.2)
+        rain2 = 1 - sun[2]
+        sun1 = sun[1] * 0.4 / (sun[1] * 0.4 + (1 - sun[1]) * 0.8)   # P(sun1 | rain2), Bayes
+        sun3 = 0.2   # from rain2
+        text = translate('dice', weather)[0]
+        self.assertGreater(rain2, 0)
+        self.assertEqual(text.count('iterate(f_weather, '), 1)
+        for got, w in zip(dice_answers(text), [sun3 * 0.6 + (1 - sun3) * 0.2, sun1]):
+            self.assertAlmostEqual(got, w)
+        # a program a query, as bench.py runs ground2net.py's
+        each = problog2ppl.Dice(problog2ppl.read(sick), 'sick.pl').each()
+        self.assertEqual([q for q, _ in each], ['infected(1)', 'infected(3)'])
+        for (_, text), w in zip(each, [want[0], want[2]]):
+            self.assertAlmostEqual(dice_answers(text)[0], w)
+        for program, why in [('0.5::e(4). p(Y) :- e(X), Y is X / 2. query(p(2)).', 'translator: the division /'),
+                             ('0.5::e. query(e). query(f).', 'f/0')]:
+            with self.assertRaises(Refused) as e:
+                translate('dice', program)
+            self.assertIn(why, str(e.exception))
+
     def test_alea_programs_are_in_the_form_alea_bench_reads(self):
         text, _, _ = translate('alea', PATHS, 'paths.pl')
         self.assertIn('const QUERY = :pr\n', text)
@@ -240,11 +332,20 @@ class Translation(unittest.TestCase):
                             for r in guarded))
         self.assertTrue(all(r.heads[0][0] != r.steps[0].pred for r in guarded))
         # and cplint's coin: an annotated disjunction of facts with a variable, called with it bound
-        for lang in problog2ppl.LANGS:
-            for program in (weather, '0.9::fair(C) ; 0.1::biased(C).\n0.5::toss(coin).\n'
-                            'h(C) :- toss(C), biased(C).\nquery(h(coin)).\n'):
+        coin = '0.9::fair(C) ; 0.1::biased(C).\n0.5::toss(coin).\nh(C) :- toss(C), biased(C).\nquery(h(coin)).\n'
+        for lang in RELATIONAL:
+            for program in (weather, coin):
                 text, _, queries = translate(lang, program)
                 self.assertIn('demand_', text, lang)
+        # in Dice the weather of a day a function of the day before's, iterated; the coin's choice a discrete
+        sun = 0.5
+        for _ in range(3):
+            sun = sun * 0.6 + (1 - sun) * 0.2
+        for program, want in [(weather, sun), (coin, 0.5 * 0.1)]:
+            text = translate('dice', program)[0]
+            self.assertNotIn('demand_', text)
+            self.assertAlmostEqual(dice_answers(text)[0], want)
+        self.assertIn('iterate(f_weather, ', translate('dice', weather)[0])
         with self.assertRaises(Refused) as e:
             translate('alea', '0.5::p(X) :- X > 1.\nq :- p(_).\nquery(q).\n')
         self.assertIn('leaves an argument', str(e.exception))
@@ -257,11 +358,12 @@ class Translation(unittest.TestCase):
                    'query(list(0, 2)).\nquery(list(1, 7)).\n')
         for lang in problog2ppl.LANGS:
             text, _, queries = translate(lang, program)
-            self.assertIn('demand_', text, lang)
+            self.assertEqual('demand_' in text, lang in RELATIONAL, lang)
             self.assertEqual(queries, ['list(0,2)', 'list(1,7)'], lang)
         # list(0, 2) through ok(0) and list(1, 3), list(1, 7) on ends(1) alone
-        for got, want in zip(sppl_answers(translate('sppl', program)[0]), [0.3 * 0.4, 0.4]):
-            self.assertAlmostEqual(got, want)
+        for answers in (sppl_answers(translate('sppl', program)[0]), dice_answers(translate('dice', program)[0])):
+            for got, want in zip(answers, [0.3 * 0.4, 0.4]):
+                self.assertAlmostEqual(got, want)
 
     def test_a_head_variable_a_test_reads_before_the_recursive_call_is_demanded(self):
         # Pluck's sorted list's step: D is bound only by the recursive call, which K < D bounds
@@ -271,12 +373,13 @@ class Translation(unittest.TestCase):
                    'query(step(0, 2)).\n')
         prog = problog2ppl.read(program)
         self.assertEqual([r.heads[0][0][1] for r in prog.rules if r.demand][:1], [2])   # demand_N(K, D)
-        for lang in problog2ppl.LANGS:
+        for lang in RELATIONAL:
             self.assertIn('demand_', translate(lang, program)[0], lang)
         self.assertAlmostEqual(sppl_answers(translate('sppl', program)[0])[0], 0.5 ** 3)
+        self.assertAlmostEqual(dice_answers(translate('dice', program)[0])[0], 0.5 ** 3)
         # and the port itself, in the languages its logic-program route gives it in
         port = (scripts.parent / 'data' / 'alea' / 'pluck' / 'sorted_list.pl').read_text()
-        for lang in ('roulette', 'webppl', 'psi', 'sppl'):
+        for lang in ('roulette', 'webppl', 'psi', 'sppl', 'dice'):
             self.assertEqual(translate(lang, port)[2], ['generated'], lang)
 
     def test_refusals(self):
@@ -321,6 +424,21 @@ class Translation(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertEqual(r.stdout.split(), ['path(a,c)', 'path(b,c)'])
             self.assertIn('\nqueries_ = lambda: [', Path(sppl).read_text())
+            # Dice: one program, or a program a query listed in a dicemap, as bench.py's run_dice_circuit reads it
+            dice = os.path.join(d, 'p.dice')
+            r = subprocess.run([sys.executable, str(scripts / 'problog2ppl.py'), 'dice', pl, dice],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual(r.stdout.split(), ['path(a,c)', 'path(b,c)'])
+            self.assertEqual(len(dice_answers(Path(dice).read_text())), 2)
+            dicemap = os.path.join(d, 'p.dicemap')
+            r = subprocess.run([sys.executable, str(scripts / 'problog2ppl.py'), 'dicemap', pl, dicemap],
+                               capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual(r.stdout.split(), ['path(a,c)', 'path(b,c)'])
+            self.assertEqual(Path(dicemap).read_text(), 'p__q0.dice bool path(a,c)\np__q1.dice bool path(b,c)\n')
+            for j, want in enumerate([0.5 + 0.5 * 0.42, 0.7]):
+                self.assertAlmostEqual(dice_answers(Path(d, f'p__q{j}.dice').read_text())[0], want)
 
 
 if __name__ == '__main__':

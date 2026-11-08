@@ -23,7 +23,7 @@ builds:
 | ProbLog 2.3.0 | yes (`ddnnf`, `sdd`, `fsdd`, `bdd`) | programs | `--problog`, `--kbs` |
 | PITA / cplint (SWI-Prolog 9.2.9) | yes | programs, through `problog2pita.py` | `--pita`, `--pita-packs` |
 | Scallop 0.2.5 | yes (top-k proofs at the largest k, every proof kept: `allproofs`) | programs, first order, through `problog2scallop.py` | `--scallop` |
-| Dice | yes | Dice programs and networks; other programs through `ground2net.py` | `--dice` |
+| Dice | yes | Dice programs and networks; logic programs through `problog2ppl.py` (section 30), and through `ground2net.py` where it refuses one | `--dice` |
 | Alea.jl (Julia 1.11.9) | yes | Dice programs and networks, through `dice2alea.py`; logic programs over their facts, through `problog2ppl.py` (section 30) | `--alea` |
 | aspmc 1.1.1 | yes | programs, the evidence asked as queries | `--aspmc` |
 | Ace 3.0 | yes | Bayesian networks; Markov networks translated to Bayesian networks; other programs through `ground2net.py` (section 23) | `--ace`, `--ace-variants`, `--ace-heap`, `--ace-java` |
@@ -2966,7 +2966,14 @@ circuit: the standard suite's graph, grid, smokers, UW-CSE, Cora and
 cplint families, the literature, Biomine and TPC-H suites. Alea.jl,
 Roulette, WebPPL, Psi, Pluck and SPPL, whose languages have loops or recursion and
 tables (Psi's arrays, Pluck's lists, SPPL's Python before its first sample), read those programs written first order over their facts
-instead (section 30), and so do Alea.jl+tddlog and Roulette+tddlog. bench.py
+instead (section 30), and so do Alea.jl+tddlog and Roulette+tddlog. The
+systems that read Dice programs read the program as `problog2ppl.py dice`
+writes it (section 30): a recursion over a step index is a Dice function
+`iterate`d over the step's tuples, and only the relations and the
+recursions through data are written out. They read the ground program's
+Dice program below only where that translator refuses the program (the
+taint family, whose queries are not ground). For the network systems,
+and for the Dice systems on that fallback, bench.py
 runs `tddlog --ground` on the program, as for Scallop (section 3), and
 `scripts/ground2net.py` writes the ground program as a Bayesian network
 of Boolean variables (UAI and its evidence file for Merlin and the UAI
@@ -2974,7 +2981,10 @@ systems, Hugin and `.inst` for Ace) or as Dice programs (one program
 returning every query as a tuple for Genfer,
 Geni, Storm and PRISM; one program per query, listed in a `.dicemap`, for Dice
 and noDice, as for the circuits). Both steps are timed, and their
-seconds (`ground_s` in the record) are added to the system's. A system
+seconds (`ground_s` in the record) are added to the system's.
+`problog2ppl.py`'s Dice program is written only to hand the program to
+these systems and is not charged, as its other languages are not
+(`ground_s` 0). A system
 the tables time by its own time in the process (TensorInference.jl here,
 of bench.py's OWN_TIME) has them added to that own
 time too (`ground_route_seconds`, `rel/charge.py`), since the route is
@@ -3237,6 +3247,8 @@ the same model) has the class of the program it is written from.
 | scallop | dice, ppl, bitblast, roulette, geni | all | translated | the ground program tddlog --ground prints of the ProbLog program, as Scallop relations and rules (ground2scallop.py) |
 | alea, alea-tddlog, roulette, roulette-tddlog, webppl, sppl | std, lit, tpch, biomine | all | translated | the ProbLog program written first order in the system's language over its facts, relations as tables, rules as loops and recursion as a loop of stages to its fixpoint (problog2ppl.py) |
 | psi, pluck | std, lit, biomine | all | translated | the ProbLog program written first order in the system's language over its facts, relations as tables, rules as loops and recursion as a loop of stages to its fixpoint (problog2ppl.py) |
+| dice, nodice, genfer, geni, storm, prism | lit | `taint_` | translated | Dice programs of the ground program (ground2net.py), where problog2ppl.py does not take the queries |
+| dice, nodice, genfer, geni, storm, prism | std, lit, tpch, biomine | all | translated | the ProbLog program written in Dice, a recursion over a step index a function iterated over the step's tuples and the relations and recursions through data written out (problog2ppl.py), translated into the system's language where it reads another (dice2geni.py, dice2genfer.py, dice2prism.py) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | std, lit, tpch, biomine | all | translated | Dice programs of the ground program (ground2net.py) |
 | dice | ppl | `nodice_` | native | noDice's programs, which are Dice programs |
 | nodice | dice | `dice_` | native | the Dice paper's programs, which noDice reads as they are |
@@ -3261,6 +3273,8 @@ the same model) has the class of the program it is written from.
 | problog, pita, aspmc | ppl | `pluck_` | translated | a port of Pluck's program to ProbLog, written by hand |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | ppl | `arith_` | translated | a port of the Alea.jl program to Dice, written by hand, translated into the system's language where it reads another (dice2psi.py, dice2roulette.py, dice2prism.py and the like) |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | ppl | `pluck_hmm$` | translated | a port of Pluck's model to Dice, written by hand, translated into the system's language where it reads another |
+| dice, nodice, genfer, geni, storm, prism | ppl | `pluck_pcfg$` | translated | a port of Pluck's program to ProbLog, written by hand, written in Dice by problog2ppl.py and translated into the system's language where it reads another |
+| dice, nodice, genfer, geni, storm, prism | ppl | `pluck_` | translated | a port of Pluck's program to ProbLog, written by hand, written in Dice by problog2ppl.py, a recursion over a step whose layers do not hold the same tuples unrolled in stages, and translated into the system's language where it reads another |
 | alea, roulette, dice, geni, nodice, psi, genfer, sppl, pluck, webppl, storm, prism | ppl | `pluck_` | translated | Dice programs of the ground program of the ProbLog port (ground2net.py) |
 | tddlog, problog, pita, aspmc | dice | `dice_(caesar-iter\|simpleCaesar\|pmc)` | translated | the program's loops written as recursion over a step index, which the system's grounder unrolls, by dice2problog.py, or tddlog --program, the same program, in the runs since tddlog reads Dice programs itself |
 | tddlog, problog, pita, aspmc | roulette | `rl_(diamond\|ladder)_` | translated | the Dice paper's model ported to ProbLog by hand, a recursion over the step, its size an argument (data/dice/diamond.pl, data/dice/ladder.pl) |
@@ -3706,8 +3720,12 @@ Three sets of instances recur in the table:
 | `gen_bn.py --format dice` | Dice, noDice | the network suites; `roulette`: `rl_bn_` | yes | every variable a `discrete` under nested conditionals on its parents, the encoding of Dice's own network generator; a Markov network's factor a `flip` of its weight, observed |
 | `gen_roulette.py --dice` | Dice, noDice | `roulette` | yes | the paper's models as Dice functions and `let`s, in the order of Roulette's programs |
 | `gen_geni.py --dice`, `--gir` | Dice, noDice; Geni | `geni` | yes | Geni's own programs: its surface programs in Dice's syntax, and its intermediate language |
-| `ground2net.py --format dice`, `--format dicemap` | Dice, noDice | `lit`, `std`, `tpch`, `biomine`; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` | yes | Dice has no relations and no recursion over data: the ground program as a `let` per gate (`let n92 = n2 && n62 in`), one program per query, what a Dice user writes out for a ground program |
-| `ground2net.py --format dice`, then `dice2geni.py`, `dice2genfer.py`, `dice2prism.py` | Geni, Genfer, Storm, PRISM | `lit`, `std`, `tpch`, `biomine`; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` | yes | Geni's intermediate language, Genfer's language and a PRISM module have no relations or recursion over data either: the gates written out |
+| `problog2ppl.py dice`, `dicemap` | Dice, noDice | `lit`, `std`, `tpch`, `biomine`; `ppl`: `pluck_pcfg` | yes | Dice has bounded loops and no relations or recursion over data (section 30): a recursion over a step index is a function from one step's tuples to the next's, `iterate`d (`iterate(f_infected, s, 4)`), and only the relations and the recursions through data are written out, a `let` per tuple that holds in some world; a fact is a `flip`, an annotated disjunction a `discrete`. One program per query for Dice and noDice |
+| `problog2ppl.py dice`, then `dice2geni.py`, `dice2genfer.py`, `dice2prism.py` | Geni, Genfer, Storm, PRISM | `lit`, `std`, `tpch`, `biomine`; `ppl`: `pluck_pcfg` | yes, as its source | the Dice program's functions and iterations in each language's form (Genfer's `loop`, a PRISM module's steps; Geni's intermediate language unrolls them, having no loops), the relations written out as in Dice |
+| `problog2ppl.py dice`, `dicemap` | Dice, noDice | `ppl`: `pluck_sorted_list`, `pluck_string_editing` | no | the recursions over a step whose layers do not hold the same tuples (`step(I, D, D)` and `ins(K, I, I)` repeat the step in another argument, and `pert` reads `ins`) are unrolled in stages, their tuples written out, where a Dice user writes the step as a function `iterate`d |
+| `problog2ppl.py dice`, then `dice2geni.py`, `dice2genfer.py`, `dice2prism.py` | Geni, Genfer, Storm, PRISM | `ppl`: `pluck_sorted_list`, `pluck_string_editing` | no, as its source | the unrolled stages of the Dice program, written out in each language |
+| `ground2net.py --format dice`, `--format dicemap`, where `problog2ppl.py` refuses the program | Dice, noDice | `lit`: `taint_` | yes | taint's recursion is through data (the analysis' reachability over the app's facts), with no recursion over a step: the ground program as a `let` per gate (`let n92 = n2 && n62 in`), one program per query, which is what a Dice user writes out for it. On a program with a recursion over a step index it would not be idiomatic, since Dice writes that with `iterate` |
+| `ground2net.py --format dice`, then `dice2geni.py`, `dice2genfer.py`, `dice2prism.py`, where `problog2ppl.py` refuses the program | Geni, Genfer, Storm, PRISM | `lit`: `taint_` | yes, as its source | the gates written out, as in Dice |
 | `ground2net.py --format dice`, then `dice2pluck.py`, `dice2psi.py`, `dice2roulette.py`, `dice2sppl.py`, `dice2webppl.py` | Pluck, Psi, Roulette, SPPL, WebPPL | `tpch` for Pluck and Psi; `ppl`: `pluck_pcfg`, `pluck_sorted_list`, `pluck_string_editing` for Psi, Roulette and SPPL, `pluck_sorted_list` for WebPPL | no | each language has loops or recursion over data (Pluck's recursive functions over lists, Psi's arrays and `for` loops, Roulette's `for/fold` and recursion, SPPL's `for`, WebPPL's recursive functions): a user writes the model over the program's facts, not a list of anonymous gates |
 | `problog2ppl.py` | Alea.jl, Roulette, WebPPL, SPPL, Pluck, Psi | `lit`, `std`, `tpch`, `biomine` for Alea.jl, Roulette, WebPPL, SPPL and Pluck; `lit`, `std`, `biomine` for Psi | yes | the program first order over its facts (section 30): a relation a table of the rows of a facts file, a rule a loop over the relations its body joins, a recursive component a loop of stages to its fixpoint (in Pluck and Psi the rows held in the program), as a user of these languages writes a Datalog program over a database |
 | `dice2alea.py` | Alea.jl | `dice`, `ppl`, `geni`, `roulette`, the network suites | yes, as its source | integers as `DistUInt`, Dice's iterations as `for` loops, `ifelse`: the form of Alea.jl's own programs |
@@ -3733,7 +3751,7 @@ unanswered, with no program to judge. Alea.jl+tddlog and Roulette+tddlog are
 integrations, not translations: their exporters hand Alea.jl's or
 Roulette's own program to tddlog's inference, and they have no row here.
 
-## 30. Logic programs in Alea.jl, Roulette, WebPPL, Psi, Pluck and SPPL (`problog2ppl.py`)
+## 30. Logic programs in Alea.jl, Roulette, WebPPL, Psi, Pluck, SPPL and Dice (`problog2ppl.py`)
 
 Alea.jl, Roulette and WebPPL have loops, recursion and dictionaries, Psi
 loops and arrays, Pluck recursion and lists, and SPPL Python before its
@@ -3852,13 +3870,55 @@ where the ground program's Dice program took 4.4 s. The evidence is a
 variables, which `sppl_dice.py` asks of the model (section 12, its
 `# queries` line).
 
+Dice has Booleans, tuples, functions and a bounded loop, `iterate(f, x,
+k)`, and no relations, data or recursion. Its program (`problog2ppl.py
+dice PROGRAM OUT`; `problog2ppl.py dicemap PROGRAM OUT`, one program per
+query listed in a `.dicemap`, as for the circuits, which Dice and noDice
+read) is written over the tuples that hold in some world, which the
+translator finds as ProbLog grounds the program, from the queries and the
+evidence (the relations of the demand as above):
+
+- a probabilistic fact is a `flip`, an instance of an annotated
+  disjunction a `discrete` read by `==` against its choices, and a tuple
+  a `let` of the disjunction of its instances, each the conjunction of
+  its coin and the tuples its body reads; a tuple that holds in every
+  world is `true`;
+- a recursion over a step index, a recursive component whose relations
+  each have an integer argument whose values are its layers, each layer
+  read only by itself and by the next (`weather(W, T)` from
+  `weather(W, T - 1)`), is a function `f_RELATION` from the tuples of one
+  layer that the next or the rest of the program reads to the next
+  layer's, its rules those of a layer with the step left out. A coin of a
+  layer's own that nothing else reads is a `flip` in the function, drawn
+  at each call. Where the layers differ only in where the rest of the
+  program reads them, the function is `iterate`d between those layers;
+  where they differ in a fact's probability, a tuple of another component
+  they read, or an instance a layer lacks, those are the function's
+  arguments and each layer a call;
+- a recursion through data (a graph's reachability) is written out in
+  stages, as section 23 unrolls a component (`ground2net.py`'s
+  `fixpoint`), since Dice has no recursion over data;
+- the evidence is an `observe`, and the program returns its queries as a
+  tuple. The program's first comments say which of the two each recursive
+  component is.
+
+Arithmetic on the facts' integers (a step, a count) is evaluated by the
+translator, since a tuple's arguments are constants; a number that an
+annotated disjunction draws (mnist_sum's digits) stays a choice among its
+values, a `discrete` read by `==`, not a Dice integer added with `+`.
+On the logic suites the translator refuses only the taint family, whose
+queries are not ground (below); its Dice systems read the ground
+program's Dice program (section 23).
+
 Alea.jl+tddlog and Roulette+tddlog run the same program up to the circuit
 that Alea.jl's export and Roulette's tddlog engine write, and tddlog on
 it. Each system is timed as on its own programs: Alea.jl warm, in the
 process (`alea_bench.jl`, section 5), Roulette's module under
 `roulette_timer.rkt` (section 11), WebPPL's compile and enumeration
 under `webppl_dice.js`, Pluck's queries under `pluck_dice.jl` and SPPL's compile and queries under
-`sppl_dice.py` (section 12). The translation is written only to
+`sppl_dice.py` (section 12), Dice and noDice as on the circuits' Dice
+programs, a run a query, the times adding up, and Geni, Genfer, Storm and
+PRISM as on every other Dice program. The translation is written only to
 hand the program to these systems, so it is not charged to them.
 
 Refused (exit 3, `unsupported`, with the reason in the record):
@@ -3874,10 +3934,25 @@ Refused (exit 3, `unsupported`, with the reason in the record):
   (hmmpos1), flexible probabilities (problogex_9_packing_problem) and
   syntax it does not read (hwf3, problogex_generated, sidechannel_p1).
 
+The Dice target also refuses the division `/`, whose value is a float in
+ProbLog.
+
+Dice answers 0 for both values of every query of noisyor15_22, whose 22
+observations have probability 7.3e-7. Dice computes that probability
+right where the program returns the observations' conjunction instead of
+observing it, and answers the query right with the first 20 of the
+observations; noDice reads the same programs and answers the reference.
+None of Dice's options (`-branch-elimination`, `-determinism`,
+`-eager-eval`, `-flip-lifting`, `-inline-functions`) changes the answer,
+so the record counts as wrong.
+
 Idiomatic, for the table of section 29: yes, on `lit`, `std`, `tpch` and
 `biomine`, for Alea.jl, Roulette, WebPPL, Psi, Pluck (`tpch` aside) and SPPL:
 relations as tables of the facts (Psi's arrays, Pluck's lists, SPPL's
 Python lists), rules as loops over them (Pluck's maps, SPPL's
 comprehensions) and recursion as a loop (Pluck's a recursion, SPPL's a
 fixpoint and a `for` over the stages of each cycle) to the fixpoint are how a user of
-these languages writes a Datalog program.
+these languages writes a Datalog program. Yes for Dice and noDice, and
+for Geni, Genfer, Storm and PRISM, which read the Dice program translated:
+a recursion over a step is Dice's bounded loop, and only what Dice cannot
+hold, relations and recursions through data, is written out.

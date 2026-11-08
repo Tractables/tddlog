@@ -626,11 +626,12 @@ pub(crate) fn compile(
 /// Where a run of a [`Compilation`] under `auto`'s turns stops on its
 /// projected finish (`src/auto/`): at the end of a component, once the
 /// trial has spent `from` work units, where the work it has spent times
-/// the components for each one finished is past `limit`, a base-2
-/// logarithm. The projection takes the components done against those left
-/// at the pace of the trial so far; it reads nothing inside a component, and
-/// a stop between components loses nothing the next run would build again.
-/// A run that passes `mark` notes the components finished there
+/// all the rules over those of the components finished is past `limit`, a
+/// base-2 logarithm. The projection takes the rules of the components done against
+/// those of the components left, at the pace of the trial so far; it reads
+/// nothing inside a component, and a stop between components loses nothing
+/// the next run would build again.
+/// A run that passes `mark` notes its progress there
 /// ([`Compilation::marked`]).
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Horizon {
@@ -659,7 +660,7 @@ pub(crate) struct Compilation {
     /// The largest base-2 logarithm of the work at which the last run's
     /// horizon projected the compile to finish, `None` where it read none.
     pub(crate) reach: Option<f64>,
-    /// The components finished, and all of them, at the end of the first
+    /// The progress ([`Self::progress`]) at the end of the first
     /// component that took the last run to its horizon's mark, where the
     /// run began short of it; `None` where it did not pass the mark.
     pub(crate) marked: Option<(usize, usize)>,
@@ -670,6 +671,9 @@ pub(crate) struct Compilation {
     formulation: Formulation,
     by_head: RulesByHead,
     sccs: Vec<Vec<AtomId>>,
+    /// The rules of the components before each, and of all of them
+    /// ([`Self::progress`]).
+    rules_before: Vec<usize>,
     /// The component of each derived atom.
     comp_of: Vec<u32>,
     /// The program's encoding as the clause loops read it.
@@ -861,6 +865,15 @@ impl Compilation {
         let sccs: Vec<Vec<AtomId>> =
             deps.sccs.iter().filter(|scc| !matches!(scc[..], [a] if templates.contains_key(&a) || ties.contains_key(&a))).cloned().collect();
         let comp_of = cone::component_of(n, &sccs);
+        let rules_before = std::iter::once(0)
+            .chain(sccs.iter().scan(0, |rules, scc| {
+                *rules += scc
+                    .iter()
+                    .map(|&a| by_head[a as usize].len())
+                    .sum::<usize>();
+                Some(*rules)
+            }))
+            .collect();
         let (projected, projection_stats) = Projected::new(&sccs, &var_of, projection);
         let scopes = vec![backend.global(); sccs.len()];
         let num_vars = var_of
@@ -907,6 +920,7 @@ impl Compilation {
             formulation,
             by_head,
             sccs,
+            rules_before,
             comp_of,
             encoded,
             projection,
@@ -986,8 +1000,22 @@ impl Compilation {
     }
 
     /// The components finished, and all of them.
-    pub(crate) fn progress(&self) -> (usize, usize) {
+    pub(crate) fn components(&self) -> (usize, usize) {
         (self.next, self.sccs.len())
+    }
+
+    /// The rules of the components finished, and of all of them: the share
+    /// of the compile done, which its projections read ([`Horizon`],
+    /// `auto`'s turns). A count of the components would take each for an
+    /// equal share: on Ihler's BN_28, a network's rows and the atoms of its
+    /// variables' values, that projected `families:0`'s compile to 2^36 to
+    /// 2^38 units after its first 82 of 112 386 components, where it
+    /// finishes in 2^30.3.
+    pub(crate) fn progress(&self) -> (usize, usize) {
+        (
+            self.rules_before[self.next],
+            self.rules_before[self.sccs.len()],
+        )
     }
 
     /// The round a cyclic component under way is at, `None` between

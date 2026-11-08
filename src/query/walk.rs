@@ -54,7 +54,13 @@
 //! scope's vtree on top of its own pairs. A spine of nodes, each with a
 //! small factor beside the result coming up, then puts the factors off
 //! and joins them among themselves before they meet the result, where
-//! each met it at its own node.
+//! each met it at its own node. A summing walk drops the subtrees a join
+//! summed out from its result's scope but for a level over two leaves
+//! (`SumOut::collapse`), and the test charges such a result the nodes the
+//! dropped variables had as well: they stand for the factors it has met,
+//! which the plan reads, not for levels a join walks. Charged at its
+//! smaller scope, a result passes up less, and factors that put off would
+//! meet among themselves first are joined into it at their own nodes.
 //!
 //! The factors a child put off are conjoined among themselves, a batch,
 //! and their product meets the child's result, the batch's target. A node
@@ -991,18 +997,21 @@ impl EvidenceWalk {
     }
 
     /// What the put-off test charges slot `id`: its pairs, and
-    /// [`LEVEL_PAIRS`] per node of its scope's vtree.
+    /// [`LEVEL_PAIRS`] per node of its scope's vtree with the variables
+    /// collapses dropped from it put back (see the module documentation).
     fn charged(&self, id: usize) -> usize {
         self.slot_pairs[id] + LEVEL_PAIRS * self.scope_nodes(id)
     }
 
-    /// The nodes of the vtree of slot `id`'s scope, or for a waiting join's
-    /// result, of the larger of its operands' scopes.
+    /// The nodes of the vtree of slot `id`'s scope, two more for each
+    /// variable collapses dropped from it, or for a waiting join's result,
+    /// of the larger of its operands'.
     fn scope_nodes(&self, id: usize) -> usize {
         let of = |s: usize| {
+            let dropped = self.sum_out.as_ref().map_or(0, |so| so.dropped_from(s));
             self.slots[s]
                 .as_ref()
-                .map_or(0, |(_, scope)| scope.vtree().num_nodes())
+                .map_or(0, |(_, scope)| scope.vtree().num_nodes() + 2 * dropped)
         };
         match self.waiting.get(&id) {
             Some(&(a, b)) => of(a).max(of(b)),
@@ -1104,6 +1113,7 @@ impl EvidenceWalk {
                 if let Some(so) = &self.sum_out {
                     sizes.summing_joins = so.summing;
                     sizes.weighted_joins = so.weighted;
+                    sizes.collapsed_variables = so.collapsed;
                 }
                 self.built[tree.root().idx()] = None;
                 return Ok(self.slots[main].take());
@@ -1269,6 +1279,9 @@ impl EvidenceWalk {
         .then(|| backend.engine.limits().armed().stop_rules())
         .filter(|outer| outer.after_pairs.is_none_or(|(pairs, _)| pairs > floor));
         let (scope, merged) = self.join_scope(a, b, out, backend, scopes)?;
+        if let Some(so) = &self.sum_out {
+            so.check_scope(&scope);
+        }
         let (first, second) = match merged {
             true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
             false => (None, None),
@@ -1287,7 +1300,7 @@ impl EvidenceWalk {
         let pairs = self.slot_pairs[a] + self.slot_pairs[b];
         let targets = match &mut self.sum_out {
             Some(so) => {
-                so.begin(a, b);
+                so.begin(a, b, &fa.1, &fb.1);
                 so.targets(&scope, pairs)
             }
             None => Vec::new(),
@@ -1359,6 +1372,18 @@ impl EvidenceWalk {
                 self.restore_operands(a, b, fa, fb, backend)?;
                 return Err(e);
             }
+        };
+        // A summed-out subtree leaves the scope but for one leaf of each
+        // side (`SumOut::collapse`), except on the last join, which only
+        // counting reads, and in a group built on one shared scope, whose
+        // next join would place the result there again.
+        let (formula, scope) = match &mut self.sum_out {
+            Some(so)
+                if !last && !self.shared.contains_key(&out) && formula.has_marginal_level() =>
+            {
+                so.collapse(backend, scopes, formula, scope)?
+            }
+            _ => (formula, scope),
         };
         self.pending = Some(PendingFormula {
             formula: (formula, scope),
@@ -1441,8 +1466,13 @@ impl EvidenceWalk {
         fb: Part,
         backend: &TddBackend,
     ) -> Result<(), CompileError> {
-        self.slots[a] = Some(fa.owned(backend)?);
-        self.slots[b] = Some(fb.owned(backend)?);
+        let (fa, fb) = (fa.owned(backend)?, fb.owned(backend)?);
+        if let Some(so) = &mut self.sum_out {
+            so.enter(&fa.1);
+            so.enter(&fb.1);
+        }
+        self.slots[a] = Some(fa);
+        self.slots[b] = Some(fb);
         Ok(())
     }
 
@@ -1528,7 +1558,7 @@ impl EvidenceWalk {
         pending.reduced = true;
         let size = counted.unwrap_or_else(|| backend.size(&pending.formula.0));
         if let Some(so) = &mut self.sum_out {
-            so.commit(a, b, out);
+            so.commit(a, b, out, &pending.formula.1);
         }
         self.slots[out] = Some(self.pending.take().unwrap().formula);
         self.slot_pairs[out] = size;

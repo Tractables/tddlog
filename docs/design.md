@@ -2024,12 +2024,11 @@ where a late winner shares the run with trials that keep going.
 
 **Turns by projected finish.** After each attempt that leaves a trial in a
 phase, the trial records, at the attempt's target, the share of the phase
-it has finished: in its compile, its components; in its query phase, its
-steps, which are the evidence walk's joins (each makes one formula of
+it has finished: in its compile, the rules of the components it has
+finished (`Compilation::progress`); in its query phase, its steps, which are the evidence walk's joins (each makes one formula of
 two, so the walk makes one of the observed factors in one fewer) and then
 the queries answered. A compile that passes half its first turn's target
-(`Horizon::mark`) also records the components finished there at half the
-target (`Trial::mark`), so that after its first turn it already has a
+(`Horizon::mark`) also records its share there at half the target (`Trial::mark`), so that after its first turn it already has a
 doubling to project from. The records of its compile are dropped when its
 query phase starts (`Trial::record`); before the query phase has a record
 at half its last target or less, it is projected from the work the trial
@@ -2076,7 +2075,12 @@ would go ahead of a winner that has reached its query phase.
 
 **Turns that end on their projection.** Within a turn, a trial's compile
 reads its projection at the end of each component (`tp::Horizon`): the
-work the trial has spent times all the components for each one finished.
+work the trial has spent times all the rules over those of the components
+finished. A component counts for its rules rather than as one of many:
+Ihler's BN_28 is 112 386 components, a network's rows and the atoms of
+its variables' values, and by the components `families:0`'s compile was
+projected to 2^36 to 2^38 units after its first 82, where it finishes in
+2^30.3.
 Where that is past `PROJECTED_DOUBLINGS` (three) doublings of its target
 over its weight, the level its turns are taken at (`policy::horizon`),
 the turn cannot finish the compile, and it ends there as one that spent
@@ -2087,7 +2091,7 @@ attempt builds again. The projection is read once the trial has spent
 the work of its first watch, 2^24 units, about a tenth of a second:
 before it the components done are too few to project from. This
 projection is linear in the work, where the one between turns is by
-doublings: early in a compile whose components cost about alike the
+doublings: early in a compile whose rules cost about alike the
 share finished per doubling grows, so that by doublings such a compile
 is projected dozens of doublings out, where the linear projection holds
 it close to its finish.

@@ -33,10 +33,11 @@ use std::borrow::Cow;
 
 use num_rational::BigRational;
 use tididi::diagram::{Arithmetic, LiteralWeights, RationalWeights, WeightStore};
+use tididi::restructure::EmbedError;
 use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{OperationError, Tdd};
 
-use super::Formula;
+use super::{Formula, Scopes};
 use crate::eval::Probabilities;
 use crate::tp::backend::Part;
 use crate::tp::{CompileError, TddBackend, VtreeScope};
@@ -48,8 +49,10 @@ type Refused = Box<(CompileError, Part, Part)>;
 /// sum them out under (see the module documentation).
 pub(super) struct SumOut {
     /// Per slot, the program variables of the observations conjoined into
-    /// it, ascending.
+    /// it, ascending, and how many more of them collapses dropped
+    /// ([`SumOut::collapse`]).
     support: Vec<Vec<VarId>>,
+    dropped_from: Vec<usize>,
     /// The global vtree's leaves from left to right: each program
     /// variable's position, each node's positions `[lo, hi)`, each node's
     /// depth, and for position `k`, the node whose children split `k` from
@@ -66,14 +69,30 @@ pub(super) struct SumOut {
     held: Vec<i64>,
     /// The facts' weights, by program variable less one.
     weights: Vec<LiteralWeights<BigRational>>,
-    /// The join begun: its result's variables, and the variables its
-    /// operands share, whose holdings it dropped.
+    /// The join begun: its result's variables, the variables its
+    /// operands share, whose holdings it dropped, and the variables
+    /// collapses dropped from its operands and its result.
     merged: Vec<VarId>,
     shared: Vec<VarId>,
-    /// The joins that summed out as they were built, and the other joins
-    /// with an operand that carries weights.
+    merged_dropped: usize,
+    /// By program variable: summed out and dropped from its result's scope
+    /// ([`SumOut::collapse`]), so that no later scope may hold it.
+    dropped: Vec<bool>,
+    any_dropped: bool,
+    /// By program variable: the live slots whose scope holds it, a join
+    /// begun's operands left out, and the live slots on the global scope,
+    /// which holds every variable. A slot's scope can hold variables its
+    /// observations do not read (a group's joins are built on the scope of
+    /// the whole group, an operand given back goes back on the join's
+    /// scope), and a collapse drops only a variable no scope holds.
+    scoped: Vec<i32>,
+    global_scopes: i32,
+    /// The joins that summed out as they were built, the other joins with
+    /// an operand that carries weights, and the variables collapses
+    /// dropped.
     pub(super) summing: usize,
     pub(super) weighted: usize,
+    pub(super) collapsed: usize,
 }
 
 impl SumOut {
@@ -139,6 +158,7 @@ impl SumOut {
             .collect();
         SumOut {
             support: Vec::new(),
+            dropped_from: Vec::new(),
             position,
             range,
             depth,
@@ -149,8 +169,14 @@ impl SumOut {
             weights,
             merged: Vec::new(),
             shared: Vec::new(),
+            merged_dropped: 0,
+            dropped: vec![false; tree.num_vars() as usize + 1],
+            any_dropped: false,
+            scoped: vec![0; tree.num_vars() as usize + 1],
+            global_scopes: 0,
             summing: 0,
             weighted: 0,
+            collapsed: 0,
         }
     }
 
@@ -205,12 +231,35 @@ impl SumOut {
             self.hold(v, 1);
         }
         self.support[id] = vars;
+        self.enter(scope);
     }
 
-    /// Before the join of slots `a` and `b`: their variables merged, and
-    /// the holdings of those they share dropped to the result's one.
-    /// [`SumOut::undo`] puts them back where the join does not happen.
-    pub(super) fn begin(&mut self, a: usize, b: usize) {
+    /// A slot on `scope` joins the live slots ([`SumOut::collapse`]): an
+    /// observation, a join's result, or an operand given back.
+    pub(super) fn enter(&mut self, scope: &VtreeScope) {
+        self.count_scope(scope, 1);
+    }
+
+    fn count_scope(&mut self, scope: &VtreeScope, delta: i32) {
+        match scope.vars() {
+            Some(vars) => {
+                for v in vars {
+                    self.scoped[v.0 as usize] += delta;
+                }
+            }
+            None => self.global_scopes += delta,
+        }
+    }
+
+    /// Before the join of slots `a` and `b`, on `scope_a` and `scope_b`:
+    /// their variables merged, the holdings of those they share dropped to
+    /// the result's one, and their scopes out of the live ones.
+    /// [`SumOut::undo`] puts the holdings back where the join does not
+    /// happen, and the walk enters the scopes the operands are given back
+    /// on.
+    pub(super) fn begin(&mut self, a: usize, b: usize, scope_a: &VtreeScope, scope_b: &VtreeScope) {
+        self.count_scope(scope_a, -1);
+        self.count_scope(scope_b, -1);
         let need = a.max(b) + 1;
         if self.support.len() < need {
             self.support.resize_with(need, Vec::new);
@@ -237,6 +286,13 @@ impl SumOut {
         }
         self.merged = merged;
         self.shared = shared;
+        self.merged_dropped = self.dropped_from(a) + self.dropped_from(b);
+    }
+
+    /// The variables of slot `id`'s observations that collapses dropped
+    /// from its scope.
+    pub(super) fn dropped_from(&self, id: usize) -> usize {
+        self.dropped_from.get(id).copied().unwrap_or(0)
     }
 
     pub(super) fn undo(&mut self) {
@@ -246,8 +302,9 @@ impl SumOut {
         self.merged.clear();
     }
 
-    /// The join begun is done, into slot `out`.
-    pub(super) fn commit(&mut self, a: usize, b: usize, out: usize) {
+    /// The join begun is done, into slot `out` on `scope`.
+    pub(super) fn commit(&mut self, a: usize, b: usize, out: usize, scope: &VtreeScope) {
+        self.enter(scope);
         if self.support.len() <= out {
             self.support.resize_with(out + 1, Vec::new);
         }
@@ -255,6 +312,145 @@ impl SumOut {
         self.support[b] = Vec::new();
         self.support[out] = std::mem::take(&mut self.merged);
         self.shared.clear();
+        let need = a.max(b).max(out) + 1;
+        if self.dropped_from.len() < need {
+            self.dropped_from.resize(need, 0);
+        }
+        self.dropped_from[a] = 0;
+        self.dropped_from[b] = 0;
+        self.dropped_from[out] = self.merged_dropped;
+    }
+
+    /// The join begun's result `f`, on `scope`, moved onto the scope of the
+    /// variables a later join can still read (`Engine::project_over`).
+    /// Each topmost summed-out subtree keeps its level over one leaf of
+    /// each side, and its other variables leave the scope, the result's
+    /// variables and the holdings: its level's values sum over them, and no
+    /// later join reads them. Every later join then carries one level and
+    /// two leaves for the subtree instead of all its levels. A refusal of
+    /// the budget or the stop leaves `f` on `scope`, for the walk to meet
+    /// it there.
+    pub(super) fn collapse(
+        &mut self,
+        backend: &TddBackend,
+        scopes: &Scopes,
+        f: Tdd,
+        scope: VtreeScope,
+    ) -> Result<(Tdd, VtreeScope), CompileError> {
+        let Some(vars) = scope.vars() else {
+            return Ok((f, scope));
+        };
+        let tree = scope.vtree();
+        // Local variables to drop: under a topmost marginal level, all but
+        // the first leaf of each side, where no other live slot's scope
+        // holds one of them. A scope can hold variables its slot does not
+        // read, and a later join on the union with it would bring a
+        // dropped variable back, its weights counted again.
+        if self.global_scopes > 0 {
+            return Ok((f, scope));
+        }
+        let mut gone = vec![false; vars.len() + 1];
+        let mut any = false;
+        let mut leaves = Vec::new();
+        let first_leaf = |mut t: VtreeIdx| {
+            while !tree.node(t).is_leaf() {
+                t = tree.children(t).0;
+            }
+            t
+        };
+        let mut stack = vec![tree.root()];
+        while let Some(t) = stack.pop() {
+            if tree.node(t).is_leaf() {
+                continue;
+            }
+            let (l, r) = tree.children(t);
+            if !f.level(t).is_marginal() {
+                stack.push(l);
+                stack.push(r);
+                continue;
+            }
+            let keep = [first_leaf(l), first_leaf(r)];
+            let mut under = vec![t];
+            leaves.clear();
+            while let Some(u) = under.pop() {
+                if tree.node(u).is_leaf() {
+                    if !keep.contains(&u) {
+                        leaves.push(tree.leaf_var(u).0 as usize);
+                    }
+                } else {
+                    let (a, b) = tree.children(u);
+                    under.push(a);
+                    under.push(b);
+                }
+            }
+            if leaves
+                .iter()
+                .all(|&local| self.scoped[vars[local - 1].0 as usize] == 0)
+            {
+                for &local in &leaves {
+                    gone[local] = true;
+                    any = true;
+                }
+            }
+        }
+        if !any {
+            return Ok((f, scope));
+        }
+        let mut kept = Vec::with_capacity(vars.len());
+        let mut renamed = vec![VarId(0); vars.len() + 1];
+        for (i, &v) in vars.iter().enumerate() {
+            if gone[i + 1] {
+                continue;
+            }
+            kept.push(v);
+            renamed[i + 1] = VarId(kept.len() as u32);
+        }
+        let reduced = scopes.over(&kept)?;
+        let store = self.store_for(&reduced);
+        let local_of = |v: VarId| (!gone[v.0 as usize]).then(|| renamed[v.0 as usize]);
+        let g = match backend
+            .engine
+            .project_over(&f, reduced.vtree(), local_of, Some(store))
+        {
+            Ok(g) => g,
+            Err(EmbedError::Operation(OperationError::OverBudget | OperationError::Stopped)) => {
+                return Ok((f, scope));
+            }
+            Err(e) => return Err(e.into()),
+        };
+        for (i, &v) in vars.iter().enumerate() {
+            if gone[i + 1] {
+                self.hold(v, -1);
+                self.dropped[v.0 as usize] = true;
+                self.collapsed += 1;
+                self.merged_dropped += 1;
+            }
+        }
+        self.any_dropped = true;
+        self.merged.retain(|v| !self.dropped[v.0 as usize]);
+        Ok((g, reduced))
+    }
+
+    /// Panics where `scope` holds a variable a collapse dropped: its
+    /// weights are in a summed-out level's values already, and a placement
+    /// there would count them again. The walk's scopes are unions of its
+    /// slots' scopes, which never hold one.
+    pub(super) fn check_scope(&self, scope: &VtreeScope) {
+        if !self.any_dropped {
+            return;
+        }
+        let back = match scope.vars() {
+            Some(vars) => vars.iter().find(|v| self.dropped[v.0 as usize]).copied(),
+            None => self
+                .dropped
+                .iter()
+                .position(|&d| d)
+                .map(|v| VarId(v as u32)),
+        };
+        assert!(
+            back.is_none(),
+            "variable {back:?}, summed out, is back in a join's scope"
+        );
     }
 
     /// The finished internal nodes of `scope`'s vtree for the join begun,

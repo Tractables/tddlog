@@ -2,7 +2,9 @@
 """Write a ProbLog program of the Datalog fragment in a probabilistic
 functional language, first order as it is written: Alea.jl, Roulette,
 WebPPL, Psi, Pluck or SPPL, over the program's facts, its rules as loops
-(in Pluck, recursions over lists; in SPPL, Python's comprehensions).
+(in Pluck, recursions over lists; in SPPL, Python's comprehensions); or in
+Dice, which has no relations, its recursions over a step as `iterate`s of
+a function.
 
 usage: problog2ppl.py LANG PROGRAM OUT FACTS   writes the program in LANG to
                                                OUT and its facts to FACTS,
@@ -10,15 +12,22 @@ usage: problog2ppl.py LANG PROGRAM OUT FACTS   writes the program in LANG to
                                                line, in the order the
                                                program answers them
        problog2ppl.py psi PROGRAM OUT          the same, the facts in the
-       problog2ppl.py pluck PROGRAM OUT        program (Psi, Pluck and SPPL
-       problog2ppl.py sppl PROGRAM OUT         read no data file of symbols)
+       problog2ppl.py pluck PROGRAM OUT        program (Psi, Pluck, SPPL
+       problog2ppl.py sppl PROGRAM OUT         and Dice read no data file
+       problog2ppl.py dice PROGRAM OUT         of symbols)
+       problog2ppl.py dicemap PROGRAM OUT      a Dice program a query,
+                                               STEM__qJ.dice beside OUT
+                                               (STEM.dicemap), which lists
+                                               them, as ground2net.py's
+                                               --format dicemap does
 
 LANG is alea (an Alea.jl program in the form of data/alea, which
 alea_bench.jl runs, and whose circuit it writes for tddlog), roulette (a
 module of Roulette's `#lang roulette/example/disrupt`), webppl (a WebPPL
 program), psi (a Psi program, `psi --dp`), pluck (a Pluck program,
-which pluck_dice.jl runs, its queries cK) or sppl (an SPPL program, which
-sppl_dice.py runs, its queries the events of queries_()). PROGRAM is a
+which pluck_dice.jl runs, its queries cK), sppl (an SPPL program, which
+sppl_dice.py runs, its queries the events of queries_()) or dice (a Dice
+program returning its queries as nested pairs). PROGRAM is a
 ProbLog program as bench.py hands the systems that take no arguments (its
 consults inlined), read by problog2souffle.py's parse.
 
@@ -92,6 +101,22 @@ The languages differ in how a tuple's holding is held:
   many stages as it has tuples, each stage reading the one before. SPPL
   compiles the program into a sum-product expression, conditioned on the
   evidence, and sppl_dice.py asks it each query's event.
+- Dice has Booleans, tuples, functions and `iterate`, and no relations,
+  data, loops over data or recursion. Its program is written over the
+  tuples that hold in some world, computed by the translation (Ground): a
+  tuple is a let of its fact's flip or of its instances, an instance its
+  coin (a flip, an annotated disjunction's discrete) and its matches. A
+  recursive component whose tuples are in layers, an integer argument of
+  each relation, each layer read only by itself and the next, is a
+  recursion over a step (an HMM's time, a loop written as recursion): a
+  function from one layer's tuples to the next's (Chain), its rules the
+  instances of a layer with the step left out, a coin of the layer's own
+  a flip in it, `iterate`d between the layers the rest of the program
+  reads (called at each layer where the layers differ, the difference its
+  arguments). Another recursive component, a recursion through data
+  (reachability over a graph), is unrolled in stages, as ground2net.py
+  unrolls a ground program's (its `fixpoint`). The program returns its
+  queries and observes its evidence.
 
 A clause whose head has a variable that its callers bind and its body does
 not (ProbLog grounds from the queries: `weather(sun,T) <- T>0, Tprev is
@@ -116,6 +141,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import problog2souffle as p2s  # noqa: E402
 from problog2souffle import Refused, REFUSED  # noqa: E402
+import ground2net as g2n  # noqa: E402
+from ground2net import TRUE, FALSE  # noqa: E402
+from dice2problog import bits_for, deep  # noqa: E402
 
 GROUND = ('int', 'sym', 'num')
 # a comparison's kind: term (in)equality, arithmetic (in)equality, an order
@@ -2518,9 +2546,903 @@ holds_ = lambda q_, t_, v_: (lambda j_: (no_() if v_ else yes_()) if j_ is None 
 
 '''
 
-LANGS = {'alea': Julia, 'roulette': Racket, 'webppl': WebPPL, 'psi': Psi, 'pluck': Pluck, 'sppl': SPPL}
+
+# --- Dice ----------------------------------------------------------------------
+
+DICE_KEYWORDS = set('''let in if then else fun flip true false fst snd observe discrete int uniform iterate bool
+list sample nth_bit head tail length binomial unit repeat return match with not sum'''.split())
+# the names of the program's own values: a node's nK, an observation's obsK, the state s, a function's
+# arguments aK, and the functions f_RELATION
+DICE_OWN = re.compile(r'[a-z]\d*|[a-z]+\d+|f_.*')
+NODE_NAME = re.compile(r'[a-z]\d*|[a-z]+\d+')
+# a slot's argument at its step, and at the step before (Chain)
+STEP, PREV = ('step', 0), ('step', -1)
+
+
+def value_of(t, env):
+    """The value of term t under the binding env, ('int', n), ('num', x) or
+    ('sym', s), as ProbLog's `is` computes it."""
+    if t[0] == 'var':
+        return env[t[1]]
+    if t[0] in GROUND:
+        return t
+    if t[0] not in ('neg', 'op'):
+        raise Refused(f'translator: the term {t}')
+    args = [value_of(a, env) for a in (t[1:] if t[0] == 'neg' else t[2:])]
+    for a in args:
+        if a[0] == 'sym':
+            raise Refused(f'arithmetic on the symbol {a[1]} (a type error in ProbLog)')
+    if t[0] == 'neg':
+        return (args[0][0], -args[0][1])
+    op, (a, b) = t[1], args
+    if op == '/':
+        raise Refused('translator: the division / (a float in ProbLog)')
+    if op in ('//', 'mod'):
+        if a[0] != 'int' or b[0] != 'int':
+            raise Refused(f'{op} of a number that is no integer (a type error in ProbLog)')
+        if b[1] == 0:
+            raise Refused(f'{op} by zero (an error in ProbLog)')
+        if op == 'mod':
+            return ('int', a[1] % b[1])
+        q = abs(a[1]) // abs(b[1])
+        return ('int', q if (a[1] < 0) == (b[1] < 0) else -q)
+    v = {'+': a[1] + b[1], '-': a[1] - b[1], '*': a[1] * b[1]}[op]
+    return ('int', v) if a[0] == b[0] == 'int' else ('num', float(v))
+
+
+def test_holds(kind, a, b):
+    """Whether the comparison of kind `kind` (TESTS) holds of values a and b."""
+    if kind == 'eq':
+        return a == b
+    if kind == 'neq':
+        return a != b
+    for x in (a, b):
+        if x[0] == 'sym':
+            raise Refused(f'an arithmetic comparison of the symbol {x[1]} (a type error in ProbLog)')
+    x, y = a[1], b[1]
+    return {'aeq': x == y, 'aneq': x != y, '<': x < y, '>': x > y, '<=': x <= y, '>=': x >= y}[kind]
+
+
+class Instance:
+    """A ground instance of a rule: the rule, its binding (the values of its
+    variables, in order), its heads [(relation, tuple)], and its body's
+    matches {(pos, neg): None}, each the tuples the match reads as (the
+    place of its atom in the body, (relation, tuple)): pos those that must
+    hold, neg those that must not (a negated atom's tuples; where its
+    arguments are all bound, its tuple, possible or not). The instance
+    holds where its coin does and one match does."""
+    __slots__ = ('rule', 'binding', 'heads', 'alts')
+
+    def __init__(self, rule, binding, heads):
+        self.rule, self.binding, self.heads, self.alts = rule, binding, heads, {}
+
+
+class Ground:
+    """The tuples of the program's relations that hold in some world
+    (`tuples`), and its rules' instances over them (`insts`), the strata
+    in order, a recursive one to its fixpoint; the instances of each tuple
+    (`of`), those that read it (`readers`), the tuples that hold in every
+    world (`certain`: a certain fact, a tuple of the demand, the head of a
+    certain rule's instance that reads only such tuples), and the tuples
+    the queries and the evidence read (`asked`)."""
+
+    def __init__(self, prog):
+        self.prog = prog
+        self.demand = {h for r in prog.rules if r.demand for h, _ in r.heads}
+        self.tuples = {k: {} for k in prog.preds}
+        self.indexes = {k: {} for k in prog.preds}
+        self.insts = {}
+        for k, rows in prog.preds.items():
+            for args, p in rows.items():
+                if p > 0:
+                    self.add((k, tuple(args)))
+        order = []
+        for members, recursive in prog.strata:
+            rules = [r for r in prog.rules if r.heads[0][0] in members]
+            while any([self.instantiate(r) for r in rules]) and recursive:
+                pass
+            order.append((rules, recursive))
+        # (a tuple of the demand holds in every world: its instances are not read)
+        self.of, self.readers, by_rule = {}, {}, {}
+        for inst in self.insts.values():
+            by_rule.setdefault(inst.rule.number, []).append(inst)
+            for x in dict.fromkeys(inst.heads):
+                self.of.setdefault(x, []).append(inst)
+            for x in dict.fromkeys(y for pos, neg in inst.alts for _, y in pos + neg):
+                if not inst.rule.demand:
+                    self.readers.setdefault(x, []).append(inst)
+        self.certain = {(k, tuple(args)) for k, rows in prog.preds.items() for args, p in rows.items() if p >= 1}
+        self.certain |= {(k, t) for k in self.demand for t in self.tuples[k]}
+        for rules, recursive in order:
+            insts = [inst for r in rules for inst in by_rule.get(r.number, ())]
+            grown = True
+            while grown:
+                grown = False
+                for inst in insts:
+                    if inst.rule.probs or all(h in self.certain for h in inst.heads):
+                        continue
+                    if any(all(y in self.certain for _, y in pos) and not any(self.exists(y) for _, y in neg)
+                           for pos, neg in inst.alts):
+                        self.certain.update(inst.heads)
+                        grown = recursive
+        self.asked = {(key(a), tuple(a[1])) for a in prog.queries} | {(key(a), tuple(a[1])) for a, _ in prog.evidence}
+
+    def exists(self, x):
+        return x[1] in self.tuples[x[0]]
+
+    def add(self, x):
+        k, t = x
+        if t in self.tuples[k]:
+            return False
+        self.tuples[k][t] = None
+        for by, ix in self.indexes[k].items():
+            ix.setdefault(tuple(t[j] for j in by), []).append(t)
+        return True
+
+    def lookup(self, k, by, vals):
+        """The tuples of relation k whose arguments at positions `by` are `vals`."""
+        if len(by) == k[1]:
+            return [vals] if vals in self.tuples[k] else []
+        if not by:
+            return list(self.tuples[k])
+        ix = self.indexes[k].get(tuple(by))
+        if ix is None:
+            ix = self.indexes[k][tuple(by)] = {}
+            for t in self.tuples[k]:
+                ix.setdefault(tuple(t[j] for j in by), []).append(t)
+        return list(ix.get(vals, ()))
+
+    def instantiate(self, r):
+        """Adds rule r's instances over the tuples so far, and their heads;
+        whether a tuple was added."""
+        grown = False
+        for env, pos, neg in self.matches(r):
+            binding = tuple(env[v] for v in r.variables)
+            inst = self.insts.get((r.number, binding))
+            if inst is None:
+                heads = [(h, tuple(env[t[1]] if t[0] == 'var' else t for t in args)) for h, args in r.heads]
+                inst = self.insts[(r.number, binding)] = Instance(r, binding, heads)
+                for x in heads:
+                    grown = self.add(x) or grown
+            inst.alts[(pos, neg)] = None
+        return grown
+
+    def matches(self, r):
+        """Each (binding, pos, neg) of a match of rule r's body (Instance)."""
+        out, steps = [], r.steps
+
+        def walk(i, env, pos, neg):
+            while i < len(steps) and not isinstance(steps[i], Atom):
+                s = steps[i]
+                if s[0] == 'test':
+                    if not test_holds(s[1], value_of(s[2], env), value_of(s[3], env)):
+                        return
+                elif s[0] == 'let':
+                    env = {**env, s[1]: value_of(s[2], env)}
+                else:
+                    lo, hi = value_of(s[2], env), value_of(s[3], env)
+                    if lo[0] != 'int' or hi[0] != 'int':
+                        raise Refused('between/3 of a number that is no integer (a type error in ProbLog)')
+                    for v in range(lo[1], hi[1] + 1):
+                        walk(i + 1, {**env, s[1]: ('int', v)}, pos, neg)
+                    return
+                i += 1
+            if i == len(steps):
+                out.append((env, pos, neg))
+                return
+            s = steps[i]
+            vals = tuple(s.roles[j][1] if s.roles[j][0] == 'const' else env[s.roles[j][1]] for j in s.bound)
+            if s.negated:
+                if s.pred in self.demand:
+                    raise Refused('translator: a negation of a relation of the demand')
+                found = [vals] if s.probe else self.lookup(s.pred, s.bound, vals)
+                walk(i + 1, env, pos, neg + tuple((i, (s.pred, t)) for t in found))
+                return
+            for t in self.lookup(s.pred, s.bound, vals):
+                e = dict(env)
+                if all(e.setdefault(role[1], t[j]) == t[j] for j, role in enumerate(s.roles)
+                       if role[0] in ('bind', 'same')):
+                    walk(i + 1, e, pos if s.pred in self.demand else pos + ((i, (s.pred, t)),), neg)
+        walk(0, {}, (), ())
+        return out
+
+
+class DiceGraph(g2n.Graph):
+    """ground2net.py's and-inverter graph, with Dice's other values as
+    nodes: ('fact', p) a flip; ('choice', [p...]) a discrete; ('pick', c,
+    i) whether choice c is i; ('input', name) a function's argument;
+    ('fst', v), ('snd', v), ('tuple', signals); ('call', f, state, args)
+    and ('iterate', f, state, n). A node of a key (a fact's, a coin's) is
+    made once."""
+
+    def __init__(self):
+        super().__init__()
+        self.keyed = {}
+
+    def node(self, node, key=None):
+        key = node if key is None else key
+        k = self.keyed.get(key)
+        if k is None:
+            self.nodes.append(node)
+            k = self.keyed[key] = len(self.nodes) - 1
+        return k
+
+
+def children(node):
+    kind = node[0]
+    if kind in ('and', 'tuple'):
+        return [abs(s) for s in node[1]]
+    if kind in ('pick', 'fst', 'snd'):
+        return [node[1]]
+    if kind == 'call':
+        return [abs(node[2])] + [abs(a) for a in node[3]]
+    if kind == 'iterate':
+        return [abs(node[2])]
+    return []
+
+
+def nested(items):
+    """Values as Dice's nested pairs, (a, (b, c))."""
+    out = items[-1]
+    for x in reversed(items[:-1]):
+        out = f'({x}, {out})'
+    return out
+
+
+def dice_type(n):
+    """The type of n Booleans as nested pairs."""
+    return nested(['bool'] * n)
+
+
+def project(g, v, i, n):
+    """The i-th of the n Booleans of nested pairs v."""
+    if n == 1:
+        return v
+    for _ in range(min(i, n - 1)):
+        v = g.node(('snd', v))
+    return v if i == n - 1 else g.node(('fst', v))
+
+
+def choice_probs(probs):
+    """An annotated disjunction's choice as Dice's discrete: its heads'
+    probabilities, and none of them with the rest, as decimals."""
+    ps = [Decimal(g2n.decimal(p)) for p in probs]
+    rest = 1 - sum(ps)
+    if rest < Decimal('-1e-4'):   # Dice's tolerance
+        raise Refused(f'an annotated disjunction whose probabilities sum to {sum(ps)}')
+    return [format(p, 'f') for p in ps + ([rest] if rest > 0 else [])]
+
+
+def coin_node(g, key, probs):
+    """A probabilistic rule instance's coin, a flip, or an annotated
+    disjunction's choice, a discrete."""
+    if len(probs) == 1:
+        return g.node(('fact', probs[0]), key)
+    return g.node(('choice', choice_probs(probs)), key)
+
+
+def instance_signal(g, probs, heads, head, alts, read, coin):
+    """The signal that an instance gives `head`, of its rule's probabilities
+    `probs` and its heads: its coin (where an annotated disjunction's, a
+    choice of `head`) and one of its matches, each (pos, neg) of refs that
+    read() reads."""
+    body = g.disj([g.conj([read(y) for y in pos] + [-read(y) for y in neg]) for pos, neg in alts])
+    if not probs or body == FALSE or (len(probs) == 1 and probs[0] >= 1):
+        return body
+    c = coin()
+    if len(probs) == 1:
+        return g.conj([c, body])
+    return g.conj([g.disj([g.node(('pick', c, i)) for i, h in enumerate(heads) if h == head]), body])
+
+
+class Scope:
+    """A Dice scope, the program's body or a function's: its graph, and its
+    nodes' names, a tuple's where one names it (`hint`), nK otherwise. A
+    conjunction of negations is written as the disjunction it negates."""
+
+    def __init__(self, fnames):
+        self.g, self.names, self.taken, self.fnames = DiceGraph(), {}, set(), fnames
+
+    def inverted(self, k):
+        node = self.g.nodes[k]
+        return node[0] == 'and' and all(s < 0 for s in node[1])
+
+    def hint(self, s, text):
+        """Names signal s's node after text where the node's value is s's."""
+        k = abs(s)
+        if k == TRUE or k in self.names or self.g.nodes[k][0] in ('input', 'tuple') or (s > 0) == self.inverted(k):
+            return
+        base = re.sub(r'[^A-Za-z0-9_]', '_', text)[:48]
+        name, n = base, 1
+        while name in self.taken or name in DICE_KEYWORDS or name in self.fnames or NODE_NAME.fullmatch(name):
+            n += 1
+            name = f'{base}_v{n}'
+        self.taken.add(name)
+        self.names[k] = name
+
+    def ref(self, s):
+        k = abs(s)
+        if k == TRUE:
+            return 'true' if s > 0 else 'false'
+        name = self.names.get(k, f'n{k}')
+        return name if (s > 0) != self.inverted(k) else f'(!{name})'
+
+    def expr(self, k):
+        node = self.g.nodes[k]
+        kind = node[0]
+        if kind == 'fact':
+            return f'flip {g2n.decimal(node[1])}'
+        if kind == 'choice':
+            return f'discrete({", ".join(node[1])})'
+        if kind == 'pick':
+            return f'{self.ref(node[1])} == int({bits_for(len(self.g.nodes[node[1]][1]))}, {node[2]})'
+        if kind == 'and':
+            if self.inverted(k):
+                return ' || '.join(self.ref(-s) for s in node[1])
+            return ' && '.join(self.ref(s) for s in node[1])
+        if kind in ('fst', 'snd'):
+            return f'{kind} {self.ref(node[1])}'
+        if kind == 'tuple':
+            return nested([self.ref(s) for s in node[1]])
+        if kind == 'call':
+            return f'{node[1]}({", ".join([self.ref(node[2])] + [self.ref(a) for a in node[3]])})'
+        if kind == 'iterate':
+            return f'iterate({node[1]}, {self.ref(node[2])}, {node[3]})'
+        raise AssertionError(node)
+
+    def lets(self, roots):
+        """The lets of the nodes the signals `roots` read, in order, and those nodes."""
+        seen, stack = set(), [abs(s) for s in roots]
+        while stack:
+            k = stack.pop()
+            if k not in seen:
+                seen.add(k)
+                stack += children(self.g.nodes[k])
+        cone = sorted(seen)
+        return [f'let {self.names.get(k, f"n{k}")} = {self.expr(k)} in' for k in cone
+                if self.g.nodes[k][0] not in ('true', 'input')], cone
+
+
+class Abstract:
+    """A rule's instances at the layers of a Chain with the step left out:
+    its key (the rule's number and its binding, STEP or PREV for a variable
+    that is the layer or the layer before at every layer), its rule, its
+    heads (slots), its matches at each layer it has (`at`) and at any
+    (`alts`), each (pos, neg) of refs: ('same', slot) a slot of the layer,
+    ('prev', slot) one of the layer before, ('ext', tuple) a tuple of
+    another component, STEP and PREV in place of the layer."""
+
+    def __init__(self, key, rule, heads):
+        self.key, self.rule, self.heads, self.at, self.alts = key, rule, heads, {}, {}
+
+
+def layering(gr, pos, insts):
+    """((the number of layers, the reads within a layer negated), the layers
+    in order, {layer: the layer before}) of a recursive component's
+    instances `insts` where its relations' steps are at positions `pos`, or
+    None: each instance's heads in one layer, reading the component's
+    tuples of that layer or of the one before, the layers one sequence."""
+    pred, succ, within = {}, {}, 0
+    for inst in insts:
+        layer = inst.heads[0][1][pos[inst.heads[0][0]]][1]
+        if any(h[1][pos[h[0]]][1] != layer for h in inst.heads[1:]):
+            return None
+        for refs, _ in inst.alts:
+            for _, y in refs:
+                if y[0] in pos:
+                    m = y[1][pos[y[0]]][1]
+                    if m == layer:
+                        within += 1
+                    elif pred.setdefault(layer, m) != m or succ.setdefault(m, layer) != layer:
+                        return None
+    layers = {t[p][1] for k, p in pos.items() for t in gr.tuples[k]}
+    starts = [layer for layer in layers if layer not in pred]
+    if len(starts) != 1:
+        return None
+    order = starts
+    while order[-1] in succ and len(order) <= len(layers):
+        order.append(succ[order[-1]])
+    if len(order) != len(layers) or set(order) != layers:
+        return None
+    return (len(order), -within), order, pred
+
+
+def find_chain(dice, members):
+    """(The Chain of recursive component `members` or None, the steps'
+    positions of its best layering where it has one but no Chain fits, so
+    that the program says so), the Chain: an argument of
+    each relation that is an integer in every tuple, its step, the layers
+    one sequence (`layering`), whose function (Chain.plan) takes the fewest
+    arguments, then has the most layers and the fewest reads within a
+    layer. (A sum's argument is in layers too, mnist_sum's partial(K, S),
+    each sum read by itself and the one before; but each instance reads the
+    sum of a value, so that every one is an argument of a function over
+    it.)"""
+    gr = dice.gr
+    live = [k for k in members if gr.tuples[k]]
+    insts = [inst for inst in gr.insts.values() if inst.heads[0][0] in members]
+    cands = []
+    for k in live:
+        cands.append([j for j in range(k[1]) if all(t[j][0] == 'int' for t in gr.tuples[k])])
+        if not cands[-1]:
+            return None, None
+    found = []
+    for combo in itertools.islice(itertools.product(*cands), 256):
+        pos = dict(zip(live, combo))
+        layers = layering(gr, pos, insts)
+        if layers is not None and len(layers[1]) >= 2:
+            found.append((layers[0], pos, layers[1], layers[2]))
+    found.sort(key=lambda f: f[0], reverse=True)
+    best = None
+    for score, pos, order, pred in found[:8]:
+        chain = Chain(dice, live, pos, order, pred, insts)
+        if chain.chosen is not None and (best is None or len(chain.chosen['params']) < len(best.chosen['params'])):
+            best = chain
+    return best, found[0][1] if found else None
+
+
+class Chain:
+    """A recursion over a step: a recursive component whose tuples are in
+    layers, the values of an integer argument of each of its relations, each
+    layer read by itself and by the next alone. The layers from the first
+    (s 0) or the second (s 1) on are computed by one function of the layer
+    before, `f_RELATION`, whose state is the slots (tuples with STEP in
+    place of their layer) that the next layer or the rest of the program
+    reads. Its rules are the instances of a layer with the step left out
+    (Abstract), the same at each layer, and a coin of a layer's own (a
+    probabilistic fact, or a rule instance that reads only certain tuples,
+    that nothing else reads, of one probability at every layer) is a flip
+    in the function, drawn at each call. What differs between the layers is
+    an argument of the function: a tuple of another component that is
+    shared or asked; a fact whose probability differs; an instance that a
+    layer does not have and could otherwise hold there (a guard). Without
+    arguments, the layers are `iterate`s of the function, each ending where
+    the rest of the program reads a layer; with them, a call a layer."""
+
+    def __init__(self, dice, members, pos, order, pred, insts):
+        self.dice, self.gr = dice, dice.gr
+        self.members, self.pos, self.order, self.pred, self.insts = members, pos, order, pred, insts
+        self.fname, self.text, self.states = None, None, None
+        plans = [p for p in (self.plan(0), self.plan(1)) if p is not None]
+        self.chosen = min(plans, key=lambda p: (len(p['params']), p['s'])) if plans else None
+
+    def layer(self, x):
+        return x[1][self.pos[x[0]]][1]
+
+    def slot(self, x):
+        p = self.pos[x[0]]
+        return (x[0], tuple(STEP if j == p else t for j, t in enumerate(x[1])))
+
+    def conc(self, a, layer):
+        """Slot or abstract tuple a at a layer: None where it reads the layer
+        before and the layer has none."""
+        if PREV in a[1] and layer not in self.pred:
+            return None
+        return (a[0], tuple(('int', layer) if t == STEP else ('int', self.pred[layer]) if t == PREV else t
+                            for t in a[1]))
+
+    def plan(self, s):
+        """The function from layer order[s] on: its abstract instances, its
+        state, the classes of its other reads, its arguments and the layers
+        the rest of the program reads (its breaks), or None where a layer's
+        instances are not those of the function."""
+        gr, pred = self.gr, self.pred
+        F = self.order[s:]
+        if len(F) < 2:
+            return None
+        at = {layer: i for i, layer in enumerate(F)}
+        by_rule = {}
+        for inst in self.insts:
+            layer = self.layer(inst.heads[0])
+            if layer in at:
+                by_rule.setdefault(inst.rule.number, []).append((layer, inst))
+        inside = {id(inst) for lst in by_rule.values() for _, inst in lst}
+        abstract = {}
+        for n, lst in by_rule.items():
+            r = lst[0][1].rule
+            kind = {}
+            for j in range(len(r.variables)):
+                if all(inst.binding[j] == ('int', layer) for layer, inst in lst):
+                    kind[j] = STEP
+                elif all(layer in pred and inst.binding[j] == ('int', pred[layer]) for layer, inst in lst):
+                    kind[j] = PREV
+            var_at = {v: j for j, v in enumerate(r.variables)}
+
+            def ref(a, y, layer):
+                if y[0] in self.pos:
+                    return ('same' if self.layer(y) == layer else 'prev', self.slot(y))
+                roles = r.steps[a].roles
+                return ('ext', (y[0], tuple(kind.get(var_at[roles[j][1]], t) if roles[j][0] in ('match', 'bind', 'same')
+                                            else t for j, t in enumerate(y[1]))))
+            for layer, inst in lst:
+                key = (n, tuple(kind.get(j, b) for j, b in enumerate(inst.binding)))
+                heads = tuple(self.slot(h) for h in inst.heads)
+                A = abstract.get(key)
+                if A is None:
+                    A = abstract[key] = Abstract(key, r, heads)
+                elif A.heads != heads:
+                    return None
+                A.at[layer] = {(tuple(ref(a, y, layer) for a, y in pos), tuple(ref(a, y, layer) for a, y in neg)): None
+                               for pos, neg in inst.alts}
+        produce = {}
+        for A in abstract.values():
+            for layer in F:
+                A.alts.update(A.at.get(layer, {}))
+            for h in dict.fromkeys(A.heads):
+                produce.setdefault(h, []).append(A)
+        # the slots the rest of the program reads, and the layers where it reads them
+        outside, breaks = {}, set()
+        for k in self.members:
+            for t in gr.tuples[k]:
+                x = (k, t)
+                if self.layer(x) in at and (x in gr.asked or any(id(i) not in inside for i in gr.readers.get(x, ()))):
+                    outside[self.slot(x)] = None
+                    breaks.add(at[self.layer(x)])
+        if not breaks:
+            return None
+        # the slots the function computes, and those its state carries: those read outside or by the next layer
+        needed, state, work = dict(outside), dict(outside), list(outside)
+        while work:
+            for A in produce.get(work.pop(), ()):
+                for refs, _ in A.alts:
+                    for kind_, v in refs:
+                        if kind_ == 'prev':
+                            state[v] = None
+                        if kind_ != 'ext' and v not in needed:
+                            needed[v] = None
+                            work.append(v)
+        used = list({id(A): A for v in needed for A in produce.get(v, ())}.values())
+        # each tuple of another component that the function reads: the layers whose instances read it,
+        # and its class: true, false, a coin of the layer's own, or an argument
+        uses, seen = {}, {}
+        for A in used:
+            for layer, alts in A.at.items():
+                for refs, negs in alts:
+                    for kind_, v in refs + negs:
+                        if kind_ == 'ext':
+                            uses.setdefault(v, {})[layer] = None
+                            seen.setdefault(layer, {}).setdefault(self.conc(v, layer), {})[v] = None
+        cls = {}
+        for e, layers in uses.items():
+            xs = [self.conc(e, layer) for layer in layers]
+            if all(x in gr.certain for x in xs):
+                cls[e] = TRUE
+            elif not any(gr.exists(x) for x in xs):
+                cls[e] = FALSE
+            else:
+                ps = set()
+                for layer, x in zip(layers, xs):
+                    p = self.dice.lone(x)
+                    if (p is None or x in gr.asked or len(seen[layer][x]) > 1 or (STEP not in e[1] and PREV not in e[1])
+                            or any(id(i) not in inside or self.layer(i.heads[0]) != layer
+                                   for i in gr.readers.get(x, ()))):
+                        ps = None
+                        break
+                    ps.add(p)
+                cls[e] = ('flip', ps.pop()) if ps and len(ps) == 1 else 'arg'
+
+        def possible(refs, layer):
+            """Whether a match's refs `refs` may all hold at a layer in the function."""
+            for kind_, v in refs:
+                if kind_ == 'ext' and cls[v] != 'arg':   # true, false or a flip
+                    if cls[v] == FALSE:
+                        return False
+                    continue
+                if kind_ == 'same':
+                    x = self.conc(v, layer)
+                elif kind_ == 'prev':
+                    x = self.conc(v, pred[layer]) if layer in pred else None
+                else:   # an argument, false at a layer whose instances do not read it
+                    x = self.conc(v, layer) if layer in uses[v] else None
+                if x is None or not gr.exists(x):
+                    return False
+            return True
+        guards = []
+        for A in used:
+            for layer in F:
+                if layer in A.at:
+                    if any(alt not in A.at[layer] and possible(alt[0], layer) for alt in A.alts):
+                        return None
+                elif any(possible(alt[0], layer) for alt in A.alts):
+                    guards.append(A)
+                    break
+        facts = {}
+        for v in needed:
+            ps = [self.dice.prog.preds[v[0]].get(self.conc(v, layer)[1], 0) for layer in F]
+            if any(p > 0 for p in ps):
+                facts[v] = TRUE if all(p >= 1 for p in ps) else ('flip', ps[0]) if len(set(ps)) == 1 else 'arg'
+        params = ([('guard', A) for A in guards] + [('ext', e) for e, c in cls.items() if c == 'arg']
+                  + [('fact', v) for v, c in facts.items() if c == 'arg'])
+        state = sorted(state)
+        return {'s': s, 'F': F, 'at': at, 'state': state, 'index': {v: i for i, v in enumerate(state)},
+                'needed': needed, 'produce': produce, 'cls': cls, 'uses': uses, 'facts': facts, 'params': params,
+                'guards': {A.key for A in guards}, 'breaks': sorted(breaks)}
+
+    def function(self):
+        """The function's text: from the state of the layer before (`s`) and
+        the arguments (aK), the state of the layer."""
+        if self.text is not None:
+            return self.text
+        p, dice = self.chosen, self.dice
+        sc = Scope(dice.fnames)
+        g = sc.g
+        n = len(p['state'])
+        s_in = g.node(('input', 's'))
+        sc.names[s_in] = 's'
+        args = {}
+        for i, (kind_, v) in enumerate(p['params']):
+            args[(kind_, v.key if kind_ == 'guard' else v)] = a = g.node(('input', f'a{i + 1}'))
+            sc.names[a] = f'a{i + 1}'
+
+        def name(v, prev=False):
+            return dice.tuple_name((v[0], tuple(PREV if prev and t == STEP else t for t in v[1])))
+
+        def ref(r_, read):
+            kind_, v = r_
+            if kind_ == 'same':
+                return read(v)
+            if kind_ == 'prev':
+                x = project(g, s_in, p['index'][v], n)
+                sc.hint(x, name(v, True))
+                return x
+            c = p['cls'][v]
+            if c in (TRUE, FALSE):
+                return c
+            x = args[('ext', v)] if c == 'arg' else g.node(('fact', c[1]), ('ext', v))
+            sc.hint(x, name(v))
+            return x
+
+        def compute(v, read):
+            c = p['facts'].get(v)
+            parts = [FALSE if c is None else TRUE if c == TRUE else args[('fact', v)] if c == 'arg'
+                     else g.node(('fact', c[1]), ('fact', v))]
+            for A in p['produce'].get(v, ()):
+                sig = instance_signal(g, A.rule.probs, A.heads, v, A.alts, lambda r_: ref(r_, read),
+                                      lambda A=A: coin_node(g, ('coin', A.key), A.rule.probs))
+                if A.key in p['guards']:
+                    sig = g.conj([args[('guard', A.key)], sig])
+                parts.append(sig)
+            return g.disj(parts)
+        # the slots that read each other within a layer, in stages
+        deps = {v: {w for A in p['produce'].get(v, ()) for refs, _ in A.alts for kind_, w in refs if kind_ == 'same'}
+                for v in p['needed']}
+        comp_of = {}
+        for comp in strongly_connected(deps):
+            if len(comp) > 1 or comp[0] in deps[comp[0]]:
+                for v in comp:
+                    comp_of[v] = comp
+        memo = {}
+
+        def slot(v):
+            if v not in memo:
+                if v in comp_of:
+                    stage = g2n.fixpoint(comp_of[v], lambda h, st: compute(h, lambda y: st[y] if y in st else slot(y)))
+                else:
+                    stage = {v: compute(v, slot)}
+                for h, x in stage.items():
+                    memo[h] = x
+                    sc.hint(x, name(h))
+            return memo[v]
+        outs = [slot(v) for v in p['state']]
+        lets, _ = sc.lets(outs)
+        head = ', '.join([f's: {dice_type(n)}'] + [f'a{i + 1}: bool' for i in range(len(p['params']))])
+        self.text = (f'fun {self.fname}({head}) {{\n' + ''.join(f'  {line}\n' for line in lets)
+                     + f'  {nested([sc.ref(o) for o in outs])}\n}}\n')
+        return self.text
+
+    def args(self, layer):
+        """The function's arguments at a layer."""
+        p, dice = self.chosen, self.dice
+        out = []
+        for kind_, v in p['params']:
+            if kind_ == 'guard':
+                out.append(TRUE if layer in v.at else FALSE)
+            elif kind_ == 'ext':
+                out.append(dice.define(self.conc(v, layer)) if layer in p['uses'][v] else FALSE)
+            else:
+                out.append(dice.fact(self.conc(v, layer)))
+        return out
+
+    def build(self):
+        """The calls of the function in the program's body, from the first
+        layer to the last the rest of the program reads, a state at each
+        layer it reads (each break)."""
+        p, dice = self.chosen, self.dice
+        g = dice.main.g
+        F, n = p['F'], len(p['state'])
+        init = [FALSE] * n if p['s'] == 0 else [dice.define(self.conc(v, self.order[0])) for v in p['state']]
+        cur = init[0] if n == 1 else g.node(('tuple', tuple(init)))
+        self.states, i = {}, 0
+        while i <= p['breaks'][-1]:
+            j = i if p['params'] else next(b for b in p['breaks'] if b >= i)
+            call = ('call', self.fname, cur, tuple(self.args(F[i]))) if j == i else ('iterate', self.fname, cur, j - i + 1)
+            cur = self.states[j] = g.node(call, ('call', self.fname, i))
+            i = j + 1
+
+    def read(self, x):
+        """The signal of member tuple x of a layer of the function, which the
+        rest of the program reads."""
+        if self.states is None:
+            self.build()
+        p = self.chosen
+        st = self.states[p['at'][self.layer(x)]]
+        return project(self.dice.main.g, st, p['index'][self.slot(x)], len(p['state']))
+
+
+class Dice(Backend):
+    """The Dice program (the module's docstring): Dice has Booleans, tuples,
+    functions and `iterate`, and no relations, data or recursion, so the
+    program is written over the tuples that hold in some world (Ground). A
+    tuple is a let of its fact's flip or its instances, an instance its coin
+    (a flip, or an annotated disjunction's discrete) and its matches. A
+    recursion over a step is a function from one layer's tuples to the
+    next's (Chain), and a recursion through data is unrolled in stages, as
+    ground2net.py unrolls it (`fixpoint`). The program returns its queries
+    as a tuple and observes its evidence."""
+    RESERVED = DICE_KEYWORDS
+
+    def __init__(self, prog, source):
+        super().__init__(prog, source)
+        self.rel = idents(prog.preds, DICE_KEYWORDS, DICE_OWN)
+        self.gr = Ground(prog)
+        self.fnames = set()
+        self.main = Scope(self.fnames)
+        self.memo, self.cover, self.comp, self.chains, self.notes = {}, {}, {}, [], []
+        for members, recursive in prog.strata:
+            members = [k for k in members if k not in self.gr.demand]
+            if not recursive or not members:
+                continue
+            what = ', '.join(f'{k[0]}/{k[1]}' for k in members)
+            staged = [(k, t) for k in members for t in self.gr.tuples[k]]
+            if not staged:
+                self.notes.append(f'{what}: a recursion none of whose tuples holds in any world')
+                continue
+            chain, layered = find_chain(self, members)
+            if chain is None and layered is None:
+                self.notes.append(f'{what}: a recursion through data, its tuples unrolled in stages')
+            elif chain is None:
+                steps = ', '.join(f'{k[0]}/{k[1]} argument {p + 1}' for k, p in layered.items())
+                self.notes.append(f'{what}: a recursion over a step ({steps}) that no function of the step '
+                                  'writes, its tuples unrolled in stages')
+            else:
+                fname = f'f_{self.rel[chain.members[0]]}'
+                while fname in self.fnames:
+                    fname += '_'
+                chain.fname = fname
+                self.fnames.add(fname)
+                self.chains.append(chain)
+                p = chain.chosen
+                for x in staged:
+                    if chain.layer(x) in p['at']:
+                        self.cover[x] = chain
+                staged = [x for x in staged if x not in self.cover]
+                steps = ', '.join(f'{k[0]}/{k[1]} argument {chain.pos[k] + 1}' for k in chain.members)
+                how = (f'a call a step with {len(p["params"])} arguments' if p['params']
+                       else 'iterated between the steps the program reads')
+                self.notes.append(f'{what}: a recursion over a step ({steps}), {fname} from step {p["F"][0]}, {how}')
+            deps = {x: set() for x in staged}
+            for x in staged:
+                for inst in self.gr.of.get(x, ()):
+                    deps[x].update(y for refs, _ in inst.alts for _, y in refs if y in deps)
+            for comp in strongly_connected(deps):
+                if len(comp) > 1 or comp[0] in deps[comp[0]]:
+                    for x in comp:
+                        self.comp[x] = comp
+
+    def tuple_name(self, x):
+        parts = [self.rel[x[0]]]
+        for t in x[1]:
+            if t == STEP:
+                parts.append('t')
+            elif t == PREV:
+                parts.append('tp')
+            elif t[0] == 'int':
+                parts.append(f'm{-t[1]}' if t[1] < 0 else str(t[1]))
+            elif t[0] == 'num':
+                parts.append(repr(float(t[1])).replace('-', 'm').replace('.', 'p'))
+            else:
+                parts.append(t[1])
+        return '_'.join(parts)
+
+    def fact(self, x):
+        p = self.prog.preds[x[0]].get(x[1], 0)
+        return FALSE if p <= 0 else TRUE if p >= 1 else self.main.g.node(('fact', p), ('fact', x))
+
+    def lone(self, x):
+        """The probability of tuple x where it is a coin of its own: a fact
+        that no rule gives, or the head of one instance of a probabilistic
+        rule of one head, with no fact, whose match reads only certain
+        tuples; else None."""
+        p = self.prog.preds[x[0]].get(x[1], 0)
+        insts = self.gr.of.get(x, [])
+        if not insts:
+            return p if 0 < p < 1 else None
+        if p > 0 or len(insts) != 1:
+            return None
+        r = insts[0].rule
+        if not r.probs or len(r.probs) != 1 or len(insts[0].heads) != 1:
+            return None
+        if any(all(y in self.gr.certain for _, y in pos) and not any(self.gr.exists(y) for _, y in neg)
+               for pos, neg in insts[0].alts):
+            return r.probs[0]
+        return None
+
+    def concrete(self, x, read):
+        """Tuple x's signal: its fact or one of its instances."""
+        g = self.main.g
+        parts = [self.fact(x)]
+        for inst in self.gr.of.get(x, ()):
+            parts.append(instance_signal(
+                g, inst.rule.probs, inst.heads, x, [([y for _, y in pos], [y for _, y in neg]) for pos, neg in inst.alts],
+                read, lambda inst=inst: coin_node(g, ('coin', inst.rule.number, inst.binding), inst.rule.probs)))
+        return g.disj(parts)
+
+    def define(self, x):
+        """Tuple x's signal in the program's body."""
+        s = self.memo.get(x)
+        if s is not None:
+            return s
+        if x in self.gr.certain:
+            s = TRUE
+        elif not self.gr.exists(x):
+            s = FALSE
+        elif x in self.cover:
+            s = self.cover[x].read(x)
+        elif x in self.comp:
+            stage = g2n.fixpoint(self.comp[x], lambda h, st: self.concrete(h, lambda y: st[y] if y in st else self.define(y)))
+            for h, v in stage.items():
+                self.memo[h] = v
+                self.main.hint(v, self.tuple_name(h))
+            return stage[x]
+        else:
+            s = self.concrete(x, self.define)
+        self.memo[x] = s
+        self.main.hint(s, self.tuple_name(x))
+        return s
+
+    def program(self, results, observed):
+        """The program returning the signals `results` given `observed` [(signal, value)]."""
+        sc = self.main
+        lets, cone = sc.lets([s for s, _ in observed] + results)
+        called = {sc.g.nodes[k][1] for k in cone if sc.g.nodes[k][0] in ('call', 'iterate')}
+        out = [DICE_PRELUDE.replace('{source}', self.source) + ''.join(f'// {note}\n' for note in self.notes)]
+        out += [chain.function() for chain in self.chains if chain.fname in called]
+        out += [line + '\n' for line in lets]
+        out += [f'let obs{j} = observe ({sc.ref(s if v else -s)}) in\n' for j, (s, v) in enumerate(observed)]
+        out.append(nested([sc.ref(s) for s in results]) + '\n')
+        return ''.join(out)
+
+    def signals(self):
+        if not self.prog.queries:
+            raise Refused('translator: a program that asks no query')
+        observed = [(self.define((key(a), tuple(a[1]))), v) for a, v in self.prog.evidence]
+        return [self.define((key(a), tuple(a[1]))) for a in self.prog.queries], observed
+
+    def text(self):
+        results, observed = self.signals()
+        return self.program(results, observed)
+
+    def each(self):
+        """A program a query: [(the query as bench.py keys it, the program)]."""
+        results, observed = self.signals()
+        return [(p2s.atom_text(a), self.program([s], observed)) for a, s in zip(self.prog.queries, results)]
+
+
+DICE_PRELUDE = '''\
+// {source}: a ProbLog program written in Dice by tddlog's scripts/problog2ppl.py,
+// over the tuples of its relations that hold in some world. A tuple is a let:
+// its fact's flip, or one of its rule instances, an instance its coin (a flip,
+// or an annotated disjunction's discrete) and one of its matches. A recursion
+// over a step (an argument that is the layer of each tuple, each layer read by
+// itself and the next) is a function from the state of one layer to the next,
+// iterated, its rules the instances of a step with the step left out; a
+// recursion through data is unrolled in stages, each applying the rules to the
+// stage before. The program returns its queries and observes its evidence.
+'''
+
+LANGS = {'alea': Julia, 'roulette': Racket, 'webppl': WebPPL, 'psi': Psi, 'pluck': Pluck, 'sppl': SPPL, 'dice': Dice}
 # the languages whose programs hold their facts themselves: no facts file
-INLINE = {'psi', 'pluck', 'sppl'}
+INLINE = {'psi', 'pluck', 'sppl', 'dice'}
 
 
 def translate(lang, text, source='a ProbLog program'):
@@ -2531,22 +3453,42 @@ def translate(lang, text, source='a ProbLog program'):
     return text, [] if lang in INLINE else data_lines(prog), [p2s.atom_text(a) for a in prog.queries]
 
 
-def main(argv):
-    if not argv or argv[0] not in LANGS or len(argv) != (3 if argv[0] in INLINE else 4):
-        sys.exit(__doc__)
-    lang, path, out = argv[:3]
-    text, rows, queries = translate(lang, open(path).read(), os.path.basename(path))
-    if lang not in INLINE:
-        with open(argv[3], 'w') as f:
-            f.write(''.join(line + '\n' for line in rows))
+def dicemap(path, out):
+    """Writes a Dice program a query of the program at `path`, beside OUT
+    (STEM.dicemap) as STEM__qJ.dice, and OUT, a line `STEM__qJ.dice bool
+    QUERY` each, as bench.py's run_dice_circuit reads them; the queries."""
+    prog = read(open(path).read())
+    stem = out[:-len('.dicemap')] if out.endswith('.dicemap') else out
+    lines = []
+    for j, (q, text) in enumerate(Dice(prog, os.path.basename(path)).each()):
+        with open(f'{stem}__q{j}.dice', 'w') as f:
+            f.write(text)
+        lines.append(f'{os.path.basename(stem)}__q{j}.dice bool {q}\n')
     with open(out, 'w') as f:
-        f.write(text)
+        f.write(''.join(lines))
+    return [p2s.atom_text(a) for a in prog.queries]
+
+
+def main(argv):
+    if argv[:1] == ['dicemap'] and len(argv) == 3:
+        queries = dicemap(argv[1], argv[2])
+    else:
+        if not argv or argv[0] not in LANGS or len(argv) != (3 if argv[0] in INLINE else 4):
+            sys.exit(__doc__)
+        lang, path, out = argv[:3]
+        text, rows, queries = translate(lang, open(path).read(), os.path.basename(path))
+        if lang not in INLINE:
+            with open(argv[3], 'w') as f:
+                f.write(''.join(line + '\n' for line in rows))
+        with open(out, 'w') as f:
+            f.write(text)
     sys.stdout.write(''.join(q + '\n' for q in queries))
 
 
 if __name__ == '__main__':
     try:
-        main(sys.argv[1:])
-    except Refused as x:
+        # Dice's translation recurses as deep as the program's chains of tuples
+        deep(main, sys.argv[1:])
+    except (Refused, g2n.Refused) as x:
         print(f'problog2ppl.py: {x}', file=sys.stderr)
         sys.exit(REFUSED)

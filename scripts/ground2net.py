@@ -185,6 +185,21 @@ def components(rules):
     return out
 
 
+def fixpoint(comp, define):
+    """The signals of a recursive component's atoms comp, in stages: stage
+    0 has every atom false, and stage s is define(atom, stage s - 1) of
+    each, up to the component's size or until a stage repeats (the
+    module's docstring). problog2ppl.py's Dice programs unroll their
+    recursions through data with it."""
+    stage = {h: FALSE for h in comp}
+    for _ in range(len(comp)):
+        nxt = {h: define(h, stage) for h in comp}
+        if nxt == stage:
+            break
+        stage = nxt
+    return stage
+
+
 def build(text):
     """(graph, observations [(node, value)], queries [(key, signal)]) of a
     ground program."""
@@ -211,13 +226,7 @@ def build(text):
                     if not pos and a in members:
                         raise Refused(f'negation through recursion ({h} and {a}): the program has a '
                                       'well-founded model, not a least one')
-        stage = {h: FALSE for h in comp}
-        for _ in range(len(comp)):
-            nxt = {h: define(h, stage) for h in comp}
-            if nxt == stage:
-                break
-            stage = nxt
-        sig.update(stage)
+        sig.update(fixpoint(comp, define))
     asked = [(key, sig.get(a, FALSE) if pos else -sig.get(a, FALSE)) for key, a, pos in queries]
     # each observed node once, with the value its observations give it; an
     # observation that contradicts another or a constant leaves the constant

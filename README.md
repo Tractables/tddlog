@@ -248,10 +248,10 @@ program and repetition, 600 s each, and ProbLog's d-DNNF once as the
 reference (300 s):
 
 ```
-for k in 100 400 1600 6400; do
-  python3 scripts/dice_scale.py data/dice/diamond.dice $k S/dice_diamond_k$k.dice
-done   # and ladder at the same counts, pmc1 at 10 20 40 75, pmc2 at 10 20 51,
-       # caesar-iter at 100 1000 3000, simpleCaesar at 100 300 1000
+for k in 100 1000 3000 10000 30000 100000 300000; do
+  python3 scripts/dice_scale.py data/dice/caesar-iter.dice $k S/dice_caesar-iter_k$k.dice
+done   # and simpleCaesar at 100 300 1000 3000 10000 30000 100000,
+       # pmc1 at 10 20 40 75 150 300 600, pmc2 at 10 20 51 200 400 800 1600
 $TDDLOG --program S/NAME.dice > S/NAME.pl   # tddlog itself reads S/NAME.dice
 DICE="prlimit --stack=unlimited $DICE" ALEA="$JULIA" PROBLOG=... TDDLOG=... \
   python3 scripts/bench_one.py scripts SYSTEM S/NAME REP CPU 600 scaled.jsonl

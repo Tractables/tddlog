@@ -238,6 +238,25 @@ class PplTests(unittest.TestCase):
             self.assertFalse(bench.writes_dice(g))
             self.assertTrue(bench.grounds_dice(g))
 
+    def test_the_dice_systems_read_problog2ppls_dice_of_a_logic_program(self):
+        # problog2ppl.py writes the Dice programs of a logic program, uncharged; the systems answer in the
+        # order of the queries it lists; a program it refuses takes the ground program's route
+        args = SimpleNamespace(dir='', timeout=30, translation_timeout=None, pr=False)
+        with tempfile.TemporaryDirectory() as d:
+            args.dir = d
+            Path(d, 'p.pl').write_text('0.6::e(a, b). 0.7::e(b, c).\np(X, Y) :- e(X, Y).\np(X, Y) :- e(X, Z), p(Z, Y).\n'
+                                       'query(p(a, c)). query(p(b, c)).\n')
+            for form in bench.DICE_FORMS:
+                r = bench.dice_route(args, 'p', str(Path(d, 'p.pl')), form)
+                self.assertEqual((r['status'], r['seconds']), ('ok', 0.0), form)
+                self.assertEqual(bench.queries(r['ground']), ['p(a,c)', 'p(b,c)'])
+                self.assertTrue(r['stem'].endswith('.lp'))
+            self.assertEqual(Path(d, 'ground-p', 'p.lp.dicemap').read_text(),
+                             'p.lp__q0.dice bool p(a,c)\np.lp__q1.dice bool p(b,c)\n')
+            self.assertIn('flip 0.6', Path(d, 'ground-p', 'p.lp.dice').read_text())
+            Path(d, 'q.pl').write_text('0.5::p([1]).\nq :- p([1]).\nquery(q).\n')
+            self.assertIsNone(bench.dice_route(args, 'q', str(Path(d, 'q.pl')), 'dicemap'))
+
     def test_alea_program_answers_name_the_ports_queries(self):
         # a Boolean, then a number of four values whose two non-constant bits
         # give worlds of values 3, -3 (1 modulo 4), 0 and 3

@@ -266,6 +266,73 @@ fn a_markov_network_prints_its_partition_function() {
     );
 }
 
+/// Z of a MARKOV file by enumerating its worlds: the product of its
+/// tables' entries, each read with the scope's last variable changing
+/// fastest, summed over every assignment.
+fn enumerated_z(path: &str) -> f64 {
+    fn int(tok: &mut std::str::SplitWhitespace) -> usize {
+        tok.next().unwrap().parse().unwrap()
+    }
+    let text = std::fs::read_to_string(path).unwrap();
+    let mut tok = text.split_whitespace();
+    assert_eq!(tok.next(), Some("MARKOV"));
+    let n = int(&mut tok);
+    let cards: Vec<usize> = (0..n).map(|_| int(&mut tok)).collect();
+    let scopes: Vec<Vec<usize>> = (0..int(&mut tok))
+        .map(|_| {
+            let k = int(&mut tok);
+            (0..k).map(|_| int(&mut tok)).collect()
+        })
+        .collect();
+    let tables: Vec<Vec<f64>> = scopes
+        .iter()
+        .map(|_| {
+            let k = int(&mut tok);
+            (0..k)
+                .map(|_| tok.next().unwrap().parse().unwrap())
+                .collect()
+        })
+        .collect();
+    let mut x = vec![0; n];
+    let mut z = 0.0;
+    for w in 0..cards.iter().product() {
+        let mut rest = w;
+        for v in (0..n).rev() {
+            x[v] = rest % cards[v];
+            rest /= cards[v];
+        }
+        z += scopes
+            .iter()
+            .zip(&tables)
+            .map(|(s, t)| t[s.iter().fold(0, |i, &v| i * cards[v] + x[v])])
+            .product::<f64>();
+    }
+    z
+}
+
+#[test]
+fn a_summed_out_variable_stays_while_a_scope_holds_it() {
+    // tests/networks/restored_scope.uai, 18 binary variables and 8 random
+    // tables, has a join stop after its moves and give its operands back on
+    // the join's scope, which holds variables their factors do not read.
+    // The evidence walk then dropped a summed-out variable that such a
+    // scope still held, the next join's union brought it back, and the
+    // check against counting its weights twice panicked. Z by enumerating
+    // the worlds; variable elimination gives 642.190392938853 too.
+    let path = "tests/networks/restored_scope.uai";
+    let out = tddlog(&[
+        path,
+        "--no-queries",
+        "--evidence-probability",
+        "--precision",
+        "13",
+    ]);
+    let (_, log10_z) = answers(&out, "Z");
+    let got = log10_z.expect("a Z line");
+    let want = enumerated_z(path).log10();
+    assert!((got - want).abs() < 1e-12, "log10 Z = {got} against {want}");
+}
+
 #[test]
 fn a_markov_file_of_rounded_tables_answers_as_its_network() {
     // tests/networks/rounded.uai holds x0's table and x1's given x0, x1
