@@ -32,9 +32,11 @@ two total times over the instances the system is given and either
 answers, a run that does not finish counted as twice its time limit
 (PAR-2), and tddlog's speed-up, the ratio of their total times on the
 instances both answer, together with the instances only one of them
-answers: tddlog's failures counted at its time limit, and the other
-system's timeouts counted at the limit where that lower bound is at
-least the speed-up measured on the instances both answer. A time under
+answers, the other at its time limit, each only where that lower bound
+raises the multiplier of the system that answered it: one only tddlog
+answers where the limit over its time is at least the speed-up, one only
+the other answers where the limit over its time is at least the
+speed-up's inverse, so that swapping the two gives the inverse. A time under
 0.2 s counts as 0.2 s, and with fewer than 20 instances both answer
 (leaving out those both answer in under 0.2 s) there is no speed-up. The
 figures draw a category's drawn systems (tddlog and the native systems

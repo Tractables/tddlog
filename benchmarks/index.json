@@ -418,7 +418,9 @@
      "bb_coinBias_w18",
      "bb_coinBias_w20",
      "bb_coinBias_w22",
-     "bb_coinBias_w24"
+     "bb_coinBias_w24",
+     "bb_coinBias_w26",
+     "bb_coinBias_w28"
     ],
     "key": "coinBias",
     "title": "Coin bias"

@@ -739,7 +739,7 @@
      "both":38,
      "failures":1,
      "timeouts":90,
-     "counted":73,
+     "counted":74,
      "ratio":35.77,
      "speedup":66.79,
      "me":["tddlog"]
@@ -9615,7 +9615,7 @@
      "both":108,
      "failures":1,
      "timeouts":134,
-     "counted":85,
+     "counted":86,
      "ratio":23.42,
      "speedup":109.1,
      "me":["tddlog"]
@@ -9645,7 +9645,7 @@
      "both":177,
      "failures":1,
      "timeouts":131,
-     "counted":82,
+     "counted":83,
      "ratio":81.68,
      "speedup":112.2,
      "me":["tddlog"]
@@ -9660,7 +9660,7 @@
      "both":131,
      "failures":1,
      "timeouts":111,
-     "counted":67,
+     "counted":68,
      "ratio":88.87,
      "speedup":92.54,
      "me":["tddlog"]
@@ -17188,7 +17188,7 @@
     ["ace","ace_alarm",600,"n-nttt-tonnnnnttntttxtxttt-",0.052,null,0.3,"timeout","timeout",48.954,null,"timeout",1.108,0.006,0.115,1.395,0.005,0.005,0.709,0.168,0.387,505.659,"timeout",0.927,112.213,"wrong",7.712,"timeout",2.834,20.486,null],
     ["ace","ace_hailfinder",600,"n-nttt-tonnnnnttntttxtxttt-",0.052,null,0.852,"timeout","timeout",253.663,null,"timeout",1.184,0.01,0.124,1.433,0.007,0.007,68.523,18.181,13.867,286.204,"timeout","timeout",52.2,"timeout",36.645,"timeout",24.087,35.828,null],
     ["ace","ace_munin2",600,"n-nttt-tonnnnnttntttxtxttt-",0.174,null,"memout","timeout","timeout","timeout",null,"timeout",2.677,0.082,0.29,7.41,0.091,0.293,"timeout",311.868,"memout","memout","timeout","timeout","timeout","timeout","memout","timeout","timeout","timeout",null],
-    ["ace","ace_pathfinder",600,"n-nttt-tonnnnnttntttxtxttt-",0.254,null,"timeout","timeout","timeout","timeout",null,"timeout",1.66,0.062,0.231,1.815,0.058,0.062,129.269,7.461,27.313,409.042,"timeout","timeout","timeout","timeout",14.68,"timeout","timeout","memout",null],
+    ["ace","ace_pathfinder",600,"n-nttt-tonnnnnttntttxtxttt-",0.254,null,"timeout","timeout","timeout","timeout",null,"timeout",1.66,0.062,0.231,1.815,0.058,0.062,129.269,7.461,27.313,409.042,"timeout","timeout","timeout","timeout",14.68,"timeout","timeout","timeout",null],
     ["ace","ace_students_03_02",600,"n-nttt-tonnnnnttntttxtxttt-",0.039,null,0.248,8.383,0.753,5.564,null,"memout",1.496,0.044,0.167,1.549,0.057,0.151,"timeout",0.03,0.168,"timeout","timeout","timeout",5.858,"timeout",8.282,21.523,82.147,47.694,null],
     ["ace","ace_munin3",600,"n-nttt-tonnnnnttntttxtxttt-",0.384,null,"timeout","timeout","timeout","timeout",null,"timeout",6.311,0.198,0.375,"memout",0.379,94.292,"timeout","timeout","memout","timeout","timeout","timeout","timeout","timeout","memout","timeout","timeout","timeout",null],
     ["ace","ace_diabetes",600,"n-nttt-tonnnnnttntttxtxttt-",0.365,null,"timeout","memout","timeout","timeout",null,"timeout",3.553,0.174,0.236,1.516,0.163,0.887,"timeout","timeout","timeout","memout","timeout","timeout","timeout","timeout","memout","timeout","timeout","timeout",null],
@@ -17200,7 +17200,7 @@
     ["ace","ace_mastermind_04_08_03",600,"n-nttt-tonnnnnttntttxtxttt-",0.058,null,0.749,"timeout",48.004,"timeout",null,"memout",2.52,1.334,1.268,"timeout",2.306,211.292,"timeout",0.08,0.829,"timeout","timeout","timeout",116.191,"timeout",12.49,294.149,"timeout","timeout",null],
     ["ace","ace_fs_10",600,"n-nttt-tonnnnnttntttxtxttt-",0.104,null,19.111,"timeout","timeout","timeout",null,"timeout",4.116,"memout","memout","memout","memout","timeout","timeout",37.008,106.077,"timeout","timeout","error","timeout","timeout","memout","timeout","memout","memout",null],
     ["ace","ace_fs_13",600,"n-nttt-tonnnnnttntttxtxttt-",0.19,null,293.268,"timeout","error","timeout",null,"timeout",6.964,"memout","memout","memout","memout","timeout","timeout","timeout","memout","timeout","timeout","error","timeout","timeout","memout","timeout","memout","timeout",null],
-    ["ace","ace_mastermind_05_08_03",600,"n-nttt-tonnnnnttntttxtxttt-",0.062,null,0.886,"timeout","error","timeout",null,"memout",3.415,0.1,0.495,16.982,0.249,272.038,"timeout",0.129,0.828,"timeout","timeout","timeout",33.707,"timeout",12.66,"timeout","timeout","memout",null],
+    ["ace","ace_mastermind_05_08_03",600,"n-nttt-tonnnnnttntttxtxttt-",0.062,null,0.886,"timeout","error","timeout",null,"memout",3.415,0.1,0.495,16.982,0.249,272.038,"timeout",0.129,0.828,"timeout","timeout","timeout",33.707,"timeout",12.66,"timeout","timeout","timeout",null],
     ["ace","ace_fs_16",600,"n-nttt-tonnnnnttntttxtxttt-",0.358,null,"timeout","timeout","error","timeout",null,"timeout",11.166,"memout","memout","memout","memout","timeout","timeout","timeout","memout","timeout","memout","error","timeout","timeout","memout","timeout","error","error",null],
     ["ace","ace_fs_19",600,"n-nttt-tonnnnnttntttxtxttt-",0.584,null,"timeout","timeout","error","timeout",null,"memout",21.488,"memout","memout","memout","memout","timeout","timeout","timeout","memout","timeout","memout","error","timeout","timeout","memout","timeout","error","error",null],
     ["ace","ace_fs_22",600,"n-nttt-tonnnnnttntttxtxttt-",0.889,null,"timeout","timeout","memout","timeout",null,"memout",38.95,"memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","memout","error","timeout","timeout","memout","timeout","error","error",null],
@@ -18046,7 +18046,7 @@
      "both":408,
      "failures":6,
      "timeouts":198,
-     "counted":196,
+     "counted":202,
      "ratio":5.846,
      "speedup":23.16,
      "me":["tddlog"]
@@ -18061,7 +18061,7 @@
      "both":159,
      "failures":7,
      "timeouts":322,
-     "counted":317,
+     "counted":324,
      "ratio":3.219,
      "speedup":34.08,
      "me":["tddlog"]
@@ -18076,7 +18076,7 @@
      "both":188,
      "failures":7,
      "timeouts":354,
-     "counted":349,
+     "counted":356,
      "ratio":3.964,
      "speedup":37.62,
      "me":["tddlog"]
@@ -18091,7 +18091,7 @@
      "both":220,
      "failures":7,
      "timeouts":387,
-     "counted":381,
+     "counted":388,
      "ratio":4.52,
      "speedup":42.96,
      "me":["tddlog"]
@@ -18106,7 +18106,7 @@
      "both":158,
      "failures":7,
      "timeouts":324,
-     "counted":322,
+     "counted":329,
      "ratio":2.918,
      "speedup":33.23,
      "me":["tddlog"]
@@ -18121,7 +18121,7 @@
      "both":200,
      "failures":7,
      "timeouts":294,
-     "counted":292,
+     "counted":299,
      "ratio":13.42,
      "speedup":34.08,
      "me":["tddlog"]
@@ -20391,7 +20391,7 @@
       "both":79,
       "failures":6,
       "timeouts":15,
-      "counted":15,
+      "counted":21,
       "ratio":1.142,
       "speedup":2.033,
       "me":["tddlog"]
@@ -20406,7 +20406,7 @@
       "both":35,
       "failures":7,
       "timeouts":44,
-      "counted":43,
+      "counted":50,
       "ratio":0.1696,
       "speedup":4.565,
       "me":["tddlog"]
@@ -20421,7 +20421,7 @@
       "both":42,
       "failures":7,
       "timeouts":44,
-      "counted":43,
+      "counted":50,
       "ratio":0.6717,
       "speedup":4.689,
       "me":["tddlog"]
@@ -20436,7 +20436,7 @@
       "both":46,
       "failures":7,
       "timeouts":48,
-      "counted":47,
+      "counted":54,
       "ratio":1.121,
       "speedup":5.222,
       "me":["tddlog"]
@@ -20451,7 +20451,7 @@
       "both":44,
       "failures":7,
       "timeouts":40,
-      "counted":40,
+      "counted":47,
       "ratio":0.4206,
       "speedup":4.154,
       "me":["tddlog"]
@@ -20466,7 +20466,7 @@
       "both":46,
       "failures":7,
       "timeouts":45,
-      "counted":45,
+      "counted":52,
       "ratio":1.354,
       "speedup":4.93,
       "me":["tddlog"]
@@ -23604,7 +23604,7 @@
     ["uaipr","uai_rus_20_40_7_1",300,"ntttttnnnnnttttttxtxt--",104.603,"error","timeout","timeout","timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null],
     ["uaipr","uai_rus_20_40_9_3",300,"ntttttnnnnnttttttxtxt--",94.961,"error","timeout","timeout","timeout","timeout","memout","memout","memout","memout","timeout","timeout","memout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null],
     ["uaipr","uai_rus_20_40_6_2",300,"ntttttnnnnnttttttxtxt--",105.459,"error","timeout","timeout","timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null],
-    ["uaipr","uai_rus_20_40_6_3",300,"ntttttnnnnnttttttxtxt--",99.136,"error","timeout","timeout","timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","error","memout","timeout","error","timeout","timeout","memout","timeout",null,null],
+    ["uaipr","uai_rus_20_40_6_3",300,"ntttttnnnnnttttttxtxt--",99.136,"error","timeout","timeout","timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null],
     ["uaipr","uai_bwt3ac_wcsp",300,"ntttttnnnnnttttttxtxt--","memout","timeout","timeout","timeout","timeout","timeout",67.095,"memout","memout","memout",44.754,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null],
     ["uaipr","uai_rus_20_40_7_3",300,"ntttttnnnnnttttttxtxt--",101.642,"error","timeout","timeout","timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null],
     ["uaipr","uai_rus_20_40_8_3",300,"ntttttnnnnnttttttxtxt--",97.506,"error","timeout","timeout","timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null],
@@ -23620,7 +23620,7 @@
     ["uaitpr","uai_csp_13",300,"ntttttnnnnnttttttxtxt--",2.14,"timeout","timeout","timeout","memout",6.61,3.372,4.286,165.634,23.254,50.123,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null],
     ["uaitpr","uai_dbn_16",300,"ntttttnnnnnttttttxtxt--",5.146,"timeout","timeout","timeout","memout","timeout",10.909,11.179,"memout",60.851,"memout","timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null],
     ["uaitpr","uai_grids_18",300,"ntttttnnnnnttttttxtxt--",6.017,"timeout","timeout","timeout","timeout","timeout","error","error","error",118.428,4.624,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null],
-    ["uaitpr","uai_grids_11",300,"ntttttnnnnnttttttxtxt--",0.137,"timeout","timeout",238.45,"timeout",25.816,0.925,16.39,140.881,2.438,0.442,"timeout","memout","error","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null],
+    ["uaitpr","uai_grids_11",300,"ntttttnnnnnttttttxtxt--",0.137,"timeout","timeout",238.45,"timeout",25.816,0.925,16.39,140.881,2.438,0.442,"timeout","memout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null],
     ["uaitpr","uai_grids_14",300,"ntttttnnnnnttttttxtxt--",0.15,"timeout","timeout",220.493,"timeout",21.319,"error","error","timeout",1.669,0.433,"timeout","memout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null],
     ["uaitpr","uai_objectdetection_28",300,"ntttttnnnnnttttttxtxt--",2.772,"timeout","timeout","timeout","timeout","timeout",11.161,25.293,6.516,35.678,10.817,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null],
     ["uaitpr","uai_grids_15",300,"ntttttnnnnnttttttxtxt--",6.006,"timeout","timeout","timeout","timeout","timeout",72.495,274.752,14.659,140.556,4.85,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null],
@@ -24023,7 +24023,7 @@
      "both":167,
      "failures":1,
      "timeouts":73,
-     "counted":36,
+     "counted":37,
      "ratio":5.416,
      "speedup":11.06,
      "me":["tddlog"]
@@ -24083,7 +24083,7 @@
      "both":189,
      "failures":7,
      "timeouts":52,
-     "counted":51,
+     "counted":58,
      "ratio":1.42,
      "speedup":2.59,
      "me":["tddlog"]
@@ -27644,8 +27644,8 @@
     ["dice","dice_caesar-iter_k100",600,"n-tttt--ttttttottnttxtxttt",0.028,null,0.116,1.443,"wrong",3.95,null,null,3.139,0.833,0.869,5.751,3.308,65.304,"zero",0.017,0.078,0.172,1.92,0.04,18.236,0.168,4.025,0.118,0.147,1.273],
     ["dice","dice_caesar-iter_k1000",600,"n-tttt--ttttttottnttxtxttt",0.41,null,1.54,"memout","timeout",436.895,null,null,15.385,355.088,98.936,338.948,"timeout","timeout","zero",1.008,3.949,18.364,20.804,0.399,"timeout",1.703,23.062,0.259,0.172,1.645],
     ["dice","dice_caesar-iter_k3000",600,"n-tttt--ttttttottnttxtxttt",0.928,null,5.113,"timeout","skipped","timeout",null,null,50.538,"timeout","timeout","timeout","skipped","skipped","underflow",13.081,"underflow","memout",148.368,"error","timeout",5.177,"memout",0.39,0.366,"error"],
-    ["dice","dice_caesar-iter_k10000",600,"n-tttt--ttttttottnttxtxttt",2.597,null,29.916,"timeout","skipped","timeout",null,null,"timeout","skipped","skipped","skipped","skipped","skipped","zero",384.009,"memout","skipped","timeout","error","timeout",18.664,"memout",0.839,1.472,"error"],
-    ["dice","dice_caesar-iter_k30000",600,"n-tttt--ttttttottnttxtxttt",8.884,null,190.499,"skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","memout","skipped","skipped","timeout","error","timeout",57.569,"memout",2.164,7.001,"error"],
+    ["dice","dice_caesar-iter_k10000",600,"n-tttt--ttttttottnttxtxttt",2.597,null,12.929,"timeout","skipped","timeout",null,null,"timeout","skipped","skipped","skipped","skipped","skipped","zero",384.009,"memout","skipped","timeout","error","timeout",18.664,"memout",0.839,1.472,"error"],
+    ["dice","dice_caesar-iter_k30000",600,"n-tttt--ttttttottnttxtxttt",8.884,null,75.654,"skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","memout","skipped","skipped","timeout","error","timeout",57.569,"memout",2.164,7.001,"error"],
     ["dice","dice_caesar-iter_k100000",600,"n-tttt--ttttttottnttxtxttt",27.686,null,"memout","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","error","timeout",194.572,"memout",6.351,56.862,"timeout"],
     ["dice","dice_caesar-iter_k300000",600,"n-tttt--ttttttottnttxtxttt",90.584,null,"skipped","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","error","timeout","memout","memout",19.788,"error","skipped"],
     ["dice","dice_pmc1_k10",600,"n-tttt--ttttttottnttxtxttt",0.145,null,0.038,2.573,1.236,6.857,null,null,1.334,0.296,0.438,2.273,0.309,15.458,"timeout",0.018,0.029,"timeout","timeout","timeout","memout",0.01,6.223,19.828,0.476,1.96],
@@ -27665,9 +27665,9 @@
     ["dice","dice_simpleCaesar_k100",600,"n-tttt--ttttttottnttxtxttt",0.352,null,0.823,"timeout","timeout",33.236,null,null,8.381,7.281,8.712,211.289,77.656,419.131,"zero",0.235,0.865,5.013,37.55,382.023,"timeout",28.662,24.029,0.534,0.198,1.513],
     ["dice","dice_simpleCaesar_k300",600,"n-tttt--ttttttottnttxtxttt",0.867,null,3.355,"skipped","skipped","timeout",null,null,16.901,"memout","error","timeout","timeout","error","underflow",2.571,"underflow","wrong",108.032,"timeout","timeout","error","memout",1.138,0.66,"error"],
     ["dice","dice_simpleCaesar_k1000",600,"n-tttt--ttttttottnttxtxttt",3.905,null,11.913,"skipped","skipped","skipped",null,null,51.432,"skipped","timeout","skipped","skipped","timeout","underflow",31.443,"underflow","memout",458.517,"skipped","timeout","error","memout",2.985,1.911,"error"],
-    ["dice","dice_simpleCaesar_k3000",600,"n-tttt--ttttttottnttxtxttt",23.329,null,85.107,"timeout","skipped","timeout",null,null,158.709,"skipped","timeout","skipped","skipped","timeout","zero","memout","memout","skipped","timeout","skipped","timeout","timeout","memout",8.972,7.735,"error"],
-    ["dice","dice_simpleCaesar_k10000",600,"n-tttt--ttttttottnttxtxttt",47.214,null,426.878,"skipped","skipped","skipped",null,null,"timeout","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","skipped","timeout","timeout","memout",31.896,30.081,"error"],
-    ["dice","dice_simpleCaesar_k30000",600,"n-tttt--ttttttottnttxtxttt",142.221,null,"timeout","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","skipped","timeout","timeout","memout",87.118,"error","error"],
+    ["dice","dice_simpleCaesar_k3000",600,"n-tttt--ttttttottnttxtxttt",23.329,null,43.761,"timeout","skipped","timeout",null,null,158.709,"skipped","timeout","skipped","skipped","timeout","zero","memout","memout","skipped","timeout","skipped","timeout","timeout","memout",8.972,7.735,"error"],
+    ["dice","dice_simpleCaesar_k10000",600,"n-tttt--ttttttottnttxtxttt",47.214,null,249.745,"skipped","skipped","skipped",null,null,"timeout","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","skipped","timeout","timeout","memout",31.896,30.081,"error"],
+    ["dice","dice_simpleCaesar_k30000",600,"n-tttt--ttttttottnttxtxttt",142.221,null,"memout","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","skipped","timeout","timeout","memout",87.118,"error","error"],
     ["dice","dice_simpleCaesar_k100000",600,"n-tttt--ttttttottnttxtxttt","memout",null,"skipped","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","timeout","skipped","timeout","memout","memout",279.123,"error","timeout"],
     ["ppl","arith_book",600,"tn-ttt--tttttttottotxtxttt",8.16,9.376,null,"timeout",10.14,242.639,null,null,"timeout","memout","memout","timeout","memout","memout","timeout",1.348,1.916,"memout","timeout","timeout","unsupported","timeout",63.171,88.273,45.54,"timeout"],
     ["ppl","arith_caesar_huge",600,"tn-ttt---ttttttottotxtxttt",4.574,2.875,null,"timeout","skipped","timeout",null,null,null,"memout","timeout","skipped","skipped","skipped","underflow",2.276,6.148,"timeout","skipped","skipped","skipped",195.404,"memout",4.075,13.077,30.381],
@@ -27864,25 +27864,25 @@
     ["roulette","rl_network_100000",600,"t-nttt-tttttttttotttxtxttt",129.072,null,"timeout","skipped","skipped","skipped",null,"unsupported","unsupported","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped",326.014,"skipped"],
     ["roulette","rl_network_300000",600,"t-nttt-tttttttttotttxtxttt","memout",null,"skipped","skipped","skipped","skipped",null,"unsupported","unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","timeout","skipped"],
     ["roulette","rl_network_1000000",600,"t-nttt-tttttttttotttxtxttt","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped"],
-    ["geni","geni_link_4",600,"t-tttt-tttttttttttttxotttt",0.008,null,0.012,0.273,0.567,2.923,null,"memout",1.609,0.089,0.245,2.354,0.091,0.091,0.069,0.005,0.003,0.081,"timeout",0.025,22.995,0.021,5.412,1.039,0.321,1.644],
-    ["geni","geni_link_6",600,"t-tttt-tttttttttttttxotttt",0.012,null,0.019,12.15,0.751,2.961,null,"skipped",2.025,0.096,0.267,2.253,0.096,0.137,0.036,0.042,0.026,"timeout","skipped",0.274,"timeout",0.06,6.027,"timeout",0.391,1.729],
-    ["geni","geni_link_8",600,"t-tttt-tttttttttttttxotttt",0.025,null,0.035,"timeout",7.751,3.228,null,"skipped",2.529,0.119,0.328,2.287,0.139,0.278,0.103,0.176,0.409,"skipped","skipped",8.969,"skipped",0.359,8.059,"skipped",0.516,2.04],
-    ["geni","geni_link_10",600,"t-tttt-tttttttttttttxotttt",0.183,null,0.253,"skipped","timeout",7.303,null,"skipped",3.765,0.186,0.449,2.406,0.235,1.353,0.917,1.994,4.835,"skipped","skipped",327.332,"skipped",2.646,27.249,"skipped",2.561,4.977],
-    ["geni","geni_link_12",600,"t-tttt-tttttttttttttxotttt",1.467,null,1.758,"skipped","skipped",60.616,null,"skipped",7.335,2.173,1.901,2.696,0.662,1.301,8.609,18.857,41.926,"skipped","skipped","timeout","skipped",17.715,204.093,"skipped",21.118,27.765],
-    ["geni","geni_link_14",600,"t-tttt-tttttttttttttxotttt",3.265,null,6.765,"skipped","skipped",576.581,null,"skipped",35.576,5.113,1.998,16.875,2.881,4.539,62.688,"timeout","memout","skipped","skipped","skipped","skipped",120.405,"memout","skipped",122.048,176.022],
+    ["geni","geni_link_4",600,"t-tttt-tttttttttttttxotttt",0.008,null,0.012,0.273,0.567,2.923,null,"memout",1.609,0.089,0.245,2.354,0.091,0.091,0.069,0.005,0.003,0.081,"timeout",0.025,22.995,0.021,5.412,1.039,0.201,1.644],
+    ["geni","geni_link_6",600,"t-tttt-tttttttttttttxotttt",0.012,null,0.019,12.15,0.751,2.961,null,"skipped",2.025,0.096,0.267,2.253,0.096,0.137,0.036,0.042,0.026,"timeout","skipped",0.274,"timeout",0.06,6.027,"timeout",0.251,1.729],
+    ["geni","geni_link_8",600,"t-tttt-tttttttttttttxotttt",0.025,null,0.035,"timeout",7.751,3.228,null,"skipped",2.529,0.119,0.328,2.287,0.139,0.278,0.103,0.176,0.409,"skipped","skipped",8.969,"skipped",0.359,8.059,"skipped",0.504,2.04],
+    ["geni","geni_link_10",600,"t-tttt-tttttttttttttxotttt",0.183,null,0.253,"skipped","timeout",7.303,null,"skipped",3.765,0.186,0.449,2.406,0.235,1.353,0.917,1.994,4.835,"skipped","skipped",327.332,"skipped",2.646,27.249,"skipped",2.516,4.977],
+    ["geni","geni_link_12",600,"t-tttt-tttttttttttttxotttt",1.467,null,1.758,"skipped","skipped",60.616,null,"skipped",7.335,2.173,1.901,2.696,0.662,1.301,8.609,18.857,41.926,"skipped","skipped","timeout","skipped",17.715,204.093,"skipped",16.528,27.765],
+    ["geni","geni_link_14",600,"t-tttt-tttttttttttttxotttt",3.265,null,6.765,"skipped","skipped",576.581,null,"skipped",35.576,5.113,1.998,16.875,2.881,4.539,62.688,"timeout","memout","skipped","skipped","skipped","skipped",120.405,"memout","skipped",106.981,176.022],
     ["geni","geni_link_16",600,"t-tttt-tttttttttttttxotttt",53.009,null,84.31,"skipped","skipped","timeout",null,"skipped","memout",76.561,"memout",24.59,28.982,45.184,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","timeout","timeout"],
     ["geni","geni_link_18",600,"t-tttt-tttttttttttttxotttt",147.748,null,80.755,"skipped","skipped","skipped",null,"skipped","timeout","memout","skipped","timeout","memout",372.581,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["geni","geni_link_20",600,"t-tttt-tttttttttttttxotttt","memout",null,"memout","skipped","skipped","skipped",null,"skipped","skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["geni","geni_link_24",600,"t-tttt-tttttttttttttxotttt","memout",null,"skipped","skipped","skipped","skipped",null,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["geni","geni_link_28",600,"t-tttt-tttttttttttttxotttt","skipped",null,"skipped","skipped","skipped","skipped",null,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","timeout","timeout","skipped","skipped","skipped","skipped"],
-    ["geni","geni_router_4",600,"t-tttt-tttttttttttttxotttt",0.007,null,0.014,0.418,0.595,2.974,null,"unsupported",1.527,0.08,0.257,2.142,0.083,0.153,0.069,0.005,0.005,0.074,"timeout",0.032,3.027,0.015,5.023,0.318,0.215,1.851],
-    ["geni","geni_router_6",600,"t-tttt-tttttttttttttxotttt",0.012,null,0.023,32.878,"timeout",3.022,null,"unsupported",1.901,0.091,0.279,2.175,0.094,0.134,0.038,0.015,0.018,"timeout","skipped",0.291,65.772,0.031,5.464,"timeout",0.231,1.936],
-    ["geni","geni_router_8",600,"t-tttt-tttttttttttttxotttt",0.027,null,0.051,"timeout","skipped",3.411,null,"unsupported",2.282,0.111,0.339,2.139,0.127,0.241,0.067,0.211,0.162,"skipped","skipped",7.93,"timeout",0.102,6.935,"skipped",0.289,2.17],
-    ["geni","geni_router_10",600,"t-tttt-tttttttttttttxotttt",0.064,null,0.087,"skipped","skipped",9.771,null,"unsupported",3.129,0.151,0.422,2.198,0.18,0.581,0.399,2.071,1.679,"skipped","skipped",212.257,"skipped",0.601,18.869,"skipped",0.7,3.085],
-    ["geni","geni_router_12",600,"t-tttt-tttttttttttttxotttt",0.101,null,0.125,"skipped","skipped",69.666,null,"unsupported",4.901,0.299,0.735,2.428,0.337,0.551,3.022,18.567,13.668,"skipped","skipped","timeout","skipped",4.015,114.533,"skipped",3.335,10.641],
-    ["geni","geni_router_14",600,"t-tttt-tttttttttttttxotttt",0.383,null,0.42,"skipped","skipped","timeout",null,"unsupported",15.501,1.332,10.848,2.609,1.846,0.756,22.833,147.318,108.063,"skipped","skipped","skipped","skipped",25.347,"memout","skipped",7.802,52.367],
-    ["geni","geni_router_16",600,"t-tttt-tttttttttttttxotttt",1.143,null,2.917,"skipped","skipped","skipped",null,"unsupported",123.068,15.721,"memout",2.956,5.847,1.948,183.568,"timeout","memout","skipped","skipped","skipped","skipped",154.095,"skipped","skipped",23.758,278.906],
-    ["geni","geni_router_18",600,"t-tttt-tttttttttttttxotttt",4.256,null,7.192,"skipped","skipped","skipped",null,"unsupported","timeout",405.402,"skipped",3.706,111.516,2.858,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped",138.437,"timeout"],
+    ["geni","geni_router_4",600,"t-tttt-tttttttttttttxotttt",0.007,null,0.014,0.418,0.595,2.974,null,"unsupported",1.527,0.08,0.257,2.142,0.083,0.153,0.069,0.005,0.005,0.074,"timeout",0.032,3.027,0.015,5.023,0.318,0.193,1.851],
+    ["geni","geni_router_6",600,"t-tttt-tttttttttttttxotttt",0.012,null,0.023,32.878,"timeout",3.022,null,"unsupported",1.901,0.091,0.279,2.175,0.094,0.134,0.038,0.015,0.018,"timeout","skipped",0.291,65.772,0.031,5.464,"timeout",0.21,1.936],
+    ["geni","geni_router_8",600,"t-tttt-tttttttttttttxotttt",0.027,null,0.051,"timeout","skipped",3.411,null,"unsupported",2.282,0.111,0.339,2.139,0.127,0.241,0.067,0.211,0.162,"skipped","skipped",7.93,"timeout",0.102,6.935,"skipped",0.27,2.17],
+    ["geni","geni_router_10",600,"t-tttt-tttttttttttttxotttt",0.064,null,0.087,"skipped","skipped",9.771,null,"unsupported",3.129,0.151,0.422,2.198,0.18,0.581,0.399,2.071,1.679,"skipped","skipped",212.257,"skipped",0.601,18.869,"skipped",0.658,3.085],
+    ["geni","geni_router_12",600,"t-tttt-tttttttttttttxotttt",0.101,null,0.125,"skipped","skipped",69.666,null,"unsupported",4.901,0.299,0.735,2.428,0.337,0.551,3.022,18.567,13.668,"skipped","skipped","timeout","skipped",4.015,114.533,"skipped",3.942,10.641],
+    ["geni","geni_router_14",600,"t-tttt-tttttttttttttxotttt",0.383,null,0.42,"skipped","skipped","timeout",null,"unsupported",15.501,1.332,10.848,2.609,1.846,0.756,22.833,147.318,108.063,"skipped","skipped","skipped","skipped",25.347,"memout","skipped",13.034,52.367],
+    ["geni","geni_router_16",600,"t-tttt-tttttttttttttxotttt",1.143,null,2.917,"skipped","skipped","skipped",null,"unsupported",123.068,15.721,"memout",2.956,5.847,1.948,183.568,"timeout","memout","skipped","skipped","skipped","skipped",154.095,"skipped","skipped",27.325,278.906],
+    ["geni","geni_router_18",600,"t-tttt-tttttttttttttxotttt",4.256,null,7.192,"skipped","skipped","skipped",null,"unsupported","timeout",405.402,"skipped",3.706,111.516,2.858,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped",93.253,"timeout"],
     ["geni","geni_router_20",600,"t-tttt-tttttttttttttxotttt",5.658,null,"memout","skipped","skipped","skipped",null,"unsupported","skipped","memout","skipped",7.202,"memout",12.708,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped"],
     ["geni","geni_router_24",600,"t-tttt-tttttttttttttxotttt",89.686,null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped",122.923,"skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["geni","geni_router_28",600,"t-tttt-tttttttttttttxotttt","memout",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
@@ -27892,41 +27892,41 @@
     ["geni","geni_router_56",600,"t-tttt-tttttttttttttxotttt","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["geni","geni_router_64",600,"t-tttt-tttttttttttttxotttt","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["geni","geni_router_72",600,"t-tttt-tttttttttttttxotttt","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
-    ["geni","geni_weather_h1",600,"t-tttt-tttttttttttttxottnn",0.004,null,0.01,0.364,1.254,6.258,null,"unsupported",1.256,"zero",0.382,48.265,0.078,0.08,0.071,0.037,0.003,"zero","timeout",43.726,1.459,0.054,7.243,1.082,2.861,14.221],
-    ["geni","geni_weather_h2",600,"t-tttt-tttttttttttttxottnn",0.016,null,0.028,0.63,0.608,3.052,null,"unsupported",1.811,"zero",0.263,3.963,0.101,0.137,0.036,0.022,0.035,"zero","skipped","memout",209.932,0.223,7.516,35.275,2.842,14.685],
-    ["geni","geni_weather_h3",600,"t-tttt-tttttttttttttxottnn",0.036,null,0.061,4.876,0.666,3.177,null,"unsupported",2.1,"zero",0.288,3.934,0.152,0.259,0.266,0.152,0.454,"zero","skipped","skipped","timeout",0.49,8.939,"timeout",3.111,14.392],
-    ["geni","geni_weather_h4",600,"t-tttt-tttttttttttttxottnn",0.049,null,0.091,45.17,1.07,3.676,null,"unsupported",2.455,"zero",0.327,4.434,0.23,0.63,0.824,1.755,3.413,"timeout","skipped","skipped","skipped",0.735,26.471,"skipped",2.891,14.222],
-    ["geni","geni_weather_h5",600,"t-tttt-tttttttttttttxottnn",0.118,null,0.244,336.44,22.698,5.025,null,"unsupported",3.265,"zero",0.433,2.914,0.37,0.572,1.424,7.625,13.234,"skipped","skipped","skipped","skipped",1.001,85.729,"skipped",2.963,14.305],
-    ["geni","geni_weather_h6",600,"t-tttt-tttttttttttttxottnn",0.144,null,0.278,"timeout","timeout",8.651,null,"unsupported",4.367,"zero",0.552,3.053,0.54,0.97,1.956,18.524,30.651,"skipped","skipped","skipped","skipped",1.256,209.818,"skipped",2.882,12.991],
-    ["geni","geni_weather_h7",600,"t-tttt-tttttttttttttxottnn",0.161,null,0.308,"skipped","skipped",35.79,null,"unsupported",4.636,"zero",0.767,3.393,0.739,1.034,2.46,34.273,48.917,"skipped","skipped","skipped","skipped",1.532,"memout","skipped",2.996,12.872],
-    ["geni","geni_weather_h8",600,"t-tttt-tttttttttttttxottnn",0.196,null,0.323,"skipped","skipped",34.735,null,"unsupported",6.382,"zero",1.546,6.72,0.959,1.173,3.386,53.49,82.824,"skipped","skipped","skipped","skipped",1.784,"skipped","skipped",2.919,13.629],
-    ["geni","geni_weather_h9",600,"t-tttt-tttttttttttttxottnn",0.183,null,0.39,"skipped","skipped",160.499,null,"unsupported",6.506,"zero",1.726,37.092,1.305,1.405,3.838,78.672,134.633,"skipped","skipped","skipped","skipped",2.021,"skipped","skipped",3.319,13.702],
-    ["geni","geni_weather_h100",600,"t-tttt-tttttttttttttxottnn",2.765,null,8.74,"skipped","skipped","timeout",null,"unsupported",210.154,23.769,526.297,179.597,171.559,"timeout",61.759,"timeout","memout","skipped","skipped","skipped","skipped",25.971,"skipped","skipped",4.11,14.26],
-    ["geni","geni_weather_h200",600,"t-tttt-tttttttttttttxottnn",7.048,null,26.684,"skipped","skipped","skipped",null,"unsupported","timeout","memout","timeout",512.104,"timeout","skipped",135.878,"skipped","skipped","skipped","skipped","skipped","skipped",52.168,"skipped","skipped",4.792,14.959],
-    ["geni","geni_weather_h300",600,"t-tttt-tttttttttttttxottnn",11.032,null,22.063,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","timeout","skipped","skipped",209.941,"skipped","skipped","skipped","skipped","skipped","skipped",77.638,"skipped","skipped",5.164,15.27],
-    ["geni","geni_weather_h400",600,"t-tttt-tttttttttttttxottnn",14.308,null,44.814,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",335.229,"skipped","skipped","skipped","skipped","skipped","skipped",104.65,"skipped","skipped",5.814,15.752],
-    ["geni","geni_weather_h500",600,"t-tttt-tttttttttttttxottnn",18.201,null,42.053,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",439.745,"skipped","skipped","skipped","skipped","skipped","skipped",129.478,"skipped","skipped",6.442,16.357],
-    ["geni","geni_weather_h600",600,"t-tttt-tttttttttttttxottnn",22.858,null,80.357,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",519.799,"skipped","skipped","skipped","skipped","skipped","skipped",157.559,"skipped","skipped",7.145,16.981],
-    ["geni","geni_weather_h700",600,"t-tttt-tttttttttttttxottnn",26.615,null,84.029,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped",180.691,"skipped","skipped",7.668,17.242],
-    ["geni","geni_weather_h800",600,"t-tttt-tttttttttttttxottnn",30.587,null,66.18,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",210.208,"skipped","skipped",8.304,17.876],
-    ["geni","geni_weather_h900",600,"t-tttt-tttttttttttttxottnn",34.686,null,73.055,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",237.56,"skipped","skipped",8.935,18.548],
-    ["geni","geni_weather_h1000",600,"t-tttt-tttttttttttttxottnn",39.83,null,78.362,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",261.724,"skipped","skipped",9.673,19.057],
-    ["geni","geni_weather_h3000",600,"t-tttt-tttttttttttttxottnn",116.482,null,306.68,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped",22.456,30.025],
-    ["geni","geni_weather_h10000",600,"t-tttt-tttttttttttttxottnn","memout",null,"timeout","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",67.238,73.622],
-    ["geni","geni_weather_h30000",600,"t-tttt-tttttttttttttxottnn","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",190.401,195.127],
-    ["geni","geni_weather_n2",600,"t-tttt-tttttttttttttxottnn",0.026,null,0.053,26.628,0.731,9.762,null,"unsupported",2.053,0.16,1.661,2.307,0.127,0.21,0.072,0.023,0.045,1.757,"timeout",0.296,"timeout",0.018,6.682,"timeout",0.206,1.538],
-    ["geni","geni_weather_n7",600,"t-tttt-tttttttttttttxottnn",0.064,null,0.136,"timeout",77.426,6.782,null,"unsupported",3.702,0.254,0.599,2.964,0.651,0.714,0.239,5.465,7.755,"timeout","skipped","timeout","skipped",0.193,58.607,"skipped",0.25,2.43],
-    ["geni","geni_weather_n8",600,"t-tttt-tttttttttttttxottnn",0.147,null,0.177,"skipped",60.706,15.516,null,"unsupported",4.204,0.427,0.757,3.296,0.866,0.73,0.65,15.859,20.912,"skipped","skipped","skipped","skipped",0.418,145.941,"skipped",0.367,13.833],
-    ["geni","geni_weather_n9",600,"t-tttt-tttttttttttttxottnn",0.186,null,0.289,"skipped",240.003,25.932,null,"unsupported",5.299,0.856,0.847,4.665,1.271,0.996,1.645,43.233,61.593,"skipped","skipped","skipped","skipped",0.947,"memout","skipped",0.858,199.164],
-    ["geni","geni_weather_n10",600,"t-tttt-tttttttttttttxottnn",0.203,null,0.385,"skipped","timeout",81.112,null,"unsupported",8.368,"zero",1.463,19.692,2.091,1.704,4.861,116.323,161.357,"skipped","skipped","skipped","skipped",2.223,"skipped","skipped",2.976,12.734],
-    ["geni","geni_weather_n11",600,"t-tttt-tttttttttttttxottnn",0.307,null,0.735,"skipped","skipped",243.763,null,"unsupported",12.143,"zero",3.898,38.248,2.772,1.515,12.504,287.714,"memout","skipped","skipped","skipped","skipped",5.228,"skipped","skipped",11.719,"error"],
-    ["geni","geni_weather_n12",600,"t-tttt-tttttttttttttxottnn",0.802,null,1.471,"skipped","skipped","timeout",null,"unsupported",22.822,39.357,9.602,7.204,3.664,2.834,33.621,"timeout","skipped","skipped","skipped","skipped","skipped",11.943,"skipped","skipped",54.962,"memout"],
-    ["geni","geni_weather_n13",600,"t-tttt-tttttttttttttxottnn",3.401,null,2.656,"skipped","skipped","skipped",null,"unsupported",74.578,197.501,3.562,"timeout",146.658,10.35,"timeout","skipped","skipped","skipped","skipped","skipped","skipped",27.629,"skipped","skipped",230.338,"skipped"],
+    ["geni","geni_weather_h1",600,"t-tttt-tttttttttttttxottnn",0.004,null,0.01,0.364,1.254,6.258,null,"unsupported",1.256,"zero",0.382,48.265,0.078,0.08,0.071,0.037,0.003,"zero","timeout",43.726,1.459,0.054,7.243,1.082,3.106,11.925],
+    ["geni","geni_weather_h2",600,"t-tttt-tttttttttttttxottnn",0.016,null,0.028,0.63,0.608,3.052,null,"unsupported",1.811,"zero",0.263,3.963,0.101,0.137,0.036,0.022,0.035,"zero","skipped","memout",209.932,0.223,7.516,35.275,2.702,11.613],
+    ["geni","geni_weather_h3",600,"t-tttt-tttttttttttttxottnn",0.036,null,0.061,4.876,0.666,3.177,null,"unsupported",2.1,"zero",0.288,3.934,0.152,0.259,0.266,0.152,0.454,"zero","skipped","skipped","timeout",0.49,8.939,"timeout",2.712,11.638],
+    ["geni","geni_weather_h4",600,"t-tttt-tttttttttttttxottnn",0.049,null,0.091,45.17,1.07,3.676,null,"unsupported",2.455,"zero",0.327,4.434,0.23,0.63,0.824,1.755,3.413,"timeout","skipped","skipped","skipped",0.735,26.471,"skipped",2.73,11.706],
+    ["geni","geni_weather_h5",600,"t-tttt-tttttttttttttxottnn",0.118,null,0.244,336.44,22.698,5.025,null,"unsupported",3.265,"zero",0.433,2.914,0.37,0.572,1.424,7.625,13.234,"skipped","skipped","skipped","skipped",1.001,85.729,"skipped",2.736,11.802],
+    ["geni","geni_weather_h6",600,"t-tttt-tttttttttttttxottnn",0.144,null,0.278,"timeout","timeout",8.651,null,"unsupported",4.367,"zero",0.552,3.053,0.54,0.97,1.956,18.524,30.651,"skipped","skipped","skipped","skipped",1.256,209.818,"skipped",2.784,12.048],
+    ["geni","geni_weather_h7",600,"t-tttt-tttttttttttttxottnn",0.161,null,0.308,"skipped","skipped",35.79,null,"unsupported",4.636,"zero",0.767,3.393,0.739,1.034,2.46,34.273,48.917,"skipped","skipped","skipped","skipped",1.532,"memout","skipped",2.794,12.024],
+    ["geni","geni_weather_h8",600,"t-tttt-tttttttttttttxottnn",0.196,null,0.323,"skipped","skipped",34.735,null,"unsupported",6.382,"zero",1.546,6.72,0.959,1.173,3.386,53.49,82.824,"skipped","skipped","skipped","skipped",1.784,"skipped","skipped",2.821,11.944],
+    ["geni","geni_weather_h9",600,"t-tttt-tttttttttttttxottnn",0.183,null,0.39,"skipped","skipped",160.499,null,"unsupported",6.506,"zero",1.726,37.092,1.305,1.405,3.838,78.672,134.633,"skipped","skipped","skipped","skipped",2.021,"skipped","skipped",2.835,11.879],
+    ["geni","geni_weather_h100",600,"t-tttt-tttttttttttttxottnn",2.765,null,8.74,"skipped","skipped","timeout",null,"unsupported",210.154,23.769,526.297,179.597,171.559,"timeout",61.759,"timeout","memout","skipped","skipped","skipped","skipped",25.971,"skipped","skipped",3.4,12.378],
+    ["geni","geni_weather_h200",600,"t-tttt-tttttttttttttxottnn",7.048,null,26.684,"skipped","skipped","skipped",null,"unsupported","timeout","memout","timeout",512.104,"timeout","skipped",135.878,"skipped","skipped","skipped","skipped","skipped","skipped",52.168,"skipped","skipped",4.064,13.466],
+    ["geni","geni_weather_h300",600,"t-tttt-tttttttttttttxottnn",11.032,null,22.063,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","timeout","skipped","skipped",209.941,"skipped","skipped","skipped","skipped","skipped","skipped",77.638,"skipped","skipped",4.492,13.605],
+    ["geni","geni_weather_h400",600,"t-tttt-tttttttttttttxottnn",14.308,null,44.814,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",335.229,"skipped","skipped","skipped","skipped","skipped","skipped",104.65,"skipped","skipped",5.06,14.22],
+    ["geni","geni_weather_h500",600,"t-tttt-tttttttttttttxottnn",18.201,null,42.053,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",439.745,"skipped","skipped","skipped","skipped","skipped","skipped",129.478,"skipped","skipped",5.589,14.842],
+    ["geni","geni_weather_h600",600,"t-tttt-tttttttttttttxottnn",22.858,null,80.357,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",519.799,"skipped","skipped","skipped","skipped","skipped","skipped",157.559,"skipped","skipped",6.232,15.309],
+    ["geni","geni_weather_h700",600,"t-tttt-tttttttttttttxottnn",26.615,null,84.029,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped",180.691,"skipped","skipped",6.858,15.683],
+    ["geni","geni_weather_h800",600,"t-tttt-tttttttttttttxottnn",30.587,null,66.18,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",210.208,"skipped","skipped",7.442,15.612],
+    ["geni","geni_weather_h900",600,"t-tttt-tttttttttttttxottnn",34.686,null,73.055,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",237.56,"skipped","skipped",7.673,16.038],
+    ["geni","geni_weather_h1000",600,"t-tttt-tttttttttttttxottnn",39.83,null,78.362,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",261.724,"skipped","skipped",8.173,16.782],
+    ["geni","geni_weather_h3000",600,"t-tttt-tttttttttttttxottnn",116.482,null,306.68,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped",20.191,27.408],
+    ["geni","geni_weather_h10000",600,"t-tttt-tttttttttttttxottnn","memout",null,"timeout","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",60.617,65.651],
+    ["geni","geni_weather_h30000",600,"t-tttt-tttttttttttttxottnn","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",176.835,172.084],
+    ["geni","geni_weather_n2",600,"t-tttt-tttttttttttttxottnn",0.026,null,0.053,26.628,0.731,9.762,null,"unsupported",2.053,0.16,1.661,2.307,0.127,0.21,0.072,0.023,0.045,1.757,"timeout",0.296,"timeout",0.018,6.682,"timeout",0.198,1.679],
+    ["geni","geni_weather_n7",600,"t-tttt-tttttttttttttxottnn",0.064,null,0.136,"timeout",77.426,6.782,null,"unsupported",3.702,0.254,0.599,2.964,0.651,0.714,0.239,5.465,7.755,"timeout","skipped","timeout","skipped",0.193,58.607,"skipped",0.234,2.617],
+    ["geni","geni_weather_n8",600,"t-tttt-tttttttttttttxottnn",0.147,null,0.177,"skipped",60.706,15.516,null,"unsupported",4.204,0.427,0.757,3.296,0.866,0.73,0.65,15.859,20.912,"skipped","skipped","skipped","skipped",0.418,145.941,"skipped",0.358,14.202],
+    ["geni","geni_weather_n9",600,"t-tttt-tttttttttttttxottnn",0.186,null,0.289,"skipped",240.003,25.932,null,"unsupported",5.299,0.856,0.847,4.665,1.271,0.996,1.645,43.233,61.593,"skipped","skipped","skipped","skipped",0.947,"memout","skipped",0.851,196.627],
+    ["geni","geni_weather_n10",600,"t-tttt-tttttttttttttxottnn",0.203,null,0.385,"skipped","timeout",81.112,null,"unsupported",8.368,"zero",1.463,19.692,2.091,1.704,4.861,116.323,161.357,"skipped","skipped","skipped","skipped",2.223,"skipped","skipped",2.825,12.326],
+    ["geni","geni_weather_n11",600,"t-tttt-tttttttttttttxottnn",0.307,null,0.735,"skipped","skipped",243.763,null,"unsupported",12.143,"zero",3.898,38.248,2.772,1.515,12.504,287.714,"memout","skipped","skipped","skipped","skipped",5.228,"skipped","skipped",11.317,257.413],
+    ["geni","geni_weather_n12",600,"t-tttt-tttttttttttttxottnn",0.802,null,1.471,"skipped","skipped","timeout",null,"unsupported",22.822,39.357,9.602,7.204,3.664,2.834,33.621,"timeout","skipped","skipped","skipped","skipped","skipped",11.943,"skipped","skipped",46.493,"timeout"],
+    ["geni","geni_weather_n13",600,"t-tttt-tttttttttttttxottnn",3.401,null,2.656,"skipped","skipped","skipped",null,"unsupported",74.578,197.501,3.562,"timeout",146.658,10.35,"timeout","skipped","skipped","skipped","skipped","skipped","skipped",27.629,"skipped","skipped",197.428,"skipped"],
     ["geni","geni_weather_n15",600,"t-tttt-tttttttttttttxottnn",16.899,null,15.366,"skipped","skipped","skipped",null,"unsupported","timeout",306.505,"memout","skipped","memout",55.974,"skipped","skipped","skipped","skipped","skipped","skipped","skipped",142.546,"skipped","skipped","timeout","skipped"],
-    ["geni","geni_weather_n16",600,"t-tttt-tttttttttttttxottnn",21.779,null,22.257,"skipped","skipped","skipped",null,"unsupported","skipped","memout","skipped","skipped","skipped",45.804,"skipped","skipped","skipped","skipped","skipped","skipped","skipped",329.157,"skipped","skipped","error","skipped"],
-    ["geni","geni_weather_n17",600,"t-tttt-tttttttttttttxottnn",83.895,null,66.432,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","error","skipped"],
-    ["geni","geni_weather_n18",600,"t-tttt-tttttttttttttxottnn",84.1,null,106.296,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped"],
-    ["geni","geni_weather_n19",600,"t-tttt-tttttttttttttxottnn","memout",null,"memout","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped"],
+    ["geni","geni_weather_n16",600,"t-tttt-tttttttttttttxottnn",21.779,null,22.257,"skipped","skipped","skipped",null,"unsupported","skipped","memout","skipped","skipped","skipped",45.804,"skipped","skipped","skipped","skipped","skipped","skipped","skipped",329.157,"skipped","skipped","skipped","skipped"],
+    ["geni","geni_weather_n17",600,"t-tttt-tttttttttttttxottnn",83.895,null,66.432,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped"],
+    ["geni","geni_weather_n18",600,"t-tttt-tttttttttttttxottnn",84.1,null,106.296,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
+    ["geni","geni_weather_n19",600,"t-tttt-tttttttttttttxottnn","memout",null,"memout","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
     ["circulette","ct_1-bit-mux",600,"n-nttttxtttttt--o---------",0.033,null,0.022,0.203,0.606,2.834,"unsupported","unsupported",1.007,0.106,0.39,2.57,0.073,0.048,null,null,0.01,null,null,null,null,null,null,null,null,null],
     ["circulette","ct_2bit-adder",600,"n-nttttxtttttt--o---------",0.057,null,0.434,"timeout",11.936,"timeout","unsupported","unsupported","error","timeout",117.331,"timeout","timeout","memout",null,null,0.726,null,null,null,null,null,null,null,null,null],
     ["circulette","ct_4-bit-comparator",600,"n-nttttxtttttt--o---------",0.008,null,0.049,28.224,0.67,4.365,"unsupported","unsupported",2.717,0.169,0.537,52.556,0.59,0.442,null,null,0.045,null,null,null,null,null,null,null,null,null],
@@ -28190,7 +28190,7 @@
     }
    ],
    "given":{"tddlog":336,"alea-tddlog":53,"roulette-tddlog":303,"problog":336,"pita":335,"aspmc":336,"psouffle":50,"scallop":228,"ace":335,"merlin":336,"agrum":336,"pgmpy":336,"libdai":336,"tensorinference":336,"dice":294,"alea":294,"roulette":336,"nodice":294,"psi":294,"genfer":294,"sppl":294,"geni":294,"pluck":294,"webppl":294,"storm":294,"prism":294},
-   "answers":{"tddlog":297,"alea-tddlog":47,"roulette-tddlog":237,"problog":111,"pita":139,"aspmc":115,"psouffle":8,"scallop":7,"ace":183,"merlin":131,"agrum":157,"pgmpy":153,"libdai":162,"tensorinference":154,"dice":138,"alea":190,"roulette":198,"nodice":64,"psi":66,"genfer":81,"sppl":57,"geni":133,"pluck":129,"webppl":75,"storm":224,"prism":157},
+   "answers":{"tddlog":297,"alea-tddlog":47,"roulette-tddlog":237,"problog":111,"pita":139,"aspmc":115,"psouffle":8,"scallop":7,"ace":183,"merlin":131,"agrum":157,"pgmpy":153,"libdai":162,"tensorinference":154,"dice":138,"alea":190,"roulette":198,"nodice":64,"psi":66,"genfer":81,"sppl":57,"geni":133,"pluck":129,"webppl":75,"storm":224,"prism":158},
    "classes":{
     "tddlog":{"own":0,"native":116,"translated":220,"unread":0,"not idiomatic":0},
     "alea-tddlog":{"own":0,"native":39,"translated":14,"unread":0,"not idiomatic":0},
@@ -28530,7 +28530,7 @@
      "both":55,
      "failures":1,
      "timeouts":183,
-     "counted":136,
+     "counted":137,
      "ratio":1.007,
      "speedup":53.33,
      "me":["tddlog"]
@@ -28540,29 +28540,29 @@
      "answers":224,
      "tddlog_answers":258,
      "either":266,
-     "total":56146.78,
+     "total":56015.881,
      "tddlog_total":13750.145,
-     "both":199,
+     "both":197,
      "failures":8,
      "timeouts":42,
-     "counted":41,
-     "ratio":1.821,
-     "speedup":3.542,
+     "counted":49,
+     "ratio":1.778,
+     "speedup":3.527,
      "me":["tddlog"]
     },
     "prism":{
      "given":294,
-     "answers":157,
+     "answers":158,
      "tddlog_answers":258,
      "either":260,
-     "total":129653.855,
+     "total":128638.582,
      "tddlog_total":6550.145,
-     "both":155,
+     "both":156,
      "failures":2,
-     "timeouts":103,
-     "counted":75,
-     "ratio":10.07,
-     "speedup":23.75,
+     "timeouts":102,
+     "counted":76,
+     "ratio":10.44,
+     "speedup":23.55,
      "me":["tddlog"]
     }
    },
@@ -31130,7 +31130,7 @@
       "answers":6,
       "tddlog_answers":8,
       "either":8,
-      "total":2546.955,
+      "total":2526.981,
       "tddlog_total":206.289,
       "both":6,
       "failures":0,
@@ -31462,9 +31462,9 @@
       "answers":8,
       "tddlog_answers":10,
       "either":10,
-      "total":2574.767,
+      "total":2538.892,
       "tddlog_total":102.126,
-      "both":8,
+      "both":7,
       "failures":0,
       "timeouts":2,
       "counted":null,
@@ -31794,29 +31794,29 @@
       "answers":30,
       "tddlog_answers":32,
       "either":34,
-      "total":5476.602,
+      "total":5401.552,
       "tddlog_total":2938.398,
-      "both":28,
+      "both":27,
       "failures":2,
       "timeouts":4,
-      "counted":4,
-      "ratio":1.263,
-      "speedup":1.77,
+      "counted":6,
+      "ratio":1.098,
+      "speedup":1.727,
       "me":["tddlog"]
      },
      "prism":{
       "given":35,
-      "answers":27,
+      "answers":28,
       "tddlog_answers":32,
       "either":34,
-      "total":9219.794,
+      "total":8204.521,
       "tddlog_total":2938.398,
-      "both":25,
+      "both":26,
       "failures":2,
-      "timeouts":7,
-      "counted":7,
-      "ratio":1.684,
-      "speedup":2.888,
+      "timeouts":6,
+      "counted":8,
+      "ratio":2.341,
+      "speedup":2.649,
       "me":["tddlog"]
      }
     },
@@ -36571,7 +36571,7 @@
       "both":21,
       "failures":1,
       "timeouts":25,
-      "counted":19,
+      "counted":20,
       "ratio":0.7641,
       "speedup":11.28,
       "me":["tddlog"]
@@ -36586,7 +36586,7 @@
       "both":44,
       "failures":2,
       "timeouts":2,
-      "counted":2,
+      "counted":4,
       "ratio":0.3239,
       "speedup":0.6824,
       "me":["tddlog"]
@@ -37250,7 +37250,7 @@
       "both":80,
       "failures":5,
       "timeouts":26,
-      "counted":26,
+      "counted":31,
       "ratio":1.918,
       "speedup":4.029,
       "me":["tddlog"]
@@ -37582,7 +37582,7 @@
       "both":28,
       "failures":1,
       "timeouts":2,
-      "counted":2,
+      "counted":3,
       "ratio":0.9346,
       "speedup":1.202,
       "me":["tddlog"]
@@ -38573,29 +38573,29 @@
       "answers":44,
       "tddlog_answers":50,
       "either":52,
-      "total":10598.324,
+      "total":10467.425,
       "tddlog_total":3246.813,
-      "both":42,
+      "both":40,
       "failures":2,
       "timeouts":8,
-      "counted":8,
-      "ratio":2.153,
-      "speedup":2.833,
+      "counted":10,
+      "ratio":1.832,
+      "speedup":2.769,
       "me":["tddlog"]
      },
      "prism":{
       "given":63,
-      "answers":40,
+      "answers":41,
       "tddlog_answers":50,
       "either":52,
-      "total":15784.927,
+      "total":14769.654,
       "tddlog_total":3246.813,
-      "both":38,
+      "both":39,
       "failures":2,
-      "timeouts":12,
-      "counted":11,
-      "ratio":3.329,
-      "speedup":4.205,
+      "timeouts":11,
+      "counted":13,
+      "ratio":3.969,
+      "speedup":3.991,
       "me":["tddlog"]
      }
     },
@@ -38983,7 +38983,7 @@
     ["ace","ace_alarm",600,"n-nttt-tonnnnnttntttxtxttt-",0.052,null,0.3,"timeout","timeout",48.954,null,"timeout",1.108,0.006,0.115,1.395,0.005,0.005,0.709,0.168,0.387,505.659,"timeout",0.927,112.213,"wrong",7.712,"timeout",2.834,20.486,null],
     ["ace","ace_hailfinder",600,"n-nttt-tonnnnnttntttxtxttt-",0.052,null,0.852,"timeout","timeout",253.663,null,"timeout",1.184,0.01,0.124,1.433,0.007,0.007,68.523,18.181,13.867,286.204,"timeout","timeout",52.2,"timeout",36.645,"timeout",24.087,35.828,null],
     ["ace","ace_munin2",600,"n-nttt-tonnnnnttntttxtxttt-",0.174,null,"memout","timeout","timeout","timeout",null,"timeout",2.677,0.082,0.29,7.41,0.091,0.293,"timeout",311.868,"memout","memout","timeout","timeout","timeout","timeout","memout","timeout","timeout","timeout",null],
-    ["ace","ace_pathfinder",600,"n-nttt-tonnnnnttntttxtxttt-",0.254,null,"timeout","timeout","timeout","timeout",null,"timeout",1.66,0.062,0.231,1.815,0.058,0.062,129.269,7.461,27.313,409.042,"timeout","timeout","timeout","timeout",14.68,"timeout","timeout","memout",null],
+    ["ace","ace_pathfinder",600,"n-nttt-tonnnnnttntttxtxttt-",0.254,null,"timeout","timeout","timeout","timeout",null,"timeout",1.66,0.062,0.231,1.815,0.058,0.062,129.269,7.461,27.313,409.042,"timeout","timeout","timeout","timeout",14.68,"timeout","timeout","timeout",null],
     ["ace","ace_students_03_02",600,"n-nttt-tonnnnnttntttxtxttt-",0.039,null,0.248,8.383,0.753,5.564,null,"memout",1.496,0.044,0.167,1.549,0.057,0.151,"timeout",0.03,0.168,"timeout","timeout","timeout",5.858,"timeout",8.282,21.523,82.147,47.694,null],
     ["ace","ace_munin3",600,"n-nttt-tonnnnnttntttxtxttt-",0.384,null,"timeout","timeout","timeout","timeout",null,"timeout",6.311,0.198,0.375,"memout",0.379,94.292,"timeout","timeout","memout","timeout","timeout","timeout","timeout","timeout","memout","timeout","timeout","timeout",null],
     ["ace","ace_diabetes",600,"n-nttt-tonnnnnttntttxtxttt-",0.365,null,"timeout","memout","timeout","timeout",null,"timeout",3.553,0.174,0.236,1.516,0.163,0.887,"timeout","timeout","timeout","memout","timeout","timeout","timeout","timeout","memout","timeout","timeout","timeout",null],
@@ -38995,7 +38995,7 @@
     ["ace","ace_mastermind_04_08_03",600,"n-nttt-tonnnnnttntttxtxttt-",0.058,null,0.749,"timeout",48.004,"timeout",null,"memout",2.52,1.334,1.268,"timeout",2.306,211.292,"timeout",0.08,0.829,"timeout","timeout","timeout",116.191,"timeout",12.49,294.149,"timeout","timeout",null],
     ["ace","ace_fs_10",600,"n-nttt-tonnnnnttntttxtxttt-",0.104,null,19.111,"timeout","timeout","timeout",null,"timeout",4.116,"memout","memout","memout","memout","timeout","timeout",37.008,106.077,"timeout","timeout","error","timeout","timeout","memout","timeout","memout","memout",null],
     ["ace","ace_fs_13",600,"n-nttt-tonnnnnttntttxtxttt-",0.19,null,293.268,"timeout","error","timeout",null,"timeout",6.964,"memout","memout","memout","memout","timeout","timeout","timeout","memout","timeout","timeout","error","timeout","timeout","memout","timeout","memout","timeout",null],
-    ["ace","ace_mastermind_05_08_03",600,"n-nttt-tonnnnnttntttxtxttt-",0.062,null,0.886,"timeout","error","timeout",null,"memout",3.415,0.1,0.495,16.982,0.249,272.038,"timeout",0.129,0.828,"timeout","timeout","timeout",33.707,"timeout",12.66,"timeout","timeout","memout",null],
+    ["ace","ace_mastermind_05_08_03",600,"n-nttt-tonnnnnttntttxtxttt-",0.062,null,0.886,"timeout","error","timeout",null,"memout",3.415,0.1,0.495,16.982,0.249,272.038,"timeout",0.129,0.828,"timeout","timeout","timeout",33.707,"timeout",12.66,"timeout","timeout","timeout",null],
     ["ace","ace_fs_16",600,"n-nttt-tonnnnnttntttxtxttt-",0.358,null,"timeout","timeout","error","timeout",null,"timeout",11.166,"memout","memout","memout","memout","timeout","timeout","timeout","memout","timeout","memout","error","timeout","timeout","memout","timeout","error","error",null],
     ["ace","ace_fs_19",600,"n-nttt-tonnnnnttntttxtxttt-",0.584,null,"timeout","timeout","error","timeout",null,"memout",21.488,"memout","memout","memout","memout","timeout","timeout","timeout","memout","timeout","memout","error","timeout","timeout","memout","timeout","error","error",null],
     ["ace","ace_fs_22",600,"n-nttt-tonnnnnttntttxtxttt-",0.889,null,"timeout","timeout","memout","timeout",null,"memout",38.95,"memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","memout","error","timeout","timeout","memout","timeout","error","error",null],
@@ -39342,7 +39342,7 @@
     ["uaipr","uai_rus_20_40_7_1",300,"n--ttt-ttnnnnnttttttxtxt---",104.603,null,null,"error","timeout","timeout",null,"timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null,null],
     ["uaipr","uai_rus_20_40_9_3",300,"n--ttt-ttnnnnnttttttxtxt---",94.961,null,null,"error","timeout","timeout",null,"timeout","timeout","memout","memout","memout","memout","timeout","timeout","memout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null,null],
     ["uaipr","uai_rus_20_40_6_2",300,"n--ttt-ttnnnnnttttttxtxt---",105.459,null,null,"error","timeout","timeout",null,"timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null,null],
-    ["uaipr","uai_rus_20_40_6_3",300,"n--ttt-ttnnnnnttttttxtxt---",99.136,null,null,"error","timeout","timeout",null,"timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","error","memout","timeout","error","timeout","timeout","memout","timeout",null,null,null],
+    ["uaipr","uai_rus_20_40_6_3",300,"n--ttt-ttnnnnnttttttxtxt---",99.136,null,null,"error","timeout","timeout",null,"timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null,null],
     ["uaipr","uai_bwt3ac_wcsp",300,"n--ttt-ttnnnnnttttttxtxt---","memout",null,null,"timeout","timeout","timeout",null,"timeout","timeout",67.095,"memout","memout","memout",44.754,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null,null],
     ["uaipr","uai_rus_20_40_7_3",300,"n--ttt-ttnnnnnttttttxtxt---",101.642,null,null,"error","timeout","timeout",null,"timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null,null],
     ["uaipr","uai_rus_20_40_8_3",300,"n--ttt-ttnnnnnttttttxtxt---",97.506,null,null,"error","timeout","timeout",null,"timeout","timeout","memout","memout","memout","memout","timeout","timeout","timeout","memout","memout","timeout","error","timeout","timeout","memout","timeout",null,null,null],
@@ -39358,7 +39358,7 @@
     ["uaitpr","uai_csp_13",300,"n--ttt-ttnnnnnttttttxtxt---",2.14,null,null,"timeout","timeout","timeout",null,"memout",6.61,3.372,4.286,165.634,23.254,50.123,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null,null],
     ["uaitpr","uai_dbn_16",300,"n--ttt-ttnnnnnttttttxtxt---",5.146,null,null,"timeout","timeout","timeout",null,"memout","timeout",10.909,11.179,"memout",60.851,"memout","timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null,null],
     ["uaitpr","uai_grids_18",300,"n--ttt-ttnnnnnttttttxtxt---",6.017,null,null,"timeout","timeout","timeout",null,"timeout","timeout","error","error","error",118.428,4.624,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null,null],
-    ["uaitpr","uai_grids_11",300,"n--ttt-ttnnnnnttttttxtxt---",0.137,null,null,"timeout","timeout",238.45,null,"timeout",25.816,0.925,16.39,140.881,2.438,0.442,"timeout","memout","error","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null,null],
+    ["uaitpr","uai_grids_11",300,"n--ttt-ttnnnnnttttttxtxt---",0.137,null,null,"timeout","timeout",238.45,null,"timeout",25.816,0.925,16.39,140.881,2.438,0.442,"timeout","memout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null,null],
     ["uaitpr","uai_grids_14",300,"n--ttt-ttnnnnnttttttxtxt---",0.15,null,null,"timeout","timeout",220.493,null,"timeout",21.319,"error","error","timeout",1.669,0.433,"timeout","memout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null,null],
     ["uaitpr","uai_objectdetection_28",300,"n--ttt-ttnnnnnttttttxtxt---",2.772,null,null,"timeout","timeout","timeout",null,"timeout","timeout",11.161,25.293,6.516,35.678,10.817,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null,null],
     ["uaitpr","uai_grids_15",300,"n--ttt-ttnnnnnttttttxtxt---",6.006,null,null,"timeout","timeout","timeout",null,"timeout","timeout",72.495,274.752,14.659,140.556,4.85,"timeout","timeout","memout","memout","timeout","timeout","timeout","timeout","memout","timeout",null,null,null],
@@ -40543,8 +40543,8 @@
     ["dice","dice_caesar-iter_k100",600,"n-tttt--ttttttottnttxtxttt-",0.028,null,0.116,1.443,"wrong",3.95,null,null,3.139,0.833,0.869,5.751,3.308,65.304,"zero",0.017,0.078,0.172,1.92,0.04,18.236,0.168,4.025,0.118,0.147,1.273,null],
     ["dice","dice_caesar-iter_k1000",600,"n-tttt--ttttttottnttxtxttt-",0.41,null,1.54,"memout","timeout",436.895,null,null,15.385,355.088,98.936,338.948,"timeout","timeout","zero",1.008,3.949,18.364,20.804,0.399,"timeout",1.703,23.062,0.259,0.172,1.645,null],
     ["dice","dice_caesar-iter_k3000",600,"n-tttt--ttttttottnttxtxttt-",0.928,null,5.113,"timeout","skipped","timeout",null,null,50.538,"timeout","timeout","timeout","skipped","skipped","underflow",13.081,"underflow","memout",148.368,"error","timeout",5.177,"memout",0.39,0.366,"error",null],
-    ["dice","dice_caesar-iter_k10000",600,"n-tttt--ttttttottnttxtxttt-",2.597,null,29.916,"timeout","skipped","timeout",null,null,"timeout","skipped","skipped","skipped","skipped","skipped","zero",384.009,"memout","skipped","timeout","error","timeout",18.664,"memout",0.839,1.472,"error",null],
-    ["dice","dice_caesar-iter_k30000",600,"n-tttt--ttttttottnttxtxttt-",8.884,null,190.499,"skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","memout","skipped","skipped","timeout","error","timeout",57.569,"memout",2.164,7.001,"error",null],
+    ["dice","dice_caesar-iter_k10000",600,"n-tttt--ttttttottnttxtxttt-",2.597,null,12.929,"timeout","skipped","timeout",null,null,"timeout","skipped","skipped","skipped","skipped","skipped","zero",384.009,"memout","skipped","timeout","error","timeout",18.664,"memout",0.839,1.472,"error",null],
+    ["dice","dice_caesar-iter_k30000",600,"n-tttt--ttttttottnttxtxttt-",8.884,null,75.654,"skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","memout","skipped","skipped","timeout","error","timeout",57.569,"memout",2.164,7.001,"error",null],
     ["dice","dice_caesar-iter_k100000",600,"n-tttt--ttttttottnttxtxttt-",27.686,null,"memout","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","error","timeout",194.572,"memout",6.351,56.862,"timeout",null],
     ["dice","dice_caesar-iter_k300000",600,"n-tttt--ttttttottnttxtxttt-",90.584,null,"skipped","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","error","timeout","memout","memout",19.788,"error","skipped",null],
     ["dice","dice_pmc1_k10",600,"n-tttt--ttttttottnttxtxttt-",0.145,null,0.038,2.573,1.236,6.857,null,null,1.334,0.296,0.438,2.273,0.309,15.458,"timeout",0.018,0.029,"timeout","timeout","timeout","memout",0.01,6.223,19.828,0.476,1.96,null],
@@ -40564,9 +40564,9 @@
     ["dice","dice_simpleCaesar_k100",600,"n-tttt--ttttttottnttxtxttt-",0.352,null,0.823,"timeout","timeout",33.236,null,null,8.381,7.281,8.712,211.289,77.656,419.131,"zero",0.235,0.865,5.013,37.55,382.023,"timeout",28.662,24.029,0.534,0.198,1.513,null],
     ["dice","dice_simpleCaesar_k300",600,"n-tttt--ttttttottnttxtxttt-",0.867,null,3.355,"skipped","skipped","timeout",null,null,16.901,"memout","error","timeout","timeout","error","underflow",2.571,"underflow","wrong",108.032,"timeout","timeout","error","memout",1.138,0.66,"error",null],
     ["dice","dice_simpleCaesar_k1000",600,"n-tttt--ttttttottnttxtxttt-",3.905,null,11.913,"skipped","skipped","skipped",null,null,51.432,"skipped","timeout","skipped","skipped","timeout","underflow",31.443,"underflow","memout",458.517,"skipped","timeout","error","memout",2.985,1.911,"error",null],
-    ["dice","dice_simpleCaesar_k3000",600,"n-tttt--ttttttottnttxtxttt-",23.329,null,85.107,"timeout","skipped","timeout",null,null,158.709,"skipped","timeout","skipped","skipped","timeout","zero","memout","memout","skipped","timeout","skipped","timeout","timeout","memout",8.972,7.735,"error",null],
-    ["dice","dice_simpleCaesar_k10000",600,"n-tttt--ttttttottnttxtxttt-",47.214,null,426.878,"skipped","skipped","skipped",null,null,"timeout","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","skipped","timeout","timeout","memout",31.896,30.081,"error",null],
-    ["dice","dice_simpleCaesar_k30000",600,"n-tttt--ttttttottnttxtxttt-",142.221,null,"timeout","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","skipped","timeout","timeout","memout",87.118,"error","error",null],
+    ["dice","dice_simpleCaesar_k3000",600,"n-tttt--ttttttottnttxtxttt-",23.329,null,43.761,"timeout","skipped","timeout",null,null,158.709,"skipped","timeout","skipped","skipped","timeout","zero","memout","memout","skipped","timeout","skipped","timeout","timeout","memout",8.972,7.735,"error",null],
+    ["dice","dice_simpleCaesar_k10000",600,"n-tttt--ttttttottnttxtxttt-",47.214,null,249.745,"skipped","skipped","skipped",null,null,"timeout","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","skipped","timeout","timeout","memout",31.896,30.081,"error",null],
+    ["dice","dice_simpleCaesar_k30000",600,"n-tttt--ttttttottnttxtxttt-",142.221,null,"memout","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","zero","skipped","skipped","skipped","timeout","skipped","timeout","timeout","memout",87.118,"error","error",null],
     ["dice","dice_simpleCaesar_k100000",600,"n-tttt--ttttttottnttxtxttt-","memout",null,"skipped","skipped","skipped","skipped",null,null,"skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","timeout","skipped","timeout","memout","memout",279.123,"error","timeout",null],
     ["ppl","arith_book",600,"tn-ttt--tttttttottotxtxttt-",8.16,9.376,null,"timeout",10.14,242.639,null,null,"timeout","memout","memout","timeout","memout","memout","timeout",1.348,1.916,"memout","timeout","timeout","unsupported","timeout",63.171,88.273,45.54,"timeout",null],
     ["ppl","arith_caesar_huge",600,"tn-ttt---ttttttottotxtxttt-",4.574,2.875,null,"timeout","skipped","timeout",null,null,null,"memout","timeout","skipped","skipped","skipped","underflow",2.276,6.148,"timeout","skipped","skipped","skipped",195.404,"memout",4.075,13.077,30.381,null],
@@ -40775,25 +40775,25 @@
     ["roulette","rl_network_100000",600,"t-nttt-tttttttttotttxtxttt-",129.072,null,"timeout","skipped","skipped","skipped",null,"unsupported","unsupported","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped",326.014,"skipped",null],
     ["roulette","rl_network_300000",600,"t-nttt-tttttttttotttxtxttt-","memout",null,"skipped","skipped","skipped","skipped",null,"unsupported","unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","timeout","skipped",null],
     ["roulette","rl_network_1000000",600,"t-nttt-tttttttttotttxtxttt-","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped",null],
-    ["geni","geni_link_4",600,"t-tttt-tttttttttttttxotttt-",0.008,null,0.012,0.273,0.567,2.923,null,"memout",1.609,0.089,0.245,2.354,0.091,0.091,0.069,0.005,0.003,0.081,"timeout",0.025,22.995,0.021,5.412,1.039,0.321,1.644,null],
-    ["geni","geni_link_6",600,"t-tttt-tttttttttttttxotttt-",0.012,null,0.019,12.15,0.751,2.961,null,"skipped",2.025,0.096,0.267,2.253,0.096,0.137,0.036,0.042,0.026,"timeout","skipped",0.274,"timeout",0.06,6.027,"timeout",0.391,1.729,null],
-    ["geni","geni_link_8",600,"t-tttt-tttttttttttttxotttt-",0.025,null,0.035,"timeout",7.751,3.228,null,"skipped",2.529,0.119,0.328,2.287,0.139,0.278,0.103,0.176,0.409,"skipped","skipped",8.969,"skipped",0.359,8.059,"skipped",0.516,2.04,null],
-    ["geni","geni_link_10",600,"t-tttt-tttttttttttttxotttt-",0.183,null,0.253,"skipped","timeout",7.303,null,"skipped",3.765,0.186,0.449,2.406,0.235,1.353,0.917,1.994,4.835,"skipped","skipped",327.332,"skipped",2.646,27.249,"skipped",2.561,4.977,null],
-    ["geni","geni_link_12",600,"t-tttt-tttttttttttttxotttt-",1.467,null,1.758,"skipped","skipped",60.616,null,"skipped",7.335,2.173,1.901,2.696,0.662,1.301,8.609,18.857,41.926,"skipped","skipped","timeout","skipped",17.715,204.093,"skipped",21.118,27.765,null],
-    ["geni","geni_link_14",600,"t-tttt-tttttttttttttxotttt-",3.265,null,6.765,"skipped","skipped",576.581,null,"skipped",35.576,5.113,1.998,16.875,2.881,4.539,62.688,"timeout","memout","skipped","skipped","skipped","skipped",120.405,"memout","skipped",122.048,176.022,null],
+    ["geni","geni_link_4",600,"t-tttt-tttttttttttttxotttt-",0.008,null,0.012,0.273,0.567,2.923,null,"memout",1.609,0.089,0.245,2.354,0.091,0.091,0.069,0.005,0.003,0.081,"timeout",0.025,22.995,0.021,5.412,1.039,0.201,1.644,null],
+    ["geni","geni_link_6",600,"t-tttt-tttttttttttttxotttt-",0.012,null,0.019,12.15,0.751,2.961,null,"skipped",2.025,0.096,0.267,2.253,0.096,0.137,0.036,0.042,0.026,"timeout","skipped",0.274,"timeout",0.06,6.027,"timeout",0.251,1.729,null],
+    ["geni","geni_link_8",600,"t-tttt-tttttttttttttxotttt-",0.025,null,0.035,"timeout",7.751,3.228,null,"skipped",2.529,0.119,0.328,2.287,0.139,0.278,0.103,0.176,0.409,"skipped","skipped",8.969,"skipped",0.359,8.059,"skipped",0.504,2.04,null],
+    ["geni","geni_link_10",600,"t-tttt-tttttttttttttxotttt-",0.183,null,0.253,"skipped","timeout",7.303,null,"skipped",3.765,0.186,0.449,2.406,0.235,1.353,0.917,1.994,4.835,"skipped","skipped",327.332,"skipped",2.646,27.249,"skipped",2.516,4.977,null],
+    ["geni","geni_link_12",600,"t-tttt-tttttttttttttxotttt-",1.467,null,1.758,"skipped","skipped",60.616,null,"skipped",7.335,2.173,1.901,2.696,0.662,1.301,8.609,18.857,41.926,"skipped","skipped","timeout","skipped",17.715,204.093,"skipped",16.528,27.765,null],
+    ["geni","geni_link_14",600,"t-tttt-tttttttttttttxotttt-",3.265,null,6.765,"skipped","skipped",576.581,null,"skipped",35.576,5.113,1.998,16.875,2.881,4.539,62.688,"timeout","memout","skipped","skipped","skipped","skipped",120.405,"memout","skipped",106.981,176.022,null],
     ["geni","geni_link_16",600,"t-tttt-tttttttttttttxotttt-",53.009,null,84.31,"skipped","skipped","timeout",null,"skipped","memout",76.561,"memout",24.59,28.982,45.184,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","timeout","timeout",null],
     ["geni","geni_link_18",600,"t-tttt-tttttttttttttxotttt-",147.748,null,80.755,"skipped","skipped","skipped",null,"skipped","timeout","memout","skipped","timeout","memout",372.581,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
     ["geni","geni_link_20",600,"t-tttt-tttttttttttttxotttt-","memout",null,"memout","skipped","skipped","skipped",null,"skipped","skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
     ["geni","geni_link_24",600,"t-tttt-tttttttttttttxotttt-","memout",null,"skipped","skipped","skipped","skipped",null,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
     ["geni","geni_link_28",600,"t-tttt-tttttttttttttxotttt-","skipped",null,"skipped","skipped","skipped","skipped",null,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","timeout","timeout","skipped","skipped","skipped","skipped",null],
-    ["geni","geni_router_4",600,"t-tttt-tttttttttttttxotttt-",0.007,null,0.014,0.418,0.595,2.974,null,"unsupported",1.527,0.08,0.257,2.142,0.083,0.153,0.069,0.005,0.005,0.074,"timeout",0.032,3.027,0.015,5.023,0.318,0.215,1.851,null],
-    ["geni","geni_router_6",600,"t-tttt-tttttttttttttxotttt-",0.012,null,0.023,32.878,"timeout",3.022,null,"unsupported",1.901,0.091,0.279,2.175,0.094,0.134,0.038,0.015,0.018,"timeout","skipped",0.291,65.772,0.031,5.464,"timeout",0.231,1.936,null],
-    ["geni","geni_router_8",600,"t-tttt-tttttttttttttxotttt-",0.027,null,0.051,"timeout","skipped",3.411,null,"unsupported",2.282,0.111,0.339,2.139,0.127,0.241,0.067,0.211,0.162,"skipped","skipped",7.93,"timeout",0.102,6.935,"skipped",0.289,2.17,null],
-    ["geni","geni_router_10",600,"t-tttt-tttttttttttttxotttt-",0.064,null,0.087,"skipped","skipped",9.771,null,"unsupported",3.129,0.151,0.422,2.198,0.18,0.581,0.399,2.071,1.679,"skipped","skipped",212.257,"skipped",0.601,18.869,"skipped",0.7,3.085,null],
-    ["geni","geni_router_12",600,"t-tttt-tttttttttttttxotttt-",0.101,null,0.125,"skipped","skipped",69.666,null,"unsupported",4.901,0.299,0.735,2.428,0.337,0.551,3.022,18.567,13.668,"skipped","skipped","timeout","skipped",4.015,114.533,"skipped",3.335,10.641,null],
-    ["geni","geni_router_14",600,"t-tttt-tttttttttttttxotttt-",0.383,null,0.42,"skipped","skipped","timeout",null,"unsupported",15.501,1.332,10.848,2.609,1.846,0.756,22.833,147.318,108.063,"skipped","skipped","skipped","skipped",25.347,"memout","skipped",7.802,52.367,null],
-    ["geni","geni_router_16",600,"t-tttt-tttttttttttttxotttt-",1.143,null,2.917,"skipped","skipped","skipped",null,"unsupported",123.068,15.721,"memout",2.956,5.847,1.948,183.568,"timeout","memout","skipped","skipped","skipped","skipped",154.095,"skipped","skipped",23.758,278.906,null],
-    ["geni","geni_router_18",600,"t-tttt-tttttttttttttxotttt-",4.256,null,7.192,"skipped","skipped","skipped",null,"unsupported","timeout",405.402,"skipped",3.706,111.516,2.858,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped",138.437,"timeout",null],
+    ["geni","geni_router_4",600,"t-tttt-tttttttttttttxotttt-",0.007,null,0.014,0.418,0.595,2.974,null,"unsupported",1.527,0.08,0.257,2.142,0.083,0.153,0.069,0.005,0.005,0.074,"timeout",0.032,3.027,0.015,5.023,0.318,0.193,1.851,null],
+    ["geni","geni_router_6",600,"t-tttt-tttttttttttttxotttt-",0.012,null,0.023,32.878,"timeout",3.022,null,"unsupported",1.901,0.091,0.279,2.175,0.094,0.134,0.038,0.015,0.018,"timeout","skipped",0.291,65.772,0.031,5.464,"timeout",0.21,1.936,null],
+    ["geni","geni_router_8",600,"t-tttt-tttttttttttttxotttt-",0.027,null,0.051,"timeout","skipped",3.411,null,"unsupported",2.282,0.111,0.339,2.139,0.127,0.241,0.067,0.211,0.162,"skipped","skipped",7.93,"timeout",0.102,6.935,"skipped",0.27,2.17,null],
+    ["geni","geni_router_10",600,"t-tttt-tttttttttttttxotttt-",0.064,null,0.087,"skipped","skipped",9.771,null,"unsupported",3.129,0.151,0.422,2.198,0.18,0.581,0.399,2.071,1.679,"skipped","skipped",212.257,"skipped",0.601,18.869,"skipped",0.658,3.085,null],
+    ["geni","geni_router_12",600,"t-tttt-tttttttttttttxotttt-",0.101,null,0.125,"skipped","skipped",69.666,null,"unsupported",4.901,0.299,0.735,2.428,0.337,0.551,3.022,18.567,13.668,"skipped","skipped","timeout","skipped",4.015,114.533,"skipped",3.942,10.641,null],
+    ["geni","geni_router_14",600,"t-tttt-tttttttttttttxotttt-",0.383,null,0.42,"skipped","skipped","timeout",null,"unsupported",15.501,1.332,10.848,2.609,1.846,0.756,22.833,147.318,108.063,"skipped","skipped","skipped","skipped",25.347,"memout","skipped",13.034,52.367,null],
+    ["geni","geni_router_16",600,"t-tttt-tttttttttttttxotttt-",1.143,null,2.917,"skipped","skipped","skipped",null,"unsupported",123.068,15.721,"memout",2.956,5.847,1.948,183.568,"timeout","memout","skipped","skipped","skipped","skipped",154.095,"skipped","skipped",27.325,278.906,null],
+    ["geni","geni_router_18",600,"t-tttt-tttttttttttttxotttt-",4.256,null,7.192,"skipped","skipped","skipped",null,"unsupported","timeout",405.402,"skipped",3.706,111.516,2.858,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped",93.253,"timeout",null],
     ["geni","geni_router_20",600,"t-tttt-tttttttttttttxotttt-",5.658,null,"memout","skipped","skipped","skipped",null,"unsupported","skipped","memout","skipped",7.202,"memout",12.708,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped",null],
     ["geni","geni_router_24",600,"t-tttt-tttttttttttttxotttt-",89.686,null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped",122.923,"skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
     ["geni","geni_router_28",600,"t-tttt-tttttttttttttxotttt-","memout",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
@@ -40803,41 +40803,41 @@
     ["geni","geni_router_56",600,"t-tttt-tttttttttttttxotttt-","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
     ["geni","geni_router_64",600,"t-tttt-tttttttttttttxotttt-","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
     ["geni","geni_router_72",600,"t-tttt-tttttttttttttxotttt-","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
-    ["geni","geni_weather_h1",600,"t-tttt-tttttttttttttxottnn-",0.004,null,0.01,0.364,1.254,6.258,null,"unsupported",1.256,"zero",0.382,48.265,0.078,0.08,0.071,0.037,0.003,"zero","timeout",43.726,1.459,0.054,7.243,1.082,2.861,14.221,null],
-    ["geni","geni_weather_h2",600,"t-tttt-tttttttttttttxottnn-",0.016,null,0.028,0.63,0.608,3.052,null,"unsupported",1.811,"zero",0.263,3.963,0.101,0.137,0.036,0.022,0.035,"zero","skipped","memout",209.932,0.223,7.516,35.275,2.842,14.685,null],
-    ["geni","geni_weather_h3",600,"t-tttt-tttttttttttttxottnn-",0.036,null,0.061,4.876,0.666,3.177,null,"unsupported",2.1,"zero",0.288,3.934,0.152,0.259,0.266,0.152,0.454,"zero","skipped","skipped","timeout",0.49,8.939,"timeout",3.111,14.392,null],
-    ["geni","geni_weather_h4",600,"t-tttt-tttttttttttttxottnn-",0.049,null,0.091,45.17,1.07,3.676,null,"unsupported",2.455,"zero",0.327,4.434,0.23,0.63,0.824,1.755,3.413,"timeout","skipped","skipped","skipped",0.735,26.471,"skipped",2.891,14.222,null],
-    ["geni","geni_weather_h5",600,"t-tttt-tttttttttttttxottnn-",0.118,null,0.244,336.44,22.698,5.025,null,"unsupported",3.265,"zero",0.433,2.914,0.37,0.572,1.424,7.625,13.234,"skipped","skipped","skipped","skipped",1.001,85.729,"skipped",2.963,14.305,null],
-    ["geni","geni_weather_h6",600,"t-tttt-tttttttttttttxottnn-",0.144,null,0.278,"timeout","timeout",8.651,null,"unsupported",4.367,"zero",0.552,3.053,0.54,0.97,1.956,18.524,30.651,"skipped","skipped","skipped","skipped",1.256,209.818,"skipped",2.882,12.991,null],
-    ["geni","geni_weather_h7",600,"t-tttt-tttttttttttttxottnn-",0.161,null,0.308,"skipped","skipped",35.79,null,"unsupported",4.636,"zero",0.767,3.393,0.739,1.034,2.46,34.273,48.917,"skipped","skipped","skipped","skipped",1.532,"memout","skipped",2.996,12.872,null],
-    ["geni","geni_weather_h8",600,"t-tttt-tttttttttttttxottnn-",0.196,null,0.323,"skipped","skipped",34.735,null,"unsupported",6.382,"zero",1.546,6.72,0.959,1.173,3.386,53.49,82.824,"skipped","skipped","skipped","skipped",1.784,"skipped","skipped",2.919,13.629,null],
-    ["geni","geni_weather_h9",600,"t-tttt-tttttttttttttxottnn-",0.183,null,0.39,"skipped","skipped",160.499,null,"unsupported",6.506,"zero",1.726,37.092,1.305,1.405,3.838,78.672,134.633,"skipped","skipped","skipped","skipped",2.021,"skipped","skipped",3.319,13.702,null],
-    ["geni","geni_weather_h100",600,"t-tttt-tttttttttttttxottnn-",2.765,null,8.74,"skipped","skipped","timeout",null,"unsupported",210.154,23.769,526.297,179.597,171.559,"timeout",61.759,"timeout","memout","skipped","skipped","skipped","skipped",25.971,"skipped","skipped",4.11,14.26,null],
-    ["geni","geni_weather_h200",600,"t-tttt-tttttttttttttxottnn-",7.048,null,26.684,"skipped","skipped","skipped",null,"unsupported","timeout","memout","timeout",512.104,"timeout","skipped",135.878,"skipped","skipped","skipped","skipped","skipped","skipped",52.168,"skipped","skipped",4.792,14.959,null],
-    ["geni","geni_weather_h300",600,"t-tttt-tttttttttttttxottnn-",11.032,null,22.063,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","timeout","skipped","skipped",209.941,"skipped","skipped","skipped","skipped","skipped","skipped",77.638,"skipped","skipped",5.164,15.27,null],
-    ["geni","geni_weather_h400",600,"t-tttt-tttttttttttttxottnn-",14.308,null,44.814,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",335.229,"skipped","skipped","skipped","skipped","skipped","skipped",104.65,"skipped","skipped",5.814,15.752,null],
-    ["geni","geni_weather_h500",600,"t-tttt-tttttttttttttxottnn-",18.201,null,42.053,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",439.745,"skipped","skipped","skipped","skipped","skipped","skipped",129.478,"skipped","skipped",6.442,16.357,null],
-    ["geni","geni_weather_h600",600,"t-tttt-tttttttttttttxottnn-",22.858,null,80.357,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",519.799,"skipped","skipped","skipped","skipped","skipped","skipped",157.559,"skipped","skipped",7.145,16.981,null],
-    ["geni","geni_weather_h700",600,"t-tttt-tttttttttttttxottnn-",26.615,null,84.029,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped",180.691,"skipped","skipped",7.668,17.242,null],
-    ["geni","geni_weather_h800",600,"t-tttt-tttttttttttttxottnn-",30.587,null,66.18,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",210.208,"skipped","skipped",8.304,17.876,null],
-    ["geni","geni_weather_h900",600,"t-tttt-tttttttttttttxottnn-",34.686,null,73.055,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",237.56,"skipped","skipped",8.935,18.548,null],
-    ["geni","geni_weather_h1000",600,"t-tttt-tttttttttttttxottnn-",39.83,null,78.362,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",261.724,"skipped","skipped",9.673,19.057,null],
-    ["geni","geni_weather_h3000",600,"t-tttt-tttttttttttttxottnn-",116.482,null,306.68,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped",22.456,30.025,null],
-    ["geni","geni_weather_h10000",600,"t-tttt-tttttttttttttxottnn-","memout",null,"timeout","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",67.238,73.622,null],
-    ["geni","geni_weather_h30000",600,"t-tttt-tttttttttttttxottnn-","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",190.401,195.127,null],
-    ["geni","geni_weather_n2",600,"t-tttt-tttttttttttttxottnn-",0.026,null,0.053,26.628,0.731,9.762,null,"unsupported",2.053,0.16,1.661,2.307,0.127,0.21,0.072,0.023,0.045,1.757,"timeout",0.296,"timeout",0.018,6.682,"timeout",0.206,1.538,null],
-    ["geni","geni_weather_n7",600,"t-tttt-tttttttttttttxottnn-",0.064,null,0.136,"timeout",77.426,6.782,null,"unsupported",3.702,0.254,0.599,2.964,0.651,0.714,0.239,5.465,7.755,"timeout","skipped","timeout","skipped",0.193,58.607,"skipped",0.25,2.43,null],
-    ["geni","geni_weather_n8",600,"t-tttt-tttttttttttttxottnn-",0.147,null,0.177,"skipped",60.706,15.516,null,"unsupported",4.204,0.427,0.757,3.296,0.866,0.73,0.65,15.859,20.912,"skipped","skipped","skipped","skipped",0.418,145.941,"skipped",0.367,13.833,null],
-    ["geni","geni_weather_n9",600,"t-tttt-tttttttttttttxottnn-",0.186,null,0.289,"skipped",240.003,25.932,null,"unsupported",5.299,0.856,0.847,4.665,1.271,0.996,1.645,43.233,61.593,"skipped","skipped","skipped","skipped",0.947,"memout","skipped",0.858,199.164,null],
-    ["geni","geni_weather_n10",600,"t-tttt-tttttttttttttxottnn-",0.203,null,0.385,"skipped","timeout",81.112,null,"unsupported",8.368,"zero",1.463,19.692,2.091,1.704,4.861,116.323,161.357,"skipped","skipped","skipped","skipped",2.223,"skipped","skipped",2.976,12.734,null],
-    ["geni","geni_weather_n11",600,"t-tttt-tttttttttttttxottnn-",0.307,null,0.735,"skipped","skipped",243.763,null,"unsupported",12.143,"zero",3.898,38.248,2.772,1.515,12.504,287.714,"memout","skipped","skipped","skipped","skipped",5.228,"skipped","skipped",11.719,"error",null],
-    ["geni","geni_weather_n12",600,"t-tttt-tttttttttttttxottnn-",0.802,null,1.471,"skipped","skipped","timeout",null,"unsupported",22.822,39.357,9.602,7.204,3.664,2.834,33.621,"timeout","skipped","skipped","skipped","skipped","skipped",11.943,"skipped","skipped",54.962,"memout",null],
-    ["geni","geni_weather_n13",600,"t-tttt-tttttttttttttxottnn-",3.401,null,2.656,"skipped","skipped","skipped",null,"unsupported",74.578,197.501,3.562,"timeout",146.658,10.35,"timeout","skipped","skipped","skipped","skipped","skipped","skipped",27.629,"skipped","skipped",230.338,"skipped",null],
+    ["geni","geni_weather_h1",600,"t-tttt-tttttttttttttxottnn-",0.004,null,0.01,0.364,1.254,6.258,null,"unsupported",1.256,"zero",0.382,48.265,0.078,0.08,0.071,0.037,0.003,"zero","timeout",43.726,1.459,0.054,7.243,1.082,3.106,11.925,null],
+    ["geni","geni_weather_h2",600,"t-tttt-tttttttttttttxottnn-",0.016,null,0.028,0.63,0.608,3.052,null,"unsupported",1.811,"zero",0.263,3.963,0.101,0.137,0.036,0.022,0.035,"zero","skipped","memout",209.932,0.223,7.516,35.275,2.702,11.613,null],
+    ["geni","geni_weather_h3",600,"t-tttt-tttttttttttttxottnn-",0.036,null,0.061,4.876,0.666,3.177,null,"unsupported",2.1,"zero",0.288,3.934,0.152,0.259,0.266,0.152,0.454,"zero","skipped","skipped","timeout",0.49,8.939,"timeout",2.712,11.638,null],
+    ["geni","geni_weather_h4",600,"t-tttt-tttttttttttttxottnn-",0.049,null,0.091,45.17,1.07,3.676,null,"unsupported",2.455,"zero",0.327,4.434,0.23,0.63,0.824,1.755,3.413,"timeout","skipped","skipped","skipped",0.735,26.471,"skipped",2.73,11.706,null],
+    ["geni","geni_weather_h5",600,"t-tttt-tttttttttttttxottnn-",0.118,null,0.244,336.44,22.698,5.025,null,"unsupported",3.265,"zero",0.433,2.914,0.37,0.572,1.424,7.625,13.234,"skipped","skipped","skipped","skipped",1.001,85.729,"skipped",2.736,11.802,null],
+    ["geni","geni_weather_h6",600,"t-tttt-tttttttttttttxottnn-",0.144,null,0.278,"timeout","timeout",8.651,null,"unsupported",4.367,"zero",0.552,3.053,0.54,0.97,1.956,18.524,30.651,"skipped","skipped","skipped","skipped",1.256,209.818,"skipped",2.784,12.048,null],
+    ["geni","geni_weather_h7",600,"t-tttt-tttttttttttttxottnn-",0.161,null,0.308,"skipped","skipped",35.79,null,"unsupported",4.636,"zero",0.767,3.393,0.739,1.034,2.46,34.273,48.917,"skipped","skipped","skipped","skipped",1.532,"memout","skipped",2.794,12.024,null],
+    ["geni","geni_weather_h8",600,"t-tttt-tttttttttttttxottnn-",0.196,null,0.323,"skipped","skipped",34.735,null,"unsupported",6.382,"zero",1.546,6.72,0.959,1.173,3.386,53.49,82.824,"skipped","skipped","skipped","skipped",1.784,"skipped","skipped",2.821,11.944,null],
+    ["geni","geni_weather_h9",600,"t-tttt-tttttttttttttxottnn-",0.183,null,0.39,"skipped","skipped",160.499,null,"unsupported",6.506,"zero",1.726,37.092,1.305,1.405,3.838,78.672,134.633,"skipped","skipped","skipped","skipped",2.021,"skipped","skipped",2.835,11.879,null],
+    ["geni","geni_weather_h100",600,"t-tttt-tttttttttttttxottnn-",2.765,null,8.74,"skipped","skipped","timeout",null,"unsupported",210.154,23.769,526.297,179.597,171.559,"timeout",61.759,"timeout","memout","skipped","skipped","skipped","skipped",25.971,"skipped","skipped",3.4,12.378,null],
+    ["geni","geni_weather_h200",600,"t-tttt-tttttttttttttxottnn-",7.048,null,26.684,"skipped","skipped","skipped",null,"unsupported","timeout","memout","timeout",512.104,"timeout","skipped",135.878,"skipped","skipped","skipped","skipped","skipped","skipped",52.168,"skipped","skipped",4.064,13.466,null],
+    ["geni","geni_weather_h300",600,"t-tttt-tttttttttttttxottnn-",11.032,null,22.063,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","timeout","skipped","skipped",209.941,"skipped","skipped","skipped","skipped","skipped","skipped",77.638,"skipped","skipped",4.492,13.605,null],
+    ["geni","geni_weather_h400",600,"t-tttt-tttttttttttttxottnn-",14.308,null,44.814,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",335.229,"skipped","skipped","skipped","skipped","skipped","skipped",104.65,"skipped","skipped",5.06,14.22,null],
+    ["geni","geni_weather_h500",600,"t-tttt-tttttttttttttxottnn-",18.201,null,42.053,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",439.745,"skipped","skipped","skipped","skipped","skipped","skipped",129.478,"skipped","skipped",5.589,14.842,null],
+    ["geni","geni_weather_h600",600,"t-tttt-tttttttttttttxottnn-",22.858,null,80.357,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped",519.799,"skipped","skipped","skipped","skipped","skipped","skipped",157.559,"skipped","skipped",6.232,15.309,null],
+    ["geni","geni_weather_h700",600,"t-tttt-tttttttttttttxottnn-",26.615,null,84.029,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped",180.691,"skipped","skipped",6.858,15.683,null],
+    ["geni","geni_weather_h800",600,"t-tttt-tttttttttttttxottnn-",30.587,null,66.18,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",210.208,"skipped","skipped",7.442,15.612,null],
+    ["geni","geni_weather_h900",600,"t-tttt-tttttttttttttxottnn-",34.686,null,73.055,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",237.56,"skipped","skipped",7.673,16.038,null],
+    ["geni","geni_weather_h1000",600,"t-tttt-tttttttttttttxottnn-",39.83,null,78.362,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",261.724,"skipped","skipped",8.173,16.782,null],
+    ["geni","geni_weather_h3000",600,"t-tttt-tttttttttttttxottnn-",116.482,null,306.68,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped",20.191,27.408,null],
+    ["geni","geni_weather_h10000",600,"t-tttt-tttttttttttttxottnn-","memout",null,"timeout","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",60.617,65.651,null],
+    ["geni","geni_weather_h30000",600,"t-tttt-tttttttttttttxottnn-","skipped",null,"skipped","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",176.835,172.084,null],
+    ["geni","geni_weather_n2",600,"t-tttt-tttttttttttttxottnn-",0.026,null,0.053,26.628,0.731,9.762,null,"unsupported",2.053,0.16,1.661,2.307,0.127,0.21,0.072,0.023,0.045,1.757,"timeout",0.296,"timeout",0.018,6.682,"timeout",0.198,1.679,null],
+    ["geni","geni_weather_n7",600,"t-tttt-tttttttttttttxottnn-",0.064,null,0.136,"timeout",77.426,6.782,null,"unsupported",3.702,0.254,0.599,2.964,0.651,0.714,0.239,5.465,7.755,"timeout","skipped","timeout","skipped",0.193,58.607,"skipped",0.234,2.617,null],
+    ["geni","geni_weather_n8",600,"t-tttt-tttttttttttttxottnn-",0.147,null,0.177,"skipped",60.706,15.516,null,"unsupported",4.204,0.427,0.757,3.296,0.866,0.73,0.65,15.859,20.912,"skipped","skipped","skipped","skipped",0.418,145.941,"skipped",0.358,14.202,null],
+    ["geni","geni_weather_n9",600,"t-tttt-tttttttttttttxottnn-",0.186,null,0.289,"skipped",240.003,25.932,null,"unsupported",5.299,0.856,0.847,4.665,1.271,0.996,1.645,43.233,61.593,"skipped","skipped","skipped","skipped",0.947,"memout","skipped",0.851,196.627,null],
+    ["geni","geni_weather_n10",600,"t-tttt-tttttttttttttxottnn-",0.203,null,0.385,"skipped","timeout",81.112,null,"unsupported",8.368,"zero",1.463,19.692,2.091,1.704,4.861,116.323,161.357,"skipped","skipped","skipped","skipped",2.223,"skipped","skipped",2.825,12.326,null],
+    ["geni","geni_weather_n11",600,"t-tttt-tttttttttttttxottnn-",0.307,null,0.735,"skipped","skipped",243.763,null,"unsupported",12.143,"zero",3.898,38.248,2.772,1.515,12.504,287.714,"memout","skipped","skipped","skipped","skipped",5.228,"skipped","skipped",11.317,257.413,null],
+    ["geni","geni_weather_n12",600,"t-tttt-tttttttttttttxottnn-",0.802,null,1.471,"skipped","skipped","timeout",null,"unsupported",22.822,39.357,9.602,7.204,3.664,2.834,33.621,"timeout","skipped","skipped","skipped","skipped","skipped",11.943,"skipped","skipped",46.493,"timeout",null],
+    ["geni","geni_weather_n13",600,"t-tttt-tttttttttttttxottnn-",3.401,null,2.656,"skipped","skipped","skipped",null,"unsupported",74.578,197.501,3.562,"timeout",146.658,10.35,"timeout","skipped","skipped","skipped","skipped","skipped","skipped",27.629,"skipped","skipped",197.428,"skipped",null],
     ["geni","geni_weather_n15",600,"t-tttt-tttttttttttttxottnn-",16.899,null,15.366,"skipped","skipped","skipped",null,"unsupported","timeout",306.505,"memout","skipped","memout",55.974,"skipped","skipped","skipped","skipped","skipped","skipped","skipped",142.546,"skipped","skipped","timeout","skipped",null],
-    ["geni","geni_weather_n16",600,"t-tttt-tttttttttttttxottnn-",21.779,null,22.257,"skipped","skipped","skipped",null,"unsupported","skipped","memout","skipped","skipped","skipped",45.804,"skipped","skipped","skipped","skipped","skipped","skipped","skipped",329.157,"skipped","skipped","error","skipped",null],
-    ["geni","geni_weather_n17",600,"t-tttt-tttttttttttttxottnn-",83.895,null,66.432,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","error","skipped",null],
-    ["geni","geni_weather_n18",600,"t-tttt-tttttttttttttxottnn-",84.1,null,106.296,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped",null],
-    ["geni","geni_weather_n19",600,"t-tttt-tttttttttttttxottnn-","memout",null,"memout","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped",null],
+    ["geni","geni_weather_n16",600,"t-tttt-tttttttttttttxottnn-",21.779,null,22.257,"skipped","skipped","skipped",null,"unsupported","skipped","memout","skipped","skipped","skipped",45.804,"skipped","skipped","skipped","skipped","skipped","skipped","skipped",329.157,"skipped","skipped","skipped","skipped",null],
+    ["geni","geni_weather_n17",600,"t-tttt-tttttttttttttxottnn-",83.895,null,66.432,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped",null],
+    ["geni","geni_weather_n18",600,"t-tttt-tttttttttttttxottnn-",84.1,null,106.296,"skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
+    ["geni","geni_weather_n19",600,"t-tttt-tttttttttttttxottnn-","memout",null,"memout","skipped","skipped","skipped",null,"unsupported","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null],
     ["circulette","ct_1-bit-mux",600,"n-nttttxtttttt--o----------",0.033,null,0.022,0.203,0.606,2.834,"unsupported","unsupported",1.007,0.106,0.39,2.57,0.073,0.048,null,null,0.01,null,null,null,null,null,null,null,null,null,null],
     ["circulette","ct_2bit-adder",600,"n-nttttxtttttt--o----------",0.057,null,0.434,"timeout",11.936,"timeout","unsupported","unsupported","error","timeout",117.331,"timeout","timeout","memout",null,null,0.726,null,null,null,null,null,null,null,null,null,null],
     ["circulette","ct_4-bit-comparator",600,"n-nttttxtttttt--o----------",0.008,null,0.049,28.224,0.67,4.365,"unsupported","unsupported",2.717,0.169,0.537,52.556,0.59,0.442,null,null,0.045,null,null,null,null,null,null,null,null,null,null],
@@ -41074,7 +41074,7 @@
    ],
    "domains":[],
    "given":{"tddlog":1942,"alea-tddlog":740,"roulette-tddlog":1269,"problog":1942,"pita":1941,"aspmc":1942,"psouffle":743,"scallop":1464,"ace":1720,"merlin":1722,"agrum":1722,"pgmpy":1722,"libdai":1722,"tensorinference":1722,"dice":1305,"alea":1526,"roulette":1571,"nodice":1305,"psi":1526,"genfer":1305,"sppl":1526,"geni":1305,"pluck":1529,"webppl":1521,"storm":992,"prism":992,"provsql":330},
-   "answers":{"tddlog":1791,"alea-tddlog":423,"roulette-tddlog":802,"problog":717,"pita":724,"aspmc":605,"psouffle":321,"scallop":119,"ace":993,"merlin":814,"agrum":823,"pgmpy":714,"libdai":878,"tensorinference":859,"dice":382,"alea":585,"roulette":539,"nodice":217,"psi":181,"genfer":196,"sppl":181,"geni":214,"pluck":382,"webppl":239,"storm":437,"prism":293,"provsql":291},
+   "answers":{"tddlog":1791,"alea-tddlog":423,"roulette-tddlog":802,"problog":717,"pita":724,"aspmc":605,"psouffle":321,"scallop":119,"ace":993,"merlin":814,"agrum":823,"pgmpy":714,"libdai":878,"tensorinference":859,"dice":382,"alea":585,"roulette":539,"nodice":217,"psi":181,"genfer":196,"sppl":181,"geni":214,"pluck":382,"webppl":239,"storm":437,"prism":294,"provsql":291},
    "classes":{
     "tddlog":{"own":0,"native":1721,"translated":221,"unread":0,"not idiomatic":0},
     "alea-tddlog":{"own":0,"native":39,"translated":701,"unread":0,"not idiomatic":0},
@@ -41145,7 +41145,7 @@
      "both":604,
      "failures":1,
      "timeouts":1187,
-     "counted":726,
+     "counted":727,
      "ratio":51.01,
      "speedup":276.9,
      "me":["tddlog"]
@@ -41190,7 +41190,7 @@
      "both":987,
      "failures":6,
      "timeouts":594,
-     "counted":433,
+     "counted":439,
      "ratio":11.25,
      "speedup":39.41,
      "me":["tddlog"]
@@ -41205,7 +41205,7 @@
      "both":524,
      "failures":9,
      "timeouts":778,
-     "counted":618,
+     "counted":627,
      "ratio":5.723,
      "speedup":50.75,
      "me":["tddlog"]
@@ -41220,7 +41220,7 @@
      "both":710,
      "failures":7,
      "timeouts":767,
-     "counted":599,
+     "counted":606,
      "ratio":9.413,
      "speedup":55.47,
      "me":["tddlog"]
@@ -41235,7 +41235,7 @@
      "both":705,
      "failures":9,
      "timeouts":878,
-     "counted":684,
+     "counted":693,
      "ratio":12.25,
      "speedup":57.44,
      "me":["tddlog"]
@@ -41250,7 +41250,7 @@
      "both":590,
      "failures":8,
      "timeouts":713,
-     "counted":562,
+     "counted":570,
      "ratio":12.27,
      "speedup":48.48,
      "me":["tddlog"]
@@ -41265,7 +41265,7 @@
      "both":621,
      "failures":14,
      "timeouts":738,
-     "counted":628,
+     "counted":642,
      "ratio":9.039,
      "speedup":36.31,
      "me":["tddlog"]
@@ -41415,7 +41415,7 @@
      "both":197,
      "failures":1,
      "timeouts":1172,
-     "counted":799,
+     "counted":800,
      "ratio":5.264,
      "speedup":202.4,
      "me":["tddlog"]
@@ -41425,29 +41425,29 @@
      "answers":437,
      "tddlog_answers":929,
      "either":937,
-     "total":484298.131,
+     "total":484167.232,
      "tddlog_total":16616.225,
-     "both":406,
+     "both":404,
      "failures":8,
      "timeouts":500,
-     "counted":465,
-     "ratio":5.988,
-     "speedup":27.0,
+     "counted":473,
+     "ratio":5.947,
+     "speedup":26.99,
      "me":["tddlog"]
     },
     "prism":{
      "given":992,
-     "answers":293,
+     "answers":294,
      "tddlog_answers":929,
      "either":931,
-     "total":633325.259,
+     "total":632309.986,
      "tddlog_total":9416.225,
-     "both":291,
+     "both":292,
      "failures":2,
-     "timeouts":638,
-     "counted":460,
-     "ratio":16.02,
-     "speedup":110.8,
+     "timeouts":637,
+     "counted":461,
+     "ratio":16.37,
+     "speedup":110.6,
      "me":["tddlog"]
     },
     "provsql":{
@@ -41606,7 +41606,7 @@
       "both":38,
       "failures":1,
       "timeouts":90,
-      "counted":73,
+      "counted":74,
       "ratio":35.77,
       "speedup":66.79,
       "me":["tddlog"]
@@ -41923,7 +41923,7 @@
       "both":108,
       "failures":1,
       "timeouts":134,
-      "counted":85,
+      "counted":86,
       "ratio":23.42,
       "speedup":109.1,
       "me":["tddlog"]
@@ -41953,7 +41953,7 @@
       "both":177,
       "failures":1,
       "timeouts":131,
-      "counted":82,
+      "counted":83,
       "ratio":81.68,
       "speedup":112.2,
       "me":["tddlog"]
@@ -41968,7 +41968,7 @@
       "both":131,
       "failures":1,
       "timeouts":111,
-      "counted":67,
+      "counted":68,
       "ratio":88.87,
       "speedup":92.54,
       "me":["tddlog"]
@@ -42270,7 +42270,7 @@
       "both":408,
       "failures":6,
       "timeouts":198,
-      "counted":196,
+      "counted":202,
       "ratio":5.846,
       "speedup":23.16,
       "me":["tddlog"]
@@ -42285,7 +42285,7 @@
       "both":159,
       "failures":7,
       "timeouts":322,
-      "counted":317,
+      "counted":324,
       "ratio":3.219,
       "speedup":34.08,
       "me":["tddlog"]
@@ -42300,7 +42300,7 @@
       "both":188,
       "failures":7,
       "timeouts":354,
-      "counted":349,
+      "counted":356,
       "ratio":3.964,
       "speedup":37.62,
       "me":["tddlog"]
@@ -42315,7 +42315,7 @@
       "both":220,
       "failures":7,
       "timeouts":387,
-      "counted":381,
+      "counted":388,
       "ratio":4.52,
       "speedup":42.96,
       "me":["tddlog"]
@@ -42330,7 +42330,7 @@
       "both":158,
       "failures":7,
       "timeouts":324,
-      "counted":322,
+      "counted":329,
       "ratio":2.918,
       "speedup":33.23,
       "me":["tddlog"]
@@ -42345,7 +42345,7 @@
       "both":200,
       "failures":7,
       "timeouts":294,
-      "counted":292,
+      "counted":299,
       "ratio":13.42,
       "speedup":34.08,
       "me":["tddlog"]
@@ -42632,7 +42632,7 @@
       "both":167,
       "failures":1,
       "timeouts":73,
-      "counted":36,
+      "counted":37,
       "ratio":5.416,
       "speedup":11.06,
       "me":["tddlog"]
@@ -42692,7 +42692,7 @@
       "both":189,
       "failures":7,
       "timeouts":52,
-      "counted":51,
+      "counted":58,
       "ratio":1.42,
       "speedup":2.59,
       "me":["tddlog"]
@@ -43189,7 +43189,7 @@
       "both":57,
       "failures":1,
       "timeouts":184,
-      "counted":137,
+      "counted":138,
       "ratio":1.031,
       "speedup":53.71,
       "me":["tddlog"]
@@ -43199,29 +43199,29 @@
       "answers":224,
       "tddlog_answers":258,
       "either":266,
-      "total":56146.78,
+      "total":56015.881,
       "tddlog_total":13750.145,
-      "both":199,
+      "both":197,
       "failures":8,
       "timeouts":42,
-      "counted":41,
-      "ratio":1.821,
-      "speedup":3.542,
+      "counted":49,
+      "ratio":1.778,
+      "speedup":3.527,
       "me":["tddlog"]
      },
      "prism":{
       "given":294,
-      "answers":157,
+      "answers":158,
       "tddlog_answers":258,
       "either":260,
-      "total":129653.855,
+      "total":128638.582,
       "tddlog_total":6550.145,
-      "both":155,
+      "both":156,
       "failures":2,
-      "timeouts":103,
-      "counted":75,
-      "ratio":10.07,
-      "speedup":23.75,
+      "timeouts":102,
+      "counted":76,
+      "ratio":10.44,
+      "speedup":23.55,
       "me":["tddlog"]
      }
     },
@@ -44909,7 +44909,7 @@
       "both":22,
       "failures":1,
       "timeouts":37,
-      "counted":31,
+      "counted":32,
       "ratio":0.7661,
       "speedup":17.99,
       "me":["tddlog"]
@@ -44924,7 +44924,7 @@
       "both":58,
       "failures":2,
       "timeouts":4,
-      "counted":4,
+      "counted":6,
       "ratio":0.671,
       "speedup":1.3,
       "me":["tddlog"]
@@ -45588,7 +45588,7 @@
       "both":88,
       "failures":5,
       "timeouts":26,
-      "counted":26,
+      "counted":31,
       "ratio":1.924,
       "speedup":4.03,
       "me":["tddlog"]
@@ -45920,7 +45920,7 @@
       "both":31,
       "failures":1,
       "timeouts":2,
-      "counted":2,
+      "counted":3,
       "ratio":0.954,
       "speedup":1.204,
       "me":["tddlog"]
@@ -46911,29 +46911,29 @@
       "answers":44,
       "tddlog_answers":50,
       "either":52,
-      "total":10598.324,
+      "total":10467.425,
       "tddlog_total":3246.813,
-      "both":42,
+      "both":40,
       "failures":2,
       "timeouts":8,
-      "counted":8,
-      "ratio":2.153,
-      "speedup":2.833,
+      "counted":10,
+      "ratio":1.832,
+      "speedup":2.769,
       "me":["tddlog"]
      },
      "prism":{
       "given":63,
-      "answers":40,
+      "answers":41,
       "tddlog_answers":50,
       "either":52,
-      "total":15784.927,
+      "total":14769.654,
       "tddlog_total":3246.813,
-      "both":38,
+      "both":39,
       "failures":2,
-      "timeouts":12,
-      "counted":11,
-      "ratio":3.329,
-      "speedup":4.205,
+      "timeouts":11,
+      "counted":13,
+      "ratio":3.969,
+      "speedup":3.991,
       "me":["tddlog"]
      }
     },
@@ -47636,7 +47636,7 @@
   "title":"Circuits",
   "noun":"circuits",
   "order":6,
-  "instances":291,
+  "instances":293,
   "systems":["tddlog","problog","pita","aspmc","scallop","ace","merlin","agrum","pgmpy","libdai","tensorinference","dice","roulette","nodice","psi","genfer","sppl","geni","pluck","webppl","storm","prism"],
   "rows":[
    ["ppl_circuits","arith_book",600,"nntn-ttttttntn-ttttttt",9.387,"timeout",106.303,164.626,null,"timeout","memout","memout","timeout","memout",347.256,"timeout",3.567,"timeout",null,"memout","timeout","timeout","memout","timeout","timeout","timeout"],
@@ -47685,7 +47685,7 @@
    ["bitblast","bb_addFun_max_w25",600,"nntntttttttntntttttttt",34.854,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_addFun_max_w27",600,"nntntttttttntntttttttt",36.021,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_addFun_max_w29",600,"nntntttttttntntttttttt",37.589,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_addFun_max_p4",600,"nntntttttttntntttttttt",0.5,"memout",128.251,69.951,"memout","timeout","memout","memout","timeout","memout",314.499,"timeout","timeout","memout","timeout","memout","timeout","timeout","memout","timeout","timeout","timeout"],
+   ["bitblast","bb_addFun_max_p4",600,"nntntttttttntntttttttt",0.5,"timeout",128.251,69.951,"memout","timeout","memout","memout","timeout","memout",314.499,"timeout","timeout","memout","timeout","memout","timeout","timeout","memout","timeout","timeout","timeout"],
    ["bitblast","bb_addFun_max_p16",600,"nntntttttttntntttttttt",0.905,"skipped",201.393,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_addFun_max_p64",600,"nntntttttttntntttttttt",5.24,"skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_addFun_max_p256",600,"nntntttttttntntttttttt",175.292,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
@@ -47719,20 +47719,22 @@
    ["bitblast","bb_clinicalTrial1_w6",600,"nntntttttttntntttttttt",0.588,4.772,"timeout","zero","skipped",13.224,20.099,28.959,28.127,241.716,"skipped","zero",13.854,"skipped","skipped","skipped","skipped","skipped","skipped","skipped",177.305,"error"],
    ["bitblast","bb_clinicalTrial1_w8",600,"nntntttttttntntttttttt",2.912,24.046,"skipped",332.515,"skipped",15.753,37.208,79.31,56.879,571.271,"skipped","timeout","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","error"],
    ["bitblast","bb_clinicalTrial1_w10",600,"nntntttttttntntttttttt",8.012,120.822,"skipped","timeout","skipped",20.224,55.231,166.376,117.106,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error"],
-   ["bitblast","bb_clinicalTrial1_w12",600,"nntntttttttntntttttttt",11.649,"memout","skipped","skipped","skipped",28.289,76.763,392.467,211.514,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error"],
-   ["bitblast","bb_clinicalTrial1_w14",600,"nntntttttttntntttttttt",25.207,"skipped","skipped","skipped","skipped",21.093,"memout",494.265,267.559,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error"],
+   ["bitblast","bb_clinicalTrial1_w12",600,"nntntttttttntntttttttt",11.649,457.016,"skipped","skipped","skipped",28.289,76.763,392.467,211.514,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error"],
+   ["bitblast","bb_clinicalTrial1_w14",600,"nntntttttttntntttttttt",25.207,"timeout","skipped","skipped","skipped",21.093,"memout",494.265,267.559,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error"],
    ["bitblast","bb_clinicalTrial2_w6",600,"nntntttttttntntttttttt",0.01,0.389,0.792,2.957,"memout",1.851,0.079,1.369,21.045,0.081,0.24,1.363,0.214,9.311,"timeout","memout","timeout","timeout",38.486,"timeout",3.005,5.124],
    ["bitblast","bb_clinicalTrial2_w8",600,"nntntttttttntntttttttt",0.015,1.067,5.969,3.196,"skipped",2.174,0.086,0.262,2.376,0.089,0.107,137.024,7.823,"timeout","skipped","skipped","skipped","skipped",472.292,"skipped",75.229,19.536],
    ["bitblast","bb_clinicalTrial2_w10",600,"nntntttttttntntttttttt",0.02,4.729,29.834,6.545,"skipped",2.27,0.099,0.268,2.672,0.105,0.116,"timeout",288.016,"skipped","skipped","skipped","skipped","skipped","memout","skipped","timeout",452.132],
    ["bitblast","bb_clinicalTrial2_w12",600,"nntntttttttntntttttttt",0.035,23.987,135.208,6.228,"skipped",2.329,0.108,0.285,2.799,0.118,0.144,"skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout"],
    ["bitblast","bb_clinicalTrial2_w14",600,"nntntttttttntntttttttt",0.036,117.519,338.546,11.82,"skipped",2.434,0.126,0.318,3.118,0.144,0.151,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_clinicalTrial2_w16",600,"nntntttttttntntttttttt",0.038,"memout",315.668,44.349,"skipped",2.477,0.141,0.341,3.633,0.17,0.17,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_clinicalTrial2_w16",600,"nntntttttttntntttttttt",0.038,"timeout",315.668,44.349,"skipped",2.477,0.141,0.341,3.633,0.17,0.17,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_clinicalTrial2_w18",600,"nntntttttttntntttttttt",0.041,"skipped",219.45,142.37,"skipped",2.653,0.154,0.387,4.744,0.192,0.379,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_coinBias_w16",600,"nntntttttttntntttttttt",13.225,"memout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout",324.758,"memout","timeout","timeout","timeout","memout","memout","timeout","timeout","timeout"],
-   ["bitblast","bb_coinBias_w18",600,"nntntttttttntntttttttt",22.031,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_coinBias_w20",600,"nntntttttttntntttttttt",49.896,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_coinBias_w22",600,"nntntttttttntntttttttt",199.217,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_coinBias_w24",600,"nntntttttttntntttttttt","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_coinBias_w18",600,"nntntttttttntntttttttt",22.031,"memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_coinBias_w20",600,"nntntttttttntntttttttt",49.896,"memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_coinBias_w22",600,"nntntttttttntntttttttt",199.217,"memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_coinBias_w24",600,"nntntttttttntntttttttt","timeout","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_coinBias_w26",600,"nntntttttttntnttttt-tt","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null,"skipped","skipped"],
+   ["bitblast","bb_coinBias_w28",600,"nntntttttttntnttttt-tt","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",null,"skipped","skipped"],
    ["bitblast","bb_conjugate_ex3_w18",600,"nntntttttttntntttttttt",50.274,"memout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout",315.76,"memout","timeout","timeout","error","memout","timeout","timeout","timeout","timeout"],
    ["bitblast","bb_conjugate_ex3_w20",600,"nntntttttttntntttttttt",82.492,"skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_conjugate_ex3_w22",600,"nntntttttttntntttttttt","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
@@ -47747,8 +47749,8 @@
    ["bitblast","bb_conjugate_gaussians_w25",600,"nntntttttttntntttttttt",1.642,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_conjugate_gaussians_w27",600,"nntntttttttntntttttttt",2.398,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_conjugate_gaussians_w29",600,"nntntttttttntntttttttt",3.215,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_fair_dt14_w12",600,"nntntttttttntntttttttt",7.93,"memout",88.83,118.812,"memout","timeout","memout","memout","timeout","memout","memout","timeout",0.804,"memout","timeout","memout","timeout","timeout",23.056,"timeout","timeout","timeout"],
-   ["bitblast","bb_fair_dt14_w16",600,"nntntttttttntntttttttt",14.52,"skipped",537.476,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",4.99,"skipped","skipped","skipped","skipped","skipped",35.723,"skipped","skipped","skipped"],
+   ["bitblast","bb_fair_dt14_w12",600,"nntntttttttntntttttttt",7.93,269.433,88.83,118.812,"memout","timeout","memout","memout","timeout","memout","memout","timeout",0.804,"memout","timeout","memout","timeout","timeout",23.056,"timeout","timeout","timeout"],
+   ["bitblast","bb_fair_dt14_w16",600,"nntntttttttntntttttttt",14.52,"timeout",537.476,"timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",4.99,"skipped","skipped","skipped","skipped","skipped",35.723,"skipped","skipped","skipped"],
    ["bitblast","bb_fair_dt14_w20",600,"nntntttttttntntttttttt",30.299,"skipped","timeout","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",84.787,"skipped","skipped","skipped","skipped","skipped",56.614,"skipped","skipped","skipped"],
    ["bitblast","bb_fair_dt14_w24",600,"nntntttttttntntttttttt",35.629,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped",86.397,"skipped","skipped","skipped"],
    ["bitblast","bb_fair_dt14_w28",600,"nntntttttttntntttttttt",51.111,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",130.626,"skipped","skipped","skipped"],
@@ -47786,7 +47788,7 @@
    ["bitblast","bb_genes_t60",600,"nntntttttttntntttttttt",23.45,"skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_genes_t80",600,"nntntttttttntntttttttt",24.624,"skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_genes_t100",600,"nntntttttttntntttttttt",23.982,"skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_genes5_w17",600,"nntntttttttntntttttttt",11.887,"memout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","zero",70.249,"memout","memout","timeout","error","memout","memout","timeout","timeout","timeout"],
+   ["bitblast","bb_genes5_w17",600,"nntntttttttntntttttttt",11.887,"timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","zero",70.249,"memout","memout","timeout","error","memout","memout","timeout","timeout","timeout"],
    ["bitblast","bb_genes5_w19",600,"nntntttttttntntttttttt",14.149,"skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout",105.51,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_genes5_w21",600,"nntntttttttntntttttttt",15.584,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",195.405,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_genes5_w23",600,"nntntttttttntntttttttt",17.797,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",392.393,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
@@ -47875,17 +47877,17 @@
    ["bitblast","bb_tug_of_war_w26",600,"nntntttttttntntttttttt",0.93,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",16.297,"skipped",30.682,346.241],
    ["bitblast","bb_tug_of_war_w28",600,"nntntttttttntntttttttt",1.005,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",17.46,"skipped",34.642,478.737],
    ["bitblast","bb_weekend_w18",600,"nntntttttttntntttttttt",22.624,"memout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout","timeout",265.412,32.403,"memout","timeout","timeout","error","memout","timeout","timeout","timeout","timeout"],
-   ["bitblast","bb_weekend_w20",600,"nntntttttttntntttttttt",26.607,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",355.258,31.837,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_weekend_w22",600,"nntntttttttntntttttttt",29.71,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero",38.538,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_weekend_w24",600,"nntntttttttntntttttttt",33.003,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero",40.288,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_weekend_w26",600,"nntntttttttntntttttttt",37.936,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero",39.752,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_weekend_w28",600,"nntntttttttntntttttttt",39.006,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero","error","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_weekend_w30",600,"nntntttttttntntttttttt",43.345,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero","error","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_weekend_w20",600,"nntntttttttntntttttttt",26.607,"memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped",355.258,31.837,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_weekend_w22",600,"nntntttttttntntttttttt",29.71,"memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero",38.538,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_weekend_w24",600,"nntntttttttntntttttttt",33.003,"memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero",40.288,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_weekend_w26",600,"nntntttttttntntttttttt",37.936,"memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero",39.752,"skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_weekend_w28",600,"nntntttttttntntttttttt",39.006,"memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero","error","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_weekend_w30",600,"nntntttttttntntttttttt",43.345,"memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero","error","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_weekend_p4",600,"nntntttttttntntttttttt",0.023,0.278,0.67,2.808,"timeout",2.059,0.176,0.397,2.43,0.456,2.055,"zero",0.026,0.162,"timeout","memout","timeout","timeout",6.973,"timeout",4.408,209.555],
    ["bitblast","bb_weekend_p16",600,"nntntttttttntntttttttt",0.125,1.038,1.182,6.331,"skipped",3.683,68.795,19.735,"timeout",76.204,"memout","zero",0.066,0.42,"skipped","skipped","skipped","skipped",8.373,"skipped",13.812,"timeout"],
    ["bitblast","bb_weekend_p64",600,"nntntttttttntntttttttt",1.948,10.883,7.453,"timeout","skipped","timeout","memout","memout","skipped","memout","skipped","zero",0.289,1.845,"skipped","skipped","skipped","skipped",8.957,"skipped",114.267,"skipped"],
    ["bitblast","bb_weekend_p256",600,"nntntttttttntntttttttt",4.535,276.354,24.428,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero",1.277,"memout","skipped","skipped","skipped","skipped",15.423,"skipped","timeout","skipped"],
-   ["bitblast","bb_weekend_p1024",600,"nntntttttttntntttttttt",7.627,"memout",297.906,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero",6.232,"skipped","skipped","skipped","skipped","skipped",97.572,"skipped","skipped","skipped"],
+   ["bitblast","bb_weekend_p1024",600,"nntntttttttntntttttttt",7.627,"timeout",297.906,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","zero",6.232,"skipped","skipped","skipped","skipped","skipped",97.572,"skipped","skipped","skipped"],
    ["bitblast","bb_weekend_p4096",600,"nntntttttttntntttttttt",34.791,"skipped","timeout","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","zero",38.833,"skipped","skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped"],
    ["bitblast","bb_weekend_p16384",600,"nntntttttttntntttttttt",170.167,"skipped","timeout","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","timeout","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_weekend_p65536",600,"nntntttttttntntttttttt","memout","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","error","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
@@ -47904,8 +47906,8 @@
    ["bitblast","bb_wmi_star_n64",600,"nntntttttttntntttttttt",0.571,37.806,"skipped",151.56,"skipped",9.652,7.318,12.225,13.69,94.288,"skipped","skipped",3.805,"skipped","skipped","skipped","skipped","skipped","memout","skipped",178.892,"timeout"],
    ["bitblast","bb_wmi_star_n128",600,"nntntttttttntntttttttt",1.116,78.303,"skipped",230.116,"skipped",16.522,35.975,50.233,41.958,"timeout","skipped","skipped",15.207,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","timeout","skipped"],
    ["bitblast","bb_wmi_star_n256",600,"nntntttttttntntttttttt",2.208,162.165,"skipped","timeout","skipped",15.547,216.295,229.738,151.681,"skipped","skipped","skipped",64.481,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_wmi_star_n512",600,"nntntttttttntntttttttt",4.641,"memout","skipped","skipped","skipped",33.217,"timeout","timeout","timeout","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
-   ["bitblast","bb_wmi_star_n1024",600,"nntntttttttntntttttttt",10.047,"skipped","skipped","skipped","skipped",90.654,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_wmi_star_n512",600,"nntntttttttntntttttttt",4.641,361.477,"skipped","skipped","skipped",33.217,"timeout","timeout","timeout","skipped","skipped","skipped","memout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
+   ["bitblast","bb_wmi_star_n1024",600,"nntntttttttntntttttttt",10.047,"timeout","skipped","skipped","skipped",90.654,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_wmi_star_n4096",600,"nntntttttttntntttttttt",51.201,"skipped","skipped","skipped","skipped","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_wmi_star_n16384",600,"nntntttttttntntttttttt",168.073,"skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
    ["bitblast","bb_wmi_star_n65536",600,"nntntttttttntntttttttt","timeout","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped","skipped"],
@@ -47971,7 +47973,7 @@
     "about":"The bit-blasting paper's gene expression program (Figures 1 and 2): by its number of genes, and with 5 genes by precision.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Section 2",
     "domain":null,
-    "rows":[136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152]
+    "rows":[138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154]
    },
    {
     "key":"conjugate",
@@ -47979,7 +47981,7 @@
     "about":"Conjugate Gaussians, observed at 8 and 9 (Figure 5) and at the observations of Table 2: the expectation, by precision.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Section 2 and Table 2",
     "domain":null,
-    "rows":[94,95,96,97,98,99,100,101,102,103,104,105,106,107]
+    "rows":[96,97,98,99,100,101,102,103,104,105,106,107,108,109]
    },
    {
     "key":"multimodal",
@@ -47987,7 +47989,7 @@
     "about":"The Yao-Vehtari-Gelman model of the bit-blasting paper's Figures 3 and 4: the expectation, by precision.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Section 2",
     "domain":null,
-    "rows":[172,173]
+    "rows":[174,175]
    },
    {
     "key":"laplace",
@@ -47995,7 +47997,7 @@
     "about":"The Laplace mixture of the bit-blasting paper's repository, by precision.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Section 2",
     "domain":null,
-    "rows":[153,154,155]
+    "rows":[155,156,157]
    },
    {
     "key":"addFun_max",
@@ -48051,7 +48053,7 @@
     "about":"The bit-blasting paper's coinBias program (data/alea/hybit/coinBias.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
     "domain":null,
-    "rows":[89,90,91,92,93]
+    "rows":[89,90,91,92,93,94,95]
    },
    {
     "key":"GPA",
@@ -48067,7 +48069,7 @@
     "about":"The bit-blasting paper's normal mixture (data/alea/hybit/normal_mixture_mu1.jl, _mu2 and _theta: one model under three questions) as the circuit Alea.jl builds, by precision: the expectation of μ1, μ2 or θ.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
     "domain":null,
-    "rows":[174,175,176,177,178,179,180,181,182,183,184,185]
+    "rows":[176,177,178,179,180,181,182,183,184,185,186,187]
    },
    {
     "key":"pi",
@@ -48075,7 +48077,7 @@
     "about":"The bit-blasting paper's pi program (data/alea/hybit/pi.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
     "domain":null,
-    "rows":[196,197,198,199,200,201,202,203]
+    "rows":[198,199,200,201,202,203,204,205]
    },
    {
     "key":"spacex",
@@ -48083,7 +48085,7 @@
     "about":"The bit-blasting paper's spacex program (data/alea/hybit/spacex.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
     "domain":null,
-    "rows":[216,217,218,219,220,221,222,223,224]
+    "rows":[218,219,220,221,222,223,224,225,226]
    },
    {
     "key":"trueskill",
@@ -48091,7 +48093,7 @@
     "about":"The bit-blasting paper's trueskill program (data/alea/hybit/trueskill.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
     "domain":null,
-    "rows":[225,226,227]
+    "rows":[227,228,229]
    },
    {
     "key":"tug_of_war",
@@ -48099,7 +48101,7 @@
     "about":"The bit-blasting paper's tug_of_war program (data/alea/hybit/tug_of_war.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
     "domain":null,
-    "rows":[228,229,230,231,232,233,234]
+    "rows":[230,231,232,233,234,235,236]
    },
    {
     "key":"weekend",
@@ -48107,7 +48109,7 @@
     "about":"The bit-blasting paper's weekend program (data/alea/hybit/weekend.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
     "domain":null,
-    "rows":[235,236,237,238,239,240,241,242,243,244,245,246,247,248,249]
+    "rows":[237,238,239,240,241,242,243,244,245,246,247,248,249,250,251]
    },
    {
     "key":"zeroone",
@@ -48115,7 +48117,7 @@
     "about":"The bit-blasting paper's zeroone classifier (zeroone_w1 and zeroone_w2: one model under two questions) as the circuit Alea.jl builds, by the width of its numbers: the expectation of w1 or w2.",
     "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
     "domain":null,
-    "rows":[270,271,272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,287,288,289,290]
+    "rows":[272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,287,288,289,290,291,292]
    },
    {
     "key":"fair_dt4",
@@ -48123,7 +48125,7 @@
     "about":"FairSquare's decision tree DT_V2_D2_N4 over its population model of the Adult census data, as SPPL's Table 3 runs it, as the circuit Alea.jl builds, by precision: the probabilities of its fairness ratio.",
     "source":"FairSquare (sedrews/fairsquare), as in SPPL (PLDI 2021)",
     "domain":null,
-    "rows":[122,123,124,125,126,127,128,129]
+    "rows":[124,125,126,127,128,129,130,131]
    },
    {
     "key":"fair_dt14",
@@ -48131,7 +48133,7 @@
     "about":"FairSquare's decision tree DT_V2_D3_N14 over its population model of the Adult census data, as SPPL's Table 3 runs it, as the circuit Alea.jl builds, by precision: the probabilities of its fairness ratio.",
     "source":"FairSquare (sedrews/fairsquare), as in SPPL (PLDI 2021)",
     "domain":null,
-    "rows":[108,109,110,111,112,113,114,115]
+    "rows":[110,111,112,113,114,115,116,117]
    },
    {
     "key":"fair_dt16",
@@ -48139,7 +48141,7 @@
     "about":"FairSquare's decision tree DT_V2_D2_N16 over its population model of the Adult census data, as SPPL's Table 3 runs it, as the circuit Alea.jl builds, by precision: the probabilities of its fairness ratio.",
     "source":"FairSquare (sedrews/fairsquare), as in SPPL (PLDI 2021)",
     "domain":null,
-    "rows":[116,117,118,119,120,121]
+    "rows":[118,119,120,121,122,123]
    },
    {
     "key":"fair_dt44",
@@ -48147,7 +48149,7 @@
     "about":"FairSquare's decision tree DT_V3_D2_N44 over its population model of the Adult census data, as SPPL's Table 3 runs it, as the circuit Alea.jl builds, by precision: the probabilities of its fairness ratio.",
     "source":"FairSquare (sedrews/fairsquare), as in SPPL (PLDI 2021)",
     "domain":null,
-    "rows":[130,131,132,133,134,135]
+    "rows":[132,133,134,135,136,137]
    },
    {
     "key":"linreg",
@@ -48155,7 +48157,7 @@
     "about":"R2's and PSI's linear regression as the circuit Alea.jl builds, by precision.",
     "source":"PSI (eth-sri/psi)",
     "domain":null,
-    "rows":[156,157,158,159,160,161,162,163]
+    "rows":[158,159,160,161,162,163,164,165]
    },
    {
     "key":"markov",
@@ -48163,7 +48165,7 @@
     "about":"SPPL's hierarchical Markov switching model as the circuit Alea.jl builds, by its number of steps.",
     "source":"SPPL (Saad et al., PLDI 2021)",
     "domain":null,
-    "rows":[164,165,166,167,168,169,170,171]
+    "rows":[166,167,168,169,170,171,172,173]
    },
    {
     "key":"pedestrian",
@@ -48171,7 +48173,7 @@
     "about":"The pedestrian of Mak et al., which GuBPI bounds, as the circuit Alea.jl builds, by its number of steps.",
     "source":"Mak et al. (ESOP 2021)",
     "domain":null,
-    "rows":[186,187,188,189,190,191,192,193,194,195]
+    "rows":[188,189,190,191,192,193,194,195,196,197]
    },
    {
     "key":"population",
@@ -48179,7 +48181,7 @@
     "about":"Genfer's population model as the circuit Alea.jl builds, by its number of steps.",
     "source":"Genfer (Zaiser et al., NeurIPS 2023)",
     "domain":null,
-    "rows":[204,205,206,207,208,209,210,211,212,213,214,215]
+    "rows":[206,207,208,209,210,211,212,213,214,215,216,217]
    },
    {
     "key":"wmi_path",
@@ -48187,7 +48189,7 @@
     "about":"The path problem of the papers on weighted model integration as the circuit Alea.jl builds, by size.",
     "source":"Zeng and Van den Broeck (UAI 2019); Zeng et al. (ICML 2020)",
     "domain":null,
-    "rows":[250,251,252,253,254,255,256,257,258,259]
+    "rows":[252,253,254,255,256,257,258,259,260,261]
    },
    {
     "key":"wmi_star",
@@ -48195,54 +48197,54 @@
     "about":"The star problem of the papers on weighted model integration as the circuit Alea.jl builds, by size.",
     "source":"Zeng and Van den Broeck (UAI 2019); Zeng et al. (ICML 2020)",
     "domain":null,
-    "rows":[260,261,262,263,264,265,266,267,268,269]
+    "rows":[262,263,264,265,266,267,268,269,270,271]
    }
   ],
   "domains":[],
-  "given":{"tddlog":291,"problog":291,"pita":291,"aspmc":291,"scallop":259,"ace":291,"merlin":291,"agrum":291,"pgmpy":291,"libdai":291,"tensorinference":291,"dice":291,"roulette":291,"nodice":291,"psi":261,"genfer":279,"sppl":283,"geni":291,"pluck":287,"webppl":289,"storm":291,"prism":291},
-  "answers":{"tddlog":255,"problog":53,"pita":82,"aspmc":81,"scallop":0,"ace":98,"merlin":64,"agrum":61,"pgmpy":56,"libdai":59,"tensorinference":46,"dice":33,"roulette":123,"nodice":7,"psi":0,"genfer":3,"sppl":3,"geni":2,"pluck":77,"webppl":2,"storm":53,"prism":31},
+  "given":{"tddlog":293,"problog":293,"pita":293,"aspmc":293,"scallop":261,"ace":293,"merlin":293,"agrum":293,"pgmpy":293,"libdai":293,"tensorinference":293,"dice":293,"roulette":293,"nodice":293,"psi":263,"genfer":281,"sppl":285,"geni":293,"pluck":289,"webppl":289,"storm":293,"prism":293},
+  "answers":{"tddlog":255,"problog":56,"pita":82,"aspmc":81,"scallop":0,"ace":98,"merlin":64,"agrum":61,"pgmpy":56,"libdai":59,"tensorinference":46,"dice":33,"roulette":123,"nodice":7,"psi":0,"genfer":3,"sppl":3,"geni":2,"pluck":77,"webppl":2,"storm":53,"prism":31},
   "classes":{
-   "tddlog":{"own":0,"native":291,"translated":0,"unread":0,"not idiomatic":0},
-   "problog":{"own":0,"native":291,"translated":0,"unread":0,"not idiomatic":0},
-   "pita":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "aspmc":{"own":0,"native":291,"translated":0,"unread":0,"not idiomatic":0},
-   "scallop":{"own":0,"native":0,"translated":259,"unread":0,"not idiomatic":0},
-   "ace":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "merlin":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "agrum":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "pgmpy":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "libdai":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "tensorinference":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "dice":{"own":0,"native":291,"translated":0,"unread":0,"not idiomatic":0},
-   "roulette":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "nodice":{"own":0,"native":291,"translated":0,"unread":0,"not idiomatic":0},
-   "psi":{"own":0,"native":0,"translated":261,"unread":0,"not idiomatic":0},
-   "genfer":{"own":0,"native":0,"translated":279,"unread":0,"not idiomatic":0},
-   "sppl":{"own":0,"native":0,"translated":283,"unread":0,"not idiomatic":0},
-   "geni":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "pluck":{"own":0,"native":0,"translated":287,"unread":0,"not idiomatic":0},
+   "tddlog":{"own":0,"native":293,"translated":0,"unread":0,"not idiomatic":0},
+   "problog":{"own":0,"native":293,"translated":0,"unread":0,"not idiomatic":0},
+   "pita":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "aspmc":{"own":0,"native":293,"translated":0,"unread":0,"not idiomatic":0},
+   "scallop":{"own":0,"native":0,"translated":261,"unread":0,"not idiomatic":0},
+   "ace":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "merlin":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "agrum":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "pgmpy":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "libdai":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "tensorinference":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "dice":{"own":0,"native":293,"translated":0,"unread":0,"not idiomatic":0},
+   "roulette":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "nodice":{"own":0,"native":293,"translated":0,"unread":0,"not idiomatic":0},
+   "psi":{"own":0,"native":0,"translated":263,"unread":0,"not idiomatic":0},
+   "genfer":{"own":0,"native":0,"translated":281,"unread":0,"not idiomatic":0},
+   "sppl":{"own":0,"native":0,"translated":285,"unread":0,"not idiomatic":0},
+   "geni":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "pluck":{"own":0,"native":0,"translated":289,"unread":0,"not idiomatic":0},
    "webppl":{"own":0,"native":0,"translated":289,"unread":0,"not idiomatic":0},
-   "storm":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0},
-   "prism":{"own":0,"native":0,"translated":291,"unread":0,"not idiomatic":0}
+   "storm":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0},
+   "prism":{"own":0,"native":0,"translated":293,"unread":0,"not idiomatic":0}
   },
   "vs":{
    "problog":{
-    "given":291,
-    "answers":53,
+    "given":293,
+    "answers":56,
     "tddlog_answers":255,
     "either":255,
-    "total":244836.674,
+    "total":242324.6,
     "tddlog_total":8132.172,
-    "both":50,
+    "both":53,
     "failures":0,
-    "timeouts":202,
-    "counted":53,
-    "ratio":42.11,
-    "speedup":377.1,
+    "timeouts":199,
+    "counted":57,
+    "ratio":42.94,
+    "speedup":309.3,
     "me":["tddlog"]
    },
    "pita":{
-    "given":291,
+    "given":293,
     "answers":82,
     "tddlog_answers":255,
     "either":255,
@@ -48257,7 +48259,7 @@
     "me":["tddlog"]
    },
    "aspmc":{
-    "given":291,
+    "given":293,
     "answers":81,
     "tddlog_answers":255,
     "either":255,
@@ -48272,7 +48274,7 @@
     "me":["tddlog"]
    },
    "scallop":{
-    "given":259,
+    "given":261,
     "answers":0,
     "tddlog_answers":225,
     "either":225,
@@ -48287,7 +48289,7 @@
     "me":["tddlog"]
    },
    "ace":{
-    "given":291,
+    "given":293,
     "answers":98,
     "tddlog_answers":255,
     "either":255,
@@ -48302,7 +48304,7 @@
     "me":["tddlog"]
    },
    "merlin":{
-    "given":291,
+    "given":293,
     "answers":64,
     "tddlog_answers":255,
     "either":255,
@@ -48317,7 +48319,7 @@
     "me":["tddlog"]
    },
    "agrum":{
-    "given":291,
+    "given":293,
     "answers":61,
     "tddlog_answers":255,
     "either":255,
@@ -48332,7 +48334,7 @@
     "me":["tddlog"]
    },
    "pgmpy":{
-    "given":291,
+    "given":293,
     "answers":56,
     "tddlog_answers":255,
     "either":255,
@@ -48347,7 +48349,7 @@
     "me":["tddlog"]
    },
    "libdai":{
-    "given":291,
+    "given":293,
     "answers":59,
     "tddlog_answers":255,
     "either":255,
@@ -48362,7 +48364,7 @@
     "me":["tddlog"]
    },
    "tensorinference":{
-    "given":291,
+    "given":293,
     "answers":46,
     "tddlog_answers":255,
     "either":255,
@@ -48377,7 +48379,7 @@
     "me":["tddlog"]
    },
    "dice":{
-    "given":291,
+    "given":293,
     "answers":33,
     "tddlog_answers":255,
     "either":255,
@@ -48392,7 +48394,7 @@
     "me":["tddlog"]
    },
    "roulette":{
-    "given":291,
+    "given":293,
     "answers":123,
     "tddlog_answers":255,
     "either":255,
@@ -48407,7 +48409,7 @@
     "me":["tddlog"]
    },
    "nodice":{
-    "given":291,
+    "given":293,
     "answers":7,
     "tddlog_answers":255,
     "either":255,
@@ -48422,7 +48424,7 @@
     "me":["tddlog"]
    },
    "psi":{
-    "given":261,
+    "given":263,
     "answers":0,
     "tddlog_answers":228,
     "either":228,
@@ -48437,7 +48439,7 @@
     "me":["tddlog"]
    },
    "genfer":{
-    "given":279,
+    "given":281,
     "answers":3,
     "tddlog_answers":243,
     "either":243,
@@ -48452,7 +48454,7 @@
     "me":["tddlog"]
    },
    "sppl":{
-    "given":283,
+    "given":285,
     "answers":3,
     "tddlog_answers":247,
     "either":247,
@@ -48467,7 +48469,7 @@
     "me":["tddlog"]
    },
    "geni":{
-    "given":291,
+    "given":293,
     "answers":2,
     "tddlog_answers":255,
     "either":255,
@@ -48482,7 +48484,7 @@
     "me":["tddlog"]
    },
    "pluck":{
-    "given":287,
+    "given":289,
     "answers":77,
     "tddlog_answers":251,
     "either":251,
@@ -48512,7 +48514,7 @@
     "me":["tddlog"]
    },
    "storm":{
-    "given":291,
+    "given":293,
     "answers":53,
     "tddlog_answers":255,
     "either":255,
@@ -48527,7 +48529,7 @@
     "me":["tddlog"]
    },
    "prism":{
-    "given":291,
+    "given":293,
     "answers":31,
     "tddlog_answers":255,
     "either":255,
@@ -52246,14 +52248,14 @@
    "clinicalTrial1":{
     "problog":{
      "given":6,
-     "answers":4,
+     "answers":5,
      "tddlog_answers":6,
      "either":6,
-     "total":2550.765,
+     "total":1807.781,
      "tddlog_total":48.568,
-     "both":4,
+     "both":5,
      "failures":0,
-     "timeouts":2,
+     "timeouts":1,
      "counted":null,
      "ratio":null,
      "speedup":null,
@@ -52879,7 +52881,7 @@
    },
    "coinBias":{
     "problog":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -52894,7 +52896,7 @@
      "me":["tddlog"]
     },
     "pita":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -52909,7 +52911,7 @@
      "me":["tddlog"]
     },
     "aspmc":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -52924,7 +52926,7 @@
      "me":["tddlog"]
     },
     "scallop":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -52939,7 +52941,7 @@
      "me":["tddlog"]
     },
     "ace":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -52954,7 +52956,7 @@
      "me":["tddlog"]
     },
     "merlin":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -52969,7 +52971,7 @@
      "me":["tddlog"]
     },
     "agrum":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -52984,7 +52986,7 @@
      "me":["tddlog"]
     },
     "pgmpy":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -52999,7 +53001,7 @@
      "me":["tddlog"]
     },
     "libdai":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53014,7 +53016,7 @@
      "me":["tddlog"]
     },
     "tensorinference":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53029,7 +53031,7 @@
      "me":["tddlog"]
     },
     "dice":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53044,7 +53046,7 @@
      "me":["tddlog"]
     },
     "roulette":{
-     "given":5,
+     "given":7,
      "answers":1,
      "tddlog_answers":4,
      "either":4,
@@ -53059,7 +53061,7 @@
      "me":["tddlog"]
     },
     "nodice":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53074,7 +53076,7 @@
      "me":["tddlog"]
     },
     "psi":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53089,7 +53091,7 @@
      "me":["tddlog"]
     },
     "genfer":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53104,7 +53106,7 @@
      "me":["tddlog"]
     },
     "sppl":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53119,7 +53121,7 @@
      "me":["tddlog"]
     },
     "geni":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53134,7 +53136,7 @@
      "me":["tddlog"]
     },
     "pluck":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53164,7 +53166,7 @@
      "me":["tddlog"]
     },
     "storm":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -53179,7 +53181,7 @@
      "me":["tddlog"]
     },
     "prism":{
-     "given":5,
+     "given":7,
      "answers":0,
      "tddlog_answers":4,
      "either":4,
@@ -56050,14 +56052,14 @@
    "fair_dt14":{
     "problog":{
      "given":8,
-     "answers":0,
+     "answers":1,
      "tddlog_answers":8,
      "either":8,
-     "total":9600,
+     "total":8669.433,
      "tddlog_total":407.116,
-     "both":0,
+     "both":1,
      "failures":0,
-     "timeouts":8,
+     "timeouts":7,
      "counted":null,
      "ratio":null,
      "speedup":null,
@@ -58541,14 +58543,14 @@
    "wmi_star":{
     "problog":{
      "given":10,
-     "answers":3,
+     "answers":4,
      "tddlog_answers":9,
      "either":9,
-     "total":7478.274,
+     "total":6639.751,
      "tddlog_total":238.337,
-     "both":3,
+     "both":4,
      "failures":0,
-     "timeouts":6,
+     "timeouts":5,
      "counted":null,
      "ratio":null,
      "speedup":null,
@@ -58856,12 +58858,12 @@
     }
    }
   },
-  "native":["roulette","ace","pita","aspmc","pluck","merlin","agrum","libdai","pgmpy","storm","problog","tensorinference","dice","prism","nodice","genfer","sppl","geni","webppl","scallop","psi"],
+  "native":["roulette","ace","pita","aspmc","pluck","merlin","agrum","libdai","pgmpy","problog","storm","tensorinference","dice","prism","nodice","genfer","sppl","geni","webppl","scallop","psi"],
   "mine":["tddlog"],
-  "drawn":["tddlog","roulette","ace","pita","aspmc","pluck","merlin","agrum","libdai","pgmpy","storm","problog","tensorinference","dice","prism","nodice","genfer","sppl","geni","webppl","scallop","psi"],
+  "drawn":["tddlog","roulette","ace","pita","aspmc","pluck","merlin","agrum","libdai","pgmpy","problog","storm","tensorinference","dice","prism","nodice","genfer","sppl","geni","webppl","scallop","psi"],
   "named":["roulette","ace","pita","aspmc","pluck"],
   "others":{
-   "systems":["merlin","agrum","libdai","pgmpy","storm","problog","tensorinference","dice","prism","nodice","genfer","sppl","geni","webppl","scallop","psi"],
+   "systems":["merlin","agrum","libdai","pgmpy","problog","storm","tensorinference","dice","prism","nodice","genfer","sppl","geni","webppl","scallop","psi"],
    "answers":[0,64],
    "total":230399.114,
    "tddlog":[7391.05,8132.172],
@@ -58875,7 +58877,7 @@
    "title":"Alea.jl+tddlog",
    "noun":"programs",
    "order":0,
-   "instances":999,
+   "instances":1001,
    "systems":["alea-tddlog","alea","tddlog","problog","pita","aspmc","psouffle","scallop","ace","merlin","agrum","pgmpy","libdai","tensorinference","dice","roulette","nodice","psi","genfer","sppl","geni","pluck","webppl","storm","prism","provsql"],
    "rows":[
     ["std","cora10",300,"ttnntnttttttttttttttttttt-",0.247,0.146,0.054,2.469,1.195,"timeout","timeout",59.583,1.778,0.13,0.238,2.501,0.136,0.123,0.535,9.555,0.44,146.48,0.172,"timeout",0.539,"memout","timeout",1.659,19.657,null],
@@ -59659,6 +59661,8 @@
     ["bitblast","bb_coinBias_w20",600,"nou-----------------------",51.041,104.165,"unread",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["bitblast","bb_coinBias_w22",600,"nou-----------------------",200.678,415.708,"unread",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["bitblast","bb_coinBias_w24",600,"nou-----------------------","timeout","timeout","unread",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["bitblast","bb_coinBias_w26",600,"nou-----------------------","skipped","skipped","unread",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
+    ["bitblast","bb_coinBias_w28",600,"nou-----------------------","skipped","skipped","unread",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["bitblast","bb_conjugate_ex3_w18",600,"nou-----------------------",51.789,10.36,"unread",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["bitblast","bb_conjugate_ex3_w20",600,"nou-----------------------",84.28,25.191,"unread",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
     ["bitblast","bb_conjugate_ex3_w22",600,"nou-----------------------","timeout",93.226,"unread",null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],
@@ -60246,7 +60250,7 @@
      "about":"The Dice paper's network verification benchmark of diamonds in a row (gen_diamond of dicebench), by the number of diamonds: the paper's Dice program, Roulette's diamond.rkt, and one ProbLog program.",
      "source":"Dice (OOPSLA 2020); Roulette (PLDI 2025); noDice (OOPSLA 2026)",
      "domain":null,
-     "rows":[978,979,980,981,982,983,984,985,986,987,988]
+     "rows":[980,981,982,983,984,985,986,987,988,989,990]
     },
     {
      "key":"ladder",
@@ -60254,7 +60258,7 @@
      "about":"The Dice paper's network verification benchmark of ladders (gen_ladder of dicebench), by the number of rungs: the paper's Dice program, Roulette's ladder.rkt, and one ProbLog program.",
      "source":"Dice (OOPSLA 2020); Roulette (PLDI 2025); noDice (OOPSLA 2026)",
      "domain":null,
-     "rows":[989,990,991,992,993,994,995,996,997,998]
+     "rows":[991,992,993,994,995,996,997,998,999,1000]
     },
     {
      "key":"pluck_hmm",
@@ -60286,7 +60290,7 @@
      "about":"The bit-blasting paper's gene expression program (Figures 1 and 2): by its number of genes, and with 5 genes by precision.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Section 2",
      "domain":null,
-     "rows":[823,824,825,826,827,828,829,830,831,832,833,834,835,836,837,838,839]
+     "rows":[825,826,827,828,829,830,831,832,833,834,835,836,837,838,839,840,841]
     },
     {
      "key":"conjugate",
@@ -60294,7 +60298,7 @@
      "about":"Conjugate Gaussians, observed at 8 and 9 (Figure 5) and at the observations of Table 2: the expectation, by precision.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Section 2 and Table 2",
      "domain":null,
-     "rows":[781,782,783,784,785,786,787,788,789,790,791,792,793,794]
+     "rows":[783,784,785,786,787,788,789,790,791,792,793,794,795,796]
     },
     {
      "key":"multimodal",
@@ -60302,7 +60306,7 @@
      "about":"The Yao-Vehtari-Gelman model of the bit-blasting paper's Figures 3 and 4: the expectation, by precision.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Section 2",
      "domain":null,
-     "rows":[859,860]
+     "rows":[861,862]
     },
     {
      "key":"laplace",
@@ -60310,7 +60314,7 @@
      "about":"The Laplace mixture of the bit-blasting paper's repository, by precision.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Section 2",
      "domain":null,
-     "rows":[840,841,842]
+     "rows":[842,843,844]
     },
     {
      "key":"addFun_max",
@@ -60366,7 +60370,7 @@
      "about":"The bit-blasting paper's coinBias program (data/alea/hybit/coinBias.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
      "domain":null,
-     "rows":[776,777,778,779,780]
+     "rows":[776,777,778,779,780,781,782]
     },
     {
      "key":"GPA",
@@ -60382,7 +60386,7 @@
      "about":"The bit-blasting paper's normal mixture (data/alea/hybit/normal_mixture_mu1.jl, _mu2 and _theta: one model under three questions) as the circuit Alea.jl builds, by precision: the expectation of μ1, μ2 or θ.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
      "domain":null,
-     "rows":[861,862,863,864,865,866,867,868,869,870,871,872]
+     "rows":[863,864,865,866,867,868,869,870,871,872,873,874]
     },
     {
      "key":"pi",
@@ -60390,7 +60394,7 @@
      "about":"The bit-blasting paper's pi program (data/alea/hybit/pi.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
      "domain":null,
-     "rows":[883,884,885,886,887,888,889,890]
+     "rows":[885,886,887,888,889,890,891,892]
     },
     {
      "key":"spacex",
@@ -60398,7 +60402,7 @@
      "about":"The bit-blasting paper's spacex program (data/alea/hybit/spacex.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
      "domain":null,
-     "rows":[903,904,905,906,907,908,909,910,911]
+     "rows":[905,906,907,908,909,910,911,912,913]
     },
     {
      "key":"trueskill",
@@ -60406,7 +60410,7 @@
      "about":"The bit-blasting paper's trueskill program (data/alea/hybit/trueskill.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
      "domain":null,
-     "rows":[912,913,914]
+     "rows":[914,915,916]
     },
     {
      "key":"tug_of_war",
@@ -60414,7 +60418,7 @@
      "about":"The bit-blasting paper's tug_of_war program (data/alea/hybit/tug_of_war.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
      "domain":null,
-     "rows":[915,916,917,918,919,920,921]
+     "rows":[917,918,919,920,921,922,923]
     },
     {
      "key":"weekend",
@@ -60422,7 +60426,7 @@
      "about":"The bit-blasting paper's weekend program (data/alea/hybit/weekend.jl) as the circuit Alea.jl builds, by the width of its numbers or its number of pieces: its probability or expectation.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
      "domain":null,
-     "rows":[922,923,924,925,926,927,928,929,930,931,932,933,934,935,936]
+     "rows":[924,925,926,927,928,929,930,931,932,933,934,935,936,937,938]
     },
     {
      "key":"zeroone",
@@ -60430,7 +60434,7 @@
      "about":"The bit-blasting paper's zeroone classifier (zeroone_w1 and zeroone_w2: one model under two questions) as the circuit Alea.jl builds, by the width of its numbers: the expectation of w1 or w2.",
      "source":"Garg et al., Bit Blasting Probabilistic Programs (PLDI 2024), Table 2",
      "domain":null,
-     "rows":[957,958,959,960,961,962,963,964,965,966,967,968,969,970,971,972,973,974,975,976,977]
+     "rows":[959,960,961,962,963,964,965,966,967,968,969,970,971,972,973,974,975,976,977,978,979]
     },
     {
      "key":"fair_dt4",
@@ -60438,7 +60442,7 @@
      "about":"FairSquare's decision tree DT_V2_D2_N4 over its population model of the Adult census data, as SPPL's Table 3 runs it, as the circuit Alea.jl builds, by precision: the probabilities of its fairness ratio.",
      "source":"FairSquare (sedrews/fairsquare), as in SPPL (PLDI 2021)",
      "domain":null,
-     "rows":[809,810,811,812,813,814,815,816]
+     "rows":[811,812,813,814,815,816,817,818]
     },
     {
      "key":"fair_dt14",
@@ -60446,7 +60450,7 @@
      "about":"FairSquare's decision tree DT_V2_D3_N14 over its population model of the Adult census data, as SPPL's Table 3 runs it, as the circuit Alea.jl builds, by precision: the probabilities of its fairness ratio.",
      "source":"FairSquare (sedrews/fairsquare), as in SPPL (PLDI 2021)",
      "domain":null,
-     "rows":[795,796,797,798,799,800,801,802]
+     "rows":[797,798,799,800,801,802,803,804]
     },
     {
      "key":"fair_dt16",
@@ -60454,7 +60458,7 @@
      "about":"FairSquare's decision tree DT_V2_D2_N16 over its population model of the Adult census data, as SPPL's Table 3 runs it, as the circuit Alea.jl builds, by precision: the probabilities of its fairness ratio.",
      "source":"FairSquare (sedrews/fairsquare), as in SPPL (PLDI 2021)",
      "domain":null,
-     "rows":[803,804,805,806,807,808]
+     "rows":[805,806,807,808,809,810]
     },
     {
      "key":"fair_dt44",
@@ -60462,7 +60466,7 @@
      "about":"FairSquare's decision tree DT_V3_D2_N44 over its population model of the Adult census data, as SPPL's Table 3 runs it, as the circuit Alea.jl builds, by precision: the probabilities of its fairness ratio.",
      "source":"FairSquare (sedrews/fairsquare), as in SPPL (PLDI 2021)",
      "domain":null,
-     "rows":[817,818,819,820,821,822]
+     "rows":[819,820,821,822,823,824]
     },
     {
      "key":"linreg",
@@ -60470,7 +60474,7 @@
      "about":"R2's and PSI's linear regression as the circuit Alea.jl builds, by precision.",
      "source":"PSI (eth-sri/psi)",
      "domain":null,
-     "rows":[843,844,845,846,847,848,849,850]
+     "rows":[845,846,847,848,849,850,851,852]
     },
     {
      "key":"markov",
@@ -60478,7 +60482,7 @@
      "about":"SPPL's hierarchical Markov switching model as the circuit Alea.jl builds, by its number of steps.",
      "source":"SPPL (Saad et al., PLDI 2021)",
      "domain":null,
-     "rows":[851,852,853,854,855,856,857,858]
+     "rows":[853,854,855,856,857,858,859,860]
     },
     {
      "key":"pedestrian",
@@ -60486,7 +60490,7 @@
      "about":"The pedestrian of Mak et al., which GuBPI bounds, as the circuit Alea.jl builds, by its number of steps.",
      "source":"Mak et al. (ESOP 2021)",
      "domain":null,
-     "rows":[873,874,875,876,877,878,879,880,881,882]
+     "rows":[875,876,877,878,879,880,881,882,883,884]
     },
     {
      "key":"population",
@@ -60494,7 +60498,7 @@
      "about":"Genfer's population model as the circuit Alea.jl builds, by its number of steps.",
      "source":"Genfer (Zaiser et al., NeurIPS 2023)",
      "domain":null,
-     "rows":[891,892,893,894,895,896,897,898,899,900,901,902]
+     "rows":[893,894,895,896,897,898,899,900,901,902,903,904]
     },
     {
      "key":"wmi_path",
@@ -60502,7 +60506,7 @@
      "about":"The path problem of the papers on weighted model integration as the circuit Alea.jl builds, by size.",
      "source":"Zeng and Van den Broeck (UAI 2019); Zeng et al. (ICML 2020)",
      "domain":null,
-     "rows":[937,938,939,940,941,942,943,944,945,946]
+     "rows":[939,940,941,942,943,944,945,946,947,948]
     },
     {
      "key":"wmi_star",
@@ -60510,7 +60514,7 @@
      "about":"The star problem of the papers on weighted model integration as the circuit Alea.jl builds, by size.",
      "source":"Zeng and Van den Broeck (UAI 2019); Zeng et al. (ICML 2020)",
      "domain":null,
-     "rows":[947,948,949,950,951,952,953,954,955,956]
+     "rows":[949,950,951,952,953,954,955,956,957,958]
     }
    ],
    "domains":[
@@ -60520,12 +60524,12 @@
      "groups":["q1","q6","q4","q12","q14","q15","q16","q17","q3","q10","q11","q18","q2","q20","q7","q21"]
     }
    ],
-   "given":{"alea-tddlog":999,"alea":999,"tddlog":740,"problog":740,"pita":739,"aspmc":740,"psouffle":687,"scallop":687,"ace":518,"merlin":520,"agrum":520,"pgmpy":520,"libdai":520,"tensorinference":520,"dice":519,"roulette":740,"nodice":519,"psi":748,"genfer":531,"sppl":748,"geni":519,"pluck":740,"webppl":740,"storm":519,"prism":519,"provsql":330},
+   "given":{"alea-tddlog":1001,"alea":1001,"tddlog":740,"problog":740,"pita":739,"aspmc":740,"psouffle":687,"scallop":687,"ace":518,"merlin":520,"agrum":520,"pgmpy":520,"libdai":520,"tensorinference":520,"dice":519,"roulette":740,"nodice":519,"psi":748,"genfer":531,"sppl":748,"geni":519,"pluck":740,"webppl":740,"storm":519,"prism":519,"provsql":330},
    "answers":{"alea-tddlog":647,"alea":379,"tddlog":699,"problog":482,"pita":380,"aspmc":298,"psouffle":313,"scallop":100,"ace":357,"merlin":245,"agrum":266,"pgmpy":246,"libdai":274,"tensorinference":216,"dice":149,"roulette":230,"nodice":108,"psi":94,"genfer":76,"sppl":83,"geni":66,"pluck":128,"webppl":150,"storm":209,"prism":113,"provsql":291},
    "classes":{
-    "alea-tddlog":{"own":0,"native":298,"translated":701,"unread":0,"not idiomatic":0},
-    "alea":{"own":287,"native":11,"translated":701,"unread":0,"not idiomatic":0},
-    "tddlog":{"own":0,"native":686,"translated":54,"unread":259,"not idiomatic":0},
+    "alea-tddlog":{"own":0,"native":300,"translated":701,"unread":0,"not idiomatic":0},
+    "alea":{"own":289,"native":11,"translated":701,"unread":0,"not idiomatic":0},
+    "tddlog":{"own":0,"native":686,"translated":54,"unread":261,"not idiomatic":0},
     "problog":{"own":182,"native":466,"translated":92,"unread":0,"not idiomatic":0},
     "pita":{"own":62,"native":0,"translated":677,"unread":0,"not idiomatic":0},
     "aspmc":{"own":0,"native":648,"translated":92,"unread":0,"not idiomatic":0},
@@ -60552,7 +60556,7 @@
    },
    "vs":{
     "alea":{
-     "given":999,
+     "given":1001,
      "answers":379,
      "tddlog_answers":647,
      "either":657,
@@ -60561,7 +60565,7 @@
      "both":233,
      "failures":10,
      "timeouts":278,
-     "counted":240,
+     "counted":250,
      "ratio":2.069,
      "speedup":11.69,
      "me":["alea-tddlog"]
@@ -60576,7 +60580,7 @@
      "both":251,
      "failures":164,
      "timeouts":105,
-     "counted":105,
+     "counted":269,
      "ratio":10.52,
      "speedup":1.307,
      "me":["alea-tddlog"]
@@ -60591,7 +60595,7 @@
      "both":255,
      "failures":125,
      "timeouts":167,
-     "counted":164,
+     "counted":289,
      "ratio":9.797,
      "speedup":2.368,
      "me":["alea-tddlog"]
@@ -60606,7 +60610,7 @@
      "both":257,
      "failures":41,
      "timeouts":166,
-     "counted":152,
+     "counted":193,
      "ratio":36.81,
      "speedup":6.223,
      "me":["alea-tddlog"]
@@ -60621,7 +60625,7 @@
      "both":264,
      "failures":49,
      "timeouts":112,
-     "counted":109,
+     "counted":158,
      "ratio":18.07,
      "speedup":3.174,
      "me":["alea-tddlog"]
@@ -60636,7 +60640,7 @@
      "both":32,
      "failures":25,
      "timeouts":301,
-     "counted":269,
+     "counted":294,
      "ratio":184.2,
      "speedup":16.07,
      "me":["alea-tddlog"]
@@ -60651,7 +60655,7 @@
      "both":307,
      "failures":50,
      "timeouts":64,
-     "counted":64,
+     "counted":114,
      "ratio":2.604,
      "speedup":1.364,
      "me":["alea-tddlog"]
@@ -60666,7 +60670,7 @@
      "both":165,
      "failures":4,
      "timeouts":131,
-     "counted":91,
+     "counted":95,
      "ratio":2.48,
      "speedup":20.1,
      "me":["alea-tddlog"]
@@ -60681,7 +60685,7 @@
      "both":238,
      "failures":3,
      "timeouts":109,
-     "counted":72,
+     "counted":75,
      "ratio":8.22,
      "speedup":18.85,
      "me":["alea-tddlog"]
@@ -60696,7 +60700,7 @@
      "both":237,
      "failures":9,
      "timeouts":135,
-     "counted":111,
+     "counted":120,
      "ratio":6.597,
      "speedup":10.79,
      "me":["alea-tddlog"]
@@ -60711,7 +60715,7 @@
      "both":185,
      "failures":9,
      "timeouts":107,
-     "counted":89,
+     "counted":98,
      "ratio":6.374,
      "speedup":8.541,
      "me":["alea-tddlog"]
@@ -60726,7 +60730,7 @@
      "both":156,
      "failures":2,
      "timeouts":158,
-     "counted":93,
+     "counted":95,
      "ratio":19.92,
      "speedup":42.3,
      "me":["alea-tddlog"]
@@ -60741,7 +60745,7 @@
      "both":101,
      "failures":5,
      "timeouts":228,
-     "counted":181,
+     "counted":186,
      "ratio":3.831,
      "speedup":26.16,
      "me":["alea-tddlog"]
@@ -60756,7 +60760,7 @@
      "both":124,
      "failures":1,
      "timeouts":194,
-     "counted":149,
+     "counted":150,
      "ratio":2.488,
      "speedup":41.45,
      "me":["alea-tddlog"]
@@ -60771,7 +60775,7 @@
      "both":77,
      "failures":1,
      "timeouts":265,
-     "counted":172,
+     "counted":173,
      "ratio":15.98,
      "speedup":125.9,
      "me":["alea-tddlog"]
@@ -60786,7 +60790,7 @@
      "both":36,
      "failures":2,
      "timeouts":138,
-     "counted":111,
+     "counted":113,
      "ratio":7.25,
      "speedup":26.24,
      "me":["alea-tddlog"]
@@ -60801,7 +60805,7 @@
      "both":41,
      "failures":6,
      "timeouts":314,
-     "counted":241,
+     "counted":247,
      "ratio":1.543,
      "speedup":47.5,
      "me":["alea-tddlog"]
@@ -60876,7 +60880,7 @@
      "both":195,
      "failures":13,
      "timeouts":176,
-     "counted":155,
+     "counted":168,
      "ratio":9.483,
      "speedup":9.469,
      "me":["alea-tddlog"]
@@ -60891,7 +60895,7 @@
      "both":112,
      "failures":1,
      "timeouts":260,
-     "counted":151,
+     "counted":152,
      "ratio":23.48,
      "speedup":145.2,
      "me":["alea-tddlog"]
@@ -60906,9 +60910,9 @@
      "both":209,
      "failures":57,
      "timeouts":20,
-     "counted":20,
+     "counted":76,
      "ratio":1.478,
-     "speedup":0.5372,
+     "speedup":0.5332,
      "me":["alea-tddlog"]
     }
    },
@@ -66153,7 +66157,7 @@
       "both":20,
       "failures":17,
       "timeouts":0,
-      "counted":0,
+      "counted":17,
       "ratio":2.628,
       "speedup":0.003767,
       "me":["alea-tddlog"]
@@ -76762,7 +76766,7 @@
     },
     "coinBias":{
      "alea":{
-      "given":5,
+      "given":7,
       "answers":4,
       "tddlog_answers":4,
       "either":4,
@@ -77130,7 +77134,7 @@
     },
     "own:alea":{
      "alea":{
-      "given":287,
+      "given":289,
       "answers":165,
       "tddlog_answers":250,
       "either":254,
@@ -77139,7 +77143,7 @@
       "both":141,
       "failures":4,
       "timeouts":89,
-      "counted":74,
+      "counted":78,
       "ratio":2.272,
       "speedup":7.101,
       "me":["alea-tddlog"]
@@ -77486,9 +77490,9 @@
       "both":35,
       "failures":92,
       "timeouts":13,
-      "counted":13,
+      "counted":104,
       "ratio":4.402,
-      "speedup":0.161,
+      "speedup":0.1554,
       "me":["alea-tddlog"]
      },
      "aspmc":{
@@ -77501,7 +77505,7 @@
       "both":33,
       "failures":39,
       "timeouts":15,
-      "counted":15,
+      "counted":54,
       "ratio":3.076,
       "speedup":0.4233,
       "me":["alea-tddlog"]
@@ -77516,7 +77520,7 @@
       "both":31,
       "failures":29,
       "timeouts":17,
-      "counted":17,
+      "counted":46,
       "ratio":48.86,
       "speedup":0.9115,
       "me":["alea-tddlog"]
@@ -77833,9 +77837,9 @@
       "both":28,
       "failures":23,
       "timeouts":1,
-      "counted":1,
+      "counted":22,
       "ratio":2.499,
-      "speedup":0.08926,
+      "speedup":0.05354,
       "me":["alea-tddlog"]
      },
      "aspmc":{
@@ -77848,7 +77852,7 @@
       "both":27,
       "failures":1,
       "timeouts":2,
-      "counted":2,
+      "counted":3,
       "ratio":6.46,
       "speedup":2.255,
       "me":["alea-tddlog"]
@@ -77863,7 +77867,7 @@
       "both":21,
       "failures":1,
       "timeouts":8,
-      "counted":8,
+      "counted":9,
       "ratio":130.7,
       "speedup":9.354,
       "me":["alea-tddlog"]
@@ -79829,7 +79833,7 @@
       "both":35,
       "failures":5,
       "timeouts":159,
-      "counted":134,
+      "counted":139,
       "ratio":3.673,
       "speedup":22.44,
       "me":["alea-tddlog"]
@@ -79844,7 +79848,7 @@
       "both":173,
       "failures":17,
       "timeouts":56,
-      "counted":55,
+      "counted":72,
       "ratio":19.04,
       "speedup":4.101,
       "me":["alea-tddlog"]
@@ -79889,7 +79893,7 @@
       "both":171,
       "failures":8,
       "timeouts":58,
-      "counted":54,
+      "counted":62,
       "ratio":16.31,
       "speedup":6.056,
       "me":["alea-tddlog"]
@@ -79919,7 +79923,7 @@
       "both":195,
       "failures":38,
       "timeouts":34,
-      "counted":34,
+      "counted":72,
       "ratio":1.503,
       "speedup":1.078,
       "me":["alea-tddlog"]
@@ -79964,7 +79968,7 @@
       "both":167,
       "failures":4,
       "timeouts":62,
-      "counted":54,
+      "counted":58,
       "ratio":5.687,
       "speedup":10.01,
       "me":["alea-tddlog"]
@@ -79979,7 +79983,7 @@
       "both":133,
       "failures":4,
       "timeouts":46,
-      "counted":43,
+      "counted":47,
       "ratio":6.841,
       "speedup":7.812,
       "me":["alea-tddlog"]
@@ -80009,7 +80013,7 @@
       "both":36,
       "failures":4,
       "timeouts":163,
-      "counted":135,
+      "counted":139,
       "ratio":6.629,
       "speedup":27.72,
       "me":["alea-tddlog"]
@@ -80144,7 +80148,7 @@
       "both":107,
       "failures":8,
       "timeouts":122,
-      "counted":109,
+      "counted":117,
       "ratio":32.82,
       "speedup":12.36,
       "me":["alea-tddlog"]
@@ -80174,9 +80178,9 @@
       "both":199,
       "failures":57,
       "timeouts":12,
-      "counted":12,
+      "counted":63,
       "ratio":1.287,
-      "speedup":0.4614,
+      "speedup":0.4539,
       "me":["alea-tddlog"]
      }
     }
@@ -80190,7 +80194,7 @@
     "answers":[66,298],
     "total":29192.529,
     "tddlog":[1787.44,70670.508],
-    "speedup":0.5372
+    "speedup":0.5332
    },
    "pipeline":"alea-tddlog",
    "system":"alea",
@@ -81173,8 +81177,8 @@
     ["dice","dice_caesar-iter_k100",600,"ttn",0.116,0.078,0.028],
     ["dice","dice_caesar-iter_k1000",600,"ttn",1.54,3.949,0.41],
     ["dice","dice_caesar-iter_k3000",600,"ttn",5.113,"underflow",0.928],
-    ["dice","dice_caesar-iter_k10000",600,"ttn",29.916,"memout",2.597],
-    ["dice","dice_caesar-iter_k30000",600,"ttn",190.499,"skipped",8.884],
+    ["dice","dice_caesar-iter_k10000",600,"ttn",12.929,"memout",2.597],
+    ["dice","dice_caesar-iter_k30000",600,"ttn",75.654,"skipped",8.884],
     ["dice","dice_caesar-iter_k100000",600,"ttn","memout","skipped",27.686],
     ["dice","dice_caesar-iter_k300000",600,"ttn","skipped","skipped",90.584],
     ["dice","dice_pmc1_k10",600,"ttn",0.038,0.029,0.145],
@@ -81194,9 +81198,9 @@
     ["dice","dice_simpleCaesar_k100",600,"ttn",0.823,0.865,0.352],
     ["dice","dice_simpleCaesar_k300",600,"ttn",3.355,"underflow",0.867],
     ["dice","dice_simpleCaesar_k1000",600,"ttn",11.913,"underflow",3.905],
-    ["dice","dice_simpleCaesar_k3000",600,"ttn",85.107,"memout",23.329],
-    ["dice","dice_simpleCaesar_k10000",600,"ttn",426.878,"skipped",47.214],
-    ["dice","dice_simpleCaesar_k30000",600,"ttn","timeout","skipped",142.221],
+    ["dice","dice_simpleCaesar_k3000",600,"ttn",43.761,"memout",23.329],
+    ["dice","dice_simpleCaesar_k10000",600,"ttn",249.745,"skipped",47.214],
+    ["dice","dice_simpleCaesar_k30000",600,"ttn","memout","skipped",142.221],
     ["dice","dice_simpleCaesar_k100000",600,"ttn","skipped","skipped","memout"],
     ["ppl","nodice_3sat-0",600,"ttn",3.482,3.919,0.396],
     ["ppl","nodice_alarm",600,"ttn",0.181,458.047,0.047],
@@ -82166,13 +82170,13 @@
      "tddlog_answers":802,
      "either":814,
      "total":325760.933,
-     "tddlog_total":31489.831,
+     "tddlog_total":31139.52,
      "both":326,
      "failures":12,
      "timeouts":305,
-     "counted":240,
+     "counted":253,
      "ratio":1.487,
-     "speedup":9.235,
+     "speedup":9.259,
      "me":["roulette-tddlog"]
     }
    },
@@ -82920,7 +82924,7 @@
       "both":26,
       "failures":2,
       "timeouts":6,
-      "counted":3,
+      "counted":5,
       "ratio":19.21,
       "speedup":2.276,
       "me":["roulette-tddlog"]
@@ -83103,7 +83107,7 @@
       "tddlog_answers":5,
       "either":5,
       "total":3604.149,
-      "tddlog_total":227.268,
+      "tddlog_total":95.436,
       "both":1,
       "failures":0,
       "timeouts":3,
@@ -83120,7 +83124,7 @@
       "tddlog_answers":5,
       "either":5,
       "total":4800.865,
-      "tddlog_total":528.076,
+      "tddlog_total":309.597,
       "both":1,
       "failures":0,
       "timeouts":4,
@@ -83628,9 +83632,9 @@
   {
    "system":"alea",
    "about":"the bit-blasting paper's programs (PLDI 2024), Alea.jl's own",
-   "instances":259,
+   "instances":261,
    "vs":{
-    "given":259,
+    "given":261,
     "answers":140,
     "tddlog_answers":224,
     "either":228,
@@ -83639,7 +83643,7 @@
     "both":128,
     "failures":4,
     "timeouts":88,
-    "counted":73,
+    "counted":77,
     "ratio":2.323,
     "speedup":7.229,
     "me":["alea-tddlog"]
@@ -84253,7 +84257,7 @@
    "link":"https://www.prismmodelchecker.org",
    "categories":["logic-programs","database-queries","bayesian-networks","markov-networks","functional-programs"],
    "given":992,
-   "answers":293
+   "answers":294
   },
   {
    "key":"provsql",
@@ -85837,7 +85841,7 @@
     "both":27,
     "failures":1,
     "timeouts":131,
-    "counted":85,
+    "counted":86,
     "ratio":37.09,
     "speedup":73.27,
     "me":["tddlog"]
@@ -85897,7 +85901,7 @@
     "both":46,
     "failures":6,
     "timeouts":112,
-    "counted":81,
+    "counted":87,
     "ratio":4.021,
     "speedup":10.7,
     "me":["tddlog"]
@@ -86803,7 +86807,7 @@
     "both":145,
     "failures":6,
     "timeouts":191,
-    "counted":187,
+    "counted":193,
     "ratio":2.695,
     "speedup":21.6,
     "me":["tddlog"]
@@ -86818,7 +86822,7 @@
     "both":59,
     "failures":7,
     "timeouts":232,
-    "counted":228,
+    "counted":235,
     "ratio":0.7435,
     "speedup":23.07,
     "me":["tddlog"]
@@ -86833,7 +86837,7 @@
     "both":79,
     "failures":7,
     "timeouts":241,
-    "counted":236,
+    "counted":243,
     "ratio":1.094,
     "speedup":24.02,
     "me":["tddlog"]
@@ -86848,7 +86852,7 @@
     "both":104,
     "failures":7,
     "timeouts":232,
-    "counted":227,
+    "counted":234,
     "ratio":2.818,
     "speedup":23.53,
     "me":["tddlog"]
@@ -86863,7 +86867,7 @@
     "both":68,
     "failures":7,
     "timeouts":226,
-    "counted":223,
+    "counted":230,
     "ratio":0.9455,
     "speedup":21.76,
     "me":["tddlog"]
@@ -86878,7 +86882,7 @@
     "both":109,
     "failures":8,
     "timeouts":194,
-    "counted":191,
+    "counted":199,
     "ratio":7.011,
     "speedup":18.68,
     "me":["tddlog"]
@@ -86923,7 +86927,7 @@
     "both":75,
     "failures":1,
     "timeouts":261,
-    "counted":218,
+    "counted":219,
     "ratio":106.5,
     "speedup":178.1,
     "me":["tddlog"]
@@ -87060,7 +87064,7 @@
     "both":41,
     "failures":1,
     "timeouts":27,
-    "counted":24,
+    "counted":25,
     "ratio":28.83,
     "speedup":23.21,
     "me":["tddlog"]
@@ -88658,7 +88662,7 @@
     "both":21,
     "failures":1,
     "timeouts":5,
-    "counted":5,
+    "counted":6,
     "ratio":0.7641,
     "speedup":2.8,
     "me":["tddlog"]
@@ -89080,7 +89084,7 @@
     "both":55,
     "failures":1,
     "timeouts":6,
-    "counted":5,
+    "counted":6,
     "ratio":2.415,
     "speedup":3.662,
     "me":["tddlog"]
@@ -89510,7 +89514,7 @@
   },
   "bitblast":{
    "alea":{
-    "given":259,
+    "given":261,
     "answers":140,
     "tddlog_answers":224,
     "either":228,
@@ -89519,13 +89523,13 @@
     "both":128,
     "failures":4,
     "timeouts":88,
-    "counted":73,
+    "counted":77,
     "ratio":2.323,
     "speedup":7.229,
     "me":["alea-tddlog"]
    },
    "alea-process":{
-    "given":259,
+    "given":261,
     "answers":140,
     "tddlog_answers":224,
     "either":228,
@@ -89534,13 +89538,13 @@
     "both":136,
     "failures":4,
     "timeouts":88,
-    "counted":72,
+    "counted":76,
     "ratio":7.89,
     "speedup":9.819,
     "me":["alea-tddlog"]
    },
    "dice":{
-    "given":259,
+    "given":261,
     "answers":19,
     "tddlog_answers":225,
     "either":225,
@@ -89555,7 +89559,7 @@
     "me":["tddlog"]
    },
    "roulette":{
-    "given":259,
+    "given":261,
     "answers":98,
     "tddlog_answers":225,
     "either":225,
@@ -89570,7 +89574,7 @@
     "me":["tddlog"]
    },
    "roulette-process":{
-    "given":259,
+    "given":261,
     "answers":98,
     "tddlog_answers":225,
     "either":225,
@@ -89585,22 +89589,22 @@
     "me":["tddlog"]
    },
    "problog":{
-    "given":259,
-    "answers":42,
+    "given":261,
+    "answers":45,
     "tddlog_answers":225,
     "either":225,
-    "total":221479.831,
+    "total":218967.757,
     "tddlog_total":7549.66,
-    "both":41,
+    "both":44,
     "failures":0,
-    "timeouts":183,
-    "counted":45,
-    "ratio":34.74,
-    "speedup":328.5,
+    "timeouts":180,
+    "counted":51,
+    "ratio":37.88,
+    "speedup":270.0,
     "me":["tddlog"]
    },
    "geni":{
-    "given":259,
+    "given":261,
     "answers":0,
     "tddlog_answers":225,
     "either":225,
@@ -89615,7 +89619,7 @@
     "me":["tddlog"]
    },
    "nodice":{
-    "given":259,
+    "given":261,
     "answers":7,
     "tddlog_answers":225,
     "either":225,
@@ -89630,7 +89634,7 @@
     "me":["tddlog"]
    },
    "psi":{
-    "given":259,
+    "given":261,
     "answers":8,
     "tddlog_answers":225,
     "either":227,
@@ -89645,7 +89649,7 @@
     "me":["tddlog","alea-tddlog"]
    },
    "genfer":{
-    "given":259,
+    "given":261,
     "answers":12,
     "tddlog_answers":225,
     "either":225,
@@ -89660,7 +89664,7 @@
     "me":["tddlog","alea-tddlog"]
    },
    "sppl":{
-    "given":259,
+    "given":261,
     "answers":1,
     "tddlog_answers":225,
     "either":225,
@@ -89675,7 +89679,7 @@
     "me":["tddlog","alea-tddlog"]
    },
    "pluck":{
-    "given":259,
+    "given":261,
     "answers":58,
     "tddlog_answers":225,
     "either":225,
@@ -89705,7 +89709,7 @@
     "me":["tddlog"]
    },
    "pita":{
-    "given":259,
+    "given":261,
     "answers":61,
     "tddlog_answers":225,
     "either":225,
@@ -89720,7 +89724,7 @@
     "me":["tddlog"]
    },
    "aspmc":{
-    "given":259,
+    "given":261,
     "answers":58,
     "tddlog_answers":225,
     "either":225,
@@ -89735,7 +89739,7 @@
     "me":["tddlog"]
    },
    "scallop":{
-    "given":259,
+    "given":261,
     "answers":0,
     "tddlog_answers":225,
     "either":225,
@@ -89750,7 +89754,7 @@
     "me":["tddlog"]
    },
    "storm":{
-    "given":259,
+    "given":261,
     "answers":33,
     "tddlog_answers":225,
     "either":225,
@@ -89765,7 +89769,7 @@
     "me":["tddlog"]
    },
    "prism":{
-    "given":259,
+    "given":261,
     "answers":21,
     "tddlog_answers":225,
     "either":225,
@@ -89780,7 +89784,7 @@
     "me":["tddlog"]
    },
    "ace":{
-    "given":259,
+    "given":261,
     "answers":77,
     "tddlog_answers":225,
     "either":225,
@@ -89795,7 +89799,7 @@
     "me":["tddlog"]
    },
    "merlin":{
-    "given":259,
+    "given":261,
     "answers":49,
     "tddlog_answers":225,
     "either":225,
@@ -89810,7 +89814,7 @@
     "me":["tddlog"]
    },
    "agrum":{
-    "given":259,
+    "given":261,
     "answers":46,
     "tddlog_answers":225,
     "either":225,
@@ -89825,7 +89829,7 @@
     "me":["tddlog"]
    },
    "pgmpy":{
-    "given":259,
+    "given":261,
     "answers":42,
     "tddlog_answers":225,
     "either":225,
@@ -89840,7 +89844,7 @@
     "me":["tddlog"]
    },
    "libdai":{
-    "given":259,
+    "given":261,
     "answers":44,
     "tddlog_answers":225,
     "either":225,
@@ -89855,7 +89859,7 @@
     "me":["tddlog"]
    },
    "tensorinference":{
-    "given":259,
+    "given":261,
     "answers":29,
     "tddlog_answers":225,
     "either":225,
@@ -90121,7 +90125,7 @@
     "both":89,
     "failures":5,
     "timeouts":26,
-    "counted":26,
+    "counted":31,
     "ratio":1.924,
     "speedup":4.03,
     "me":["tddlog"]
@@ -90478,29 +90482,29 @@
     "answers":44,
     "tddlog_answers":50,
     "either":52,
-    "total":10598.324,
+    "total":10467.425,
     "tddlog_total":3246.813,
-    "both":42,
+    "both":40,
     "failures":2,
     "timeouts":8,
-    "counted":8,
-    "ratio":2.153,
-    "speedup":2.833,
+    "counted":10,
+    "ratio":1.832,
+    "speedup":2.769,
     "me":["tddlog"]
    },
    "prism":{
     "given":63,
-    "answers":40,
+    "answers":41,
     "tddlog_answers":50,
     "either":52,
-    "total":15784.927,
+    "total":14769.654,
     "tddlog_total":3246.813,
-    "both":38,
+    "both":39,
     "failures":2,
-    "timeouts":12,
-    "counted":11,
-    "ratio":3.329,
-    "speedup":4.205,
+    "timeouts":11,
+    "counted":13,
+    "ratio":3.969,
+    "speedup":3.991,
     "me":["tddlog"]
    },
    "ace":{
@@ -90797,5 +90801,5 @@
    "alea-tddlog":{"answers":224,"seconds":7324.0,"export":325.301}
   }
  },
- "stamp":{"date":"2026-11-07","source":"38ca10c6c"}
+ "stamp":{"date":"2026-11-07","source":"849897d81"}
 }

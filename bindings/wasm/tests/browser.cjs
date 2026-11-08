@@ -781,12 +781,16 @@ function benchmarksOf(root) {
     // tddlog against a system by rule 16 over runs [limit, tddlog's record,
     // its record], the instances it is given: the two totals over those
     // either answers, a run that does not answer counted as twice its limit
-    // (PAR-2), and the speed-up: the ratio of the totals over those both
-    // answer (but those both answer in under 0.2 s), tddlog's failures at the
-    // limit and the system's timeouts at the limit, each whose bound (the
-    // limit over tddlog's time) raises the speed-up, the largest bound
-    // first; none with fewer than 20 both answer. A time under 0.2 s counts
-    // as 0.2 s. (0.2, 2 and 20: the data's measure, panels.py's parameters.)
+    // (PAR-2), and the speed-up F: the ratio of the totals over those both
+    // answer (but those both answer in under 0.2 s) and over each instance
+    // only one answers, the other at the limit, where that raises the
+    // multiplier of the one that answered it (an instance only tddlog answers
+    // where the limit over its time is at least F, one only the system answers
+    // where the limit over its time is at least 1 / F); none with fewer than
+    // 20 both answer. F is the root of the left side of that balance, which
+    // decreases in F, found here by bisection (panels.py walks its pieces). A
+    // time under 0.2 s counts as 0.2 s. (0.2, 2 and 20: the data's measure,
+    // panels.py's parameters.)
     const { floor, par: times, common } = cats.measure;
     const compare = (runs) => {
       const f = (t) => Math.max(t, floor);
@@ -798,15 +802,18 @@ function benchmarksOf(root) {
         total: either.reduce((s, [l, , x]) => s + par(l, x), 0), tddlog_total: either.reduce((s, [l, t]) => s + par(l, t), 0),
         both: both.length, ratio: null, speedup: null };
       if (both.length < common) return out;
-      let mine = both.reduce((s, [, t]) => s + f(t), 0), theirs = both.reduce((s, [, , x]) => s + f(x), 0);
+      const mine = both.reduce((s, [, t]) => s + f(t), 0), theirs = both.reduce((s, [, , x]) => s + f(x), 0);
       const r = theirs / mine;
-      for (const [l, t, x] of either) if (number(x) && !number(t)) [mine, theirs] = [mine + l, theirs + f(x)];
-      const timeouts = either.filter(([, t, x]) => number(t) && !number(x)).map(([l, t]) => [f(t), l]).sort(([t, l], [u, m]) => m / u - l / t);
-      for (const [t, l] of timeouts) {
-        if (l * mine <= theirs * t) break;
-        [mine, theirs] = [mine + t, theirs + l];
+      const failures = either.filter(([, t, x]) => number(x) && !number(t)).map(([l, , x]) => [f(x), l]);
+      const timeouts = either.filter(([, t, x]) => number(t) && !number(x)).map(([l, t]) => [f(t), l]);
+      const g = (F) => theirs - F * mine + timeouts.reduce((s, [t, l]) => s + Math.max(0, l - F * t), 0)
+        + failures.reduce((s, [x, l]) => s + Math.min(0, x - F * l), 0);
+      let [lo, hi] = [1e-12, 1e12];
+      for (let k = 0; k < 200; k++) {
+        const m = Math.sqrt(lo * hi);
+        if (g(m) > 0) lo = m; else hi = m;
       }
-      return { ...out, ratio: r, speedup: theirs / mine };
+      return { ...out, ratio: r, speedup: Math.sqrt(lo * hi) };
     };
     // A comparison of the data's is the oracle's: its counts, its totals to
     // 0.01 s, its ratio and speed-up to their four digits.

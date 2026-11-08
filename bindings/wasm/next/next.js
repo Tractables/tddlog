@@ -840,8 +840,9 @@ function methodsView() {
         ["answers", "Over all of a type's instances: a run out of time or memory, wrong, refused or not given is unanswered"],
         [`total (PAR-${par})`, `Over the instances a system is given and either answers: an unanswered run at ${twice(par)} its time limit, `
           + `a time under ${floor} s at ${floor} s`],
-        ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s), with tddlog's unanswered `
-          + `runs at its limit and the other's at its limit where that raises the speed-up, so that no timeout lowers it; none with fewer than ${common} in common`],
+        ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s) and over each instance only one of the two `
+          + `answers, the other at its limit, where that raises the multiplier of the system that answered it, so that `
+          + `a system's answers the other misses only help it; none with fewer than ${common} in common`],
         ["X+tddlog", "X's own code, then tddlog's inference; its time includes X's after its warm-up, so that against X it differs only in the inference"],
         ["circuits", "Every circuit Alea.jl exports, read by every system and timed without its export; the functional programs among them are also in their type"],
         ["data", element("span", {}, `Processed ${date}, on public main `,
