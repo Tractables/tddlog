@@ -302,6 +302,15 @@ fn ground_tried(
     // rewrite below and the compile's elimination of linear recursion take.
     let norm = chain::linearize(&norm).unwrap_or(norm);
     let (gp, ground_size, kept) = ground_norm(&norm, opts, None, keep)?;
+    // A program grounded level by level, each recursive stratum a loop over
+    // a rising level, is not rewritten, as [`ground_norm`] does not give it
+    // the magic rewrite: the chains from its bound ends run down the levels
+    // it was ground up, and the relevance cut in `finish` keeps them.
+    // Grounding the rewrite as well, to compare the two, cost as much again
+    // as the grounding kept.
+    if gp.stats.levels > 0 {
+        return Ok((gp, kept));
+    }
     // The rewritten program can fail to ground where the original does not
     // (a step that binds its target only through the recursive call); the
     // original stands then. It is ground only while it stays within the
@@ -836,12 +845,12 @@ mod tests {
     }
 
     /// A loop of n steps grounds in walks that grow with n, written over its
-    /// steps or from its end ([`engine`]'s `IsKey`). Over its steps, the
-    /// bound-end grounding tried after the one level by level reaches each
-    /// new link's step through `T1 is T + 1`; from its end, each new `s(J)`
-    /// reaches its demand through `J is T - 1`. Trying every step for each
-    /// link, 3 000 steps walked 27 million body literals over the steps and
-    /// 54 million from the end.
+    /// steps or from its end ([`engine`]'s `IsKey`). Over its steps, it is
+    /// ground level by level; from its end, each new `s(J)` reaches its
+    /// demand through `J is T - 1`. Trying every step for each link, 3 000
+    /// steps walked 27 million body literals over the steps, when the
+    /// bound-end rewrite of the loop was ground as well, and 54 million from
+    /// the end.
     #[test]
     fn a_loop_grounds_in_walks_linear_in_its_length() {
         let n: u64 = 3000;
@@ -862,6 +871,24 @@ mod tests {
                 gp.stats.walked
             );
         }
+    }
+
+    /// A loop over its steps, ground level by level, is not ground again
+    /// from its bound end: a query that binds the end walks the body
+    /// literals that one leaving it free walks, for which the bound-end
+    /// rewrite declines.
+    #[test]
+    fn a_loop_ground_by_levels_is_not_ground_from_its_bound_end() {
+        let bound = include_str!("../../tests/regress/bound_end_chain.pl");
+        let free = bound.replace("query(s(12)).", "query(s(T)).");
+        assert_ne!(free, bound);
+        let [bound, free] = [bound, free.as_str()].map(|source| {
+            let program = crate::syntax::parse_program(source).expect("parses");
+            ground(&program, &GroundOptions::default()).expect("grounds")
+        });
+        assert!(bound.stats.levels > 0);
+        assert!(bound.stats.from_bound_end.is_empty());
+        assert_eq!(bound.stats.walked, free.stats.walked);
     }
 
     /// Under a demand, the atoms of facts are numbered as the demand reaches

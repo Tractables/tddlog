@@ -3,11 +3,11 @@
 %
 % The diamond network of the Dice paper's network verification benchmark,
 % 12 diamonds, as a recursion over its steps: each passes with probability
-% 0.5 + 0.5 * 0.9999 = 0.99995, so s(12) is 0.99995^12, by hand. The
-% bound-end rewrite grounds s's chain from s(12), where each new link
-% `r(S, T1)` reaches its step through `T1 is T + 1`: the grounder looks
-% step(T) up by the value of T + 1 rather than trying every step. Twelve
-% diamonds keep every layout of the suite small: under `program` and
+% 0.5 + 0.5 * 0.9999 = 0.99995, so s(12) is 0.99995^12, by hand. step
+% and s rise a level a step, and the grounder grounds them level by level;
+% s's chain from s(12) runs down the same levels, and the bound-end
+% rewrite, which would ground it from there, is not tried. Twelve diamonds
+% keep every layout of the suite small: under `program` and
 % `program:fanin`, forty diamonds take more than 16 GB.
 
 diamonds(12).
