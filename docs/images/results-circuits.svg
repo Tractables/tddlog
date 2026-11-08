@@ -302,14 +302,18 @@ L 56.327465 277.522406
 L 56.327465 276.744625 
 L 60.224717 276.744625 
 L 60.224717 275.966844 
-L 67.019591 275.966844 
+L 62.861861 275.966844 
+L 62.861861 275.189062 
 L 67.019591 275.189062 
-L 139.245077 275.189062 
-L 139.245077 274.411281 
-L 236.709263 274.411281 
-L 236.709263 273.6335 
-L 368.564375 273.6335 
-L 368.564375 273.6335 
+L 67.019591 274.411281 
+L 136.255583 274.411281 
+L 136.255583 273.6335 
+L 139.245077 273.6335 
+L 139.245077 272.855719 
+L 236.709263 272.855719 
+L 236.709263 272.077937 
+L 368.564375 272.077937 
+L 368.564375 272.077937 
 " clip-path="url(#pecf5dd2e08)" style="fill: none; stroke: #b4b9be; stroke-width: 1.2; stroke-linecap: square"/>
    </g>
    <g id="line2d_31">
@@ -2885,7 +2889,7 @@ L 357.764375 553.937969
    <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="455.59125" transform="rotate(-0, 364.964375, 455.59125)">noDice</text>
   </g>
   <g id="text_82">
-   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="455.59125" transform="rotate(-0, 537.764375, 455.59125)">7</text>
+   <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="455.59125" transform="rotate(-0, 537.764375, 455.59125)">9</text>
   </g>
   <g id="text_83">
    <text style="fill: #59636e; font: 9.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="455.039375" transform="rotate(-0, 649.364375, 455.039375)">too few in common</text>
