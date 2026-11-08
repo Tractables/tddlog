@@ -39,7 +39,7 @@ command-line tool with Python, C and WebAssembly bindings, and it
 </p>
 
 <!-- results:overview -->
-<sub>Results as of 2026-11-07, public main [38ca10c6c](https://github.com/Tractables/tddlog/commit/38ca10c6c). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
+<sub>Results as of 2026-11-07, public main [849897d81](https://github.com/Tractables/tddlog/commit/849897d81). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
 <!-- /results:overview -->
 
 On every type of program, tddlog answers more instances than each
@@ -229,8 +229,8 @@ times faster tddlog is. The
 instance, time and program, and a page for each system.
 
 <!-- results:setup -->
-<!-- written from bindings/wasm/results/categories.json, sha256 5d47c471b47cea750c499e3dc094e52efe00e648d3030889dc0622cea11cf250 -->
-Results as of 2026-11-07, public main [38ca10c6c](https://github.com/Tractables/tddlog/commit/38ca10c6c). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
+<!-- written from bindings/wasm/results/categories.json, sha256 fe0d6fb79283258e84c1e8f8859e4e61901d27e0374d19740206ef322020bd5f -->
+Results as of 2026-11-07, public main [849897d81](https://github.com/Tractables/tddlog/commit/849897d81). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
 <!-- /results:setup -->
 
 The [methods table](https://tractables.github.io/tddlog/#/methods) says
@@ -441,7 +441,7 @@ it is given, natively or through a translation.
 </p>
 
 <!-- results:circuits -->
-tddlog answers **255 of 291** circuits, of 33 families.
+tddlog answers **255 of 293** circuits, of 33 families.
 <!-- /results:circuits -->
 
 The circuits are an evaluation of their own, apart from the five types:
@@ -458,7 +458,7 @@ its language, and no one pays for its export.
 | PITA | 82 | 60 h | 2.3 h | 151× |
 | aspmc | 81 | 60 h | 2.3 h | 211× |
 | Pluck | 77 | 59 h | 2.2 h | 46× |
-| 16 others: Merlin, pyAgrum, libDAI, pgmpy, Storm, ProbLog, TensorInference.jl, Dice, PRISM, noDice, Genfer, SPPL, Geni, WebPPL, Scallop, Psi | 0 to 64 | over 63 h each | 2.1 h to 2.3 h | at least 138× |
+| 16 others: Merlin, pyAgrum, libDAI, pgmpy, ProbLog, Storm, TensorInference.jl, Dice, PRISM, noDice, Genfer, SPPL, Geni, WebPPL, Scallop, Psi | 0 to 64 | over 63 h each | 2.1 h to 2.3 h | at least 138× |
 <!-- /results:circuits-table -->
 
 ### Integrations
@@ -477,8 +477,8 @@ fork of neuppl/roulette.
 <!-- results:integrations -->
 | Integration | Instances | Answers | Total time | Faster |
 |---|--:|--:|--:|--:|
-| Alea.jl+tddlog against Alea.jl | 999 | 647 (Alea.jl 379) | 6.5 h (Alea.jl 92 h) | 12× |
-| Roulette+tddlog against Roulette | 1269 | 802 (Roulette 509) | 8.7 h (Roulette 90 h) | 9.2× |
+| Alea.jl+tddlog against Alea.jl | 1001 | 647 (Alea.jl 379) | 6.5 h (Alea.jl 92 h) | 12× |
+| Roulette+tddlog against Roulette | 1269 | 802 (Roulette 509) | 8.6 h (Roulette 90 h) | 9.3× |
 <!-- /results:integrations -->
 
 ## Building and testing
