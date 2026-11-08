@@ -39,7 +39,7 @@ command-line tool with Python, C and WebAssembly bindings, and it
 </p>
 
 <!-- results:overview -->
-<sub>Results as of 2026-11-07, public main [849897d81](https://github.com/Tractables/tddlog/commit/849897d81). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
+<sub>Results as of 2026-11-08, public main [26f8f42eb](https://github.com/Tractables/tddlog/commit/26f8f42eb). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
 <!-- /results:overview -->
 
 On every type of program, tddlog answers more instances than each
@@ -229,8 +229,8 @@ times faster tddlog is. The
 instance, time and program, and a page for each system.
 
 <!-- results:setup -->
-<!-- written from bindings/wasm/results/categories.json, sha256 fe0d6fb79283258e84c1e8f8859e4e61901d27e0374d19740206ef322020bd5f -->
-Results as of 2026-11-07, public main [849897d81](https://github.com/Tractables/tddlog/commit/849897d81). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
+<!-- written from bindings/wasm/results/categories.json, sha256 281a8044f444eddd98cc99c3f6fed4b4755ac3461c23db5bb62a184d95b994b1 -->
+Results as of 2026-11-08, public main [26f8f42eb](https://github.com/Tractables/tddlog/commit/26f8f42eb). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
 <!-- /results:setup -->
 
 The [methods table](https://tractables.github.io/tddlog/#/methods) says
