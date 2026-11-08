@@ -1240,6 +1240,48 @@ mod tests {
     }
 
     #[test]
+    fn the_walk_holds_nothing_by_vtree_node_once_done() {
+        // A chain of observations: the walk holds its tables by the nodes
+        // that have an observation or a result their parent has not read,
+        // and an emptied slot holds a pointer, so a walk over millions of
+        // nodes holds only its frontier. Once done, it holds nothing.
+        assert_eq!(
+            std::mem::size_of::<Option<Box<Formula>>>(),
+            std::mem::size_of::<usize>()
+        );
+        let mut source = String::new();
+        for i in 0..64 {
+            source.push_str(&format!("0.5::f({i}).\nquery(f({i})).\n"));
+            source.push_str(&format!("evidence(f({i}),true).\n"));
+        }
+        let gp = ground(&source);
+        let (
+            crate::vtree::Layout {
+                vtree: tree, order, ..
+            },
+            _,
+        ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
+        tree.context().run(|engine| {
+            let backend = TddBackend::new(engine, tree.clone());
+            let compiled = compile(
+                &gp,
+                fact_variables(&gp, &order),
+                Formulation::Dual,
+                &backend,
+                Projection::default(),
+                None,
+            )
+            .unwrap();
+            let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
+            assert_eq!(state.walk.held(), (0, 0, 0));
+            let (answers, _) = state.run(&gp, &backend, &compiled, None).unwrap();
+            assert!(answers.unwrap().iter().all(|a| a.probability == 1.0));
+            assert_eq!(state.walk.completed_joins, 63);
+            assert_eq!(state.walk.held(), (0, 0, 0), "every result is read");
+        });
+    }
+
+    #[test]
     fn a_join_that_sums_out_its_scope_runs_past_the_caps() {
         // Two observations and no query: the walk's one join sums out its
         // whole scope into P(e), and a cap of one emitted node and a stop
