@@ -1024,8 +1024,13 @@ function benchmarksOf(root) {
       assert.deepEqual(headline.slice(0, answers.length), answers, `${what}: its headline's answers, each in a cell`);
       const filters = c.systems.filter((x) => c.classes[x].own > 0).length;
       assert.equal((await page.$$("#view nav.filters a")).length, filters ? filters + 1 : 0, `${what}: its filters`);
-      assert.deepEqual(await page.$$eval("#view table.families tbody th a", (as) => as.map((a) => a.getAttribute("href"))),
-        c.groups.map((g) => `#/category/${c.key}/in/${encodeURIComponent(g.key)}`), `${what}: its families`);
+      // a row a family, its one link its program's (all programs': a type's, its name), those of a domain
+      // together under its heading after the others
+      const domains = [...new Set(c.groups.map((g) => g.domain).filter(Boolean))];
+      const ordered = [...c.groups.filter((g) => !g.domain), ...domains.flatMap((d) => c.groups.filter((g) => g.domain === d))];
+      assert.deepEqual(await page.$$eval("#view table.families tbody a", (as) => as.map((a) => a.getAttribute("href"))),
+        ordered.map((g) => `#/category/${c.key}/in/${encodeURIComponent(g.key)}`), `${what}: its families`);
+      assert.equal(await page.locator("#view table.families tbody tr.heading.domain").count(), domains.length, `${what}: a heading a domain`);
       assert.equal(await page.title(), `${c.title} · tddlog results`);
     }
     // the line nearest the pointer picked out: one line, in its colour, its name at its end and first in the tip
@@ -1068,18 +1073,26 @@ function benchmarksOf(root) {
           assert.equal(await page.getAttribute(`#tree a[href="${h}"]`, "aria-current"), "page", `${c.key} narrowed to ${only}: the menu`);
           assert.equal((await page.$$("#tree .tree > li > ul > li > ul > li > ul")).length, 0, `${c.key} narrowed to ${only}: no pages in the menu`);
           assert.equal(await page.textContent("#view h2"), g.title, `${c.key} narrowed to ${only}: its title`);
-          // one line above the table links the family's benchmark pages,
-          // each with tddlog's answers there, all of its instances between them
-          const pages = await page.$("#view p.pages");
-          assert.equal(pages !== null, Boolean(g.source), `${c.key} narrowed to ${only}: its benchmark pages`);
-          if (pages) {
-            const text = (await pages.textContent()).replace(/,(?=\d)/g, "");
-            const counts = [...text.matchAll(/ answers (\d+) of (\d+)\)/g)].map((m) => [Number(m[1]), Number(m[2])]);
-            assert.ok(text.includes(`(${subject(subjectsOf(rows))} answers `), `${c.key} narrowed to ${only}: who answers, ${text}`);
-            assert.ok(text.startsWith("Programs and runs: ") && text.endsWith("."), `${c.key} narrowed to ${only}: ${text}`);
-            assert.equal((await pages.$$("a")).length, counts.length, `${c.key} narrowed to ${only}: a link a page`);
-            assert.deepEqual([counts.reduce((s, [a]) => s + a, 0), counts.reduce((s, [, n]) => s + n, 0)],
-              [answeredBy(rows), rows.length], `${c.key} narrowed to ${only}: tddlog's answers on its pages`);
+          // the family's program first, once, where the site has the benchmarks' data: an instance
+          // picked among the family's own, its programs and tddlog's command; no links by suite.
+          // Another instance redraws it in place, the address naming it.
+          assert.equal(await page.$("#view p.pages"), null, `${c.key} narrowed to ${only}: no pages by suite`);
+          if (g.source && await page.$("#view section#programs:not([hidden])")) {
+            await page.waitForSelector("#view section#programs .viewer .pane, #view section#programs p.note:not(:first-child)");
+            const order = await page.$$eval("#view > *", (es) => es.map((e) => (e.id === "programs" ? "P" : e.tagName === "H3" ? "H" : "")).join(""));
+            assert.ok(order.indexOf("P") >= 0 && order.indexOf("P") < order.indexOf("H"), `${c.key} narrowed to ${only}: its program first, ${order}`);
+            // the instance picker, not the menu of the instance's programs beside it
+            const menu = '#view section#programs select[aria-label="Instance"]';
+            const seg = '#view section#programs .seg[aria-label="Instance"]';
+            const picks = await page.$$eval(`${menu} option, ${seg} a`, (os) => os.length);
+            assert.ok(g.rows.length === 1 ? picks === 0 : picks > 1 && picks <= g.rows.length, `${c.key} narrowed to ${only}: ${picks} instances to pick`);
+            if (picks > 1) {
+              if (await page.$(menu)) await page.selectOption(menu, "1");
+              else await page.click(`${seg} a:nth-child(2)`);
+              await page.waitForFunction((h) => location.hash.startsWith(`${h}/program/`), h);
+              await page.waitForSelector(`${seg} [aria-current], ${menu}`);
+              assert.equal(await page.$eval("#view h2", (e) => e.textContent), g.title, `${c.key} narrowed to ${only}: another instance in place`);
+            }
           }
         }
         console.log(`ok ${c.key} narrowed to ${only}, ${rows.length} instances`);
