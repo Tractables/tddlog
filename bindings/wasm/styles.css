@@ -1034,8 +1034,11 @@ table.board { font-size: 13px; }
 table.board th, table.board td { padding: 0.35rem 0.55rem; white-space: nowrap; }
 /* "too few in common" wraps under its short header, so that a board of nine columns fits a desktop's width. */
 table.board td.few { white-space: normal; min-width: 4.5rem; color: var(--muted); line-height: 1.25; }
-/* A family's programs, a link each: they wrap, so that the counts after them stay in view. */
-table.board td.code-links { white-space: normal; min-width: 14rem; }
+/* A family's one link, its program's: a file's name in the code face, else how many instances. */
+table.board td.program a code { padding: 0; background: none; color: inherit; font-size: 12.5px; }
+/* A table of families under headings: a type's where it spans several, a domain's over its families. */
+table.board tr.heading th { padding-top: 0.75rem; background: var(--bg); color: var(--ink); font-weight: 650; white-space: normal; }
+table.board tr.heading.domain th { padding-top: 0.55rem; background: none; color: var(--muted); font-weight: 600; font-size: 12.5px; }
 table.board tbody th { font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--ink); font-weight: 500; vertical-align: middle; }
 table.board tbody th i.sw { margin-right: 0.5rem; vertical-align: middle; }
 .results .tscroll.whole { max-height: none; }
@@ -1264,6 +1267,14 @@ i.heat.na { background: var(--code); }
 .pick { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.8rem; margin: 0.4rem 0; }
 .pick select { width: auto; max-width: 100%; padding: 0.25rem 0.4rem; font: 13px var(--mono); }
 .pick code.inst { background: none; padding: 0; color: var(--muted); }
+/* the suite of an instance where two of a family's are alike, small beside its name */
+.seg a small { margin-left: 0.35rem; color: var(--muted); font: 11px/1 var(--sans); }
+.seg a[aria-current] small { color: inherit; opacity: 0.8; }
+.pick a code.inst { color: inherit; }
+/* the command of tddlog's run of the instance, a shell's line */
+p.cmdline { margin: 0.1rem 0 0.5rem; }
+p.cmdline code { padding: 0; background: none; font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+p.cmdline code::before { content: "$ "; color: var(--muted); }
 .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--card); }
 .seg a { padding: 0.15rem 0.6rem; border-right: 1px solid var(--line); color: var(--ink); font: 12px/1.6 var(--mono); text-decoration: none; }
 .seg a:last-child { border-right: 0; }
@@ -1314,6 +1325,8 @@ details.about h4 { margin: 0.6rem 0 0; font-size: 13px; }
 .ftabs button small { margin-left: 0.45rem; font-family: var(--sans); opacity: 0.8; }
 /* what tells a file from the tab's other files of its name: whose it is */
 .ftabs button .twin { margin-left: 0.45rem; padding: 0 0.4rem; border-radius: 3px; background: var(--amber-fill); color: var(--ink); font: 500 11.5px/1.5 var(--sans); }
+/* the data a program consults at a place: data $1 */
+.ftabs button .place { margin-left: 0.45rem; padding: 0 0.4rem; border-radius: 3px; background: var(--accent-fill); color: var(--ink); font: 500 11.5px/1.5 var(--mono); }
 .ftabs button:hover:not(:disabled) { background: var(--accent-fill); color: var(--ink); }
 .ftabs button[aria-selected="true"], .ftabs button[aria-selected="true"]:hover:not(:disabled) {
   background: var(--card); color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }

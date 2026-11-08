@@ -272,8 +272,12 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
     let s = g.stats.swept;
     if s.calls > 0 {
         line.push_str(&format!(
-            "; the sweep proved {} gates equal to earlier ones or constant in {} calls ({} told apart, {} left open, {} steps)",
-            s.proved, s.calls, s.refuted, s.open, s.steps
+            "; the sweep proved {} gates equal to earlier ones or constant in {} calls ({} told apart, {} left open, {} steps{})",
+            s.proved, s.calls, s.refuted, s.open, s.steps,
+            match s.deep {
+                0 => String::new(),
+                d => format!(", {d} asked again over the whole cones"),
+            }
         ));
     }
     if g.stats.contexts > 0 {

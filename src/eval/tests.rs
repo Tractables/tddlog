@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::sync::Arc;
 
 use tididi::diagram::{ChildPair, NEG_LEAF_IDX, NodeIdx, POS_LEAF_IDX, TddBuilder, TddNodeId};
@@ -547,6 +548,107 @@ fn a_count_keeps_levels_under_powers_of_two_or_switches_to_counts() {
             let plain = count::<f64>(f, &w).unwrap();
             assert_eq!(total.to_f64(), plain.total(f).value, "{what}");
         }
+    }
+}
+
+thread_local! {
+    /// The requests [`collected`] grants before it refuses every later
+    /// one, where set: the tests' allocator refusing memory.
+    static GRANTS: Cell<Option<usize>> = const { Cell::new(None) };
+}
+
+/// [`collected`]'s request granted, or refused where [`GRANTS`] has run
+/// out.
+pub(super) fn grant() -> Result<(), tididi::OperationError> {
+    GRANTS.with(|grants| match grants.get() {
+        Some(0) => Err(tididi::OperationError::OverBudget),
+        left => {
+            grants.set(left.map(|k| k - 1));
+            Ok(())
+        }
+    })
+}
+
+/// What the query phase reads of a count of `e`, as bits: the total, each
+/// literal's count and the walk of `q` against it, `None` where not exact.
+fn reads<V: Value>(c: &Counted<V>, e: &Tdd, q: &Tdd, w: &Probabilities) -> Vec<Option<(u64, i64)>> {
+    let mut read = vec![Some(bits(c.total(e).count()))];
+    read.extend(e.vtree().leaf_bottomup().map(|(leaf, var)| {
+        c.with_literal(e, leaf, var, true, w)
+            .unwrap()
+            .map(|x| bits(x.count()))
+    }));
+    let (joint, exact) = crate::eval::conjunction_count(
+        e,
+        c,
+        &crate::eval::Shape::of(e),
+        q,
+        &count::<V>(q, w).unwrap(),
+        |v| e.vtree().leaf_of(v),
+        |_| Ok(()),
+    )
+    .unwrap();
+    read.push(exact.then(|| bits(joint.count())));
+    read
+}
+
+/// A count in floats refused memory while it is taken over in [`Count`]s
+/// ([`Counts::widen`]) reads as before. `auto` resumes the query phase of
+/// a trial refused memory on the same count once it has freed what the
+/// other trials hold, and a query's walk reads every level's counts up:
+/// where the refusal had left them taken, the walk indexed an empty table.
+/// Refused at each level in turn, the count gives the same total, the same
+/// count with each literal and the same walk of a query; taken over once
+/// memory is granted, it gives what the count taken over at once does.
+#[test]
+fn a_count_refused_memory_as_it_is_taken_over_reads_as_before() {
+    let v = Arc::new(Vtree::balanced(23));
+    let cube = |sign: i32| Tdd::cube(&v, (1..=20).map(|x| sign * x).collect::<Vec<_>>()).unwrap();
+    let e = tididi::and(
+        tididi::or(cube(1), cube(-1)).unwrap(),
+        Tdd::clause(&v, [21, -22, 23]).unwrap(),
+    )
+    .unwrap();
+    let q = Tdd::clause(&v, [1, -22]).unwrap();
+    let mut w = Probabilities {
+        pos: vec![0.5; 24],
+        neg: vec![0.5; 24],
+        one: vec![1.0; 24],
+    };
+    for x in 1..=23 {
+        let p = 0.1 + 0.03 * x as f64;
+        (w.pos[x], w.neg[x]) = (p, 1.0 - p);
+    }
+    let read = |counts: &Counts| match counts {
+        Counts::Plain(c) => reads(c, &e, &q, &w),
+        Counts::Wide(c) => reads(c, &e, &q, &w),
+    };
+    let plain = || {
+        let counts = count_exact(&e, &w, &mut 0).unwrap();
+        assert!(matches!(counts, Counts::Plain(_)));
+        counts
+    };
+    let before = read(&plain());
+    let mut at_once = plain();
+    at_once.widen().unwrap();
+    let widened = read(&at_once);
+    // A column of counts up in `Count`s a level.
+    for granted in 0..e.vtree().num_nodes() {
+        let mut counts = plain();
+        // The columns down walked, as a query phase has before it widens.
+        assert_eq!(read(&counts), before);
+        GRANTS.set(Some(granted));
+        let refused = counts.widen();
+        GRANTS.set(None);
+        assert_eq!(
+            refused.err(),
+            Some(tididi::OperationError::OverBudget),
+            "{granted} levels granted"
+        );
+        assert!(matches!(counts, Counts::Plain(_)));
+        assert_eq!(read(&counts), before, "refused after {granted} levels");
+        counts.widen().unwrap();
+        assert_eq!(read(&counts), widened, "widened after {granted} levels");
     }
 }
 

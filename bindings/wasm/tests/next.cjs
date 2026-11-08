@@ -118,7 +118,8 @@ function drawn(page) {
         v.original.given, `${x}: its original programs, counted`);
       assert.equal(await page.locator(".cells .cell", { hasText: "not idiomatic" }).count(), v.n.x ? 1 : 0, `${x}: not idiomatic`);
       if (idiomatic) {
-        // a row a family, each named as its type names it and opening its page, those of few instances one row
+        // a row a family, each named as its type names it, its one link its program's, opening the
+        // family's view in its type; those of few instances one row
         const rows = page.locator("#idiomatic table.fams-tr tbody tr");
         assert.equal(await rows.count(), v.families.length, `${x}: a row a family`);
         // past the first twelve, the rest on asking
@@ -128,11 +129,14 @@ function drawn(page) {
           assert.equal(await page.locator("#idiomatic table.fams-tr tbody tr:visible").count(), v.families.length, `${x}: every family on asking`);
         }
         const folded = v.families.filter((f) => f.families).length;
-        assert.equal(await page.locator("#idiomatic table.fams-tr tbody th a").count(), v.families.length - folded, `${x}: each family a link`);
-        const names = await page.locator("#idiomatic table.fams-tr tbody th a").allTextContents();
+        assert.equal(await page.locator("#idiomatic table.fams-tr tbody a").count(), v.families.length - folded, `${x}: one link a family`);
+        const hrefs = await page.locator("#idiomatic table.fams-tr tbody td.program a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+        assert.deepEqual(hrefs, v.families.filter((f) => f.family).map((f) => `#/category/${f.family[0]}/in/${encodeURIComponent(f.family[1])}`),
+          `${x}: each family's link opens its view in its type`);
+        const names = await page.locator("#idiomatic table.fams-tr tbody th").allTextContents();
         assert.equal(new Set(names).size, names.length, `${x}: each family named once`);
         assert.equal(await page.locator("#idiomatic table.fams-tr tbody th[title]").count(), folded, `${x}: the folded families' names on hover`);
-        assert.equal(await page.locator("#idiomatic table.fams-tr tbody tr").first().locator("td").count(), 6, `${x}: the instances, two sides' answers and totals, the speed-up`);
+        assert.equal(await page.locator("#idiomatic table.fams-tr tbody tr").first().locator("td").count(), 7, `${x}: the program, the instances, two sides' answers and totals, the speed-up`);
         // one line under it, no reasons or routes
         assert.equal(await page.locator("#idiomatic p.note", { hasText: "Each family's page shows" }).count(), 1, `${x}: what each side read, once`);
         assert.ok(!/other routes/.test(await page.locator("#idiomatic").textContent()), `${x}: no routes`);
@@ -166,8 +170,15 @@ function drawn(page) {
         assert.ok(line.includes(cats.names[i.pipeline]) && line.includes(cats.names[i.system]), `${k}: ${i.pipeline} against ${i.system}`);
         // the families last, after a row for each other system on a program of its own of the model
         const others = i.systems.filter((y) => y !== "tddlog" && !y.endsWith("-tddlog") && y !== i.system).length;
-        assert.equal(await page.locator("table.board").last().locator("tbody tr").count(), i.groups.length, `${k}: a row a family`);
-        assert.equal(await page.locator("table.board tbody tr").count(), i.groups.length + others, `${k}: a row each other system`);
+        // a row a family, under its type's and its domain's headings, its one link its program's
+        const fams = page.locator("table.board").last().locator("tbody tr:not(.heading)");
+        assert.equal(await fams.count(), i.groups.length, `${k}: a row a family`);
+        assert.equal(await page.locator("table.board").last().locator("tbody a").count(), await page.locator("table.board").last().locator("tbody td.program a").count(),
+          `${k}: no link but the programs'`);
+        assert.ok(await page.locator("table.board").last().locator("tbody td.program a").count() >= i.groups.length - 1, `${k}: a family's program a link`);
+        assert.deepEqual([...new Set(await page.locator("table.board").last().locator("tbody tr.heading").evaluateAll((trs) => trs.map((tr) => tr.cells.length)))],
+          (await page.locator("table.board").last().locator("tbody tr.heading").count()) ? [1] : [], `${k}: a heading a row of one cell`);
+        assert.equal(await page.locator("table.board tbody tr:not(.heading)").count(), i.groups.length + others, `${k}: a row each other system`);
         // a line names the families where the system is faster, as the scatter counts it
         const t = (row, y) => (typeof row[4 + i.systems.indexOf(y)] === "number" ? row[4 + i.systems.indexOf(y)] : null);
         const faster = i.rows.filter((row) => {

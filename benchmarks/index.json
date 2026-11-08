@@ -92,6 +92,7 @@
      "ace_students_03_02"
     ],
     "key": "students",
+    "program": "students_03_02.net",
     "title": "Students"
    }
   ],
@@ -450,6 +451,8 @@
      "bb_normal_mixture_mu2_w7",
      "bb_normal_mixture_mu2_w9",
      "bb_normal_mixture_mu2_w11",
+     "bb_normal_mixture_mu2_w13",
+     "bb_normal_mixture_mu2_w15",
      "bb_normal_mixture_theta_w9",
      "bb_normal_mixture_theta_w11"
     ],
@@ -485,6 +488,16 @@
       "E[\u03bc2]",
       "32",
       "11"
+     ],
+     "bb_normal_mixture_mu2_w13": [
+      "E[\u03bc2]",
+      "32",
+      "13"
+     ],
+     "bb_normal_mixture_mu2_w15": [
+      "E[\u03bc2]",
+      "32",
+      "15"
      ],
      "bb_normal_mixture_mu2_w7": [
       "E[\u03bc2]",
@@ -1267,6 +1280,7 @@
      "pedigree32_6"
     ],
     "key": "pedigree",
+    "program": "pedigree.pl",
     "title": "Pedigrees"
    },
    {
@@ -1346,6 +1360,7 @@
      "taint_yaaic"
     ],
     "key": "taint",
+    "program": "taint.pl",
     "title": "Taint analysis of Android apps"
    },
    {
@@ -1586,6 +1601,7 @@
      "pcfg32"
     ],
     "key": "pcfg",
+    "program": "pcfg.pl",
     "title": "A grammar, by its stack"
    },
    {
@@ -1599,6 +1615,7 @@
      "dnahmm28"
     ],
     "key": "dnahmm",
+    "program": "dnahmm.pl",
     "title": "An HMM of DNA"
    },
    {
@@ -1612,6 +1629,7 @@
      "plcg16"
     ],
     "key": "plcg",
+    "program": "plcg.pl",
     "title": "A left-corner grammar"
    },
    {
@@ -1623,6 +1641,7 @@
      "hmmpos5"
     ],
     "key": "hmmpos",
+    "program": "hmmpos.pl",
     "title": "Part-of-speech tagging"
    },
    {
@@ -1740,6 +1759,7 @@
      "pluck_hmm"
     ],
     "key": "pluck_hmm",
+    "program": "pluck_hmm.pl",
     "title": "Pluck's hidden Markov model"
    },
    {
@@ -1956,6 +1976,7 @@
      "pluck_hmm"
     ],
     "key": "pluck_hmm",
+    "program": "pluck_hmm.pl",
     "title": "Pluck's hidden Markov model"
    },
    {
@@ -2133,6 +2154,7 @@
      "rl_caesar_100000"
     ],
     "key": "caesar_noisy",
+    "program": "caesar.pl",
     "title": "Caesar cipher, noisy"
    },
    {
@@ -2150,6 +2172,7 @@
      "rl_diamond_6000000"
     ],
     "key": "diamond",
+    "program": "diamond.pl",
     "title": "Diamonds"
    },
    {
@@ -2166,6 +2189,7 @@
      "rl_ladder_3000000"
     ],
     "key": "ladder",
+    "program": "ladder.pl",
     "title": "Ladders"
    },
    {
@@ -2183,6 +2207,7 @@
      "rl_network_1000000"
     ],
     "key": "network",
+    "program": "network.pl",
     "title": "Lossy network"
    },
    {
@@ -2198,6 +2223,7 @@
      "rl_motivating_9000000"
     ],
     "key": "markov",
+    "program": "motivating.pl",
     "title": "Markov chain"
    },
    {
@@ -2252,6 +2278,7 @@
      "rl_hmm_smoothing_marginal_3000000"
     ],
     "key": "hmm",
+    "program": "hmm.pl",
     "title": "Hidden Markov model",
     "values": {
      "rl_hmm_filtering_joint_100": [
@@ -2468,6 +2495,7 @@
      "rl_hardware_bitwidth_100000000"
     ],
     "key": "hardware",
+    "program": "hardware.pl",
     "title": "Perturbed-memory interpreter",
     "values": {
      "rl_hardware_10": [
@@ -2628,6 +2656,7 @@
      "g40_140"
     ],
     "key": "graphs",
+    "program": "graph.pl",
     "title": "Paths in random graphs"
    },
    {
@@ -2646,6 +2675,7 @@
      "grid40"
     ],
     "key": "grids",
+    "program": "grid.pl",
     "title": "Paths in grids"
    },
    {
@@ -2654,6 +2684,7 @@
      "grid30_ev"
     ],
     "key": "gridev",
+    "program": "gridev.pl",
     "title": "Paths in grids with evidence"
    },
    {
@@ -2671,6 +2702,7 @@
      "s30000"
     ],
     "key": "smokers",
+    "program": "smokers.pl",
     "title": "Smokers"
    },
    {
@@ -2684,6 +2716,7 @@
      "nsym16"
     ],
     "key": "symsmokers",
+    "program": "smokers.pl",
     "title": "Symmetric smokers"
    },
    {
@@ -2702,6 +2735,7 @@
      "uwcse2560"
     ],
     "key": "uwcse",
+    "program": "uwcse.pl",
     "title": "UW-CSE"
    },
    {
@@ -2723,6 +2757,7 @@
      "bloodtype"
     ],
     "key": "bloodtype",
+    "program": "bloodtype.pl",
     "title": "Blood type"
    }
   ],
@@ -3328,6 +3363,7 @@
      "uai_alchemy_11"
     ],
     "key": "alchemy",
+    "program": "Alchemy_11.uai",
     "title": "Markov logic networks"
    }
   ],
@@ -3874,6 +3910,7 @@
      "uai_fs_07"
     ],
     "key": "fs",
+    "program": "fs-07.uai",
     "title": "Friends and smokers"
    },
    {
@@ -3983,6 +4020,7 @@
      "uai_pedigree51"
     ],
     "key": "pedigree",
+    "program": "pedigree51.uai",
     "title": "Pedigrees"
    }
   ],
@@ -4154,6 +4192,7 @@
      "uai_alchemy_11"
     ],
     "key": "alchemy",
+    "program": "Alchemy_11.uai",
     "title": "Markov logic networks"
    }
   ]

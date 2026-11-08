@@ -104,25 +104,18 @@ function pairPlot(rows, x, v, key) {
   return element("div", { class: "pair" }, plotted(both, { ...data.names, tddlog: me }), scatter(rows, ["tddlog", x], x, false, (r) => r.me));
 }
 
-// The families rows are of, by how many each: a family opens in its type of
-// program, its code on its benchmark pages; past the first eight, the rest
-// folded.
+// The families rows are of, by how many each, each with its one link, its
+// program's, which opens the family's view in its type on it; past the first
+// eight, the rest folded.
 const FAMILIES_SHOWN = 8;
 function familyCounts(rows) {
-  const out = new Map();
-  for (const r of rows) {
-    const at = data.place.get(`${r.suite}/${r.name}`);
-    const key = at ? `${at.c.key}/${at.g.key}` : r.suite;
-    if (!out.has(key)) out.set(key, { at, rows: [] });
-    out.get(key).rows.push(r);
-  }
-  const list = [...out.values()].sort((a, b) => b.rows.length - a.rows.length);
+  const list = familiesOfRows(rows).sort((a, b) => b.rows.length - a.rows.length);
   const table = (items) => scroller(stacked(element("table", { class: "board fams-t" }, element("thead", {}, element("tr", {},
-    element("th", { scope: "col" }, "family"), element("th", { scope: "col", title: "the family's programs, each system's, and its runs" }, "program"),
+    element("th", { scope: "col" }, "family"), element("th", { scope: "col", title: "Opens the family's view on its program" }, "program"),
     element("th", { scope: "col", class: "num" }, "instances"))),
-  element("tbody", {}, ...items.map(({ at, rows: rs }) => element("tr", {},
-    element("th", { scope: "row" }, at ? link({ view: "category", category: at.c.key, only: at.g.key }, at.g.title) : "another suite"),
-    codeCell(rs), element("td", { class: "num" }, count(rs.length))))))), "whole");
+  element("tbody", {}, ...items.map(({ c, g, rows: rs }) => element("tr", {},
+    element("th", { scope: "row", title: g?.about ?? null }, g ? g.title : "another suite"),
+    g ? programCell(c, g) : element("td"), element("td", { class: "num" }, count(rs.length))))))), "whole");
   const first = list.slice(0, FAMILIES_SHOWN), rest = list.slice(FAMILIES_SHOWN);
   return element("div", { class: "fams" }, table(first),
     ...(rest.length ? [lazy({ class: "fams-more" }, `${plural(rest.length, "more family", "more families")}`, () => [table(rest)])] : []));
@@ -216,36 +209,27 @@ function readLine(read) {
 // A baseline's idiomatic instances by family (views.json's families, as
 // the types name them, most first; those of few instances in one row, their
 // names its title): the instances, each side's answers and total, and
-// tddlog's speed-up; a family opens on its program's page, where its type
-// has several, on the type's view of it. Past the first FAMILY_ROWS, the rest
+// tddlog's speed-up; a family's one link, its program's, opens its view in its
+// type on its program. Past the first FAMILY_ROWS, the rest
 // show on asking. Under it, one line on what each
 // side read.
 const FAMILY_ROWS = 12;
-function familyTable(v, name, rows) {
+function familyTable(v, name) {
   const me = subject(v.idiomatic.me), par = `over the instances ${name} is given and either answers (PAR-${data.measure.par})`;
   const num = (text) => element("td", { class: "num" }, text);
-  const group = ([c, key]) => data.categories.find((y) => y.key === c).groups.find((g) => g.key === key);
-  const of = new Map();
-  for (const r of rows) {
-    const at = data.place.get(`${r.suite}/${r.name}`);
-    const key = `${at.c.key}/${at.g.key}`;
-    if (!of.has(key)) of.set(key, []);
-    of.get(key).push(r);
-  }
+  const type = (c) => data.categories.find((y) => y.key === c);
+  const group = ([c, key]) => type(c).groups.find((g) => g.key === key);
   // A title two types share (Mastermind) names its type too.
   const titles = v.families.filter((f) => f.family).map((f) => group(f.family).title);
   const title = (f) => titles.filter((t) => t === group(f).title).length > 1
-    ? `${group(f).title} (${lower(data.categories.find((y) => y.key === f[0]).title)})` : group(f).title;
-  const familyLink = (f) => {
-    const pages = pagesOf(of.get(f.join("/")) ?? []);
-    return link(pages.length === 1 ? pages[0].route : { view: "category", category: f[0], only: f[1] }, title(f));
-  };
+    ? `${group(f).title} (${lower(type(f[0]).title)})` : group(f).title;
   const body = element("tbody", {}, ...v.families.map((f, i) => element("tr", { class: i < FAMILY_ROWS ? null : "more" },
     f.families ? element("th", { scope: "row", title: f.families.map((k) => group(k).title).join(", ") }, `other families (${f.families.length})`)
-      : element("th", { scope: "row" }, familyLink(f.family)),
+      : element("th", { scope: "row" }, title(f.family)),
+    f.families ? element("td") : programCell(type(f.family[0]), group(f.family)),
     ...[count(f.n), count(f.vs.answers), duration(f.vs.total), count(f.vs.tddlog_answers), duration(f.vs.tddlog_total), speedCell(f.vs)].map(num))));
   const table = element("table", { class: `board fams-tr${v.families.length > FAMILY_ROWS ? " folded" : ""}` },
-    head2(["family", "each family's page shows the programs both read"], ["instances", null, "num"],
+    head2(["family"], ["program", "Opens the family's view on its program, with the programs both read"], ["instances", null, "num"],
       { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
       { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up, a dash where fewer than ${data.measure.common} instances both answer`, "num"]] }), body);
   // past the first rows, the rest on asking
@@ -301,7 +285,7 @@ function baselineView(route) {
   } else if (tab === "idiomatic") {
     panel.append(note("Its own language's programs and the translations its users would write (",
       element("a", { href: IDIOMS_HREF }, "docs/baselines.md"), ", Idiomatic translations)."),
-    versusCells(v.idiomatic, name, rows.length), ...(rows.length ? [pairPlot(rows, x, v.idiomatic, "i"), ...familyTable(v, name, rows)] : []));
+    versusCells(v.idiomatic, name, rows.length), ...(rows.length ? [pairPlot(rows, x, v.idiomatic, "i"), ...familyTable(v, name)] : []));
   } else if (tab === "types") {
     panel.append(...solverParts(x).types);
   } else if (tab === "coverage") {
@@ -403,17 +387,20 @@ function integrationView(route) {
       + (unread ? `; it counts as unanswered on the ${plural(unread, "instance")} it does not read.` : ".")));
   }
   out.push(...othersOf(i));
-  // the families
+  // the families, as their types name them, under their types and domains, each with its one link, its program's
   const fams = element("tbody");
   const answers = [me, x, ...(alone ? ["tddlog"] : [])];
-  for (const g of i.groups) {
-    const rs = g.rows.map((j) => rows[j]);
-    fams.append(element("tr", {}, element("th", { scope: "row", title: g.about ?? null }, g.title), codeCell(rs),
-      element("td", { class: "num" }, count(rs.length)),
-      ...answers.map((y) => element("td", { class: "num" }, count(rs.filter((r) => r.t[y] !== null).length)))));
+  for (const f of headings(familiesOfRows(rows))) {
+    if (f.heading) {
+      fams.append(headingRow(f, 3 + answers.length));
+      continue;
+    }
+    fams.append(element("tr", {}, element("th", { scope: "row", title: f.g?.about ?? null }, f.g ? f.g.title : "another suite"),
+      f.g ? programCell(f.c, f.g) : element("td"), element("td", { class: "num" }, count(f.rows.length)),
+      ...answers.map((y) => element("td", { class: "num" }, count(f.rows.filter((r) => r.t[y] !== null).length)))));
   }
   out.push(element("h3", {}, "Families"), scroller(stacked(element("table", { class: "board" },
-    head2(["family"], ["program", "the family's programs, each system's, and its runs"], ["instances", null, "num"],
+    head2(["family"], ["program", "Opens the family's view on its program"], ["instances", null, "num"],
       { group: "answers", cols: [[i.title, null, "num"], [name, null, "num"],
         ...(alone ? [["tddlog", "plain tddlog, on its own program of the model", "num"]] : [])] }), fams)), "whole"));
   return out;

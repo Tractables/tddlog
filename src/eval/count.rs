@@ -188,6 +188,18 @@ impl<V: Value> Down<V> {
         }
     }
 
+    /// No level walked, as [`Down::with_views`] leaves the pass down, its
+    /// views and routes kept. It frees the columns and allocates nothing.
+    fn clear(&mut self) {
+        self.columns.iter_mut().for_each(|c| *c = Vec::new());
+        self.wide.iter_mut().for_each(|w| *w = None);
+        self.has.fill(false);
+        self.opened.fill(false);
+        self.ranges.fill(Range::NEW);
+        self.exact.fill(true);
+        self.exps.fill(0);
+    }
+
     /// Walk the levels from the output's down to `t` that have no column
     /// yet, each spread from its parent ([`Down::spread`]), and give `t` a
     /// column.
@@ -839,6 +851,8 @@ pub(super) fn collected<T>(
     n: usize,
     items: impl Iterator<Item = T>,
 ) -> Result<Vec<T>, tididi::OperationError> {
+    #[cfg(test)]
+    tests::grant()?;
     let mut v = Vec::new();
     v.try_reserve_exact(n)
         .map_err(|_| tididi::OperationError::OverBudget)?;
@@ -870,7 +884,8 @@ impl Counts {
     /// taken over in [`Count`]s where a query read against it was not
     /// exact: the counts up as they are, each value times its level's
     /// power, and the pass down anew. The routes of the pass down it
-    /// replaces are returned.
+    /// replaces are returned. Refused memory, the count stays in floats
+    /// and reads as before ([`Counted::take_counts`]).
     pub(crate) fn widen(&mut self) -> Result<Routes, tididi::OperationError> {
         let Counts::Plain(plain) = self else {
             panic!("a count in `Count`s is exact")
@@ -978,17 +993,27 @@ pub(super) fn fitted<V: Value>(
 
 impl Counted<f64> {
     /// The counts up taken over in [`Count`]s, each value times its
-    /// level's power, with the levels' views and no column down; `self` is
-    /// left without them. Where the counts up are exact, these are the
-    /// counts a count in `Count`s from the leaves computes.
+    /// level's power, with the levels' views and no column down. Where the
+    /// counts up are exact, these are the counts a count in `Count`s from
+    /// the leaves computes.
+    ///
+    /// `self` frees its columns down first ([`Down::clear`]), which its pass
+    /// down walks again where asked, and keeps its counts up until those in
+    /// `Count`s are all
+    /// allocated: refused memory there, it is left a count that reads as
+    /// before, since the query phase that takes it over is resumed after a
+    /// refusal (`auto` gives a trial refused memory what the other trials
+    /// hold). Once taken over, it is left without its views and true nodes.
     fn take_counts(&mut self) -> Result<Counted<Count>, tididi::OperationError> {
-        let up = std::mem::take(&mut self.up);
+        self.down.get_mut().clear();
+        let up = self
+            .up
+            .iter()
+            .zip(&self.exps)
+            .map(|(column, &k)| in_counts(column, k))
+            .collect::<Result<_, _>>()?;
         Ok(Counted {
-            up: up
-                .into_iter()
-                .zip(&self.exps)
-                .map(|(column, &k)| in_counts(&column, k))
-                .collect::<Result<_, _>>()?,
+            up,
             exps: vec![0; self.exps.len()],
             ranges: vec![Range::NEW; self.ranges.len()],
             exact: vec![true; self.exact.len()],

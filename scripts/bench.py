@@ -1431,11 +1431,28 @@ def program_args(args, name, gargs):
     return argv + ['--no-queries'] if pr else argv
 
 
+def evidence_file(gargs):
+    """The .inst file a gen_bn.py instance takes its observations from
+    (`--evidence-file`: an evidence set of Ace's archive), else None."""
+    return gen_bn.arguments().parse_args(gargs[1:]).evidence_file
+
+
+def ace_observations(args, name, gargs):
+    """The .inst file Ace reads for a gen_bn.py instance: the one the
+    instance names (`evidence_file`), which tddlog reads too, so that a
+    network's page has one file of its observations; else the one `gen`
+    writes beside the program (NAME.inst) of the observations it samples or
+    converts."""
+    return os.path.abspath(evidence_file(gargs) or os.path.join(args.dir, name + '.inst'))
+
+
 def gen_network(args, name, gargs):
     """`gen` of a gen_bn.py instance: the gzipped network decompressed once
     (`network_file`); the files only the baselines read, written by
     gen_bn.py (the observations as Ace's .inst file, which tddlog reads
-    where they are sampled; the network as a UAI file for Merlin; the
+    where they are sampled, unless the instance names an .inst file of its
+    own, which Ace and tddlog both read as it is (`ace_observations`); the
+    network as a UAI file for Merlin; the
     weighted CNF under --cnf), its program discarded; and NAME.pl, the
     program the systems that read ProbLog programs are given, as tddlog's
     reader writes it (`tddlog --program`, the same text gen_bn.py writes),
@@ -1448,7 +1465,8 @@ def gen_network(args, name, gargs):
         os.replace(net + '.part', net)
     side = []
     if not getattr(args, 'pr', False):
-        side += ['--inst', os.path.join(args.dir, name + '.inst')]
+        if not evidence_file(gargs):
+            side += ['--inst', os.path.join(args.dir, name + '.inst')]
         if not gargs[1].endswith('.uai'):
             side += ['--uai', os.path.join(args.dir, name + '.uai')]
     if has_cnf((None, gargs)) and getattr(args, 'cnf', False):
@@ -5322,8 +5340,9 @@ def network_answers(rows, cells):
 
 def run_ace(args, name, path, variant):
     """Ace 3.0 on the network file the program was generated from, with the
-    program's observations from the `.inst` file `gen` writes beside it. The
-    file is copied (or unzipped) into a scratch directory of the instance,
+    program's observations from the `.inst` file `gen` writes beside it, or
+    from the instance's own (an evidence set of Ace's archive, which tddlog
+    reads too: `ace_observations`). The network file is copied (or unzipped) into a scratch directory of the instance,
     since Ace writes the circuit and the marginals next to it, and the copy
     of a Hugin file is written as Ace's reader takes it (`hugin_for_ace`).
     Ace reads a UAI file only as a Bayesian network, and a BIF file (Roulette's
@@ -5365,7 +5384,7 @@ def run_ace(args, name, path, variant):
             evidence = re.findall(r'^<inst ', f.read(), re.M)
     else:
         source = instances(args)[name][1][1]
-        inst = os.path.abspath(os.path.join(args.dir, name + '.inst'))
+        inst = ace_observations(args, name, instances(args)[name][1])
         if not os.path.exists(inst):
             return {'status': 'error', 'seconds': 0.0, 'error': f'no {inst}: rerun bench.py gen'}
         network = gen_bn.parse(source)
@@ -6676,7 +6695,8 @@ def run(args):
             os.environ['BENCH_PROBLOG'] = os.path.abspath(args.problog)
     if args.ace:
         takes_networks(args, spec, names, 'ace')
-        networks = [n for n in names if spec[n][1][0] == 'gen_bn.py']
+        # the networks whose observations Ace reads from the .inst file gen writes (ace_observations)
+        networks = [n for n in names if spec[n][1][0] == 'gen_bn.py' and not evidence_file(spec[n][1])]
         if networks and not any(os.path.exists(os.path.join(args.dir, n + '.inst')) for n in networks):
             raise SystemExit(f'--ace reads the observations bench.py gen writes beside each network (NAME.inst), and '
                              f'{args.dir} has none' + (' (gen --pr writes none)' if args.pr else ''))

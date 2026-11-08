@@ -2685,6 +2685,33 @@ class AceTests(unittest.TestCase):
             self.assertIn('-Xss512m', calls[0][0])
             self.assertEqual(result['stats']['ace_stack'], '512m')
 
+    def test_an_evidence_set_of_the_archive_is_the_one_inst_file(self):
+        """An instance whose observations are an evidence set of Ace's
+        archive (`--evidence-file`, the ace suite) has that one .inst file:
+        gen writes no copy of it (NAME.inst), and Ace compiles and evaluates
+        with the archive's file, which tddlog reads too."""
+        asia = str(SOURCE / 'tests' / 'networks' / 'asia.net')
+        with scratch_dir('ace-archive-') as d:
+            archive = Path(d) / 'asia-0006.inst'
+            archive.write_text(bench.gen_bn.write_inst([('smoke', 'yes'), ('xray', 'yes')]))
+            spec = {'ace_asia': ('acenet', ['gen_bn.py', asia, '--query', 'leaves', '--evidence-file', str(archive)])}
+            out = Path(d) / 'bench'
+            with patch.object(bench, 'instances', return_value=spec), redirect_stdout(io.StringIO()):
+                bench.gen(SimpleNamespace(dir=str(out), cnf=False))
+            self.assertTrue((out / 'ace_asia.pl').exists())
+            self.assertFalse((out / 'ace_asia.inst').exists())
+            self.assertEqual(bench.network_args(SimpleNamespace(dir=str(out), pr=False), 'ace_asia',
+                                                spec['ace_asia'][1], False)[1][-1], str(archive))
+            calls = []
+            args = SimpleNamespace(dir=str(out), ace=d, ace_heap='1g', ace_java='java', timeout=10)
+            with patch.object(bench, 'instances', return_value=spec), \
+                    patch.object(bench, 'timed', side_effect=self.fake_ace(calls)):
+                result = bench.run_ace(args, 'ace_asia', str(out / 'ace_asia.pl'), 'auto')
+            self.assertEqual(result['status'], 'ok')
+            (compile_, _), (evaluate, _) = calls
+            self.assertEqual(compile_[compile_.index('-e') + 1], str(archive))
+            self.assertEqual(evaluate[-1], str(archive))
+
 
 MERLIN_MAR = """PR
 -1.234567 (5.831e-02)

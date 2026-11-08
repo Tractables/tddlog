@@ -3179,7 +3179,7 @@ fn evaluate_by_levels(
             });
         }
         g.by_level.as_mut().expect("grounding by levels").done = Some(key);
-        prune_key(g, pruner, group, &start, r0, cyclic);
+        prune_key(g, pruner, key.0, group, &start, r0, cyclic);
         for (s, &p) in group.iter().enumerate() {
             let e = g.rels[p as usize].len();
             if e > start[s] {
@@ -3196,6 +3196,7 @@ fn evaluate_by_levels(
 fn prune_key(
     g: &mut Grounder,
     pruner: &mut super::aig::Pruner,
+    level: i64,
     group: &[PredId],
     start: &[usize],
     r0: usize,
@@ -3206,6 +3207,7 @@ fn prune_key(
         .zip(start)
         .flat_map(|(&p, &s)| g.rels[p as usize].ids[s..].to_vec())
         .collect();
+    pruner.level(level);
     if cyclic {
         for a in atoms {
             pruner.input(a);

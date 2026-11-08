@@ -38,6 +38,37 @@
 //! recursion: 1 088 gates proved where the search stopped at 770, 3 256
 //! atoms left of 9 220). What it proved by then stands.
 //!
+//! Grounding level by level ([`Pruner`]), the solver is given the cones
+//! of the gates of the level at hand and of the level before it alone: a
+//! node built before those is an input of its calls, and each level
+//! takes a new solver. What a call proves holds whatever those nodes are,
+//! and a call costs about as much at a loop's thousandth step as at its
+//! tenth. Over the cones down to the facts, in one solver, each step's
+//! calls cost more than the last's until the steps ran out midway, and
+//! the loop's later steps were left unswept: Geni's weather written with
+//! `iterate` builds a tautology at each step, and at 1 000 days the sweep
+//! proved 4 059 gates over those cones against 51 011 over each level's,
+//! which leaves a ground program of 505 497 atoms rather than 743 872.
+//! A gate of an older level is a candidate where the gate's cone reads
+//! it, as a loop's step reads a value an earlier step left as it was.
+//!
+//! A pair the window tells apart may be equal all the same: its model
+//! may give the nodes at its floor values that no assignment of the
+//! facts gives them. The pair is asked again of a second solver, over
+//! the cones down to the facts and kept from level to level, and only a
+//! model there is a counterexample. Without it dice_pmc2 at 1 600 steps
+//! left each step's pairs apart and built 1.27 M gates rather than
+//! 445 k (10.7 s against 1.2 s). Where those pairs are apart, the second
+//! solver's models must reach the facts, and its calls cost more at each
+//! step: on dice_pmc1 at 300 steps they spent the steps by the 62nd, the
+//! steps after went unswept and the program kept 121 435 atoms rather
+//! than 404 (67 s against 3.5 s). So the second solver is asked only
+//! while it proves as many pairs as it tells apart: once [`PATTERNS`]
+//! counterexamples hold more pairs it told apart than it proved since the
+//! last were, the window's models are the counterexamples from then on,
+//! and the stop above holds for them (dice_pmc1: the second solver
+//! stopped at the 49th step, the search at the 53rd).
+//!
 //! The atoms of a cyclic component are inputs here, so gates proved equal
 //! are equal however those atoms come out, and the facts are free,
 //! whatever exclusive sets they are in: what is proved holds in every
@@ -78,6 +109,30 @@ fn node(l: Lit) -> usize {
     (l >> 1) as usize
 }
 
+/// Whether node `c` is a gate built before `floor`: an input of a level's
+/// calls ([`Pruner::level`]).
+fn below_floor(g: &Graph, c: usize, floor: usize) -> bool {
+    c != 0 && c < floor && g.fanins[c][0] != NO
+}
+
+/// The gates below `floor` that the cone of `n` reads, its walk stopping
+/// at them and at the inputs.
+fn reads_below(g: &Graph, n: usize, floor: usize) -> FxHashSet<usize> {
+    let (mut seen, mut reads) = (FxHashSet::default(), FxHashSet::default());
+    let mut todo = vec![n];
+    while let Some(m) = todo.pop() {
+        if !seen.insert(m) || g.fanins[m][0] == NO {
+            continue;
+        }
+        if m < floor {
+            reads.insert(m);
+            continue;
+        }
+        todo.extend(g.fanins[m].iter().map(|&f| node(f)));
+    }
+    reads
+}
+
 /// What the sweep did, for `--stats`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SweepStats {
@@ -91,6 +146,9 @@ pub struct SweepStats {
     pub open: u64,
     /// Steps taken: clause literals written and propagation steps.
     pub steps: u64,
+    /// Calls asked again over the cones down to the facts, after the
+    /// window's solver told a pair apart.
+    pub deep: u64,
 }
 
 impl SweepStats {
@@ -101,6 +159,7 @@ impl SweepStats {
         self.refuted += other.refuted;
         self.open += other.open;
         self.steps += other.steps;
+        self.deep += other.deep;
     }
 }
 
@@ -218,11 +277,22 @@ impl Graph {
     }
 }
 
+/// The candidates of one signature: the inputs and the gates from the
+/// floor on, in the order added, and whether a gate of the signature is
+/// below the floor. The floor only rises: a gate below it leaves the
+/// class for good the first time a lookup meets it, and is found again
+/// only through a cone that reads it ([`Sweep::find`]).
+#[derive(Default)]
+struct Class {
+    members: Vec<usize>,
+    older: bool,
+}
+
 /// The search for nodes equal in function: the candidates by signature,
 /// and one solver for every call.
 struct Sweep {
     /// The candidate nodes by the hash of their signatures.
-    classes: FxHashMap<u64, Vec<usize>>,
+    classes: FxHashMap<u64, Class>,
     /// Every candidate, in the order added.
     candidates: Vec<usize>,
     /// The counterexamples not yet simulated: values of input nodes.
@@ -237,129 +307,53 @@ struct Sweep {
     /// The candidates proved when the counterexamples pending began.
     proved_before: u64,
     stats: SweepStats,
-    /// The solver, over the clauses of the nodes encoded so far and what
-    /// the calls proved; each node's positive literal there, [`NONE`]
-    /// before it is encoded; and the input nodes encoded.
+    /// The solver of the calls, over the cones above its floor
+    /// ([`Pruner::level`]), and the one over the cones down to the facts,
+    /// for a pair it tells apart: its model may give the nodes at the
+    /// floor values no assignment of the facts gives them.
+    window: Cnf,
+    deep: Cnf,
+    /// The pairs the deep solver proved equal and told apart since the
+    /// counterexamples pending began, while it is still asked; `None` once
+    /// it told apart more than it proved: the window then told those pairs
+    /// apart rightly, and a refutation over the cones down to the facts
+    /// costs more at each step of a loop.
+    deep_tally: Option<(u64, u64)>,
+}
+
+/// A solver over the clauses of the nodes encoded so far and what its
+/// calls proved; each node's positive literal there, [`NONE`] before it
+/// is encoded; the input nodes encoded, with the nodes below the floor;
+/// and the floor, the first node whose clauses it is given.
+struct Cnf {
     solver: Solver,
     var: Vec<SatLit>,
     inputs: Vec<usize>,
+    floor: usize,
 }
 
-/// No variable yet.
-const NONE: SatLit = SatLit::MAX;
-
-impl Sweep {
-    /// The search over a program of `literals` body literals; the constant
-    /// is the first candidate.
-    fn new(g: &Graph, literals: u64) -> Self {
-        let mut sweep = Sweep {
-            classes: FxHashMap::default(),
-            candidates: Vec::new(),
-            pending: Vec::new(),
-            budget: STEPS_FLOOR + STEPS_PER_LITERAL * literals,
-            stopped: false,
-            proved_before: 0,
-            stats: SweepStats::default(),
+impl Cnf {
+    fn new(floor: usize) -> Self {
+        Cnf {
             solver: Solver::new(0),
             var: Vec::new(),
             inputs: Vec::new(),
-        };
-        sweep.add(g, 0);
-        sweep
-    }
-
-    /// Adds node `n` as a candidate for the nodes after it.
-    fn add(&mut self, g: &Graph, n: usize) {
-        self.classes.entry(g.signature(n).0).or_default().push(n);
-        self.candidates.push(n);
-    }
-
-    /// A literal of an earlier candidate that `l` is proved equal to,
-    /// within the search's steps.
-    fn find(&mut self, g: &mut Graph, l: Lit) -> Option<Lit> {
-        if self.stopped || self.budget == 0 {
-            return None;
-        }
-        let n = node(l);
-        let (h, phase) = g.signature(n);
-        let tries: Vec<usize> = self
-            .classes
-            .get(&h)?
-            .iter()
-            .copied()
-            .filter(|&c| c != n && g.alike(n, c))
-            .take(TRIES)
-            .collect();
-        for c in tries {
-            if self.stopped || self.budget == 0 {
-                return None;
-            }
-            // `l` is `c` where their phases agree, its complement otherwise.
-            let c_phase = g.sim[0][c] & 1 == 1;
-            let target = 2 * c as Lit + Lit::from(phase ^ c_phase ^ (l & 1 == 1));
-            match self.prove(g, l, target) {
-                Some(true) => {
-                    self.stats.proved += 1;
-                    return Some(target);
-                }
-                Some(false) => self.stats.refuted += 1,
-                None => self.stats.open += 1,
-            }
-        }
-        None
-    }
-
-    /// Whether no assignment of the inputs tells `a` and `b` apart; `None`
-    /// where the call gave up. A model that tells them apart is kept as a
-    /// counterexample. What is proved stays with the solver.
-    fn prove(&mut self, g: &mut Graph, a: Lit, b: Lit) -> Option<bool> {
-        let va = self.encode(g, a)?;
-        let vb = self.encode(g, b)?;
-        // d where the two differ, assumed for this call and then denied.
-        let d = 2 * self.solver.num_vars() as SatLit;
-        self.solver.add_vars(1);
-        self.solver.add_clause(&[d ^ 1, va, vb]);
-        self.solver.add_clause(&[d ^ 1, va ^ 1, vb ^ 1]);
-        let before = self.solver.ticks;
-        self.solver.tick_limit = before.saturating_add(self.budget);
-        self.stats.calls += 1;
-        let outcome = self.solver.solve(&[d], CONFLICTS);
-        let ticks = (self.solver.ticks - before).min(self.budget);
-        self.budget -= ticks;
-        self.stats.steps += ticks;
-        // The clauses have models (every assignment of the inputs extends
-        // to one), so a solver that finds none without the assumption has
-        // a fault, and nothing it says is taken.
-        let mut consistent = self.solver.add_clause(&[d ^ 1]);
-        match outcome {
-            Outcome::Unsat => {
-                consistent &= self.solver.add_clause(&[va ^ 1, vb]);
-                consistent &= self.solver.add_clause(&[va, vb ^ 1]);
-                debug_assert!(consistent, "the sweep's clauses have no model");
-                if !consistent {
-                    self.stopped = true;
-                    return None;
-                }
-                Some(true)
-            }
-            Outcome::Unknown => None,
-            Outcome::Sat => {
-                let pattern = self
-                    .inputs
-                    .iter()
-                    .map(|&x| (x, self.solver.holds(self.var[x])))
-                    .collect();
-                self.counterexample(g, pattern);
-                Some(false)
-            }
+            floor,
         }
     }
 
     /// The solver's literal of `l`, the clauses of the nodes of its cone
     /// given where they were not yet. `None` where the steps run out, the
-    /// cone then left as it was: the pruner gives the search more steps
-    /// with each gate it builds, and a later call encodes the cone anew.
-    fn encode(&mut self, g: &Graph, l: Lit) -> Option<SatLit> {
+    /// cone then left as it was and the steps spent: the pruner gives the
+    /// search more steps with each gate it builds, and a later call
+    /// encodes the cone anew.
+    fn encode(
+        &mut self,
+        g: &Graph,
+        l: Lit,
+        budget: &mut u64,
+        stats: &mut SweepStats,
+    ) -> Option<SatLit> {
         if self.var.len() < g.fanins.len() {
             self.var.resize(g.fanins.len(), NONE);
         }
@@ -371,14 +365,19 @@ impl Sweep {
             let (mut fresh, inputs) = (vec![root], self.inputs.len());
             self.var[root] = 2 * vars;
             vars += 1;
+            // A cone that does not fit the steps left is not walked further:
+            // its clauses are built only as far as the steps they would cost.
             while let Some(n) = todo.pop() {
+                if 7 * (clauses.len() as u64) / 3 >= *budget {
+                    break;
+                }
                 let v = self.var[n];
                 let [a, b] = g.fanins[n];
                 if n == 0 {
                     clauses.push([v ^ 1, NONE, NONE]);
                     continue;
                 }
-                if a == NO {
+                if a == NO || n < self.floor {
                     self.inputs.push(n);
                     continue;
                 }
@@ -396,16 +395,16 @@ impl Sweep {
                 clauses.push([v, va ^ 1, vb ^ 1]);
             }
             let written = 7 * (clauses.len() as u64) / 3;
-            if written >= self.budget {
-                self.budget = 0;
+            if written >= *budget {
+                *budget = 0;
                 for n in fresh {
                     self.var[n] = NONE;
                 }
                 self.inputs.truncate(inputs);
                 return None;
             }
-            self.budget -= written;
-            self.stats.steps += written;
+            *budget -= written;
+            stats.steps += written;
             self.solver.add_vars(vars as usize - self.solver.num_vars());
             for c in &clauses {
                 let k = c.iter().position(|&x| x == NONE).unwrap_or(3);
@@ -414,11 +413,182 @@ impl Sweep {
         }
         Some(self.var[root] ^ (l & 1))
     }
+}
+
+/// No variable yet.
+const NONE: SatLit = SatLit::MAX;
+
+impl Sweep {
+    /// The search over a program of `literals` body literals; the constant
+    /// is the first candidate.
+    fn new(g: &Graph, literals: u64) -> Self {
+        let mut sweep = Sweep {
+            classes: FxHashMap::default(),
+            candidates: Vec::new(),
+            pending: Vec::new(),
+            budget: STEPS_FLOOR + STEPS_PER_LITERAL * literals,
+            stopped: false,
+            proved_before: 0,
+            stats: SweepStats::default(),
+            window: Cnf::new(0),
+            deep: Cnf::new(0),
+            deep_tally: Some((0, 0)),
+        };
+        sweep.add(g, 0);
+        sweep
+    }
+
+    /// A new solver for the calls, given the clauses of node `floor` and
+    /// the nodes after it only: the nodes before it are inputs there.
+    fn window(&mut self, floor: usize) {
+        self.window = Cnf::new(floor);
+    }
+
+    /// Adds node `n` as a candidate for the nodes after it.
+    fn add(&mut self, g: &Graph, n: usize) {
+        self.classes
+            .entry(g.signature(n).0)
+            .or_default()
+            .members
+            .push(n);
+        self.candidates.push(n);
+    }
+
+    /// A literal of an earlier candidate that `l` is proved equal to,
+    /// within the search's steps.
+    fn find(&mut self, g: &mut Graph, l: Lit) -> Option<Lit> {
+        if self.stopped || self.budget == 0 {
+            return None;
+        }
+        let n = node(l);
+        let (h, phase) = g.signature(n);
+        // A gate below the floor is an input of the calls: `n` can be proved
+        // equal to it only where `n`'s cone reads it, as a step of a loop
+        // reads the value an earlier step left unchanged. Any other call
+        // would fail and cost a counterexample. Those gates are found through
+        // the cone, where the class held one, and not by walking the class.
+        let floor = self.window.floor;
+        let class = self.classes.get_mut(&h)?;
+        let before = class.members.len();
+        class.members.retain(|&c| !below_floor(g, c, floor));
+        class.older |= class.members.len() < before;
+        let mut reads: Vec<usize> = match class.older {
+            true => reads_below(g, n, floor)
+                .into_iter()
+                .filter(|&c| g.signature(c).0 == h)
+                .collect(),
+            false => Vec::new(),
+        };
+        reads.sort_unstable();
+        let tries: Vec<usize> = reads
+            .into_iter()
+            .chain(class.members.iter().copied())
+            .filter(|&c| c != n && g.alike(n, c))
+            .take(TRIES)
+            .collect();
+        for c in tries {
+            if self.stopped || self.budget == 0 {
+                return None;
+            }
+            // `l` is `c` where their phases agree, its complement otherwise.
+            let c_phase = g.sim[0][c] & 1 == 1;
+            let target = 2 * c as Lit + Lit::from(phase ^ c_phase ^ (l & 1 == 1));
+            // A pair the window tells apart is asked again over the cones
+            // down to the facts, where a floor cut them and while that solver
+            // proves as many pairs as it tells apart: the window's model may
+            // give the nodes at the floor values that no assignment of the
+            // facts gives them.
+            let deep = floor > 0 && self.deep_tally.is_some();
+            let outcome = match self.prove(g, l, target, false, !deep) {
+                Some(false) if deep => {
+                    self.stats.deep += 1;
+                    let outcome = self.prove(g, l, target, true, true);
+                    if let (Some(t), Some(proved)) = (self.deep_tally.as_mut(), outcome) {
+                        match proved {
+                            true => t.0 += 1,
+                            false => t.1 += 1,
+                        }
+                    }
+                    outcome
+                }
+                outcome => outcome,
+            };
+            match outcome {
+                Some(true) => {
+                    self.stats.proved += 1;
+                    return Some(target);
+                }
+                Some(false) => self.stats.refuted += 1,
+                None => self.stats.open += 1,
+            }
+        }
+        None
+    }
+
+    /// Whether no assignment of the inputs tells `a` and `b` apart, in the
+    /// window's solver or the deep one; `None` where the call gave up. A
+    /// model that tells them apart is kept as a counterexample where `keep`
+    /// says so. What is proved stays with the solver.
+    fn prove(&mut self, g: &mut Graph, a: Lit, b: Lit, deep: bool, keep: bool) -> Option<bool> {
+        let cnf = if deep {
+            &mut self.deep
+        } else {
+            &mut self.window
+        };
+        let va = cnf.encode(g, a, &mut self.budget, &mut self.stats)?;
+        let vb = cnf.encode(g, b, &mut self.budget, &mut self.stats)?;
+        let solver = &mut cnf.solver;
+        // d where the two differ, assumed for this call and then denied.
+        let d = 2 * solver.num_vars() as SatLit;
+        solver.add_vars(1);
+        solver.add_clause(&[d ^ 1, va, vb]);
+        solver.add_clause(&[d ^ 1, va ^ 1, vb ^ 1]);
+        let before = solver.ticks;
+        solver.tick_limit = before.saturating_add(self.budget);
+        self.stats.calls += 1;
+        let outcome = solver.solve(&[d], CONFLICTS);
+        let ticks = (solver.ticks - before).min(self.budget);
+        self.budget -= ticks;
+        self.stats.steps += ticks;
+        // The clauses have models (every assignment of the inputs extends
+        // to one), so a solver that finds none without the assumption has
+        // a fault, and nothing it says is taken.
+        let mut consistent = solver.add_clause(&[d ^ 1]);
+        match outcome {
+            Outcome::Unsat => {
+                consistent &= solver.add_clause(&[va ^ 1, vb]);
+                consistent &= solver.add_clause(&[va, vb ^ 1]);
+                debug_assert!(consistent, "the sweep's clauses have no model");
+                if !consistent {
+                    self.stopped = true;
+                    return None;
+                }
+                Some(true)
+            }
+            Outcome::Unknown => None,
+            Outcome::Sat => {
+                if keep {
+                    // The graph's inputs: a node below the floor is
+                    // simulated over them.
+                    let pattern = cnf
+                        .inputs
+                        .iter()
+                        .filter(|&&x| g.fanins[x][0] == NO)
+                        .map(|&x| (x, cnf.solver.holds(cnf.var[x])))
+                        .collect();
+                    self.counterexample(g, pattern);
+                }
+                Some(false)
+            }
+        }
+    }
 
     /// Keeps a counterexample, and once there are [`PATTERNS`] of them stops
-    /// the search where no candidate was proved since the last were, and
-    /// otherwise simulates them as a word of their own, which splits the
-    /// classes, or drops them where [`MAX_WORDS`] are simulated.
+    /// the search where no candidate was proved since the last were, stops
+    /// asking the deep solver where it told apart more pairs than it proved
+    /// since then, and otherwise simulates them as a word of their own,
+    /// which splits the classes, or drops them where [`MAX_WORDS`] are
+    /// simulated.
     fn counterexample(&mut self, g: &mut Graph, pattern: Vec<(usize, bool)>) {
         self.pending.push(pattern);
         if self.pending.len() < PATTERNS {
@@ -430,13 +600,21 @@ impl Sweep {
             self.stopped = true;
             return;
         }
+        if let Some((proved, refuted)) = self.deep_tally {
+            self.deep_tally = (proved >= refuted).then_some((0, 0));
+        }
         if g.sim.len() >= MAX_WORDS {
             return;
         }
         g.add_word(&pending);
         self.classes.clear();
+        let floor = self.window.floor;
         for &c in &self.candidates {
-            self.classes.entry(g.signature(c).0).or_default().push(c);
+            let class = self.classes.entry(g.signature(c).0).or_default();
+            match below_floor(g, c, floor) {
+                true => class.older = true,
+                false => class.members.push(c),
+            }
         }
     }
 }
@@ -782,6 +960,9 @@ pub(super) struct Pruner {
     lit: Vec<Lit>,
     /// The nodes the sweep has as candidates.
     added: FxHashSet<usize>,
+    /// The level whose gates are built, and its first node.
+    level: Option<i64>,
+    start: usize,
 }
 
 impl Pruner {
@@ -793,6 +974,8 @@ impl Pruner {
             sweep,
             lit: Vec::new(),
             added: FxHashSet::default(),
+            level: None,
+            start: 0,
         }
     }
 
@@ -807,6 +990,18 @@ impl Pruner {
             self.lit.resize(a + 1, NO);
         }
         &mut self.lit[a]
+    }
+
+    /// The gates built next are of level `level`. At a new level the sweep
+    /// takes a new solver, given the cones of this level's gates and the
+    /// level's before alone: a node built before them is an input of its
+    /// calls.
+    pub(super) fn level(&mut self, level: i64) {
+        if self.level != Some(level) {
+            self.level = Some(level);
+            self.sweep.window(self.start);
+            self.start = self.g.fanins.len();
+        }
     }
 
     /// Atom `a` an input of its own.
@@ -872,7 +1067,8 @@ impl Pruner {
 
 #[cfg(test)]
 mod tests {
-    use super::{Graph, Sweep, WORDS};
+    use super::{AtomId, GLit, Graph, Pruner, Sweep, SweepStats, WORDS};
+    use GLit::{Neg, Pos};
 
     /// A cone the steps cannot pay for stays unencoded, so that a call
     /// after the steps grow, as the pruner grows them with each gate it
@@ -888,11 +1084,35 @@ mod tests {
         let yz = g.and(y, z);
         let b = g.and(x, yz);
         let mut sweep = Sweep::new(&g, 0);
-        sweep.budget = 1;
-        assert_eq!(sweep.encode(&g, a), None);
+        let (mut budget, mut stats) = (1, SweepStats::default());
+        assert_eq!(sweep.window.encode(&g, a, &mut budget, &mut stats), None);
         sweep.budget = 1 << 20;
-        assert_eq!(sweep.prove(&mut g, a, b), Some(true));
+        assert_eq!(sweep.prove(&mut g, a, b, false, true), Some(true));
         let c = g.and(x, y);
-        assert_eq!(sweep.prove(&mut g, a, c), Some(false));
+        assert_eq!(sweep.prove(&mut g, a, c, false, true), Some(false));
+    }
+
+    /// Grounding level by level, a gate is proved over the cones of its
+    /// level and the level before: facts f 0, g 1, h 2; x 3 = f and g at
+    /// level 0; y 4 = x and f at level 1, x over the level before, merged
+    /// into x. At level 3, z 5 = (x and h) or (not x and h) is h whatever x
+    /// is, and merged into h, x an input there; w 6 = x and f is x only
+    /// through x's cone, two levels back, and stays.
+    #[test]
+    fn a_level_proves_over_its_cones_and_the_level_before() {
+        let mut p = Pruner::new();
+        let none = |_: AtomId| None;
+        p.level(0);
+        assert_eq!(p.gate(3, &[&[Pos(0), Pos(1)]], &none), None);
+        p.level(1);
+        assert_eq!(p.gate(4, &[&[Pos(3), Pos(0)]], &none), None);
+        assert_eq!(p.lit[4], p.lit[3]);
+        p.level(2);
+        p.level(3);
+        p.gate(5, &[&[Pos(3), Pos(2)], &[Neg(3), Pos(2)]], &none);
+        assert_eq!(p.lit[5], p.lit[2]);
+        p.gate(6, &[&[Pos(3), Pos(0)]], &none);
+        assert_ne!(p.lit[6], p.lit[3]);
+        assert_eq!(p.stats().proved, 2);
     }
 }

@@ -117,7 +117,7 @@ const HIGHLIGHT = { pl: "problog", py: "python", rs: "rust", c: "c", h: "c", tom
 
 // The fields of a file the page reads for itself; any other text a file
 // has (how it was made, a licence) is a line of HTML above its text.
-const FILE_FIELDS = new Set(["name", "bytes", "lines", "sha", "src", "part", "gzip", "held", "archive", "form", "readers", "for"]);
+const FILE_FIELDS = new Set(["name", "bytes", "lines", "sha", "src", "part", "gzip", "held", "archive", "form", "readers", "for", "data"]);
 
 // The most of what the search finds that it lists.
 const SHOWN_HITS = 40;
@@ -663,33 +663,64 @@ function filtersOf(c) {
 // The family of a category (c.groups) whose key is `only`, else undefined.
 const groupOf = (c, only) => c.groups.find((g) => g.key === only);
 
-// The benchmarks' pages of rows (catRows'): each family of the benchmarks'
-// data that holds some of them (without that data, each suite), with how
-// many (n) and how many of them tddlog answers (a), named by its title or,
-// where two share one (a family's pages in several suites), by its suite's.
-function pagesOf(rows) {
-  const out = new Map();
-  for (const r of rows) {
-    const f = familyOf(r.suite, r.name), s = data.suites.get(r.suite);
-    const key = f ? `${r.suite}/${f.key}` : r.suite;
-    if (!out.has(key)) {
-      out.set(key, { route: f ? { view: "family", suite: r.suite, family: f.key } : { view: "suite", suite: r.suite },
-        title: f ? f.title : s.title, suite: s.title, n: 0 });
-    }
-    out.get(key).n++;
-    if (myTime(r) !== null) out.get(key).a = (out.get(key).a ?? 0) + 1;
-  }
-  const list = [...out.values()];
-  const twice = new Set(list.map((p) => p.title).filter((t, i, all) => all.indexOf(t) !== i));
-  return list.map((p) => ({ ...p, label: twice.has(p.title) ? p.suite : p.title }));
+// A category's word for one of its instances.
+const ONE = { programs: "program", queries: "query", networks: "network", circuits: "circuit" };
+
+// The name of the program of family g of category c: the one file tddlog
+// reads for every instance of it (benchmarks/index.json's `program`), else
+// how many instances it has (62 networks).
+function programName(c, g) {
+  const names = new Set(g.rows.map((i) => familyOf(c.rows[i][0], c.rows[i][1])?.program ?? null));
+  return names.size === 1 && !names.has(null) ? element("code", {}, [...names][0]) : plural(g.rows.length, ONE[c.noun] ?? "instance", c.noun);
 }
 
-// A cell of links to the benchmark pages of rows (pagesOf's), each opening
-// on the program: "code" where there is one, else each page's label.
-function codeCell(rows) {
-  const pages = pagesOf(rows);
-  return element("td", { class: "code-links" }, ...pages.flatMap((p, i) => [i ? ", " : "", link(p.route, pages.length > 1 ? p.label : "code")]));
+// A table's one link of a family's row: the family's view on its type,
+// which opens on its program, named after the program.
+const programCell = (c, g) => element("td", { class: "program" }, link({ view: "category", category: c.key, only: g.key }, programName(c, g)));
+
+// The families of rows (catRows'), each { c, g, rows }: the type and the
+// family there of each (data.place; the circuits' where it is in no type), in
+// the types' order and each type's; the rows of neither last, as { rows }.
+function familiesOfRows(rows) {
+  const out = new Map();
+  for (const r of rows) {
+    const key = `${r.suite}/${r.name}`;
+    const at = data.place.get(key) ?? (data.circuit.has(key) ? { c: data.circuits, g: data.circuit.get(key) } : null);
+    const id = at ? `${at.c.key}/${at.g.key}` : "";
+    if (!out.has(id)) out.set(id, { ...at, rows: [] });
+    out.get(id).rows.push(r);
+  }
+  const place = (f) => (f.c ? [f.c === data.circuits ? data.categories.length : data.categories.indexOf(f.c), f.c.groups.indexOf(f.g)] : [Infinity, 0]);
+  return [...out.values()].sort((a, b) => place(a)[0] - place(b)[0] || place(a)[1] - place(b)[1]);
 }
+
+// Families ({ c, g, ... }) in their order under their headings: a type's
+// where they are of several types, its families of no domain first; a
+// domain's (the data's domains) over its families, which go together.
+function headings(families) {
+  const several = new Set(families.map((f) => f.c?.key)).size > 1;
+  const domain = (f) => (f.g?.domain ? f.c.domains?.find((d) => d.key === f.g.domain) ?? null : null);
+  const out = [];
+  for (const f of families) {
+    const last = out.at(-1)?.c;
+    if (several && f.c && f.c !== last) out.push({ heading: f.c.title, level: "type", c: f.c });
+    out.push(f);
+  }
+  // within a run of a type's families: those of no domain, then each domain's under its title
+  const runs = [];
+  for (const f of out) {
+    if (f.heading || !runs.length || runs.at(-1).c !== f.c) runs.push({ c: f.c, items: [] });
+    runs.at(-1).items.push(f);
+  }
+  return runs.flatMap(({ items }) => {
+    const plain = items.filter((f) => f.heading || !domain(f));
+    const ds = [...new Set(items.map(domain).filter(Boolean))];
+    return [...plain, ...ds.flatMap((d) => [{ heading: d.title, level: "domain" }, ...items.filter((f) => domain(f) === d)])];
+  });
+}
+
+// A heading row of a table of families (headings'), across its n columns.
+const headingRow = (h, n) => element("tr", { class: `heading ${h.level}` }, element("th", { colspan: n }, h.heading));
 
 const LETTERS = { o: "own", n: "native", t: "translated", u: "unread", x: "not idiomatic" };
 
@@ -1177,7 +1208,14 @@ function parse(hash) {
       if (what === "in" && filtersOf(c).some((f) => f.key === key)) route.only = key;
       else if (what === "in" && (data.suites.has(key) || key === "uai2022")) continue;   // a suite, as the page once narrowed to
       else if (what === "vs" && c.systems.includes(key) && !isMine(key)) route.vs = key;
-      else return missing;
+      else if (what === "program" && groupOf(c, route.only)) {
+        // last: the family's instance on show (SUITE/NAME) and the file of its programs, as a family's address names it
+        const m = parts.slice(i + 1).join("/").match(/^([^/]+)\/([^/]+)(?:\/tab\/(\d+)(?:\/(\d+))?)?$/);
+        if (!m || !groupOf(c, route.only).rows.some((j) => c.rows[j][0] === m[1] && c.rows[j][1] === m[2])) return missing;
+        route.program = [m[1], m[2]];
+        if (m[3] !== undefined) route.file = [Number(m[3]), Number(m[4] ?? 0)];
+        break;
+      } else return missing;
     }
     return route;
   }
@@ -1214,13 +1252,14 @@ function href(route) {
     // the circuits at the address of their section, a family of theirs as a category's
     case "category": return route.category === APART && !route.only && !route.vs ? `#/${APART}`
       : `#/category/${route.category}${route.only ? `/in/${encodeURIComponent(route.only)}` : ""}`
-      + `${route.vs ? `/vs/${encodeURIComponent(route.vs)}` : ""}`;
+      + `${route.vs ? `/vs/${encodeURIComponent(route.vs)}` : ""}`
+      + `${route.only && route.program ? `/program/${route.program.map(encodeURIComponent).join("/")}${tabPart(route.file)}` : ""}`;
     case "system": return `${front}#/${isMine(route.system) ? `integrations/${integrationOf(route.system)}` : `baselines/${encodeURIComponent(route.system)}`}`
       + `${route.at ? `/${route.at}` : ""}`;
     case "suite": return `#/${route.suite}`;
     case "family": {
       let out = `#/${route.suite}/${encodeURIComponent(route.family)}${route.instance ? `/${encodeURIComponent(route.instance)}` : ""}`;
-      if (route.file) out += `/tab/${route.file[0]}${route.file[1] ? `/${route.file[1]}` : ""}`;
+      out += tabPart(route.file);
       if (route.runs) out += `/runs/${encodeURIComponent(route.runs)}`;
       return out;
     }
@@ -1230,10 +1269,13 @@ function href(route) {
   }
 }
 
+// An address's part for the file on show of an instance's programs.
+const tabPart = (file) => (file ? `/tab/${file[0]}${file[1] ? `/${file[1]}` : ""}` : "");
+
 // A view without what is open in it: the file on show, the drawer, a
-// category's filter and the system its times are set against, and the
-// section of a page a link scrolls to.
-const pageOf = (route) => ({ ...route, file: undefined, runs: undefined, vs: undefined, only: undefined, at: undefined });
+// category's filter, the system its times are set against and the instance
+// of its family on show, and the section of a page a link scrolls to.
+const pageOf = (route) => ({ ...route, file: undefined, runs: undefined, vs: undefined, only: undefined, program: undefined, at: undefined });
 
 function link(route, ...children) {
   return element("a", { href: href(route) }, ...children);
@@ -1384,13 +1426,13 @@ function categoryView(route) {
   // a family: what it is and where it comes from
   if (g && !g.source) out.push(prose("p", g.about, { class: "lede" }), note("The type on its own, against the systems native to it: ",
     link({ view: "category", category: g.key }, g.title), "."));
-  else if (g) out.push(prose("p", g.about, { class: "lede" }), note(`From ${g.source}.`));
-  // the families' table, last, and a way to it from the top: each family's code is a click away
+  else if (g) out.push(prose("p", g.about, { class: "lede" }), note(`From ${g.source}.`), programSection(c, g, route));
+  // the families' table, last, and a way to it from the top: each family's program is a click away
   const famHead = g ? null : element("h3", {}, c.key === ALL ? "Types of program" : "Families");
   out.push(headline(c, rows, tal, only));
   if (famHead && c.key !== ALL) {
     out.push(element("p", { class: "jump" }, element("button", { type: "button", class: "plain",
-      onclick: () => famHead.scrollIntoView({ behavior: "smooth" }) }, `Its ${plural(c.groups.length, "family", "families")}, each with its code ↓`)));
+      onclick: () => famHead.scrollIntoView({ behavior: "smooth" }) }, `Its ${plural(c.groups.length, "family", "families")}, each with its program ↓`)));
   }
   out.push(...extend.category(c, route, rows));
   const filters = filtersOf(c);
@@ -1407,11 +1449,6 @@ function categoryView(route) {
   const hidden = c.native.filter((x) => tal[x].given > 0 && !drawn.includes(x));
   const foreign = c.systems.filter((x) => !isMine(x) && !c.native.includes(x) && tal[x].given > 0);
   const me = subject(subjectsOf(rows));
-  // a family's benchmark pages (its programs and runs), each with tddlog's answers there
-  if (g?.source) {
-    out.push(element("p", { class: "pages" }, "Programs and runs: ", ...pagesOf(rows).flatMap((p, i) => [i ? ", " : "",
-      link(p.route, p.label), ` (${me} answers ${count(p.a ?? 0)} of ${count(p.n)})`]), "."));
-  }
   out.push(element("h3", {}, c.key === ALL || c.key === APART ? `Each system's answers, and its total time against ${me}'s`
     : `The native systems' answers, and their total times against ${me}'s`), scoreboard(c, rows, tal, rows.length, route.vs, only),
     note(measureLine()),
@@ -1424,30 +1461,37 @@ function categoryView(route) {
     note(`Answers count over all ${count(rows.length)} ${c.noun}${only ? ` of ${filters.find((f) => f.key === only).title}` : ""}; `
       + "one not given counts as unanswered."
       + (Object.keys(c.copies).length ? ` ${plural(Object.values(c.copies).flat().length, "copy", "copies")} of instances of other suites count once.` : "")));
-  // Each family of the instances shown: tddlog's answers, and the most of
-  // another system; a family narrows the category to it.
+  // Each family of the instances shown, under its domain where it has one:
+  // its one link, its program's, which opens its view on it; tddlog's
+  // answers, and the most of another system. All programs' rows are the
+  // types, each a link to its view.
   if (!g) {
     const all = only === undefined ? rows : catRows(c);
     const keep = narrowing(c, only);
     const body = element("tbody");
-    for (const fam of c.groups) {
-      const mine = fam.rows.filter((i) => keep(c.rows[i], i)).map((i) => all[i]);
-      if (!mine.length) continue;
+    const cols = c.key === ALL ? 5 : 6;
+    const fams = c.groups.map((fam) => ({ c, g: fam, rows: fam.rows.filter((i) => keep(c.rows[i], i)).map((i) => all[i]) }))
+      .filter((f) => f.rows.length);
+    for (const f of headings(fams)) {
+      if (f.heading) {
+        body.append(headingRow(f, cols));
+        continue;
+      }
+      const { g: fam, rows: mine } = f;
       let best = null;
       for (const x of c.systems) {
         if (isMine(x)) continue;
         const a = mine.filter((r) => r.t[x] !== null).length;
         if (best === null || a > best[1]) best = [x, a];
       }
-      const name = link({ view: "category", category: c.key, only: fam.key }, fam.title);
-      name.title = fam.about;
-      body.append(element("tr", {}, element("th", { scope: "row" }, name), ...(c.key === ALL ? [] : [codeCell(mine)]),
+      const name = c.key === ALL ? link({ view: "category", category: c.key, only: fam.key }, fam.title) : fam.title;
+      body.append(element("tr", {}, element("th", { scope: "row", title: fam.about ?? null }, name), ...(c.key === ALL ? [] : [programCell(c, fam)]),
         element("td", { class: "num" }, count(mine.length)), element("td", { class: "num" }, count(mine.filter((r) => myTime(r) !== null).length)),
         element("td", {}, best?.[1] ? `${data.names[best[0]]}, ${count(best[1])}` : "none"), prose("td", fam.source, { class: "about" })));
     }
     out.push(famHead, scroller(stacked(element("table", { class: "board families" },
       element("thead", {}, element("tr", {}, element("th", { scope: "col" }, c.key === ALL ? "type" : "family"),
-        ...(c.key === ALL ? [] : [element("th", { scope: "col", title: "the family's programs, each system's, and its runs" }, "program")]),
+        ...(c.key === ALL ? [] : [element("th", { scope: "col", title: "Opens the family's view on its program" }, "program")]),
         element("th", { scope: "col", class: "num" }, "instances"),
         element("th", { scope: "col", class: "num" }, `${me} answers`), element("th", { scope: "col" }, "the most answers of another system"),
         element("th", { scope: "col" }, "from"))), body))));
@@ -1740,9 +1784,14 @@ function familyView(route, view) {
       element("span", { class: "chip" }, `${s.limit} s a run`))];
   const programs = element("section", { class: "programs", id: "programs" }, note("Loading the programs and the runs…"));
   out.push(programs, element("h3", {}, "Times"), timesGrid(s, f, rows, short, route), raw(`benchmarks/${s.key}/${f.key}.json`, s.file));
+  // the instance's whole name where the choice shows a shorter one; a family of one shows its name alone
+  const here = { view: "family", suite: s.key, family: f.key };
+  const one = f.instances.length === 1;
+  const pick = one ? null : picker(f.instances.map((n) => ({ route: { ...here, instance: n }, label: short.get(n), on: n === route.instance })));
+  const name = one || short.get(route.instance) !== route.instance ? element("code", { class: "inst" }, route.instance) : null;
   familyData(s.key, f.key).then((fam) => {
     if (view.dataset.route !== page) return;   // another view was chosen meanwhile
-    programs.replaceChildren(...instanceView(s, f, fam, now, short));
+    programs.replaceChildren(...instanceView(s, f, fam, now, pick, name));
   }).catch((failure) => {
     programs.replaceChildren(element("p", { class: "failed" }, `The programs and runs did not load: ${failure.message}`));
   });
@@ -1834,9 +1883,9 @@ function uncaptured(inst) {
 // language tddlog reads (filled in where it has places: code.js), as a link,
 // or why the playground cannot open it.
 function playground(s, f, fam, inst, name) {
-  const read = (inst.tabs ?? []).find((t) => t.readers.includes(name) && t.files.some((file) => /\.pl$/.test(file.name)));
+  const read = (inst.tabs ?? []).find((t) => t.readers.includes(name) && t.files.some(isProgram));
   // files of one name (a loop's two forms) each name their readers
-  const pl = read?.files.filter((file) => /\.pl$/.test(file.name) && mayRead(file, (r) => r === name)) ?? [];
+  const pl = read?.files.filter((file) => isProgram(file) && mayRead(file, (r) => r === name)) ?? [];
   if (pl.length !== 1) return null;
   const filled = tddlogCode.filledFile(inst, read, pl[0], fam.texts);
   const { tab, file } = filled ?? { tab: read, file: pl[0] };
@@ -1869,6 +1918,9 @@ const FORMS = { recursive: "recursive form", unrolled: "unrolled form" };
 // the file's name is its tab's only one; else those it names.
 const mayRead = (file, who) => !(file.readers || file.for) || (file.readers ?? []).some(who);
 
+// A ProbLog program of a tab, not the data a program consults at a place ($1: `data`).
+const isProgram = (file) => /\.pl$/.test(file.name) && !file.data;
+
 // What tells file k of a tab from the tab's other files of its name (a path
 // read with other contents in other runs, a loop's two forms, an arm's copy
 // in a directory of its own): its form, else who read it, else its
@@ -1898,10 +1950,10 @@ function firstFile(inst) {
   // the program tddlog itself read before a pipeline's (the circuit Alea.jl+tddlog read beside it)
   const tabs = inst.tabs.map((t, i) => [t, i]);
   const reads = [readsAs("tddlog"), tddlog].map((who) => tabs.filter(([t]) => t.readers.some(who))).find((r) => r.length) ?? [];
-  const ti = (reads.find(([t]) => t.files.some((file) => /\.pl$/.test(file.name))) ?? reads[0] ?? [null, -1])[1];
+  const ti = (reads.find(([t]) => t.files.some(isProgram)) ?? reads[0] ?? [null, -1])[1];
   if (ti < 0) return [0, shownFiles(inst.tabs[0])[0]];
   // of a loop's two forms (files of one name, each with its readers), the one tddlog read
-  const pl = inst.tabs[ti].files.findIndex((file) => /\.pl$/.test(file.name) && mayRead(file, tddlog));
+  const pl = inst.tabs[ti].files.findIndex((file) => isProgram(file) && mayRead(file, tddlog));
   return [ti, pl < 0 ? shownFiles(inst.tabs[ti])[0] : pl];
 }
 
@@ -1925,31 +1977,47 @@ function versionLabel(tab) {
 const unfair = (tab) => `Note: this is ${tab.by_hand ? "a translation by hand" : "an automatic translation"} from the original `
   + "program, which might have performance implications that make the comparison unfair.";
 
-// An instance of a family: its programs (the one tddlog read, and a menu of
-// every other system's), then its answers. `route` names the file to show.
+// An instance picker: a menu where there are more than 12, else a row of
+// links. choices: [{ route, label, tag (a small label, or none), on }].
+function picker(choices) {
+  if (choices.length > 12) {
+    return element("select", { "aria-label": "Instance", onchange: (e) => go(choices[Number(e.target.value)].route) },
+      ...choices.map((p, i) => element("option", { value: i, selected: p.on }, p.tag ? `${p.label} (${p.tag})` : p.label)));
+  }
+  return element("div", { class: "seg", role: "group", "aria-label": "Instance" }, ...choices.map((p) => {
+    const a = link(p.route, p.label, ...(p.tag ? [element("small", {}, p.tag)] : []));
+    if (p.on) a.setAttribute("aria-current", "true");
+    return a;
+  }));
+}
+
+// The command tddlog's run of an instance read its program with, as its tab
+// of the program tddlog read lists it; null where it lists none.
+function mineCommand(inst) {
+  if (!inst.tabs) return null;
+  const tab = inst.tabs[firstFile(inst)[0]];
+  return tab.cmds.find(([who]) => readsAs("tddlog")(who) || /^\S+\+tddlog\b/.test(who))?.[1] ?? null;
+}
+
+// An instance of a family: its programs (the one tddlog read, its command,
+// and a menu of every other system's), then its answers. `route` names the
+// instance and the file to show, `pick` chooses another instance (none in a
+// family of one), `name` is the instance's name beside it (a link, or none),
+// and `where` is what an address of the view adds to the file it names.
 let compare = false;
-function instanceView(s, f, fam, route, short) {
+function instanceView(s, f, fam, route, pick, name, where = {}) {
   const inst = fam.instances.find((i) => i.name === route.instance) ?? fam.instances[0];
-  const at = { view: "family", suite: s.key, family: f.key };
   const out = [];
-  const pick = f.instances.length > 12
-    ? element("select", { "aria-label": "Instance", onchange: (e) => go({ ...at, instance: e.target.value }) },
-      ...f.instances.map((n) => element("option", { value: n, selected: n === inst.name }, short.get(n))))
-    : element("div", { class: "seg", role: "group", "aria-label": "Instance" },
-      ...f.instances.map((n) => link({ ...at, instance: n }, short.get(n))).map((a, i) => {
-        if (f.instances[i] === inst.name) a.setAttribute("aria-current", "true");
-        return a;
-      }));
-  // the instance's whole name where the choice shows a shorter one; a family of one shows its name alone
-  const one = f.instances.length === 1;
+  const cmd = mineCommand(inst);
   out.push(element("h3", {}, "Programs"), element("div", { class: "pick" }, element("span", { class: "muted" }, "instance"),
-    ...(one ? [] : [pick]), ...(one || short.get(inst.name) !== inst.name ? [element("code", { class: "inst" }, inst.name)] : []),
-    playground(s, f, fam, inst, mineReader(inst))));
+    ...(pick ? [pick] : []), ...(name ? [name] : []), playground(s, f, fam, inst, mineReader(inst))),
+  ...(cmd ? [element("p", { class: "cmdline", title: "The command of tddlog's run" }, element("code", {}, cmd))] : []));
   if (!inst.tabs) {
     if (inst.gen) out.push(markup("p", inst.gen, { class: "note" }));
     out.push(note("The programs of this instance were not captured."));
   } else {
     const view = element("div", { class: "viewer" });
+    view.where = where;
     out.push(view);
     // a file the address names later, without drawing the view again
     view.show = (file) => showFile(view, fam, inst, ...(file ?? firstFile(inst)));
@@ -1957,6 +2025,42 @@ function instanceView(s, f, fam, route, short) {
   }
   if (inst.answers) out.push(answers(inst.answers));
   return out.filter(Boolean);
+}
+
+// A family's program on its view in its type (family g of category c): an
+// instance of it (route.program, else its first) and its programs, as a
+// benchmark's view shows them, the instance chosen among the family's by
+// what each is: its values where its benchmarks' family names some, else its
+// name less the start its benchmarks' family shares; where two are alike,
+// the suite of each as a small label. A family of several suites lists its
+// instances by name, one suite's in its order (by size).
+function programSection(c, g, route) {
+  const box = element("section", { class: "programs", id: "programs" });
+  const rows = g.rows.map((i) => ({ suite: c.rows[i][0], name: c.rows[i][1], f: familyOf(c.rows[i][0], c.rows[i][1]) })).filter((r) => r.f);
+  if (!rows.length) return element("section", { id: "programs", hidden: true });   // the site without the benchmarks' data
+  const shorts = new Map();
+  for (const r of rows) if (!shorts.has(r.f)) shorts.set(r.f, shortNames(r.f.instances));
+  const label = (r) => (r.f.values?.[r.name]?.filter(Boolean).join(", ") || shorts.get(r.f).get(r.name));
+  const suites = new Set(rows.map((r) => r.suite));
+  const order = suites.size > 1 ? [...rows].sort((a, b) => label(a).localeCompare(label(b), undefined, { numeric: true }))
+    : [...rows].sort((a, b) => a.f.instances.indexOf(a.name) - b.f.instances.indexOf(b.name));
+  const twice = new Set(order.map(label).filter((l, i, all) => all.indexOf(l) !== i));
+  const on = order.find((r) => route.program?.[0] === r.suite && route.program?.[1] === r.name) ?? order[0];
+  const at = { view: "category", category: c.key, only: g.key };
+  const pick = order.length > 1 ? picker(order.map((r) => ({ route: { ...at, program: [r.suite, r.name] }, label: label(r),
+    tag: twice.has(label(r)) ? data.suites.get(r.suite).title : null, on: r === on }))) : null;
+  // the instance's name opens its benchmark's view, with its times by system
+  const name = link({ view: "family", suite: on.suite, family: on.f.key, instance: on.name }, element("code", { class: "inst" }, on.name));
+  name.title = "Its times by system";
+  const s = data.suites.get(on.suite);
+  box.append(note("Loading the programs…"));
+  familyData(s.key, on.f.key).then((fam) => {
+    if (!box.isConnected) return;   // another instance or view was chosen meanwhile
+    box.replaceChildren(...instanceView(s, on.f, fam, { instance: on.name, file: route.file }, pick, name, { program: [on.suite, on.name] }));
+  }).catch((failure) => {
+    box.replaceChildren(element("p", { class: "failed" }, `The programs did not load: ${failure.message}`));
+  });
+  return box;
 }
 
 function size(bytes) {
@@ -1976,7 +2080,7 @@ function showFile(view, fam, inst, ti, fi) {
   view.dataset.file = `${ti}:${fi}`;
   const open = (t, k) => {
     showFile(view, fam, inst, t, k);
-    remember({ file: fileRoute(inst, t, k) });
+    remember({ ...view.where, file: fileRoute(inst, t, k) });
   };
   const [first, mine] = firstFile(inst);
   const order = [first, ...inst.tabs.keys()].filter((t, k, all) => all.indexOf(t) === k);
@@ -2052,8 +2156,10 @@ function filePane(fam, tab, fi, pick, cap) {
       choose(ks[(ks.indexOf(fi) + step + ks.length) % ks.length]);
     } }, ...ks.map((k) => {
       const twin = twinLabel(tab, k);
+      const place = tab.files[k].data;   // the data the program consults at $1
       return element("button", { type: "button", role: "tab", "aria-selected": String(k === fi), tabindex: k === fi ? "0" : "-1",
         "data-file": k, onclick: () => k !== fi && choose(k) }, tab.files[k].name.split("/").pop(),
+      ...(place ? [element("span", { class: "place", title: `The data the program consults at ${place}` }, `data ${place}`)] : []),
       ...(twin ? [element("span", { class: "twin" }, twin)] : []), element("small", {}, size(tab.files[k].bytes)));
     }));
     box.append(strip);
@@ -2556,6 +2662,11 @@ function show(again = false) {
     show.family = family;
     const t = title(route);
     document.title = t === null ? pageTitle : `${t} · ${pageTitle}`;
+  } else if (route.view === "category" && route.vs === before.vs && route.only === before.only
+    && String(route.program ?? "") !== String(before.program ?? "")) {
+    // another instance of the family on show: its programs drawn again in place
+    const c = categoryOf(route.category);
+    document.getElementById("programs")?.replaceWith(programSection(c, groupOf(c, route.only), route));
   } else if (route.view === "category" && (route.vs !== before.vs || route.only !== before.only)) {
     // the same category narrowed otherwise, or against another system: drawn
     // again in place, the menu marking the family it is narrowed to
@@ -2565,7 +2676,7 @@ function show(again = false) {
     if (menu) view.querySelector("select.vs").focus();
   } else if (route.at && route.at !== before.at) {
     reach(route.at);
-  } else if (route.view === "family" && String(route.file ?? "") !== String(before.file ?? "")) {
+  } else if ((route.view === "family" || route.view === "category") && String(route.file ?? "") !== String(before.file ?? "")) {
     const viewer = document.querySelector("#programs .viewer");
     if (viewer?.show) {
       viewer.show(route.file);

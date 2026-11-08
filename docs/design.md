@@ -980,6 +980,19 @@ are skipped. Several steps have a program in `examples/` that shows them.
    (Dice's `iterate` as the Dice reader writes it) the dead branches
    of each step are never grounded, and the program grounds fewer atoms
    than the loop unrolled.
+   The sweep's solver at a level is given the cones of that level's
+   gates and the level's before alone, the older nodes inputs of its
+   calls, and a new level takes a new solver: a call costs as much at a
+   loop's last step as at its first, and every step is swept alike. A
+   gate of an older level is a candidate where the gate's cone reads it.
+   The window's model may give the older nodes values that no assignment
+   of the facts gives them, so a pair it tells apart is asked again of a
+   second solver over the cones down to the facts, kept from level to
+   level, whose models are the counterexamples. That solver is asked
+   only while it proves as many pairs as it tells apart, over each 64
+   counterexamples: where the pairs are apart its models must reach the
+   facts, at a cost that grows with each step. Once it stops, the
+   window's models are the counterexamples.
 5. **Simplify** (`simplify.rs`): propagate certain atoms; merge each atom
    the grounder introduced into another atom with the same rule bodies
    (atoms the program writes wait for the exclusive sets, below;
@@ -2474,10 +2487,20 @@ query is counted against the evidence without a product
 down, and each query's formula, on its own cone vtree, against it in one
 dense table per level, a row per evidence node and a column per query
 node; a memoized walk would reach nearly every pair at a hash entry each.
-The dense count is charged to the work clock at `MULTIPLY_ADDS_PER_UNIT`
-multiply-adds per unit. A query is counted in the polarity asked where
-that costs nothing: a literal of the evidence reads its own leaves, and a
-fact's literal is built as asked. A query of the polarity the formulation
+The dense count is charged to the work clock a unit for each pair a
+table's loop reads, as the engine charges a product pair, and one for
+each `MULTIPLY_ADDS_PER_UNIT` multiply-adds (`eval::conjunction::work`):
+a pair read off an implicit level is enumerated from its description,
+which costs more than a short row's multiply-adds. On cora8000 read back
+from its ground program, the walks of its 8 000 queries read a pair in
+about 7 ns, with rows of about one column; charged by their
+multiply-adds alone, `families:0` spent 130 s of query products within
+a first turn of 2^31 units, where `closed` answers in 0.2 s. The evidence's
+vtree spans are read once for all its queries, and each level's pairs
+once, at the first walk that reads them (`eval::Shape`). A query is
+counted in the polarity asked where that costs nothing: a literal of the
+evidence reads its own leaves, and a fact's literal is built as asked. A
+query of the polarity the formulation
 does not store is `1 - m` from the stored formula's count `m`, except
 where `1 - m` is under `eval::COMPLEMENT_FLOOR` (1e-4): the subtraction
 keeps the count's absolute error, some 1e-14, and a posterior of 2.8e-121
@@ -2598,10 +2621,36 @@ a limit on the address space (`ulimit -v`) is at the limit. A cgroup's
 `memory.max` bounds resident memory instead, and the kernel kills a
 process that reaches it without refusing anything first, so `auto` could
 not give up one trial and keep another. The binary therefore lowers its
-address-space limit to the room its cgroups leave, `memory.max` less
-`memory.current`, the least over its cgroup and those above it
-(`src/bin/tddlog/budget.rs`), and is refused there as under `ulimit -v`:
-resident memory never exceeds the address space that holds it.
+address-space limit to the room its cgroups leave, the least over its
+cgroup and those above it (`src/bin/tddlog/budget.rs`), and is refused
+there as under `ulimit -v`. A cgroup's room is `memory.max` less
+`memory.current` less a reserve of a 64th of `memory.max`. The kernel
+charges the cgroup for more than the process's mappings (page tables,
+kernel stacks and the like), and the reserve keeps room for those
+charges, so that the process is refused before they take the cgroup to
+its limit.
+
+The address space also holds memory that is reserved and not yet
+written, which is not resident: the capacity a `Vec` has grown into, a
+zeroed table not yet filled, address space the allocator has mapped
+ahead. With the limit fixed at the room, that memory failed runs below
+the cgroup's limit (a Roulette circuit of caesar-iter's loop at 100000
+steps was refused at 36.7 GiB resident under 41.9 GiB, its address
+space full). So the limit follows the cgroups' room: where a request is
+refused at it after the purge, the limit rises by half the room the
+cgroups still show (`budget::raise`), up to the limit the process
+started with, and the request is made again; it is refused once that
+half is under the request. While the reserved memory stays unwritten,
+each rise takes half of what is left, and resident memory nears the
+reserve without reaching `memory.max`. A rise by the whole room put the
+address space past `memory.max` by the reserved memory, and a rise by
+half with no reserve took the room down to nothing; in both, resident
+memory reached `memory.max` and the kernel killed the run where `auto`
+could have given up a trial. The raise allocates nothing: the cgroups'
+files are opened as the process starts and read again into a buffer on
+the stack. Without a cgroup that sets `memory.max` the limit never
+rises. Where reserved memory is written after all, the kernel can still
+end the run at that limit.
 
 A run that is refused memory ends one way wherever the refusal falls: with
 a refused TDD operation's error and exit status 1. tididi's operations ask
