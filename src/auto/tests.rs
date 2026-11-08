@@ -1391,7 +1391,7 @@ fn query_counting_obeys_the_batch_work_limit() {
     ) = vtree::build(&gp, &Deps::of(&gp), Kind::Closed).unwrap();
     tree.context().run(|engine| {
         let backend = tp::TddBackend::new(engine, tree.clone());
-        let compiled = tp::compile(
+        let mut compiled = tp::compile(
             &gp,
             tp::fact_variables(&gp, &order),
             tp::Formulation::Dual,
@@ -1407,11 +1407,11 @@ fn query_counting_obeys_the_batch_work_limit() {
         {
             let _guard = engine.limits().scope(stopped);
             assert!(matches!(
-                query::query_probabilities(&gp, &backend, &compiled),
+                query::query_probabilities(&gp, &backend, &mut compiled),
                 Err(tp::CompileError::Tdd(tididi::OperationError::Stopped))
             ));
         }
-        let (answers, _) = query::query_probabilities(&gp, &backend, &compiled).unwrap();
+        let (answers, _) = query::query_probabilities(&gp, &backend, &mut compiled).unwrap();
         let answers = answers.unwrap();
         assert!((answers[0].probability - 0.2).abs() < 1e-12);
         assert!((answers[1].probability - 0.5).abs() < 1e-12);

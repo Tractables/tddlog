@@ -144,14 +144,15 @@ impl QuerySizes {
 pub(crate) fn query_probabilities(
     gp: &GroundProgram,
     backend: &TddBackend,
-    compiled: &Compiled,
+    compiled: &mut Compiled,
 ) -> Result<(Option<Vec<QueryResult>>, QuerySizes), CompileError> {
     QueryEvaluation::new(gp, backend, compiled).run(gp, backend, compiled, None)
 }
 
 /// State belongs to one immutable ground program, compilation and vtree.
 /// The engine may change between calls, but these three inputs must not,
-/// other than by the formulas the phase takes ([`Self::take_last_reads`]).
+/// other than by the formulas the phase takes ([`Self::take_last_reads`])
+/// or drops once read for the last time (`EvidenceWalk::run`).
 pub(crate) struct QueryEvaluation {
     weights: Probabilities,
     scopes: RefCell<ScopeTable>,
@@ -206,6 +207,18 @@ impl QueryEvaluation {
         if gp.queries.iter().all(|(_, id, _)| id.is_none()) {
             walk.sum_out(&backend.vtree(), &weights);
         }
+        // The formulas read after the walk: those the ties stand on, and the
+        // queries', as themselves or through a template.
+        let for_queries = &compiled.for_queries;
+        let mut read_after: FxHashSet<AtomId> =
+            for_queries.ties.values().map(|t| t.reference).collect();
+        for &(_, q, _) in &gp.queries {
+            if let Some(q) = q {
+                read_after.insert(q);
+                read_after.extend(for_queries.templates.get(&q).map(|t| t.atom));
+            }
+        }
+        walk.mark_last_reads(compiled, |a| read_after.contains(&a));
         let settled = &compiled.for_queries.settled;
         Self {
             weights,
@@ -278,19 +291,8 @@ impl QueryEvaluation {
     /// through a template, and no tie stands on. For the phase's last run
     /// only, as one without a watch is ([`crate::evaluation::Evaluation`]):
     /// after an error, there is none.
-    pub(crate) fn take_last_reads(&mut self, gp: &GroundProgram, compiled: &mut Compiled) {
-        let for_queries = &compiled.for_queries;
-        let mut read_after: FxHashSet<AtomId> =
-            for_queries.ties.values().map(|t| t.reference).collect();
-        for &(_, q, _) in &gp.queries {
-            if let Some(q) = q {
-                read_after.insert(q);
-                read_after.extend(for_queries.templates.get(&q).map(|t| t.atom));
-            }
-        }
-        self.took |= self
-            .walk
-            .take_last_reads(compiled, |a| read_after.contains(&a));
+    pub(crate) fn take_last_reads(&mut self, compiled: &mut Compiled) {
+        self.took |= self.walk.take_last_reads(compiled);
     }
 
     /// A completed result is consumed by the caller; do not run again after
@@ -304,7 +306,7 @@ impl QueryEvaluation {
         &mut self,
         gp: &GroundProgram,
         backend: &TddBackend,
-        compiled: &Compiled,
+        compiled: &mut Compiled,
         watch: Option<usize>,
     ) -> Result<(Option<Vec<QueryResult>>, QuerySizes), CompileError> {
         assert!(
@@ -321,7 +323,7 @@ impl QueryEvaluation {
         &mut self,
         gp: &GroundProgram,
         backend: &TddBackend,
-        compiled: &Compiled,
+        compiled: &mut Compiled,
         watch: Option<usize>,
     ) -> Result<(Option<Vec<QueryResult>>, QuerySizes), CompileError> {
         let _route = backend
@@ -348,17 +350,18 @@ impl QueryEvaluation {
         if *impossible {
             return Ok((None, *sizes));
         }
+        if !walk.done {
+            let t = Instant::now();
+            let walked = walk.run(backend, compiled, scopes, sizes, watch);
+            sizes.walk_seconds += t.elapsed().as_secs_f64();
+            *evidence = walked?;
+        }
+        let compiled = &*compiled;
         let scopes = Scopes {
             backend,
             compiled,
             table: scopes,
         };
-        if !walk.done {
-            let t = Instant::now();
-            let walked = walk.run(backend, compiled, &scopes, sizes, watch);
-            sizes.walk_seconds += t.elapsed().as_secs_f64();
-            *evidence = walked?;
-        }
         let evidence = match evidence {
             None => None,
             Some((e, scope)) => {
@@ -928,7 +931,7 @@ mod tests {
             },
             _,
         ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
-        let compiled = tree.context().run(|engine| {
+        let mut compiled = tree.context().run(|engine| {
             let backend = TddBackend::new(engine, tree.clone());
             compile(
                 &gp,
@@ -950,7 +953,7 @@ mod tests {
                     state.run(
                         &gp,
                         &TddBackend::new(engine, tree.clone()),
-                        &compiled,
+                        &mut compiled,
                         Some(1)
                     ),
                     Err(CompileError::QueryOversize { .. })
@@ -965,7 +968,14 @@ mod tests {
         }
         let (answers, _) = tree
             .context()
-            .run(|engine| state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None))
+            .run(|engine| {
+                state.run(
+                    &gp,
+                    &TddBackend::new(engine, tree.clone()),
+                    &mut compiled,
+                    None,
+                )
+            })
             .unwrap();
         assert_eq!(
             state.walk.completed_joins, 11,
@@ -1027,13 +1037,13 @@ mod tests {
             compiled.for_queries.counted.remove(&q);
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
             assert!(matches!(
-                state.run(&gp, &backend, &compiled, Some(0)),
+                state.run(&gp, &backend, &mut compiled, Some(0)),
                 Err(CompileError::QueryOversize { .. })
             ));
             assert_eq!(state.out.len(), 1);
             assert!(state.pending_query.is_some());
             let answers = state
-                .run(&gp, &backend, &compiled, None)
+                .run(&gp, &backend, &mut compiled, None)
                 .unwrap()
                 .0
                 .unwrap();
@@ -1069,17 +1079,22 @@ mod tests {
                         _,
                     ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed)
                         .unwrap();
-                    let compiled = tree.context().run(|engine| {
-                        compile(
-                            &gp,
-                            fact_variables(&gp, &order),
-                            form,
-                            &TddBackend::new(engine, tree.clone()),
-                            projection,
-                            None,
-                        )
-                        .unwrap()
-                    });
+                    let compile_it = || {
+                        tree.context().run(|engine| {
+                            compile(
+                                &gp,
+                                fact_variables(&gp, &order),
+                                form,
+                                &TddBackend::new(engine, tree.clone()),
+                                projection,
+                                None,
+                            )
+                            .unwrap()
+                        })
+                    };
+                    // A query phase drops the formulas it read last: each
+                    // phase has a compile of its own.
+                    let mut compiled = compile_it();
                     let mut state = tree.context().run(|engine| {
                         QueryEvaluation::new(&gp, &TddBackend::new(engine, tree.clone()), &compiled)
                     });
@@ -1096,7 +1111,12 @@ mod tests {
                                 ))),
                             );
                             let _guard = engine.limits().scope(limit);
-                            state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
+                            state.run(
+                                &gp,
+                                &TddBackend::new(engine, tree.clone()),
+                                &mut compiled,
+                                None,
+                            )
                         });
                         match result {
                             Ok(result) => break result,
@@ -1135,7 +1155,7 @@ mod tests {
                             query_probabilities(
                                 &gp,
                                 &TddBackend::new(engine, tree.clone()),
-                                &compiled,
+                                &mut compile_it(),
                             )
                         })
                         .unwrap();
@@ -1170,7 +1190,9 @@ mod tests {
                 ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed)
                     .unwrap();
                 // The answers and the negations, and which of g, k and h4
-                // keep their stored formulas, with and without the take.
+                // keep their stored formulas before and after the walk, with
+                // the take and without it, under a watch as a race's
+                // attempt runs: a copy's last read drops the formula after.
                 let run = |take: bool| {
                     tree.context().run(|engine| {
                         let backend = TddBackend::new(engine, tree.clone());
@@ -1185,11 +1207,15 @@ mod tests {
                         .unwrap();
                         let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
                         if take {
-                            state.take_last_reads(&gp, &mut compiled);
+                            state.take_last_reads(&mut compiled);
                         }
-                        let held = ["g", "k", "h4"].map(|x| compiled.formulas[id(x)].is_some());
-                        let (answers, sizes) = state.run(&gp, &backend, &compiled, None).unwrap();
-                        (answers.unwrap(), sizes.negations, held)
+                        let held =
+                            |c: &Compiled| ["g", "k", "h4"].map(|x| c.formulas[id(x)].is_some());
+                        let before = held(&compiled);
+                        let watch = (!take).then_some(usize::MAX);
+                        let (answers, sizes) =
+                            state.run(&gp, &backend, &mut compiled, watch).unwrap();
+                        (answers.unwrap(), sizes.negations, before, held(&compiled))
                     })
                 };
                 let (copied, taken) = (run(false), run(true));
@@ -1197,8 +1223,51 @@ mod tests {
                 assert_eq!(copied.1, taken.1);
                 assert_eq!(copied.2, [true; 3]);
                 assert_eq!(taken.2, [false, false, true], "{form:?} {projection:?}");
+                assert_eq!(copied.3, [false, false, true], "{form:?} {projection:?}");
+                assert_eq!(taken.3, [false, false, true]);
             }
         }
+    }
+
+    #[test]
+    fn a_summing_walk_keeps_the_formulas_it_copies() {
+        // No query reads the evidence, so the walk sums out, and a walk that
+        // puts nothing off may start over in its place and read them again.
+        let source = TAKEN_SOURCE.split("query(").next().unwrap();
+        let gp = crate::ground::ground(
+            &crate::syntax::parse_program(source).unwrap(),
+            &GroundOptions {
+                detach: false,
+                ..GroundOptions::default()
+            },
+        )
+        .unwrap();
+        let id = |name: &str| gp.atoms.iter().position(|a| a.to_string() == name).unwrap();
+        let (
+            crate::vtree::Layout {
+                vtree: tree, order, ..
+            },
+            _,
+        ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
+        tree.context().run(|engine| {
+            let backend = TddBackend::new(engine, tree.clone());
+            let mut compiled = compile(
+                &gp,
+                fact_variables(&gp, &order),
+                Formulation::Dual,
+                &backend,
+                Projection::default(),
+                None,
+            )
+            .unwrap();
+            let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
+            let held = |c: &Compiled| ["g", "k", "h4"].map(|x| c.formulas[id(x)].is_some());
+            assert_eq!(held(&compiled), [true; 3]);
+            state
+                .run(&gp, &backend, &mut compiled, Some(usize::MAX))
+                .unwrap();
+            assert_eq!(held(&compiled), [true; 3]);
+        });
     }
 
     #[test]
@@ -1223,7 +1292,7 @@ mod tests {
             )
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
-            state.take_last_reads(&gp, &mut compiled);
+            state.take_last_reads(&mut compiled);
             {
                 let limit =
                     LimitConfig::none().with_stop_rules(StopRules::default().with_unconditional(
@@ -1231,11 +1300,11 @@ mod tests {
                     ));
                 let _guard = engine.limits().scope(limit);
                 assert!(matches!(
-                    state.run(&gp, &backend, &compiled, None),
+                    state.run(&gp, &backend, &mut compiled, None),
                     Err(CompileError::Tdd(OperationError::Stopped))
                 ));
             }
-            let _ = state.run(&gp, &backend, &compiled, None);
+            let _ = state.run(&gp, &backend, &mut compiled, None);
         });
     }
 
@@ -1263,7 +1332,7 @@ mod tests {
         ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
         tree.context().run(|engine| {
             let backend = TddBackend::new(engine, tree.clone());
-            let compiled = compile(
+            let mut compiled = compile(
                 &gp,
                 fact_variables(&gp, &order),
                 Formulation::Dual,
@@ -1274,7 +1343,7 @@ mod tests {
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
             assert_eq!(state.walk.held(), (0, 0, 0));
-            let (answers, _) = state.run(&gp, &backend, &compiled, None).unwrap();
+            let (answers, _) = state.run(&gp, &backend, &mut compiled, None).unwrap();
             assert!(answers.unwrap().iter().all(|a| a.probability == 1.0));
             assert_eq!(state.walk.completed_joins, 63);
             assert_eq!(state.walk.held(), (0, 0, 0), "every result is read");
@@ -1307,7 +1376,7 @@ mod tests {
         ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
         let (mass, sizes) = tree.context().run(|engine| {
             let backend = TddBackend::new(engine, tree.clone());
-            let compiled = compile(
+            let mut compiled = compile(
                 &gp,
                 fact_variables(&gp, &order),
                 Formulation::Primal,
@@ -1323,7 +1392,7 @@ mod tests {
                     StopRules::default().with_after_pairs(Some((1, StopAt::WorkUnits(0)))),
                 );
             let _guard = engine.limits().scope(limit);
-            let result = state.run(&gp, &backend, &compiled, None);
+            let result = state.run(&gp, &backend, &mut compiled, None);
             let (_, sizes) = result.unwrap_or_else(|e| panic!("{e} at {:?}", state.progress()));
             (state.evidence_mass(), sizes)
         });
@@ -1402,28 +1471,32 @@ mod tests {
                         Err(_) if strategy != Kind::Closed => continue,
                         Err(e) => panic!("{e}"),
                     };
-                    let compiled = tree.context().run(|engine| {
-                        compile(
-                            &gp,
-                            fact_variables(&gp, &order),
-                            Formulation::Dual,
-                            &TddBackend::new(engine, tree.clone()),
-                            Projection::default(),
-                            None,
-                        )
-                        .unwrap()
-                    });
+                    let compile_it = || {
+                        tree.context().run(|engine| {
+                            compile(
+                                &gp,
+                                fact_variables(&gp, &order),
+                                Formulation::Dual,
+                                &TddBackend::new(engine, tree.clone()),
+                                Projection::default(),
+                                None,
+                            )
+                            .unwrap()
+                        })
+                    };
                     let (fresh, _) = tree
                         .context()
                         .run(|engine| {
                             query_probabilities(
                                 &gp,
                                 &TddBackend::new(engine, tree.clone()),
-                                &compiled,
+                                &mut compile_it(),
                             )
                         })
                         .unwrap();
                     let fresh = fresh.unwrap();
+                    // The fresh phase dropped the formulas it read last.
+                    let mut compiled = compile_it();
                     let mut state = tree.context().run(|engine| {
                         QueryEvaluation::new(&gp, &TddBackend::new(engine, tree.clone()), &compiled)
                     });
@@ -1438,7 +1511,12 @@ mod tests {
                                 ))),
                             );
                             let _guard = engine.limits().scope(limit);
-                            state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
+                            state.run(
+                                &gp,
+                                &TddBackend::new(engine, tree.clone()),
+                                &mut compiled,
+                                None,
+                            )
                         });
                         match result {
                             Ok((answers, _)) => break answers.unwrap(),
@@ -1528,23 +1606,27 @@ mod tests {
                     Err(_) if strategy != Kind::Closed => continue,
                     Err(e) => panic!("{e}"),
                 };
-                let compiled = tree.context().run(|engine| {
-                    compile(
-                        &gp,
-                        fact_variables(&gp, &order),
-                        Formulation::Dual,
-                        &TddBackend::new(engine, tree.clone()),
-                        Projection::default(),
-                        None,
-                    )
-                    .unwrap()
-                });
+                let compile_it = || {
+                    tree.context().run(|engine| {
+                        compile(
+                            &gp,
+                            fact_variables(&gp, &order),
+                            Formulation::Dual,
+                            &TddBackend::new(engine, tree.clone()),
+                            Projection::default(),
+                            None,
+                        )
+                        .unwrap()
+                    })
+                };
                 // Every batch given up at its first join, and then as the
                 // walk caps them; each also with every third room the walk
                 // asks for refused, as the allocator refuses it, and the
                 // walk resumed after each refusal.
                 for (capped, refuse) in [(true, false), (false, false), (true, true), (false, true)]
                 {
+                    // Each phase drops the formulas it read last.
+                    let mut compiled = compile_it();
                     let mut state = tree.context().run(|engine| {
                         QueryEvaluation::new(&gp, &TddBackend::new(engine, tree.clone()), &compiled)
                     });
@@ -1552,7 +1634,12 @@ mod tests {
                     state.walk.probe.refuse_rooms = refuse;
                     let (answers, _) = loop {
                         let result = tree.context().run(|engine| {
-                            state.run(&gp, &TddBackend::new(engine, tree.clone()), &compiled, None)
+                            state.run(
+                                &gp,
+                                &TddBackend::new(engine, tree.clone()),
+                                &mut compiled,
+                                None,
+                            )
                         });
                         match result {
                             Err(CompileError::Tdd(OperationError::OverBudget)) if refuse => {
@@ -1682,7 +1769,7 @@ mod tests {
         let tree = std::sync::Arc::new(tididi::Vtree::linear_from_order(&vars).unwrap());
         tree.context().run(|engine| {
             let backend = TddBackend::new(engine, tree.clone());
-            let compiled = compile(
+            let mut compiled = compile(
                 &gp,
                 fact_variables(&gp, &order),
                 Formulation::Dual,
@@ -1692,7 +1779,7 @@ mod tests {
             )
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
-            let (answers, sizes) = state.run(&gp, &backend, &compiled, None).unwrap();
+            let (answers, sizes) = state.run(&gp, &backend, &mut compiled, None).unwrap();
             let answers = answers.unwrap();
             assert_eq!(answers.len(), n);
             for (answer, expected) in answers.iter().zip(&expected) {
@@ -1757,7 +1844,7 @@ mod tests {
             let tree = std::sync::Arc::new(tree);
             tree.context().run(|engine| {
                 let backend = TddBackend::new(engine, tree.clone());
-                let compiled = compile(
+                let mut compiled = compile(
                     &gp,
                     fact_variables(&gp, &order),
                     Formulation::Dual,
@@ -1767,7 +1854,7 @@ mod tests {
                 )
                 .unwrap();
                 let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
-                let (answers, _) = state.run(&gp, &backend, &compiled, None).unwrap();
+                let (answers, _) = state.run(&gp, &backend, &mut compiled, None).unwrap();
                 let answers = answers.unwrap();
                 assert_eq!(answers.len(), n);
                 for (answer, expected) in answers.iter().zip(&expected) {

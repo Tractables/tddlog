@@ -28,8 +28,8 @@ fn answers(
             compilation = compilation.dynamic(first);
         }
         compilation.run(gp, &backend, None).expect("compiles");
-        let compiled = compilation.finish(&backend).expect("finishes");
-        let (results, _) = query_probabilities(gp, &backend, &compiled).expect("answers");
+        let mut compiled = compilation.finish(&backend).expect("finishes");
+        let (results, _) = query_probabilities(gp, &backend, &mut compiled).expect("answers");
         (results, compiled.stats.search)
     })
 }

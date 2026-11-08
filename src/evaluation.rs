@@ -223,7 +223,7 @@ impl Evaluation {
             }
         });
         if watch.is_none() {
-            query.take_last_reads(gp, compiled);
+            query.take_last_reads(compiled);
         }
         query.run(gp, backend, compiled, watch)
     }
