@@ -88,6 +88,8 @@
 
 mod splits;
 mod tables;
+#[cfg(test)]
+mod tests;
 
 use std::collections::TryReserveError;
 use std::fmt::Write as _;
@@ -204,7 +206,7 @@ pub(crate) fn name(
     let mut gp = original.without_rules();
     let mut names = Names::default();
     let reads = Reads::of(original, unit_of, &structure, &mut gp, &mut names);
-    let copies = Copies::make(&reads, &structure.sccs, &mut gp, &mut names);
+    let copies = Copies::make(&reads, &structure.sccs, &mut gp, &mut names)?;
     let Bodies {
         rows,
         bit_rows,
@@ -255,6 +257,14 @@ fn push(rules: &mut Vec<GroundRule>, rule: GroundRule) -> Result<(), TryReserveE
     rules.try_reserve(1)?;
     rules.push(rule);
     Ok(())
+}
+
+/// Room for `n` more items in `list`, or `Err` where the allocator refuses
+/// it: [`Copies::make`]'s lists, which grow with the program.
+fn reserve<T>(list: &mut Vec<T>, n: usize) -> Result<(), TryReserveError> {
+    #[cfg(test)]
+    tests::grant()?;
+    list.try_reserve(n)
 }
 
 /// The names of the program's atoms as constants, which the bits, copies
@@ -534,15 +544,29 @@ struct Copies {
 
 impl Copies {
     /// The copies `reads` reads, added to `gp`, the rewrite, whose units
-    /// are named after their first atom in the components `sccs`.
+    /// are named after their first atom in the components `sccs`. `Err`
+    /// where the allocator refuses room for them.
     fn make(
         reads: &Reads,
         sccs: &[Vec<AtomId>],
         gp: &mut GroundProgram,
         names: &mut Names,
-    ) -> Copies {
+    ) -> Result<Copies, TryReserveError> {
         let keys = reads.keys();
         let n = gp.num_atoms();
+        // Room for a copy each in the rewrite's atoms and in the lists
+        // below, taken before the first: they grow with the program, and a
+        // push past what the allocator would give aborted the run (the
+        // atoms of rl_diamond_6000000's `program` layout asked for 1.7 GB
+        // under 29.6 GB), where a rewrite given up disables its trial.
+        reserve(&mut gp.atoms, keys.len())?;
+        reserve(&mut gp.kinds, keys.len())?;
+        let mut tie: Vec<AtomId> = Vec::new();
+        reserve(&mut tie, keys.len())?;
+        let mut copy: FxHashMap<CopyKey, AtomId> = FxHashMap::default();
+        #[cfg(test)]
+        tests::grant()?;
+        copy.try_reserve(keys.len())?;
         // A unit's name, for the indicators it reads: its first atom's.
         let mut unit_name: FxHashMap<usize, Name> = FxHashMap::default();
         for &a in sccs.iter().flatten() {
@@ -550,10 +574,8 @@ impl Copies {
                 .entry(reads.unit_of[a as usize])
                 .or_insert_with(|| names.of(&gp.atoms, a));
         }
-        let mut copy: FxHashMap<CopyKey, AtomId> = FxHashMap::default();
         let mut set_lists: Vec<Vec<Option<AtomId>>> = Vec::new();
         let mut set_list: FxHashMap<(usize, usize, PartId), usize> = FxHashMap::default();
-        let mut tie: Vec<AtomId> = Vec::with_capacity(keys.len());
         let mut last: Option<(AtomId, usize, AtomId)> = None;
         let var_name: Name = "$v".into();
         // The values a part splits on, from the part up.
@@ -598,14 +620,14 @@ impl Copies {
             });
             last = Some((k, u, var));
         }
-        Copies {
+        Ok(Copies {
             first: n,
             keys,
             copy,
             set_lists,
             set_list,
             tie,
-        }
+        })
     }
 
     /// The number of `a` among the copies, if it is one.
