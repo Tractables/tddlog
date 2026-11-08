@@ -404,11 +404,16 @@ pub(super) struct EvidenceWalk {
     /// the place in `observed` of the read that consumes each
     /// ([`EvidenceWalk::take_last_reads`]).
     taken: FxHashMap<usize, Tdd>,
-    at: Vec<Vec<usize>>,
-    built: Vec<Option<Built>>,
+    /// The observations put at each vtree node, and what each node built,
+    /// until its parent plans: held by node, as only the nodes with an
+    /// observation or a frontier of the walk have any.
+    at: FxHashMap<usize, Vec<usize>>,
+    built: FxHashMap<usize, Built>,
     nodes: Vec<VtreeIdx>,
     next_node: usize,
-    slots: Vec<Option<Formula>>,
+    /// Boxed, so that a slot emptied by its join, which the walk never
+    /// reuses, holds a pointer rather than a formula's room.
+    slots: Vec<Option<Box<Formula>>>,
     /// The pairs of each slot's formula as it was put there, or of a
     /// waiting join's cap. A count walks every node of the diagram, and a
     /// slot's is read when its join finishes and again when its vtree node
@@ -495,8 +500,8 @@ impl EvidenceWalk {
             observed,
             next_observed: 0,
             taken: FxHashMap::default(),
-            at: vec![Vec::new(); tree.num_nodes()],
-            built: (0..tree.num_nodes()).map(|_| None).collect(),
+            at: FxHashMap::default(),
+            built: FxHashMap::default(),
             nodes: tree.bottomup().collect(),
             next_node: 0,
             slots: Vec::new(),
@@ -566,6 +571,14 @@ impl EvidenceWalk {
         self.sum_out.is_some() && self.put_offs > 0
     }
 
+    /// The nodes holding observations or results, and the slots holding
+    /// formulas.
+    #[cfg(test)]
+    pub(super) fn held(&self) -> (usize, usize, usize) {
+        let live = self.slots.iter().filter(|s| s.is_some()).count();
+        (self.at.len(), self.built.len(), live)
+    }
+
     /// No node puts items off, for a walk that has not started.
     pub(super) fn put_nothing_off(&mut self) {
         debug_assert!(self.next_node == 0, "the walk has started");
@@ -586,11 +599,12 @@ impl EvidenceWalk {
         )
     }
 
-    /// Room for `more` slots and joins, or `OverBudget` where the allocator
-    /// refuses it. The slots of a large evidence take gigabytes, and the
-    /// push that grew them past what the allocator would give aborted the
-    /// run (rl_caesar at 100000 under 40 GiB asked for 1.3 GB), where a
-    /// refusal retires the trial.
+    /// Room for `more` slots and joins, and for one more node in each map
+    /// by node, or `OverBudget` where the allocator refuses it. The slots of
+    /// a large evidence take gigabytes, and the push that grew them past
+    /// what the allocator would give aborted the run (rl_caesar at 100000
+    /// under 40 GiB asked for 1.3 GB), where a refusal retires the trial;
+    /// so did a map that grew (rl_caesar at 20000 under 9 GiB, 24 MiB).
     fn room(&mut self, more: usize) -> Result<(), CompileError> {
         #[cfg(test)]
         {
@@ -602,6 +616,8 @@ impl EvidenceWalk {
         let refused = |_| CompileError::Tdd(OperationError::OverBudget);
         self.slots.try_reserve(more).map_err(refused)?;
         self.slot_pairs.try_reserve(more).map_err(refused)?;
+        self.at.try_reserve(1).map_err(refused)?;
+        self.built.try_reserve(1).map_err(refused)?;
         self.joins.try_reserve(more).map_err(refused)
     }
 
@@ -609,11 +625,11 @@ impl EvidenceWalk {
     /// factors, its children's results and what they put off, and one
     /// more: each join it plans makes one item of two, and a slot.
     fn plan_room(&self, tree: &tididi::Vtree, node: VtreeIdx) -> usize {
-        let mut items = self.at[node.idx()].len() + 1;
+        let mut items = self.at.get(&node.idx()).map_or(0, Vec::len) + 1;
         if !tree.node(node).is_leaf() {
             let (l, r) = tree.children(node);
             for c in [l, r] {
-                if let Some(b) = &self.built[c.idx()] {
+                if let Some(b) = self.built.get(&c.idx()) {
                     items += 1 + b.put_off.len();
                 }
             }
@@ -624,7 +640,7 @@ impl EvidenceWalk {
     /// A new slot, empty or holding a formula of `pairs` pairs.
     fn slot(&mut self, formula: Option<Formula>, pairs: usize) -> usize {
         let id = self.slots.len();
-        self.slots.push(formula);
+        self.slots.push(formula.map(Box::new));
         self.slot_pairs.push(pairs);
         id
     }
@@ -768,7 +784,7 @@ impl EvidenceWalk {
             return (factors, groups);
         }
         let on_chain = |v: &VarId| self.chain.get(v.0 as usize).copied().unwrap_or(false);
-        let vars = |f: usize| self.slots[f].as_ref().and_then(|(_, scope)| scope.vars());
+        let vars = |f: usize| self.slots[f].as_deref().and_then(|(_, scope)| scope.vars());
         if !factors
             .iter()
             .any(|&f| vars(f).is_some_and(|vs| vs.iter().any(on_chain)))
@@ -979,7 +995,7 @@ impl EvidenceWalk {
         }
         let mut vars: Vec<VarId> = Vec::new();
         for &id in factors {
-            let own = self.slots[id].as_ref()?.1.vars()?;
+            let own = self.slots[id].as_deref()?.1.vars()?;
             vars.extend_from_slice(own);
             if vars.len() > SHARED_UP_TO * factors.len() {
                 return None;
@@ -1010,7 +1026,7 @@ impl EvidenceWalk {
         let of = |s: usize| {
             let dropped = self.sum_out.as_ref().map_or(0, |so| so.dropped_from(s));
             self.slots[s]
-                .as_ref()
+                .as_deref()
                 .map_or(0, |(_, scope)| scope.vtree().num_nodes() + 2 * dropped)
         };
         match self.waiting.get(&id) {
@@ -1028,7 +1044,7 @@ impl EvidenceWalk {
         let (l, r) = tree.children(node);
         let children: Vec<&Built> = [l, r]
             .into_iter()
-            .filter_map(|c| self.built[c.idx()].as_ref())
+            .filter_map(|c| self.built.get(&c.idx()))
             .collect();
         let waiting: Vec<usize> = children
             .iter()
@@ -1037,7 +1053,12 @@ impl EvidenceWalk {
             .collect();
         let [main] = waiting[..] else { return waiting };
         let cap = self.slot_pairs[main];
-        let own = self.at[node.idx()].iter().map(|&id| self.slot_pairs[id]);
+        let own = self
+            .at
+            .get(&node.idx())
+            .into_iter()
+            .flatten()
+            .map(|&id| self.slot_pairs[id]);
         let others: Vec<usize> = own
             .clone()
             .chain(
@@ -1101,8 +1122,9 @@ impl EvidenceWalk {
                 self.finish_join(a, b, out, backend, sizes, watch)?;
             }
             let Some(&node) = self.nodes.get(self.next_node) else {
-                let main = self.built[tree.root().idx()]
-                    .as_ref()
+                let main = self
+                    .built
+                    .get(&tree.root().idx())
                     .expect("observations reach the root")
                     .main;
                 if let Some((x, y)) = self.waiting.remove(&main) {
@@ -1115,8 +1137,8 @@ impl EvidenceWalk {
                     sizes.weighted_joins = so.weighted;
                     sizes.collapsed_variables = so.collapsed;
                 }
-                self.built[tree.root().idx()] = None;
-                return Ok(self.slots[main].take());
+                self.built.remove(&tree.root().idx());
+                return Ok(self.slots[main].take().map(|f| *f));
             };
             if !tree.node(node).is_leaf() {
                 let first = self.to_join_first(tree, node);
@@ -1193,7 +1215,7 @@ impl EvidenceWalk {
             so.observe(self.slots.len(), &own);
         }
         let id = self.slot(Some((formula, own)), pairs);
-        self.at[node.idx()].push(id);
+        self.at.entry(node.idx()).or_default().push(id);
         self.next_observed += 1;
         backend.kept();
         Ok(())
@@ -1292,7 +1314,10 @@ impl EvidenceWalk {
         // the join's scope, which the retry then needs none for. The cap's pair
         // floor is for the conjunction: the moves put no pair in flight, so it
         // cannot stop them.
-        let (fa, fb) = (self.slots[a].take().unwrap(), self.slots[b].take().unwrap());
+        let (fa, fb) = (
+            *self.slots[a].take().unwrap(),
+            *self.slots[b].take().unwrap(),
+        );
         // Where only the evidence's count is wanted, the join sums out what no
         // later join reads (`SumOut`); an operand that carries the facts'
         // weights makes a weighted join.
@@ -1432,8 +1457,8 @@ impl EvidenceWalk {
         backend: &TddBackend,
         scopes: &Scopes,
     ) -> Result<(VtreeScope, bool), CompileError> {
-        let (_, sa) = self.slots[a].as_ref().unwrap();
-        let (_, sb) = self.slots[b].as_ref().unwrap();
+        let (_, sa) = self.slots[a].as_deref().unwrap();
+        let (_, sb) = self.slots[b].as_deref().unwrap();
         let shared = self.shared.get(&out).filter(|_| !sa.same(sb));
         // Both are ascending and distinct: merged, not sorted, and each
         // operand's renaming onto the union read off the merge.
@@ -1471,8 +1496,8 @@ impl EvidenceWalk {
             so.enter(&fa.1);
             so.enter(&fb.1);
         }
-        self.slots[a] = Some(fa);
-        self.slots[b] = Some(fb);
+        self.slots[a] = Some(Box::new(fa));
+        self.slots[b] = Some(Box::new(fb));
         Ok(())
     }
 
@@ -1560,7 +1585,7 @@ impl EvidenceWalk {
         if let Some(so) = &mut self.sum_out {
             so.commit(a, b, out, &pending.formula.1);
         }
-        self.slots[out] = Some(self.pending.take().unwrap().formula);
+        self.slots[out] = Some(Box::new(self.pending.take().unwrap().formula));
         self.slot_pairs[out] = size;
         self.shared.remove(&out);
         self.batch_of.remove(&out);
@@ -1577,7 +1602,10 @@ impl EvidenceWalk {
     /// or passes its largest up with the rest put off.
     fn plan_node(&mut self, tree: &tididi::Vtree, node: VtreeIdx, backend: &TddBackend) {
         let fresh = self.slots.len();
-        let mut items: Vec<(usize, usize)> = std::mem::take(&mut self.at[node.idx()])
+        let mut items: Vec<(usize, usize)> = self
+            .at
+            .remove(&node.idx())
+            .unwrap_or_default()
             .into_iter()
             .map(|id| (id, self.slot_pairs[id]))
             .collect();
@@ -1586,7 +1614,7 @@ impl EvidenceWalk {
         if !tree.node(node).is_leaf() {
             let (l, r) = tree.children(node);
             for c in [l, r] {
-                if let Some(b) = self.built[c.idx()].take() {
+                if let Some(b) = self.built.remove(&c.idx()) {
                     items.push((b.main, self.slot_pairs[b.main]));
                     put_off.push((b.put_off, b.put_off_size, b.groups));
                 }
@@ -1671,12 +1699,17 @@ impl EvidenceWalk {
         {
             self.last_joins.insert(main);
         }
-        self.built[node.idx()] = main.map(|main| Built {
-            main,
-            put_off: VecDeque::new(),
-            put_off_size: 0,
-            groups: Vec::new(),
-        });
+        if let Some(main) = main {
+            self.built.insert(
+                node.idx(),
+                Built {
+                    main,
+                    put_off: VecDeque::new(),
+                    put_off_size: 0,
+                    groups: Vec::new(),
+                },
+            );
+        }
     }
 
     fn pass_up(
@@ -1705,12 +1738,15 @@ impl EvidenceWalk {
         }
         rest_factors.extend(items.into_iter().map(|(f, _)| f));
         self.put_offs += usize::from(!rest_factors.is_empty());
-        self.built[node.idx()] = Some(Built {
-            main,
-            put_off: rest_factors,
-            put_off_size: rest,
-            groups,
-        });
+        self.built.insert(
+            node.idx(),
+            Built {
+                main,
+                put_off: rest_factors,
+                put_off_size: rest,
+                groups,
+            },
+        );
     }
 }
 

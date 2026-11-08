@@ -111,6 +111,12 @@ pub(in crate::ground) struct Propagation<'a> {
     /// zero and empty between calls.
     in_rules: Vec<u32>,
     shared: Vec<GLit>,
+    /// The true atoms an atom's value killed rules of, as it is
+    /// propagated, each tested once after them all.
+    due: Vec<AtomId>,
+    /// Per atom, a place in its rules before which every rule is dead
+    /// ([`first_live`](Self::first_live)).
+    dead_before: Vec<u32>,
 }
 
 impl<'a> Propagation<'a> {
@@ -159,6 +165,8 @@ impl<'a> Propagation<'a> {
             work: 0,
             in_rules: vec![0; 2 * n],
             shared: Vec::new(),
+            due: Vec::new(),
+            dead_before: vec![0; n],
         }
     }
 
@@ -207,11 +215,13 @@ impl<'a> Propagation<'a> {
     fn shared_literals_hold(&mut self, h: AtomId) -> Result<(), Contradiction> {
         let gp = self.gp;
         let node = |l: GLit| (2 * l.atom() + u32::from(l.is_positive())) as usize;
-        let mut live = self.by_head[h as usize]
+        let at = self.first_live(h);
+        let rules = &self.by_head[h as usize];
+        let first = rules[at];
+        let live = rules[at + 1..]
             .iter()
             .copied()
             .filter(|&ri| self.killer[ri] == u32::MAX);
-        let first = live.next().expect("a live rule");
         let mut shared = std::mem::take(&mut self.shared);
         shared.clear();
         for &l in &gp.rules[first].body {
@@ -247,6 +257,21 @@ impl<'a> Propagation<'a> {
         }
         self.shared = shared;
         result
+    }
+
+    /// The place of `h`'s first live rule among its rules, which has one.
+    /// The rules before [`dead_before`](Self::dead_before) are dead, so the
+    /// search starts there and moves it up: the rules of a table whose
+    /// observed head stays true die one by one, and a search from the first
+    /// rule each time would pass every dead rule again.
+    fn first_live(&mut self, h: AtomId) -> usize {
+        let rules = &self.by_head[h as usize];
+        let mut at = self.dead_before[h as usize] as usize;
+        while self.killer[rules[at]] != u32::MAX {
+            at += 1;
+        }
+        self.dead_before[h as usize] = at as u32;
+        at
     }
 
     /// The one open literal of rule `ri`, whose head is false, does not hold.
@@ -299,6 +324,7 @@ impl<'a> Propagation<'a> {
             // The counters first, and then what they leave: an atom's
             // counters change all at once, which `undo` takes back whole.
             self.fired.clear();
+            self.due.clear();
             self.work += self.readers[a as usize].len() as u64;
             for &(ri, l) in &self.readers[a as usize] {
                 if self.killer[ri as usize] != u32::MAX {
@@ -327,10 +353,20 @@ impl<'a> Propagation<'a> {
                 } else {
                     match (self.live[h as usize], self.val[h as usize]) {
                         (0, _) => self.assign(h, false)?,
-                        (_, Val::True) => self.shared_literals_hold(h)?,
+                        (_, Val::True) => self.due.push(h),
                         _ => {}
                     }
                 }
+            }
+            // A value that kills many of a true atom's rules, as a parent's
+            // value kills half the rows of a table whose head is observed,
+            // would otherwise count the live rules' shared literals once per
+            // rule it kills.
+            self.due.sort_unstable();
+            self.due.dedup();
+            for i in 0..self.due.len() {
+                let h = self.due[i];
+                self.shared_literals_hold(h)?;
             }
             if !derived {
                 continue;
@@ -396,8 +432,12 @@ impl<'a> Propagation<'a> {
                 for &(ri, l) in &self.readers[a as usize] {
                     let ri = ri as usize;
                     if self.killer[ri] == a {
+                        // A rule alive again may come before the place
+                        // where the search for a first live rule starts.
+                        let h = self.gp.rules[ri].head as usize;
                         self.killer[ri] = u32::MAX;
-                        self.live[self.gp.rules[ri].head as usize] += 1;
+                        self.live[h] += 1;
+                        self.dead_before[h] = 0;
                     } else if self.killer[ri] == u32::MAX && l.is_positive() == holds {
                         self.open[ri] += 1;
                     }
@@ -938,6 +978,50 @@ mod tests {
             .iter()
             .map(|gate| gate.fact)
             .collect()
+    }
+
+    #[test]
+    fn the_first_live_rule_is_found_whatever_order_rules_die_and_revive_in() {
+        // An atom of a rule on each of `n` facts: a fact made false kills
+        // its rule, the facts in an order of their own, and the trail taken
+        // back to a mark revives the rules killed after it.
+        let n = 23;
+        let facts = vec![0.5; n];
+        let h = n as AtomId;
+        let bodies: Vec<[GLit; 1]> = (0..n).map(|i| [Pos(i as AtomId)]).collect();
+        let rules: Vec<(AtomId, &[GLit])> = bodies.iter().map(|b| (h, &b[..])).collect();
+        let gp = test_program(&facts, 1, &rules, &[]);
+        let mut p = Propagation::with_sets(&gp, &[], Vec::new());
+        // The first live rule found without the place the search starts at.
+        let scan = |p: &Propagation| {
+            p.by_head[h as usize]
+                .iter()
+                .position(|&ri| p.killer[ri] == u32::MAX)
+                .expect("a live rule")
+        };
+        let kill = |p: &mut Propagation, f: usize| {
+            if p.val[f] == Val::Unknown && p.live[h as usize] > 1 {
+                assert!(p.assign(f as AtomId, false).is_ok());
+                assert!(p.run().is_ok());
+            }
+            assert_eq!(p.first_live(h), scan(p));
+        };
+        let mut marks = Vec::new();
+        for k in 0..n {
+            if k % 4 == 0 {
+                marks.push(p.trail.len());
+            }
+            kill(&mut p, (7 * k + 3) % n);
+        }
+        while let Some(mark) = marks.pop() {
+            p.undo(mark);
+            assert_eq!(p.first_live(h), scan(&p));
+            for k in 0..marks.len() + 2 {
+                kill(&mut p, (5 * k + 1) % n);
+            }
+        }
+        p.undo(0);
+        assert_eq!(p.first_live(h), 0);
     }
 
     fn gate(fact: AtomId, or: bool, inputs: &[GLit], clauses: &[u32]) -> Gate {

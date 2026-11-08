@@ -168,27 +168,31 @@ pub(super) struct Ups<'a, V> {
 
 impl<V: Value> Down<V> {
     /// No level walked, for a diagram of `n` levels, none of them viewed.
-    fn new(n: usize) -> Self {
-        Down::with_views(vec![View::Untried; n])
+    fn new(n: usize) -> Result<Self, tididi::OperationError> {
+        Ok(Down {
+            views: filled(n, View::Untried)?,
+            ..Down::unviewed(n)?
+        })
     }
 
-    /// No level walked, the levels viewed as `views` has them.
-    fn with_views(views: Vec<View>) -> Self {
-        let n = views.len();
-        Down {
-            columns: vec![Vec::new(); n],
-            wide: vec![None; n],
-            has: vec![false; n],
-            opened: vec![false; n],
-            ranges: vec![Range::NEW; n],
-            exact: vec![true; n],
-            exps: vec![0; n],
-            views,
+    /// No level walked, for a diagram of `n` levels, its views left to the
+    /// caller to place: every vector allocated, or `OverBudget`, before
+    /// the caller gives up what it views them with.
+    fn unviewed(n: usize) -> Result<Self, tididi::OperationError> {
+        Ok(Down {
+            columns: filled(n, Vec::new())?,
+            wide: filled(n, None)?,
+            has: filled(n, false)?,
+            opened: filled(n, false)?,
+            ranges: filled(n, Range::NEW)?,
+            exact: filled(n, true)?,
+            exps: filled(n, 0)?,
+            views: Vec::new(),
             routes: [0; ROUTES],
-        }
+        })
     }
 
-    /// No level walked, as [`Down::with_views`] leaves the pass down, its
+    /// No level walked, as [`Down::new`] leaves the pass down, its
     /// views and routes kept. It frees the columns and allocates nothing.
     fn clear(&mut self) {
         self.columns.iter_mut().for_each(|c| *c = Vec::new());
@@ -839,10 +843,18 @@ pub(super) fn slot<V: Value>(
 /// level is gigabytes: `vec!` would abort the run where a refusal retires
 /// the trial.
 pub(super) fn filled<T: Clone>(n: usize, x: T) -> Result<Vec<T>, tididi::OperationError> {
+    let mut v = reserved(n)?;
+    v.resize(n, x);
+    Ok(v)
+}
+
+/// An empty vector with room for `n` items, as [`filled`] allocates.
+fn reserved<T>(n: usize) -> Result<Vec<T>, tididi::OperationError> {
+    #[cfg(test)]
+    tests::grant()?;
     let mut v = Vec::new();
     v.try_reserve_exact(n)
         .map_err(|_| tididi::OperationError::OverBudget)?;
-    v.resize(n, x);
     Ok(v)
 }
 
@@ -851,11 +863,7 @@ pub(super) fn collected<T>(
     n: usize,
     items: impl Iterator<Item = T>,
 ) -> Result<Vec<T>, tididi::OperationError> {
-    #[cfg(test)]
-    tests::grant()?;
-    let mut v = Vec::new();
-    v.try_reserve_exact(n)
-        .map_err(|_| tididi::OperationError::OverBudget)?;
+    let mut v = reserved(n)?;
     v.extend(items);
     Ok(v)
 }
@@ -1006,20 +1014,26 @@ impl Counted<f64> {
     /// hold). Once taken over, it is left without its views and true nodes.
     fn take_counts(&mut self) -> Result<Counted<Count>, tididi::OperationError> {
         self.down.get_mut().clear();
-        let up = self
-            .up
-            .iter()
-            .zip(&self.exps)
-            .map(|(column, &k)| in_counts(column, k))
-            .collect::<Result<_, _>>()?;
+        // Pushed into a vector of the levels' number: the fallible
+        // iterator gives no size, and a vector grown as it goes cannot
+        // give up (rl_caesar at 20000, 24 MiB under 9 GiB).
+        let mut up = reserved(self.up.len())?;
+        for (column, &k) in self.up.iter().zip(&self.exps) {
+            up.push(in_counts(column, k)?);
+        }
+        let n = self.exps.len();
+        let (exps, ranges, exact) = (filled(n, 0)?, filled(n, Range::NEW)?, filled(n, true)?);
+        let down = Down::unviewed(n)?;
+        // Everything allocated: the views are taken over.
         Ok(Counted {
             up,
-            exps: vec![0; self.exps.len()],
-            ranges: vec![Range::NEW; self.ranges.len()],
-            exact: vec![true; self.exact.len()],
-            down: RefCell::new(Down::with_views(std::mem::take(
-                &mut self.down.get_mut().views,
-            ))),
+            exps,
+            ranges,
+            exact,
+            down: RefCell::new(Down {
+                views: std::mem::take(&mut self.down.get_mut().views),
+                ..down
+            }),
             top: std::mem::take(&mut self.top),
             grid_min: self.grid_min,
             grid_pairs: self.grid_pairs,
@@ -1043,7 +1057,7 @@ impl<V: Value> Counted<V> {
             .internal_bottomup()
             .nth(k)
             .expect("a level of the pass up");
-        let mut wide: Vec<Vec<Count>> = vec![Vec::new(); vtree.num_nodes()];
+        let mut wide: Vec<Vec<Count>> = filled(vtree.num_nodes(), Vec::new())?;
         for c in [l, r] {
             wide[c.idx()] = in_counts(&self.up[c.idx()], self.exps[c.idx()])?;
         }
@@ -1081,12 +1095,13 @@ impl<V: Value> Counted<V> {
         let vtree = f.vtree();
         let n = vtree.num_nodes();
         // Pushed into a vector of `n`: the fallible iterator gives no size.
-        let mut up: Vec<Vec<V>> = Vec::with_capacity(n);
+        // The tables of one entry a level are allocated as [`filled`] does.
+        let mut up: Vec<Vec<V>> = reserved(n)?;
         for t in 0..n {
             up.push(V::zeros(f.reference_slot_count(VtreeIdx(t as u32)))?);
         }
-        let mut ranges = vec![Range::NEW; n];
-        let mut exact = vec![true; n];
+        let mut ranges = filled(n, Range::NEW)?;
+        let mut exact = filled(n, true)?;
         if !f.is_zero() {
             for (leaf, var) in vtree.leaf_bottomup() {
                 let column = &mut up[leaf.idx()];
@@ -1103,11 +1118,11 @@ impl<V: Value> Counted<V> {
         }
         Ok(Counted {
             up,
-            exps: vec![0; n],
+            exps: filled(n, 0)?,
             ranges,
             exact,
-            down: RefCell::new(Down::new(n)),
-            top: true_nodes(f),
+            down: RefCell::new(Down::new(n)?),
+            top: true_nodes(f)?,
             grid_min,
             grid_pairs: 0,
             routes_up: [0; ROUTES],
@@ -1321,10 +1336,10 @@ pub(super) fn level_pairs(d: &tididi::Tdd, t: tididi::vtree::VtreeIdx) -> usize 
 /// if the level has one: the `One` node of a leaf, and an internal node
 /// with the one pair of its children's true nodes. Every level outside a
 /// formula's cone has one, since embedding copies it there.
-pub(super) fn true_nodes(f: &tididi::Tdd) -> Vec<Option<usize>> {
+pub(super) fn true_nodes(f: &tididi::Tdd) -> Result<Vec<Option<usize>>, tididi::OperationError> {
     use tididi::diagram::{ChildRef, ONE_LEAF_IDX};
     let vtree = f.vtree();
-    let mut top: Vec<Option<usize>> = vec![None; vtree.num_nodes()];
+    let mut top: Vec<Option<usize>> = filled(vtree.num_nodes(), None)?;
     for (leaf, _) in vtree.leaf_bottomup() {
         top[leaf.idx()] = Some(ONE_LEAF_IDX.idx());
     }
@@ -1346,7 +1361,7 @@ pub(super) fn true_nodes(f: &tididi::Tdd) -> Vec<Option<usize>> {
             }
         }
     }
-    top
+    Ok(top)
 }
 
 /// The pre-order spans of a vtree: `spans[t] = (first, last)` with every

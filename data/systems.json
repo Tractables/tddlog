@@ -4,8 +4,8 @@
     ["machines", "Lab and cloud machines with 16 to 96 physical cores and 125 to 1 488 GB of memory"],
     ["lanes", "Every run single-threaded and pinned to a physical core of its own, beside other runs in lanes; a suite's systems in one job, tddlog in that job or a later one"],
     ["memory", "Each process capped at its lane's share of the machine's memory, the same for every system: its address space before 2026-10-28 and in some runs since, whose memory-outs are being rerun; its memory (a cgroup without swap) otherwise"],
-    ["runs", "2026-10-12 to 2026-11-07"],
-    ["tddlog", "tddlog {version} with its default strategy (auto), linked statically: builds of 2026-10-20 to 2026-11-07, each table's named on the baselines branch; the release's main has every solver change they have"],
+    ["runs", "2026-10-12 to 2026-11-08"],
+    ["tddlog", "tddlog {version} with its default strategy (auto), linked statically: builds of 2026-10-20 to 2026-11-08, each table's named on the baselines branch; the release's main has every solver change they have"],
     ["baselines", "Each one's version and settings on its page"],
     ["reference", "An exact method written for the suite where one answers, else a system in exact arithmetic (Psi, Storm's exact engine, Genfer's rationals), else Alea.jl, ProbLog, Merlin or Ace, in doubles; each instance's page names it"],
     ["tolerance", "A marginal within 1e-9 of the reference, absolute (the UAI MAR convention), or within both 1e-6 and 0.1% of it beyond the digits either prints; log10 Z within 1e-6 of it, relative to max(1, |log10 Z|)"]

@@ -655,7 +655,12 @@ would print the joint).
   (rl_hmm_filtering_marginal, rl_hmm_smoothing_marginal) fall under it
   from 20 steps on (P(e) = 3e-7 at 20), in every writing of the Dice
   program (`iterate`, a chain of calls, the steps inline), with the
-  posterior at 5, 10 and 15 steps. Its zeros count as its wrong
+  posterior at 5, 10 and 15 steps. So does noisyor15_22 of the logic
+  programs, its ground program written in Dice by problog2ppl.py (22
+  observed findings): Dice prints 0 for each of the 15 diseases, and
+  its own program of P(e) prints 7.3e-7; master gives the posterior,
+  and noisyor10_15 is answered right.
+  Its zeros count as its wrong
   answers. The image has no option against the cutoff; a build of a later
   driver (exact zero test, log space) would avoid it. Dice's master
   (1d8a277, 2025-03-15), whose default `-wmc-type 0` computes in log space,

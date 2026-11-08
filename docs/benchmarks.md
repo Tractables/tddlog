@@ -83,19 +83,24 @@ beside Pluck, SPPL and Psi on the functional programs and the runs
 beside WebPPL, Genfer, Alea.jl, Storm, PRISM and Psi again ran a build
 of 2026-11-05 (tididi 23344168, goatd e592d1e). The runs beside Scallop,
 aspmc and PSouffle on their first-order programs ran a build of
-2026-11-04 (tididi 6e472575, goatd e592d1e). The runs beside Psi again
-ran a build of 2026-11-05 (tididi 23344168, goatd e592d1e). The runs
-beside WebPPL, and beside Storm and PRISM on the PR sets ran a build of
-2026-11-04 (tididi 6e472575, goatd e592d1e). The runs beside Roulette on
-its upstream main and Roulette+tddlog's ran a build of 2026-10-31
-(tididi c5642b97, goatd e592d1e). The third literature scan ran a build
-of 2026-10-30 (tididi df7b84a3, goatd e592d1e). The runs on the families
-written as one program with its data and arguments ran a build of
-2026-11-03 (tididi 6e472575, goatd e592d1e). The runs beside Alea.jl,
-Roulette and WebPPL on dataflow_13, the runs beside Pluck, Psi and SPPL
-again where their translation changed and the runs beside Pluck again on
-TPC-H written over its facts ran a build of 2026-11-06 (tididi 23344168,
-goatd e592d1e). The runs beside Roulette in its BN language and
+2026-11-04 (tididi 6e472575, goatd e592d1e). The runs beside ProbLog
+again on two UAI networks at the published memory cap, the runs beside
+Roulette again on the UAI networks at the published memory cap and the
+runs beside Geni again on the logic programs, the networks and TPC-H at
+the published memory cap ran a build of 2026-11-06 (tididi 23344168,
+goatd e592d1e). The runs beside Psi again ran a build of 2026-11-05
+(tididi 23344168, goatd e592d1e). The runs beside WebPPL, and beside
+Storm and PRISM on the PR sets ran a build of 2026-11-04 (tididi
+6e472575, goatd e592d1e). The runs beside Roulette on its upstream main
+and Roulette+tddlog's ran a build of 2026-10-31 (tididi c5642b97, goatd
+e592d1e). The third literature scan ran a build of 2026-10-30 (tididi
+df7b84a3, goatd e592d1e). The runs on the families written as one
+program with its data and arguments ran a build of 2026-11-03 (tididi
+6e472575, goatd e592d1e). The runs beside Alea.jl, Roulette and WebPPL
+on dataflow_13, the runs beside Pluck, Psi and SPPL again where their
+translation changed and the runs beside Pluck again on TPC-H written
+over its facts ran a build of 2026-11-06 (tididi 23344168, goatd
+e592d1e). The runs beside Roulette in its BN language and
 Roulette+tddlog's on the Bayesian networks ran a build of 2026-11-03
 (tididi 427cb8f8, goatd e592d1e). The runs beside the network tools and
 Ace again on the networks of programs that changed since their runs, the
@@ -103,73 +108,74 @@ runs beside TensorInference.jl, Ace and Merlin again on six of those
 networks, the runs beside Storm and PRISM again on the networks, the
 runs beside Storm and PRISM again on a UAI network and the runs beside
 Storm and PRISM again on seven networks ran a build of 2026-11-06
-(tididi 23344168, goatd e592d1e). The runs beside ProbLog again on two
-UAI networks at the published memory cap and the runs beside Roulette
-again on the UAI networks at the published memory cap ran a build of
-2026-11-06 (tididi 23344168, goatd e592d1e). The runs on the
-literature's logic programs ran a build of 2026-10-31 (tididi c5642b97,
-goatd e592d1e). The runs beside Roulette again on the UAI networks at
-the published memory cap ran a build of 2026-11-07 (tididi 23344168,
-goatd e592d1e). The runs beside Roulette and Roulette+tddlog again on
-the UAI networks at the published memory cap, the runs beside aspmc and
-Scallop again at the published memory cap and the runs beside PRISM,
-Pluck, TensorInference.jl and Merlin again at the published memory cap
-ran a build of 2026-11-06 (tididi 23344168, goatd e592d1e). The runs
-beside Scallop ran a build of 2026-10-29 (tididi df7b84a3, goatd
-e592d1e). The runs beside Ace again on its own networks, each with its
-archive's evidence set ran a build of 2026-11-06 (tididi 23344168, goatd
-e592d1e). The runs on four of cplint on SWISH's examples, and tddlog's
-on the families read as one program and its arguments ran a build of
-2026-10-31 (tididi c5642b97, goatd e592d1e). The runs on the standard
-suite and the runs beside TensorInference.jl timed warm ran a build of
-2026-10-29 (tididi b5d9b21d, goatd e592d1e). The event-calculus programs
-and the growth sizes ran a build of 2026-10-25 with twin contraction
-(tididi b9e5064e, goatd e592d1e) and a recursion over a successor
-relation grounded level by level, which lacks only the release's sparse
-route (tididi 9fc0a599). The runs beside Scallop and PSouffle again on
-the literature suite ran a build of 2026-11-04 (tididi 23344168, goatd
-e592d1e). The runs beside aspmc again on the literature suite and the
-runs beside aspmc again on the larger sizes of the literature suite ran
-a build of 2026-11-05 (tididi 23344168, goatd e592d1e). The reruns of
-tddlog where an older build's record stood ran a build of 2026-10-31
-(tididi c5642b97, goatd e592d1e). The runs beside Psi again on a size of
-the noisy-or program at the published memory cap and the runs beside
-Storm again at the published memory cap ran a build of 2026-11-07
-(tididi 23344168, goatd e592d1e). The runs on five more of cplint's
-examples and one more of ProbLog's tutorial ran a build of 2026-10-31
-(tididi c5642b97, goatd e592d1e). The reruns of tddlog where an older
-build's record stood, and every system's runs on eleven of the growth
-sizes ran a build of 2026-11-01 (tididi c5642b97, goatd e592d1e). The
-runs beside Roulette in its BN language and Roulette+tddlog's on three
-of Ace's networks ran a build of 2026-11-05 (tididi 23344168, goatd
-e592d1e). The runs beside TensorInference.jl again on a UAI network at
-the published memory cap ran a build of 2026-11-06 (tididi 23344168,
-goatd e592d1e). Every system's runs on a program of ProbLog's tutorial
-that calls subquery/3 ran a build of 2026-11-05 (tididi 23344168, goatd
-e592d1e). The release's main contains every solver change those builds
-have. The baselines: ProbLog 2.3.0 with d-DNNF, SDD and forward SDD
-compilation, PITA's BDDs and aspmc with sharpSAT-TD on the program
-suites and Ace's networks, the large networks and the UAI networks; Ace
-3.0 (default route and c2d forced, and in log space, `-Xlog`, on the UAI
-networks), Merlin 1.7.0's bucket-tree elimination (`-a bte`), pyAgrum's
-junction tree, pgmpy's variable elimination, libDAI's junction tree and
+(tididi 23344168, goatd e592d1e). The runs on the literature's logic
+programs ran a build of 2026-10-31 (tididi c5642b97, goatd e592d1e). The
+runs beside Roulette again on the UAI networks at the published memory
+cap ran a build of 2026-11-07 (tididi 23344168, goatd e592d1e). The runs
+beside Roulette and Roulette+tddlog again on the UAI networks at the
+published memory cap, the runs beside aspmc and Scallop again at the
+published memory cap and the runs beside PRISM, Pluck,
+TensorInference.jl and Merlin again at the published memory cap ran a
+build of 2026-11-06 (tididi 23344168, goatd e592d1e). The runs beside
+the Dice family, Storm and PRISM on the logic programs written in Dice
+at the published memory cap ran a build of 2026-11-07 (tididi 23344168,
+goatd e592d1e). The runs beside Scallop ran a build of 2026-10-29
+(tididi df7b84a3, goatd e592d1e). The runs beside Ace again on its own
+networks, each with its archive's evidence set ran a build of 2026-11-06
+(tididi 23344168, goatd e592d1e). The runs on four of cplint on SWISH's
+examples, and tddlog's on the families read as one program and its
+arguments ran a build of 2026-10-31 (tididi c5642b97, goatd e592d1e).
+The runs on the standard suite and the runs beside TensorInference.jl
+timed warm ran a build of 2026-10-29 (tididi b5d9b21d, goatd e592d1e).
+The event-calculus programs and the growth sizes ran a build of
+2026-10-25 with twin contraction (tididi b9e5064e, goatd e592d1e) and a
+recursion over a successor relation grounded level by level, which lacks
+only the release's sparse route (tididi 9fc0a599). The runs beside
+Scallop and PSouffle again on the literature suite ran a build of
+2026-11-04 (tididi 23344168, goatd e592d1e). The runs beside aspmc again
+on the literature suite and the runs beside aspmc again on the larger
+sizes of the literature suite ran a build of 2026-11-05 (tididi
+23344168, goatd e592d1e). The reruns of tddlog where an older build's
+record stood ran a build of 2026-10-31 (tididi c5642b97, goatd e592d1e).
+The runs beside Psi again on a size of the noisy-or program at the
+published memory cap and the runs beside Storm again at the published
+memory cap ran a build of 2026-11-07 (tididi 23344168, goatd e592d1e).
+The runs on five more of cplint's examples and one more of ProbLog's
+tutorial ran a build of 2026-10-31 (tididi c5642b97, goatd e592d1e). The
+reruns of tddlog where an older build's record stood, and every system's
+runs on eleven of the growth sizes ran a build of 2026-11-01 (tididi
+c5642b97, goatd e592d1e). The runs beside Roulette in its BN language
+and Roulette+tddlog's on three of Ace's networks ran a build of
+2026-11-05 (tididi 23344168, goatd e592d1e). The runs beside
+TensorInference.jl again on a UAI network at the published memory cap
+ran a build of 2026-11-06 (tididi 23344168, goatd e592d1e). Every
+system's runs on a program of ProbLog's tutorial that calls subquery/3
+ran a build of 2026-11-05 (tididi 23344168, goatd e592d1e). The
+release's main contains every solver change those builds have. The
+baselines: ProbLog 2.3.0 with d-DNNF, SDD and forward SDD compilation,
+PITA's BDDs and aspmc with sharpSAT-TD on the program suites and Ace's
+networks, the large networks and the UAI networks; Ace 3.0 (default
+route and c2d forced, and in log space, `-Xlog`, on the UAI networks),
+Merlin 1.7.0's bucket-tree elimination (`-a bte`), pyAgrum's junction
+tree, pgmpy's variable elimination, libDAI's junction tree and
 TensorInference.jl's tensor network contraction on the networks, and
 ProvSQL on TPC-H; Dice, Alea.jl, Roulette, noDice, Psi, Genfer, SPPL,
 Geni, Pluck and WebPPL, the exact systems that read Dice programs, on
 the standard suite's networks, Ace's networks, the large networks and
-the UAI networks and with Ace, Merlin and the network tools on the
-ground programs of the standard suite, the literature suite, TPC-H and
-Biomine (the ground route). Seconds are wall time, parsing and grounding
-included; the limit is 300 s a run on the standard, literature and UAI
-suites and 600 s on Ace's and the large networks. A program written in
-another language is converted once into the file tddlog reads (`tddlog
---program`'s of a network, which the systems that read ProbLog programs
-are given while tddlog reads the network itself), and that conversion,
-timed on its own, is part of the time of tddlog and of every system
-whose input is made from its file, a run that passes the limit with it
-counting as a timeout; a translator written only to hand a program to
-one baseline (PITA's and PSouffle's, the Hugin and UAI files of Ace,
-Merlin and the network tools) is not timed.
+the UAI networks and on the standard suite, the literature suite, TPC-H
+and Biomine as `scripts/problog2ppl.py` writes each logic program, with
+Ace, Merlin and the network tools on its ground program (the ground
+route). Seconds are wall time, parsing and grounding included; the limit
+is 300 s a run on the standard, literature and UAI suites and 600 s on
+Ace's and the large networks. A program written in another language is
+converted once into the file tddlog reads (`tddlog --program`'s of a
+network, which the systems that read ProbLog programs are given while
+tddlog reads the network itself), and that conversion, timed on its own,
+is part of the time of tddlog and of every system whose input is made
+from its file, a run that passes the limit with it counting as a
+timeout; a translator written only to hand a program to one baseline
+(PITA's and PSouffle's, the Hugin and UAI files of Ace, Merlin and the
+network tools) is not timed.
 
 | suite | instances | tddlog finishes (total s) | faster than ProbLog, PITA, aspmc and Ace | Merlin faster | faster than pyAgrum, pgmpy, libDAI and TensorInference.jl (ProvSQL on TPC-H) | finished where no exact system did |
 |---|---:|---:|---:|---:|---:|---:|
@@ -312,21 +318,26 @@ Both take under 0.2 s on 45 more. tddlog alone answers 188, a tool alone
 noDice, Psi, Genfer, SPPL, Geni, Pluck and WebPPL, the exact systems
 that read Dice programs, ran on the standard suite's networks, Ace's
 networks, the large networks and the UAI networks as the Dice programs
-of `scripts/gen_bn.py` and with Ace, Merlin and the other network tools
-on the standard suite, the literature suite, TPC-H and Biomine, on the
-network and the Dice program that `scripts/ground2net.py` writes of each
-program's ground program. Alea.jl's, Pluck's and Roulette's times leave
-out the start-up and compilation of Julia and Racket, as on the page of
-the Dice family's suites. A baseline's answer off the reference by more
-than 1e-9 and either by more than 1e-6 or by more than 1e-3 of it,
-beyond the last digit either of the two prints, counts as a failure
-(`wrong`): Dice on dice_digitRecognition; PSouffle on biomine1,
-biomine2, biomine4, biomine8, biomine12 and 15 more; Geni on ace_alarm,
-ace_water, bn_alarm_ev, bn_child_ev, bn_hailfinder_ev and 31 more; PITA
-on ace_fs_07, ace_mastermind_03_08_03, plcg4,
-problogtut_various_04_nampally_3, uai_mastermind_03_08_04_0001 and 41
-more; ProbLog on uai_csp_12 and uai_promedus_24; aspmc on uai_bn_30,
-uai_bn_31, uai_bn_32, uai_bn_34, uai_bn_36 and 34 more; noDice on
+of `scripts/gen_bn.py` and on the standard suite, the literature suite,
+TPC-H and Biomine as the program `scripts/problog2ppl.py` writes of each
+logic program over its facts, in Dice or in the system's own language
+(where it refuses one, the Dice program `scripts/ground2net.py` writes
+of its ground program). Ace, Merlin and the other network tools ran on
+the standard suite, the literature suite, TPC-H and Biomine on the
+network `scripts/ground2net.py` writes of each program's ground program.
+Alea.jl's, Pluck's and Roulette's times leave out the start-up and
+compilation of Julia and Racket, as on the page of the Dice family's
+suites. A baseline's answer off the reference by more than 1e-9 and
+either by more than 1e-6 or by more than 1e-3 of it, beyond the last
+digit either of the two prints, counts as a failure (`wrong`): Dice on
+dice_digitRecognition and noisyor15_22; PSouffle on biomine1, biomine2,
+biomine4, biomine8, biomine12 and 15 more; PITA on ace_fs_07,
+ace_mastermind_03_08_03, plcg4, problogtut_various_04_nampally_3,
+uai_mastermind_03_08_04_0001 and 41 more; ProbLog on uai_csp_12 and
+uai_promedus_24; aspmc on uai_bn_30, uai_bn_31, uai_bn_32, uai_bn_34,
+uai_bn_36 and 34 more; Geni on uai_grid10x10_f10, uai_grids_12,
+uai_mastermind_03_08_04_0001, uai_mastermind_03_08_04_0002,
+uai_mastermind_03_08_05_0001 and 14 more; noDice on
 uai_blockmap_10_03_0010, uai_grid10x10_f10, uai_grids_12,
 uai_mastermind_03_08_04_0001, uai_mastermind_03_08_04_0002 and 32 more;
 PRISM on uai_grids_17 and uai_grids_18; Ace on uai_bn_26,
@@ -775,7 +786,6 @@ out of time or memory on a smaller size of the same program.
 | cplint_swish_smoking | 0.01 | 0.09 (problog:fsdd) | 0.4 |
 | cplint_swish_viraltab | 0.01 | 0.09 (problog:sdd) | 0.5 |
 | taint_barcode | 2.77 | - |  |
-| taint_angulo | >300 | - |  |
 | pedigree4_6 | 0.06 | - |  |
 | pedigree6_6 | 0.10 | - |  |
 | pedigree10_6 | 0.23 | - |  |
@@ -799,6 +809,7 @@ out of time or memory on a smaller size of the same program.
 | taint_ginger_master | 1.54 | - |  |
 | taint_app_ca7 | 2.36 | - |  |
 | taint_tilt_mazes | 1.48 | - |  |
+| taint_angulo | >300 | - |  |
 | taint_tuio_droid | >300 | - |  |
 | taint_video_game | >300 | - |  |
 | taint_andors_trail | 0.89 | 230.03 (pita:bdd) | 258.2 |
@@ -907,7 +918,7 @@ each instance; its two orders follow.
 | Psi | 34 | 8 | 34 | 7 830 | 6.2 | 8 | 29.8 | 0.1 | 0 |
 | Genfer | 34 | 25 | 34 | 3 200 | 5.0 | 25 | 500.2 | 1.3 | 0 |
 | SPPL | 34 | 12 | 34 | 6 627 | 5.0 | 12 | 27.4 | 0.5 | 0 |
-| Geni | 34 | 20 | 34 | 4 331 | 5.0 | 20 | 131.0 | 1.0 | 0 |
+| Geni | 34 | 25 | 34 | 3 390 | 5.7 | 25 | 690.5 | 0.8 | 0 |
 | Pluck | 34 | 25 | 34 | 3 062 | 4.6 | 25 | 362.0 | 1.5 | 0 |
 | WebPPL | 34 | 11 | 34 | 7 141 | 6.4 | 11 | 241.0 | 0.2 | 0 |
 | Storm | 34 | 28 | 34 | 2 631 | 5.7 | 28 | 830.8 | 2.2 | 0 |
@@ -935,7 +946,7 @@ each instance; its two orders follow.
 | Psi | 43 | 1 | 43 | 25 247 | 12.5 | 1 | 47.4 | 0.0 | 0 |
 | Genfer | 43 | 4 | 43 | 23 601 | 10.4 | 4 | 201.1 | 0.2 | 0 |
 | SPPL | 43 | 21 | 43 | 15 133 | 10.4 | 21 | 1 933 | 1.3 | 0 |
-| Geni | 43 | 3 | 43 | 24 024 | 10.4 | 3 | 24.0 | 0.1 | 0 |
+| Geni | 43 | 5 | 43 | 23 241 | 12.9 | 5 | 441.5 | 0.1 | 0 |
 | Pluck | 46 | 25 | 46 | 13 383 | 18.9 | 25 | 783.4 | 3.0 | 0 |
 | WebPPL | 43 | 9 | 43 | 21 593 | 14.5 | 9 | 1 193 | 0.4 | 0 |
 | Storm | 46 | 7 | 46 | 23 890 | 16.3 | 7 | 489.9 | 0.3 | 0 |
@@ -963,7 +974,7 @@ each instance; its two orders follow.
 | Psi | 14 | 0 | 14 | 8 400 | 18.2 | 0 | 0.0 | 0.0 | 0 |
 | Genfer | 14 | 0 | 14 | 8 400 | 15.2 | 0 | 0.0 | 0.0 | 0 |
 | SPPL | 14 | 0 | 14 | 8 400 | 15.2 | 0 | 0.0 | 0.0 | 0 |
-| Geni | 14 | 0 | 14 | 8 400 | 15.2 | 0 | 0.0 | 0.0 | 0 |
+| Geni | 14 | 0 | 14 | 8 400 | 19.5 | 0 | 0.0 | 0.0 | 0 |
 | Pluck | 14 | 0 | 14 | 8 400 | 18.2 | 0 | 0.0 | 0.0 | 0 |
 | WebPPL | 14 | 0 | 14 | 8 400 | 20.9 | 0 | 0.0 | 0.0 | 0 |
 | Storm | 14 | 0 | 14 | 8 400 | 16.1 | 0 | 0.0 | 0.0 | 0 |
@@ -984,18 +995,18 @@ each instance; its two orders follow.
 | TensorInference.jl | 76 | 39 | 68 | 9 039 | 159.0 | 39 | 339.4 | 3.7 | 0 |
 | TensorInference.jl treesa | 76 | 37 | 68 | 11 057 | 159.0 | 37 | 1 757 | 3.6 | 0 |
 | TensorInference.jl greedy | 76 | 38 | 68 | 9 108 | 159.0 | 38 | 108.5 | 3.7 | 0 |
-| Dice | 76 | 43 | 68 | 8 693 | 157.3 | 43 | 1 193 | 3.2 | 0 |
+| Dice | 76 | 43 | 68 | 8 534 | 156.4 | 43 | 1 034 | 2.3 | 0 |
 | Alea.jl | 76 | 48 | 68 | 6 103 | 153.0 | 48 | 102.6 | 2.7 | 0 |
 | Roulette | 76 | 45 | 68 | 7 745 | 151.9 | 45 | 844.6 | 1.1 | 0 |
-| noDice | 76 | 38 | 68 | 9 663 | 157.3 | 38 | 662.7 | 3.4 | 0 |
+| noDice | 76 | 38 | 68 | 9 596 | 156.4 | 38 | 595.7 | 2.6 | 0 |
 | Psi | 76 | 10 | 68 | 17 661 | 157.2 | 10 | 260.9 | 0.2 | 0 |
-| Genfer | 76 | 28 | 68 | 12 310 | 157.3 | 28 | 309.8 | 3.0 | 1 |
+| Genfer | 76 | 28 | 68 | 12 370 | 156.4 | 28 | 369.8 | 2.2 | 1 |
 | SPPL | 76 | 10 | 68 | 17 472 | 166.1 | 10 | 71.9 | 0.1 | 0 |
-| Geni | 76 | 24 | 68 | 13 683 | 157.3 | 24 | 482.6 | 1.5 | 0 |
+| Geni | 76 | 28 | 68 | 12 707 | 159.3 | 28 | 707.4 | 3.1 | 0 |
 | Pluck | 76 | 22 | 68 | 14 299 | 146.2 | 22 | 499.3 | 3.3 | 0 |
 | WebPPL | 71 | 13 | 66 | 16 058 | 146.0 | 13 | 158.0 | 0.1 | 0 |
-| Storm | 76 | 39 | 68 | 9 948 | 158.2 | 39 | 1 248 | 3.1 | 0 |
-| PRISM | 76 | 31 | 68 | 11 981 | 156.7 | 31 | 881.5 | 0.7 | 0 |
+| Storm | 76 | 38 | 68 | 10 229 | 157.0 | 38 | 1 229 | 1.9 | 0 |
+| PRISM | 76 | 32 | 68 | 11 915 | 156.4 | 32 | 1 115 | 0.8 | 0 |
 
 **Literature suite**
 
@@ -1012,18 +1023,18 @@ each instance; its two orders follow.
 | TensorInference.jl | 99 | 21 | 88 | 20 448 | 1 315 | 21 | 347.9 | 1.6 | 0 |
 | TensorInference.jl treesa | 99 | 19 | 88 | 21 794 | 1 315 | 19 | 1 094 | 1.2 | 0 |
 | TensorInference.jl greedy | 99 | 19 | 88 | 20 845 | 1 315 | 19 | 144.5 | 1.5 | 0 |
-| Dice | 98 | 17 | 85 | 21 074 | 1 047 | 17 | 673.6 | 7.5 | 0 |
+| Dice | 99 | 17 | 88 | 21 462 | 1 160 | 17 | 161.5 | 1.0 | 0 |
 | Alea.jl | 319 | 82 | 292 | 63 698 | 1 260 | 82 | 697.8 | 109.1 | 6 |
 | Roulette | 319 | 78 | 292 | 64 985 | 1 184 | 78 | 784.5 | 87.2 | 1 |
-| noDice | 98 | 11 | 85 | 22 727 | 1 047 | 11 | 527.3 | 0.6 | 0 |
+| noDice | 99 | 13 | 88 | 22 989 | 1 160 | 13 | 489.2 | 0.5 | 0 |
 | Psi | 319 | 39 | 292 | 76 098 | 1 100 | 39 | 197.6 | 0.2 | 0 |
-| Genfer | 98 | 7 | 85 | 24 671 | 942.8 | 7 | 1 271 | 7.2 | 0 |
+| Genfer | 99 | 7 | 88 | 25 571 | 1 160 | 7 | 1 271 | 7.2 | 0 |
 | SPPL | 319 | 50 | 293 | 73 088 | 1 188 | 50 | 188.0 | 0.4 | 0 |
-| Geni | 98 | 0 | 85 | 25 500 | 1 047 | 0 | 0.0 | 0.0 | 0 |
+| Geni | 99 | 4 | 89 | 25 886 | 1 351 | 4 | 386.0 | 1.2 | 0 |
 | Pluck | 319 | 60 | 293 | 70 307 | 1 166 | 60 | 406.9 | 4.3 | 0 |
 | WebPPL | 319 | 61 | 291 | 69 435 | 968.5 | 61 | 435.0 | 2.2 | 0 |
-| Storm | 99 | 17 | 86 | 21 629 | 1 077 | 17 | 929.5 | 0.6 | 0 |
-| PRISM | 99 | 9 | 86 | 23 366 | 1 080 | 9 | 266.0 | 0.2 | 0 |
+| Storm | 100 | 23 | 89 | 20 769 | 1 160 | 23 | 968.6 | 1.1 | 0 |
+| PRISM | 100 | 11 | 89 | 23 877 | 1 160 | 11 | 477.5 | 0.3 | 0 |
 
 ## The literature suite
 
@@ -1267,7 +1278,7 @@ Against each baseline (columns as in "Against each baseline"):
 | Psi | 120 | 0 | 120 | 36 000 | 367.8 | 0 | 0.0 | 0.0 | 0 |
 | Genfer | 120 | 4 | 120 | 35 306 | 342.4 | 4 | 505.7 | 0.2 | 0 |
 | SPPL | 120 | 2 | 120 | 35 565 | 342.4 | 2 | 165.4 | 0.1 | 0 |
-| Geni | 120 | 0 | 120 | 36 000 | 342.4 | 0 | 0.0 | 0.0 | 0 |
+| Geni | 120 | 3 | 120 | 35 392 | 368.2 | 3 | 291.7 | 0.1 | 0 |
 | Pluck | 120 | 1 | 120 | 35 760 | 277.2 | 1 | 60.5 | 0.0 | 0 |
 | WebPPL | 120 | 0 | 120 | 36 000 | 394.4 | 0 | 0.0 | 0.0 | 0 |
 | Storm | 120 | 1 | 120 | 35 862 | 335.4 | 1 | 161.9 | 0.0 | 0 |
@@ -1356,7 +1367,7 @@ each baseline"):
 | Psi | 197 | 29 | 162 | 40 110 | 1 565 | 29 | 209.7 | 4.6 | 1 |
 | Genfer | 197 | 16 | 158 | 43 306 | 3 992 | 16 | 705.7 | 0.8 | 0 |
 | SPPL | 197 | 7 | 158 | 45 305 | 3 992 | 7 | 5.2 | 0.3 | 0 |
-| Geni | 197 | 7 | 158 | 45 300 | 3 992 | 7 | 0.0 | 0.3 | 0 |
+| Geni | 197 | 16 | 163 | 44 100 | 1 809 | 16 | 0.1 | 0.3 | 0 |
 | Pluck | 197 | 81 | 163 | 26 321 | 1 523 | 81 | 1 721 | 39.4 | 0 |
 | WebPPL | 197 | 7 | 163 | 46 800 | 1 871 | 7 | 0.0 | 0.3 | 0 |
 | Storm | 197 | 29 | 163 | 40 210 | 1 807 | 29 | 10.5 | 1.0 | 0 |
@@ -1406,7 +1417,7 @@ The tuning set:
 | Psi | 121 | 0 | 121 | 36 300 | 586.2 | 0 | 0.0 | 0.0 | 0 |
 | Genfer | 121 | 4 | 121 | 35 142 | 543.4 | 4 | 42.4 | 0.1 | 0 |
 | SPPL | 121 | 4 | 121 | 35 485 | 543.4 | 4 | 385.1 | 0.1 | 0 |
-| Geni | 121 | 0 | 121 | 36 300 | 543.4 | 0 | 0.0 | 0.0 | 0 |
+| Geni | 121 | 4 | 121 | 35 102 | 576.4 | 4 | 2.4 | 0.1 | 0 |
 | Pluck | 121 | 13 | 121 | 32 567 | 454.1 | 13 | 166.7 | 0.4 | 0 |
 | WebPPL | 120 | 0 | 120 | 36 000 | 626.8 | 0 | 0.0 | 0.0 | 0 |
 | Storm | 121 | 6 | 121 | 34 655 | 626.9 | 6 | 154.5 | 0.3 | 0 |
@@ -1536,17 +1547,17 @@ machine with 20 physical cores and 503 GB of memory, on 2026-10-19, in
 18 lanes of 55 GB of address space, 600 s a run.
 
 tddlog answers 289 of the 295 (982.3 s in all), each within 4.6e-9 of
-`exact:tpch`; it misses q21v and q21 at SF 0.1; q18v at SF 1; q7 and q7v
-at SF 0.2; q7 at SF 0.5. Against the fastest of ProbLog, PITA and aspmc
-on each instance, in total time: Of the 295 instances both are given,
-tddlog answers 289 and ProbLog, PITA or aspmc 200. Over the 289 that
-either answers, a run that does not answer counted at the 600 s limit,
-tddlog takes 982.3 s in all and the fastest of them 70 979 s; over the
-200 both answer, 87.4 s against 17 579. tddlog alone answers
+`exact:tpch`; it misses q18v at SF 1; q7 and q7v at SF 0.2; q7 at SF
+0.5; q21v and q21 at SF 0.1. Against the fastest of ProbLog, PITA and
+aspmc on each instance, in total time: Of the 295 instances both are
+given, tddlog answers 289 and ProbLog, PITA or aspmc 200. Over the 289
+that either answers, a run that does not answer counted at the 600 s
+limit, tddlog takes 982.3 s in all and the fastest of them 70 979 s;
+over the 200 both answer, 87.4 s against 17 579. tddlog alone answers
 tpch_q15_200, tpch_q15_500, tpch_q15_1000, tpch_q11v_200, tpch_q11v_500
-and 84 more. Neither answers tpch_q21v_100, tpch_q18v_1000, tpch_q7_200,
-tpch_q7_500, tpch_q21_100 and 1 more. By query, flat and views together
-(seconds in total time, as in "Against each baseline": over the
+and 84 more. Neither answers tpch_q18v_1000, tpch_q7_200, tpch_q7_500,
+tpch_q21v_100, tpch_q21_100 and 1 more. By query, flat and views
+together (seconds in total time, as in "Against each baseline": over the
 instances either answers, a run that does not answer counted at 600 s;
 largest scale factor answered, times 1 000):
 
@@ -1577,7 +1588,7 @@ run that does not answer counted at the 600 s limit, tddlog takes
 982.3 s in all and ProvSQL 18 599 s; over the 274 both answer, 708.6 s
 against 9 599. tddlog alone answers tpch_q11v_20, tpch_q11v_50,
 tpch_q11v_100, tpch_q11v_200, tpch_q11v_500 and 10 more. Neither answers
-tpch_q21v_100, tpch_q18v_1000, tpch_q7_200, tpch_q7_500, tpch_q21_100
+tpch_q18v_1000, tpch_q7_200, tpch_q7_500, tpch_q21v_100, tpch_q21_100
 and 1 more.
 
 ## The Biomine suite

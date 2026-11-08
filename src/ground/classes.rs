@@ -61,19 +61,34 @@
 //! class atoms' own table has no switches. A table is rewritten so where
 //! ([`on_spines`]):
 //!
-//! - it has [`OWN_VALUE_FROM`] classes or more, and at most
-//!   [`MOST_SELECTORS`], and its head fewer values than
-//!   [`OWN_VALUE_FROM`], for its parts to read their class alone;
+//! - it has [`OWN_VALUE_FROM`] classes or more, and its head fewer values
+//!   than [`OWN_VALUE_FROM`], for its parts to read their class alone;
 //! - a split on the largest parent of which every row reads a value leaves
 //!   parts of [`SPINE_ROWS`] rows or more;
-//! - its rows read three parents or more.
+//! - its rows read three parents or more;
+//! - it has [`MOST_SELECTORS`] classes at most, unless that largest parent
+//!   is binary.
+//!
+//! A split on a parent of v values leaves v spines of r/v rows, about
+//! r²/v pairs, and each part is split again ([`crate::indicators`]), so a
+//! table with a parent of three values or more costs far less than r² as
+//! it is, and its class atoms, nearly a row each where its classes are
+//! many, cost more than they save. A split on a binary parent saves at
+//! most half of the spine, which the split's pricing refuses: a table whose
+//! rows all read a binary parent, and no larger one, keeps its r² spine,
+//! and its classes cost about k log k for k classes, at most r log r,
+//! however many they are (the UAI 2006 networks BN_115 to BN_125, a class
+//! nearly every row). A table no parent of which every row reads is no
+//! such spine, and keeps the bound: rows that share no parent, each over
+//! facts no other row reads, make a class each, a copy of the row.
 //!
 //! So rewritten, the evidence of bn_hailfinder, bn_hepar2 and bn_water
 //! shrinks. Each bound rules out a loss: a head of many values that another
 //! table reads, whose parts read every value's copy (bn_mildew); a table of
-//! nearly as many classes as rows (bn_barley's `tkv`); parts of fewer rows
-//! (bn_insurance, bn_diabetes, the munin networks); tables of two parents
-//! (ObjectDetection_13 ran out of memory).
+//! nearly as many classes as rows whose parents split it (bn_barley's
+//! `tkv`); parts of fewer rows (bn_insurance, bn_diabetes, the munin
+//! networks); tables of two parents (ObjectDetection_13 ran out of
+//! memory).
 
 use rustc_hash::FxHashMap;
 
@@ -92,8 +107,23 @@ const CLASS_GAIN: usize = 2;
 /// which a table is rewritten for its spines (see above).
 const SPINE_ROWS: usize = 12;
 
-/// The most classes of a table rewritten for its spines (see above).
+/// The most classes of a table rewritten for its spines unless every row
+/// reads a binary parent and no larger one (see above).
 const MOST_SELECTORS: usize = 256;
+
+/// Whether a table is rewritten for its spines ([`on_spines`]).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Spines {
+    /// It is not.
+    No,
+    /// It is, with [`MOST_SELECTORS`] classes at most: a split on its
+    /// largest parent, of three values or more, takes its spine apart, or no
+    /// parent is read by every row.
+    Split,
+    /// It is, whatever its classes: every row reads a binary parent and no
+    /// larger one, and no split takes its spine apart.
+    Whole,
+}
 
 /// A switch's place in its row: its probability and the heads of the rules
 /// that read it, with the sign they read it with, sorted; written end to
@@ -287,7 +317,11 @@ fn classes_of(
     // The most classes the table may have.
     let spines = on_spines(rows, of_table, t, tables);
     let few = (of_table.len() - 1) / CLASS_GAIN;
-    let most = if spines { few.max(MOST_SELECTORS) } else { few };
+    let most = match spines {
+        Spines::No => few,
+        Spines::Split => few.max(MOST_SELECTORS),
+        Spines::Whole => of_table.len(),
+    };
     // A signature per group, of which there are at most `most + 1`
     // before the table is given up, and at most one a row.
     let mut by_signature: FxHashMap<Signature, usize> =
@@ -346,10 +380,12 @@ fn classes_of(
             }
         }
     }
+    // The first fit of a group whose rows do not clash pairwise may pass
+    // `most` within the group.
     (stochastic
-        && (classes.len() <= few
-            || (spines && (OWN_VALUE_FROM..=MOST_SELECTORS).contains(&classes.len()))))
-    .then_some(classes)
+        && classes.len() <= most
+        && (classes.len() <= few || (spines != Spines::No && classes.len() >= OWN_VALUE_FROM)))
+        .then_some(classes)
 }
 
 /// `gp` with the rows of each table of `rewrite` read through their
@@ -444,13 +480,14 @@ fn rewrite_rows(
 /// whatever its classes: its head has fewer than [`OWN_VALUE_FROM`]
 /// values, its rows read three parents or more, and a split on the largest
 /// parent of which every row reads a value positively leaves parts of
-/// [`SPINE_ROWS`] rows or more. `of_table` are its rows.
-fn on_spines(rows: &Rows, of_table: &[usize], t: usize, tables: &Tables) -> bool {
+/// [`SPINE_ROWS`] rows or more; and whether that parent, binary, leaves its
+/// spine whole ([`Spines::Whole`]). `of_table` are its rows.
+fn on_spines(rows: &Rows, of_table: &[usize], t: usize, tables: &Tables) -> Spines {
     let sets = tables.sets();
     if of_table.len() < OWN_VALUE_FROM.max(SPINE_ROWS)
         || sets.get(t).is_some_and(|s| s.len() >= OWN_VALUE_FROM)
     {
-        return false;
+        return Spines::No;
     }
     // Three parents or more: the first three distinct tables the rows
     // read, rather than every parent of every row listed, sorted and made
@@ -470,7 +507,7 @@ fn on_spines(rows: &Rows, of_table: &[usize], t: usize, tables: &Tables) -> bool
         }
     }
     if found < parents.len() {
-        return false;
+        return Spines::No;
     }
     let read = |row: usize| {
         rows.context(row)
@@ -484,7 +521,13 @@ fn on_spines(rows: &Rows, of_table: &[usize], t: usize, tables: &Tables) -> bool
         .map(|s| sets[s].len())
         .max()
         .unwrap_or(1);
-    of_table.len() / largest >= SPINE_ROWS
+    if of_table.len() / largest < SPINE_ROWS {
+        Spines::No
+    } else if largest == 2 {
+        Spines::Whole
+    } else {
+        Spines::Split
+    }
 }
 
 /// Whether the contexts of the rows `members` clash pairwise, as

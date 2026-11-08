@@ -11,6 +11,7 @@ mod ad_tails;
 mod binary;
 mod binary_parent;
 mod circulette;
+mod class_spines;
 mod cli;
 mod cnf;
 mod contexts;

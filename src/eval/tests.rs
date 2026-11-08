@@ -557,7 +557,7 @@ thread_local! {
     static GRANTS: Cell<Option<usize>> = const { Cell::new(None) };
 }
 
-/// [`collected`]'s request granted, or refused where [`GRANTS`] has run
+/// A request of [`reserved`]'s granted, or refused where [`GRANTS`] has run
 /// out.
 pub(super) fn grant() -> Result<(), tididi::OperationError> {
     GRANTS.with(|grants| match grants.get() {
@@ -597,9 +597,11 @@ fn reads<V: Value>(c: &Counted<V>, e: &Tdd, q: &Tdd, w: &Probabilities) -> Vec<O
 /// a trial refused memory on the same count once it has freed what the
 /// other trials hold, and a query's walk reads every level's counts up:
 /// where the refusal had left them taken, the walk indexed an empty table.
-/// Refused at each level in turn, the count gives the same total, the same
-/// count with each literal and the same walk of a query; taken over once
-/// memory is granted, it gives what the count taken over at once does.
+/// Refused at each level in turn, and at each table of one entry a level
+/// (grown as it went, such a table ended the run where it was refused),
+/// the count gives the same total, the same count with each literal and
+/// the same walk of a query; taken over once memory is granted, it gives
+/// what the count taken over at once does.
 #[test]
 fn a_count_refused_memory_as_it_is_taken_over_reads_as_before() {
     let v = Arc::new(Vtree::balanced(23));
@@ -632,14 +634,20 @@ fn a_count_refused_memory_as_it_is_taken_over_reads_as_before() {
     let mut at_once = plain();
     at_once.widen().unwrap();
     let widened = read(&at_once);
-    // A column of counts up in `Count`s a level.
-    for granted in 0..e.vtree().num_nodes() {
+    // A column of counts up in `Count`s a level, and the tables of one
+    // entry a level, each refused in turn until the widening has them all.
+    for granted in 0.. {
         let mut counts = plain();
         // The columns down walked, as a query phase has before it widens.
         assert_eq!(read(&counts), before);
         GRANTS.set(Some(granted));
         let refused = counts.widen();
         GRANTS.set(None);
+        if refused.is_ok() {
+            assert!(granted > e.vtree().num_nodes(), "{granted} requests");
+            assert_eq!(read(&counts), widened);
+            break;
+        }
         assert_eq!(
             refused.err(),
             Some(tididi::OperationError::OverBudget),

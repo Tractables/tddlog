@@ -125,6 +125,43 @@ fn the_well_founded_fixpoint_and_the_links_count_as_their_own() {
 }
 
 #[test]
+fn a_link_selected_on_its_copy_is_stored_as_itself() {
+    // Projected, each link of a loop over its steps lives on a scope whose
+    // root has the copy as a child, and is built by selecting on the copy
+    // from its atom's formula and that formula's negation, both of which
+    // the selection reads whichever it builds. Stored as itself under the
+    // dual too, a link observed true is not negated in the query phase.
+    // s(12) is 0.99995^12, by hand (tests/regress/bound_end_chain.pl).
+    let source = include_str!("../regress/bound_end_chain.pl");
+    let gp = common::ground(source, Rows::Classes, true);
+    assert!(!gp.encoding.indicators.is_empty());
+    let strategy = Strategy::Trial(Kind::Families { search: false });
+    let run = tddlog::solve_ground(
+        gp,
+        &common::options(strategy, tddlog::Projection::default()),
+    )
+    .unwrap();
+    assert_eq!(run.kind.formulation(), Formulation::Dual);
+    common::assert_probabilities(
+        "families",
+        run.results.as_ref().unwrap(),
+        &[0.99995f64.powi(12)],
+        1e-12,
+    );
+    assert!(
+        run.stats.negations.of(NegationSource::Lambda).calls > 0,
+        "{:?}",
+        calls(&run)
+    );
+    assert_eq!(
+        run.query_sizes.negations.of(NegationSource::Evidence).calls,
+        0,
+        "{:?}",
+        calls(&run)
+    );
+}
+
+#[test]
 fn rows_of_facts_alone_negate_nothing() {
     // p's rows share a and c, which the factoring took as one term
     // ¬(a ∧ c ∧ (b ∨ d)): two negations. As clauses, none. q, of one
