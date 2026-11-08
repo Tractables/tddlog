@@ -245,6 +245,9 @@ pub(crate) fn name(
     if !reads.bits.sets.is_empty() {
         drop_unread_values(&mut gp, &reads, &copies)?;
     }
+    // The rules, the links' atoms and the evidence grew by doubling as
+    // they were written, and the compile holds the rewrite to its end.
+    gp.shrink_to_fit();
     let units = copies.keys.iter().map(|&(_, u, _)| u).collect();
     Ok((gp, units))
 }
