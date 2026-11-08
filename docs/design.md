@@ -1735,10 +1735,11 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   On programs with something to order it is `auto`'s first trial where
   the program is built gate by gate (`built_of_gates`): a quarter of its
   rules read derived atoms alone, or half its derived atoms are read by
-  one rule each, whatever their own rules. The exported circuits are; the
-  networks, grids and graphs, whose rules each read a fact, are not. It
-  is the last trial elsewhere, where it takes its share of the work until
-  another trial wins.
+  one rule each, whatever their own rules, and `families:0`'s rewrite
+  ties no table by clauses. The exported circuits are; the networks,
+  grids and graphs, whose rules each read a fact or whose tables
+  partition their inputs, are not. It is the last trial elsewhere, where
+  it takes its share of the work until another trial wins.
 
   Where the order has narrow cuts, `program` and `program:fanin` name the
   derived atoms that cross them (`vtree/naming.rs`). The width of the
@@ -1873,7 +1874,7 @@ A program gets these trials (`candidates`), in order:
 | `nothing_to_order`, every rule reads facts alone | `td`, `dynamic`, `closed` |
 | `nothing_to_order`, otherwise | `dynamic`, `closed`, `td` |
 | a CNF over facts the conditioning copied | `td`, `closed` |
-| otherwise | `program` and `program:fanin` where built gate by gate, `families:0`, `closed`, `td` where not, `families`, `program` where not |
+| otherwise | `program` and `program:fanin` where built gate by gate with no table tied by clauses, `families:0`, `closed`, `td` where not, `families`, `program` where not |
 
 The CNF over facts is the conditioning's (Grounding, step 9). `closed`
 comes before `families:0` where the program has `FEW_FACTS` facts or
@@ -1898,8 +1899,20 @@ inlined, so that a program and the ground program `tddlog --ground`
 prints of it get the same trials. The benchmark programs did, all but 5
 of the 449 whose two writings both come to this choice; whether the
 grounder had inlined views, the earlier test, gave the two writings
-different trials on 221 of them. Where it comes first,
-`program:fanin`, the facts in the order the gates read them, comes
+different trials on 221 of them. A network's tables that read their
+rows' classes (Grounding) are gates by that count too, a third to two
+fifths of the rules of the UAI networks BN_115 to BN_125, and what sets
+a network apart is a table whose rows partition their inputs, which
+`families:0`'s rewrite ties by clauses: 266 of the 268 benchmark networks
+built gate by gate have one, and 5 of the 270 writings of the 135
+circuits. `program` leads only where the rewrite ties none. The rewrite
+is `families:0`'s own, and `auto` asks it where the two orders part, at
+the first attempt that one would give another trial than the other
+(`run_within`): at once where `program` would lead, never where an
+earlier trial wins first, as `decision` does on the guarded circuits,
+whose rewrites take 5 to 9 s. Where it ties a table, the run goes on in
+the network's order, and `families:0` keeps the rewrite either way.
+Where it comes first, `program:fanin`, the facts in the order the gates read them, comes
 second. A front end that bit-blasts a program states the bits of each
 variable together and the variables in the source's order, the order
 Alea and Dice hand CUDD and their own diagrams. On circuits whose every

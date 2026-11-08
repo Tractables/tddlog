@@ -81,7 +81,7 @@ use tididi::limits::{LimitConfig, StopAt, StopRules};
 use policy::{
     FAMILIES_WEIGHT, FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR,
     bet_left, candidates, horizon, overspent_estimate, projected_from, search_due, search_rent,
-    weight,
+    ties_tables_by_clauses, weight,
 };
 use trial::Trial;
 
@@ -123,10 +123,10 @@ pub(crate) fn families_estimate(gp: &GroundProgram, search: bool) -> Option<f64>
     families(gp, search)?.pairs()
 }
 
-/// Whether `auto`'s first trial on `gp` is `families:0` ([`candidates`]),
-/// which [`run`] can be handed ready.
+/// Whether `auto`'s first trial on `gp` is `families:0` whatever its
+/// rewrite ([`candidates`]), which [`run`] can be handed ready.
 pub(crate) fn lays_families_first(gp: &GroundProgram) -> bool {
-    candidates(gp).first() == Some(&Kind::Families { search: false })
+    candidates(gp, false).first() == Some(&Kind::Families { search: false })
 }
 
 /// `auto` on `original`, as grounded, its trials the [`candidates`], each
@@ -134,18 +134,25 @@ pub(crate) fn lays_families_first(gp: &GroundProgram) -> bool {
 /// `original`, or `ready`'s `written` or `conditioned`, each eliminated
 /// once for all of them, [`Kind::eliminated`]); the `families:0` trial
 /// takes `ready`'s `laid` as its own, and where `ready`'s `conditioned`
-/// [`decides`], `decision` is the first trial.
+/// [`decides`], `decision` is the first trial. Where the order turns on
+/// whether `families:0`'s rewrite ties tables, it is the order where it
+/// does not, and [`run_within`] is handed the other.
 pub(crate) fn run(
     original: GroundProgram,
     projection: Projection,
     ready: Ready,
     traced: bool,
 ) -> Result<Run, Error> {
-    let mut trials = candidates(&original);
     let decision = ready.decides(&original);
-    if decision {
-        trials.insert(0, Kind::Decision);
-    }
+    let order = |tables| {
+        let mut trials = candidates(&original, tables);
+        if decision {
+            trials.insert(0, Kind::Decision);
+        }
+        trials
+    };
+    let (trials, tabled) = (order(false), order(true));
+    let tabled = (tabled != trials).then_some(tabled);
     let Ready {
         written,
         conditioned,
@@ -159,6 +166,7 @@ pub(crate) fn run(
             decision,
         },
         trials,
+        tabled,
         projection,
         Watch::default(),
         laid,
@@ -525,11 +533,34 @@ fn book_layout(t: &mut Trial, layout: &mut vtree::Layout, seconds: f64, ledger: 
     ));
 }
 
+/// The weight and first target of each of `trials` that has spent nothing:
+/// its weight times `first_work`. `families:0`'s weight turns on its
+/// rewrite, which it is given before its first attempt ([`rewrite`]),
+/// where `ready` did not lay it out. Where `program` goes first, it and the
+/// two trials after it start with short turns ([`LEAD_SHARE`]), so that
+/// none spends much more than its share.
+fn first_targets(trials: &mut [Trial], first_work: u64) {
+    let program_leads = matches!(trials.first().map(|t| t.kind), Some(Kind::Program { .. }));
+    for (k, t) in trials.iter_mut().enumerate().filter(|(_, t)| t.spent == 0) {
+        t.weight = weight(t);
+        t.target = first_work.saturating_mul(t.weight);
+        if program_leads && k < 3 {
+            t.target /= LEAD_SHARE;
+        }
+    }
+}
+
 /// [`run`] over the given trials from `watch`, each trial's compile
-/// recording its components for a trace of the run where `traced`.
+/// recording its components for a trace of the run where `traced`. Where
+/// `tabled` is given, `trials` is the order where `families:0`'s rewrite
+/// ties no table by clauses and `tabled` the order where it does
+/// ([`candidates`]): the first attempt that the two would give different
+/// trials asks the rewrite, which `families:0` keeps, and goes on in the
+/// order it calls for.
 fn run_within(
     programs: Programs,
     trials: Vec<Kind>,
+    mut tabled: Option<Vec<Kind>>,
     projection: Projection,
     watch: Watch,
     laid: Option<Box<Prepared>>,
@@ -549,13 +580,11 @@ fn run_within(
         written: programs.written.map(eliminated),
         ..programs
     };
-    let mut trials: Vec<_> = trials
-        .into_iter()
-        .map(|kind| Trial {
-            evaluation: crate::evaluation::Evaluation::new(traced),
-            ..Trial::new(kind)
-        })
-        .collect();
+    let new_trial = |kind| Trial {
+        evaluation: crate::evaluation::Evaluation::new(traced),
+        ..Trial::new(kind)
+    };
+    let mut trials: Vec<_> = trials.into_iter().map(&new_trial).collect();
     let mut ledger = Ledger {
         rewrite_seconds: start.elapsed().as_secs_f64(),
         ..Ledger::default()
@@ -576,22 +605,10 @@ fn run_within(
         (t.ground, t.deps, t.built) = (Some(ground), Some(deps), Some(layout));
     }
     let first_work = (first_pairs.max(1) as u64).saturating_mul(WORK_PER_PAIR);
-    let Some(lead) = trials.first().map(|t| t.kind) else {
+    if trials.is_empty() {
         return Err(Error::Vtree("auto has no trial left".into()));
-    };
-    // `families:0`'s weight turns on its rewrite, which it is given before
-    // its first attempt ([`rewrite`]), where `ready` did not lay it out.
-    for t in &mut trials {
-        t.weight = weight(t);
-        t.target = first_work.saturating_mul(t.weight);
     }
-    // Where `program` goes first, it and the two trials after it start
-    // with short turns, so that none spends much more than its share.
-    if matches!(lead, Kind::Program { .. }) {
-        for t in trials.iter_mut().take(3) {
-            t.target /= LEAD_SHARE;
-        }
-    }
+    first_targets(&mut trials, first_work);
     // Whether the searched families layout has been weighed against the
     // laid one ([`weigh_searched`]); once a run.
     let mut weighed = false;
@@ -638,6 +655,34 @@ fn run_within(
             );
             return Err(error);
         };
+        // The two orders part here: `families:0`'s rewrite, which its
+        // trial keeps, says which goes on ([`candidates`]).
+        if let Some(order) = tabled.take_if(|order| order.get(i) != Some(&trials[i].kind)) {
+            let laid = trials
+                .iter()
+                .position(|t| t.kind == (Kind::Families { search: false }));
+            let tables = laid.is_some_and(|j| {
+                rewrite(&mut trials, j, &programs, &mut ledger)
+                    && ties_tables_by_clauses(&trials[j])
+            });
+            ledger.notes.push(format!(
+                "turn: families:0 indicators=all ties {}tables by clauses, asked at {}'s first attempt",
+                if tables { "" } else { "no " },
+                trials[i].kind
+            ));
+            if tables {
+                let mut before = std::mem::take(&mut trials);
+                trials = order
+                    .into_iter()
+                    .map(|kind| match before.iter().position(|t| t.kind == kind) {
+                        Some(k) => before.swap_remove(k),
+                        None => new_trial(kind),
+                    })
+                    .collect();
+                first_targets(&mut trials, first_work);
+                continue;
+            }
+        }
         if !weighed && trials[i].kind == (Kind::Families { search: true }) {
             weighed = true;
             weigh_searched(&mut trials, &programs, &mut ledger)?;

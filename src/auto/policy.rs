@@ -319,7 +319,21 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// rewrite `dynamic` takes less work than `closed` on the random graphs
 /// and bidirectional grids, and stays the one trial of a recursive
 /// component.
-pub(super) fn candidates(gp: &GroundProgram) -> Vec<Kind> {
+///
+/// A network's rules are gates by that count too where its tables read
+/// their rows' classes (`crate::ground::classes`): a third to two fifths
+/// of the rules of the UAI networks BN_115 to BN_125 read derived atoms
+/// alone. What a network has and a circuit has not is a table whose rows
+/// partition their inputs, which `families:0`'s rewrite ties by clauses
+/// ([`ties_tables_by_clauses`]): 266 of the 268 benchmark networks built
+/// gate by gate have one, and 5 of the 270 writings of the 135 circuits,
+/// as written and as ground. `tables` is whether it does,
+/// and `program` leads only where it does not. The rewrite is the
+/// `families:0` trial's own, and `auto` asks it where the two orders part,
+/// at the first attempt that one of them would give another trial than
+/// the other ([`super::run_within`]): where an earlier trial wins first,
+/// as `decision` does on the guarded circuits, the rewrite is not built.
+pub(super) fn candidates(gp: &GroundProgram, tables: bool) -> Vec<Kind> {
     if shape::nothing_to_order(gp) {
         let by_head = gp.rules_by_head();
         let recursive = ground::deps::derived_sccs(gp, &by_head)
@@ -344,7 +358,7 @@ pub(super) fn candidates(gp: &GroundProgram) -> Vec<Kind> {
         } else {
             vec![laid, Kind::Closed, Kind::Td, searched]
         };
-    if built_of_gates(gp) {
+    if built_of_gates(gp) && !tables {
         trials.retain(|&kind| kind != Kind::Td);
         trials.splice(
             0..0,
