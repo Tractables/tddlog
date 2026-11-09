@@ -493,9 +493,10 @@ fork of neuppl/roulette.
 ## Building and testing
 
 From a checkout, `cargo build --release` builds `target/release/tddlog`,
-and `cargo test` checks it against ProbLog's answers on the examples and
-on ProbLog's own system tests. [CONTRIBUTING.md](.github/CONTRIBUTING.md) lists
-the checks a change runs.
+and `cargo test --profile quick` checks it against ProbLog's answers on
+the examples and on ProbLog's own system tests, as CI does; a plain
+`cargo test` builds without optimization and takes about an hour.
+[CONTRIBUTING.md](.github/CONTRIBUTING.md) lists the checks a change runs.
 
 ## Citing
 
