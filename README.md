@@ -51,17 +51,26 @@ exact inference system native to it, in less total time
 - **Command line:** `cargo install --locked --git https://github.com/Tractables/tddlog tddlog`.
 - **Rust:** `tddlog = { git = "https://github.com/Tractables/tddlog" }` under
   `[dependencies]`. See the [Rust API].
-- **Python:** build the package from a checkout. See the
+- **Python:** `pip install "git+https://github.com/Tractables/tddlog#subdirectory=bindings/python"`
+  builds the package from the repository. See the
   [Python README](bindings/python/README.md).
 - **C and C++:** build the CMake package from a checkout. See the
   [C README](bindings/c/README.md).
 - **Browser:** the [playground] runs tddlog in the tab, with nothing to install.
 
-A build from source needs Rust 1.88 or newer and a C++ compiler (gcc 12
-or newer, or a recent clang) for the tree-decomposition solver that goatd
-vendors.
+A build from source needs Rust 1.88 or newer ([rustup](https://rustup.rs)
+installs it) and a C++ compiler (gcc 12 or newer, or a recent clang) for
+the tree-decomposition solver that goatd vendors. It takes a few minutes.
 
 ## Getting started
+
+The commands below run in a checkout of the repository, whose
+`examples/` holds the programs they read:
+
+```sh
+git clone --depth 1 https://github.com/Tractables/tddlog
+cd tddlog
+```
 
 A program states probabilistic facts, rules, evidence and queries.
 This is `examples/alarm.pl`:

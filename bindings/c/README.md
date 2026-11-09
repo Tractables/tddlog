@@ -36,7 +36,7 @@ checkout, with Rust 1.88 or newer, a C++20 compiler for the
 tree-decomposition solvers goatd vendors, a C compiler and CMake:
 
 ```sh
-git clone https://github.com/Tractables/tddlog
+git clone --depth 1 https://github.com/Tractables/tddlog
 cd tddlog
 cmake -S bindings/c -B build/c -DCMAKE_BUILD_TYPE=Release
 cmake --build build/c --config Release

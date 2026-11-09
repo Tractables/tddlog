@@ -22,13 +22,22 @@ the [C library](https://tractables.github.io/tddlog/c/).
 
 ## Install
 
-tddlog is not on PyPI yet. Build it from a checkout, with Python 3.10 or
-later, Rust 1.88 or newer and a C++20 compiler. `pyproject.toml` cannot
-reference files above its own directory, so the license and the notices
-are copied in first:
+tddlog is not on PyPI yet. pip builds it from the repository, with
+Python 3.10 or later, Rust 1.88 or newer ([rustup](https://rustup.rs)
+installs it) and a C++20 compiler (gcc 12 or newer, or a recent clang).
+The build takes a few minutes. In a virtual environment:
 
 ```sh
-git clone https://github.com/Tractables/tddlog
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install "git+https://github.com/Tractables/tddlog#subdirectory=bindings/python"
+```
+
+From a checkout, the license and the notices are copied in first, since
+`pyproject.toml` cannot reference files above its own directory:
+
+```sh
+git clone --depth 1 https://github.com/Tractables/tddlog
 cd tddlog
 mkdir -p bindings/python/notices
 cp LICENSE NOTICE THIRD-PARTY.md bindings/python/notices/
@@ -102,8 +111,9 @@ prints. `solve` releases the interpreter lock, so threads can solve
 several programs at once.
 
 The [API reference](https://tractables.github.io/tddlog/python/reference.html)
-documents each function and exception, `examples/` holds this program
-and one built from Python data, and the
+documents each function and exception, `bindings/python/examples/` holds
+this program and one built from Python data
+(`python bindings/python/examples/alarm.py` in a checkout), and the
 [guide](https://tractables.github.io/tddlog/guide/) describes the
 language, with worked examples that open in the
 [playground](https://tractables.github.io/tddlog/playground/).
@@ -114,7 +124,7 @@ From the checkout, after the copy above, build the extension in place
 and run its tests:
 
 ```sh
-python -m venv .venv
+python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install 'maturin>=1.9,<2' pytest
 maturin develop --release --manifest-path bindings/python/Cargo.toml

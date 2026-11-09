@@ -76,8 +76,8 @@ playground.</p>
   <p>tddlog is an exact inference engine for probabilistic Datalog. It
   reads a probabilistic logic program written in ProbLog, or a Bayesian
   or Markov network, and prints the probability of each of its queries
-  given its evidence; translators reduce Dice programs and LPADs to
-  ProbLog (<a href="#networks">below</a>). The answers are exact:
+  given its evidence; it also reads Dice programs, Circulette netlists
+  and LPADs (<a href="#networks">below</a>). The answers are exact:
   tddlog grounds the program to probabilistic Datalog, compiles it into
   tree decision diagrams and counts the queries on them.</p>
   <p>There are three ways to run it:</p>
@@ -88,19 +88,21 @@ playground.</p>
     repository and installs it in its <code>bin</code> directory
     (<code>$HOME/.cargo/bin</code>):
 <pre data-lang="shell">cargo install --locked --git https://github.com/Tractables/tddlog tddlog</pre>
-    The build needs Rust 1.88 or newer and a C++ compiler (gcc 12 or
-    newer, or a recent clang) for the tree-decomposition solver that the
-    goatd library vendors. <code>--locked</code> builds with the versions
+    The build needs Rust 1.88 or newer (<a href="https://rustup.rs">rustup</a>
+    installs it) and a C++ compiler (gcc 12 or newer, or a recent clang)
+    for the tree-decomposition solver that the goatd library vendors, and
+    takes a few minutes. <code>--locked</code> builds with the versions
     of the dependencies that the repository's tests ran with. In a
     checkout of the repository, <code>cargo build --release</code> builds
     the same program as <code>target/release/tddlog</code>.</li>
-    <li>From Python: build the package from a checkout, as the
-    <a href="../python/">Python page</a> shows, then
-    <code>tddlog.solve(program)</code>
+    <li>From Python: pip builds the package from the repository, with the
+    same compilers, as the <a href="../python/">Python page</a> shows:
+<pre data-lang="shell">python -m pip install "git+https://github.com/Tractables/tddlog#subdirectory=bindings/python"</pre>
+    then <code>tddlog.solve(program)</code>
     (<a href="#library">below</a>).</li>
   </ul>
   <p>The commands below run in a checkout of the repository
-  (<code>git clone https://github.com/Tractables/tddlog</code>), whose
+  (<code>git clone --depth 1 https://github.com/Tractables/tddlog</code>), whose
   <code>examples/</code> holds the programs they read.</p>
 
   <h3 id="first-program">A first program</h3>
@@ -797,8 +799,9 @@ solution = tddlog.solve(open("examples/alarm.pl").read(), evidence_probability=T
 for query, probability in solution.answers.items():
     print(f"{query}: {probability:.6f}")
 print(f"P(e) = {solution.evidence_probability:.6f}")</pre>
-  <p>The package is not on PyPI yet: it builds from a checkout, with
-  Python 3.10 or later. <code>solve</code> takes the
+  <p>The package is not on PyPI yet: pip builds it from the repository
+  (<a href="#getting-started">above</a>), with Python 3.10 or later.
+  <code>solve</code> takes the
   options as keywords (<code>format</code>, <code>evidence</code>,
   <code>vtree</code>, <code>evidence_probability</code>,
   <code>queries</code>, and <code>arguments</code>, a list of the
