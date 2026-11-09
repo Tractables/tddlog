@@ -278,6 +278,8 @@ ProbLog's and cplint's examples.
 - On Biomine, ProbLog's own benchmark, each program the K most probable
   paths from Alzheimer's disease to four genes, K from 1 to 64, tddlog
   answers all 10 programs and ProbLog 4.
+- No native system answers a program tddlog does not, or is twice as
+  fast on one where tddlog takes 1 s or more.
 
 ### Probabilistic databases
 
@@ -305,8 +307,8 @@ paths of two edges in random graphs.
 | Scallop | 30 | 90 h | 20 min | 2480× |
 <!-- /results:database-queries-table -->
 
-- Where others win: ProbLog on the paths of two edges in random graphs
-  of 14 and 17 nodes, in 4.8 s and 39 s against tddlog's 18 s and 182 s.
+- No native system answers a query tddlog does not, or is twice as fast
+  on one where tddlog takes 1 s or more.
 
 ### Bayesian networks
 
@@ -338,10 +340,13 @@ blockmap, Mastermind and fs networks, and the classic networks).
 PSouffle was given 11 of the networks and answers 6.
 <!-- /results:bayesian-networks-table -->
 
-- Where others win: the networks named BN of Ihler's collection. tddlog
-  runs out of time on seven that pyAgrum or Merlin answers in 0.3 to 2.1 s,
-  and on 20 more Merlin, pyAgrum or TensorInference.jl is at least twice
-  as fast, up to 0.3 s against tddlog's 204 s.
+- Where others win: every network tool answers uai_bn_125 of Ihler's
+  collection in 1.3 to 18 s, and tddlog runs out of time. On 37 more a
+  native system is at least twice as fast where tddlog takes 1 s or more:
+  Merlin, pyAgrum or TensorInference.jl on 22 of Ihler's BN networks, up
+  to 0.3 s against tddlog's 161 s; TensorInference.jl or pyAgrum on
+  bnlearn's barley, mildew and diabetes; Alea.jl on ten Mastermind
+  networks.
 
 ### Markov networks
 
@@ -370,10 +375,12 @@ and pedigree and diagnosis networks.
 | pgmpy | 117 | 24 h | 48 min | 32× |
 <!-- /results:markov-networks-table -->
 
-- Where others win: six partition functions of the UAI 2022 final set,
-  five of them protein networks, and Ihler's pedigree50 run out of time
-  or memory. TensorInference.jl answers the six in 12 to 45 s and
-  pedigree50 in 133 s.
+- Where others win: TensorInference.jl answers Ihler's pedigree50 in
+  133 s, and tddlog runs out of memory. On 35 more a native system is at
+  least twice as fast where tddlog takes 1 s or more: TensorInference.jl
+  on nine protein networks of the UAI 2022 final set, up to 19 s against
+  tddlog's 268 s, on bwt3ac and on pedigree30; pgmpy or
+  TensorInference.jl on 22 object detection networks; Merlin on two DBNs.
 
 ### Probabilistic functional programs
 
@@ -409,6 +416,13 @@ circuits are [below](#circuits) too.
 | 5 others: Genfer, WebPPL, Psi, noDice, SPPL | 57 to 80 | over 20 min each | 1.8 s to 1.5 h | at least 52× |
 <!-- /results:functional-programs-table -->
 
+- Where others win: WebPPL answers simpleCaesar at k = 100000 in 279 s,
+  and tddlog runs out of memory. On 20 more a native system is at least
+  twice as fast where tddlog takes 1 s or more: Pluck on pmc1, up to 13 s
+  against tddlog's 184 s; WebPPL on the Caesar ciphers and gcd; Geni and
+  Alea.jl on the bounded retransmission protocol; Dice on the ladder and
+  the HMM joints; Alea.jl on three of Cao et al.'s integer programs.
+
 ### All programs
 
 <p align="center">
@@ -434,13 +448,14 @@ it is given, natively or through a translation.
 | 19 others: PITA, ProbLog, pgmpy, aspmc, Alea.jl, Roulette, Dice, Storm, Pluck, noDice, PSouffle, PRISM, ProvSQL, Geni, WebPPL, Genfer, SPPL, Psi, Scallop | 119 to 724 | over 9.6 h each | 21 min to 4.7 h | at least 26× |
 <!-- /results:all-programs-table -->
 
-- Where others win: pgmpy answers grid25, a logic program's path query
-  across a 25 by 25 grid of probabilistic edges, in 144 s on the
-  program's ground network, and tddlog runs out of time. PRISM and Storm
-  answer Geni's four largest router networks (PRISM alone the largest,
-  48 routers), which tddlog does not, by
-  value iteration over decision diagrams in double precision; their
-  exact engines time out from 18 to 20 routers.
+- Where others win, beyond the native systems above, on programs
+  translated into their languages: Storm answers the largest sizes of
+  Roulette's diamond, ladder, hardware and motivating loops, of noDice's
+  coupon collector and, with PRISM, of Geni's weather factory, where
+  tddlog runs out of time or memory. pgmpy answers grid25, a path query
+  across a 25 by 25 grid, in 150 s on its ground network; libDAI, pgmpy
+  and Merlin the database query liftsep11 in 7 to 26 s; aspmc the Markov
+  network or_chain_156 in 285 s.
 
 ### Circuits
 
