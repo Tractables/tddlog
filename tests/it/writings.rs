@@ -1259,3 +1259,67 @@ fn a_step_read_from_successor_facts_answers_as_one_computed() {
         }
     }
 }
+
+/// The diamond loop, `n` diamonds in a row: each step routes the signal
+/// one way with probability 0.5 and loses it the other way with
+/// probability 0.0001, so that it arrives with probability 0.99995^n. Its
+/// recursion is written from the start over the steps, as the Dice
+/// paper's port does, or from either end with a comparison that bounds
+/// the step, against a constant or a bound passed on.
+fn diamonds(n: usize, rules: &str, query: &str) -> String {
+    format!(
+        "0.5::route(T) :- step(T).\n0.0001::drop(T) :- step(T).\n\
+         step(T) :- between(1, {n}, T1), T is T1 - 1.\n{rules}\nquery({query}).\n"
+    )
+}
+
+/// Each writing answers 0.99995^n past the nesting a top-down resolution
+/// allows (1000 calls): the rewrite reads a step that a comparison bounds
+/// as a level, whichever way it moves, and the demand comes from its
+/// fixpoint, as for the port that counts up from `step(T)`.
+#[test]
+fn a_loop_written_from_either_end_answers_as_written_from_its_start() {
+    let n = 1500;
+    let up_to_a_constant = format!(
+        "s({n}).\ns(T) :- {n} > T, J is T + 1, s(J), route(T).\n\
+         s(T) :- {n} > T, J is T + 1, s(J), \\+ route(T), \\+ drop(T)."
+    );
+    let writings = [
+        (
+            "s(0).\ns(T1) :- step(T), T1 is T + 1, s(T), route(T).\n\
+             s(T1) :- step(T), T1 is T + 1, s(T), \\+ route(T), \\+ drop(T).",
+            format!("s({n})"),
+        ),
+        (
+            "s(0).\ns(T) :- T > 0, J is T - 1, s(J), route(J).\n\
+             s(T) :- T > 0, J is T - 1, s(J), \\+ route(J), \\+ drop(J).",
+            format!("s({n})"),
+        ),
+        (
+            "s(L, L).\ns(T, L) :- J is T - 1, J >= L, s(J, L), route(J).\n\
+             s(T, L) :- J is T - 1, J >= L, s(J, L), \\+ route(J), \\+ drop(J).",
+            format!("s({n},0)"),
+        ),
+        (up_to_a_constant.as_str(), "s(0)".to_string()),
+        (
+            "s(N, N).\ns(T, N) :- T < N, J is T + 1, s(J, N), route(T).\n\
+             s(T, N) :- T < N, J is T + 1, s(J, N), \\+ route(T), \\+ drop(T).",
+            format!("s(0,{n})"),
+        ),
+    ];
+    let p = 0.99995f64.powi(n as i32);
+    for (rules, query) in &writings {
+        let source = diamonds(n, rules, query);
+        let run = common::run(
+            &source,
+            &common::options(Strategy::Auto, Projection::default()),
+        )
+        .unwrap_or_else(|e| panic!("{query}, {rules}: {e}"));
+        assert_answers(
+            rules,
+            &run.results.expect("no evidence"),
+            &[(query.clone(), p)],
+            1e-9,
+        );
+    }
+}

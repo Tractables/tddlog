@@ -334,7 +334,9 @@ pub(crate) struct Rewritten {
 /// its negations read, as the time index `S is T - 1` under `time(T)` in
 /// examples/larger/robot.pl; so does one that counts along a level, as
 /// `K is J + 1` in examples/larger/mastermind.pl, where `count(X, C, P, K)`
-/// reads `count(X, C, Q, J)` with `Q is P + 1` under `peg(P)`. So does a
+/// reads `count(X, C, Q, J)` with `Q is P + 1` under `peg(P)`, and one
+/// whose level a comparison bounds before each read, as `T > 0, J is T -
+/// 1, s(J)` counts down from a query `s(1000)`. So does a
 /// program that builds no values, whose values are its constants:
 /// PSouffle's taint analyses, whose rewrite puts a negated predicate's
 /// demand inside the points-to recursion, ground from it in about a second
@@ -445,11 +447,14 @@ fn negation_bounds(norm: &NormProgram, given: &FxHashSet<Sig>) -> bool {
 /// Whether the rules `rules` of a recursive component, with the variables
 /// `outside` of each whose values atoms outside the component give, read
 /// the component's atoms (`inside`) at a level strictly beyond their
-/// heads', one way for all: an argument position whose variable in the
-/// head of each rule that reads such an atom is in its `outside`, and in
-/// each such atom is the head's plus or minus a constant, as an `is` of
-/// the body sets it (`Q is P + 1` under `peg(P)`). A derivation then
-/// passes each level once at most, and the levels are finitely many.
+/// heads', one way for all: an argument position whose variable in each
+/// such atom is the head's plus or minus a constant, as an `is` of the
+/// body sets it, and whose values are finitely many. They are where the
+/// head's variable is in its `outside` (`Q is P + 1` under `peg(P)`), or
+/// where a comparison before the read bounds the level the way it moves
+/// ([`bounded`]: `T > 0, J is T - 1, s(J)` down from a query `s(1000)`).
+/// A derivation then passes each level once at most, and a demand
+/// reaches finitely many.
 fn levelled(
     rules: &[&Clause],
     outside: &[FxHashSet<String>],
@@ -463,11 +468,12 @@ fn levelled(
     (0..arity).any(|i| {
         let mut way = 0;
         rules.iter().zip(outside).all(|(r, o)| {
-            let read: Vec<&Atom> = r
+            let read: Vec<(usize, &Atom)> = r
                 .body
                 .iter()
-                .filter_map(|l| match l {
-                    Literal::Pos(a) | Literal::Neg(a) if inside(a) => Some(a),
+                .enumerate()
+                .filter_map(|(at, l)| match l {
+                    Literal::Pos(a) | Literal::Neg(a) if inside(a) => Some((at, a)),
                     _ => None,
                 })
                 .collect();
@@ -477,20 +483,87 @@ fn levelled(
             let Term::Var(vh) = &r.heads[0].atom.args[i] else {
                 return false;
             };
-            o.contains(vh)
-                && read.iter().all(|a| {
-                    let Term::Var(vb) = &a.args[i] else {
-                        return false;
-                    };
-                    match step(&r.body, vh, vb).map(i64::signum) {
-                        Some(s) if way == 0 || s == way => {
-                            way = s;
-                            true
-                        }
-                        _ => false,
+            read.iter().all(|&(at, a)| {
+                let Term::Var(vb) = &a.args[i] else {
+                    return false;
+                };
+                match step(&r.body, vh, vb).map(i64::signum) {
+                    Some(s)
+                        if (way == 0 || s == way)
+                            && (o.contains(vh) || bounded(r, at, a, [vh, vb], s, &inside)) =>
+                    {
+                        way = s;
+                        true
                     }
-                })
+                    _ => false,
+                }
+            })
         })
+    })
+}
+
+/// Whether a comparison of `rule` before its read `read` (the body up to
+/// `at`) bounds the level, `vh` in the head and `vb` in `read`, the way
+/// it moves (`way`: down where negative, up where positive), against a
+/// value that stays the same along the recursion: a constant, a variable
+/// an atom outside the component (not `inside`) binds before the read, or
+/// one the head passes on to `read` unchanged. `T > 0` or `0 =< J` bound a
+/// level down, `T < 100` or `T < N` in `s(T, N) :- T < N, J is T + 1,
+/// s(J, N)` one up.
+fn bounded(
+    rule: &Clause,
+    at: usize,
+    read: &Atom,
+    [vh, vb]: [&str; 2],
+    way: i64,
+    inside: &impl Fn(&Atom) -> bool,
+) -> bool {
+    use crate::syntax::CmpOp::{Ge, Gt, Le, Lt};
+    let head = &rule.heads[0].atom;
+    let before: FxHashSet<String> = rule.body[..at]
+        .iter()
+        .filter_map(|l| match l {
+            Literal::Pos(a) if !inside(a) => Some(a.vars()),
+            _ => None,
+        })
+        .flatten()
+        .collect();
+    let passed =
+        |v: &str| {
+            head.signature() == read.signature()
+                && head.args.iter().zip(&read.args).any(
+                    |(h, b)| matches!((h, b), (Term::Var(x), Term::Var(y)) if x == v && y == v),
+                )
+        };
+    let level = |t: &Term| matches!(t, Term::Var(v) if v == vh || v == vb);
+    let fixed = |t: &Term| {
+        t.vars()
+            .iter()
+            .all(|v| v != vh && v != vb && (before.contains(v) || passed(v)))
+    };
+    rule.body[..at].iter().any(|l| {
+        let Literal::Cmp(op, a, b) = l else {
+            return false;
+        };
+        // The comparison as `level op bound`.
+        let op = if level(a) && fixed(b) {
+            *op
+        } else if level(b) && fixed(a) {
+            match op {
+                Lt => Gt,
+                Le => Ge,
+                Gt => Lt,
+                Ge => Le,
+                _ => return false,
+            }
+        } else {
+            return false;
+        };
+        match op {
+            Gt | Ge => way < 0,
+            Lt | Le => way > 0,
+            _ => false,
+        }
     })
 }
 
@@ -1109,6 +1182,66 @@ mod tests {
             "peg(P) :- between(1, 3, P).\n0.5::hit(P) :- peg(P).\ncount(4, 0).\n\
              count(P, K) :- peg(P), Q is P + 1, count(Q, J), hit(P), K is J + 1.\n\
              count(P, K) :- peg(P), Q is P + 1, count(Q, K), \\+ hit(P).\nquery(count(1, _)).\n"
+        ));
+    }
+
+    /// A recursion whose level a comparison bounds before each read, the way
+    /// the level moves, is ground from its demand, down or up, against a
+    /// constant or a bound the recursion passes on: the diamond loop read
+    /// from its end (`s(T)` from `s(T - 1)`) or from its start, each step
+    /// a route or a negated route and drop. A comparison after the read,
+    /// one the wrong way, or one against the level itself bounds nothing,
+    /// and the program stays top-down.
+    #[test]
+    fn a_level_a_comparison_bounds_before_its_read_is_ground_from_its_demand() {
+        let top_down = |rules: &str, query: &str| {
+            let source = format!(
+                "0.5::route(T) :- step(T).\n0.0001::drop(T) :- step(T).\n\
+                 step(T) :- between(0, 9, T).\n{rules}\nquery({query}).\n"
+            );
+            let p = parse_program(&source).unwrap();
+            let (lowered, _) = crate::ground::terms::lower(&p).unwrap();
+            let n = normalize(&lowered, Default::default()).unwrap();
+            rewrite(&n).unwrap().top_down
+        };
+        // Down to a constant, and down to a bound passed on.
+        assert!(!top_down(
+            "s(0).\ns(T) :- T > 0, J is T - 1, s(J), route(J).\n\
+             s(T) :- T > 0, J is T - 1, s(J), \\+ route(J), \\+ drop(J).",
+            "s(10)"
+        ));
+        assert!(!top_down(
+            "s(L, L).\ns(T, L) :- J is T - 1, J >= L, s(J, L), route(J).\n\
+             s(T, L) :- J is T - 1, J >= L, s(J, L), \\+ route(J), \\+ drop(J).",
+            "s(10, 0)"
+        ));
+        // Up to a constant, and up to a bound passed on.
+        assert!(!top_down(
+            "s(10).\ns(T) :- 10 > T, J is T + 1, s(J), route(T).\n\
+             s(T) :- 10 > T, J is T + 1, s(J), \\+ route(T), \\+ drop(T).",
+            "s(0)"
+        ));
+        assert!(!top_down(
+            "s(N, N).\ns(T, N) :- T < N, J is T + 1, s(J, N), route(T).\n\
+             s(T, N) :- T < N, J is T + 1, s(J, N), \\+ route(T), \\+ drop(T).",
+            "s(0, 10)"
+        ));
+        // The comparison after the read, the wrong way, or against the
+        // level.
+        assert!(top_down(
+            "s(0).\ns(T) :- J is T - 1, s(J), T > 0, route(J).\n\
+             s(T) :- J is T - 1, s(J), T > 0, \\+ route(J), \\+ drop(J).",
+            "s(10)"
+        ));
+        assert!(top_down(
+            "s(0).\ns(T) :- T < 20, J is T - 1, s(J), route(J).\n\
+             s(T) :- T < 20, J is T - 1, s(J), \\+ route(J), \\+ drop(J).",
+            "s(10)"
+        ));
+        assert!(top_down(
+            "s(0).\ns(T) :- J is T - 1, T > J, s(J), route(J).\n\
+             s(T) :- J is T - 1, T > J, s(J), \\+ route(J), \\+ drop(J).",
+            "s(10)"
         ));
     }
 
