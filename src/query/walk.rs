@@ -39,9 +39,9 @@
 //! node brings in variables that a factor higher up also reads, which put
 //! off the two would have met first (1aie of the UAI 2022 PR set under
 //! `families:0`, 29 s with put-offs against 230 s without). So a summing
-//! walk puts items off, and `auto` starts it over once, putting nothing
-//! off, where it is refused memory or outgrows an index
-//! (`crate::evaluation::Evaluation::walk_again`): on the PR proteins under
+//! walk puts items off, and the query phase starts it over once,
+//! putting nothing off, where it is refused memory or outgrows an index
+//! (`crate::evaluation::Evaluation::run`): on the PR proteins under
 //! `families:0` at 29.59 GB, 1cxy, 1fas, 1nkd and 1svy were refused near
 //! the end of the walk with put-offs, and answer without (the root
 //! formulas of 2rta, 1vfy and 1a7w held 4.85e9, 2.79e9 and 586 M pairs

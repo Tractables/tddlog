@@ -18,7 +18,10 @@
 //! one further out, or none, counts that many, so that without
 //! projections the trials take equal shares for their weights, and a
 //! trial projected to finish soon takes its turns ahead of the others,
-//! by up to that many doublings. A compile notes its progress at half
+//! by up to that many doublings. An attempt that ends at its phase's last
+//! step, as the one before it did, measures no pace: the share of a phase
+//! moves there only when the phase finishes ([`Trial::record_progress`]).
+//! A compile notes its progress at half
 //! its first turn's target ([`tp::Horizon`]), so that the pace of that
 //! turn's second half projects it where it puts the compile's finish past
 //! the trial's next target ([`Trial::ahead`]). The attempt's watch, the largest formula
@@ -39,9 +42,13 @@
 //! stopped compile, and completed evidence conjunctions and query answers
 //! a stopped query phase. The first trial
 //! to finish answers. An evidence walk that sums out and is refused memory
-//! or outgrows an index starts over first, once, putting nothing off
-//! ([`crate::evaluation::Evaluation::walk_again`]); beyond that, memory
-//! goes to the trial that has spent the most:
+//! or outgrows an index starts over first, once, putting nothing off,
+//! within the attempt, which goes on in its turn
+//! ([`crate::evaluation::Evaluation::run`]): its trial keeps its place in
+//! the turns, where it lost it to trials far from their finish when the
+//! walk began again at a later turn (1rfs, whose walk outgrew an index at
+//! 9085 of 9086 steps). Beyond that, memory goes to the trial that has
+//! spent the most:
 //! refused it while other trials hold what their attempts built, and
 //! having spent more work than each of them, a trial takes it, once: what
 //! they hold is freed, each of them to begin its phase again at its next
@@ -736,19 +743,6 @@ fn run_within(
                 e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
             ) = error
             {
-                // A walk that sums out starts over first, once, putting
-                // nothing off (`query::walk`'s module doc).
-                if trials[i].evaluation.walk_again() {
-                    let t = &mut trials[i];
-                    t.progress.clear();
-                    ledger.notes.push(format!(
-                        "walked again: {} indicators={} putting nothing off ({} units): {e}",
-                        t.kind,
-                        t.kind.indicators_name(),
-                        t.spent
-                    ));
-                    continue;
-                }
                 // Memory refused goes to the trial refused it where it has
                 // spent more than each trial that holds any, once: what
                 // they built is freed, and it resumes at its next turn.
@@ -840,7 +834,13 @@ fn run_within(
 /// target of that weight, and so takes the next attempt, and `families:0`
 /// loses its weight, the bet now being on the searched layout (pedigree51,
 /// where `families:0` otherwise spent eight shares beside it;
-/// geni_router_24, where it spent them until it was refused memory).
+/// geni_router_24, where it spent them until it was refused memory). It
+/// keeps its target, its weighted turn counted as spent, so that the
+/// searched trial takes the next attempt whatever `families:0`'s
+/// projection: by its steps, `families:0` at 99% of its walk (pedigree37,
+/// 24 of 3492 steps left) looks as close as at 76% (bn_munin1, which took
+/// 1.8 G units more at its level, where the searched trial answers in
+/// 63 M).
 /// Where `families:0`'s rewrite ties no table by clauses the gap is the
 /// bet's evidence: on GeNI's routers, whose rewrite ties none, the
 /// searched layout wins, and at weight 1 the other trials' equal shares
@@ -963,6 +963,7 @@ fn attempt(
     let mut reached = None;
     let kept = t.kept.take();
     let settled = t.evaluation.settled_work();
+    let walked = t.evaluation.walked_again.is_some();
     let started = Instant::now();
     ledger.attempts += 1;
     let mut work = 0;
@@ -1016,6 +1017,16 @@ fn attempt(
     });
     if let Some(reached) = reached {
         t.built.as_mut().unwrap().vtree = reached;
+    }
+    // A walk that started over in the attempt measures its pace from where
+    // it began ([`Trial::began`]).
+    if let Some((refusal, dropped)) = t.evaluation.walked_again.filter(|_| !walked) {
+        t.progress.clear();
+        ledger.notes.push(format!(
+            "walked again: {} indicators={} putting nothing off, {dropped} units of walk dropped: {refusal}",
+            t.kind,
+            t.kind.indicators_name(),
+        ));
     }
     let seconds = started.elapsed().as_secs_f64();
     ledger.trial_seconds += seconds;

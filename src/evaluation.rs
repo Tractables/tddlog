@@ -33,9 +33,10 @@ pub(crate) struct Evaluation {
     /// budget ([`Self::settled_work`]): the work `auto` charges a trial's
     /// turns for it.
     pub(crate) query_work: u64,
-    /// Whether the query phase started over with a walk that puts nothing
-    /// off ([`Self::walk_again`]).
-    walked_again: bool,
+    /// Where the query phase started over with a walk that puts nothing
+    /// off ([`Self::walk_again`]): the refusal that stopped the walk
+    /// before, and the work units it had spent.
+    pub(crate) walked_again: Option<(tididi::OperationError, u64)>,
     /// Whether the compile records its components for a trace of the run
     /// ([`tp::CompileTrace`]).
     traced: bool,
@@ -168,10 +169,28 @@ impl Evaluation {
         let start = std::time::Instant::now();
         let work = backend.work_units();
         let settled = self.settled_work();
-        let result = self.query_phase(gp, backend, watch, settled);
+        // The work and the settling of the phase since it began, in this
+        // call.
+        let mut began = (work, settled);
+        let since = |e: &Self, (work, settled): (u64, u64)| {
+            (backend.work_units() - work).saturating_sub(e.settled_work() - settled)
+        };
+        let mut result = self.query_phase(gp, backend, watch, settled);
+        // A walk refused memory or an index starts over within the call,
+        // once, putting nothing off: the call goes on, within its turn, as
+        // if that walk had not begun.
+        if let Err(tp::CompileError::Tdd(
+            e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
+        )) = result
+        {
+            let dropped = self.query_work + since(self, began);
+            if self.walk_again(e, dropped) {
+                began = (backend.work_units(), self.settled_work());
+                result = self.query_phase(gp, backend, watch, settled);
+            }
+        }
         self.query_seconds += start.elapsed().as_secs_f64();
-        self.query_work +=
-            (backend.work_units() - work).saturating_sub(self.settled_work() - settled);
+        self.query_work += since(self, began);
         let (results, mut sizes) = result?;
         // Under a watch the phase may stop and go on in a later call, and
         // its work units are not added up across calls.
@@ -216,7 +235,7 @@ impl Evaluation {
         let compiled = self.compiled.as_mut().unwrap();
         let query = self.query.get_or_insert_with(|| {
             let query = query::QueryEvaluation::new(gp, backend, compiled);
-            if self.walked_again {
+            if self.walked_again.is_some() {
                 query.putting_nothing_off()
             } else {
                 query
@@ -231,15 +250,16 @@ impl Evaluation {
     /// Starts the query phase over, once, with an evidence walk that puts
     /// nothing off, where its walk sums out, has put items off and holds
     /// no formula taken from the compile (`query::walk`'s module doc):
-    /// `auto` does so for a trial whose walk was refused memory or outgrew
-    /// an index. What the walk built is dropped. Whether it did.
-    pub(crate) fn walk_again(&mut self) -> bool {
+    /// [`Self::run`] does so where the walk, having spent `dropped` units,
+    /// was refused memory or outgrew an index, `refusal`. What the walk
+    /// built is dropped. Whether it did.
+    fn walk_again(&mut self, refusal: tididi::OperationError, dropped: u64) -> bool {
         if !self.query.as_ref().is_some_and(|q| q.walks_again()) {
             return false;
         }
         self.query = None;
         self.query_work = 0;
-        self.walked_again = true;
+        self.walked_again = Some((refusal, dropped));
         true
     }
 
@@ -255,18 +275,19 @@ mod tests {
     use crate::GroundOptions;
     use crate::tp::{CompileError, Projection, TddBackend};
     use crate::vtree::Kind;
+    use tididi::OperationError;
 
     #[test]
     fn a_summing_walk_starts_over_putting_nothing_off() {
         // Two naive Bayes models of 40 features, each with its first half
         // observed and no query, so that only P(e) is wanted and the walk
         // sums out. On `closed`'s right-linear layout it puts observations
-        // along the spine off. Stopped by the watch once it has, as `auto`
-        // stops it where it is refused memory, it starts over putting
-        // nothing off, once, and answers the same P(e), hand computed from
-        // the program's rounded weights: each model's P(e) is 0.5 times
-        // the product of the observed p_i plus 0.5 times that of the q_i,
-        // and the models are independent.
+        // along the spine off. Stopped by the watch once it has, as a
+        // refusal of memory or of an index stops it ([`Evaluation::run`]),
+        // it starts over putting nothing off, once, and answers the same
+        // P(e), hand computed from the program's rounded weights: each
+        // model's P(e) is 0.5 times the product of the observed p_i plus
+        // 0.5 times that of the q_i, and the models are independent.
         let k = 40;
         let weight = |x: f64| format!("{x:.4}").parse::<f64>().unwrap();
         let p = |i: usize| weight(0.1 + 0.8 * (i as f64 / k as f64));
@@ -316,13 +337,16 @@ mod tests {
                 Err(CompileError::Oversize { .. } | CompileError::QueryOversize { .. }) => {}
                 other => panic!("at a watch of {watch} pairs: {other:?}"),
             }
-            if evaluation.walk_again() {
+            if evaluation.walk_again(OperationError::OverBudget, 0) {
                 break;
             }
             watch *= 2;
         }
         run(&mut evaluation, None).unwrap();
-        assert!(!evaluation.walk_again(), "the walk put items off again");
+        assert!(
+            !evaluation.walk_again(OperationError::OverBudget, 0),
+            "the walk put items off again"
+        );
         let got = evaluation
             .evidence_probability(&gp)
             .expect("nothing detached")

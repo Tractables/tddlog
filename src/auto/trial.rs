@@ -144,7 +144,13 @@ impl Trial {
     /// too ([`Evaluation::marked`]), so that the turn after its first has a
     /// doubling to be projected from. The first in its query phase drops
     /// those of its compile: the phase is projected from where it began
-    /// ([`Self::began`]).
+    /// ([`Self::began`]). An attempt that ended at the phase's last step,
+    /// as the record before it did, records nothing: the share of the
+    /// phase moves only when a step finishes, and at the last step only
+    /// when the phase does, so that the record says nothing the one before
+    /// it did not, and would put the pace of a trial one step from its
+    /// finish at none (1vfy, whose last join was stopped at 25.77 G of its
+    /// 25.8 G units, and which then waited behind trials far from theirs).
     pub(super) fn record_progress(&mut self) {
         self.record(
             self.evaluation.is_compiled(),
@@ -169,6 +175,11 @@ impl Trial {
         }
         if let Some((done, all)) = progress
             && all > 0
+            && !(done + 1 == all
+                && self
+                    .progress
+                    .last()
+                    .is_some_and(|&(_, d)| d == done as f64 / all as f64))
         {
             if self.progress.last().is_some_and(|&(t, _)| t == self.target) {
                 self.progress.pop();

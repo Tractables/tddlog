@@ -2087,7 +2087,19 @@ work the stop lost: once after a turn that ended at a step, and where one
 step outweighs a turn, so that each try of it has at least twice the work
 of the last and the work it wastes is at most what it finally takes
 (rus_20_40, whose last join of 3.3 G units was otherwise stopped at
-2.1 G and given 2.1 G again). Ended inside an operation, as turns once
+2.1 G and given 2.1 G again). The target so raised is the level the
+next attempt brings the trial to, which its place in the turns counts;
+where the target only passed what the trial had spent and the room went
+into the attempt besides, trials whose later components outgrow the
+earlier ones took turns early and were refused memory, freeing the
+others' work (Alea.jl's trueskill and spacex circuits, 1.5 times the
+work). An attempt that ends at its phase's last step, as the record
+before it did, records no pace (`Trial::record_progress`): the share of
+a phase moves only when a step finishes, and at its last step only when
+the phase does, so that its record would put the pace of a trial one
+step from its finish at none, the most doublings past its target (1vfy,
+whose last join of 25.8 G units the guard stopped at 25.77 G). Ended
+inside an operation, as turns once
 were, every turn started its loop of clauses over (TPC-H's q7, whose
 formula is one loop of hundreds of bodies), or the walk's join under way.
 
@@ -2222,8 +2234,11 @@ one whose operation the guard cut short has nothing to resume and keeps
 its target (`Trial::lose_weight`).
 
 **Refusals.** A walk that sums out and is refused starts over first,
-once, putting nothing off (`Evaluation::walk_again`, under Put-offs
-below). Beyond that, memory goes to the trial that has spent the most. An
+once, putting nothing off, within the attempt, which goes on in its turn
+(`Evaluation::run`, under Put-offs below): its trial keeps its place in
+the turns, where a walk begun again at a later turn waited behind trials
+far from their finish (1rfs, whose walk outgrew an index at 9085 of its
+9086 steps). Beyond that, memory goes to the trial that has spent the most. An
 operation refused memory, by the allocator or tididi's byte budget,
 while other trials hold what their attempts built, frees that
 (`Trial::release`) where the refused trial has spent more work than each
@@ -2523,7 +2538,7 @@ density than the compile's (`QUERY_ROUTE`).
   fails conjoins them. On a right-linear vtree the observations otherwise
   each join a growing result.
   A walk that sums out (P(e) alone) and is refused memory or outgrows an
-  index starts over once putting nothing off (`Evaluation::walk_again`):
+  index starts over once putting nothing off (`Evaluation::run`), within the attempt:
   a factor put off keeps its variables unsummed until it meets the
   result, whose pairs then multiply with each factor (the UAI 2022 PR
   proteins 1cxy, 1fas, 1nkd and 1svy under `families:0`). Elsewhere
