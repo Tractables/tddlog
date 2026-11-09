@@ -100,7 +100,8 @@ pub struct Input<'a> {
     /// borrowed, or the program another input is read as, which
     /// `tddlog --program` prints.
     pub program: Cow<'a, str>,
-    /// For a UAI `MARKOV` network, `log10 Z - log10 P(e)`
+    /// For a UAI network whose `Z` is not its program's `P(e)`,
+    /// `log10 Z - log10 P(e)`
     /// ([`network::NetworkProgram::log10_offset`]).
     pub log10_offset: Option<f64>,
     /// The example queries of an LPAD that its program leaves out, each

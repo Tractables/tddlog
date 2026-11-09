@@ -14,8 +14,9 @@
 //! `v_` before a name that does not start with a letter; a clash is an
 //! error. Zero-probability heads are dropped, a row with one certain value
 //! is a plain rule, and a row that sums to one up to the rounding of its
-//! decimals is divided by its sum (`rows.rs`). The rules come in the order
-//! of a depth-first walk from each variable in turn to its parents.
+//! decimals is divided by its sum (`rows.rs`); a UAI file's rows are read
+//! as written instead, their sums kept as factors. The rules come in the
+//! order of a depth-first walk from each variable in turn to its parents.
 //!
 //! What tddlog answers is that program's rows of the variables the queries
 //! and the evidence read and of their ancestors ([`ReadOptions::whole`]):
@@ -26,16 +27,19 @@
 //! The formats, by the file's extension ([`Format::of_path`]): BIF
 //! (`.bif`), Hugin (`.net`, `.hugin`), GeNIe (`.xdsl`, its `cpt` nodes),
 //! and the UAI format (`.uai`), whose variables are named `x0`, `x1`, ...
-//! and their values `v_0`, `v_1`, .... A UAI `MARKOV` file whose
-//! functions are the conditional tables of a Bayesian network, up to the
-//! rounding of their decimals, is read as that network. Any other `MARKOV`
-//! network's variables get uniform priors, times their unary factors normalized, and every
-//! other factor `f` becomes a variable `fJ` of one value `ok`, observed,
-//! whose row for each assignment of its scope holds the factor's entry
-//! divided by its largest: `P(e)` of the program is then the partition
-//! function given the evidence divided by `10^c`, the offset
-//! [`NetworkProgram::log10_offset`] gives and the program's first line
-//! states (`uai.rs`).
+//! and their values `v_0`, `v_1`, .... A UAI file's functions are read as
+//! written, their product the partition function. A UAI `MARKOV` file
+//! whose functions are the conditional tables of a Bayesian network, up to
+//! the rounding of their decimals, is read as that network. A table whose
+//! rows do not all sum to one is its rows divided by their sums times the
+//! factor of those sums over its parents. Any other `MARKOV` network's
+//! variables get uniform priors, times their unary factors normalized.
+//! Every other factor `f` becomes a variable `fJ` of one value `ok`,
+//! observed, whose row for each assignment of its scope holds the factor's
+//! entry divided by its largest, and a factor of one entry is left out:
+//! `P(e)` of the program is then the partition function given the
+//! evidence divided by `10^c`, the offset [`NetworkProgram::log10_offset`]
+//! gives and the program's first line states (`uai.rs`).
 //!
 //! The evidence is an Ace `.inst` file or, for a UAI network, a UAI
 //! `.evid` file. The queries are every value of every variable, or of the
@@ -178,7 +182,8 @@ impl Default for ReadOptions<'_> {
 pub struct NetworkProgram {
     /// The program's text.
     pub program: String,
-    /// For a UAI `MARKOV` network, `log10 Z - log10 P(e)`: the base-10
+    /// For a UAI `MARKOV` network, or a `BAYES` one whose rows do not all
+    /// sum to one, `log10 Z - log10 P(e)`: the base-10
     /// logarithm of the partition function given the evidence is the
     /// program's `log10 P(e)` plus this.
     pub log10_offset: Option<f64>,
@@ -197,6 +202,10 @@ pub fn read(data: &[u8], format: Format, options: &ReadOptions) -> Result<Networ
     }
     if !options.arguments.is_empty() {
         return Err(ARGUMENTS.into());
+    }
+    if options.rescale && format == Format::Uai {
+        // uai.rs divides every row and keeps the sums as the file's factors.
+        return Err("--rescale is not for a UAI file, whose functions are read as written".into());
     }
     let read = match format {
         Format::Bif => Read::of(bif::parse(&text(data))?),

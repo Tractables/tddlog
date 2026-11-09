@@ -99,8 +99,8 @@ impl Solution {
 
     /// ``P(e)``, the probability of the evidence: 1.0 with none, 0.0 where
     /// it is inconsistent, and 0.0 too where it is under the least float,
-    /// which ``log10_evidence_probability`` still gives. For a UAI
-    /// ``MARKOV`` network, the partition function given the evidence, as
+    /// which ``log10_evidence_probability`` still gives. For a UAI network,
+    /// the partition function given the evidence, as
     /// the command line's ``Z:`` line. ``None`` unless ``solve`` was called
     /// with ``evidence_probability=True``.
     #[getter]

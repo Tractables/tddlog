@@ -570,6 +570,13 @@ precision, which it refused past 1e-9, and an excess equal to the slack,
 which it refused, and the two decide alike on every
 row of every network the script read. `--rescale` divides
 every row by its sum first, for Ace's tables in percent or as weights.
+A UAI file is the exception: its functions are read as written, since
+the PR task's `Z` is their product, so each table is split into its rows
+divided by their sums (`rows::split`) and the factor of those sums over
+its parents, which the next paragraph's factors hold. A row within a few
+units of roundoff of one stays as it is; a table whose rows all have one
+sum (`0.3333333` three times) needs no variable, only the offset.
+`--rescale` is refused for a UAI file.
 
 **Markov networks** (`uai.rs`). A `MARKOV` file whose functions are each
 a conditional table of one variable of its scope, one function per
@@ -577,16 +584,17 @@ variable and the child relation acyclic (Promedus, Pedigree, and the UAI
 2006 networks written as `MARKOV` files), is that Bayesian network. A
 table's row over its child's values counts where the rule above divides
 it or keeps it as summing to one (`rows::sums_to_one`), so that a file
-rounded to six decimals reads as its `BAYES` writing would, and its rows
-are then divided as that writing's are. In any other, every variable gets a uniform prior times
+rounded to six decimals reads as its `BAYES` writing would, its tables
+split as that writing's are. In any other, every variable gets a uniform prior times
 its unary factors, normalized, and every other factor `f` becomes a
 variable `fJ` of one value, observed, whose row for each assignment of the
 factor's scope is its entry over its largest; a constant factor is left
-out. The program's `P(e)` times `10^c`, where `c` sums the base-10
-logarithms of the priors' sums, the factors' largest entries and the
-constants, is the partition function given the evidence: the program
-states `c` on its first line, and the binary prints `Z:` for such a
-file where it would print `P(e):` ([The probability of the
+out. The factors of a table's rows' sums are such factors too. The
+program's `P(e)` times `10^c`, where `c` sums the base-10 logarithms of
+the priors' sums, the factors' largest entries and the constants, is the
+partition function given the evidence: the program states `c` on its
+first line, and the binary prints `Z:` for a `MARKOV` file, or a `BAYES`
+one whose rows do not all sum to one, where it would print `P(e):` ([The probability of the
 evidence](#evidence-and-queries-srcquery-srceval)). Under `--no-queries`
 without observations, a network of Potts tables over pairs of variables of
 `k` values each (a graph colouring) has its colour symmetry broken: one
@@ -1541,7 +1549,8 @@ root, is built. Put where the two readers' copies meet instead, the tie
 would meet the copies below that free of the inputs.
 
 **Network files.** A network's row whose gap from one the rounding of its
-entries explains (`0.3333333` three times) is rescaled
+entries explains (`0.3333333` three times) is rescaled, or for a UAI
+file split into the row over its sum and a factor
 ([Network files](#network-files-srcnetwork)); a row like `0.5, 0.499` is
 kept, and its missing mass goes to no value as in ProbLog. Rows that do
 not sum to one fall outside the clause encoding.
@@ -2613,7 +2622,8 @@ Dropping detached evidence would leave out factors of `P(e)`, so the
 binary grounds with it off under the option. The line is
 `P(e):<tab>p<tab>log10 l`; below the least normal float the mantissa and
 exponent of `p` are read off the logarithm. Inconsistent evidence prints
-`0` and `-inf`, none `1` and `0`. For a UAI `MARKOV` file the binary
+`0` and `-inf`, none `1` and `0`. For a UAI `MARKOV` file, or a `BAYES`
+one whose rows do not all sum to one, the binary
 prints the partition function given the evidence instead,
 `Z:<tab>z<tab>log10 l`: `P(e)` times ten to the offset the reader computes
 ([Network files](#network-files-srcnetwork)), the UAI PR task. The

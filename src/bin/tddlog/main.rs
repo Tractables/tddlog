@@ -65,8 +65,9 @@ options:
                                         notation and l its base-10 logarithm, exact beyond a
                                         float's range (0 and -inf for inconsistent evidence, 1
                                         and 0 for none); the evidence no query depends on is then
-                                        compiled rather than dropped; for a UAI MARKOV network,
+                                        compiled rather than dropped; for a UAI network,
                                         the partition function given the evidence, as `Z:...`
+                                        where it is not P(e)
   --no-queries                          leave out the program's queries and print P(e) alone, as
                                         for the partition function: the program is ground for its
                                         evidence alone, and what no observation depends on (in a
@@ -79,7 +80,7 @@ options:
                                         for a .uai network, of a UAI .evid file
   --rescale                             for a network: divide every row of every table by its
                                         sum, for a file that writes its tables in percent or as
-                                        weights
+                                        weights; not for a .uai network, read as written
   --program                             print the program a network, a Dice program, a netlist
                                         or an LPAD is read as, or a program with its arguments
                                         or consulted files in place, and exit
@@ -601,7 +602,7 @@ fn run(
         let (p, log10) = input
             .evidence_probability(&solution)
             .expect("the grounder kept every observation");
-        // A Markov network's is its partition function given the evidence.
+        // A UAI network's is its partition function given the evidence.
         let label = match input.log10_offset {
             None => "P(e)",
             Some(_) => "Z",

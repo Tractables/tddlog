@@ -111,7 +111,7 @@ against the probabilities worked out by hand.
   or a network's, `"bif"`, `"hugin"`
   (`.net`), `"xdsl"` or `"uai"`, with every variable queried. A network's
   `evidence` is the text of its evidence file, an Ace `.inst` file or,
-  for a UAI network, a UAI `.evid` file. For a UAI `MARKOV` network,
+  for a UAI network, a UAI `.evid` file. For a UAI network,
   `P(e)` is the partition function given the evidence.
 - `arguments` in the options, `num_arguments` strings, are a ProbLog
   program's, an LPAD's or a Dice program's arguments, the values the

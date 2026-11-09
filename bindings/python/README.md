@@ -94,7 +94,7 @@ list of strings, each the text of a term that takes the places `$1`, `$2`,
 arguments=["10", "0.9", "4"])`; in a Dice program a place stands for an
 integer, and its argument is a natural number.
 
-For a UAI `MARKOV` network, `evidence_probability` is the partition
+For a UAI network, `evidence_probability` is the partition
 function given the evidence. A
 program tddlog cannot answer raises `tddlog.ParseError`,
 `GroundingError` or `CompilationError`, with the message the command line
