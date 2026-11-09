@@ -39,7 +39,7 @@ command-line tool with Python, C and WebAssembly bindings, and it
 </p>
 
 <!-- results:overview -->
-<sub>Results as of 2026-11-08, public main [868234c5f](https://github.com/Tractables/tddlog/commit/868234c5f). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
+<sub>Results as of 2026-11-09, public main [fa9726036](https://github.com/Tractables/tddlog/commit/fa9726036). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
 <!-- /results:overview -->
 
 On every type of program, tddlog answers more instances than each
@@ -238,8 +238,8 @@ times faster tddlog is. The
 instance, time and program, and a page for each system.
 
 <!-- results:setup -->
-<!-- written from bindings/wasm/results/categories.json, sha256 8a4fb2c4ed4cddd51aff5a974ed06b98280b27ef475318ef0ecf9ae2549fd765 -->
-Results as of 2026-11-08, public main [868234c5f](https://github.com/Tractables/tddlog/commit/868234c5f). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
+<!-- written from bindings/wasm/results/categories.json, sha256 7702ce598ce18780e1a61f0decb35e3271ccceec83f2c5676f7755865535210b -->
+Results as of 2026-11-09, public main [fa9726036](https://github.com/Tractables/tddlog/commit/fa9726036). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
 <!-- /results:setup -->
 
 The [methods table](https://tractables.github.io/tddlog/#/methods) says
@@ -316,7 +316,7 @@ paths of two edges in random graphs.
 </p>
 
 <!-- results:bayesian-networks -->
-tddlog answers **607 of 634** networks, of 12 families.
+tddlog answers **616 of 634** networks, of 12 families.
 <!-- /results:bayesian-networks -->
 
 The networks: bnlearn's, the large ones and the Roulette and noDice
@@ -328,12 +328,12 @@ blockmap, Mastermind and fs networks, and the classic networks).
 <!-- results:bayesian-networks-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 414 | 34 h | 1.3 h | 23× |
-| TensorInference.jl | 320 | 57 h | 1.5 h | 34× |
-| Merlin | 292 | 57 h | 1.5 h | 34× |
-| libDAI | 290 | 58 h | 1.5 h | 33× |
-| pyAgrum | 260 | 63 h | 1.5 h | 38× |
-| 15 others: PITA, pgmpy, aspmc, Alea.jl, Pluck, Roulette, ProbLog, Dice, Geni, Genfer, noDice, SPPL, Psi, WebPPL, Scallop | 12 to 236 | over 1.6 h each | 13 s to 1.5 h | at least 42× |
+| Ace | 414 | 35 h | 30 min | 55× |
+| TensorInference.jl | 320 | 57 h | 30 min | 93× |
+| Merlin | 292 | 58 h | 30 min | 92× |
+| libDAI | 290 | 58 h | 30 min | 91× |
+| pyAgrum | 260 | 64 h | 30 min | 101× |
+| 15 others: PITA, pgmpy, aspmc, Alea.jl, Pluck, Roulette, ProbLog, Dice, Geni, Genfer, noDice, SPPL, Psi, WebPPL, Scallop | 12 to 236 | over 1.6 h each | 13 s to 30 min | at least 115× |
 
 PSouffle was given 11 of the networks and answers 6.
 <!-- /results:bayesian-networks-table -->
@@ -351,7 +351,7 @@ PSouffle was given 11 of the networks and answers 6.
 </p>
 
 <!-- results:markov-networks -->
-tddlog answers **243 of 290** networks, of 11 families.
+tddlog answers **250 of 290** networks, of 11 families.
 <!-- /results:markov-networks -->
 
 The networks are those of the UAI 2022 competition and of Ihler's
@@ -363,11 +363,11 @@ and pedigree and diagnosis networks.
 <!-- results:markov-networks-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| TensorInference.jl | 198 | 9.4 h | 2.5 h | 2.6× |
-| libDAI | 182 | 13 h | 1.4 h | 16× |
-| Merlin | 171 | 13 h | 1.5 h | 11× |
-| pyAgrum | 170 | 13 h | 1.4 h | 13× |
-| pgmpy | 117 | 22 h | 1.4 h | 30× |
+| TensorInference.jl | 198 | 9.5 h | 58 min | 6.0× |
+| libDAI | 182 | 14 h | 48 min | 20× |
+| Merlin | 171 | 14 h | 48 min | 17× |
+| pyAgrum | 170 | 14 h | 48 min | 18× |
+| pgmpy | 117 | 24 h | 48 min | 32× |
 <!-- /results:markov-networks-table -->
 
 - Where others win: six partition functions of the UAI 2022 final set,
@@ -401,12 +401,12 @@ circuits are [below](#circuits) too.
 <!-- results:functional-programs-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Roulette | 198 | 34 h | 1.3 h | 30× |
-| Alea.jl | 190 | 24 h | 1.2 h | 18× |
-| Dice | 138 | 41 h | 1.2 h | 67× |
-| Geni | 134 | 42 h | 1.2 h | 81× |
-| Pluck | 129 | 25 h | 32 min | 669× |
-| 5 others: Genfer, WebPPL, Psi, noDice, SPPL | 57 to 80 | over 20 min each | 1.8 s to 1.5 h | at least 53× |
+| Roulette | 198 | 34 h | 1.4 h | 29× |
+| Alea.jl | 190 | 24 h | 1.2 h | 17× |
+| Dice | 138 | 41 h | 1.2 h | 63× |
+| Geni | 134 | 42 h | 1.2 h | 77× |
+| Pluck | 129 | 25 h | 34 min | 639× |
+| 5 others: Genfer, WebPPL, Psi, noDice, SPPL | 57 to 80 | over 20 min each | 1.8 s to 1.5 h | at least 52× |
 <!-- /results:functional-programs-table -->
 
 ### All programs
@@ -417,7 +417,7 @@ circuits are [below](#circuits) too.
 </p>
 
 <!-- results:all-programs -->
-tddlog answers **1791 of 1942** programs.
+tddlog answers **1807 of 1942** programs.
 <!-- /results:all-programs -->
 
 All programs are the five types together, every system on every program
@@ -426,12 +426,12 @@ it is given, natively or through a translation.
 <!-- results:all-programs-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
 |---|--:|--:|--:|--:|
-| Ace | 993 | 135 h | 4.7 h | 39× |
-| libDAI | 878 | 170 h | 5.0 h | 48× |
-| TensorInference.jl | 859 | 185 h | 6.0 h | 36× |
-| pyAgrum | 823 | 178 h | 4.9 h | 55× |
-| Merlin | 814 | 185 h | 5.2 h | 51× |
-| 19 others: PITA, ProbLog, pgmpy, aspmc, Alea.jl, Roulette, Storm, Dice, Pluck, PSouffle, PRISM, ProvSQL, Geni, WebPPL, noDice, Genfer, SPPL, Psi, Scallop | 119 to 724 | over 9.6 h each | 21 min to 5.2 h | at least 26× |
+| Ace | 993 | 137 h | 3.3 h | 61× |
+| libDAI | 878 | 171 h | 3.5 h | 82× |
+| TensorInference.jl | 859 | 185 h | 3.5 h | 61× |
+| pyAgrum | 823 | 180 h | 3.3 h | 99× |
+| Merlin | 814 | 187 h | 3.5 h | 87× |
+| 19 others: PITA, ProbLog, pgmpy, aspmc, Alea.jl, Roulette, Dice, Storm, Pluck, noDice, PSouffle, PRISM, ProvSQL, Geni, WebPPL, Genfer, SPPL, Psi, Scallop | 119 to 724 | over 9.6 h each | 21 min to 4.7 h | at least 26× |
 <!-- /results:all-programs-table -->
 
 - Where others win: pgmpy answers grid25, a logic program's path query
