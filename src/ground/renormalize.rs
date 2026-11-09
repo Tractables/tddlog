@@ -87,7 +87,7 @@ fn no_head(chains: &[Vec<GLit>], weight_of: &impl Fn(GLit) -> Prob) -> Option<f6
 /// pairwise: each reads one atom of each of the same exclusive sets,
 /// positively, and nothing else, as the rows of a network's table do.
 /// Such a table's rows share their new switches (the `k`-th of each
-/// probability) and their masses' facts, as [`crate::ground::share`] does: in a
+/// probability) and their masses' facts, as [`crate::ground::rows`] does: in a
 /// world where one row's context holds the others' do not, and a fact read
 /// under them sums out of their part.
 ///

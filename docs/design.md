@@ -166,7 +166,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
 | `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice/`, a Dice program read as the program its symbolic evaluation writes (`tokens.rs`, `syntax.rs`, `values.rs`, `translate.rs`); `circulette.rs`, a Circulette netlist read as its gates' rules with a fault on each logic gate |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
-| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
+| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `rows.rs` (row classes and switch sharing), `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, its eliminations (min-fill, weighted min-fill, in a given order), an elimination order annealed, the minor-min-width bound, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies, tested in `tests/copies.rs`), `closed.rs` with `order.rs`, `families.rs` with `nest.rs` (a group's block), `decision.rs` (with the names of its tree's contexts, of the atoms read outside it and of the atoms read beside those): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them, and `chained`, the wide bodies written as chains along `program`'s order |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `trace.rs`: `CompileTrace`, each component's compile as a trace records it; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
@@ -622,7 +622,7 @@ CNF in DIMACS for a weighted model counter, after every pass of the
 grounder (steps 5 to 11: the conditioning, backbones and equal facts,
 equal gates, bits over values, defined facts eliminated) but the row
 classes. The switches of every table whose rows exclude each other are
-shared first, in any number of parents (`share::Sharing::Exclusive`), so
+shared first, in any number of parents (`rows::Target::Cnf`), so
 that a table's equal entries are one fact; that is what the row classes
 give the compile, without their atoms, which cost the CNF a variable per
 class and a clause per row, an entry of one's included. Each fact is a variable weighed as the fact; each derived
@@ -693,7 +693,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
 | 4 | `engine/` (`lists.rs`, `topdown.rs`) | stratified semi-naive bottom-up grounding, probabilistic findalls, or top-down grounding from the queries |
 | 5 | `simplify.rs`, `values.rs`, `noisy_or.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables; variables held as bits written over their values; tables of one atom written as noisy-ors |
 | 6 | `exclusive.rs`, `negation.rs`, `inline.rs`, `aig.rs`, `contexts.rs` | exclusive sets; negated atoms unfolded; views; equal gates; choices read under exclusive contexts |
-| 7 | `classes.rs`, `share.rs` | row classes; switch sharing |
+| 7 | `rows.rs` | the parameters a table's rows share: row classes, switch sharing |
 | 8 | `cover.rs` | atoms certain by cover |
 | 9 | `condition.rs`, `preprocess/backbone.rs`, `renormalize.rs` | conditioning on the evidence: unit propagation, backbones, gates, renormalized rows |
 | 10 | `detach.rs` | evidence no query depends on dropped |
@@ -702,8 +702,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
 
 0. **The heads' order** (`normalize::ordered_heads`). The chain of
    switches of an annotated disjunction (step 1) follows its heads'
-   order, and the passes that compare rows, the row classes and the
-   switch sharing (step 7), find two rows of one distribution alike only
+   order, and the pass that compares rows, for its classes and its
+   shared switches (step 7), finds two rows of one distribution alike only
    where their heads come in one order. Once the terms are lowered, the
    heads of every disjunction are put in an order that every disjunction
    keeps: numbered in the order they are first read, the heads go in a
@@ -1208,11 +1208,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    table reads: an annotated disjunction without a body, normalized to a
    chain of switches. Where every rule that reads an atom of a choice
    reads one, positively, and the rest of every two such bodies clash
-   (each reads a different atom of one exclusive set, or the bodies are
-   compared two by two up to `MOST_COMPARED` readers), each reading rule
-   reads a fact of its own in place of the atom, of the atom's
-   probability, and the choice goes. At most one context holds in a
-   world, and where one does, the atom it read depends on facts nothing
+   (`Tables::exclusive`, the test step 7 makes of a table's rows), each
+   reading rule reads a fact of its own in place of the atom, of the
+   atom's probability, and the choice goes. At most one context holds in
+   a world, and where one does, the atom it read depends on facts nothing
    else reads, so the fact has the same effect. A choice is read so where
    it saves at least as many literals as it adds facts. Dice's `iterate`
    writes a step that draws a value and observes a function of it and a
@@ -1220,33 +1219,63 @@ are skipped. Several steps have a program in `examples/` that shows them.
    under one key is then one fact, not the chain of switches before its
    letter, and switch sharing then makes the facts of one probability
    one. The exclusive sets are found again after it.
-7. **Row classes** (`classes.rs`; `examples/row_classes.pl`). The rows of
-   a table that hold one distribution read it through a class atom, one
-   rule per row, and the table's rules for the class read it and the
-   switches of its first row. A table is rewritten where it has fewer than
-   half as many classes as rows (`CLASS_GAIN`) and some class has
-   switches. Tables of one parent are left alone, since a split on the
-   parent already reads them a row at a time. A table whose rows lie on
-   long spines (*Bodies of facts alone*, under Compilation) is rewritten
-   too, with up to `MOST_SELECTORS` classes and one per row if need be
-   (`SPINE_ROWS`, `OWN_VALUE_FROM`): a class atom then selects its rows,
-   and the table over the classes is split on them, its parts side by
-   side. A noisy-or over facts is left alone: its class atoms would be
-   copies of the facts and split one component into many.
+7. **The parameters a table's rows share** (`rows.rs`;
+   `examples/row_classes.pl`, `examples/shared_rows.pl`). A row is the
+   rules of a table with one context, the literals that are not the
+   table's own facts. One analysis per table finds:
+   - whether every two of its rows exclude each other
+     (`Tables::exclusive`): at once where the atoms the contexts read of
+     the exclusive sets that each reads one atom of differ from row to
+     row, two by two up to `MOST_COMPARED` rows otherwise;
+   - its *classes*, the rows of one distribution: the same heads over
+     switches of the same probabilities in the same places, every two
+     rows of a class exclusive;
+   - its shared switches (local flip-hoisting, Theorem 1 of Cheng et
+     al.): where its rows exclude each other, the k-th switch of
+     probability p of each unit is one fact, a unit being a named class
+     or a row. A switch two units read keeps its fact, and rows that can
+     hold together keep switches of their own
+     (`examples/shared_rows.pl`).
 
-   Then **switch sharing** (`share.rs`, local flip-hoisting, Theorem 1 of
-   Cheng et al.): in a table whose rows exclude each other, the k-th switch
-   of probability p of every row is one fact. A table shares where it has
-   one parent (its rows are the parent's values or its row classes), at
-   least `MIN_ROWS` rows, a quarter of its switches merged away
-   (`MIN_MERGED`), and, where the parent reads no fact, at least two rules
-   per row in the parent (`MIN_RULES_PER_ROW`). A shared fact read in two
-   parts of a split table keeps them on a spine instead of side by side,
-   so elsewhere sharing costs more than it saves. Rows that can hold
-   together keep switches of their own (`examples/shared_rows.pl`). The
-   weighted CNF (`--cnf`) shares in every table whose rows read one atom
-   of each of the same exclusive sets, whatever its size: a model
-   counter has no spine to keep.
+   A table some atom of which depends on another of its atoms is left
+   alone. What is written depends on the program's reader
+   (`rows::Target`). The weighted CNF (`--cnf`) has no layout: every
+   table whose rows exclude each other shares its switches, in any number
+   of parents, the rows of a class all of theirs, and no class is named,
+   which would cost a variable per class and a clause per row. The
+   compile makes two decisions, each in one place:
+   - *Classes named* (`classes_of`): a class's rows read a class atom,
+     one rule per row, and the table's rules for the class read it and
+     the switches of its first row. A table's classes are named where it
+     has fewer than half as many classes as rows (`CLASS_GAIN`) and some
+     class has switches. Tables of one parent are left alone, since a
+     split on the parent already reads them a row at a time. A table
+     whose rows lie on long spines (*Bodies of facts alone*, under
+     Compilation) is rewritten too, with up to `MOST_SELECTORS` classes
+     and one per row if need be (`SPINE_ROWS`, `OWN_VALUE_FROM`): a class
+     atom then selects its rows, and the table over the classes is split
+     on them, its parts side by side. A noisy-or over facts is left
+     alone: its class atoms would be copies of the facts and split one
+     component into many.
+   - *Switches shared* (`compile_shares`): where the units are the values
+     of the table's one parent, or its named classes with every two of
+     its rows exclusive; they are at least `MIN_ROWS`; a quarter of the
+     table's switches merge away (`MIN_MERGED`); and, where the units read
+     no fact, they have at least two rules each (`MIN_RULES_PER_ROW`). A
+     shared fact read in two parts of a split table keeps them on a spine
+     instead of side by side, so elsewhere sharing costs more than it
+     saves.
+
+   The program is then compacted once; its exclusive sets are found again
+   where classes were named, and renumbered where only switches were
+   shared. Two passes beside it read rows too and stay apart, since each
+   asks something else. The choices before it (step 6) are read on the
+   reader's side: a choice read under exclusive contexts becomes a fact
+   per reading rule, the reading table's own, which this pass then
+   shares, by the same test of exclusive contexts. The cover after it
+   (step 8) decides the validity of any derived atom's bodies: a table of
+   one class reads one class atom whose contexts cover its parents'
+   values, and the cover finds that atom certain.
 8. **Certain by cover** (`cover.rs`; `examples/cover.pl`). A derived atom
    whose rule bodies together are valid is certain and leaves the bodies
    that read it. Validity is decided by merging bodies equal but for one

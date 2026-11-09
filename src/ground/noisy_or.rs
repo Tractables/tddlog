@@ -43,7 +43,7 @@
 //! observe the findings present: as tables, the chains' atoms, each read
 //! at both values, make the decompositions wide; as rules, each finding
 //! reads its causes' facts and the program's decomposition is narrow
-//! (with row classes leaving such tables alone, [`super::classes`]).
+//! (with row classes leaving such tables alone, [`super::rows`]).
 //!
 //! A table observed whose parents are not all taken stays a table, and
 //! its parents, read at both values, stay too. Observed as a table, `x(b)`

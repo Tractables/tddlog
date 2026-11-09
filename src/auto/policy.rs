@@ -321,7 +321,7 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// component.
 ///
 /// A network's rules are gates by that count too where its tables read
-/// their rows' classes (`crate::ground::classes`): a third to two fifths
+/// their rows' classes (`crate::ground::rows`): a third to two fifths
 /// of the rules of the UAI networks BN_115 to BN_125 read derived atoms
 /// alone. What a network has and a circuit has not is a table whose rows
 /// partition their inputs, which `families:0`'s rewrite ties by clauses

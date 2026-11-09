@@ -279,7 +279,7 @@ pub(super) fn table_splits(
 /// units or more read it through copies (`reads`, [`table_splits`]), so
 /// that some of its readers read it in binary ([`Unit::read_in_binary`]).
 /// Where one unit alone reads such a set, as a table reads its row classes
-/// ([`crate::ground::classes`]), the split on it still pays.
+/// ([`crate::ground::rows`]), the split on it still pays.
 fn wide_and_shared(
     gp: &GroundProgram,
     unit_of: &[usize],

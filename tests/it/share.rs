@@ -1,4 +1,4 @@
-//! Switch sharing (src/ground/share.rs) on a network whose tables repeat
+//! Shared switches (src/ground/rows.rs) on a network whose tables repeat
 //! parameters: the answers against an enumeration of its worlds under the
 //! strategies and groundings `tests/it/examples.rs` runs, and which tables
 //! share their switches.
@@ -11,8 +11,12 @@
 //! facts shared. `g` has three rows; `h` reads `a` and `x`; `k` has a row
 //! per value of `a` whose switches merge one in 40; `m` has `c`'s rows
 //! over `d`, a function of `a` and `b(1)` with one rule per value, and
-//! only `m(1)` is asked, a switch per row: none of them shares. `f` is observed. ProbLog 2.3.0 gives the same answers to
-//! its eight digits.
+//! only `m(1)` is asked, a switch per row: none of them shares. `n` has
+//! `c`'s distributions over `a` and `b`, three rows each, whose 40 classes
+//! are named and share their switches across classes as `c`'s rows do: 44
+//! facts where the rows kept apart read 360; its answers are `c`'s, since
+//! `b` does not change its distribution. `f` is observed. ProbLog
+//! 2.3.0 gives the same answers to its eight digits.
 
 use crate::common;
 
@@ -71,6 +75,9 @@ fn program() -> String {
         s += &format!("{} :- a({i}).\n", heads("c", &c(i)));
         s += &format!("{}::e(t); {}::e(f) :- a({i}).\n", e(i)[0], e(i)[1]);
         s += &format!("{} :- a({i}).\n", heads("k", &k(i)));
+        for j in 1..=B.len() {
+            s += &format!("{} :- a({i}), b({j}).\n", heads("n", &c(i)));
+        }
         s += &format!(
             "d({i}) :- a({i}), b(1).\n{} :- d({i}).\n",
             heads("m", &c(i))
@@ -92,9 +99,9 @@ fn program() -> String {
     s
 }
 
-const QUERIES: [&str; 14] = [
+const QUERIES: [&str; 16] = [
     "a(1)", "a(2)", "c(1)", "c(2)", "c(3)", "c(4)", "e(t)", "g(1)", "g(2)", "h(1)", "h(2)", "x",
-    "k(1)", "m(1)",
+    "k(1)", "m(1)", "n(1)", "n(4)",
 ];
 
 /// The queries' probabilities given `f`, summed over the values of `a`,
@@ -123,6 +130,8 @@ fn enumerated() -> Vec<(&'static str, f64)> {
                         if x { 1.0 } else { 0.0 },
                         k(i)[0],
                         if j == 0 { c(i)[0] } else { 0.0 },
+                        c(i)[0],
+                        c(i)[3],
                     ];
                     for (q, p) in joint.iter_mut().zip(holds) {
                         *q += w * p;
@@ -212,5 +221,7 @@ fn a_table_of_one_parent_and_many_rows_shares_its_switches() {
         assert_eq!(switches("h"), 4 * N, "{rows:?}: {names:?}");
         assert_eq!(switches("k"), N, "{rows:?}: {names:?}");
         assert_eq!(switches("m"), N, "{rows:?}: {names:?}");
+        let n = if rows == Rows::Classes { 44 } else { 9 * N };
+        assert_eq!(switches("n"), n, "{rows:?}: {names:?}");
     }
 }

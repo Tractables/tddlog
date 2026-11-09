@@ -1,4 +1,4 @@
-//! A table of a distribution per row on long spines (src/ground/classes.rs).
+//! A table of a distribution per row on long spines (src/ground/rows.rs).
 //! Where its parents are binary, no split takes its spine apart, and it is
 //! read through its row classes however many classes it has: a class atom
 //! per row, the table over them split into parts side by side. Where a

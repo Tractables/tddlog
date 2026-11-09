@@ -29,7 +29,7 @@
 //! step and observes it added to a key of 32 values, a rule per value of the
 //! key reading the character it takes. Under each value of the key a
 //! step's formula is then one fact, not the chain of the switches before
-//! the character's own, and switch sharing ([`super::share`]) makes the
+//! the character's own, and switch sharing ([`super::rows`]) makes the
 //! facts of one probability one.
 //!
 //! A choice is read so where it saves literals at least as many as it adds
@@ -45,11 +45,6 @@ use super::{AtomId, AtomKind, GLit, GroundProgram, Prob, simplify};
 
 /// The name of the facts read in place of a choice's atoms.
 const NAME: &str = "$cx";
-
-/// The most rules reading a choice whose contexts are compared two by two;
-/// above it, the contexts must each read a different atom of one exclusive
-/// set.
-const MOST_COMPARED: usize = 64;
 
 /// Reads each choice of `gp` that its readers read under exclusive
 /// contexts through a fact per reading rule, as described above, and
@@ -231,46 +226,14 @@ fn choice(
     Some(probabilities)
 }
 
-/// Whether every two contexts of `readers` clash ([`Tables::clash`]), a
-/// reader's context being the rest of its body beyond the literal at its
-/// place in `at`: at once where each reads a different atom of one
-/// exclusive set positively, two by two where there are at most
-/// [`MOST_COMPARED`] of them. Only these are written out, sorted.
+/// Whether every two contexts of `readers` clash ([`Tables::exclusive`]),
+/// a reader's context being the rest of its body beyond the literal at its
+/// place in `at`.
 fn exclusive(gp: &GroundProgram, tables: &Tables, readers: &[usize], at: &[usize]) -> bool {
-    let sets = tables.sets().len();
-    let in_set = |l: &GLit| l.is_positive() && !gp.is_fact(l.atom()) && tables.of(l.atom()) < sets;
-    let context = |i: usize| {
+    tables.exclusive(readers.len(), |i| {
         let body = &gp.rules[readers[i]].body;
         body[..at[i]].iter().chain(&body[at[i] + 1..])
-    };
-    let first: Vec<usize> = context(0)
-        .filter(|l| in_set(l))
-        .map(|l| tables.of(l.atom()))
-        .collect();
-    for s in first {
-        let mut atoms: FxHashSet<AtomId> = FxHashSet::default();
-        let distinct = (0..readers.len()).all(|i| {
-            let mut of_s = context(i).filter(|l| in_set(l) && tables.of(l.atom()) == s);
-            matches!((of_s.next(), of_s.next()), (Some(l), None) if atoms.insert(l.atom()))
-        });
-        if distinct {
-            return true;
-        }
-    }
-    if readers.len() > MOST_COMPARED {
-        return false;
-    }
-    let contexts: Vec<Vec<GLit>> = (0..readers.len())
-        .map(|i| {
-            let mut c: Vec<GLit> = context(i).copied().collect();
-            c.sort_unstable();
-            c
-        })
-        .collect();
-    contexts
-        .iter()
-        .enumerate()
-        .all(|(i, x)| contexts[i + 1..].iter().all(|y| tables.clash(x, y)))
+    })
 }
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 % Rows of a table with one distribution, for row classes
-% (src/ground/classes.rs). c's six rows over a and b hold two distributions
+% (src/ground/rows.rs). c's six rows over a and b hold two distributions
 % and exclude each other through the values of their parents: c reads a
 % class atom per distribution. e's rows are deterministic, a class per
 % value, and stay as they are. w's four rows hold one distribution but read

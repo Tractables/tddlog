@@ -573,17 +573,16 @@ fn neg_name(name: &str) -> Name {
 /// that every disjunction keeps; `None` where each keeps it as written.
 ///
 /// A disjunction's chain of switches follows its heads' order, and the
-/// passes that compare rows, the row classes ([`super::classes`]) and the
-/// switch sharing ([`super::share`]), find two rows of one distribution
-/// alike only where their heads come in one order. A table written with
-/// each row's values in an order of its own holds the distribution of
-/// the table written in one order; with its rows in one order it is
-/// compiled alike. The order is the one the disjunctions agree on: the
-/// heads, numbered in the order they are first read, are put in a
-/// topological order of "comes before" in a disjunction, the lowest number
-/// ready first, and where none is ready (the disjunctions disagree) the
-/// lowest number left. Disjunctions that agree keep their order, rows that
-/// leave a value out included.
+/// pass that compares rows ([`super::rows`]), for its classes and its
+/// shared switches, finds two rows of one distribution alike only where
+/// their heads come in one order. A table written with each row's values
+/// in an order of its own holds the distribution of the table written in
+/// one order; with its rows in one order it is compiled alike. The order
+/// is the one the disjunctions agree on: the heads, numbered in the order
+/// they are first read, are put in a topological order of "comes before"
+/// in a disjunction, the lowest number ready first, and where none is
+/// ready (the disjunctions disagree) the lowest number left. Disjunctions
+/// that agree keep their order, rows that leave a value out included.
 pub(super) fn ordered_heads(program: &Program) -> Option<Program> {
     let disjunctions = || program.clauses.iter().filter(|c| c.heads.len() > 1);
     let mut id: FxHashMap<&Atom, usize> = FxHashMap::default();

@@ -60,7 +60,7 @@ pub(super) const FAMILIES_SEARCH_FROM_WIDTH: u32 = 8;
 /// part in a balanced tree of their own beside the parents' copies, as a
 /// single row's facts are, the compile and the evidence grow many times.
 /// Where each row reads an atom of its own, a class atom of the
-/// table's row classes ([`crate::ground::classes`]), the table over those
+/// table's row classes ([`crate::ground::rows`]), the table over those
 /// atoms is split on them, and its parts go side by side, each above the
 /// copy of its row's atom.
 ///
