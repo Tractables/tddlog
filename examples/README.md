@@ -38,12 +38,13 @@ those and a few more, the larger programs below among them.
 ## Larger programs
 
 In [larger](larger): sizes that ProbLog does not answer within five
-minutes, and tddlog's browser build in one to three seconds, all but
-mastermind.pl, which takes about 20. On the command line, mastermind.pl
-takes about 30 s and 25 GB of memory, or about 17 s with the memory
-limited to 8 GB (`ulimit -v 8000000`); each of the others takes under
-two seconds. Their answers are checked against exact ones computed independently, which
-agree with ProbLog's on the smaller sizes it answers.
+minutes. tddlog's browser build answers mastermind.pl in about 20
+seconds and each of the others in one to three. On the command line,
+mastermind.pl takes about 30 s and 25 GB of memory, or about 17 s with
+the memory limited to 8 GB (`ulimit -v 8000000`), and each of the others
+under two seconds. Their answers are
+checked against exact ones computed independently, which agree with
+ProbLog's on the smaller sizes it answers.
 
 | file | what it shows |
 |---|---|

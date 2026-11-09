@@ -20,10 +20,9 @@
 //
 // The examples marked `larger` take a few seconds each (mastermind about
 // 20), and ProbLog does not answer them within five minutes. Their
-// `problog` holds exact answers,
-// computed independently of tddlog and ProbLog as `exact` says; on the
-// smaller sizes ProbLog answers, those computations agree with ProbLog and
-// with tddlog.
+// `problog` holds exact answers, computed independently of tddlog and
+// ProbLog as `exact` says; on the smaller sizes ProbLog answers, those
+// computations agree with ProbLog and with tddlog.
 // tests/examples.cjs checks the built module against both.
 const tddlogExamples = [
   {
