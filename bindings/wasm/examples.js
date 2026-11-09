@@ -18,8 +18,9 @@
 // Roulette's circuits hold them by hand too, from the programs they were
 // built from (tests/it/examples.rs).
 //
-// The examples marked `larger` take a few seconds each, and ProbLog does not
-// answer them within five minutes. Their `problog` holds exact answers,
+// The examples marked `larger` take a few seconds each (mastermind about
+// 20), and ProbLog does not answer them within five minutes. Their
+// `problog` holds exact answers,
 // computed independently of tddlog and ProbLog as `exact` says; on the
 // smaller sizes ProbLog answers, those computations agree with ProbLog and
 // with tddlog.
