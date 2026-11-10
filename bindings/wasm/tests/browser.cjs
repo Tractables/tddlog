@@ -991,20 +991,21 @@ function benchmarksOf(root) {
       && (key !== "circuits" || cats.circuits)).map(([, name]) => name);
     const groups = await page.$$eval("#tree .tree > li.group", (lis) => lis.map((li) => [li.querySelector(":scope > a").textContent,
       ...[...li.querySelectorAll(":scope > ul > li > a")].map((a) => a.getAttribute("href"))]));
-    const withInt = cats.integrations ? groups : [groups[0], [""], ...groups.slice(1)];
-    const menu = cats.circuits ? withInt : [...withInt.slice(0, 3), [""], ...withInt.slice(3)];
+    // each section's entries by its key, in whatever order SECTIONS puts the sections (none where the data has no such section)
+    const keys = await page.$$eval("#tree .tree > li.group", (lis) => lis.map((li) => li.querySelector(":scope > a").dataset.section.replace(/^#\//, "")));
+    const entries = (key) => (groups[keys.indexOf(key)] ?? [""]).slice(1);
     const baselines = cats.systems.filter((s) => !isMine(s.key)).sort((a, b) => b.answers - a.answers).map((s) => `../#/baselines/${s.key}`);
     assert.deepEqual(groups.map(([name]) => name), menuNames, "the menu: the bar's sections");
-    assert.deepEqual(menu[0].slice(1), baselines, "the menu: the baselines");
-    assert.deepEqual(menu[1].slice(1), ["tddlog", "alea", "roulette"].filter((k) => cats.integrations?.[k]).map((k) => `../#/integrations/${k}`),
+    assert.deepEqual(entries("baselines"), baselines, "the menu: the baselines");
+    assert.deepEqual(entries("integrations"), ["tddlog", "alea", "roulette"].filter((k) => cats.integrations?.[k]).map((k) => `../#/integrations/${k}`),
       "the menu: the integrations");
-    assert.deepEqual(menu[2].slice(1), [...categories.map((c) => `#/category/${c.key}`), "../#/coverage"],
+    assert.deepEqual(entries("types"), [...categories.map((c) => `#/category/${c.key}`), "../#/coverage"],
       "the menu: the categories and the programs tddlog does not run");
     // the circuits' families only where the view is among the circuits, as a type's under the type on show
-    assert.deepEqual(menu[3].slice(1), [], "the menu: the circuits, without their families on the overview");
+    assert.deepEqual(entries("circuits"), [], "the menu: the circuits, without their families on the overview");
     const walks = fs.readdirSync(path.join(site, "next", "walk")).filter((f) => f.endsWith(".json")).map((f) => `../#/how/${f.slice(0, -5)}`);
-    assert.deepEqual(menu[4].slice(-1), ["../#/methods"], "the menu: the methods table, last");
-    assert.deepEqual(menu[4].slice(1, -1).sort(), walks.sort(), "the menu: every walkthrough");
+    assert.deepEqual(entries("how").slice(-1), ["../#/methods"], "the menu: the methods table, last");
+    assert.deepEqual(entries("how").slice(0, -1).sort(), walks.sort(), "the menu: every walkthrough");
     assert.deepEqual(await page.$$eval("#tree li.legend", (ls) => ls.map((l) => l.textContent)),
       ["instances answered", "instances"], "the menu: what its counts count");
     if (cats.circuits) {
