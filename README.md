@@ -6,6 +6,8 @@
   <br>
   <a href="https://tractables.github.io/tddlog/"><img
      src="https://img.shields.io/badge/website-results%2C%20playground%2C%20guide-e3a72f" alt="Website: results, playground, guide"></a>
+  <a href="https://crates.io/crates/tddlog"><img
+     src="https://img.shields.io/crates/v/tddlog.svg" alt="crates.io"></a>
   <a href="https://pypi.org/project/tddlog/"><img
      src="https://img.shields.io/pypi/v/tddlog.svg" alt="PyPI"></a>
   <a href="https://github.com/Tractables/tddlog/actions/workflows/ci.yml"><img
@@ -91,19 +93,19 @@ Nothing to install: the [playground] runs tddlog in the browser.
 Prebuilt, on Linux x86-64 (glibc 2.28 or newer):
 
 ```sh
-curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
-cd tddlog-v0.1.0-x86_64-unknown-linux-gnu
+curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.1/tddlog-v0.1.1-x86_64-unknown-linux-gnu.tar.gz | tar xz
+cd tddlog-v0.1.1-x86_64-unknown-linux-gnu
 ./tddlog examples/alarm.pl
 ```
 
 - **Other platforms:** the
-  [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0) has
+  [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.1) has
   archives for Linux ARM64, macOS and Windows.
 - **Python:** `pip install tddlog`
 - **C and C++:** prebuilt archives on the same release
   ([C README](bindings/c/README.md)).
-- **From source**, with Rust 1.88 or newer and a C++20 compiler:
-  `cargo install --locked --git https://github.com/Tractables/tddlog tddlog`
+- **From [crates.io](https://crates.io/crates/tddlog)**, with Rust 1.88 or newer and a C++20 compiler:
+  `cargo install --locked tddlog`
 
 The guide's [getting started](https://tractables.github.io/tddlog/guide/#getting-started)
 covers each platform and what to do if the build fails.
@@ -188,7 +190,7 @@ measured behind it.
 
 ## Using it from Rust, Python and C
 
-- **Rust:** add `tddlog = { git = "https://github.com/Tractables/tddlog" }`
+- **Rust:** add `tddlog = "0.1"`
   under `[dependencies]`. [`tddlog::solve`] answers a program
   ([Rust API]).
 - **Python:** `tddlog.solve(text)` ([Python README](bindings/python/README.md)).

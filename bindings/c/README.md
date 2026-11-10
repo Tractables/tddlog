@@ -28,13 +28,13 @@ with and check `tddlog_version()` at run time.
 
 ## Install
 
-The [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0)
+The [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.1)
 has a prebuilt archive for Linux x86-64 and ARM64, macOS ARM64 and
 x86-64, and Windows x86-64. It needs no Rust toolchain. On Linux x86-64:
 
 ```sh
-curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-c-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
-export PKG_CONFIG_PATH=$PWD/tddlog-c-v0.1.0-x86_64-unknown-linux-gnu/lib/pkgconfig
+curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.1/tddlog-c-v0.1.1-x86_64-unknown-linux-gnu.tar.gz | tar xz
+export PKG_CONFIG_PATH=$PWD/tddlog-c-v0.1.1-x86_64-unknown-linux-gnu/lib/pkgconfig
 cc prog.c $(pkg-config --cflags --libs tddlog) -o prog
 ```
 

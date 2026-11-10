@@ -83,10 +83,10 @@ systems, see the results <a href="../#/types">by program type</a>,
     <li><b>In the browser:</b> the <a href="../playground/">playground</a>,
     with nothing to install.</li>
     <li><b>Download</b> the binary for your platform from the
-    <a href="https://github.com/Tractables/tddlog/releases/tag/v0.1.0">release</a>,
+    <a href="https://github.com/Tractables/tddlog/releases/tag/v0.1.1">release</a>,
     with its <code>examples/</code>:
-<pre data-lang="shell">curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
-cd tddlog-v0.1.0-x86_64-unknown-linux-gnu
+<pre data-lang="shell">curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.1/tddlog-v0.1.1-x86_64-unknown-linux-gnu.tar.gz | tar xz
+cd tddlog-v0.1.1-x86_64-unknown-linux-gnu
 ./tddlog examples/alarm.pl</pre>
     For other platforms, replace <code>x86_64-unknown-linux-gnu</code> with
     <code>aarch64-unknown-linux-gnu</code>, <code>aarch64-apple-darwin</code>,
@@ -95,8 +95,8 @@ cd tddlog-v0.1.0-x86_64-unknown-linux-gnu
     first needs <code>xattr -d com.apple.quarantine tddlog</code>.</li>
     <li><b>From Python:</b> <code>pip install tddlog</code>. For Rust and
     C, see <a href="#library">below</a>.</li>
-    <li><b>From source</b>, with Rust 1.88 or newer and a C++20 compiler:
-<pre data-lang="shell">cargo install --locked --git https://github.com/Tractables/tddlog tddlog</pre>
+    <li><b>From <a href="https://crates.io/crates/tddlog">crates.io</a></b>, with Rust 1.88 or newer and a C++20 compiler:
+<pre data-lang="shell">cargo install --locked tddlog</pre>
     <details><summary>If the build fails</summary>
     <ul>
       <li>"feature <code>edition2024</code> is required": this cargo is
@@ -846,7 +846,7 @@ tddlog --program tests/lpad/coin.cplint.pl &gt; coin.pl</pre>
   <p>Add the crate to <code>Cargo.toml</code>. The build needs a C++
   compiler, as in <a href="#getting-started">Getting started</a>.</p>
 <pre data-lang="toml">[dependencies]
-tddlog = { git = "https://github.com/Tractables/tddlog" }</pre>
+tddlog = "0.1"</pre>
   <p><code>tddlog::solve</code> takes the program, <code>Options</code>
   and a function that receives what <code>--stats</code> would
   print:</p>

@@ -605,7 +605,7 @@ function benchmarksOf(root) {
     for (const term of ["vtree", "pairs", "layout", "trial", "component", "part"]) {
       assert.ok(await page.$(`dt#term-${term}`), `the guide's terms: ${term}`);
     }
-    const install = "cargo install --locked --git https://github.com/Tractables/tddlog tddlog";
+    const install = "cargo install --locked tddlog";
     assert.ok((await page.textContent("#getting-started")).includes(install), "the guide's install line");
     assert.ok(fs.readFileSync(path.join(__dirname, "../../../README.md"), "utf8").includes(install), "the README's install line");
     assert.equal(await page.$eval("nav.contents", (n) => getComputedStyle(n).position), "sticky");
