@@ -32,8 +32,13 @@ with and check `tddlog_version()` at run time.
 ## Install
 
 There are no prebuilt archives yet. Build and install the package from a
-checkout, with Rust 1.88 or newer, a C++20 compiler for the
-tree-decomposition solvers goatd vendors, a C compiler and CMake:
+checkout, with Rust 1.88 or newer ([rustup](https://rustup.rs) installs
+it), a C++20 compiler (GCC 11 or newer or Clang 14 or newer) for the
+tree-decomposition solvers goatd vendors, a C compiler, `make` and CMake
+3.16 or newer; the command line's
+[install notes](https://github.com/Tractables/tddlog#install) say what
+to do when the default `cargo` or `g++` is older. The build takes about
+three minutes on eight cores:
 
 ```sh
 git clone --depth 1 https://github.com/Tractables/tddlog
@@ -99,7 +104,13 @@ tddlog_solution_free(solution);
 ```
 
 `examples/alarm.c` runs it on the alarm example and checks the answers
-against the probabilities worked out by hand.
+against the probabilities worked out by hand. It calls `log10`, so it
+links the maths library too, `-lm` after the package's flags or `m`
+after `tddlog::tddlog` in CMake:
+
+```sh
+cc bindings/c/examples/alarm.c $(pkg-config --cflags --libs tddlog) -lm -o alarm
+```
 
 - `TddlogOptions` holds the command line's options: `vtree` (`--vtree`,
   null for `"auto"`), `evidence_probability` (`--evidence-probability`)

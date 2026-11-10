@@ -48,7 +48,28 @@ exact inference system native to it, in less total time
 
 ## Install
 
-- **Command line:** `cargo install --locked --git https://github.com/Tractables/tddlog tddlog`.
+The [playground] runs tddlog in the browser, with nothing to install.
+The command line and the Rust, Python and C libraries build from source,
+which needs:
+
+- Rust 1.88 or newer, from [rustup](https://rustup.rs). A distribution's
+  cargo is often older and stops with "feature `edition2024` is
+  required". rustup puts `cargo` on the PATH of new shells; in the shell
+  that ran it, run `. "$HOME/.cargo/env"` first.
+- A C++20 compiler, GCC 11 or newer or Clang 14 or newer, for the
+  tree-decomposition solver that goatd vendors, and `make`, for jemalloc:
+  `sudo apt install build-essential` on Debian and Ubuntu,
+  `xcode-select --install` on macOS. An older `g++` stops with
+  "unrecognized command line option '-std=c++20'": install a newer one,
+  which the build finds by the name `g++-12`, `g++-13` or `g++-14`, or name
+  it in `GOATD_CXX` (`GOATD_CXX=g++-11 cargo install ...`); `CXX` does not
+  choose it.
+
+Then:
+
+- **Command line:** `cargo install --locked --git https://github.com/Tractables/tddlog tddlog`
+  builds `tddlog` into `$HOME/.cargo/bin`, in about five minutes on eight
+  cores.
 - **Rust:** `tddlog = { git = "https://github.com/Tractables/tddlog" }` under
   `[dependencies]`. See the [Rust API].
 - **Python:** `pip install "git+https://github.com/Tractables/tddlog#subdirectory=bindings/python"`
@@ -56,24 +77,11 @@ exact inference system native to it, in less total time
   [Python README](bindings/python/README.md).
 - **C and C++:** build the CMake package from a checkout. See the
   [C README](bindings/c/README.md).
-- **Browser:** the [playground] runs tddlog in the tab, with nothing to install.
-
-A build from source needs Rust 1.88 or newer ([rustup](https://rustup.rs)
-installs it) and a C++ compiler (gcc 12 or newer, or a recent clang) for
-the tree-decomposition solver that goatd vendors. It takes a few minutes.
 
 ## Getting started
 
-The commands below run in a checkout of the repository, whose
-`examples/` holds the programs they read:
-
-```sh
-git clone --depth 1 https://github.com/Tractables/tddlog
-cd tddlog
-```
-
 A program states probabilistic facts, rules, evidence and queries.
-This is `examples/alarm.pl`:
+This is [examples/alarm.pl](examples/alarm.pl):
 
 ```prolog
 0.1::burglary.
@@ -89,10 +97,13 @@ query(earthquake).
 query(calls(mary)).
 ```
 
-tddlog prints the probability of each query given the evidence:
+Saved as `alarm.pl`, or fetched with
+`curl -O https://raw.githubusercontent.com/Tractables/tddlog/main/examples/alarm.pl`,
+it runs as `tddlog alarm.pl`, which prints the probability of each query
+given the evidence:
 
 ```text
-$ tddlog examples/alarm.pl
+$ tddlog alarm.pl
 burglary:       0.357143
 earthquake:     0.714286
 calls(mary):    0.400000
@@ -103,6 +114,14 @@ of the others, and the rules derive the other atoms. The alarm goes off
 with probability 1 − 0.9 × 0.8 = 0.28, so John calls with probability
 0.28 × 0.7 = 0.196, and P(burglary | John calls) = 0.1 × 0.7 / 0.196 =
 0.357143.
+
+The commands below run in a checkout of the repository, whose
+`examples/` and `tests/` hold the programs they read:
+
+```sh
+git clone --depth 1 https://github.com/Tractables/tddlog
+cd tddlog
+```
 
 A program can take values from the command line: the arguments after its
 file take its places `$1`, `$2`, ... (outside comments and quoted

@@ -88,13 +88,29 @@ playground.</p>
     repository and installs it in its <code>bin</code> directory
     (<code>$HOME/.cargo/bin</code>):
 <pre data-lang="shell">cargo install --locked --git https://github.com/Tractables/tddlog tddlog</pre>
-    The build needs Rust 1.88 or newer (<a href="https://rustup.rs">rustup</a>
-    installs it) and a C++ compiler (gcc 12 or newer, or a recent clang)
-    for the tree-decomposition solver that the goatd library vendors, and
-    takes a few minutes. <code>--locked</code> builds with the versions
-    of the dependencies that the repository's tests ran with. In a
-    checkout of the repository, <code>cargo build --release</code> builds
-    the same program as <code>target/release/tddlog</code>.</li>
+    The build needs:
+    <ul>
+      <li>Rust 1.88 or newer, from <a href="https://rustup.rs">rustup</a>.
+      A distribution's cargo is often older and stops with "feature
+      <code>edition2024</code> is required". rustup puts <code>cargo</code>
+      on the PATH of new shells; in the shell that ran it, run
+      <code>. "$HOME/.cargo/env"</code> first.</li>
+      <li>A C++20 compiler, GCC 11 or newer or Clang 14 or newer, for the
+      tree-decomposition solver that the goatd library vendors, and
+      <code>make</code>, for jemalloc: <code>sudo apt install
+      build-essential</code> on Debian and Ubuntu, <code>xcode-select
+      --install</code> on macOS. An older <code>g++</code> stops with
+      "unrecognized command line option '-std=c++20'": install a newer
+      one, which the build finds by the name <code>g++-12</code>,
+      <code>g++-13</code> or <code>g++-14</code>, or name it in
+      <code>GOATD_CXX</code> (<code>GOATD_CXX=g++-11 cargo install
+      ...</code>); <code>CXX</code> does not choose it.</li>
+    </ul>
+    The build takes about five minutes on eight cores.
+    <code>--locked</code> builds with the versions of the dependencies
+    that the repository's tests ran with. In a checkout of the repository,
+    <code>cargo build --release</code> builds the same program as
+    <code>target/release/tddlog</code>.</li>
     <li>From Python: pip builds the package from the repository, with the
     same compilers, as the <a href="../python/">Python page</a> shows:
 <pre data-lang="shell">python -m pip install "git+https://github.com/Tractables/tddlog#subdirectory=bindings/python"</pre>
@@ -103,7 +119,10 @@ playground.</p>
   </ul>
   <p>The commands below run in a checkout of the repository
   (<code>git clone --depth 1 https://github.com/Tractables/tddlog</code>), whose
-  <code>examples/</code> holds the programs they read.</p>
+  <code>examples/</code> holds the programs they read. Without one, a
+  program is fetched on its own:
+  <code>curl -O https://raw.githubusercontent.com/Tractables/tddlog/main/examples/alarm.pl</code>
+  and <code>tddlog alarm.pl</code>.</p>
 
   <h3 id="first-program">A first program</h3>
   <p><a href="https://github.com/Tractables/tddlog/blob/main/examples/alarm.pl"><code>examples/alarm.pl</code></a> is the alarm example of

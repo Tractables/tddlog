@@ -24,8 +24,11 @@ the [C library](https://tractables.github.io/tddlog/c/).
 
 tddlog is not on PyPI yet. pip builds it from the repository, with
 Python 3.10 or later, Rust 1.88 or newer ([rustup](https://rustup.rs)
-installs it) and a C++20 compiler (gcc 12 or newer, or a recent clang).
-The build takes a few minutes. In a virtual environment:
+installs it), a C++20 compiler (GCC 11 or newer or Clang 14 or newer)
+and `make`; the command line's
+[install notes](https://github.com/Tractables/tddlog#install) say what
+to do when the default `cargo` or `g++` is older. The build takes about
+four minutes on eight cores. In a virtual environment:
 
 ```sh
 python3 -m venv .venv
