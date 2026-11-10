@@ -298,7 +298,7 @@ pub(crate) const ANSWERS: &str = "$sq";
 /// that is not a built-in tddlog evaluates, in a clause of a predicate the
 /// queries and the evidence reach, or in a query rule. tddlog would read
 /// such a predicate as false: a misspelt name, or a built-in of ProbLog's
-/// it does not evaluate (`write/1`, `call/1`, `select/3`), would give a
+/// it does not evaluate (`write/1`, `functor/3`), would give a
 /// wrong probability. ProbLog stops where its resolution reaches the call,
 /// so it also answers a program whose call comes after a literal that
 /// never holds, or in a clause whose head unifies with no call; tddlog
