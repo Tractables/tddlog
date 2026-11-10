@@ -41,8 +41,10 @@ type of program is compared with the systems that natively handle it.
 Every answer is checked against an exact reference.
 
 <p align="center">
-  <img src="docs/images/overview.svg"
-       alt="Each type of program against the exact inference systems native to it: their answers, their total times and tddlog's, and tddlog's speed-up over each">
+  <a href="https://tractables.github.io/tddlog/#/types"><img src="docs/images/overview.svg"
+       alt="Each type of program against the exact inference systems native to it: their answers, their total times and tddlog's, and tddlog's speed-up over each"></a>
+  <br>
+  <sub><a href="https://tractables.github.io/tddlog/#/types">Every result on the website</a>: each type of program, family, instance and system.</sub>
 </p>
 
 <!-- results:overview -->
