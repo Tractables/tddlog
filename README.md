@@ -29,8 +29,6 @@ library, with Python, C and WebAssembly bindings.
 <!-- results:headline -->
 On [probabilistic logic programs](https://tractables.github.io/tddlog/#/category/logic-programs), tddlog is **214×** faster than ProbLog, and on [Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks) **55×** faster than Ace, the existing system that answers the most of each. [Detailed results below](#how-well-does-it-work).
 <!-- /results:headline -->
-On every type of program, tddlog answers more instances than each exact
-inference system native to it, in less total time.
 
 **Website: [tractables.github.io/tddlog](https://tractables.github.io/tddlog/).**
 It has every result, by program type and by baseline, the [playground],
