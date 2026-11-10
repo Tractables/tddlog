@@ -319,3 +319,61 @@ fn var_and_nonvar_test_a_term_as_it_stands_where_they_are_called() {
     let e = refusal(&format!("{program} query(v(_)). query(v(1))."));
     assert!(e.contains("var/1 of a term with variables"), "{e}");
 }
+
+/// The diamond loop counted down from `n` to zero, `test` stopping it, and
+/// a ring of `n` nodes walked back from its last node to its first: each
+/// step routes the signal one way with probability 0.5 and loses it the
+/// other way with probability 0.0001, so that `s(n)` holds with
+/// probability 0.99995^n, and each edge of the ring holds with probability
+/// 0.999, so that `reach(n - 1)` holds with probability 0.999^(n - 1).
+fn countdown(n: usize, test: &str) -> String {
+    format!(
+        "0.5::route(T) :- step(T).
+         0.0001::drop(T) :- step(T).
+         step(T) :- between(0, {n}, T).
+         s(0).
+         s(T) :- {test}, J is T - 1, s(J), route(J).
+         s(T) :- {test}, J is T - 1, s(J), \\+ route(J), \\+ drop(J).
+         node(X) :- between(0, {m}, X).
+         0.999::edge(Y, X) :- node(X), X > 0, Y is X - 1.
+         0.999::edge({m}, 0).
+         reach(0).
+         reach(X) :- edge(Y, X), reach(Y).
+         query(s({n})).
+         query(reach({m})).",
+        m = n - 1
+    )
+}
+
+/// Calls resolved top-down nest as deep as the grounding's bound allows,
+/// past the thousand the resolution refused when it recursed on the
+/// thread's stack, here the test harness's 2 MB: the loop's 2000 nested
+/// calls, and the ring's 2000 calls in one cycle, completed by its first.
+/// The loop stopped by `T =\= 0`, which bounds no level, negates a
+/// derived predicate along a recursion that counts, and the program is
+/// resolved top-down; stopped by `T > 0`, it is ground from its demand.
+/// The two writings answer alike.
+#[test]
+fn a_loop_and_a_cycle_resolved_top_down_nest_past_a_thousand_calls() {
+    let n = 2000;
+    let expected = [
+        (format!("s({n})"), 0.99995f64.powi(n as i32)),
+        (format!("reach({})", n - 1), 0.999f64.powi(n as i32 - 1)),
+    ];
+    for (test, top_down) in [("T =\\= 0", true), ("T > 0", false)] {
+        let source = countdown(n, test);
+        let gp = common::ground(&source, common::Rows::Classes, false);
+        assert_eq!(
+            gp.stats.top_down.0 > 0,
+            top_down,
+            "{test}: {:?}",
+            gp.stats.top_down
+        );
+        let got = answers(&source);
+        assert_eq!(got.len(), expected.len(), "{test}: {got:?}");
+        for ((a, p), (b, q)) in got.iter().zip(&expected) {
+            assert_eq!(a, b, "{test}");
+            assert!((p - q).abs() < 1e-9, "{test}: {a} = {p} against {q}");
+        }
+    }
+}

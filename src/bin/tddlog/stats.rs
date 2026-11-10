@@ -224,6 +224,12 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
     if g.stats.walked > 0 {
         line.push_str(&format!("; {} body literals walked", g.stats.walked));
     }
+    let (tables, literals) = g.stats.top_down;
+    if tables > 0 {
+        line.push_str(&format!(
+            "; resolved top-down, {tables} tables, {literals} literals"
+        ));
+    }
     if !g.stats.from_bound_end.is_empty() {
         line.push_str(&format!(
             "; {} grounded from the bound end",

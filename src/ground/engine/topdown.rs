@@ -54,12 +54,20 @@
 //!   recorded as a derivation, its clause's group and what each body
 //!   literal reads.
 //!
-//! The answers, the rules, the derivations and the literals resolved
-//! count against the grounding's bound, so that a grounding bounded by
-//! another's size also stops once its work passes it, and a ground term deeper than
-//! [`MAX_DEPTH`](super::MAX_DEPTH), or calls or a term with variables
-//! nested deeper than [`MAX_NESTING`], give the grounding up with the goal
-//! that reached them.
+//! The resolution keeps its own stack, on the heap: a frame for each
+//! table being resolved, called from the clause of the one below it, and
+//! for each literal of its clause the alternatives it has left (a
+//! choice). A table is on the stack once at most, so that calls nest as
+//! deep as the tables made allow, and a loop of a hundred thousand steps
+//! resolved from its end takes no more of the thread's stack than one of
+//! ten.
+//!
+//! The tables, the answers, the rules, the derivations and the literals
+//! resolved count against the grounding's bound, so that a grounding
+//! bounded by another's size also stops once its work passes it, and a
+//! ground term deeper than [`MAX_DEPTH`](super::MAX_DEPTH), or a term with
+//! variables nested deeper than [`MAX_NESTING`], gives the grounding up
+//! with the goal that reached it.
 
 use std::rc::Rc;
 use std::sync::{Arc, LazyLock};
@@ -72,9 +80,9 @@ use crate::ground::GroundProgram;
 use crate::ground::normalize::{Driver, NormProgram};
 use crate::syntax::{Args, Atom, Builtin, Clause, CmpOp, Compound, Gather, Literal, Name, Term};
 
-/// The deepest nesting of calls resolved, and of a term with variables:
-/// each level takes a few frames of the stack. A ground term is bound by
-/// [`MAX_DEPTH`](super::MAX_DEPTH).
+/// The deepest nesting of a term with variables, which the functions that
+/// walk such a term recurse into, a few frames of the thread's stack a
+/// level. A ground term is bound by [`MAX_DEPTH`](super::MAX_DEPTH).
 const MAX_NESTING: usize = 1_000;
 
 /// A term being resolved: a ground term's value, a variable, or a compound
@@ -84,6 +92,15 @@ enum T {
     G(Val),
     X(u32),
     F(u32, Rc<[T]>),
+}
+
+/// The values of `ts`, where all are ground.
+fn ground_vals(ts: &[T]) -> Option<Box<[Val]>> {
+    let val = |t: &T| match t {
+        T::G(v) => Some(*v),
+        _ => None,
+    };
+    ts.iter().map(val).collect()
 }
 
 /// A term of a clause, its variables numbered from 0 in the clause.
@@ -191,15 +208,89 @@ struct Table {
     compared: bool,
 }
 
-/// A table being resolved: the first table of a cycle it reached, and
-/// whether it read a table that was not complete.
+/// A table being resolved, on the resolution's stack, and the clause of
+/// it being resolved.
 struct Frame {
     table: u32,
+    /// The first table of a cycle it reached, and whether it read a table
+    /// that was not complete.
     low: u32,
     looped: bool,
-    /// The call's terms as the clause being resolved for it instantiated
-    /// them ([`TopDown::of_call`]).
+    /// The answers found, all tables', when this pass over its clauses
+    /// began.
+    before: u64,
+    /// The clause being resolved, by its place among its predicate's; its
+    /// rule, and its variables' first number.
+    clause: usize,
+    rule: u32,
+    base: u32,
+    /// The call's terms as the clause instantiated them
+    /// ([`TopDown::of_call`]).
     call: Vec<T>,
+    /// The bindings before the clause, restored after it.
+    mark: (usize, usize),
+    /// Where the clause's choices start on [`TopDown::choices`], and what
+    /// its body reads on [`TopDown::steps`].
+    choices: usize,
+    steps: usize,
+    /// The literal of the caller's clause that reads the table once it is
+    /// resolved, and its call's terms; none for a query's call.
+    reader: Option<(usize, Vec<T>)>,
+}
+
+/// A literal of the clause being resolved, and the alternatives it has
+/// left.
+struct Choice {
+    lit: usize,
+    /// The bindings and the steps before it, restored before each
+    /// alternative and after the last.
+    mark: (usize, usize),
+    steps: usize,
+    alts: Alts,
+}
+
+/// A literal's alternatives, from the `next`th on, each unified with the
+/// literal's terms.
+enum Alts {
+    /// The answers of a table, for a call of `args`.
+    Answers {
+        table: u32,
+        next: usize,
+        args: Vec<T>,
+    },
+    /// The facts of `pred` that may match `args`.
+    Tuples {
+        pred: u32,
+        tuples: Vec<Box<[Val]>>,
+        next: usize,
+        args: Vec<T>,
+    },
+    /// The solutions of a built-in over `args`, or a findall's lists, its
+    /// result the one argument, each with what it reads.
+    Solutions {
+        sols: Vec<(Vec<T>, Option<Step>)>,
+        next: usize,
+        args: Vec<T>,
+    },
+    /// None: the literal held once, and the literals after it are being
+    /// resolved.
+    Spent,
+}
+
+/// What the resolution does next with the table on top of its stack.
+enum Go {
+    /// Resolves the `i`th literal of the clause at hand.
+    Enter(usize),
+    /// Tries the next alternative of the clause's latest choice.
+    Retry,
+    /// Resolves the next clause, or ends the pass over the clauses.
+    Clause,
+}
+
+/// The table of a call, ready to read, or to resolve first.
+enum Called {
+    Ready(u32),
+    Resolve(u32),
 }
 
 /// Pushes the variables of `t` to `out`, `t`'s bound variables replaced
@@ -242,8 +333,11 @@ pub(crate) fn ground(
         td.driver(d, &mut queries, &mut evidence)?;
     }
     td.shared()?;
+    let resolved = (td.tables.len(), td.literals);
     let out = td.program(norm, queries, evidence);
-    ground_normalized(&out, bound)
+    let mut gp = ground_normalized(&out, bound)?;
+    gp.stats.top_down = resolved;
+    Ok(gp)
 }
 
 struct TopDown<'a> {
@@ -265,10 +359,16 @@ struct TopDown<'a> {
     compared: Option<String>,
     /// The tables that are not complete, in the order made.
     open: Vec<u32>,
+    /// The resolution's stack: the tables being resolved, each called
+    /// from the clause of the one below it, the choices of the literals
+    /// of their clauses, and what those clauses' bodies read.
     frames: Vec<Frame>,
+    choices: Vec<Choice>,
+    steps: Vec<Step>,
     pass: u32,
-    /// The answers found so far, all tables'.
+    /// The answers found so far, all tables', and the literals resolved.
     added: u64,
+    literals: u64,
     /// The facts' values, by predicate, and their indexes by a place.
     facts: FxHashMap<u32, Rc<[Val]>>,
     fact_ix: FxHashMap<(u32, usize), FactIndex>,
@@ -311,8 +411,11 @@ impl<'a> TopDown<'a> {
             compared: None,
             open: Vec::new(),
             frames: Vec::new(),
+            choices: Vec::new(),
+            steps: Vec::new(),
             pass: 0,
             added: 0,
+            literals: 0,
             facts: FxHashMap::default(),
             fact_ix: FxHashMap::default(),
             atoms: Vec::new(),
@@ -756,8 +859,24 @@ impl<'a> TopDown<'a> {
 
     /// The table of the call of `p` with `args`, resolved: complete, or
     /// holding the answers found so far where it is part of a cycle still
-    /// being resolved.
-    fn call(&mut self, p: u32, args: &[T]) -> Result<u32, GroundError> {
+    /// being resolved. A query's or a query rule's call starts the
+    /// resolution; a clause's call goes on the stack of the one at hand
+    /// ([`Self::enter`]).
+    fn resolved(&mut self, p: u32, args: &[T]) -> Result<u32, GroundError> {
+        match self.call(p, args)? {
+            Called::Ready(t) => Ok(t),
+            Called::Resolve(t) => {
+                self.start(t, None)?;
+                self.run()?;
+                Ok(t)
+            }
+        }
+    }
+
+    /// The table of the call of `p` with `args`: one to read, or one whose
+    /// clauses are to be resolved, made now or resolved again in a new
+    /// pass of its cycle.
+    fn call(&mut self, p: u32, args: &[T]) -> Result<Called, GroundError> {
         let args = self.full_all(args)?;
         let Some(key) = Self::key(&args) else {
             return Err(self.too_deep(p, "call"));
@@ -772,19 +891,19 @@ impl<'a> TopDown<'a> {
             if let Some(c) = caller {
                 self.reads.insert((c, t));
             }
-            match self.tables[t as usize].state {
+            let Table {
+                state, pass, low, ..
+            } = self.tables[t as usize];
+            match state {
                 State::Complete => {}
                 State::Active => self.reads(t),
-                State::Open => {
-                    if self.tables[t as usize].pass != self.pass {
-                        self.resolve_table(t)?;
-                    }
-                    if self.tables[t as usize].state == State::Open {
-                        self.reads(self.tables[t as usize].low);
-                    }
-                }
+                // Resolved again once in each pass of its cycle: its frame
+                // passes the cycle's first table on to the caller's as it
+                // ends ([`Self::clause`]).
+                State::Open if pass != self.pass => return Ok(Called::Resolve(t)),
+                State::Open => self.reads(low),
             }
-            return Ok(t);
+            return Ok(Called::Ready(t));
         }
         if self.tables.try_reserve(1).is_err() {
             return Err(GroundError::OutOfMemory);
@@ -806,8 +925,7 @@ impl<'a> TopDown<'a> {
         }
         self.table_ix.insert((p, key), t);
         self.open.push(t);
-        self.resolve_table(t)?;
-        Ok(t)
+        Ok(Called::Resolve(t))
     }
 
     /// Whether the terms `ts`, their bound variables replaced, hold a
@@ -888,68 +1006,65 @@ impl<'a> TopDown<'a> {
         }
     }
 
-    /// Resolves the clauses of table `t`'s call, again while it is the
-    /// first of a cycle that gained answers.
-    fn resolve_table(&mut self, t: u32) -> Result<(), GroundError> {
-        if self.frames.len() >= MAX_NESTING {
-            let key = self.tables[t as usize].call.clone();
-            let p = self.tables[t as usize].pred;
-            let mark = self.mark();
-            let args = self.unkey(&key, self.preds[p as usize].arity);
-            let goal = self.show(p, &args);
-            self.undo(mark);
-            return Err(GroundError::Unsupported(format!(
-                "the top-down grounding nests calls deeper than {MAX_NESTING}, at {goal}"
-            )));
+    /// Puts table `t` on the stack, to resolve its clauses, whose answers
+    /// literal `reader` of the caller's clause reads once it is resolved.
+    fn start(&mut self, t: u32, reader: Option<(usize, Vec<T>)>) -> Result<(), GroundError> {
+        if self.frames.try_reserve(1).is_err() {
+            return Err(GroundError::OutOfMemory);
         }
+        let table = &mut self.tables[t as usize];
+        table.state = State::Active;
+        table.pass = self.pass;
         // A table already found in a cycle starts from the cycle's first
         // table: whatever it reads this time, it is not taken for the first
         // table of a cycle of its own and completed before that one is.
+        let low = table.low;
+        let mark = self.mark();
         self.frames.push(Frame {
             table: t,
-            low: self.tables[t as usize].low,
+            low,
             looped: false,
+            before: self.added,
+            clause: 0,
+            rule: 0,
+            base: 0,
             call: Vec::new(),
+            mark,
+            choices: self.choices.len(),
+            steps: self.steps.len(),
+            reader,
         });
-        self.tables[t as usize].state = State::Active;
-        loop {
-            let before = self.added;
-            self.tables[t as usize].pass = self.pass;
-            self.clauses(t)?;
-            let f = self.frames.last_mut().expect("a frame");
-            if f.low < t {
-                self.tables[t as usize].state = State::Open;
-                self.tables[t as usize].low = f.low;
-                break;
-            }
-            if !f.looped || self.added == before {
-                while let Some(&u) = self.open.last()
-                    && u >= t
-                {
-                    self.open.pop();
-                    self.tables[u as usize].state = State::Complete;
-                }
-                break;
-            }
-            f.looped = false;
-            self.pass += 1;
-        }
-        let f = self.frames.pop().expect("a frame");
-        if f.low < f.table
-            && let Some(parent) = self.frames.last_mut()
-        {
-            parent.low = parent.low.min(f.low);
-            parent.looped = true;
+        Ok(())
+    }
+
+    /// Resolves the tables on the stack until none is left, depth first:
+    /// each clause of the table on top in turn, the alternatives of each
+    /// literal of its body in turn, and a call of a table to resolve put
+    /// on top.
+    fn run(&mut self) -> Result<(), GroundError> {
+        let rules = self.rules.clone();
+        let mut go = Go::Clause;
+        while !self.frames.is_empty() {
+            go = match go {
+                Go::Enter(i) => self.enter(&rules, i)?,
+                Go::Retry => self.retry()?,
+                Go::Clause => self.clause(&rules)?,
+            };
         }
         Ok(())
     }
 
-    /// Resolves the call of table `t` with each clause of its predicate.
-    fn clauses(&mut self, t: u32) -> Result<(), GroundError> {
+    /// Resolves the next clause of the table on top, its head unified with
+    /// the call. Once none is left, ends the pass over them: the table is
+    /// resolved again while it is the first of a cycle that gained
+    /// answers, then completed with the tables of its cycle, or left open
+    /// for its cycle's first table, and its caller reads it.
+    fn clause(&mut self, rules: &[Rule]) -> Result<Go, GroundError> {
+        let f = self.frames.last().expect("a frame");
+        let t = f.table;
         let p = self.tables[t as usize].pred;
-        let rules = self.rules.clone();
-        for k in 0..self.preds[p as usize].rules.len() {
-            let rule = &rules[self.preds[p as usize].rules[k] as usize];
+        if let Some(&r) = self.preds[p as usize].rules.get(f.clause) {
+            let rule = &rules[r as usize];
             let mark = self.mark();
             let key = self.tables[t as usize].call.clone();
             let call = self.unkey(&key, rule.args.len());
@@ -958,126 +1073,246 @@ impl<'a> TopDown<'a> {
                 .resize(self.binds.len() + rule.vars as usize, None);
             let head: Vec<T> = rule.args.iter().map(|a| Self::inst(a, base)).collect();
             let unified = self.unify_all(&head, &call);
-            self.frames.last_mut().expect("a frame").call = call;
-            if unified {
-                self.body(t, rule, base, 0, &mut Vec::new())?;
-            }
-            self.undo(mark);
+            let f = self.frames.last_mut().expect("a frame");
+            (f.rule, f.base, f.mark, f.call) = (r, base, mark, call);
+            return Ok(if unified { Go::Enter(0) } else { Go::Retry });
         }
-        Ok(())
+        let f = self.frames.last_mut().expect("a frame");
+        if f.low < t {
+            self.tables[t as usize].state = State::Open;
+            self.tables[t as usize].low = f.low;
+        } else if !f.looped || self.added == f.before {
+            while let Some(&u) = self.open.last()
+                && u >= t
+            {
+                self.open.pop();
+                self.tables[u as usize].state = State::Complete;
+            }
+        } else {
+            f.looped = false;
+            f.before = self.added;
+            f.clause = 0;
+            self.pass += 1;
+            self.tables[t as usize].pass = self.pass;
+            return Ok(Go::Clause);
+        }
+        let f = self.frames.pop().expect("a frame");
+        if f.low < f.table
+            && let Some(parent) = self.frames.last_mut()
+        {
+            parent.low = parent.low.min(f.low);
+            parent.looped = true;
+        }
+        match f.reader {
+            Some((i, args)) => self.read(rules, i, t, args),
+            None => Ok(Go::Clause),
+        }
     }
 
-    /// Resolves the literals of `rule` from the `i`th on, its variables
-    /// from `base`, for table `t`'s call; `steps` holds what the
-    /// literals before it read: atoms, negated or not, and the ranks of
-    /// built-ins' solutions.
-    fn body(
-        &mut self,
-        t: u32,
-        rule: &Rule,
-        base: u32,
-        i: usize,
-        steps: &mut Vec<Step>,
-    ) -> Result<(), GroundError> {
+    /// Backtracks to the latest literal of the clause at hand with an
+    /// alternative left, its bindings and steps restored, and tries it;
+    /// once none is left, the clause is done.
+    fn retry(&mut self) -> Result<Go, GroundError> {
+        let f = self.frames.last().expect("a frame");
+        let (from, before) = (f.choices, f.mark);
+        while self.choices.len() > from {
+            let c = self.choices.last().expect("a choice");
+            let (lit, mark, steps) = (c.lit, c.mark, c.steps);
+            self.undo(mark);
+            self.steps.truncate(steps);
+            if let Some(step) = self.alternative(mark)? {
+                self.steps.extend(step);
+                return Ok(Go::Enter(lit + 1));
+            }
+            self.choices.pop();
+        }
+        self.undo(before);
+        self.frames.last_mut().expect("a frame").clause += 1;
+        Ok(Go::Clause)
+    }
+
+    /// The next alternative of the latest choice that unifies, and what it
+    /// reads; `None` once none is left. Each that does not unify has its
+    /// bindings undone to `mark`.
+    fn alternative(&mut self, mark: (usize, usize)) -> Result<Option<Option<Step>>, GroundError> {
+        let c = self.choices.len() - 1;
+        let mut alts = std::mem::replace(&mut self.choices[c].alts, Alts::Spent);
+        let found = loop {
+            match &mut alts {
+                // Read as they come: a table of the caller's cycle may gain
+                // answers while the clause is resolved further.
+                Alts::Answers { table, next, args } => {
+                    let Some((key, a)) = self.tables[*table as usize].answers.get(*next).cloned()
+                    else {
+                        break None;
+                    };
+                    *next += 1;
+                    let answer = self.unkey(&key, args.len());
+                    if self.unify_all(args, &answer) {
+                        break Some(Some(Step::Pos(a)));
+                    }
+                }
+                Alts::Tuples {
+                    pred,
+                    tuples,
+                    next,
+                    args,
+                } => {
+                    let Some(vals) = tuples.get_mut(*next).map(std::mem::take) else {
+                        break None;
+                    };
+                    *next += 1;
+                    let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
+                    if self.unify_all(args, &tuple) {
+                        let a = self.atom(*pred, vals)?;
+                        break Some(Some(Step::Pos(a)));
+                    }
+                }
+                Alts::Solutions { sols, next, args } => {
+                    let Some((sol, step)) = sols.get(*next) else {
+                        break None;
+                    };
+                    *next += 1;
+                    if self.unify_all(args, sol) {
+                        break Some(*step);
+                    }
+                }
+                Alts::Spent => break None,
+            }
+            self.undo(mark);
+        };
+        self.choices[c].alts = alts;
+        Ok(found)
+    }
+
+    /// Pushes the choice of the `i`th literal of the clause at hand among
+    /// `alts`, the bindings and steps as they stand restored before each
+    /// alternative and after the last.
+    fn push(&mut self, i: usize, alts: Alts) {
+        let mark = self.mark();
+        self.choices.push(Choice {
+            lit: i,
+            mark,
+            steps: self.steps.len(),
+            alts,
+        });
+    }
+
+    /// The `i`th literal tries `alts` in turn.
+    fn choose(&mut self, i: usize, alts: Alts) -> Result<Go, GroundError> {
+        self.push(i, alts);
+        Ok(Go::Retry)
+    }
+
+    /// The `i`th literal holds once, reading `steps`: the literals after
+    /// it are resolved.
+    fn take(&mut self, i: usize, steps: impl IntoIterator<Item = Step>) -> Result<Go, GroundError> {
+        self.push(i, Alts::Spent);
+        self.steps.extend(steps);
+        Ok(Go::Enter(i + 1))
+    }
+
+    /// The `i`th literal, a negation, reads the atoms of its call's
+    /// answers: it holds where none of them does, and fails where one is
+    /// true in every world, as in ProbLog's grounding: `\+ member(X,
+    /// Seen)` ends a walk that would otherwise grow its list.
+    fn negation(&mut self, i: usize, atoms: Vec<u32>) -> Result<Go, GroundError> {
+        if atoms.iter().any(|&a| self.always(a)) {
+            return Ok(Go::Retry);
+        }
+        self.take(i, atoms.into_iter().map(Step::Neg))
+    }
+
+    /// Resolves the `i`th literal of the clause at hand: pushes its choice
+    /// of alternatives, or the table its call reads where that table is
+    /// still to be resolved. Past the last literal, the clause's instance
+    /// proves an answer.
+    fn enter(&mut self, rules: &[Rule], i: usize) -> Result<Go, GroundError> {
         // Each literal resolved counts against the bound too: the work of a
         // call resolved again for each binding of an argument its rules
         // read only after enumerating (`step(J) :- between(1, N, T1), J is
         // T1 - 1`, called for each `J`) grows past what it keeps.
         self.grow(1)?;
+        self.literals += 1;
+        let f = self.frames.last().expect("a frame");
+        let (t, rule, base) = (f.table, &rules[f.rule as usize], f.base);
         let Some(lit) = rule.body.get(i) else {
-            return self.answer(t, rule.group, steps);
-        };
-        let next = |me: &mut Self, step: Option<Step>, steps: &mut Vec<Step>| {
-            steps.extend(step);
-            let r = me.body(t, rule, base, i + 1, steps);
-            if step.is_some() {
-                steps.pop();
-            }
-            r
+            let from = f.steps;
+            let steps = std::mem::take(&mut self.steps);
+            let proved = self.answer(t, rule.group, &steps[from..]);
+            self.steps = steps;
+            proved?;
+            return Ok(Go::Retry);
         };
         match lit {
             Lit::Call(p, args, negated) => {
                 let args: Vec<T> = args.iter().map(|a| Self::inst(a, base)).collect();
                 let p = *p;
+                let kind = self.preds[p as usize].kind;
                 if !negated {
-                    match self.preds[p as usize].kind {
-                        Kind::Rules => {
-                            let u = self.call(p, &args)?;
-                            let arity = args.len();
-                            let mut k = 0;
-                            while let Some((key, a)) =
-                                self.tables[u as usize].answers.get(k).cloned()
-                            {
-                                k += 1;
-                                let mark = self.mark();
-                                let answer = self.unkey(&key, arity);
-                                if self.unify_all(&args, &answer) {
-                                    next(self, Some(Step::Pos(a)), steps)?;
-                                }
-                                self.undo(mark);
-                            }
-                        }
+                    return match kind {
+                        Kind::Rules => self.called(rules, i, p, args),
                         Kind::Facts(f) => {
-                            for vals in self.fact_matches(p, f, &args) {
-                                let mark = self.mark();
-                                let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
-                                if self.unify_all(&args, &tuple) {
-                                    let a = self.atom(p, vals)?;
-                                    next(self, Some(Step::Pos(a)), steps)?;
-                                }
-                                self.undo(mark);
-                            }
+                            let tuples = self.fact_matches(p, f, &args);
+                            self.choose(
+                                i,
+                                Alts::Tuples {
+                                    pred: p,
+                                    tuples,
+                                    next: 0,
+                                    args,
+                                },
+                            )
                         }
                         Kind::Switch => {
                             let vals = self.values(p, &args, rule, "a probabilistic choice")?;
                             let a = self.atom(p, vals)?;
-                            next(self, Some(Step::Pos(a)), steps)?;
+                            self.take(i, Some(Step::Pos(a)))
                         }
-                        Kind::Undefined => {}
-                    }
-                    return Ok(());
+                        Kind::Undefined => Ok(Go::Retry),
+                    };
                 }
-                if self.preds[p as usize].kind == Kind::Switch {
+                if kind == Kind::Switch {
                     let vals = self.values(p, &args, rule, "a negation")?;
                     let a = self.atom(p, vals)?;
-                    if !self.always(a) {
-                        next(self, Some(Step::Neg(a)), steps)?;
-                    }
-                    return Ok(());
+                    return self.negation(i, vec![a]);
                 }
-                // The negation holds where none of the call's answers does,
-                // and fails where one is true in every world, as in
-                // ProbLog's grounding: `\+ member(X, Seen)` ends a walk that
-                // would otherwise grow its list. A call with variables, as
-                // ProbLog makes it, may have several answers.
-                // Where a variable of the table's call is free there, a
-                // call that binds it reads fewer answers.
+                // A call with variables, as ProbLog makes it, may have
+                // several answers. Where a variable of the table's call is
+                // free there, a call that binds it reads fewer answers.
                 let full = self.full_all(&args)?;
                 if full.iter().any(|a| !matches!(a, T::G(_))) && self.of_call(&full)? {
                     self.call_dependent(rule, "a negation of a call with variables");
                 }
-                let Some(answers) = self.negated(p, &args, rule)? else {
-                    return Ok(());
-                };
-                let n = steps.len();
-                steps.extend(answers.into_iter().map(Step::Neg));
-                let r = self.body(t, rule, base, i + 1, steps);
-                steps.truncate(n);
-                r?;
+                match kind {
+                    Kind::Rules => self.called(rules, i, p, args),
+                    Kind::Facts(f) => {
+                        let mut atoms = Vec::new();
+                        for vals in self.fact_matches(p, f, &args) {
+                            let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
+                            if self.unifiable(&args, &tuple) {
+                                atoms.push(self.atom(p, vals)?);
+                            }
+                        }
+                        self.negation(i, atoms)
+                    }
+                    Kind::Switch | Kind::Undefined => self.negation(i, Vec::new()),
+                }
             }
             Lit::Unify(a, b) => {
                 let (a, b) = (Self::inst(a, base), Self::inst(b, base));
-                let mark = self.mark();
-                if self.unify(&a, &b) {
-                    next(self, None, steps)?;
-                }
-                self.undo(mark);
+                self.push(i, Alts::Spent);
+                Ok(match self.unify(&a, &b) {
+                    true => Go::Enter(i + 1),
+                    false => Go::Retry,
+                })
             }
             Lit::Cmp(op, a, b) => {
                 let a = Self::inst(a, base);
                 let b = Self::inst(b, base);
-                if self.compare(*op, &a, &b, rule)? {
-                    next(self, None, steps)?;
+                match self.compare(*op, &a, &b, rule)? {
+                    true => self.take(i, None),
+                    false => Ok(Go::Retry),
                 }
             }
             Lit::Is(v, e) => {
@@ -1086,92 +1321,186 @@ impl<'a> TopDown<'a> {
                     return Err(self.unbound(rule, i));
                 };
                 let Some(x) = self.g.num(x).map(|n| n.rounded().val()) else {
-                    return Ok(());
+                    return Ok(Go::Retry);
                 };
                 let v = Self::inst(v, base);
-                let mark = self.mark();
-                if self.unify(&v, &T::G(x)) {
-                    next(self, None, steps)?;
-                }
-                self.undo(mark);
+                self.push(i, Alts::Spent);
+                Ok(match self.unify(&v, &T::G(x)) {
+                    true => Go::Enter(i + 1),
+                    false => Go::Retry,
+                })
             }
             Lit::Builtin(b, args, negated) => {
                 let args: Vec<T> = args.iter().map(|a| Self::inst(a, base)).collect();
                 let args = self.full_all(&args)?;
                 let sols = self.builtin(*b, &args, *negated, rule, i)?;
-                for (rank, sol) in sols.into_iter().enumerate() {
-                    let mark = self.mark();
-                    if self.unify_all(&args, &sol) {
-                        let step = (!negated).then_some(Step::Rank(rank as u32));
-                        next(self, step, steps)?;
-                    }
-                    self.undo(mark);
-                }
+                let rank = |r: usize| (!negated).then_some(Step::Rank(r as u32));
+                let sols = sols.into_iter().enumerate();
+                let sols = sols.map(|(r, sol)| (sol, rank(r))).collect();
+                self.choose(
+                    i,
+                    Alts::Solutions {
+                        sols,
+                        next: 0,
+                        args,
+                    },
+                )
             }
-            Lit::Collect(c) => {
-                let result = Self::inst(&c.result, base);
-                if !self.listlike(&result) {
-                    let result = self.show_term(&result);
-                    return Err(lists::not_a_list(&c.text, &result));
-                }
-                for &(list, cond) in self.collect(c, base, rule)?.iter() {
-                    let mark = self.mark();
-                    if self.unify(&Self::inst(&c.result, base), &T::G(list)) {
-                        let step = cond.map(|(positive, a)| match positive {
-                            true => Step::Pos(a),
-                            false => Step::Neg(a),
-                        });
-                        next(self, step, steps)?;
-                    }
-                    self.undo(mark);
-                }
-            }
+            Lit::Collect(c) => self.collect(rules, i, c, base, rule),
         }
-        Ok(())
     }
 
-    /// The lists of the findall `c` of `rule`, its variables from `base`,
-    /// each with the literal of the worlds where it is the list: its goal
-    /// called with the shared variables' terms, and its table complete. A
-    /// shared variable free at the call stays free, as ProbLog's findall
-    /// leaves it, and the lists then depend on the call where the variable
-    /// is the call's.
-    fn collect(&mut self, c: &Collect, base: u32, rule: &Rule) -> Result<Lists, GroundError> {
-        let shared: Vec<T> = c.shared.iter().map(|a| Self::inst(a, base)).collect();
-        let shared = self.full_all(&shared)?;
-        let ground: Option<Box<[Val]>> = shared
+    /// The `i`th literal of the clause at hand calls `p`, a predicate of
+    /// rules, with `args`: it reads the call's table, or puts the table on
+    /// the stack and reads it once it is resolved.
+    fn called(
+        &mut self,
+        rules: &[Rule],
+        i: usize,
+        p: u32,
+        args: Vec<T>,
+    ) -> Result<Go, GroundError> {
+        match self.call(p, &args)? {
+            Called::Ready(u) => self.read(rules, i, u, args),
+            Called::Resolve(u) => {
+                self.start(u, Some((i, args)))?;
+                Ok(Go::Clause)
+            }
+        }
+    }
+
+    /// The `i`th literal of the clause at hand reads table `u` of its call
+    /// with `args`, resolved: a call its answers, a negation the atoms of
+    /// its answers, which its table holds complete, and a findall the
+    /// lists of its goal's solutions, its shared terms the first of `args`.
+    fn read(
+        &mut self,
+        rules: &[Rule],
+        i: usize,
+        u: u32,
+        mut args: Vec<T>,
+    ) -> Result<Go, GroundError> {
+        let f = self.frames.last().expect("a frame");
+        let (rule, base) = (&rules[f.rule as usize], f.base);
+        match &rule.body[i] {
+            Lit::Call(_, _, false) => self.choose(
+                i,
+                Alts::Answers {
+                    table: u,
+                    next: 0,
+                    args,
+                },
+            ),
+            Lit::Call(p, _, true) => {
+                if self.tables[u as usize].state != State::Complete {
+                    let goal = self.show(*p, &args);
+                    return Err(GroundError::Unsupported(format!(
+                        "\\+{goal}: a negation in a cycle of calls, in {}",
+                        self.norm.rules[rule.at]
+                    )));
+                }
+                let atoms = self.tables[u as usize]
+                    .answers
+                    .iter()
+                    .map(|&(_, a)| a)
+                    .collect();
+                self.negation(i, atoms)
+            }
+            Lit::Collect(c) => {
+                args.truncate(c.shared.len());
+                let lists = self.listed(c, rule, Some(u), &args)?;
+                self.lists(i, c, base, &lists)
+            }
+            _ => unreachable!("only a call, a negation or a findall reads a table"),
+        }
+    }
+
+    /// The `i`th literal, the findall `c`, its variables from `base`, tries
+    /// `lists` in turn as its result.
+    fn lists(
+        &mut self,
+        i: usize,
+        c: &Collect,
+        base: u32,
+        lists: &Lists,
+    ) -> Result<Go, GroundError> {
+        let step = |(positive, a)| if positive { Step::Pos(a) } else { Step::Neg(a) };
+        let sols = lists
             .iter()
-            .map(|t| match t {
-                T::G(v) => Some(*v),
-                _ => None,
-            })
-            .collect();
-        if ground.is_none() && self.of_call(&shared)? {
+            .map(|&(l, cond)| (vec![T::G(l)], cond.map(step)));
+        let args = vec![Self::inst(&c.result, base)];
+        let sols = sols.collect();
+        self.choose(
+            i,
+            Alts::Solutions {
+                sols,
+                next: 0,
+                args,
+            },
+        )
+    }
+
+    /// Resolves the `i`th literal of the clause at hand, the findall `c`,
+    /// its variables from `base`: the lists of its goal called with the
+    /// shared variables' terms, its table complete. A shared variable
+    /// free at the call stays free, as ProbLog's findall leaves it, and
+    /// the lists then depend on the call where the variable is the call's.
+    fn collect(
+        &mut self,
+        rules: &[Rule],
+        i: usize,
+        c: &Collect,
+        base: u32,
+        rule: &Rule,
+    ) -> Result<Go, GroundError> {
+        let result = Self::inst(&c.result, base);
+        if !self.listlike(&result) {
+            let result = self.show_term(&result);
+            return Err(lists::not_a_list(&c.text, &result));
+        }
+        let shared: Vec<T> = c.shared.iter().map(|a| Self::inst(a, base)).collect();
+        let mut args = self.full_all(&shared)?;
+        let ground = ground_vals(&args);
+        if ground.is_none() && self.of_call(&args)? {
             self.call_dependent(rule, "a findall over a goal with variables");
         }
-        let vals = ground.unwrap_or_default();
-        if let Some(l) = self.collected.get(&(c.aux, vals.clone()))
-            && vals.len() == shared.len()
-        {
-            return Ok(l.clone());
+        let cached = ground.and_then(|vals| self.collected.get(&(c.aux, vals)).cloned());
+        if let Some(lists) = cached {
+            return self.lists(i, c, base, &lists);
         }
+        if self.preds[c.aux as usize].kind != Kind::Rules {
+            let lists = self.listed(c, rule, None, &args)?;
+            return self.lists(i, c, base, &lists);
+        }
+        let arity = self.preds[c.aux as usize].arity;
+        while args.len() < arity {
+            let x = self.fresh_var();
+            args.push(x);
+        }
+        self.called(rules, i, c.aux, args)
+    }
+
+    /// The lists of the findall `c` of `rule` over its shared terms
+    /// `shared`, each with the literal of the worlds where it is the list,
+    /// from the answers of table `u` of its goal where its goal's
+    /// predicate has rules; kept for later calls where `shared` is ground.
+    fn listed(
+        &mut self,
+        c: &Collect,
+        rule: &Rule,
+        u: Option<u32>,
+        shared: &[T],
+    ) -> Result<Lists, GroundError> {
         let mut answers: Vec<(Val, u32)> = Vec::new();
-        let shared_len = shared.len();
-        if self.preds[c.aux as usize].kind == Kind::Rules {
-            let arity = self.preds[c.aux as usize].arity;
-            let mut args = shared;
-            while args.len() < arity {
-                let x = self.fresh_var();
-                args.push(x);
-            }
-            let u = self.call(c.aux, &args)?;
+        if let Some(u) = u {
             if self.tables[u as usize].state != State::Complete {
                 return Err(GroundError::Unsupported(format!(
                     "{}: a findall in a cycle of calls, in {}",
                     c.text, self.norm.rules[rule.at]
                 )));
             }
-            let k = shared_len;
+            let arity = self.preds[c.aux as usize].arity;
+            let k = shared.len();
             for (key, a) in self.tables[u as usize].answers.clone() {
                 let mark = self.mark();
                 let answer = self.unkey(&key, arity);
@@ -1196,7 +1525,7 @@ impl<'a> TopDown<'a> {
             return Err(GroundError::OutOfMemory);
         }
         self.grow(l.len())?;
-        if vals.len() == shared_len {
+        if let Some(vals) = ground_vals(shared) {
             self.collected.insert((c.aux, vals), l.clone());
         }
         Ok(l)
@@ -1222,14 +1551,7 @@ impl<'a> TopDown<'a> {
         what: &str,
     ) -> Result<Box<[Val]>, GroundError> {
         let full = self.full_all(args)?;
-        if let Some(vals) = full
-            .iter()
-            .map(|t| match t {
-                T::G(v) => Some(*v),
-                _ => None,
-            })
-            .collect::<Option<Box<[Val]>>>()
-        {
+        if let Some(vals) = ground_vals(&full) {
             return Ok(vals);
         }
         let goal = self.show(p, &full);
@@ -1237,47 +1559,6 @@ impl<'a> TopDown<'a> {
             "{}: {what} called with variables, {goal}",
             self.norm.rules[rule.at]
         )))
-    }
-
-    /// The atoms of the answers of the call of `p`, a predicate of rules or
-    /// facts, with `args`, which a negation in `rule` reads; `None` where
-    /// one is true in every world.
-    fn negated(
-        &mut self,
-        p: u32,
-        args: &[T],
-        rule: &Rule,
-    ) -> Result<Option<Vec<u32>>, GroundError> {
-        let mut atoms = Vec::new();
-        match self.preds[p as usize].kind {
-            Kind::Rules => {
-                let u = self.call(p, args)?;
-                if self.tables[u as usize].state != State::Complete {
-                    let goal = self.show(p, args);
-                    return Err(GroundError::Unsupported(format!(
-                        "\\+{goal}: a negation in a cycle of calls, in {}",
-                        self.norm.rules[rule.at]
-                    )));
-                }
-                atoms.extend(self.tables[u as usize].answers.iter().map(|&(_, a)| a));
-            }
-            Kind::Facts(f) => {
-                for vals in self.fact_matches(p, f, args) {
-                    let tuple: Vec<T> = vals.iter().map(|v| T::G(*v)).collect();
-                    let mark = self.mark();
-                    let unifies = self.unify_all(args, &tuple);
-                    self.undo(mark);
-                    if unifies {
-                        atoms.push(self.atom(p, vals)?);
-                    }
-                }
-            }
-            Kind::Switch | Kind::Undefined => {}
-        }
-        if atoms.iter().any(|&a| self.always(a)) {
-            return Ok(None);
-        }
-        Ok(Some(atoms))
     }
 
     /// The tuples of the facts of `p`, the facts at place `f` of the
@@ -1750,7 +2031,7 @@ impl<'a> TopDown<'a> {
     /// prints an answer with variables by names of its own for them, which
     /// tddlog does not: such an answer is refused.
     fn asked(&mut self, p: u32, args: &[T]) -> Result<(), GroundError> {
-        let t = self.call(p, args)?;
+        let t = self.resolved(p, args)?;
         let Some((key, _)) = self.tables[t as usize]
             .answers
             .iter()
@@ -1796,7 +2077,7 @@ impl<'a> TopDown<'a> {
             .iter()
             .map(|t| self.term(t, &mut vars))
             .collect();
-        let t = self.call(p, &args)?;
+        let t = self.resolved(p, &args)?;
         let asked = if d.evidence { evidence } else { queries };
         let mut seen: FxHashSet<Atom> = asked.iter().map(|(a, _)| a.clone()).collect();
         for k in 0..self.tables[t as usize].answers.len() {

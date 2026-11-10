@@ -883,10 +883,14 @@ are skipped. Several steps have a program in `examples/` that shows them.
    called with variables of its own call, directly or not, a call that
    did. The
    resolution emits the ground instances of the clauses it
-   used, which the grounder then grounds as a program without variables;
-   they count against the grounding bound, and a call or a term with
-   variables nested deeper than 1 000 gives the grounding up with the
-   goal that reached it. A program whose rewrite reads a findall inside a
+   used, which the grounder then grounds as a program without variables.
+   The resolution keeps its own stack on the heap, a frame for each
+   table being resolved and, for each literal of its clause, the
+   alternatives left, so that calls nest as deep as the tables made
+   allow: the tables, answers, rules and literals resolved count against
+   the grounding bound, and a term with variables nested deeper than
+   1 000 gives the grounding up with the goal that reached it. A program
+   whose rewrite reads a findall inside a
    recursion is resolved top-down too: two calls of one predicate with
    one binding pattern share a demand, which can close a loop through a
    findall's goal that the calls themselves do not close (ProbLog's urn

@@ -306,6 +306,10 @@ pub struct GroundStats {
     /// that scans a relation for each new tuple makes grow with the square
     /// of a loop's length.
     pub walked: u64,
+    /// How many tables the top-down resolution made and how many literals
+    /// it resolved, where the program kept was resolved from its queries
+    /// (`engine::topdown`).
+    pub top_down: (usize, u64),
     /// How many keys (level, rank) the grounder completed, where it
     /// grounded the recursive strata level by level, and how many atoms
     /// it proved constant as their keys completed (`engine`).
