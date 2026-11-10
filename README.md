@@ -49,8 +49,46 @@ exact inference system native to it, in less total time
 ## Install
 
 The [playground] runs tddlog in the browser, with nothing to install.
-The command line and the Rust, Python and C libraries build from source,
-which needs:
+The command line and the C library also come prebuilt, with nothing
+else to install:
+
+- **Command line:** download the archive for your platform from the
+  [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0)
+  and unpack it: its directory holds `tddlog` (`tddlog.exe` on Windows)
+  and the repository's `examples/`.
+
+  | Platform | Archive |
+  |---|---|
+  | Linux x86-64, glibc 2.28 or newer | [tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz][linux-x86-64] |
+  | Linux ARM64, glibc 2.28 or newer | [tddlog-v0.1.0-aarch64-unknown-linux-gnu.tar.gz][linux-arm64] |
+  | macOS ARM64 (Apple silicon) | [tddlog-v0.1.0-aarch64-apple-darwin.tar.gz][macos-arm64] |
+  | macOS x86-64 (Intel) | [tddlog-v0.1.0-x86_64-apple-darwin.tar.gz][macos-x86-64] |
+  | Windows x86-64 | [tddlog-v0.1.0-x86_64-pc-windows-msvc.zip][windows-x86-64] |
+
+  On a Mac with Apple silicon, for example:
+
+  ```sh
+  curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-aarch64-apple-darwin.tar.gz | tar xz
+  cd tddlog-v0.1.0-aarch64-apple-darwin
+  ./tddlog examples/alarm.pl
+  ```
+
+  macOS refuses to open a binary downloaded with a browser, which it
+  quarantines; `xattr -d com.apple.quarantine tddlog` lifts that.
+  Moving `tddlog` into a directory on your `PATH`, such as
+  `/usr/local/bin`, lets you run it as `tddlog` anywhere.
+- **C and C++:** prebuilt archives for the same platforms on the
+  [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0).
+  See the [C README](bindings/c/README.md).
+
+[linux-x86-64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz
+[linux-arm64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-aarch64-unknown-linux-gnu.tar.gz
+[macos-arm64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-aarch64-apple-darwin.tar.gz
+[macos-x86-64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-apple-darwin.tar.gz
+[windows-x86-64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-pc-windows-msvc.zip
+
+The command line and the Rust, Python and C libraries also build from
+source, which needs:
 
 - Rust 1.88 or newer, from [rustup](https://rustup.rs). A distribution's
   cargo is often older and stops with "feature `edition2024` is

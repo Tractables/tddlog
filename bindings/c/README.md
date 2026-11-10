@@ -31,9 +31,21 @@ with and check `tddlog_version()` at run time.
 
 ## Install
 
-There are no prebuilt archives yet. Build and install the package from a
-checkout, with Rust 1.88 or newer ([rustup](https://rustup.rs) installs
-it), a C++20 compiler (GCC 11 or newer or Clang 14 or newer) for the
+Each [GitHub release](https://github.com/Tractables/tddlog/releases)
+attaches a prebuilt archive for Linux x86-64 and ARM64, macOS ARM64 and
+x86-64 and Windows x86-64 (`tddlog-c-v0.1.0-<target>.tar.gz`, `.zip` on
+Windows, each with a `.sha256`), which needs no Rust toolchain. A
+`.tar.gz` is the installed package below: the header in `include/`, the
+shared library beside the static one, the CMake package and
+`lib/pkgconfig` in `lib/`, and the license and notices in
+`share/licenses/tddlog`. Set `CMAKE_PREFIX_PATH` to the unpacked
+directory, or `PKG_CONFIG_PATH` to its `lib/pkgconfig`. The Windows zip
+holds the header, `tddlog_c.dll`, its import library `tddlog_c.dll.lib`
+and the static `tddlog_c.lib`. Each archive's `NATIVE-STATIC-LIBS.txt`
+names the system libraries a static link needs on that platform.
+
+To build and install the package from a checkout instead, with Rust 1.88
+or newer ([rustup](https://rustup.rs) installs it), a C++20 compiler (GCC 11 or newer or Clang 14 or newer) for the
 tree-decomposition solvers goatd vendors, a C compiler, `make` and CMake
 3.16 or newer; the command line's
 [install notes](https://github.com/Tractables/tddlog#install) say what

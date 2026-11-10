@@ -80,11 +80,25 @@ playground.</p>
   and LPADs (<a href="#networks">below</a>). The answers are exact:
   tddlog grounds the program to probabilistic Datalog, compiles it into
   tree decision diagrams and counts the queries on them.</p>
-  <p>There are three ways to run it:</p>
+  <p>There are four ways to run it:</p>
   <ul>
     <li>In the browser: the <a href="../playground/">playground</a> runs tddlog in
     the tab, built for WebAssembly. Nothing is installed.</li>
-    <li>On the command line: Cargo builds <code>tddlog</code> from the
+    <li>On the command line, prebuilt: the
+    <a href="https://github.com/Tractables/tddlog/releases/tag/v0.1.0">release</a>
+    has an archive of <code>tddlog</code> for Linux x86-64 and ARM64
+    (glibc 2.28 or newer), macOS ARM64 and x86-64, and Windows x86-64,
+    which needs nothing else installed. It unpacks to a directory with the
+    binary and the repository's <code>examples/</code>; on a Mac with
+    Apple silicon:
+<pre data-lang="shell">curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-aarch64-apple-darwin.tar.gz | tar xz
+cd tddlog-v0.1.0-aarch64-apple-darwin
+./tddlog examples/alarm.pl</pre>
+    The other archives are named for their platforms
+    (<code>x86_64-apple-darwin</code>, <code>x86_64-unknown-linux-gnu</code>,
+    <code>aarch64-unknown-linux-gnu</code>, and
+    <code>x86_64-pc-windows-msvc</code>, a <code>.zip</code>).</li>
+    <li>On the command line, from source: Cargo builds <code>tddlog</code> from the
     repository and installs it in its <code>bin</code> directory
     (<code>$HOME/.cargo/bin</code>):
 <pre data-lang="shell">cargo install --locked --git https://github.com/Tractables/tddlog tddlog</pre>
@@ -118,7 +132,8 @@ playground.</p>
     (<a href="#library">below</a>).</li>
   </ul>
   <p>The commands below run in a checkout of the repository
-  (<code>git clone --depth 1 https://github.com/Tractables/tddlog</code>), whose
+  (<code>git clone --depth 1 https://github.com/Tractables/tddlog</code>)
+  or in the directory an archive unpacks to, whose
   <code>examples/</code> holds the programs they read. Without one, a
   program is fetched on its own, then run as <code>tddlog alarm.pl</code>:</p>
 <pre data-lang="shell">curl -O https://raw.githubusercontent.com/Tractables/tddlog/main/examples/alarm.pl</pre>
