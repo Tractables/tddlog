@@ -1007,8 +1007,9 @@ function benchmarksOf(root) {
     assert.deepEqual(entries("how").slice(0, 1), ["../#/why"], "the menu: why it is fast, first");
     assert.deepEqual(entries("how").slice(-1), ["../#/methods"], "the menu: the methods table, last");
     assert.deepEqual(entries("how").slice(1, -1).sort(), walks.sort(), "the menu: every walkthrough");
+    // in the menu's order of its sections
     assert.deepEqual(await page.$$eval("#tree li.legend", (ls) => ls.map((l) => l.textContent)),
-      ["instances answered", "instances"], "the menu: what its counts count");
+      keys.flatMap((key) => ({ baselines: ["instances answered"], types: ["instances"] })[key] ?? []), "the menu: what its counts count");
     if (cats.circuits) {
       await visit("#/circuits", "figure.plot svg.cactus path.line");
       const circuits = await page.$$eval("#tree .tree > li.group", (lis) => [...lis.find((li) => li.querySelector(":scope > a").dataset.section === "#/circuits")
