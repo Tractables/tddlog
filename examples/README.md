@@ -50,7 +50,7 @@ ProbLog's on the smaller sizes it answers.
 |---|---|
 | [grid_reliability.pl](larger/grid_reliability.pl) | two-terminal reliability of an 8 by 8 grid of routers: reachability over 112 uncertain links |
 | [dice_sum.pl](larger/dice_sum.pl) | the sum of 100 dice, built die by die with arithmetic in the rules |
-| [blood_types.pl](larger/blood_types.pl) | ABO blood types in a pedigree of 7 generations full of loops, with evidence on the youngest |
+| [dog_pedigree.pl](larger/dog_pedigree.pl) | A gene in a line of dogs, 7 generations full of loops, with evidence on the youngest |
 | [mastermind.pl](larger/mastermind.pl) | a code of 12 pegs in 12 colours after 10 scored guesses: counting with negation, and evidence of probability 2.5e-10 |
 | [stones.pl](larger/stones.pl) | a game whose winning positions are defined through their own negation, over 4000 heaps |
 | [robot.pl](larger/robot.pl) | a hidden Markov model: a robot on a ring of 12 cells after 400 sensor readings |
