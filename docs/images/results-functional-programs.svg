@@ -2342,7 +2342,7 @@ L 357.764375 469.337969
    <text style="fill: #1f2328; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="537.764375" y="455.59125" transform="rotate(-0, 537.764375, 455.59125)">57</text>
   </g>
   <g id="text_71">
-   <text style="fill: #59636e; font: 9.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="455.039375" transform="rotate(-0, 649.364375, 455.039375)">too few in common</text>
+   <text style="fill: #59636e; font: 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: end" x="649.364375" y="455.59125" transform="rotate(-0, 649.364375, 455.59125)">345×</text>
   </g>
   <g id="text_72">
    <text style="fill: #1f2328; font: 700 11.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; text-anchor: start" x="364.964375" y="472.466328" transform="rotate(-0, 364.964375, 472.466328)">Alea.jl+tddlog</text>
