@@ -531,8 +531,18 @@ function typeSplit(c, route) {
 // A source of the census: what it holds, how many programs and how many
 // tddlog runs, each in a cell of its own, and why it does not run the others
 // (folded on the census's page, open on a baseline's, where it is the point).
+// A long text's first sentence, the rest folded under "More".
+function brief(text, cls) {
+  const cut = text.search(/(?<=[a-z0-9)'"]\.) (?=[A-Z])/);
+  if (cut < 0 || text.length < 260) return prose("p", text, { class: cls });
+  const box = element("div", { class: cls });
+  box.append(prose("p", text.slice(0, cut)), element("details", { class: "more" }, element("summary", {}, "More"),
+    prose("p", text.slice(cut + 1))));
+  return box;
+}
+
 // A reason of the census as its badge, what it means on hover.
-const reason = (k) => element("span", { class: `cls cls-${k.replace(/ /g, "-")}`, title: draft.views.census.classes[k] ?? null }, k);
+const reason =(k) => element("span", { class: `cls cls-${k.replace(/ /g, "-")}`, title: draft.views.census.classes[k] ?? null }, k);
 
 function censusSource(src, tool = false, open = false) {
   const n = (x) => (typeof x === "number" ? count(x) : x);
