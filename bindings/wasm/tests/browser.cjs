@@ -786,12 +786,16 @@ function benchmarksOf(root) {
     // only one answers, the other at the limit, where that raises the
     // multiplier of the one that answered it (an instance only tddlog answers
     // where the limit over its time is at least F, one only the system answers
-    // where the limit over its time is at least 1 / F); none with fewer than
-    // 20 both answer. F is the root of the left side of that balance, which
-    // decreases in F, found here by bisection (panels.py walks its pieces). A
-    // time under 0.2 s counts as 0.2 s. (0.2, 2 and 20: the data's measure,
-    // panels.py's parameters.)
-    const { floor, par: times, common } = cats.measure;
+    // where the limit over its time is at least 1 / F); none only where there
+    // is nothing to measure, no instance both answer over 0.2 s and none only
+    // one answers (no minimum in common). F is the root of the left side of
+    // that balance, which decreases in F, found here by bisection (panels.py
+    // walks its pieces); with none both answer over 0.2 s and only one side's
+    // instances, the left side is 0 past the largest of tddlog's bounds, or
+    // before the least of the system's, and F is that bound. A time under
+    // 0.2 s counts as 0.2 s. (0.2 and 2: the data's measure, panels.py's
+    // parameters.)
+    const { floor, par: times } = cats.measure;
     const compare = (runs) => {
       const f = (t) => Math.max(t, floor);
       const par = (limit, v) => (number(v) ? f(v) : times * limit);
@@ -801,11 +805,12 @@ function benchmarksOf(root) {
         tddlog_answers: runs.filter(([, t]) => number(t)).length, either: either.length,
         total: either.reduce((s, [l, , x]) => s + par(l, x), 0), tddlog_total: either.reduce((s, [l, t]) => s + par(l, t), 0),
         both: both.length, ratio: null, speedup: null };
-      if (both.length < common) return out;
-      const mine = both.reduce((s, [, t]) => s + f(t), 0), theirs = both.reduce((s, [, , x]) => s + f(x), 0);
-      const r = theirs / mine;
       const failures = either.filter(([, t, x]) => number(x) && !number(t)).map(([l, , x]) => [f(x), l]);
       const timeouts = either.filter(([, t, x]) => number(t) && !number(x)).map(([l, t]) => [f(t), l]);
+      if (!(both.length || failures.length || timeouts.length)) return out;
+      if (!both.length && !failures.length) return { ...out, speedup: Math.max(...timeouts.map(([t, l]) => l / t)) };
+      if (!both.length && !timeouts.length) return { ...out, speedup: Math.min(...failures.map(([x, l]) => x / l)) };
+      const mine = both.reduce((s, [, t]) => s + f(t), 0), theirs = both.reduce((s, [, , x]) => s + f(x), 0);
       const g = (F) => theirs - F * mine + timeouts.reduce((s, [t, l]) => s + Math.max(0, l - F * t), 0)
         + failures.reduce((s, [x, l]) => s + Math.min(0, x - F * l), 0);
       let [lo, hi] = [1e-12, 1e12];
@@ -813,7 +818,7 @@ function benchmarksOf(root) {
         const m = Math.sqrt(lo * hi);
         if (g(m) > 0) lo = m; else hi = m;
       }
-      return { ...out, ratio: r, speedup: Math.sqrt(lo * hi) };
+      return { ...out, ratio: both.length ? theirs / mine : null, speedup: Math.sqrt(lo * hi) };
     };
     // A comparison of the data's is the oracle's: its counts, its totals to
     // 0.01 s, its ratio and speed-up to their four digits.
@@ -924,7 +929,7 @@ function benchmarksOf(root) {
     assert.equal(categories.at(-1).instances, types.reduce((n, c) => n + c.instances, 0), "all programs: the types' instances");
     // The overview: for each type, a link to it with its instances and
     // tddlog's answers, a row for each named native system, with its answers
-    // and tddlog's speed-up over it (too few in common, narrow: too few),
+    // and tddlog's speed-up over it (nothing to measure, narrow: none),
     // and a row for the others. Then each
     // category's cactus plot of its systems drawn, tddlog's and the named
     // systems' lines in colour, and its scatter plot of tddlog against the fastest of them; then each
@@ -938,9 +943,9 @@ function benchmarksOf(root) {
       return [`#/category/${c.key}`, `${c.title}, ${count(c.instances)} ${c.noun}: ${subject(ms)} ${ms.length > 1 ? "answer" : "answers"} ${count(answeredBy(rows))}`];
     }), "the overview: a type a group");
     const overviewRows = await page.$$eval("#view svg.overview a.row.other", (as) => as.map((a) => [a.getAttribute("href"),
-      ...["answers", "ratio"].map((c) => (a.querySelector(`text.${c}`)?.textContent ?? "").replace(/^too few$/, "too few in common"))]));
+      ...["answers", "ratio"].map((c) => (a.querySelector(`text.${c}`)?.textContent ?? "").replace(/^none$/, "nothing to measure"))]));
     assert.deepEqual(overviewRows, types.flatMap((c) => c.named.map((x) => [`#/category/${c.key}/vs/${x}`, count(c.answers[x]),
-      c.vs[x].speedup === null ? "too few in common" : speed(c.vs[x].speedup)])), "the overview: each named system's answers and tddlog's speed-up");
+      c.vs[x].speedup === null ? "nothing to measure" : speed(c.vs[x].speedup)])), "the overview: each named system's answers and tddlog's speed-up");
     assert.equal((await page.$$("#view svg.overview a.row.others")).length, types.filter((c) => c.others.systems.length).length,
       "the overview: a row of the others");
     // no bound of 0 s on the others' row (a total of 0: no instance it or tddlog answers)
@@ -1002,7 +1007,7 @@ function benchmarksOf(root) {
       assert.deepEqual(fig.systems, order, `${what}: its systems drawn, tddlog first and then by their answers`);
       assert.deepEqual([...fig.lines].sort(), [...order].sort(), `${what}: its lines`);
       assert.deepEqual(fig.legend, byAnswers(order, (x) => c.answers[x])
-        .map((x) => `answers${count(c.answers[x])}of${count(rows.length)}${isMine(x) ? "" : c.vs[x].speedup === null ? ",toofewincommon"
+        .map((x) => `answers${count(c.answers[x])}of${count(rows.length)}${isMine(x) ? "" : c.vs[x].speedup === null ? ",nothingtomeasure"
           : `,${subject(c.vs[x].me)}${speed(c.vs[x].speedup)}${c.vs[x].speedup >= 1 ? "faster" : ""}`.replace(/\s/g, "")}`), `${what}: its legend`);
       assert.deepEqual([...fig.coloured].sort(), order.filter((x) => lit(c, x)).sort(), `${what}: tddlog's and the named systems' lines in colour`);
       assert.ok(fig.axis.includes(`all${count(rows.length)}instances`), `${what}: its axis`);
