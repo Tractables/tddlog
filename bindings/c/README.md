@@ -55,8 +55,8 @@ or newer ([rustup](https://rustup.rs) installs it), a C++20 compiler (GCC 11 or 
 tree-decomposition solvers goatd vendors, a C compiler, `make` and CMake
 3.16 or newer; the command line's
 [install notes](https://github.com/Tractables/tddlog#install) say what
-to do when the default `cargo` or `g++` is older. The build takes about
-three minutes on eight cores:
+to do when the default `cargo` or `g++` is older. The build takes a few
+minutes on eight cores:
 
 ```sh
 git clone --depth 1 https://github.com/Tractables/tddlog

@@ -25,6 +25,7 @@
     <a href="../#/how" data-section="#/how">How it works</a>
     <a href="../playground/">Playground</a>
     <details class="docs"><summary class="current">Docs</summary><div>
+      <a href="../guide/#getting-started">Install</a>
       <a href="./" aria-current="page">Guide</a>
       <a href="../api/">Rust API</a>
       <a href="../python/">Python</a>
@@ -62,7 +63,7 @@ playground.</p>
         distribution</span></li>
       </ol></li>
     <li><a href="#command-line">The command line</a></li>
-    <li><a href="#networks">Networks, Dice, Alea.jl and LPADs</a></li>
+    <li><a href="#networks">Networks and other languages</a></li>
     <li><a href="#library">From Rust, Python and C</a></li>
     <li><a href="#how-it-works">How it works</a></li>
     <li><a href="#terms">Terms</a></li>
@@ -125,7 +126,7 @@ cd tddlog-v0.1.0-aarch64-apple-darwin
       <code>GOATD_CXX</code> (<code>GOATD_CXX=g++-11 cargo install
       ...</code>); <code>CXX</code> does not choose it.</li>
     </ul>
-    The build takes about five minutes on eight cores.
+    The build takes a few minutes on eight cores.
     <code>--locked</code> builds with the versions of the dependencies
     that the repository's tests ran with. In a checkout of the repository,
     <code>cargo build --release</code> builds the same program as
@@ -648,7 +649,7 @@ query(reach($3)).</pre>
 </section>
 
 <section class="card prose" id="networks">
-  <h2>Networks, Dice, Alea.jl and LPADs</h2>
+  <h2>Networks and other languages</h2>
   <p>tddlog reads network files, Dice programs, Circulette netlists and
   LPADs itself, each as a program, which <code>--program</code> prints;
   Alea.jl's and Roulette's tddlog backends (below) write the circuits
@@ -991,7 +992,8 @@ tddlog_solution_free(solution);</pre>
   tddlog is open source under the Apache-2.0 license:
   <a href="https://github.com/Tractables/tddlog">repository</a> ·
   <a href="https://github.com/Tractables/tididi">tididi</a>, the TDD library ·
-  <a href="https://github.com/Tractables/goatd">goatd</a>, its tree decompositions
+  <a href="https://github.com/Tractables/goatd">goatd</a>, its tree decompositions ·
+  <a href="https://github.com/Tractables/tddlog/tree/baselines">the baselines' scripts and programs</a>
 </footer>
 
 </main>

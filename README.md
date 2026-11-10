@@ -113,7 +113,7 @@ source, which needs:
 Then:
 
 - **Command line:** `cargo install --locked --git https://github.com/Tractables/tddlog tddlog`
-  builds `tddlog` into `$HOME/.cargo/bin`, in about five minutes on eight
+  builds `tddlog` into `$HOME/.cargo/bin`, in a few minutes on eight
   cores.
 - **Rust:** `tddlog = { git = "https://github.com/Tractables/tddlog" }` under
   `[dependencies]`. See the [Rust API].

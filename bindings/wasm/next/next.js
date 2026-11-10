@@ -837,8 +837,9 @@ function methodsView() {
     element("table", { class: "board methods" },
       group("How the runs were made", data.methods.flatMap((row) => (row[0] === "memory" ? [row, ["time limits", limits.join("; ")]] : [row]))),
       group("How the results are counted", [
-        ["answers", "Over all of a type's instances: a run out of time or memory, wrong, refused or not given is unanswered"],
-        [`total (PAR-${par})`, `Over the instances a system is given and either answers: an unanswered run at ${twice(par)} its time limit, `
+        ["answers", "A run out of time or memory, wrong, refused or not given is unanswered; a type's tables count a system's answers on the "
+          + "instances it is given as its users would write them, its plots every instance"],
+        [`total (PAR-${par})`, `Over the instances a system is given (in a type, as its users would write them) and either answers: an unanswered run at ${twice(par)} its time limit, `
           + `a time under ${floor} s at ${floor} s`],
         ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s) and over each instance only one of the two `
           + `answers, the other at its limit, where that raises the multiplier of the system that answered it, so that `

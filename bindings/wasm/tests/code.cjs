@@ -58,18 +58,18 @@ test("every program the guide shows whole is its file in the repository", () => 
 // them; the results page is By program type's).
 test("every page has the site's bar, its own page marked", () => {
   const sections = JSON.parse(page("results/results.js").match(/^const SECTIONS = (\[.*\]);$/m)[1]);
-  const names = [...sections.map(([, name]) => name), "Playground", "Guide", "Rust API", "Python", "C", "GitHub"];
+  const names = [...sections.map(([, name]) => name), "Playground", "Install", "Guide", "Rust API", "Python", "C", "GitHub"];
   for (const [file, current] of [["index.html", null], ["playground/index.html", "Playground"], ["guide/index.html", "Guide"],
     ["results/index.html", "By program type"], ["404.html", null]]) {
     const nav = page(file).match(/<nav class="site-nav" id="site-nav" aria-label="Site">([\s\S]*?)<\/nav>/);
     assert.ok(nav, `${file}: the bar`);
-    assert.match(nav[1], /<details class="docs"><summary[^>]*>Docs<\/summary><div>\s*<a href="[^"]+"[^>]*>Guide</, `${file}: the docs' list`);
+    assert.match(nav[1], /<details class="docs"><summary[^>]*>Docs<\/summary><div>\s*<a href="[^"]+"[^>]*>Install</, `${file}: the docs' list, installing first`);
     const links = [...nav[1].matchAll(/<a href="([^"]+)"(?: data-section="[^"]+")?( aria-current="page")?>([^<]+)<\/a>/g)];
     assert.deepEqual(links.map((l) => l[3]), names, `${file}: the bar's links`);
     assert.deepEqual(links.filter((l) => l[2]).map((l) => l[3]), current ? [current] : [], `${file}: the current page`);
     const up = file.includes("/") ? "../" : "";
     const where = { ...Object.fromEntries(sections.map(([key, name]) => [name, `${up}#/${key}`])), Playground: `${up}playground/`,
-      Guide: `${up}guide/`, "Rust API": `${up}api/`, Python: `${up}python/`, C: `${up}c/` };
+      Install: `${up}guide/#getting-started`, Guide: `${up}guide/`, "Rust API": `${up}api/`, Python: `${up}python/`, C: `${up}c/` };
     for (const [, href, , name] of links) {
       const expected = name === current && !name.startsWith("By ") ? "./" : where[name] ?? "https://github.com/Tractables/tddlog";
       assert.equal(href, expected, `${file}: ${name}`);
