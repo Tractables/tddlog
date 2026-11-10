@@ -4,9 +4,9 @@
 // and the logic programs) and ppl.json (the programs of Dice, Alea.jl,
 // Roulette and Geni), both written by the generator of README.md's results
 // and the baselines branch's docs/benchmarks.md; the results by type of
-// program from categories.json (release/results/rel/panels.py); and, where
+// program from categories.json (written by the results' processing); and, where
 // the site has them, the benchmarks' data from the baselines branch
-// (benchmarks/, which release/pages/bench_pages.py writes): each suite's
+// (benchmarks/, written by the results' processing): each suite's
 // families of instances and, for each family, its programs in every
 // language, its runs and its answers.
 //
@@ -350,7 +350,7 @@ function head2(...items) {
 }
 
 // A speed-up's name in a header or a cell's label, a link to the methods
-// table that defines it (rule 20) on the front page.
+// table that defines it on the front page.
 const speedName = (label) => element("a", { href: `${front}#/methods`, class: "defined" }, label);
 
 // A <details> whose body is built when it is first opened.
@@ -748,7 +748,7 @@ function drawnOf(c, rows, only) {
   return c.systems.filter((x) => (isMine(x) || c.native.includes(x)) && rows.some((r) => r.v[x] !== null));
 }
 
-// tddlog against system x by rule 16 (release/results/rel/panels.py's
+// tddlog against system x by the measure (the processing's
 // compare, the data's): over the category's rows (c.vs), or narrowed to
 // `only` (c.narrowed), where x was given one of them; null otherwise.
 const versus = (c, x, only) => (only === undefined ? c.vs[x] : c.narrowed[only]?.[x]) ?? null;
@@ -823,9 +823,9 @@ function headMembers(c, rows, tal) {
     .map((x) => [x, subjects.includes(x) ? `${data.names[x]} answers, of those it reads` : `${data.names[x]} answers`]);
 }
 
-// How the totals and the speed-up are counted, in one line under a table
-// (rule 16), from the data's parameters of the measure (data.measure,
-// panels.py's); How it works holds the whole definition.
+// How the totals and the speed-up are counted, in one line under a table,
+// from the data's parameters of the measure (data.measure,
+// the processing's); How it works holds the whole definition.
 const twice = (par) => (par === 2 ? "twice" : `${par} times`);
 // When and on which commit of the source tree the data were processed
 // (categories.json's stamp), the one data every headline is from: the
@@ -1095,7 +1095,7 @@ const data = {
   version: "",      // tddlog's version in the release run
   names: {},        // a system's key: its name
   categories: [],   // categories.json's, in the README's order, each with `suites` and `perSuite` (its instances in each)
-  measure: {},      // the parameters of the measure (rule 16): floor, par, named, drawn
+  measure: {},      // the parameters of the measure: floor, par, named, drawn
   own: [],          // each system on its own benchmarks against tddlog
   suiteVs: {},      // a suite's key: tddlog against each other system of the suite (categories.json's `suites`)
   systems: [],      // each solver, by the instances it answers: what it is, its totals, how it was given the instances
@@ -1150,8 +1150,8 @@ const recorded = (key) => data.bench?.records?.[key] ?? base(key);
 // and "Ace forceC2d" are Ace's.
 const readsAs = (name) => (reader) => reader === name || reader.startsWith(`${name} `);
 
-// tddlog against each other system of a suite by rule 16 (the data's
-// cats.suites, panels.py's compare over the instances both are given): by
+// tddlog against each other system of a suite by the measure (the data's
+// cats.suites, the processing's comparison over the instances both are given): by
 // the system's answers, then tddlog's speed-up, the least first.
 function against(suite) {
   const vs = data.suiteVs[suite.key] ?? {};
@@ -1343,7 +1343,7 @@ function home() {
 }
 
 // Each system on its own benchmarks (from its papers, benchmarks or
-// distribution) against tddlog on the same instances (o.vs, rule 16): each
+// distribution) against tddlog on the same instances (o.vs): each
 // one's answers and total time over the instances either answers, and
 // tddlog's speed-up; a system opens the category that holds most of them,
 // narrowed to them. `list` is the rows shown (all of them, or one
@@ -1370,7 +1370,7 @@ function ownTable(list = data.own, head = "Each system on its own benchmarks") {
 }
 
 // A category's systems by their answers, then tddlog's speed-up over them,
-// against tddlog (rule 16), with how each was given the instances and how
+// against tddlog, with how each was given the instances and how
 // many it was not given, which together are all of them; `vs`'s row marked;
 // a system's name and its numbers open its page (tddlog's, tddlog's own).
 function scoreboard(c, rows, tal, n, vs, only) {
@@ -1993,7 +1993,7 @@ function picker(choices) {
 // The command tddlog's run of an instance read its program with, as its tab
 // of the program tddlog read lists it; null where it lists none.
 function mineCommand(inst) {
-  if (!inst.tabs) return null;
+  if (!inst.tabs?.length) return null;
   const tab = inst.tabs[firstFile(inst)[0]];
   return tab.cmds.find(([who]) => readsAs("tddlog")(who) || /^\S+\+tddlog\b/.test(who))?.[1] ?? null;
 }
@@ -2011,7 +2011,7 @@ function instanceView(s, f, fam, route, pick, name, where = {}) {
   out.push(element("h3", {}, "Programs"), element("div", { class: "pick" }, element("span", { class: "muted" }, "instance"),
     ...(pick ? [pick] : []), ...(name ? [name] : []), playground(s, f, fam, inst, mineReader(inst))),
   ...(cmd ? [element("p", { class: "cmdline", title: "The command of tddlog's run" }, element("code", {}, cmd))] : []));
-  if (!inst.tabs) {
+  if (!inst.tabs?.length) {
     if (inst.gen) out.push(markup("p", inst.gen, { class: "note" }));
     out.push(note("The programs of this instance were not captured."));
   } else {

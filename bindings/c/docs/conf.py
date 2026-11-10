@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 manifest = (ROOT / "bindings/c/Cargo.toml").read_text(encoding="utf-8")
 project = "tddlog for C"
+copyright = "2026, Guy Van den Broeck. tddlog is open source under the Apache-2.0 license"
 release = re.search(r'^version = "([^"]+)"', manifest, re.MULTILINE).group(1)
 extensions = ["myst_parser"]
 html_theme = "furo"

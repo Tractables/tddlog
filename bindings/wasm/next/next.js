@@ -23,12 +23,12 @@
 // head-to-head and translated before the rest; a suite, a family and an
 // instance are results.js's views as they are.
 //
-// The data is views.json (release/results/rel/views.py): each system's kind
+// The data is views.json (written by the results' processing): each system's kind
 // of comparison on each instance of each type (head-to-head, translated for
 // it, for tddlog or for both, or a translation not idiomatic for it, out of
 // a type's comparisons and in all programs'), and the comparisons over each kind, which
-// are panels.py's (rule 16), and the census of the programs tddlog does not
-// run; and categories.json's integrations (panels.py's). A system is
+// are the processing's, and the census of the programs tddlog does not
+// run; and categories.json's integrations. A system is
 // compared on each instance with tddlog or one of its pipelines (views.json's
 // mine): in a type, with the instance's subject (the type's with); on the
 // system's own page, with its own pipeline where that ran (Roulette+tddlog
@@ -62,7 +62,7 @@ function systemRows(x) {
   return typesOf(x).flatMap((c) => kindRows(c, x, true).map((r) => ({ ...r, c })));
 }
 
-// The types a system natively handles (panels.py NATIVE_TO, as the data's
+// The types a system natively handles (as the data's
 // categories name them).
 const nativeTo = (x) => data.types.filter((c) => c.native.includes(x));
 
@@ -148,7 +148,7 @@ function draftHome() {
   const lines = integrationsOf().filter((k) => data.integrations[k].system).map((k) => {
     const i = data.integrations[k];
     return element("li", {}, link({ view: "integration", key: k }, i.title), ` against ${data.names[i.system]}: `,
-      `${speedup(i.vs[i.system], true)}, on ${plural(i.instances, "instance")} of ${data.names[i.system]}'s.`);
+      `${speedup(i.vs[i.system], true)}, on the ${plural(i.instances, "instance")} ${data.names[i.system]} reads.`);
   });
   return [
     element("section", { class: "intro" },
@@ -156,7 +156,7 @@ function draftHome() {
         + "Bayesian and Markov networks, and probabilistic functional programs, by compiling them into tree decision diagrams."),
       element("p", { class: "lede" }, `It answers ${count(all.answers.tddlog ?? 0)} of ${count(all.instances)} instances of `
         + `${inWords(data.types.length)} types of program, against ${count(others)} baselines. `,
-        element("a", { href: "playground/" }, "The playground"), " runs it in the browser."),
+        element("a", { href: "playground/" }, "The playground"), " runs it in the browser; ", element("a", { href: "guide/#getting-started" }, "the guide"), " installs it."),
       stampLine()),
     element("h2", { class: "home-h" }, "Each type of program against its best baselines"),
     scroller(stacked(element("table", { class: "board home-t" }, element("thead", {}, element("tr", {},
@@ -164,7 +164,7 @@ function draftHome() {
       element("th", { scope: "col", class: "num" }, "tddlog answers"),
       element("th", { scope: "col", title: "the baselines that answer most, each with tddlog's speed-up over it" }, "its best baselines, and tddlog's ", speedName("speed-up")))),
     body)), "whole"),
-    ...(lines.length ? [element("h2", { class: "home-h" }, "tddlog after another system's own code"), element("ul", { class: "home-int" }, ...lines)] : []),
+    ...(lines.length ? [element("h2", { class: "home-h" }, "tddlog as another system's backend"), element("ul", { class: "home-int" }, ...lines)] : []),
     note(measureLine()),
   ];
 }
@@ -821,7 +821,7 @@ function howView(route) {
 }
 
 // The methods table (#/methods), the one place that says how the runs were
-// made and how the results are counted (rules 16 and 20): a row a fact, the
+// made and how the results are counted: a row a fact, the
 // runs' from the data (data/systems.json's `methods`), each type's time
 // limits from its rows, the measure from data.measure and the data's stamp.
 // Under a table, the views say the measure in one line (measureLine), and
@@ -852,14 +852,14 @@ function methodsView() {
 // ------------------------------------------------------------- the routes
 
 // FNV-1a (32 bits) of a category's rows' SUITE/NAME, a line each, as
-// views.py computes it.
+// the processing computes it.
 function fingerprint(rows) {
   let h = 0x811c9dc5;
   for (const b of new TextEncoder().encode(rows.map((r) => `${r[0]}/${r[1]}`).join("\n"))) h = Math.imul(h ^ b, 0x01000193) >>> 0;
   return h;
 }
 
-// The types whose rows views.json was not written from (rule 3: its kinds
+// The types whose rows views.json was not written from (its kinds
 // would be another instance's).
 function staleViews() {
   if (draft.stale === undefined) {
@@ -868,7 +868,7 @@ function staleViews() {
   return draft.stale;
 }
 const staleNote = (stale) => note(`These views (views.json) were written from other results than these (${and(stale)}); `
-  + "views.py writes them again from the results page's data.");
+  + "the results' processing writes them again from the results page's data.");
 
 const DRAFT_VIEWS = { "draft-home": draftHome, baselines: baselinesView, baseline: baselineView, integrations: integrationsView,
   integration: integrationView, types: home, coverage: coverageView, how: howView, methods: methodsView };

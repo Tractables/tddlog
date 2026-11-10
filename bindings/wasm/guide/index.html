@@ -97,7 +97,12 @@ cd tddlog-v0.1.0-aarch64-apple-darwin
     The other archives are named for their platforms
     (<code>x86_64-apple-darwin</code>, <code>x86_64-unknown-linux-gnu</code>,
     <code>aarch64-unknown-linux-gnu</code>, and
-    <code>x86_64-pc-windows-msvc</code>, a <code>.zip</code>).</li>
+    <code>x86_64-pc-windows-msvc</code>, a <code>.zip</code>). macOS
+    refuses to open a binary downloaded with a browser, which it
+    quarantines; <code>xattr -d com.apple.quarantine tddlog</code> lifts
+    that. Moving <code>tddlog</code> into a directory on your
+    <code>PATH</code>, such as <code>/usr/local/bin</code>, lets you run
+    it as <code>tddlog</code> anywhere, as the commands below do.</li>
     <li>On the command line, from source: Cargo builds <code>tddlog</code> from the
     repository and installs it in its <code>bin</code> directory
     (<code>$HOME/.cargo/bin</code>):
@@ -132,7 +137,8 @@ cd tddlog-v0.1.0-aarch64-apple-darwin
   <p>The commands below run in a checkout of the repository
   (<code>git clone --depth 1 https://github.com/Tractables/tddlog</code>)
   or in the directory an archive unpacks to, whose
-  <code>examples/</code> holds the programs they read. Without one, a
+  <code>examples/</code> holds the programs they read; the few that read
+  <code>tests/</code> need the checkout. Without one, a
   program is fetched on its own, then run as <code>tddlog alarm.pl</code>:</p>
 <pre data-lang="shell">curl -O https://raw.githubusercontent.com/Tractables/tddlog/main/examples/alarm.pl</pre>
 
@@ -859,7 +865,7 @@ tddlog_solution_free(solution);</pre>
   ProbLog), <code>options.evidence</code> holds a network's evidence
   file (NULL for none), and <code>options.arguments</code> points to
   <code>options.num_arguments</code> strings, the program's arguments.
-  The C library installs with CMake, as a CMake
+  The C library comes prebuilt in the release's C archives, or installs with CMake, as a CMake
   package and a pkg-config file; the <a href="../c/">C page</a> covers
   building, linking and the header.</p>
 </section>

@@ -31,7 +31,7 @@ with and check `tddlog_version()` at run time.
 
 ## Install
 
-Each [GitHub release](https://github.com/Tractables/tddlog/releases)
+Each GitHub release ([v0.1.0](https://github.com/Tractables/tddlog/releases/tag/v0.1.0), the latest)
 attaches a prebuilt archive for Linux x86-64 and ARM64, macOS ARM64 and
 x86-64 and Windows x86-64 (`tddlog-c-v0.1.0-<target>.tar.gz`, `.zip` on
 Windows, each with a `.sha256`), which needs no Rust toolchain. A
@@ -42,7 +42,13 @@ shared library beside the static one, the CMake package and
 directory, or `PKG_CONFIG_PATH` to its `lib/pkgconfig`. The Windows zip
 holds the header, `tddlog_c.dll`, its import library `tddlog_c.dll.lib`
 and the static `tddlog_c.lib`. Each archive's `NATIVE-STATIC-LIBS.txt`
-names the system libraries a static link needs on that platform.
+names the system libraries a static link needs on that platform. On
+Linux x86-64, for example:
+
+```sh
+curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-c-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
+export PKG_CONFIG_PATH=$PWD/tddlog-c-v0.1.0-x86_64-unknown-linux-gnu/lib/pkgconfig
+```
 
 To build and install the package from a checkout instead, with Rust 1.88
 or newer ([rustup](https://rustup.rs) installs it), a C++20 compiler (GCC 11 or newer or Clang 14 or newer) for the
