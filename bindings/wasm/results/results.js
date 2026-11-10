@@ -57,7 +57,7 @@ const extend = { parse: () => null, href: () => null, draw: () => null, title: (
 // The site's sections, in the order of the bar at the top of every page and
 // of the menu, by their front page's address: their names are these, here
 // only (the pages' bars, which tests/next.cjs holds to them, name them too).
-const SECTIONS = [["baselines", "By baseline"], ["integrations", "By integration"], ["types", "By program type"], ["circuits", "Circuits"], ["how", "How it works"]];
+const SECTIONS = [["types", "By program type"], ["baselines", "By baseline"], ["integrations", "By integration"], ["circuits", "Circuits"], ["how", "How it works"]];
 const sectionName = (key) => SECTIONS.find(([k]) => k === key)[1];
 // The first crumbs of a view: the front page, and the section the view is in.
 const HOME = ["Home", { view: "section", key: "" }];
