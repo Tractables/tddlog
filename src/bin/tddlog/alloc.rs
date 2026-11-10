@@ -42,9 +42,17 @@ static ALLOC: HugeLater = HugeLater;
 // blocks of 8 MiB and more come from an arena of their own, whose free
 // address space no other request can take. `_RJEM_MALLOC_CONF` overrides
 // each option.
+//
+// Transparent huge pages are Linux's: elsewhere jemalloc reports the
+// option as unsupported on every run, so it is left out there.
+#[cfg(target_os = "linux")]
 #[unsafe(export_name = "_rjem_malloc_conf")]
 static MALLOC_CONF: &[u8; 96] =
     b"thp:always,oversize_threshold:0,dirty_decay_ms:-1,muzzy_decay_ms:-1,lg_extent_max_active_fit:64\0";
+#[cfg(not(target_os = "linux"))]
+#[unsafe(export_name = "_rjem_malloc_conf")]
+static MALLOC_CONF: &[u8; 85] =
+    b"oversize_threshold:0,dirty_decay_ms:-1,muzzy_decay_ms:-1,lg_extent_max_active_fit:64\0";
 
 /// jemalloc, with the process's transparent huge pages off until it has
 /// asked for [`HUGE_FROM`] bytes. A small program's first huge pages are
