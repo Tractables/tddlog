@@ -157,7 +157,11 @@ reads. `--cnf` writes the ground program as a
    (TDDs), with the [tididi](https://github.com/Tractables/tididi) library.
    The layout of the diagrams' variables comes from tree decompositions,
    computed with [goatd](https://github.com/Tractables/goatd).
-3. It reads every query's probability off the diagrams in one pass.
+3. It counts the evidence's diagram once. The queries on its variables
+   come out of one backward pass over it; any other query has a diagram
+   of its own, counted in conjunction with the evidence's without
+   building the conjunction. A large program whose queries depend on
+   separate parts is compiled part by part.
 
 [How it works](https://tractables.github.io/tddlog/#/how) on the website
 walks through example programs, stage by stage, and

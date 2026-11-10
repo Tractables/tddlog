@@ -953,7 +953,7 @@ const OPTIMIZATIONS = [
   },
   {
     title: "Evidence once, then every query",
-    lines: ["One compile for the evidence, and every query is read off it."],
+    lines: ["The evidence's TDD is built and counted once, and each query is counted against it."],
     show: [{ head: ["", ""], rows: [
       ["evidence", "one TDD, built once along the vtree"],
       ["a query q that is a variable of the evidence's TDD", "one backward pass"],
