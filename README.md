@@ -189,7 +189,8 @@ runs.
 
 tddlog has no paper yet: cite the software, as [CITATION.cff](CITATION.cff)
 describes it (GitHub's "Cite this repository"). TDDs were introduced in
-[*A Canonical Generalization of OBDD*](https://arxiv.org/abs/2604.05537).
+[*A Canonical Generalization of OBDD*](https://doi.org/10.4230/LIPIcs.SAT.2026.10),
+SAT 2026 ([arXiv](https://arxiv.org/abs/2604.05537)).
 
 ## Acknowledgements
 

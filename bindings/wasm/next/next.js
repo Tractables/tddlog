@@ -866,7 +866,7 @@ const TP_PAPER = ["Tp-compilation", "Vlasselaer, Van den Broeck, Kimmig, Meert a
 const GAINS = [
   ["tddlog", "optimizations in the pipeline", null, "mine"],
   ["tididi", "highly optimized kernels", "https://github.com/Tractables/tididi", "lib"],
-  ["TDDs", "superpolynomial advantage over OBDDs", "https://arxiv.org/abs/2604.05537", "tdd", "A Canonical Generalization of OBDD"],
+  ["TDDs", "superpolynomial advantage over OBDDs", "https://doi.org/10.4230/LIPIcs.SAT.2026.10", "tdd", "A Canonical Generalization of OBDD"],
 ];
 
 // The example the first two optimizations read: its program and its answer.
