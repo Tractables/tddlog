@@ -829,7 +829,7 @@ fn a_program_with_nothing_to_order_matches_problog_round_after_round() {
         let run = bounded_alone(&gp, trial);
         assert!(run.attempts > 1, "{trial}: one attempt");
         assert!(
-            run.ground.atoms.iter().any(|a| a.name.starts_with("$e")),
+            run.ground.atoms.iter().any(|a| &*a.name == "$via"),
             "{trial}: no label atoms"
         );
         if trial.is_dynamic() {

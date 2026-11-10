@@ -298,6 +298,13 @@ pub(super) fn ground_line(g: &GroundProgram, secs: f64) -> String {
             g.stats.stepped
         ));
     }
+    if !g.stats.eliminated.is_empty() {
+        line.push_str(&format!(
+            "; {} atoms of {} linear recursive components eliminated",
+            g.stats.eliminated.iter().map(Vec::len).sum::<usize>(),
+            g.stats.eliminated.len()
+        ));
+    }
     let c = g.stats.conditioned;
     if c.facts + c.atoms + c.merged + c.into > 0 {
         line.push_str(&format!(

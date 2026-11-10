@@ -831,6 +831,14 @@ impl Atom {
         self.vars_into(&mut out);
         out
     }
+    /// The atom as a term: a constant without arguments, a compound with.
+    pub(crate) fn as_term(&self) -> Term {
+        if self.args.is_empty() {
+            Term::Const(self.name.clone())
+        } else {
+            Compound::term(self.name.clone(), self.args.to_vec())
+        }
+    }
 }
 
 impl fmt::Display for Atom {
@@ -843,8 +851,7 @@ impl fmt::Display for Atom {
             _ => false,
         };
         if operator {
-            let t = Compound::term(self.name.clone(), self.args.iter().cloned().collect());
-            return write_term(f, &t, 1200);
+            return write_term(f, &self.as_term(), 1200);
         }
         write_const(f, &self.name)?;
         if !self.args.is_empty() {

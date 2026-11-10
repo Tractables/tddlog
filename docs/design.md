@@ -88,7 +88,10 @@ library caller alike.
    ([Queries in groups](#queries-in-groups-srcsolvesplitrs-split_check)).
 3. **Rewrite.** Linear recursion is written without recursion
    (`src/ground/eliminate.rs`, `ground::without_linear_recursion`) and the
-   acyclic result finished again. Every layout compiles the rewrite
+   acyclic result finished again: the recursive atoms are eliminated one
+   at a time, as in Floyd and Warshall's algorithm, each defined from the
+   atoms eliminated after it, and an atom `'$via'(I, J, K)` says that `J`
+   follows from `I` through the first `K` atoms eliminated (step 12). Every layout compiles the rewrite
    (`Kind::eliminated`, the first step of `Kind::rewrite`); `auto` chooses
    its trials from the program as grounded and writes it once for all of
    them. A layout may then read derived atoms through *indicators*
@@ -1397,25 +1400,45 @@ are skipped. Several steps have a program in `examples/` that shows them.
     atom and a source `s`, an edge `b → h` labelled `L` for a rule
     `h :- b, L`, and `s → h` for a rule that reads no atom of the
     component; `h` holds exactly when a path from `s` to `h` has every
-    label true. Eliminating node `k` adds `label(i → k) ∧ label(k → j)` to
-    `label(i → j)` (Floyd and Warshall, one world at a time), and then
-    `v_k ⇔ A(k) ∨ ⋁_{j after k} v_j ∧ L(j, k)`: each atom reads only atoms
-    eliminated after it, so the program is acyclic, and the atoms keep
-    their names (a label of several bodies becomes an atom `$e(n)`). The
-    order is greedy on fill, the atoms read outside the component last;
-    past `MAX_PRODUCTS` label products the rest stays recursive. Steps 5
-    to 11 then run again, without step 6's views and equal gates
-    (`finish` with `inline` false): the elimination keeps its atoms apart
-    on purpose, and inlining would multiply them out. This is Gaussian
-    elimination for the algebraic path problem (Tarjan, JACM 1981) used
-    as cycle breaking, for linear positive recursion only: unlike
-    Janhunen's translation of normal programs (ECAI 2004) it adds no rank
-    variables, and unlike ProbLog 2's proof-based cycle breaking no
-    per-context copies. It is faster than the compile's Tp iteration on
-    the same program on the random graphs and grids, which the iteration
-    can run out of memory on.
+    label true. The nodes are eliminated one at a time, and a label keeps
+    one meaning throughout: `label(i → j)` holds where `j` follows from `i`
+    through a chain of the component's rules whose intermediate atoms are
+    all eliminated. On a path program, with atoms `path(X, t)` for a fixed
+    target `t` (or `path(1, Y)` from a fixed source), that is
+    `reach(i, j, S)`: a path from `i` to `j` whose inner nodes all lie in
+    `S`, the nodes eliminated so far. Eliminating node `k` is Floyd and
+    Warshall's step, one world at a time:
+
+    ```text
+    reach(i, j, S+k) :- reach(i, j, S).                  % avoids k
+    reach(i, j, S+k) :- reach(i, k, S), reach(k, j, S).  % passes through k
+    ```
+
+    and `v_k ⇔ A(k) ∨ ⋁_{j after k} v_j ∧ L(j, k)` is the eliminated atom's
+    definition: each atom reads only atoms eliminated after it, so the
+    program is acyclic, and the atoms keep their names. A label of several
+    bodies that is conjoined with another becomes an atom named for its
+    meaning, `'$via'(I, J, K)`: `J` follows from `I` through the first `K`
+    atoms of the component's order (`I` is `true` for the source), which
+    `--ground` prints as a comment. Every atom the elimination makes is a
+    definition, fixed in every world by the facts, so models, counts and
+    probabilities carry over: it adds no rank variables (Janhunen's
+    translation of normal programs, ECAI 2004), no guessed atoms and no
+    per-context copies (ProbLog 2's proof-based cycle breaking). The
+    labels share their parts, so the output is a circuit: on a complete
+    graph of `n` nodes about `n³/3` label products, while the simple paths
+    they cover are exponentially many (5 from one node of K4 to another,
+    109 601 in K10). The order is greedy on fill, the atoms read outside
+    the component last; past `MAX_PRODUCTS` label products the rest stays
+    recursive. Steps 5 to 11 then run again, without step 6's views and
+    equal gates (`finish` with `inline` false): the elimination keeps its
+    atoms apart on purpose, and inlining would multiply them out. This is
+    Gaussian elimination for the algebraic path problem (Tarjan, JACM
+    1981) used as cycle breaking, for linear positive recursion only. It
+    is faster than the compile's Tp iteration on the same program on the
+    random graphs and grids, which the iteration can run out of memory on.
     `tddlog --ground --vtree closed examples/cycle_graph.pl` prints the
-    acyclic program.
+    acyclic program, the order of the elimination first.
 
 ## Queries in groups (`src/solve/split.rs`, `split_check`)
 

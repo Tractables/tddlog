@@ -346,6 +346,11 @@ pub struct GroundStats {
     /// How many atoms the grounder made composing chains of steps
     /// (`steps`).
     pub stepped: usize,
+    /// The atoms of each linear recursive component written without
+    /// recursion (`eliminate`), in the order they were eliminated: the `K`
+    /// of a label `'$via'(T,H,K)` counts the first atoms of its
+    /// component's order.
+    pub eliminated: Vec<Vec<Atom>>,
     /// What the last conditioning on the evidence fixed and merged
     /// (`condition`).
     pub conditioned: Conditioned,
@@ -619,6 +624,15 @@ impl<T> std::ops::Index<usize> for Lists<T> {
 
 impl fmt::Display for GroundProgram {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // The order each linear recursive component was eliminated in, which
+        // the labels' `K` counts in (`eliminate`), as a comment.
+        for order in &self.stats.eliminated {
+            f.write_str("% eliminated in this order:")?;
+            for a in order {
+                write!(f, " {a}")?;
+            }
+            writeln!(f)?;
+        }
         for (a, p) in self.facts() {
             writeln!(f, "{}::{}.", p.p, self.atoms[a as usize])?;
         }
