@@ -108,6 +108,9 @@ ol.pipeline a[aria-current] { background: var(--logo-blue); color: #fff; font-we
 .results .step h3 { margin: 0.8rem 0 0.3rem; }
 .step h3 .muted { margin-left: 0.4rem; font-weight: 400; }
 .step > p { max-width: 80ch; }
+/* a term of the guide's, linked where a step first uses it: the text's colour, underlined in dots */
+.step a.term { color: inherit; text-decoration: underline dotted; text-underline-offset: 0.15em; }
+.step a.term:hover { color: var(--accent-ink); text-decoration-style: solid; }
 .step pre.src { max-height: 26rem; overflow: auto; font-size: 12.5px; }
 .step-nav { display: flex; justify-content: space-between; max-width: 80ch; }
 a.try-btn, .step-nav a {
