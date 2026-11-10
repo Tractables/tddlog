@@ -908,8 +908,16 @@ function benchmarksOf(root) {
       if (c.key === ALL) assert.deepEqual([...c.native].sort(), c.systems.filter((x) => !isMine(x)).sort(), `${what}: every system`);
       const shown = c.native.filter((x) => c.given[x] >= cats.measure.drawn);
       assert.deepEqual(c.drawn, [...c.mine, ...shown], `${what}: the systems drawn`);
-      assert.deepEqual([...c.named, ...c.others.systems], shown, `${what}: the named systems, then the others`);
-      assert.ok(c.named.length === shown.length || (c.named.length === cats.measure.named && c.others.systems.length > 1), `${what}: the best named, or all of them`);
+      const { leads } = c.others;
+      assert.deepEqual([...c.named, ...shown.filter((x) => !c.named.includes(x) && !leads.includes(x))], [...c.named, ...c.others.systems],
+        `${what}: the named systems, then the others`);
+      assert.deepEqual([...c.named, ...c.others.systems, ...leads].sort(), [...shown].sort(), `${what}: each shown system named, among the others or led`);
+      const rest = shown.slice(c.named.length);
+      assert.ok(c.named.length === shown.length || (c.named.length === cats.measure.named && rest.length > 1), `${what}: the best named, or all of them`);
+      // the others tddlog leads most below their row, the largest speed-ups first: three, or
+      // every one of them where they are five or fewer (panels.py's LEADS and FEW)
+      const byLead = [...rest].sort((a, b) => (c.vs[a].speedup === null) - (c.vs[b].speedup === null) || (c.vs[b].speedup ?? 0) - (c.vs[a].speedup ?? 0));
+      assert.deepEqual(leads, rest.length <= 5 ? byLead : byLead.filter((x) => c.vs[x].speedup !== null).slice(0, 3), `${what}: the others tddlog leads most`);
       if (c.others.systems.length) {
         const vs = c.others.systems.map((x) => c.vs[x]);
         const fast = vs.map((v) => v.speedup).filter((r) => r !== null);
@@ -954,6 +962,10 @@ function benchmarksOf(root) {
       speedText(c.vs[x])])), "the overview: each named system's answers and tddlog's speed-up");
     assert.equal((await page.$$("#view svg.overview a.row.others")).length, types.filter((c) => c.others.systems.length).length,
       "the overview: a row of the others");
+    const leadRows = await page.$$eval("#view svg.overview a.row.lead", (as) => as.map((a) => [a.getAttribute("href"),
+      ...["answers", "ratio"].map((c) => (a.querySelector(`text.${c}`)?.textContent ?? "").replace(/^none$/, "nothing to measure"))]));
+    assert.deepEqual(leadRows, types.flatMap((c) => c.others.leads.map((x) => [`#/category/${c.key}/vs/${x}`, count(c.vs[x].answers),
+      speedText(c.vs[x])])), "the overview: the others tddlog leads most, each with its answers and speed-up");
     // no bound of 0 s on the others' row (a total of 0: no instance it or tddlog answers)
     assert.equal((await page.$$eval("#view svg.overview a.row.others text.both", (ts) => ts.map((t) => t.textContent)))
       .filter((t) => /\b0(\.0)? s\b/.test(t)).length, 0, "the overview: no others' bound of 0 s");

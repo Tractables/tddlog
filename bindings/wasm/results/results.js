@@ -851,7 +851,9 @@ function measureLine() {
 // the two total times over the instances it is given and either answers
 // (PAR-2), on one time axis, and tddlog's speed-up over it; the other
 // native systems in one row (c.others), the least of their totals and of
-// their speed-ups. A type's title or row opens the type.
+// their speed-ups, and below it the three of them tddlog leads most
+// (c.others.leads), each in a row of its own, muted. A type's title or row
+// opens the type.
 function overview() {
   const box = element("div", { class: "box" });
   const figure = element("figure", { class: "overview" }, box,
@@ -875,17 +877,18 @@ function drawOverview(box) {
   const groups = data.types.map((c) => {
     const ms = subjectsOf(catRows(c));
     const title = `${c.title}, ${count(c.instances)} ${c.noun}: ${subject(ms)} ${ms.length > 1 ? "answer" : "answers"} ${count(answeredBy(catRows(c)))}`;
-    return { c, rows: c.named.map((x) => ({ x, v: c.vs[x] })), others: c.others, ms, lines: titleLines(title) };
+    const of = (xs) => xs.map((x) => ({ x, v: c.vs[x] }));
+    return { c, rows: of(c.named), others: c.others, leads: of(c.others.leads ?? []), ms, lines: titleLines(title) };
   });
   const row = 23, top = 46, bottom = 30, head = (g) => 32 + 16 * (g.lines.length - 1);
   const nameRight = narrow ? 112 : 190, answersRight = nameRight + 38;
   const ratio = width - (narrow ? 56 : 110);
   const x0 = answersRight + 14, x1 = ratio - (narrow ? 10 : 18);
-  const all = groups.flatMap((g) => [...g.rows.flatMap((r) => [r.v.tddlog_total, r.v.total]),
+  const all = groups.flatMap((g) => [...[...g.rows, ...g.leads].flatMap((r) => [r.v.tddlog_total, r.v.total]),
     ...(g.others.systems.length ? [g.others.total] : [])]).filter((t) => t > 0);
   const lo = Math.min(...all) / 3, hi = Math.max(...all) * 3;
   const lx = (t) => x0 + Math.log(Math.max(t, lo) / lo) / Math.log(hi / lo) * (x1 - x0);
-  const height = top + groups.reduce((h, g) => h + head(g) + row * (g.rows.length + (g.others.systems.length ? 1 : 0)), 0) + bottom;
+  const height = top + groups.reduce((h, g) => h + head(g) + row * (g.rows.length + g.leads.length + (g.others.systems.length ? 1 : 0)), 0) + bottom;
   const plot = svg("svg", { class: "overview", width, height, viewBox: `0 0 ${width} ${height}`, role: "group",
     "aria-label": "Each type of program: each native system's answers, its total time and tddlog's, and tddlog's speed-up" });
   const ticks = [];
@@ -938,16 +941,18 @@ function drawOverview(box) {
     lines.forEach((text, i) => title.append(svg("text", { x: 0, y: y + 23 + 16 * i }, i < lines.length - 1 ? `${text} ` : text)));
     plot.append(title);
     y += head(g);
-    for (const { x, v } of rows) {
+    // a system's row, in its colour (lead: muted, one of the three others tddlog leads most)
+    const system = ({ x, v }, lead = false) => {
       const mine = v.tddlog_total, theirs = v.total;
       const [left, right] = mine <= theirs ? [-1, 1] : [1, -1];
       // its answers those of the comparison: in a type, of the instances as its users would write them
       line({ ...to, vs: x }, `${data.names[x]}: answers ${count(v.answers)} of the ${plural(v.given, "instance")} it is given as its users would write them; over `
         + `${totals(v, data.names[x])}; ${subject(v.me)}'s speed-up: ${speedup(v)}`,
-      "other", data.names[x], v.answers,
+      lead ? "lead" : "other", data.names[x], v.answers,
       svg("line", { class: "span", x1: lx(mine), y1: y + row / 2, x2: lx(theirs), y2: y + row / 2 }),
-      ...at(theirs, `you ${tint(x)}`, right), ...at(mine, "me", left), mark(v.speedup, false, answersNone(v)));
-    }
+      ...at(theirs, lead ? "you" : `you ${tint(x)}`, right), ...at(mine, "me", left), mark(v.speedup, false, answersNone(v)));
+    };
+    for (const r of rows) system(r);
     if (others.systems.length) {
       const who = others.systems.map((x) => data.names[x]);
       const several = who.length > 1;
@@ -964,6 +969,8 @@ function drawOverview(box) {
       "others", several ? `${who.length} others` : who[0], null,
       svg("text", { class: "both", x: x0, y: y + row / 2 + 4 }, text), mark(r, true));
     }
+    // below them, the others tddlog leads most, each with its speed-up
+    for (const r of g.leads) system(r, true);
   }
   box.replaceChildren(plot);
 }
