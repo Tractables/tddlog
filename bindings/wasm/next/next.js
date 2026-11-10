@@ -638,7 +638,7 @@ const WALKS = [
       read: "A ProbLog file is the program as it stands: there is nothing to translate.",
       parse: "The 14 edges as probabilistic facts, the two rules of `path/2` (the second reads `path` itself) and six queries `path(1,Y)`.",
       ground: "Only the paths from node 1 are ground, since the queries need no others. They form one cyclic component of six atoms, round the graph.",
-      rewrite: "The recursion is linear, so tddlog writes it out: the cycle's atoms are eliminated one at a time, as in Floyd and Warshall's algorithm. Eight acyclic components are left.",
+      rewrite: "The recursion is linear, so tddlog writes it out: the cycle's atoms are eliminated one at a time, as in Floyd and Warshall's algorithm, `path(1,3)` first. `'$via'(path(1,2),path(1,4),2)` holds where a path leads from 2 to 4 whose inner nodes are among the first two eliminated, 3 and 6. Eight acyclic components are left.",
       layout: "`auto` gives this program one trial, `dynamic`, and it finished in its first attempt. The vtree is right-linear over a min-fill order of the 12 edges.",
       compile: "Each atom's formula over the edges is built by TDD operations, in dependency order. The largest, `path(1,6)`, has 79 pairs. No cycle is left, so no fixpoint runs.",
       evidence: "There is no evidence, so each query was counted during the compile.",

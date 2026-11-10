@@ -449,7 +449,8 @@ path(1,7):      0.199812</pre>
   A connection that joins several paths and goes on becomes an atom of
   its own, named for what it means:
   <code>'$via'(path(1,2),path(1,4),2)</code> holds where a path leads
-  from 2 to 4 through the first two nodes eliminated.
+  from 2 to 4 whose inner nodes are among the first two eliminated, 3
+  and 6.
   <code>tddlog --ground --vtree closed examples/cycle_graph.pl</code>
   prints the program without recursion, the order of the elimination
   first. Every new atom is fixed by the edges, so the probabilities are
