@@ -36,46 +36,24 @@ which runs tddlog in the browser, and the [guide].
 
 ## How well does it work?
 
-tddlog was compared with every exact inference system we could find. Each
-type of program is compared with the systems that natively handle it.
-Every answer is checked against an exact reference.
+tddlog was compared with every exact inference system we could find, each
+type of program with the systems that natively handle it, and every answer
+was checked against an exact reference.
 
 <p align="center">
   <a href="https://tractables.github.io/tddlog/#/types"><img src="docs/images/overview.svg"
        alt="Each type of program against the exact inference systems native to it: their answers, their total times and tddlog's, and tddlog's speed-up over each"></a>
   <br>
-  <sub><a href="https://tractables.github.io/tddlog/#/types">Every result on the website</a>: each type of program, family, instance and system.</sub>
+<!-- results:overview -->
+<!-- written from bindings/wasm/results/categories.json, sha256 157bfc8f8f63add3f252def7484ef5feb65433b19a79e953f2b3c75458387303 -->
+<sub>As of 2026-11-09. Click the figure for every result.</sub>
+<!-- /results:overview -->
 </p>
 
-<!-- results:overview -->
-<sub>Results as of 2026-11-09, public main [d8f161566](https://github.com/Tractables/tddlog/commit/d8f161566). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
-<!-- /results:overview -->
-
-Each type has a page with every instance, time and program, and the instances
-where another system wins: [logic programs](https://tractables.github.io/tddlog/#/category/logic-programs),
-[databases](https://tractables.github.io/tddlog/#/category/database-queries),
-[Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks),
-[Markov networks](https://tractables.github.io/tddlog/#/category/markov-networks) and
-[functional programs](https://tractables.github.io/tddlog/#/category/functional-programs).
-
-<!-- results:setup -->
-<!-- written from bindings/wasm/results/categories.json, sha256 157bfc8f8f63add3f252def7484ef5feb65433b19a79e953f2b3c75458387303 -->
-Results as of 2026-11-09, public main [d8f161566](https://github.com/Tractables/tddlog/commit/d8f161566). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
-<!-- /results:setup -->
-
-- [By baseline](https://tractables.github.io/tddlog/#/baselines): a page
-  for each of the other systems.
-- [Circuits](https://tractables.github.io/tddlog/#/circuits): the Boolean
-  circuits Alea.jl exports, read by every system.
-- [Methods](https://tractables.github.io/tddlog/#/methods): how the runs
-  were made and the speed-up counted.
-- The [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines):
-  how each system was run.
-
-tddlog is also an inference backend for Alea.jl and Roulette
-([integrations](https://tractables.github.io/tddlog/#/integrations)).
-X+tddlog runs X's own code, then tddlog's inference. X alone is in
-brackets:
+A richer language can keep its own front end and hand its inference to
+tddlog. Alea.jl and Roulette do so through tddlog backends
+([integrations](https://tractables.github.io/tddlog/#/integrations)),
+each against itself alone:
 
 <!-- results:integrations -->
 | Integration | Instances | Answers | Total time | Faster |
