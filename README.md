@@ -45,8 +45,8 @@ was checked against an exact reference.
        alt="Each type of program against the exact inference systems native to it: their answers, their total times and tddlog's, and tddlog's speed-up over each"></a>
   <br>
 <!-- results:overview -->
-<!-- written from bindings/wasm/results/categories.json, sha256 157bfc8f8f63add3f252def7484ef5feb65433b19a79e953f2b3c75458387303 -->
-<sub>As of 2026-11-09. Click the figure for every result.</sub>
+<!-- written from bindings/wasm/results/categories.json, sha256 0981c0666314f4bdc186c5f01d6c7d50704cd6e99fd1f8c7a1aad1e27f949dc1 -->
+<sub>As of 2026-11-10. Click the figure for every result.</sub>
 <!-- /results:overview -->
 </p>
 

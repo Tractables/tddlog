@@ -8988,7 +8988,8 @@
     "answers":null,
     "total":null,
     "tddlog":null,
-    "speedup":null
+    "speedup":null,
+    "leads":[]
    },
    "losses":[]
   },
@@ -17131,7 +17132,8 @@
     "answers":null,
     "total":null,
     "tddlog":null,
-    "speedup":null
+    "speedup":null,
+    "leads":[]
    },
    "losses":[]
   },
@@ -23416,16 +23418,17 @@
      }
     }
    },
-   "native":["ace","tensorinference","merlin","libdai","agrum","pita","pgmpy","aspmc","alea","pluck","roulette","problog","dice","geni","genfer","nodice","sppl","psi","webppl","scallop","psouffle"],
+   "native":["ace","tensorinference","merlin","libdai","agrum","pita","pgmpy","aspmc","alea","roulette","problog","dice","geni","genfer","nodice","psi","webppl","pluck","scallop","psouffle","sppl"],
    "mine":["tddlog","alea-tddlog","roulette-tddlog"],
-   "drawn":["tddlog","alea-tddlog","roulette-tddlog","ace","tensorinference","merlin","libdai","agrum","pita","pgmpy","aspmc","alea","pluck","roulette","problog","dice","geni","genfer","nodice","sppl","psi","webppl","scallop"],
+   "drawn":["tddlog","alea-tddlog","roulette-tddlog","ace","tensorinference","merlin","libdai","agrum","pita","pgmpy","aspmc","alea","roulette","problog","dice","geni","genfer","nodice","psi","webppl","pluck","scallop","sppl"],
    "named":["ace","tensorinference","merlin","libdai","agrum"],
    "others":{
-    "systems":["pita","pgmpy","aspmc","alea","pluck","roulette","problog","dice","geni","genfer","nodice","sppl","psi","webppl","scallop"],
-    "answers":[12,236],
+    "systems":["pita","pgmpy","aspmc","alea","roulette","problog","dice","geni","genfer","nodice","pluck","sppl"],
+    "answers":[0,236],
     "total":6000,
     "tddlog":[13.21,1778.772],
-    "speedup":115.1
+    "speedup":115.1,
+    "leads":["scallop","webppl","psi"]
    },
    "losses":["Where others win: every network tool answers uai_bn_125 of Ihler's collection in 1.3 to 18 s, and tddlog runs out of time. On 37 more a native system is at least twice as fast where tddlog takes 1 s or more: Merlin, pyAgrum or TensorInference.jl on 22 of Ihler's BN networks, up to 0.3 s against tddlog's 161 s; TensorInference.jl or pyAgrum on bnlearn's barley, mildew and diabetes; Alea.jl on ten Mastermind networks."]
   },
@@ -27621,7 +27624,8 @@
     "answers":null,
     "total":null,
     "tddlog":null,
-    "speedup":null
+    "speedup":null,
+    "leads":[]
    },
    "losses":["Where others win: TensorInference.jl answers Ihler's pedigree50 in 133 s, and tddlog runs out of memory. On 35 more a native system is at least twice as fast where tddlog takes 1 s or more: TensorInference.jl on nine protein networks of the UAI 2022 final set, up to 19 s against tddlog's 268 s, on bwt3ac and on pedigree30; pgmpy or TensorInference.jl on 22 object detection networks; Merlin on two DBNs."]
   },
@@ -38923,16 +38927,17 @@
      }
     }
    },
-   "native":["roulette","alea","dice","geni","pluck","genfer","webppl","psi","nodice","sppl"],
+   "native":["roulette","alea","dice","geni","genfer","webppl","nodice","psi","pluck","sppl"],
    "mine":["tddlog","alea-tddlog","roulette-tddlog"],
-   "drawn":["tddlog","alea-tddlog","roulette-tddlog","roulette","alea","dice","geni","pluck","genfer","webppl","psi","nodice","sppl"],
-   "named":["roulette","alea","dice","geni","pluck"],
+   "drawn":["tddlog","alea-tddlog","roulette-tddlog","roulette","alea","dice","geni","genfer","webppl","nodice","psi","pluck","sppl"],
+   "named":["roulette","alea","dice","geni","genfer"],
    "others":{
-    "systems":["genfer","webppl","psi","nodice","sppl"],
-    "answers":[57,80],
-    "total":1204.014,
-    "tddlog":[1.752,5469.007],
-    "speedup":52.91
+    "systems":[],
+    "answers":null,
+    "total":null,
+    "tddlog":null,
+    "speedup":null,
+    "leads":["psi","nodice","pluck","sppl","webppl"]
    },
    "losses":["Where others win: WebPPL answers simpleCaesar at k = 100000 in 279 s, and tddlog runs out of memory. On 20 more a native system is at least twice as fast where tddlog takes 1 s or more: Pluck on pmc1, up to 13 s against tddlog's 184 s; WebPPL on the Caesar ciphers and gcd; Geni and Alea.jl on the bounded retransmission protocol; Dice on the ladder and the HMM joints; Alea.jl on three of Cao et al.'s integer programs."]
   },
@@ -47634,11 +47639,12 @@
    "drawn":["tddlog","alea-tddlog","roulette-tddlog","ace","libdai","tensorinference","agrum","merlin","pita","problog","pgmpy","aspmc","alea","roulette","dice","storm","pluck","nodice","psouffle","prism","provsql","geni","webppl","genfer","sppl","psi","scallop"],
    "named":["ace","libdai","tensorinference","agrum","merlin"],
    "others":{
-    "systems":["pita","problog","pgmpy","aspmc","alea","roulette","dice","storm","pluck","nodice","psouffle","prism","provsql","geni","webppl","genfer","sppl","psi","scallop"],
-    "answers":[119,724],
+    "systems":["pita","problog","pgmpy","aspmc","alea","roulette","dice","storm","pluck","nodice","psouffle","prism","provsql","geni","webppl","genfer"],
+    "answers":[195,724],
     "total":34592.529,
     "tddlog":[1234.894,16743.83],
-    "speedup":26.06
+    "speedup":26.06,
+    "leads":["scallop","psi","sppl"]
    },
    "losses":["Where others win, beyond the native systems above, on programs translated into their languages: Storm answers the largest sizes of Roulette's diamond, ladder, hardware and motivating loops, of noDice's coupon collector and, with PRISM, of Geni's weather factory, where tddlog runs out of time or memory. pgmpy answers grid25, a path query across a 25 by 25 grid, in 150 s on its ground network; libDAI, pgmpy and Merlin the database query liftsep11 in 7 to 26 s; aspmc the Markov network or_chain_156 in 285 s."]
   }
@@ -58875,11 +58881,12 @@
   "drawn":["tddlog","roulette","ace","pita","aspmc","pluck","merlin","agrum","libdai","pgmpy","problog","storm","tensorinference","dice","prism","nodice","sppl","genfer","webppl","geni","scallop","psi"],
   "named":["roulette","ace","pita","aspmc","pluck"],
   "others":{
-   "systems":["merlin","agrum","libdai","pgmpy","problog","storm","tensorinference","dice","prism","nodice","sppl","genfer","webppl","geni","scallop","psi"],
-   "answers":[0,64],
+   "systems":["merlin","agrum","libdai","pgmpy","problog","storm","tensorinference","dice","prism","nodice","sppl","webppl","geni"],
+   "answers":[2,64],
    "total":230399.114,
-   "tddlog":[7391.05,8132.172],
-   "speedup":138.7
+   "tddlog":[7795.461,8132.172],
+   "speedup":138.7,
+   "leads":["scallop","psi","genfer"]
   },
   "pipeline":"alea-tddlog"
  },
@@ -80203,20 +80210,21 @@
      }
     }
    },
-   "native":["problog","pita","alea","ace","psouffle","aspmc","provsql","dice","libdai","agrum","pgmpy","merlin","roulette","storm","tensorinference","nodice","webppl","prism","pluck","scallop","psi","geni","sppl","genfer"],
+   "native":["problog","pita","alea","ace","psouffle","aspmc","provsql","dice","libdai","agrum","pgmpy","merlin","roulette","storm","tensorinference","nodice","webppl","prism","scallop","geni","pluck","genfer","sppl","psi"],
    "mine":["alea-tddlog","tddlog"],
-   "drawn":["alea-tddlog","tddlog","problog","pita","alea","ace","psouffle","aspmc","provsql","dice","libdai","agrum","pgmpy","merlin","roulette","storm","tensorinference","nodice","webppl","prism","pluck","scallop","psi","geni","sppl","genfer"],
+   "drawn":["alea-tddlog","tddlog","problog","pita","alea","ace","psouffle","aspmc","provsql","dice","libdai","agrum","pgmpy","merlin","roulette","storm","tensorinference","nodice","webppl","prism","scallop","geni","pluck","genfer","sppl","psi"],
    "named":["problog","pita","alea","ace","psouffle"],
    "others":{
-    "systems":["aspmc","provsql","dice","libdai","agrum","pgmpy","merlin","roulette","storm","tensorinference","nodice","webppl","prism","pluck","scallop","psi","geni","sppl","genfer"],
-    "answers":[75,298],
+    "systems":["aspmc","provsql","dice","libdai","agrum","pgmpy","merlin","roulette","storm","tensorinference","nodice","prism","scallop","geni","genfer","psi"],
+    "answers":[61,298],
     "total":29192.529,
-    "tddlog":[1787.44,70670.508],
-    "speedup":0.5332
+    "tddlog":[4989.578,70670.508],
+    "speedup":0.5332,
+    "leads":["sppl","pluck","webppl"]
    },
    "pipeline":"alea-tddlog",
    "system":"alea",
-   "about":"Alea.jl's programs, run by Alea.jl up to the circuit it exports and handed to tddlog, against Alea.jl, which compiles the same circuit into BDDs with CUDD, and the systems that read a program of their own of the model: the bit-blasting paper's programs, Cao et al.'s integer programs, Pluck's sequence models and the Dice paper's diamond and ladder.",
+   "about":"Alea.jl's programs, and the logic programs, database queries and other programs translated into Alea.jl's language, run by Alea.jl up to the circuit it exports and handed to tddlog, against Alea.jl, which compiles the same circuit into BDDs with CUDD, and the systems that read a program of their own of the model: the bit-blasting paper's programs, Cao et al.'s integer programs, Pluck's sequence models and the Dice paper's diamond and ladder.",
    "code":"https://github.com/Tractables/Alea.jl/tree/tddlog",
    "ported":true,
    "splits":{
@@ -83502,7 +83510,8 @@
     "answers":null,
     "total":null,
     "tddlog":null,
-    "speedup":null
+    "speedup":null,
+    "leads":[]
    },
    "pipeline":"roulette-tddlog",
    "system":"roulette",
@@ -90819,5 +90828,5 @@
    "alea-tddlog":{"answers":224,"seconds":7324.0,"export":325.301}
   }
  },
- "stamp":{"date":"2026-11-09","source":"d8f161566"}
+ "stamp":{"date":"2026-11-10","source":"88715d818"}
 }
