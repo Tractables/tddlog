@@ -760,12 +760,12 @@ function ranked(c, xs, tal, only) {
   return xs.filter((x) => !isMine(x)).sort((a, b) => tal[b].answers - tal[a].answers || key(a) - key(b));
 }
 
-// tddlog's speed-up of a comparison: 49×, 1.7×, 1.3× slower, or "too few in
-// common" where fewer than 20 instances both answer; with sentence, "49×
-// faster".
+// tddlog's speed-up of a comparison: 49×, 1.7×, 1.3× slower, or "nothing to
+// measure" where no instance both answer over the floor and none only one
+// answers; with sentence, "49× faster".
 function speedup(v, sentence = false) {
   const r = v?.speedup ?? null;
-  if (r === null) return sentence ? "too few instances in common for a speed-up" : "too few in common";
+  if (r === null) return "nothing to measure";
   return r >= 1 ? `${times(r, 1)}${sentence ? " faster" : ""}` : `${times(1, r)} slower`;
 }
 
@@ -779,7 +779,7 @@ function catSuite(c, rows, drawn, tal, only) {
     limit: Math.max(...rows.map((r) => r.limit)),
     faster: Object.fromEntries(systems.filter((x) => !isMine(x)).map((x) => {
       const v = versus(c, x, only);
-      return [x, (v?.speedup ?? null) === null ? "too few in common" : `${subject(v.me)} ${speedup(v, true)}`];
+      return [x, (v?.speedup ?? null) === null ? "nothing to measure" : `${subject(v.me)} ${speedup(v, true)}`];
     })) };
 }
 
@@ -837,9 +837,8 @@ function stampLine() {
 }
 
 function measureLine() {
-  const { floor, par, common } = data.measure;
-  return `An unanswered run counts as ${twice(par)} its time limit (PAR-${par}) and a time under ${floor} s as ${floor} s; `
-    + `a speed-up needs ${common} instances both answer.`;
+  const { floor, par } = data.measure;
+  return `An unanswered run counts as ${twice(par)} its time limit (PAR-${par}) and a time under ${floor} s as ${floor} s.`;
 }
 
 
@@ -921,9 +920,9 @@ function drawOverview(box) {
     }
     return marks;
   };
-  // the right column: tddlog's speed-up r (with least, "at least"), or too few in common
+  // the right column: tddlog's speed-up r (with least, "at least"), or nothing to measure
   const mark = (r, least = false) => (r === null
-    ? svg("text", { class: "ratio few", x: ratio, y: y + row / 2 + 4 }, narrow ? "too few" : "too few in common")
+    ? svg("text", { class: "ratio few", x: ratio, y: y + row / 2 + 4 }, narrow ? "none" : "nothing to measure")
     : svg("text", { class: `ratio${r >= 1 ? "" : " slower"}`, x: ratio, y: y + row / 2 + 4 },
       r >= 1 ? `${least ? "≥" : ""}${times(r, 1, least)}` : `${least ? "≤" : ""}${times(1, r)} slower`));
   for (const g of groups) {
@@ -1096,7 +1095,7 @@ const data = {
   version: "",      // tddlog's version in the release run
   names: {},        // a system's key: its name
   categories: [],   // categories.json's, in the README's order, each with `suites` and `perSuite` (its instances in each)
-  measure: {},      // the parameters of the measure (rule 16): floor, par, common, named, drawn
+  measure: {},      // the parameters of the measure (rule 16): floor, par, named, drawn
   own: [],          // each system on its own benchmarks against tddlog
   suiteVs: {},      // a suite's key: tddlog against each other system of the suite (categories.json's `suites`)
   systems: [],      // each solver, by the instances it answers: what it is, its totals, how it was given the instances

@@ -1032,7 +1032,7 @@ details.fold p { margin: 0.3rem 0 0; color: var(--muted); }
 }
 table.board { font-size: 13px; }
 table.board th, table.board td { padding: 0.35rem 0.55rem; white-space: nowrap; }
-/* "too few in common" wraps under its short header, so that a board of nine columns fits a desktop's width. */
+/* "nothing to measure" wraps under its short header, so that a board of nine columns fits a desktop's width. */
 table.board td.few { white-space: normal; min-width: 4.5rem; color: var(--muted); line-height: 1.25; }
 /* A family's one link, its program's: a file's name in the code face, else how many instances. */
 table.board td.program a code { padding: 0; background: none; color: inherit; font-size: 12.5px; }

@@ -76,10 +76,10 @@ function scriptLink(name, path) {
 
 // ------------------------------------------------------------- the parts
 
-// tddlog's speed-up in a table's cell: a dash, its title saying why, where too few instances both
-// answer.
+// tddlog's speed-up in a table's cell: a dash, its title saying why, where there is nothing to
+// measure (no instance both answer over the floor and none only one answers).
 const speedCell = (v) => (v?.speedup == null
-  ? element("span", { class: "few", title: `fewer than ${data.measure.common} instances both answer` }, "–") : speedup(v));
+  ? element("span", { class: "few", title: `nothing to measure: no instance both answer over ${data.measure.floor} s and none only one answers` }, "–") : speedup(v));
 
 // A comparison in cells, each side's under its name: the instances; the
 // system's answers and its PAR-2 total over the instances it is given and
@@ -231,7 +231,7 @@ function familyTable(v, name) {
   const table = element("table", { class: `board fams-tr${v.families.length > FAMILY_ROWS ? " folded" : ""}` },
     head2(["family"], ["program", "Opens the family's view on its program, with the programs both read"], ["instances", null, "num"],
       { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
-      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up, a dash where fewer than ${data.measure.common} instances both answer`, "num"]] }), body);
+      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up, a dash where there is nothing to measure`, "num"]] }), body);
   // past the first rows, the rest on asking
   const more = v.families.length > FAMILY_ROWS ? element("button", { type: "button", class: "plain more-rows", "aria-expanded": "false", onclick: () => {
     const open = table.classList.toggle("folded") === false;
@@ -827,7 +827,7 @@ function howView(route) {
 // Under a table, the views say the measure in one line (measureLine), and
 // every speed-up's header links here (results.js's speedName).
 function methodsView() {
-  const { floor, par, common } = data.measure;
+  const { floor, par } = data.measure;
   const limits = data.categories.filter((c) => c.key !== ALL).map((c) =>
     `${c.title} ${[...new Set(c.rows.map((r) => r[2]))].sort((a, b) => a - b).join(" or ")} s`);
   const { date, source } = data.stamp;
@@ -842,7 +842,7 @@ function methodsView() {
           + `a time under ${floor} s at ${floor} s`],
         ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s) and over each instance only one of the two `
           + `answers, the other at its limit, where that raises the multiplier of the system that answered it, so that `
-          + `a system's answers the other misses only help it; none with fewer than ${common} in common`],
+          + `a system's answers the other misses only help it; no minimum number of instances in common`],
         ["X+tddlog", "X's own code, then tddlog's inference; its time includes X's after its warm-up, so that against X it differs only in the inference"],
         ["circuits", "Every circuit Alea.jl exports, read by every system and timed without its export; the functional programs among them are also in their type"],
         ["data", element("span", {}, `Processed ${date}, on public main `,
