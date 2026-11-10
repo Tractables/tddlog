@@ -809,8 +809,8 @@ function headline(c, rows, tal, only) {
   const box = cells([`${subject(subjectsOf(rows))} answers`, `${count(answeredBy(rows))} of ${count(rows.length)}`],
     ...headMembers(c, rows, tal).map(([x, label]) => [label, `${count(tal[x].answers)} of ${count(tal[x].given)}`, `${data.names[x]}'s answers of the instances it was given`]),
     ...(v ? [[`best ${which}: ${data.names[best]}`, `${count(tal[best].answers)} of ${given}`, `the ${which} system with the most answers, of the instances it was given`],
-      [speedName(`speed-up over it, on all ${given}`), speedup(v),
-        `${subject(v.me)}'s speed-up over ${data.names[best]} on every instance it was given, head-to-head and translated together`]] : []));
+      [speedName(`speed-up over it, on ${count(v.given)}`), speedup(v),
+        `${subject(v.me)}'s speed-up over ${data.names[best]} on the ${plural(v.given, "instance")} its comparison counts, head-to-head and translated together`]] : []));
   box.classList.add("headline");
   return box;
 }
@@ -941,9 +941,10 @@ function drawOverview(box) {
     for (const { x, v } of rows) {
       const mine = v.tddlog_total, theirs = v.total;
       const [left, right] = mine <= theirs ? [-1, 1] : [1, -1];
-      line({ ...to, vs: x }, `${data.names[x]}: ${count(c.answers[x])} of ${count(c.instances)} answered; over `
+      // its answers those of the comparison: in a type, of the instances as its users would write them
+      line({ ...to, vs: x }, `${data.names[x]}: answers ${count(v.answers)} of the ${plural(v.given, "instance")} it is given as its users would write them; over `
         + `${totals(v, data.names[x])}; ${subject(v.me)}'s speed-up: ${speedup(v)}`,
-      "other", data.names[x], c.answers[x],
+      "other", data.names[x], v.answers,
       svg("line", { class: "span", x1: lx(mine), y1: y + row / 2, x2: lx(theirs), y2: y + row / 2 }),
       ...at(theirs, `you ${tint(x)}`, right), ...at(mine, "me", left), mark(v.speedup, false, answersNone(v)));
     }

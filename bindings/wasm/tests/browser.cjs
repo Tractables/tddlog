@@ -902,7 +902,9 @@ function benchmarksOf(root) {
         assert.deepEqual(Object.keys(c.narrowed[key]).sort(), [...given].sort(), `${what} narrowed to ${key}: its systems`);
         for (const x of given) same(c.narrowed[key][x], versus(sub, x, true), `${what} narrowed to ${key}: tddlog against ${x}`);
       }
-      assert.deepEqual(c.native, ranked(c, c.native), `${what}: the native systems by their answers, then speed-up`);
+      // ranked by their answers in the comparison beside them (in a type, the instances as their users would write them)
+      const byVs = (xs) => [...xs].sort((a, b) => c.vs[b].answers - c.vs[a].answers || (c.vs[a].speedup ?? Number.MAX_VALUE) - (c.vs[b].speedup ?? Number.MAX_VALUE));
+      assert.deepEqual(c.native, byVs(c.native), `${what}: the native systems by their answers, then speed-up`);
       if (c.key === ALL) assert.deepEqual([...c.native].sort(), c.systems.filter((x) => !isMine(x)).sort(), `${what}: every system`);
       const shown = c.native.filter((x) => c.given[x] >= cats.measure.drawn);
       assert.deepEqual(c.drawn, [...c.mine, ...shown], `${what}: the systems drawn`);
@@ -913,8 +915,8 @@ function benchmarksOf(root) {
         const fast = vs.map((v) => v.speedup).filter((r) => r !== null);
         assert.equal(c.others.speedup, fast.length ? Math.min(...fast) : null, `${what}: the others' least speed-up`);
         assert.equal(c.others.total, Math.min(...vs.map((v) => v.total)), `${what}: the others' least total`);
-        assert.deepEqual(c.others.answers, [Math.min(...c.others.systems.map((x) => c.answers[x])),
-          Math.max(...c.others.systems.map((x) => c.answers[x]))], `${what}: the range of the others' answers`);
+        assert.deepEqual(c.others.answers, [Math.min(...c.others.systems.map((x) => c.vs[x].answers)),
+          Math.max(...c.others.systems.map((x) => c.vs[x].answers))], `${what}: the range of the others' answers`);
         assert.deepEqual(c.others.tddlog, [Math.min(...vs.map((v) => v.tddlog_total)), Math.max(...vs.map((v) => v.tddlog_total))],
           `${what}: the range of tddlog's totals against the others`);
       }
@@ -948,7 +950,7 @@ function benchmarksOf(root) {
     }), "the overview: a type a group");
     const overviewRows = await page.$$eval("#view svg.overview a.row.other", (as) => as.map((a) => [a.getAttribute("href"),
       ...["answers", "ratio"].map((c) => (a.querySelector(`text.${c}`)?.textContent ?? "").replace(/^none$/, "nothing to measure"))]));
-    assert.deepEqual(overviewRows, types.flatMap((c) => c.named.map((x) => [`#/category/${c.key}/vs/${x}`, count(c.answers[x]),
+    assert.deepEqual(overviewRows, types.flatMap((c) => c.named.map((x) => [`#/category/${c.key}/vs/${x}`, count(c.vs[x].answers),
       speedText(c.vs[x])])), "the overview: each named system's answers and tddlog's speed-up");
     assert.equal((await page.$$("#view svg.overview a.row.others")).length, types.filter((c) => c.others.systems.length).length,
       "the overview: a row of the others");
