@@ -67,13 +67,15 @@ prebuilt, with nothing else to install:
   | macOS x86-64 (Intel) | [tddlog-v0.1.0-x86_64-apple-darwin.tar.gz][macos-x86-64] |
   | Windows x86-64 | [tddlog-v0.1.0-x86_64-pc-windows-msvc.zip][windows-x86-64] |
 
-  On a Mac with Apple silicon, for example:
+  On Linux x86-64, for example:
 
   ```sh
-  curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-aarch64-apple-darwin.tar.gz | tar xz
-  cd tddlog-v0.1.0-aarch64-apple-darwin
+  curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
+  cd tddlog-v0.1.0-x86_64-unknown-linux-gnu
   ./tddlog examples/alarm.pl
   ```
+
+  On a Mac with Apple silicon, the same with `aarch64-apple-darwin`.
 
   macOS refuses to open a binary downloaded with a browser, which it
   quarantines; `xattr -d com.apple.quarantine tddlog` lifts that.
