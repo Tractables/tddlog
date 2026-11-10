@@ -74,79 +74,50 @@ playground.</p>
 
 <section class="card prose" id="getting-started">
   <h2>Getting started</h2>
-  <p>tddlog is an exact inference engine for probabilistic Datalog. It
-  reads a probabilistic logic program written in ProbLog, or a Bayesian
-  or Markov network, and prints the probability of each of its queries
-  given its evidence; it also reads Dice programs, Circulette netlists
-  and LPADs (<a href="#networks">below</a>). The answers are exact:
-  tddlog grounds the program to probabilistic Datalog, compiles it into
-  tree decision diagrams and counts the queries on them.</p>
-  <p>There are four ways to run it:</p>
+  <p>tddlog computes exact probabilities for ProbLog programs and for
+  Bayesian and Markov networks. It also reads Dice programs, Circulette
+  netlists and LPADs (<a href="#networks">below</a>).</p>
   <ul>
-    <li>In the browser: the <a href="../playground/">playground</a> runs tddlog in
-    the tab, built for WebAssembly. Nothing is installed.</li>
-    <li>On the command line, prebuilt: the
-    <a href="https://github.com/Tractables/tddlog/releases/tag/v0.1.0">release</a>
-    has an archive of <code>tddlog</code> for Linux x86-64 and ARM64
-    (glibc 2.28 or newer), macOS ARM64 and x86-64, and Windows x86-64,
-    which needs nothing else installed. It unpacks to a directory with the
-    binary and the repository's <code>examples/</code>; on a Mac with
-    Apple silicon:
-<pre data-lang="shell">curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-aarch64-apple-darwin.tar.gz | tar xz
-cd tddlog-v0.1.0-aarch64-apple-darwin
+    <li><b>In the browser:</b> the <a href="../playground/">playground</a>,
+    with nothing to install.</li>
+    <li><b>Download</b> the binary for your platform from the
+    <a href="https://github.com/Tractables/tddlog/releases/tag/v0.1.0">release</a>,
+    with its <code>examples/</code>:
+<pre data-lang="shell">curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
+cd tddlog-v0.1.0-x86_64-unknown-linux-gnu
 ./tddlog examples/alarm.pl</pre>
-    The other archives are named for their platforms
-    (<code>x86_64-apple-darwin</code>, <code>x86_64-unknown-linux-gnu</code>,
-    <code>aarch64-unknown-linux-gnu</code>, and
-    <code>x86_64-pc-windows-msvc</code>, a <code>.zip</code>). macOS
-    refuses to open a binary downloaded with a browser, which it
-    quarantines; <code>xattr -d com.apple.quarantine tddlog</code> lifts
-    that. Moving <code>tddlog</code> into a directory on your
-    <code>PATH</code>, such as <code>/usr/local/bin</code>, lets you run
-    it as <code>tddlog</code> anywhere, as the commands below do.</li>
-    <li>On the command line, from source: Cargo builds <code>tddlog</code> from the
-    repository and installs it in its <code>bin</code> directory
-    (<code>$HOME/.cargo/bin</code>):
+    For other platforms, replace <code>x86_64-unknown-linux-gnu</code> with
+    <code>aarch64-unknown-linux-gnu</code>, <code>aarch64-apple-darwin</code>,
+    <code>x86_64-apple-darwin</code> or <code>x86_64-pc-windows-msvc</code>
+    (a <code>.zip</code>). On macOS, a binary downloaded with a browser
+    first needs <code>xattr -d com.apple.quarantine tddlog</code>.</li>
+    <li><b>From Python:</b> <code>pip install tddlog</code>. For Rust and
+    C, see <a href="#library">below</a>.</li>
+    <li><b>From source</b>, with Rust 1.88 or newer and a C++20 compiler:
 <pre data-lang="shell">cargo install --locked --git https://github.com/Tractables/tddlog tddlog</pre>
-    The build needs:
+    <details><summary>If the build fails</summary>
     <ul>
-      <li>Rust 1.88 or newer, from <a href="https://rustup.rs">rustup</a>.
-      A distribution's cargo is often older and stops with "feature
-      <code>edition2024</code> is required". rustup puts <code>cargo</code>
-      on the PATH of new shells; in the shell that ran it, run
-      <code>. "$HOME/.cargo/env"</code> first.</li>
-      <li>A C++20 compiler, GCC 11 or newer or Clang 14 or newer, for the
-      tree-decomposition solver that the goatd library vendors, and
-      <code>make</code>, for jemalloc: <code>sudo apt install
-      build-essential</code> on Debian and Ubuntu, <code>xcode-select
-      --install</code> on macOS. An older <code>g++</code> stops with
-      "unrecognized command line option '-std=c++20'": install a newer
-      one, which the build finds by the name <code>g++-12</code>,
-      <code>g++-13</code> or <code>g++-14</code>, or name it in
-      <code>GOATD_CXX</code> (<code>GOATD_CXX=g++-11 cargo install
-      ...</code>); <code>CXX</code> does not choose it.</li>
-    </ul>
-    The build takes a few minutes on eight cores.
-    <code>--locked</code> builds with the versions of the dependencies
-    that the repository's tests ran with. In a checkout of the repository,
-    <code>cargo build --release</code> builds the same program as
-    <code>target/release/tddlog</code>.</li>
-    <li>From Python: <code>pip install tddlog</code>, then
-    <code>tddlog.solve(program)</code>
-    (<a href="#library">below</a>).</li>
+      <li>"feature <code>edition2024</code> is required": this cargo is
+      older than 1.88. Install Rust from <a href="https://rustup.rs">rustup</a>,
+      then run <code>. "$HOME/.cargo/env"</code>.</li>
+      <li>"unrecognized command line option '-std=c++20'": this
+      <code>g++</code> is older than 11. Install a newer one; the build
+      finds <code>g++-12</code> to <code>g++-14</code>. Otherwise, name it
+      in <code>GOATD_CXX</code> (<code>GOATD_CXX=g++-11 cargo install
+      ...</code>).</li>
+      <li>No compiler or <code>make</code>: install them with
+      <code>sudo apt install build-essential</code> on Debian or Ubuntu,
+      or <code>xcode-select --install</code> on macOS.</li>
+    </ul></details></li>
   </ul>
-  <p>The commands below run in a checkout of the repository
-  (<code>git clone --depth 1 https://github.com/Tractables/tddlog</code>)
-  or in the directory an archive unpacks to, whose
-  <code>examples/</code> holds the programs they read; the few that read
-  <code>tests/</code> need the checkout. Without one, a
-  program is fetched on its own, then run as <code>tddlog alarm.pl</code>:</p>
-<pre data-lang="shell">curl -O https://raw.githubusercontent.com/Tractables/tddlog/main/examples/alarm.pl</pre>
+  <p>The commands below run in the archive's directory, or in a checkout of
+  the repository (the few that read <code>tests/</code> need the checkout).
+  Put <code>tddlog</code> on your <code>PATH</code> to run it by name.</p>
 
   <h3 id="first-program">A first program</h3>
-  <p><a href="https://github.com/Tractables/tddlog/blob/main/examples/alarm.pl"><code>examples/alarm.pl</code></a> is the alarm example of
-  <a href="https://doi.org/10.1017/S1471068414000076">Fierens et al.
-  (2015)</a>:</p>
+  <p><a href="https://github.com/Tractables/tddlog/blob/main/examples/alarm.pl"><code>examples/alarm.pl</code></a>
+  is the alarm example of <a href="https://doi.org/10.1017/S1471068414000076">Fierens
+  et al. (2015)</a>:</p>
 <pre data-lang="problog" data-file="examples/alarm.pl">0.1::burglary.
 0.2::earthquake.
 0.7::hears_alarm(john).
@@ -158,26 +129,19 @@ evidence(calls(john), true).
 query(burglary).
 query(earthquake).
 query(calls(mary)).</pre>
-  <p>Each line <code>p::fact.</code> is a probabilistic fact, true with
-  probability p independently of the others. A choice of truth values for
-  the four facts is a possible world, and in each world the rules decide
-  which other atoms hold: the alarm goes off if there is a burglary or an
-  earthquake, and a person calls if the alarm goes off and they hear it.
-  The evidence keeps the worlds in which John calls, and each query asks
-  for the probability of an atom over those worlds.</p>
+  <p>Each <code>p::fact.</code> is true with probability p,
+  independently of the others, and the rules derive the other atoms.
+  Each query asks for its atom's probability, given the evidence that
+  John calls:</p>
 <pre data-lang="shell">$ tddlog examples/alarm.pl
 burglary:       0.357143
 earthquake:     0.714286
 calls(mary):    0.400000</pre>
-  <p>The answers can be checked by hand. The alarm goes off with
-  probability 1 − 0.9 × 0.8 = 0.28, so John calls with probability
-  0.28 × 0.7 = 0.196. A burglary sets the alarm off, so a burglary and
-  John's call happen together with probability 0.1 × 0.7 = 0.07, and
-  P(burglary | John calls) = 0.07 / 0.196 = 0.357143. Once John calls,
-  the alarm has gone off, and Mary hears it with probability 0.4.</p>
-  <p><code>--evidence-probability</code> adds a line with P(e), the
-  probability of the evidence, in scientific notation and as its base-10
-  logarithm, which stays exact where P(e) is smaller than the least
+  <p>To check this by hand: the alarm goes off with probability
+  1 − 0.9 × 0.8 = 0.28, so John calls with probability 0.28 × 0.7 = 0.196.
+  That gives P(burglary | John calls) = 0.1 × 0.7 / 0.196 = 0.357143.</p>
+  <p><code>--evidence-probability</code> also prints P(e), with its base-10
+  logarithm, which stays exact even where P(e) is too small for a
   floating-point number:</p>
 <pre data-lang="shell">$ tddlog --evidence-probability examples/alarm.pl
 burglary:       0.357143
@@ -185,8 +149,7 @@ earthquake:     0.714286
 calls(mary):    0.400000
 P(e):   1.960000e-1     log10 -0.707744</pre>
   <p class="try"><a href="../playground/?example=alarm&amp;evidence=1">Open this
-  program in the playground</a>, where it can be edited and run
-  again.</p>
+  program in the playground</a> to edit it and run it again.</p>
 </section>
 
 <section class="card prose" id="language">
