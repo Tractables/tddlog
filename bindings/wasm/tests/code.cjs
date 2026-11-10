@@ -132,6 +132,9 @@ test("filledFile: the instance's program in place of a family's with places", ()
   assert.deepEqual(code.filledFile({ name: "grid4", tabs: [mine, pita] }, mine, family, texts), { tab: pita, file: pita.files[0] });
   assert.equal(code.filledFile(inst, mine, family, { ...texts, f: "size(4).\n" }), null);
   assert.equal(code.filledFile({ name: "grid4", tabs: [mine] }, mine, family, texts), null);
+  // the instance's program in tddlog's own tab, beside the family's (Geni's, Roulette's)
+  const both = { lang: "ProbLog", readers: ["tddlog", "ProbLog -k sdd"], files: [{ name: "grid4.pl", sha: "q" }, family] };
+  assert.deepEqual(code.filledFile({ name: "grid4", tabs: [both] }, both, family, texts), { tab: both, file: both.files[0] });
   // a text the site keeps on its own: tddlog's command says whether it has places
   const kept = { q: texts.q };
   const given = { ...mine, cmds: [["tddlog", "tddlog --stats grid.pl 4"]] };
