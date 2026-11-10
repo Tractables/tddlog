@@ -462,11 +462,11 @@ failing links or routers and its weather factory, hidden Markov models
 and Pluck's sequence models, a Markov chain, a lossy network, contract
 signing, a perturbed-memory interpreter, Cao et al.'s integer programs,
 the coupon collector, 3-SAT, the bounded retransmission protocol,
-Circulette's netlists and the Dice paper's small programs. tddlog counts
-as unanswered on the programs only another system's front end reads:
-Alea.jl's on Cao et al.'s integer programs and Pluck's sequence models,
-whose integration Alea.jl+tddlog is [below](#integrations) and whose
-circuits are [below](#circuits) too.
+Circulette's netlists and the Dice paper's small programs. tddlog reads
+every one, with its own front ends or as a translation of the original
+program. Alea.jl+tddlog and Roulette+tddlog, tddlog behind those
+systems' own front ends, are [below](#integrations), and the circuits
+Alea.jl exports [below](#circuits).
 
 <!-- results:functional-programs-table -->
 | System | Answers | Its total time | tddlog's total time | tddlog faster |
