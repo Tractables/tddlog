@@ -117,6 +117,35 @@ fn a_tail_that_a_factor_outweighs() {
     }
 }
 
+/// A lone head's probability is its own number, however close to one: it
+/// is not a sum, which the rounding of its terms could bring to one
+/// (src/ground/normalize.rs, `whole`). `0.999999995::a` leaves `a` false
+/// with 5e-9, as a fact and as a rule's head; the old switches took either
+/// as certain, within 1e-8 of one, and found the evidence inconsistent.
+/// Two heads within 1e-8 of one are still a full distribution, divided by
+/// their sum: `e` is certain once `d` is false, which happens with
+/// 0.499999995 / 0.999999995. The answers by hand: `b` and `c` are
+/// independent of `a`, `d` and `e`.
+#[test]
+fn a_lone_head_close_to_one_keeps_its_number() {
+    let p = 0.999999995;
+    let source = "0.999999995::a.\n0.999999995::b :- c.\n0.5::c.\n\
+                  0.5::d; 0.499999995::e.\n\
+                  evidence(a, false).\nevidence(d, false).\n\
+                  query(b).\nquery(c).\nquery(e).\n";
+    for strategy in STRATEGIES {
+        let (got, pe) = answers(source, strategy);
+        assert_relative(&format!("{strategy:?}: b"), got[0], p * 0.5, 1e-12);
+        assert_relative(&format!("{strategy:?}: c"), got[1], 0.5, 1e-12);
+        assert_relative(&format!("{strategy:?}: e"), got[2], 1.0, 1e-12);
+        let want = ((1.0 - p) * 0.499999995 / 0.999999995f64).log10();
+        assert!(
+            (pe - want).abs() < 1e-12,
+            "{strategy:?}: log10 P(not a, not d) = {pe} against {want}"
+        );
+    }
+}
+
 /// A disjunction of seven heads whose four tails, of 5e-12 to 5e-11, come
 /// after a head of all but 1e-10 of the mass left, and one of three heads
 /// under a body with a tail of 1e-11 after a head of nearly all the mass

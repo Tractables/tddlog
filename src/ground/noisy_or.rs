@@ -104,7 +104,7 @@
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use super::normalize::SUM_TOLERANCE;
+use super::normalize::{SUM_TOLERANCE, whole};
 use super::table::{Shape, Switched};
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::syntax::{Annotation, Atom, Clause, HeadChoice, Literal, Program, Term};
@@ -527,9 +527,9 @@ fn value_of(values: [&Atom; 2], atom: &Atom) -> Option<usize> {
 /// The parents of the table of `clauses`, which read the tables `reads`,
 /// with its rows appended to `dists`, where its clauses read the same
 /// parents, at each assignment once, and each clause's heads, of the
-/// table's two `values`, sum to one up to rounding; `value` tells a
-/// parent's value from its atom. Where they do not, it may leave rows in
-/// `dists` (which [`rewrite`] cuts).
+/// table's two `values`, are a full distribution ([`whole`]); `value`
+/// tells a parent's value from its atom. Where they do not, it may leave
+/// rows in `dists` (which [`rewrite`] cuts).
 fn table_rows<'s>(
     clauses: &[Switched],
     reads: &'s [usize],
@@ -575,7 +575,7 @@ fn table_rows<'s>(
             d[value_of(values, &h.atom)?] += h.mass()?;
         }
         let total = d[0] + d[1];
-        if (total - 1.0).abs() > SUM_TOLERANCE {
+        if !whole(total, clause.heads.len()) {
             return None;
         }
         dist[key] = [d[0] / total, d[1] / total];

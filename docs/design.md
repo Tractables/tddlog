@@ -561,14 +561,17 @@ a unit in the most significant digits any entry of the row has
 10000/10001 and 1/10001 to four digits), and the gap of the decimals'
 exact sum is compared with the sum of these. An excess may equal that
 slack, entries rounded up by half a unit each (`0.160598, 0.839403` in
-the UAI 2006 networks); a shortfall must be under it. An excess also
-divides the row where it is at most `(n + 1) 2^-24` for `n` entries, the
-error of a row computed in single precision, its entries rounded to
-floats and divided by their sum of `n - 1` rounded additions: the UAI
-classics write such rows to eight decimals, diagnose_b's `0.94297521,
-0.05702495` over one by 1.6e-7. Otherwise a shortfall is the
+the UAI 2006 networks); a shortfall must be under it. A gap either way
+also divides the row where it is at most `(n + 1) 2^-24` for `n`
+entries, the error of a row computed in single precision, its entries
+rounded to floats and divided by their sum of `n - 1` rounded additions:
+the UAI classics write such rows to eight decimals, diagnose_b's
+`0.94297521, 0.05702495` over one by 1.6e-7, emdec6g's and tcc4e's short
+of it by up to 8e-8 and 1.6e-7. Otherwise a shortfall is the
 table's own, its mass left to no value as in ProbLog, and an excess is an
-error. The script decided by the same rule, but for the excess of single
+error. A row of one entry is that number and no sum: it rounds to
+nothing, and is one only where its entry is. The script decided by the
+same rule, but for the gaps of single
 precision, which it refused past 1e-9, and an excess equal to the slack,
 which it refused, and the two decide alike on every
 row of every network the script read. `--rescale` divides
@@ -576,10 +579,15 @@ every row by its sum first, for Ace's tables in percent or as weights.
 A UAI file is the exception: its functions are read as written, since
 the PR task's `Z` is their product, so each table is split into its rows
 divided by their sums (`rows::split`) and the factor of those sums over
-its parents, which the next paragraph's factors hold. A row within a few
-units of roundoff of one stays as it is; a table whose rows all have one
-sum (`0.3333333` three times) needs no variable, only the offset.
-`--rescale` is refused for a UAI file.
+its parents, which the next paragraph's factors hold. Rounding is not
+structure: where a table's sums differ, a row that sums to one up to the
+rounding above has one in that factor, as the network the file writes
+means, so that a factor that varies by rounding alone is none and a
+program does not observe a variable for each such row. A row within a
+few units of roundoff of one stays as it is; a table whose rows all have
+one sum (`0.3333333` three times) keeps it, which needs no variable,
+only the offset, and keeps `Z` exact. `--rescale` is refused for a UAI
+file.
 
 **Markov networks** (`uai.rs`). A `MARKOV` file whose functions are each
 a conditional table of one variable of its scope, one function per
@@ -597,7 +605,7 @@ program's `P(e)` times `10^c`, where `c` sums the base-10 logarithms of
 the priors' sums, the factors' largest entries and the constants, is the
 partition function given the evidence: the program states `c` on its
 first line, and the binary prints `Z:` for a `MARKOV` file, or a `BAYES`
-one whose rows do not all sum to one, where it would print `P(e):` ([The probability of the
+one whose rows' sums leave a factor, where it would print `P(e):` ([The probability of the
 evidence](#evidence-and-queries-srcquery-srceval)). Under `--no-queries`
 without observations, a network of Potts tables over pairs of variables of
 `k` values each (a graph colouring) has its colour symmetry broken: one
@@ -750,7 +758,11 @@ are skipped. Several steps have a program in `examples/` that shows them.
    `chain_weights`), never `1 - q`: a tail after a head of nearly all the
    mass left keeps its mass. Switch predicates have no rules; their
    ground atoms are the random variables. A value that takes all the mass
-   left has no switch, and a head of probability zero none either.
+   left has no switch, and a head of probability zero none either. Two
+   heads or more whose masses sum to one within 1e-8, the rounding of the
+   numbers as written, leave nothing to no head (`SUM_TOLERANCE`); a
+   single head's probability is a number and no sum, so `0.999999995::a`
+   leaves `a` false with 5e-9 (`normalize::whole`).
    A clause with flexible probabilities has a switch per head, whose
    arguments end with every head's probability (a term the body computes
    is bound by an `is` after the body); its weights are a
@@ -1577,7 +1589,8 @@ would meet the copies below that free of the inputs.
 
 **Network files.** A network's row whose gap from one the rounding of its
 entries explains (`0.3333333` three times) is rescaled, or for a UAI
-file split into the row over its sum and a factor
+file split into the row over its sum and a factor, of one for such a row
+where a table's sums differ
 ([Network files](#network-files-srcnetwork)); a row like `0.5, 0.499` is
 kept, and its missing mass goes to no value as in ProbLog. Rows that do
 not sum to one fall outside the clause encoding.
@@ -2650,7 +2663,7 @@ binary grounds with it off under the option. The line is
 `P(e):<tab>p<tab>log10 l`; below the least normal float the mantissa and
 exponent of `p` are read off the logarithm. Inconsistent evidence prints
 `0` and `-inf`, none `1` and `0`. For a UAI `MARKOV` file, or a `BAYES`
-one whose rows do not all sum to one, the binary
+one whose rows' sums leave a factor, the binary
 prints the partition function given the evidence instead,
 `Z:<tab>z<tab>log10 l`: `P(e)` times ten to the offset the reader computes
 ([Network files](#network-files-srcnetwork)), the UAI PR task. The
