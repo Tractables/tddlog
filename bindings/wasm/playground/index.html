@@ -36,10 +36,10 @@
 </header>
 
 <h1>tddlog playground</h1>
-<p class="lede">Pick an example or write a program (ProbLog, or another from the Format menu) and press
-Run: tddlog computes each query's exact probability in this tab; nothing
-is uploaded.<span class="aside"> The <a href="../guide/">guide</a> runs it
-from the command line, Rust, Python and C.</span></p>
+<p class="lede">Pick an example or write a program, in ProbLog or another format, and
+press Run. tddlog computes each query's exact probability in this tab.
+Nothing is uploaded.<span class="aside"> The <a href="../guide/">guide</a> covers
+the command line, Rust, Python and C.</span></p>
 
 <noscript><p class="card note">The playground runs tddlog in this tab and
 needs JavaScript. The <a href="../guide/">guide</a> shows the same programs
@@ -120,18 +120,18 @@ and their answers.</p></noscript>
   <div class="result-head">
     <h2>Trace</h2>
   </div>
-  <p class="note">What each stage of the run took in and gave out, in
-  summary: the program as read, ground and rewritten, the vtree, each
-  component's compile, the evidence and the answers.</p>
+  <p class="note">What each stage of the run took in and gave out.
+  <a href="../guide/#how-it-works">How it works</a> names the stages.</p>
   <div id="trace-steps"></div>
 </section>
 
 <section class="card glance" id="glance" hidden>
   <div id="glance-stats" class="stats"></div>
-  <p class="note">Against the exact systems people use for each kind of
-  problem (ProbLog, Ace, Merlin, Dice, Alea.jl and more), every answer of
-  tddlog's checked against a reference:
-  <a href="../results/">the plots, the tables and the findings</a>.</p>
+  <p class="note">tddlog against the other exact systems, every answer
+  checked against a reference:
+  <a href="../#/types">by program type</a>,
+  <a href="../#/baselines">by baseline</a>,
+  <a href="../#/integrations">by integration</a>.</p>
   <p class="note" id="glance-asof"></p>
 </section>
 
