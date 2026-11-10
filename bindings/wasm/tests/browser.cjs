@@ -982,7 +982,7 @@ function benchmarksOf(root) {
     console.log(`ok the overview: ${overviewRows.length} native systems' speed-ups, each category's plots and the own benchmarks`);
     // The menu, the site's: its sections, each a heading with its entries:
     // every other system by its answers; the integrations; the
-    // categories and the programs tddlog does not run; the walkthroughs and the
+    // categories and the programs tddlog does not run; why it is fast, the walkthroughs and the
     // methods table.
     // by integration where the data has the integrations
     const sectionNames = (await page.evaluate(() => SECTIONS)).map(([, name]) => name);
@@ -1004,8 +1004,9 @@ function benchmarksOf(root) {
     // the circuits' families only where the view is among the circuits, as a type's under the type on show
     assert.deepEqual(entries("circuits"), [], "the menu: the circuits, without their families on the overview");
     const walks = fs.readdirSync(path.join(site, "next", "walk")).filter((f) => f.endsWith(".json")).map((f) => `../#/how/${f.slice(0, -5)}`);
+    assert.deepEqual(entries("how").slice(0, 1), ["../#/why"], "the menu: why it is fast, first");
     assert.deepEqual(entries("how").slice(-1), ["../#/methods"], "the menu: the methods table, last");
-    assert.deepEqual(entries("how").slice(0, -1).sort(), walks.sort(), "the menu: every walkthrough");
+    assert.deepEqual(entries("how").slice(1, -1).sort(), walks.sort(), "the menu: every walkthrough");
     assert.deepEqual(await page.$$eval("#tree li.legend", (ls) => ls.map((l) => l.textContent)),
       ["instances answered", "instances"], "the menu: what its counts count");
     if (cats.circuits) {

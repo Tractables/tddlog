@@ -2259,7 +2259,7 @@ async function runs(route) {
 // choice the viewer keeps; By integration, tddlog alone and its pipelines;
 // By program type, the types and all programs, the one on show (or that
 // holds the family or instance on show) with its families, then the
-// programs tddlog does not run; How it works, its walkthroughs and the
+// programs tddlog does not run; How it works, why it is fast, its walkthroughs and the
 // methods table. By program type's heading opens the results page's
 // figures; the logo above is the front page.
 const MENU_TOP = 10;
@@ -2268,9 +2268,11 @@ const COVERAGE = "Programs tddlog does not run";
 // The methods table (next.js's), the last entry under How it works; every
 // speed-up's header links to it (speedName).
 const METHODS = "Methods";
+// The optimizations (next.js's whyView), the first entry under How it works.
+const WHY = "Why it is fast";
 // The section each view is in, which the bar marks.
 const SECTION_OF = { baselines: "baselines", baseline: "baselines", coverage: "types", integrations: "integrations",
-  integration: "integrations", types: "types", category: "types", family: "types", how: "how", methods: "how" };
+  integration: "integrations", types: "types", category: "types", family: "types", how: "how", why: "how", methods: "how" };
 // The circuits and the pages of a suite of circuits in no type are the circuits' section.
 const circuitSuite = (suite) => !categoriesOf(suite).length && Boolean(data.circuits?.perSuite.has(suite));
 const sectionOf = (route) => ((route.view === "category" && route.category === APART)
@@ -2358,7 +2360,7 @@ function rail(route) {
   }
   for (const a of document.querySelectorAll(`.site-nav a[href$="#/${APART}"]`)) a.hidden = !data.circuits;
   // how it works
-  group("how", element("ul", {}, ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)), entry("#/methods", METHODS)));
+  group("how", element("ul", {}, entry("#/why", WHY), ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)), entry("#/methods", METHODS)));
   tree.append(...SECTIONS.filter(([key]) => groups.has(key)).map(([key]) => groups.get(key)));
   // on the front page, the bar's section the view is in, and the menu's entry on show: its view, else the entry it is in
   if (!front) {

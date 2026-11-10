@@ -135,3 +135,45 @@ ol.pipeline a:focus-visible { outline: 2px solid var(--ink); outline-offset: -3p
   nav.walks { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 0.2rem; }
   nav.walks a { flex: none; white-space: nowrap; }
 }
+
+/* Why it is fast: the three gains in a row, a times sign between them, each
+   in its own colour (tddlog's teal, the logo's blue, the accent); then the
+   optimizations, each a card of two columns under a rule: what it does, its
+   effect and its links on the left, what shows it on the right. */
+.gains { display: flex; align-items: stretch; gap: 0.7rem; max-width: 52rem; margin: 0.7rem 0 0.3rem; }
+.gain { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 0.1rem; padding: 0.6rem 0.8rem;
+  border: 1px solid var(--g); border-radius: 8px; background: color-mix(in oklab, var(--g) 9%, var(--card)); text-align: center; }
+.gain.mine { --g: var(--s-tddlog); }
+.gain.lib { --g: var(--logo-blue); }
+.gain.tdd { --g: var(--accent); }
+.gain b { font-size: 1.1rem; font-weight: 650; }
+.gain a { color: var(--ink); text-decoration-color: var(--g); text-underline-offset: 0.18em; }
+.gain span { color: var(--muted); font-size: 13px; line-height: 1.3; text-wrap: balance; }
+.gains .times { align-self: center; color: var(--muted); font-size: 1.5rem; line-height: 1; }
+.opt { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 0.4rem 1.8rem; align-items: start; max-width: 75rem;
+  margin-top: 0.9rem; padding-top: 0.8rem; border-top: 1px solid var(--line); }
+.results .opt h3 { margin: 0 0 0.3rem; }
+.opt h3 .k { display: inline-block; min-width: 1.5em; margin-right: 0.5rem; border-radius: 999px; background: var(--logo-blue); color: #fff;
+  font-size: 0.85em; font-variant-numeric: tabular-nums; line-height: 1.5; text-align: center; }
+.results .opt .say p { margin: 0.3rem 0; max-width: 62ch; }
+.opt .cells { margin: 0.5rem 0; }
+.results .opt p.credit, .results .opt p.links { font-size: 13px; }
+.opt p.credit { color: var(--muted); }
+.opt p.links { display: flex; flex-wrap: wrap; gap: 0.15rem 1.1rem; }
+.opt .show { min-width: 0; }
+.results .opt .show p.cap { margin: 0 0 0.2rem; color: var(--muted); font-size: 12px; }
+.opt .show > * + p.cap { margin-top: 0.6rem; }
+.opt .show pre { margin: 0; max-height: none; }
+.opt .show .tscroll { max-height: none; }
+.opt .show table.board { width: 100%; }
+.opt .show table.board th, .opt .show table.board td { white-space: normal; vertical-align: top; }
+.opt .show table.board thead th { position: static; }
+.opt .show .tscroll + .tscroll, .opt .show pre + .tscroll, .opt .show .tscroll + pre { margin-top: 0.6rem; }
+.gain a:focus-visible, .opt a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* On a phone: the gains one under the other, and a card's two columns too. */
+@media (max-width: 52rem) {
+  .gains { flex-direction: column; gap: 0.25rem; }
+  .gain { flex: none; }
+  .opt { grid-template-columns: minmax(0, 1fr); }
+}

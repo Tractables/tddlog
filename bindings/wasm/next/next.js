@@ -17,6 +17,7 @@
 //   #/circuits             the circuits Alea.jl exports, every system on them (results.js's view of a category)
 //   #/coverage             the programs each system's sources hold that tddlog does not run, and why
 //   #/how[/WALK[/N]]       how a program is answered: a run's stages, a walkthrough at its step N
+//   #/why                  why it is fast: the three gains that compound, and tddlog's optimizations, a card each
 //   #/methods              how the runs were made and the results counted, a table
 // #/tools/... and #/system/... are the addresses these pages once had. A
 // type of program is results.js's view (#/category/C), with its comparisons
@@ -817,7 +818,8 @@ function howView(route) {
   const out = [crumbs(HOME, ...(route.walk ? [inSection("how"), [w.title]] : [[sectionName("how")]])),
     element("h2", {}, sectionName("how")),
     element("p", { class: "lede one" }, "Pick a program and step through tddlog's run on it, drawn from the run's own trace (", element("code", {}, "tddlog --trace"), "). ",
-      element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"), " describes each stage."),
+      element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"), " describes each stage. ",
+      link({ view: "why" }, WHY), ": the optimizations, each with an example."),
     element("nav", { class: "walks", "aria-label": "Walkthroughs" }, ...WALKS.map((x) =>
       element("a", { href: `#/how/${x.key}`, title: x.what, "aria-current": x === w ? "page" : null }, x.title)))];
   showMarked(out[out.length - 1]);
@@ -847,6 +849,180 @@ function howView(route) {
     walk.replaceChildren(strip, head, body, nav);
     showMarked(strip);
   }, (e) => walk.replaceChildren(note(`The trace did not load: ${e.message}.`)));
+  return out;
+}
+
+// ------------------------------------------------------------- why it is fast
+
+const TP_PAPER = ["Tp-compilation", "Vlasselaer, Van den Broeck, Kimmig, Meert and De Raedt, IJCAI 2015", "https://www.ijcai.org/proceedings/2015/263"];
+
+// The three gains that compound: whose it is, what it is, its link, its
+// colour, and the paper its link is.
+const GAINS = [
+  ["tddlog", "optimizations in the pipeline", null, "mine"],
+  ["tididi", "highly optimized kernels", "https://github.com/Tractables/tididi", "lib"],
+  ["TDDs", "superpolynomial advantage over OBDDs", "https://arxiv.org/abs/2604.05537", "tdd", "A Canonical Generalization of OBDD"],
+];
+
+// The example the first two optimizations read: its program and its answer.
+const WHY_EXAMPLE = `0.6::edge(a,b).  0.3::edge(a,c).
+0.7::edge(b,c).  0.4::edge(c,b).
+0.8::edge(b,d).
+
+path(X,Y) :- edge(X,Y).
+path(X,Y) :- edge(X,Z), path(Z,Y).
+reach(Y) :- path(a,Y), \\+path(c,Y).
+
+evidence(path(a,c)).
+query(reach(d)).`;
+
+// The optimizations, in the pipeline's order. Each: its title; what it does
+// and why it helps, a line or two (code between backticks); what shows it
+// (`show`: {pre, cap} a program under its caption, {head, rows} a table, a
+// subscript written _{x}); the measured effect in a cell ([label, value]);
+// the papers it comes from ([technique, authors and venue, link]); the
+// walkthrough steps that show it ([walk, stage, the stage's step there],
+// which the browser test checks against the walkthrough's trace); and its
+// section of docs/design.md ([title, id]).
+const OPTIMIZATIONS = [
+  {
+    title: "Eliminate linear recursion",
+    lines: ["A cycle in the ground rules would make Tp-compilation iterate TDDs to a fixpoint.",
+      "Inlining `path(c,d)` gives a rule that reads its own head. It is true in no more worlds, so it is dropped: the least model is unchanged, and no fixpoint runs over large TDDs."],
+    show: [{ cap: "The recursive part of the ground rules: a cycle", pre: "path(b,d) :- edge(b,d).\npath(b,d) :- edge(b,c), path(c,d).\npath(c,d) :- edge(c,b), path(b,d)." },
+      { cap: "The second rule with path(c,d) inlined: dropped", pre: "path(b,d) :- edge(b,c), edge(c,b), path(b,d)." }],
+    effect: ["random graph g24_76", "over 150 s → 2.4 s"],
+    credit: [TP_PAPER],
+    walks: [["reach", "rewrite", 4]],
+    design: ["Grounding", "grounding-srcground"],
+  },
+  {
+    title: "Compile stratum by stratum",
+    lines: ["Each TDD is built from the finished TDDs of its rules' bodies."],
+    show: [{ head: ["stratum", "ground atom", "TDD operation"], rows: [
+      ["1", "`path(b,d)`", "D_{bd} ← e_{bd}"],
+      ["2", "`path(c,d)`", "D_{cd} ← AND(e_{cb}, D_{bd})"],
+      ["3", "`path(a,d)`", "D_{ad} ← OR(AND(e_{ab}, D_{bd}), AND(e_{ac}, D_{cd}))"],
+      ["4", "`reach(d)`", "Q ← AND NOT(D_{ad}, D_{cd})"]] }],
+    walks: [["reach", "compile", 6]],
+    design: ["Compilation", "compilation-srctp"],
+  },
+  {
+    title: "An indicator cuts a long chain",
+    lines: ["Compiled bottom up, D_{3} takes in every variable of the chain before it.",
+      "With an indicator x for `rain(2)`, x ⇔ D_{2} is conjoined later, and x is a leaf of the vtree. Heuristics decide where an indicator pays off, and inline the others."],
+    show: [{ cap: "Ground rules of a weather chain", pre: "rain(2) :- rain(1), stay(1).\nrain(2) :- \\+rain(1), start(1).\nrain(3) :- rain(2), stay(2).\nrain(3) :- \\+rain(2), start(2)." },
+      { head: ["", "D_{3}", "its variables"], rows: [
+        ["bottom up", "(D_{2} ∧ s_{2}) ∨ (¬D_{2} ∧ t_{2})", "r_{1}, s_{1}, t_{1}, s_{2}, t_{2}"],
+        ["with the indicator x", "(x ∧ s_{2}) ∨ (¬x ∧ t_{2})", "x, s_{2}, t_{2}"]] }],
+    effect: ["time over the benchmarks", "41% less"],
+    credit: [TP_PAPER],
+    walks: [["dice", "rewrite", 4], ["circuit", "rewrite", 4]],
+    design: ["Indicators and clause tables", "indicators-and-clause-tables-srcindicators"],
+  },
+  {
+    title: "Vtrees from tree decompositions",
+    lines: ["A tree decomposition of the ground rules becomes the vtree."],
+    show: [{ head: ["", ""], rows: [
+      ["ground rules", "`h :- a, b.` `k :- b, c.`"],
+      ["interaction graph", "the triangles a, b, h and b, c, k, sharing b"],
+      ["tree decomposition", "{a, b, h} — {b, c, k}"],
+      ["vtree", "c beside the pair of b and a"]] }],
+    walks: [["tpch", "layout", 5]],
+    design: ["Vtrees", "vtrees-srcvtree"],
+  },
+  {
+    title: "A portfolio of vtrees, in turns",
+    lines: ["Layouts take turns, each budget doubling: the first to finish answers."],
+    show: [{ head: ["", "layout", "its vtree"], rows: [
+      ["1", "program order", "the facts as the program states them (an OBDD)"],
+      ["2", "fan-in order", "the facts in the order the rules read them"],
+      ["3", "tree decomposition", "of the facts' interaction graph"],
+      ["4", "dependencies", "a subtree per atom, above the atoms it reads"],
+      ["5", "indicators", "a tree decomposition over indicators, at once"],
+      ["6", "indicators, searched", "the same, after a costly search for a narrower one"],
+      ["7", "decisions", "an if-then-else's guard above the facts it chooses between"],
+      ["8", "dynamic", "vtree rotations during the compile"]] }],
+    walks: [],
+    design: ["auto", "auto-srcauto"],
+  },
+  {
+    title: "Evidence once, then every query",
+    lines: ["One compile for the evidence, and every query is read off it."],
+    show: [{ head: ["", ""], rows: [
+      ["evidence", "one TDD, built once along the vtree"],
+      ["a query q that is a variable of the evidence's TDD", "one backward pass"],
+      ["any other query q", "its TDD counted against the evidence's: no TDD for q ∧ e, and the evidence's TDD unchanged"],
+      ["P(e) alone", "variables summed out once nothing reads them"]] }],
+    effect: ["network BN_22, P(e) alone", "93 s → 3.4 s"],
+    walks: [["network", "evidence", 7], ["markov", "evidence", 7]],
+    design: ["Evidence and queries", "evidence-and-queries-srcquery-srceval"],
+  },
+  {
+    title: "Find local structure",
+    lines: ["Six rows, twelve probabilities: two variables."],
+    show: [{ cap: "A network's table", head: ["battery", "fuel", "starts"], rows: [["ok", "full", "0.95"], ["weak", "full", "0.6"], ["ok", "empty", "0"],
+      ["weak", "empty", "0"], ["flat", "full", "0"], ["flat", "empty", "0"]] },
+    { cap: "The ground program, starts(no) observed", pre: "0.95::w1.   0.6::w2.\nstarts(no) :- battery(ok), fuel(full), \\+w1.\nstarts(no) :- battery(weak), fuel(full), \\+w2.\n"
+        + "starts(no) :- battery(ok), fuel(empty).\nstarts(no) :- battery(weak), fuel(empty).\nstarts(no) :- battery(flat), fuel(full).\nstarts(no) :- battery(flat), fuel(empty)." }],
+    credit: [["Local structure", "Chavira and Darwiche, AIJ 2008", "https://doi.org/10.1016/j.artint.2007.11.002"],
+      ["flip hoisting", "Cheng, Millstein, Van den Broeck and Holtzen, arXiv 2021", "https://arxiv.org/abs/2110.10284"]],
+    walks: [["network", "parse", 2], ["markov", "ground", 3]],
+    design: ["Grounding", "grounding-srcground"],
+  },
+];
+for (const o of OPTIMIZATIONS) {
+  for (const [key] of o.walks) if (!WALKS.some((w) => w.key === key)) throw new Error(`${o.title}: no walkthrough ${key}`);
+}
+
+// A text with `code` between backticks and a subscript written _{x}.
+function marked(text) {
+  return text.split("`").flatMap((part, i) => (i % 2 ? [element("code", {}, part)]
+    : part.split(/_\{([^}]*)\}/).map((piece, k) => (k % 2 ? element("sub", {}, piece) : piece))));
+}
+
+// What shows an optimization: a program under its caption, or a small table.
+function shown({ cap, pre, head, rows }) {
+  const out = cap ? [element("p", { class: "cap" }, cap)] : [];
+  if (pre) out.push(element("pre", {}, pre));
+  else {
+    const named = head.some(Boolean);
+    out.push(element("div", { class: "tscroll" }, element("table", { class: "board" },
+      ...(named ? [element("thead", {}, element("tr", {}, ...head.map((h) => element("th", { scope: "col" }, ...marked(h)))))] : []),
+      element("tbody", {}, ...rows.map(([first, ...rest]) => element("tr", {}, element("th", { scope: "row" }, ...marked(first)),
+        ...rest.map((cell) => element("td", {}, ...marked(cell)))))))));
+  }
+  return out;
+}
+
+// Why it is fast (#/why): the three gains that compound, then tddlog's
+// optimizations in the pipeline's order, each a card: what it does, what
+// shows it, its measured effect in a cell, the papers it comes from, and
+// links to the walkthrough steps that show it and to docs/design.md.
+function whyView() {
+  const out = [crumbs(HOME, inSection("how"), [WHY]), element("h2", {}, WHY),
+    element("div", { class: "gains" }, ...GAINS.flatMap(([name, what, url, cls, paper], i) => [
+      ...(i ? [element("span", { class: "times", "aria-hidden": "true" }, "×")] : []),
+      element("div", { class: `gain ${cls}` }, url ? element("a", { href: url, title: paper }, element("b", {}, name)) : element("b", {}, name), element("span", {}, what))])),
+    note("Three gains that compound. tddlog's optimizations follow, in the pipeline's order."),
+    element("section", { class: "opt example" },
+      element("div", { class: "say" }, element("h3", {}, "The running example"),
+        element("p", {}, "Independent probabilistic facts define a random graph. Reachable from a but not from c: negation over a recursive relation."),
+        cells(["P(reach(d) | path(a,c))", "0.383"])),
+      element("div", { class: "show" }, element("pre", {}, WHY_EXAMPLE)))];
+  OPTIMIZATIONS.forEach((o, i) => {
+    const links = element("p", { class: "links" }, ...o.walks.map(([key, , step]) => element("a", { href: `#/how/${key}/${step}`, class: "walk-link" },
+      `Walkthrough: ${WALKS.find((w) => w.key === key).title}, step ${step}`)),
+    element("a", { href: `${BRANCH}main/docs/design.md#${o.design[1]}` }, `docs/design.md: ${o.design[0]}`));
+    out.push(element("section", { class: "opt", id: `opt-${i + 1}` },
+      element("div", { class: "say" }, element("h3", {}, element("span", { class: "k" }, `${i + 1}`), o.title),
+        ...o.lines.map((line) => element("p", {}, ...marked(line))),
+        ...(o.effect ? [cells(o.effect)] : []),
+        ...(o.credit ? [element("p", { class: "credit" }, ...o.credit.flatMap(([what, who, url], k) => [k ? "; " : "",
+          `${what}: `, element("a", { href: url }, who)]), ".")] : []),
+        links),
+      element("div", { class: "show" }, ...o.show.flatMap(shown))));
+  });
   return out;
 }
 
@@ -902,7 +1078,7 @@ const staleNote = (stale) => note(`These views (views.json) were written from ot
   + "the results' processing writes them again from the results page's data.");
 
 const DRAFT_VIEWS = { "draft-home": draftHome, baselines: baselinesView, baseline: baselineView, integrations: integrationsView,
-  integration: integrationView, types: home, coverage: coverageView, how: howView, methods: methodsView };
+  integration: integrationView, types: home, coverage: coverageView, how: howView, why: whyView, methods: methodsView };
 
 Object.assign(extend, {
   load: async () => {
@@ -933,7 +1109,7 @@ Object.assign(extend, {
       // an integration the data does not have yet opens their page
       return data.integrations?.[key] ? { view: "integration", key } : { view: "integrations" };
     }
-    if (parts.length === 1 && ["types", "coverage", "how", "methods"].includes(first)) return { view: first };
+    if (parts.length === 1 && ["types", "coverage", "how", "why", "methods"].includes(first)) return { view: first };
     if (first === "how" && WALKS.some((w) => w.key === key)) {
       if (parts.length === 2) return { view: "how", walk: key, step: 0 };
       if (parts.length === 3 && /^[1-9]\d{0,2}$/.test(at)) return { view: "how", walk: key, step: Number(at) - 1 };
@@ -942,17 +1118,17 @@ Object.assign(extend, {
   },
   href: (route) => ({ "draft-home": "#/", baselines: "#/baselines",
     baseline: `#/baselines/${encodeURIComponent(route.system)}${route.tab ? `/${route.tab}` : ""}`,
-    integrations: "#/integrations", integration: `#/integrations/${route.key}`, types: "#/types", coverage: "#/coverage", methods: "#/methods",
+    integrations: "#/integrations", integration: `#/integrations/${route.key}`, types: "#/types", coverage: "#/coverage", why: "#/why", methods: "#/methods",
     how: route.walk ? `#/how/${route.walk}${route.step ? `/${route.step + 1}` : ""}` : "#/how" })[route.view] ?? null,
   draw: (route) => {
     if (!(route.view in DRAFT_VIEWS)) return null;
     const stale = staleViews();
-    if (stale.length && !["draft-home", "types", "how", "methods"].includes(route.view) && !route.view.startsWith("integration")) return [staleNote(stale)];
+    if (stale.length && !["draft-home", "types", "how", "why", "methods"].includes(route.view) && !route.view.startsWith("integration")) return [staleNote(stale)];
     return DRAFT_VIEWS[route.view](route);
   },
   title: (route) => ({ "draft-home": null, baselines: sectionName("baselines"), baseline: `tddlog against ${data.names[route.system]}`,
     integrations: sectionName("integrations"), integration: data.integrations?.[route.key]?.title, types: sectionName("types"),
-    coverage: COVERAGE, methods: METHODS, how: route.walk ? `${sectionName("how")}: ${WALKS.find((w) => w.key === route.walk).title}` : sectionName("how") })[route.view] ?? null,
+    coverage: COVERAGE, why: WHY, methods: METHODS, how: route.walk ? `${sectionName("how")}: ${WALKS.find((w) => w.key === route.walk).title}` : sectionName("how") })[route.view] ?? null,
   // the circuits are no type: views.json splits only the types
   category: (c, route, rows) => (c.key === APART ? [] : staleViews().length ? [staleNote(staleViews())] : typeSplit(c, route, rows)),
   // a translator's or generator's name in a line on how a file was made, as a link to its source

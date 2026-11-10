@@ -160,7 +160,9 @@ reads. `--cnf` writes the ground program as a
 3. It reads every query's probability off the diagrams in one pass.
 
 [How it works](https://tractables.github.io/tddlog/#/how) on the website
-walks through example programs, stage by stage.
+walks through example programs, stage by stage, and
+[Why it is fast](https://tractables.github.io/tddlog/#/why) shows the
+optimizations, each with an example.
 [docs/design.md](docs/design.md) describes each stage and the cases
 measured behind it.
 
