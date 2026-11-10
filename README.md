@@ -4,6 +4,8 @@
   <img src="https://raw.githubusercontent.com/Tractables/tddlog/main/docs/logo.svg"
        alt="tddlog" width="340">
   <br>
+  <a href="https://pypi.org/project/tddlog/"><img
+     src="https://img.shields.io/pypi/v/tddlog.svg" alt="PyPI"></a>
   <a href="https://github.com/Tractables/tddlog/actions/workflows/ci.yml"><img
      src="https://github.com/Tractables/tddlog/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://tractables.github.io/tddlog/playground/"><img
@@ -49,8 +51,8 @@ exact inference system native to it, in less total time
 ## Install
 
 The [playground] runs tddlog in the browser, with nothing to install.
-The command line and the C library also come prebuilt, with nothing
-else to install:
+The command line, the Python package and the C library also come
+prebuilt, with nothing else to install:
 
 - **Command line:** download the archive for your platform from the
   [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0)
@@ -77,6 +79,9 @@ else to install:
   quarantines; `xattr -d com.apple.quarantine tddlog` lifts that.
   Moving `tddlog` into a directory on your `PATH`, such as
   `/usr/local/bin`, lets you run it as `tddlog` anywhere.
+- **Python:** `pip install tddlog`, with wheels for CPython 3.10 and
+  later on Linux and macOS (x86-64 and ARM64) and Windows x86-64. See
+  the [Python README](bindings/python/README.md).
 - **C and C++:** prebuilt archives for the same platforms on the
   [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0).
   See the [C README](bindings/c/README.md).
@@ -111,8 +116,8 @@ Then:
 - **Rust:** `tddlog = { git = "https://github.com/Tractables/tddlog" }` under
   `[dependencies]`. See the [Rust API].
 - **Python:** `pip install "git+https://github.com/Tractables/tddlog#subdirectory=bindings/python"`
-  builds the package from the repository. See the
-  [Python README](bindings/python/README.md).
+  builds the package from the repository, for a commit after the
+  release. See the [Python README](bindings/python/README.md).
 - **C and C++:** build the CMake package from a checkout. See the
   [C README](bindings/c/README.md).
 

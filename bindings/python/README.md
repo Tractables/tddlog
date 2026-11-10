@@ -4,6 +4,8 @@
   <img src="https://raw.githubusercontent.com/Tractables/tddlog/main/docs/logo.svg"
        alt="tddlog" width="340">
   <br>
+  <a href="https://pypi.org/project/tddlog/"><img
+     src="https://img.shields.io/pypi/v/tddlog.svg" alt="PyPI"></a>
   <a href="https://github.com/Tractables/tddlog/actions/workflows/ci.yml"><img
      src="https://github.com/Tractables/tddlog/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://tractables.github.io/tddlog/python/"><img
@@ -22,10 +24,18 @@ the [C library](https://tractables.github.io/tddlog/c/).
 
 ## Install
 
-tddlog is not on PyPI yet. pip builds it from the repository, with
-Python 3.10 or later, Rust 1.88 or newer ([rustup](https://rustup.rs)
-installs it), a C++20 compiler (GCC 11 or newer or Clang 14 or newer)
-and `make`; the command line's
+```sh
+pip install tddlog
+```
+
+Wheels cover CPython 3.10 and later on Linux and macOS (x86-64 and
+ARM64) and Windows x86-64, and need nothing else installed. Elsewhere
+pip builds from the source distribution, as below.
+
+pip also builds the package from the repository, for a commit after the
+release, with Python 3.10 or later, Rust 1.88 or newer
+([rustup](https://rustup.rs) installs it), a C++20 compiler (GCC 11 or
+newer or Clang 14 or newer) and `make`; the command line's
 [install notes](https://github.com/Tractables/tddlog#install) say what
 to do when the default `cargo` or `g++` is older. The build takes about
 four minutes on eight cores. In a virtual environment:

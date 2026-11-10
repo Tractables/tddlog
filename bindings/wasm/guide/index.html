@@ -125,10 +125,8 @@ cd tddlog-v0.1.0-aarch64-apple-darwin
     that the repository's tests ran with. In a checkout of the repository,
     <code>cargo build --release</code> builds the same program as
     <code>target/release/tddlog</code>.</li>
-    <li>From Python: pip builds the package from the repository, with the
-    same compilers, as the <a href="../python/">Python page</a> shows:
-<pre data-lang="shell">python -m pip install "git+https://github.com/Tractables/tddlog#subdirectory=bindings/python"</pre>
-    then <code>tddlog.solve(program)</code>
+    <li>From Python: <code>pip install tddlog</code>, then
+    <code>tddlog.solve(program)</code>
     (<a href="#library">below</a>).</li>
   </ul>
   <p>The commands below run in a checkout of the repository
@@ -832,8 +830,10 @@ solution = tddlog.solve(open("examples/alarm.pl").read(), evidence_probability=T
 for query, probability in solution.answers.items():
     print(f"{query}: {probability:.6f}")
 print(f"P(e) = {solution.evidence_probability:.6f}")</pre>
-  <p>The package is not on PyPI yet: pip builds it from the repository
-  (<a href="#getting-started">above</a>), with Python 3.10 or later.
+  <p><code>pip install tddlog</code> installs a wheel for CPython 3.10 or
+  later on Linux and macOS (x86-64 and ARM64) and Windows x86-64, and
+  elsewhere builds from source, as the <a href="../python/">Python
+  page</a> says.
   <code>solve</code> takes the
   options as keywords (<code>format</code>, <code>evidence</code>,
   <code>vtree</code>, <code>evidence_probability</code>,
