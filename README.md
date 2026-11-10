@@ -25,7 +25,7 @@ Markov networks, and Dice programs. It is a command-line tool and a Rust
 library, with Python, C and WebAssembly bindings.
 
 <!-- results:headline -->
-tddlog answers **1807 of 1942** benchmark programs. The next best system, Ace, answers **993**.
+On [probabilistic logic programs](https://tractables.github.io/tddlog/#/category/logic-programs), tddlog is **214×** faster than ProbLog, and on [Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks) **55×** faster than Ace, the existing system that answers the most of each. [Detailed results below](#how-well-does-it-work).
 <!-- /results:headline -->
 On every type of program, tddlog answers more instances than each exact
 inference system native to it, in less total time.
@@ -51,18 +51,12 @@ Every answer is checked against an exact reference.
 <sub>Results as of 2026-11-09, public main [d8f161566](https://github.com/Tractables/tddlog/commit/d8f161566). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
 <!-- /results:overview -->
 
-Each type's page has every instance, time and program, and the instances
-where another system wins:
-
-<!-- results:types -->
-| Type of program | tddlog answers | Best native system | Its answers | tddlog faster |
-|---|--:|---|--:|--:|
-| [Probabilistic logic programs](https://tractables.github.io/tddlog/#/category/logic-programs) | **336** of 362 | ProbLog | 255 | 214× |
-| [Probabilistic databases](https://tractables.github.io/tddlog/#/category/database-queries) | **308** of 320 | ProvSQL | 283 | 26× |
-| [Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks) | **616** of 634 | Ace | 414 | 55× |
-| [Markov networks](https://tractables.github.io/tddlog/#/category/markov-networks) | **250** of 290 | TensorInference.jl | 198 | 6.0× |
-| [Probabilistic functional programs](https://tractables.github.io/tddlog/#/category/functional-programs) | **297** of 336 | Roulette | 198 | 29× |
-<!-- /results:types -->
+Each type has a page with every instance, time and program, and the instances
+where another system wins: [logic programs](https://tractables.github.io/tddlog/#/category/logic-programs),
+[databases](https://tractables.github.io/tddlog/#/category/database-queries),
+[Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks),
+[Markov networks](https://tractables.github.io/tddlog/#/category/markov-networks) and
+[functional programs](https://tractables.github.io/tddlog/#/category/functional-programs).
 
 <!-- results:setup -->
 <!-- written from bindings/wasm/results/categories.json, sha256 157bfc8f8f63add3f252def7484ef5feb65433b19a79e953f2b3c75458387303 -->
