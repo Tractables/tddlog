@@ -2281,7 +2281,9 @@ function rail(route) {
   const section = (hash, ...children) => element("a", { href: front + hash, "data-section": hash }, ...children);
   const entry = (hash, text, n, x) => element("li", { class: x ? "solver" : null },
     section(hash, ...(x ? [swatch(x)] : []), text, ...(n === undefined ? [] : [element("span", { class: "n" }, n)])));
-  const group = (key, ...entries) => element("li", { class: "group" }, section(`#/${key}`, sectionName(key)), ...entries);
+  // each section a heading with its entries, put in the order of SECTIONS once all are built
+  const groups = new Map();
+  const group = (key, ...entries) => groups.set(key, element("li", { class: "group" }, section(`#/${key}`, sectionName(key)), ...entries));
   // by baseline
   const others = data.systems.filter((s) => !isMine(s.key)).sort((a, b) => b.answers - a.answers);
   const shown = route.view === "baseline" ? route.system : null;
@@ -2315,9 +2317,9 @@ function rail(route) {
     button.textContent = label();
     list.append(element("li", { class: "toggle" }, button));
   }
-  tree.append(group("baselines", list));
+  group("baselines", list);
   // by integration, where the data has them (and the bar's link to them with it)
-  if (data.integrations) tree.append(group("integrations", element("ul", {}, ...integrationsOf().map((k) => entry(`#/integrations/${k}`, data.integrations[k].title)))));
+  if (data.integrations) group("integrations", element("ul", {}, ...integrationsOf().map((k) => entry(`#/integrations/${k}`, data.integrations[k].title))));
   for (const a of document.querySelectorAll('.site-nav a[href$="#/integrations"]')) a.hidden = !data.integrations;
   // by program type: a benchmark's page is in the category and the family
   // of its instance, and the menu marks that family as it marks a category
@@ -2339,24 +2341,25 @@ function rail(route) {
     types.append(li);
   }
   types.append(entry("#/coverage", COVERAGE));
-  tree.append(group("types", types));
+  group("types", types);
   // the circuits, where the data has them (and the bar's link to them with it): their families
   // where the view is among the circuits, as a type's families under the type on show
-  if (data.circuits && sectionOf(route) !== APART) tree.append(group(APART));
+  if (data.circuits && sectionOf(route) !== APART) group(APART);
   else if (data.circuits) {
     const c = data.circuits;
     // a circuit's page marks its family, as a category narrowed to it does
     const here = route.view === "category" && route.category === APART ? route.only
       : route.view === "family" ? data.circuit.get(`${route.suite}/${route.instance}`)?.key : undefined;
-    tree.append(group(APART, element("ul", {}, legend("instances"), ...c.groups.map((g) => {
+    group(APART, element("ul", {}, legend("instances"), ...c.groups.map((g) => {
       const li = element("li", {}, link({ view: "category", category: APART, only: g.key }, g.title, element("span", { class: "n" }, count(g.rows.length))));
       if (here !== undefined && here === g.key) li.firstChild.setAttribute("aria-current", "page");
       return li;
-    }))));
+    })));
   }
   for (const a of document.querySelectorAll(`.site-nav a[href$="#/${APART}"]`)) a.hidden = !data.circuits;
   // how it works
-  tree.append(group("how", element("ul", {}, ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)), entry("#/methods", METHODS))));
+  group("how", element("ul", {}, ...WALK_TITLES.map(([key, text]) => entry(`#/how/${key}`, text)), entry("#/methods", METHODS)));
+  tree.append(...SECTIONS.filter(([key]) => groups.has(key)).map(([key]) => groups.get(key)));
   // on the front page, the bar's section the view is in, and the menu's entry on show: its view, else the entry it is in
   if (!front) {
     for (const a of document.querySelectorAll(".site-nav a[data-section]")) {
