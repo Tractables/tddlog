@@ -206,7 +206,9 @@ jobs:
           name: tddlog-${{ matrix.target }}
 
       # The README's first example, whose answers it prints, read from the
-      # unpacked directory; nothing on standard error.
+      # unpacked directory; nothing on standard error. Each answer is
+      # `atom:<tab>probability`, as ProbLog prints it; carriage returns are
+      # dropped before the comparison.
       - name: Verify, unpack and run
         run: |
           set -eux
@@ -227,15 +229,12 @@ jobs:
           head -n 3 help.txt
           ./tddlog --version | tee version.txt
           if [ "$IS_RELEASE" = true ]; then
-            test "$(cat version.txt)" = "tddlog ${TAG#v}"
+            test "$(tr -d '\r' < version.txt)" = "tddlog ${TAG#v}"
           fi
           ./tddlog examples/alarm.pl > answers.txt 2> errors.txt
           cat answers.txt errors.txt
-          printf '%s\n' \
-            'burglary:       0.357143' \
-            'earthquake:     0.714286' \
-            'calls(mary):    0.400000' > expected.txt
-          diff expected.txt answers.txt
+          printf 'burglary:\t0.357143\nearthquake:\t0.714286\ncalls(mary):\t0.400000\n' > expected.txt
+          tr -d '\r' < answers.txt | diff expected.txt -
           test ! -s errors.txt
 
       # An archive attached to a published release, and the checksum people
