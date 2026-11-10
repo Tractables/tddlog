@@ -778,6 +778,10 @@ function benchmarksOf(root) {
     // How many times less time tddlog takes, as the README writes it.
     const ratio = (a, b) => `${a / b >= 10 ? (a / b).toFixed(0) : (a / b).toFixed(1)}×`;
     const speed = (r) => (r >= 1 ? ratio(r, 1) : `${ratio(1, r)} slower`);
+    // A speed-up's text: nothing to measure, answers none where the other
+    // system answers no instance (its speed-up is the measure's ceiling), or
+    // the ratio.
+    const speedText = (v) => (v.speedup === null ? "nothing to measure" : v.answers === 0 ? "answers none" : speed(v.speedup));
     // tddlog against a system by rule 16 over runs [limit, tddlog's record,
     // its record], the instances it is given: the two totals over those
     // either answers, a run that does not answer counted as twice its limit
@@ -945,7 +949,7 @@ function benchmarksOf(root) {
     const overviewRows = await page.$$eval("#view svg.overview a.row.other", (as) => as.map((a) => [a.getAttribute("href"),
       ...["answers", "ratio"].map((c) => (a.querySelector(`text.${c}`)?.textContent ?? "").replace(/^none$/, "nothing to measure"))]));
     assert.deepEqual(overviewRows, types.flatMap((c) => c.named.map((x) => [`#/category/${c.key}/vs/${x}`, count(c.answers[x]),
-      c.vs[x].speedup === null ? "nothing to measure" : speed(c.vs[x].speedup)])), "the overview: each named system's answers and tddlog's speed-up");
+      speedText(c.vs[x])])), "the overview: each named system's answers and tddlog's speed-up");
     assert.equal((await page.$$("#view svg.overview a.row.others")).length, types.filter((c) => c.others.systems.length).length,
       "the overview: a row of the others");
     // no bound of 0 s on the others' row (a total of 0: no instance it or tddlog answers)
@@ -1007,7 +1011,8 @@ function benchmarksOf(root) {
       assert.deepEqual(fig.systems, order, `${what}: its systems drawn, tddlog first and then by their answers`);
       assert.deepEqual([...fig.lines].sort(), [...order].sort(), `${what}: its lines`);
       assert.deepEqual(fig.legend, byAnswers(order, (x) => c.answers[x])
-        .map((x) => `answers${count(c.answers[x])}of${count(rows.length)}${isMine(x) ? "" : c.vs[x].speedup === null ? ",nothingtomeasure"
+        .map((x) => `answers${count(c.answers[x])}of${count(rows.length)}${isMine(x) || (c.vs[x].answers === 0 && c.vs[x].speedup !== null) ? ""
+          : c.vs[x].speedup === null ? ",nothingtomeasure"
           : `,${subject(c.vs[x].me)}${speed(c.vs[x].speedup)}${c.vs[x].speedup >= 1 ? "faster" : ""}`.replace(/\s/g, "")}`), `${what}: its legend`);
       assert.deepEqual([...fig.coloured].sort(), order.filter((x) => lit(c, x)).sort(), `${what}: tddlog's and the named systems' lines in colour`);
       assert.ok(fig.axis.includes(`all${count(rows.length)}instances`), `${what}: its axis`);

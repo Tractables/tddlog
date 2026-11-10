@@ -760,27 +760,31 @@ function ranked(c, xs, tal, only) {
   return xs.filter((x) => !isMine(x)).sort((a, b) => tal[b].answers - tal[a].answers || key(a) - key(b));
 }
 
-// tddlog's speed-up of a comparison: 49×, 1.7×, 1.3× slower, or "nothing to
+// tddlog's speed-up of a comparison: 49×, 1.7×, 1.3× slower, "nothing to
 // measure" where no instance both answer over the floor and none only one
-// answers; with sentence, "49× faster".
+// answers, or "answers none" where the other system answers no instance (its
+// speed-up is then the measure's ceiling, the limit over the floor); with
+// sentence, "49× faster".
+const answersNone = (v) => v?.answers === 0 && (v.speedup ?? null) !== null;
 function speedup(v, sentence = false) {
   const r = v?.speedup ?? null;
   if (r === null) return "nothing to measure";
+  if (answersNone(v)) return "answers none";
   return r >= 1 ? `${times(r, 1)}${sentence ? " faster" : ""}` : `${times(1, r)} slower`;
 }
 
 // A category's rows as one suite for a plot: the systems drawn, tddlog's (and
 // its pipelines') first and then by their answers and speed-ups, as the
 // README's legends list them; the limit the longest of its instances'; tddlog's speed-up over
-// each other system in words (`faster`).
+// each other system in words (`faster`), none for a system that answers no
+// instance (its legend's "answers 0" says it).
 function catSuite(c, rows, drawn, tal, only) {
   const systems = [...drawn.filter(isMine), ...ranked(c, drawn, tal, only)];
   return { key: c.key, title: c.title, noun: c.noun, systems, instances: rows.map((r) => [r.name, ...systems.map((x) => r.v[x])]),
     limit: Math.max(...rows.map((r) => r.limit)),
-    faster: Object.fromEntries(systems.filter((x) => !isMine(x)).map((x) => {
-      const v = versus(c, x, only);
-      return [x, (v?.speedup ?? null) === null ? "nothing to measure" : `${subject(v.me)} ${speedup(v, true)}`];
-    })) };
+    faster: Object.fromEntries(systems.filter((x) => !isMine(x)).map((x) => [x, versus(c, x, only)])
+      .filter(([, v]) => !answersNone(v))
+      .map(([x, v]) => [x, (v?.speedup ?? null) === null ? "nothing to measure" : `${subject(v.me)} ${speedup(v, true)}`])) };
 }
 
 // A comparison's two total times in words, after "over": the instances the
@@ -920,9 +924,10 @@ function drawOverview(box) {
     }
     return marks;
   };
-  // the right column: tddlog's speed-up r (with least, "at least"), or nothing to measure
-  const mark = (r, least = false) => (r === null
-    ? svg("text", { class: "ratio few", x: ratio, y: y + row / 2 + 4 }, narrow ? "none" : "nothing to measure")
+  // the right column: tddlog's speed-up r (with least, "at least"), nothing to measure, or
+  // (with none) "answers none" where the other system answers no instance; narrow, "none" for both
+  const mark = (r, least = false, none = false) => (r === null || none
+    ? svg("text", { class: "ratio few", x: ratio, y: y + row / 2 + 4 }, narrow ? "none" : none ? "answers none" : "nothing to measure")
     : svg("text", { class: `ratio${r >= 1 ? "" : " slower"}`, x: ratio, y: y + row / 2 + 4 },
       r >= 1 ? `${least ? "≥" : ""}${times(r, 1, least)}` : `${least ? "≤" : ""}${times(1, r)} slower`));
   for (const g of groups) {
@@ -940,7 +945,7 @@ function drawOverview(box) {
         + `${totals(v, data.names[x])}; ${subject(v.me)}'s speed-up: ${speedup(v)}`,
       "other", data.names[x], c.answers[x],
       svg("line", { class: "span", x1: lx(mine), y1: y + row / 2, x2: lx(theirs), y2: y + row / 2 }),
-      ...at(theirs, `you ${tint(x)}`, right), ...at(mine, "me", left), mark(v.speedup));
+      ...at(theirs, `you ${tint(x)}`, right), ...at(mine, "me", left), mark(v.speedup, false, answersNone(v)));
     }
     if (others.systems.length) {
       const who = others.systems.map((x) => data.names[x]);
