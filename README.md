@@ -4,36 +4,41 @@
   <img src="https://raw.githubusercontent.com/Tractables/tddlog/main/docs/logo.svg"
        alt="tddlog" width="340">
   <br>
+  <a href="https://tractables.github.io/tddlog/"><img
+     src="https://img.shields.io/badge/website-results%2C%20playground%2C%20guide-e3a72f" alt="Website: results, playground, guide"></a>
   <a href="https://pypi.org/project/tddlog/"><img
      src="https://img.shields.io/pypi/v/tddlog.svg" alt="PyPI"></a>
   <a href="https://github.com/Tractables/tddlog/actions/workflows/ci.yml"><img
      src="https://github.com/Tractables/tddlog/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://tractables.github.io/tddlog/playground/"><img
-     src="https://img.shields.io/badge/run-in%20the%20browser-blue" alt="Run in the browser"></a>
-  <a href="https://tractables.github.io/tddlog/guide/"><img
-     src="https://img.shields.io/badge/docs-guide-blue" alt="Guide"></a>
   <a href="https://tractables.github.io/tddlog/api/tddlog/"><img
      src="https://img.shields.io/badge/docs-Rust-blue" alt="Rust API"></a>
   <a href="https://tractables.github.io/tddlog/python/"><img
      src="https://img.shields.io/badge/docs-Python-blue" alt="Python API"></a>
   <a href="https://tractables.github.io/tddlog/c/"><img
      src="https://img.shields.io/badge/docs-C-blue" alt="C API"></a>
-  <a href="https://tractables.github.io/tddlog/results/"><img
-     src="https://img.shields.io/badge/results-benchmarks-blue" alt="Benchmark results"></a>
 </p>
 
 **Exact probabilistic inference by compilation into tree decision diagrams.**
 
-tddlog answers probabilistic Datalog programs exactly: probabilistic
-facts, annotated disjunctions, and recursive rules with negation,
-comparisons and arithmetic. [Front ends](#front-ends) reduce ProbLog
-programs with function symbols and lists, Bayesian and Markov networks,
-Dice programs, Circulette netlists and LPADs to it. tddlog grounds the
-program, simplifies it, compiles it bottom up into tree decision diagrams
-(TDDs) with the [tididi](https://github.com/Tractables/tididi) library, and reads every
-query's probability off the diagrams. It is a Rust library and
-command-line tool with Python, C and WebAssembly bindings, and it
-[runs in the browser](https://tractables.github.io/tddlog/playground/).
+tddlog computes exact probabilities for ProbLog programs, Bayesian and
+Markov networks, and Dice programs. It is a command-line tool and a Rust
+library, with Python, C and WebAssembly bindings.
+
+<!-- results:headline -->
+tddlog answers **1807 of 1942** benchmark programs. The next best system, Ace, answers **993**.
+<!-- /results:headline -->
+On every type of program, tddlog answers more instances than each exact
+inference system native to it, in less total time.
+
+**Website: [tractables.github.io/tddlog](https://tractables.github.io/tddlog/).**
+It has every result, by program type and by baseline, the [playground],
+which runs tddlog in the browser, and the [guide].
+
+## How well does it work?
+
+tddlog was compared with every exact inference system we could find. Each
+type of program is compared with the systems that natively handle it.
+Every answer is checked against an exact reference.
 
 <p align="center">
   <img src="docs/images/overview.svg"
@@ -44,84 +49,68 @@ command-line tool with Python, C and WebAssembly bindings, and it
 <sub>Results as of 2026-11-09, public main [d8f161566](https://github.com/Tractables/tddlog/commit/d8f161566). Each row: a native system's answers of the type's instances, its total time (its colour) and tddlog's (teal) over the instances it is given as its users would write them and either answers, and how many times faster tddlog is ([how it is counted](https://tractables.github.io/tddlog/#/methods)).</sub>
 <!-- /results:overview -->
 
-On every type of program, tddlog answers more instances than each
-exact inference system native to it, in less total time
-([Performance](#performance)).
+Each type's page has every instance, time and program, and the instances
+where another system wins:
+
+<!-- results:types -->
+| Type of program | tddlog answers | Best native system | Its answers | tddlog faster |
+|---|--:|---|--:|--:|
+| [Probabilistic logic programs](https://tractables.github.io/tddlog/#/category/logic-programs) | **336** of 362 | ProbLog | 255 | 214× |
+| [Probabilistic databases](https://tractables.github.io/tddlog/#/category/database-queries) | **308** of 320 | ProvSQL | 283 | 26× |
+| [Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks) | **616** of 634 | Ace | 414 | 55× |
+| [Markov networks](https://tractables.github.io/tddlog/#/category/markov-networks) | **250** of 290 | TensorInference.jl | 198 | 6.0× |
+| [Probabilistic functional programs](https://tractables.github.io/tddlog/#/category/functional-programs) | **297** of 336 | Roulette | 198 | 29× |
+<!-- /results:types -->
+
+<!-- results:setup -->
+<!-- written from bindings/wasm/results/categories.json, sha256 157bfc8f8f63add3f252def7484ef5feb65433b19a79e953f2b3c75458387303 -->
+Results as of 2026-11-09, public main [d8f161566](https://github.com/Tractables/tddlog/commit/d8f161566). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
+<!-- /results:setup -->
+
+- [By baseline](https://tractables.github.io/tddlog/#/baselines): a page
+  for each of the other systems.
+- [Circuits](https://tractables.github.io/tddlog/#/circuits): the Boolean
+  circuits Alea.jl exports, read by every system.
+- [Methods](https://tractables.github.io/tddlog/#/methods): how the runs
+  were made and the speed-up counted.
+- The [`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines):
+  how each system was run.
+
+tddlog is also an inference backend for Alea.jl and Roulette
+([integrations](https://tractables.github.io/tddlog/#/integrations)).
+X+tddlog runs X's own code, then tddlog's inference. X alone is in
+brackets:
+
+<!-- results:integrations -->
+| Integration | Instances | Answers | Total time | Faster |
+|---|--:|--:|--:|--:|
+| Alea.jl+tddlog against Alea.jl | 1001 | 647 (Alea.jl 379) | 6.5 h (Alea.jl 92 h) | 12× |
+| Roulette+tddlog against Roulette | 1269 | 802 (Roulette 509) | 8.6 h (Roulette 90 h) | 9.3× |
+<!-- /results:integrations -->
 
 ## Install
 
-The [playground] runs tddlog in the browser, with nothing to install.
-The command line, the Python package and the C library also come
-prebuilt, with nothing else to install:
+Nothing to install: the [playground] runs tddlog in the browser.
 
-- **Command line:** download the archive for your platform from the
-  [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0)
-  and unpack it: its directory holds `tddlog` (`tddlog.exe` on Windows)
-  and the repository's `examples/`.
+Prebuilt, on Linux x86-64 (glibc 2.28 or newer):
 
-  | Platform | Archive |
-  |---|---|
-  | Linux x86-64, glibc 2.28 or newer | [tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz][linux-x86-64] |
-  | Linux ARM64, glibc 2.28 or newer | [tddlog-v0.1.0-aarch64-unknown-linux-gnu.tar.gz][linux-arm64] |
-  | macOS ARM64 (Apple silicon) | [tddlog-v0.1.0-aarch64-apple-darwin.tar.gz][macos-arm64] |
-  | macOS x86-64 (Intel) | [tddlog-v0.1.0-x86_64-apple-darwin.tar.gz][macos-x86-64] |
-  | Windows x86-64 | [tddlog-v0.1.0-x86_64-pc-windows-msvc.zip][windows-x86-64] |
+```sh
+curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
+cd tddlog-v0.1.0-x86_64-unknown-linux-gnu
+./tddlog examples/alarm.pl
+```
 
-  On Linux x86-64, for example:
+- **Other platforms:** the
+  [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0) has
+  archives for Linux ARM64, macOS and Windows.
+- **Python:** `pip install tddlog`
+- **C and C++:** prebuilt archives on the same release
+  ([C README](bindings/c/README.md)).
+- **From source**, with Rust 1.88 or newer and a C++20 compiler:
+  `cargo install --locked --git https://github.com/Tractables/tddlog tddlog`
 
-  ```sh
-  curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
-  cd tddlog-v0.1.0-x86_64-unknown-linux-gnu
-  ./tddlog examples/alarm.pl
-  ```
-
-  On a Mac with Apple silicon, the same with `aarch64-apple-darwin`.
-
-  macOS refuses to open a binary downloaded with a browser, which it
-  quarantines; `xattr -d com.apple.quarantine tddlog` lifts that.
-  Moving `tddlog` into a directory on your `PATH`, such as
-  `/usr/local/bin`, lets you run it as `tddlog` anywhere.
-- **Python:** `pip install tddlog`, with wheels for CPython 3.10 and
-  later on Linux and macOS (x86-64 and ARM64) and Windows x86-64. See
-  the [Python README](bindings/python/README.md).
-- **C and C++:** prebuilt archives for the same platforms on the
-  [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0).
-  See the [C README](bindings/c/README.md).
-
-[linux-x86-64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-unknown-linux-gnu.tar.gz
-[linux-arm64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-aarch64-unknown-linux-gnu.tar.gz
-[macos-arm64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-aarch64-apple-darwin.tar.gz
-[macos-x86-64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-apple-darwin.tar.gz
-[windows-x86-64]: https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-x86_64-pc-windows-msvc.zip
-
-The command line and the Rust, Python and C libraries also build from
-source, which needs:
-
-- Rust 1.88 or newer, from [rustup](https://rustup.rs). A distribution's
-  cargo is often older and stops with "feature `edition2024` is
-  required". rustup puts `cargo` on the PATH of new shells; in the shell
-  that ran it, run `. "$HOME/.cargo/env"` first.
-- A C++20 compiler, GCC 11 or newer or Clang 14 or newer, for the
-  tree-decomposition solver that goatd vendors, and `make`, for jemalloc:
-  `sudo apt install build-essential` on Debian and Ubuntu,
-  `xcode-select --install` on macOS. An older `g++` stops with
-  "unrecognized command line option '-std=c++20'": install a newer one,
-  which the build finds by the name `g++-12`, `g++-13` or `g++-14`, or name
-  it in `GOATD_CXX` (`GOATD_CXX=g++-11 cargo install ...`); `CXX` does not
-  choose it.
-
-Then:
-
-- **Command line:** `cargo install --locked --git https://github.com/Tractables/tddlog tddlog`
-  builds `tddlog` into `$HOME/.cargo/bin`, in a few minutes on eight
-  cores.
-- **Rust:** `tddlog = { git = "https://github.com/Tractables/tddlog" }` under
-  `[dependencies]`. See the [Rust API].
-- **Python:** `pip install "git+https://github.com/Tractables/tddlog#subdirectory=bindings/python"`
-  builds the package from the repository, for a commit after the
-  release. See the [Python README](bindings/python/README.md).
-- **C and C++:** build the CMake package from a checkout. See the
-  [C README](bindings/c/README.md).
+The guide's [getting started](https://tractables.github.io/tddlog/guide/#getting-started)
+covers each platform and what to do if the build fails.
 
 ## Getting started
 
@@ -142,10 +131,7 @@ query(earthquake).
 query(calls(mary)).
 ```
 
-Saved as `alarm.pl`, or fetched with
-`curl -O https://raw.githubusercontent.com/Tractables/tddlog/main/examples/alarm.pl`,
-it runs as `tddlog alarm.pl`, which prints the probability of each query
-given the evidence:
+tddlog prints the probability of each query given the evidence:
 
 ```text
 $ tddlog alarm.pl
@@ -154,53 +140,28 @@ earthquake:     0.714286
 calls(mary):    0.400000
 ```
 
-Each probabilistic fact `p::f` holds with probability p, independently
-of the others, and the rules derive the other atoms. The alarm goes off
-with probability 1 − 0.9 × 0.8 = 0.28, so John calls with probability
-0.28 × 0.7 = 0.196, and P(burglary | John calls) = 0.1 × 0.7 / 0.196 =
-0.357143.
+Each fact `p::f` holds with probability p, independently of the others.
+The rules derive the other atoms.
 
-The commands below run in a checkout of the repository, whose
-`examples/` and `tests/` hold the programs they read:
+The [guide] describes the language and the command line. Its worked
+examples open in the [playground]. [examples/](examples/) lists every
+example program.
 
-```sh
-git clone --depth 1 https://github.com/Tractables/tddlog
-cd tddlog
-```
+## What it reads
 
-A program can take values from the command line: the arguments after its
-file take its places `$1`, `$2`, ... (outside comments and quoted
-atoms), each read as a term, so that one program serves every size,
-probability, query and observation. In
-[examples/chain.pl](examples/chain.pl) they are the length of a chain,
-the probability of each link and the node queried, and `--program`
-prints the program with them in place:
+- [ProbLog programs](https://tractables.github.io/tddlog/guide/#language),
+  with function symbols, lists and `findall`.
+- [LPADs](https://tractables.github.io/tddlog/guide/#lpad) written for
+  cplint and PITA.
+- [Bayesian networks](https://tractables.github.io/tddlog/guide/#network-files)
+  in BIF, Hugin, GeNIe or UAI, and Markov networks in UAI.
+- [Dice programs](https://tractables.github.io/tddlog/guide/#dice).
+- [Circulette netlists](https://tractables.github.io/tddlog/guide/#circulette).
+- [Alea.jl](https://tractables.github.io/tddlog/guide/#alea) and
+  [Roulette](https://tractables.github.io/tddlog/guide/#roulette) programs,
+  through those systems' tddlog backends.
 
-```text
-$ tddlog examples/chain.pl 10 0.9 4
-reach(4):       0.656100
-$ tddlog --program examples/chain.pl 20 0.9 7 > chain_20.pl
-```
-
-The [guide] describes the language and the command line, with worked
-examples that open in the [playground].
-[examples/](examples/) lists every example program by what it shows.
-
-## Front ends
-
-Every input is reduced to a probabilistic Datalog program before
-inference:
-
-| Input | Read by | Reduced to probabilistic Datalog as |
-|---|---|---|
-| ProbLog programs | tddlog | function symbols and lists ground to constants, with ProbLog's list predicates, `call/N`, `findall/3`, `all/3` and `forall/2` over probabilistic goals, and `library(aggregate)`'s aggregates |
-| Bayesian networks in BIF, Hugin, GeNIe or UAI, with evidence in Ace's `.inst` or UAI's `.evid` | tddlog, by the file's extension | one annotated disjunction per row of each table |
-| Markov networks in UAI | tddlog | one observed atom per factor; `--evidence-probability` prints the partition function |
-| Dice programs | tddlog, by the extension `.dice` | each integer as its bits, each operation as rules over them, a loop as recursion over a step index |
-| Circulette netlists | tddlog, by the extension `.cql` | the netlist as facts, one rule per kind of gate over its operands' bits, a fault on each logic gate the outputs read, the failure as evidence; every single, pair and triple of faults a query |
-| Alea.jl programs | Alea.jl's tddlog backend, on the branch [`tddlog` of Tractables/Alea.jl](https://github.com/Tractables/Alea.jl/tree/tddlog): `pr(x; algo = Tddlog())` runs tddlog on the circuit, `write_problog(io, x)` writes it | the Boolean circuit Alea.jl builds: each flip a probabilistic fact, each gate a rule, each observation evidence; Alea.jl+tddlog in the results |
-| Roulette programs | Roulette's tddlog engine, on the branch [`tddlog` of Tractables/roulette](https://github.com/Tractables/roulette/tree/tddlog), a fork of neuppl/roulette: `racket -l- roulette/engine/tddlog PROGRAM.rkt` writes the circuit, and with `--tddlog` the program runs with tddlog answering its queries | the Boolean circuit Roulette builds: each flip a probabilistic fact, each gate a rule, each observation evidence; Roulette+tddlog in the results |
-| LPADs written for cplint and PITA | tddlog, where the file holds `:- begin_lpad.` | the same clauses in ProbLog's syntax, with the database clauses they call and the file's example queries; under PITA's depth bound, each predicate with the depth as an argument; PRISM's switches as annotated disjunctions of `msw/2` |
+tddlog tells the format from the file. In a checkout of the repository:
 
 ```text
 $ tddlog examples/car.net --evidence examples/car.inst --query fuel,plugs,starter
@@ -208,375 +169,45 @@ $ tddlog tests/dice/arith.dice
 $ tddlog --program tests/lpad/coin.cplint.pl
 ```
 
-`--program` prints the program an input is read as, and `--ground` the
-ground program after it, which ProbLog also reads, so each reduction can
-be checked on its own. `--cnf` writes that ground program as a weighted CNF
-for a weighted model counter. On the UAI networks measured, the counters
-took 12 to 261 times as long as tddlog, since they read clauses where
-tddlog compiles tables ([why](docs/design.md#grounding-srcground)). As a
-library, [`tddlog::read`] reads an input in
-any of these formats as a program and [`tddlog::solve`] answers it; the
-[Python](bindings/python/README.md) (`tddlog.solve(text, format="dice")`),
-[C](bindings/c/README.md) and [WebAssembly](bindings/wasm/README.md)
-bindings take the text with its format's name. A front end of one's own
-writes the program's text, as [examples/sprinkler.rs](examples/sprinkler.rs)
-does from Rust data.
+Every input is reduced to a probabilistic Datalog program. `--program`
+prints it, and `--ground` prints its ground program, which ProbLog also
+reads. `--cnf` writes the ground program as a
+[weighted CNF](docs/design.md#grounding-srcground). The guide lists
+[what tddlog does not read](https://tractables.github.io/tddlog/guide/#not-read).
 
-Not yet read: cut, if-then-else, `assert`, strings and a findall in a
-cycle of calls in ProbLog; `/`, `%` and `sample` in Dice.
+## How it works
 
-## Inside the engine
+1. tddlog grounds the part of the program that the queries and the
+   evidence depend on, and simplifies it.
+2. It compiles the ground program bottom up into tree decision diagrams
+   (TDDs), with the [tididi](https://github.com/Tractables/tididi) library.
+   The layout of the diagrams' variables comes from tree decompositions,
+   computed with [goatd](https://github.com/Tractables/goatd).
+3. It reads every query's probability off the diagrams in one pass.
 
+[How it works](https://tractables.github.io/tddlog/#/how) on the website
+walks through example programs, stage by stage.
 [docs/design.md](docs/design.md) describes each stage and the cases
 measured behind it.
 
-**Grounding and simplification**
+## Using it from Rust, Python and C
 
-- **Relevant grounding.** Magic sets and semi-naive evaluation ground
-  only what the queries and the evidence depend on, ProbLog's relevant
-  ground program (Fierens et al., TPLP 2015). Transitive closures ground
-  from their bound end, and linear recursion is solved without iteration
-  by Gaussian elimination (Tarjan, 1981).
-- **And-inverter graph.** Acyclic rules are hashed into an and-inverter
-  graph, so a gate the program writes many times is built once (of a
-  12-bit circuit's 6 635 gates, 4 941 merge). Gates equal to another
-  gate, to its negation or to a constant are found by random simulation,
-  proved by SAT and merged (fraiging, Mishchenko et al., 2005).
-- **Conditioning.** Unit propagation, SAT backbones and equivalences fix
-  and merge facts under the evidence, and tables are renormalized to it.
-- **Table structure.** The rows of one distribution share a class atom,
-  rows that exclude each other share switches, and a choice read under
-  exclusive contexts becomes one fact per context.
+- **Rust:** add `tddlog = { git = "https://github.com/Tractables/tddlog" }`
+  under `[dependencies]`. [`tddlog::solve`] answers a program
+  ([Rust API]).
+- **Python:** `tddlog.solve(text)` ([Python README](bindings/python/README.md)).
+- **C and C++:** `tddlog_solve` ([C README](bindings/c/README.md)).
+- **WebAssembly:** the module behind the playground
+  ([WebAssembly README](bindings/wasm/README.md)).
 
-**Compilation**
-
-- **Tp-compilation.** Each derived atom's TDD is built bottom up by the
-  immediate-consequence operator on diagrams (Vlasselaer et al., IJCAI
-  2015), one strongly connected component at a time, each shared atom
-  once, and each component over the part of the vtree its facts lie in.
-  Negation through recursion takes the well-founded fixpoint by
-  approximation fixpoint theory (Bogaerts and Van den Broeck, ICLP 2015),
-  which answers sound programs that ProbLog rejects.
-- **Names where depth needs them.** An atom read across a narrow cut of
-  the variable order is read through a named copy tied to its
-  definition, as in a Tseitin encoding. After the compile, each name is
-  kept or composed away, whichever gives the smaller diagram.
-
-**Vtrees**
-
-- **Layouts from the program.** A vtree, the layout of the diagrams'
-  variables, is read from tree decompositions computed with
-  [goatd](https://github.com/Tractables/goatd), from the rules'
-  dependency order, from the order the program states its facts in, or
-  from its rules' fan-in. In a bit-blasted program, an atom read under a
-  fact is read conditioned on it, a decision list becomes a balanced
-  tree, and these guards give the vtree.
-- **Layouts as trials.** By default, several layouts run in turns under
-  doubling budgets of engine work, one of them a vtree searched by
-  rotations during the compile, and the first to finish answers. The
-  budgets count pairs and units of work, not seconds, so the same layout
-  wins on every machine.
-
-**Queries and evidence**
-
-- **Every marginal in one pass.** The evidence is conjoined bottom up
-  along the vtree, and every query is read off one backward pass.
-  Probabilities below a double's range keep an exponent of their own
-  instead of underflowing.
-- **Summing out.** Where only the probability of the evidence or a
-  partition function is asked, each join sums out what no later join
-  reads.
-
-## Performance
-
-tddlog was compared with every exact inference system we could find, on
-five types of program, each against the systems that natively handle it,
-and on [all programs](#all-programs) together, against every system.
-Where another system's code runs first and hands the inference to tddlog,
-the [integrations](#integrations) compare the two.
-Every answer is checked against an exact reference. Each table gives a
-system's answers, its total time and tddlog's over the instances it is
-given as its users would write them and either answers, and how many
-times faster tddlog is. The
-[results page](https://tractables.github.io/tddlog/results/) has every
-instance, time and program, and a page for each system.
-
-<!-- results:setup -->
-<!-- written from bindings/wasm/results/categories.json, sha256 157bfc8f8f63add3f252def7484ef5feb65433b19a79e953f2b3c75458387303 -->
-Results as of 2026-11-09, public main [d8f161566](https://github.com/Tractables/tddlog/commit/d8f161566). Runs are single-threaded, under a time limit of 300 or 600 s by suite; a run that does not answer counts as twice its limit, and a time under 0.2 s as 0.2 s.
-<!-- /results:setup -->
-
-The [methods table](https://tractables.github.io/tddlog/#/methods) says
-how the runs were made and the speed-up counted, and the
-[`baselines` branch](https://github.com/Tractables/tddlog/tree/baselines)
-how each system was run.
-
-### Probabilistic logic programs
-
-<p align="center">
-  <img src="docs/images/results-logic-programs.svg"
-       alt="Probabilistic logic programs answered within each time limit, and tddlog's time against the fastest native system's">
-</p>
-
-<!-- results:logic-programs -->
-tddlog answers **336 of 362** programs, of 25 families.
-<!-- /results:logic-programs -->
-
-The ProbLog programs: paths in random graphs and grids, Biomine's paths,
-smokers, UW-CSE, Cora's citation matching, blood types and pedigrees,
-sickness, Mastermind, MNIST addition and handwritten formulas, Prob-EC's
-event calculus, taint analyses of Android apps, probabilistic grammars,
-hidden Markov models, and the programs of the ProbLog tutorial and of
-ProbLog's and cplint's examples.
-
-<!-- results:logic-programs-table -->
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| ProbLog | 255 | 15 h | 28 min | 214× |
-| PITA | 226 | 20 h | 28 min | 285× |
-| aspmc | 120 | 38 h | 28 min | 685× |
-| PSouffle | 114 | 40 h | 28 min | 762× |
-| Scallop | 70 | 46 h | 28 min | 1311× |
-<!-- /results:logic-programs-table -->
-
-- On Biomine, ProbLog's own benchmark, each program the K most probable
-  paths from Alzheimer's disease to four genes, K from 1 to 64, tddlog
-  answers all 10 programs and ProbLog 4.
-- No native system answers a program tddlog does not, or is twice as
-  fast on one where tddlog takes 1 s or more.
-
-### Probabilistic databases
-
-<p align="center">
-  <img src="docs/images/results-database-queries.svg"
-       alt="Queries over probabilistic databases answered within each time limit, and tddlog's time against the fastest native system's">
-</p>
-
-<!-- results:database-queries -->
-tddlog answers **308 of 320** queries, of 19 families.
-<!-- /results:database-queries -->
-
-The queries are Boolean queries over tuple-independent databases: 16
-TPC-H queries, the queries h0 and h1, the safe queries QW and Q9, and
-paths of two edges in random graphs.
-
-<!-- results:database-queries-table -->
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| ProvSQL | 283 | 9.3 h | 20 min | 26× |
-| ProbLog | 202 | 39 h | 20 min | 291× |
-| PSouffle | 193 | 40 h | 20 min | 277× |
-| aspmc | 147 | 56 h | 20 min | 805× |
-| PITA | 123 | 62 h | 20 min | 875× |
-| Scallop | 30 | 90 h | 20 min | 2480× |
-<!-- /results:database-queries-table -->
-
-- No native system answers a query tddlog does not, or is twice as fast
-  on one where tddlog takes 1 s or more.
-
-### Bayesian networks
-
-<p align="center">
-  <img src="docs/images/results-bayesian-networks.svg"
-       alt="Bayesian networks answered within each time limit, and tddlog's time against the fastest native system's">
-</p>
-
-<!-- results:bayesian-networks -->
-tddlog answers **616 of 634** networks, of 12 families.
-<!-- /results:bayesian-networks -->
-
-The networks: bnlearn's, the large ones and the Roulette and noDice
-papers' versions among them, Ace's, the noisy-or networks, and the
-networks of the UAI 2022 competition and of Ihler's collection whose
-factors are conditional probability tables (diagnosis, pedigree, BN,
-blockmap, Mastermind and fs networks, and the classic networks).
-
-<!-- results:bayesian-networks-table -->
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| Ace | 414 | 35 h | 30 min | 55× |
-| TensorInference.jl | 320 | 57 h | 30 min | 93× |
-| Merlin | 292 | 58 h | 30 min | 92× |
-| libDAI | 290 | 58 h | 30 min | 91× |
-| pyAgrum | 260 | 64 h | 30 min | 101× |
-| 15 others: PITA, pgmpy, aspmc, Alea.jl, Pluck, Roulette, ProbLog, Dice, Geni, Genfer, noDice, SPPL, Psi, WebPPL, Scallop | 12 to 236 | over 1.6 h each | 13 s to 30 min | at least 115× |
-
-PSouffle was given 11 of the networks and answers 6.
-<!-- /results:bayesian-networks-table -->
-
-- Where others win: every network tool answers uai_bn_125 of Ihler's
-  collection in 1.3 to 18 s, and tddlog runs out of time. On 37 more a
-  native system is at least twice as fast where tddlog takes 1 s or more:
-  Merlin, pyAgrum or TensorInference.jl on 22 of Ihler's BN networks, up
-  to 0.3 s against tddlog's 161 s; TensorInference.jl or pyAgrum on
-  bnlearn's barley, mildew and diabetes; Alea.jl on ten Mastermind
-  networks.
-
-### Markov networks
-
-<p align="center">
-  <img src="docs/images/results-markov-networks.svg"
-       alt="Markov networks answered within each time limit, and tddlog's time against the fastest native system's">
-</p>
-
-<!-- results:markov-networks -->
-tddlog answers **250 of 290** networks, of 11 families.
-<!-- /results:markov-networks -->
-
-The networks are those of the UAI 2022 competition and of Ihler's
-collection whose factors are not conditional probability tables over an
-acyclic graph: object detection, segmentation, grid, DBN, CSP and
-Alchemy networks, protein side chains, the rus networks, weighted CSPs,
-and pedigree and diagnosis networks.
-
-<!-- results:markov-networks-table -->
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| TensorInference.jl | 198 | 9.5 h | 58 min | 6.0× |
-| libDAI | 182 | 14 h | 48 min | 20× |
-| Merlin | 171 | 14 h | 48 min | 17× |
-| pyAgrum | 170 | 14 h | 48 min | 18× |
-| pgmpy | 117 | 24 h | 48 min | 32× |
-| Ace | 81 | 30 h | 48 min | 64× |
-<!-- /results:markov-networks-table -->
-
-- Where others win: TensorInference.jl answers Ihler's pedigree50 in
-  133 s, and tddlog runs out of memory. On 35 more a native system is at
-  least twice as fast where tddlog takes 1 s or more: TensorInference.jl
-  on nine protein networks of the UAI 2022 final set, up to 19 s against
-  tddlog's 268 s, on bwt3ac and on pedigree30; pgmpy or
-  TensorInference.jl on 22 object detection networks; Merlin on two DBNs.
-
-### Probabilistic functional programs
-
-<p align="center">
-  <img src="docs/images/results-functional-programs.svg"
-       alt="Probabilistic functional programs answered within each time limit, and tddlog's time against the fastest native system's">
-</p>
-
-<!-- results:functional-programs -->
-tddlog answers **297 of 336** programs, of 25 families.
-<!-- /results:functional-programs -->
-
-The programs are over discrete values with conditionals and loops: the
-Caesar cipher, diamond and ladder networks, Geni's router grids with
-failing links or routers and its weather factory, hidden Markov models
-and Pluck's sequence models, a Markov chain, a lossy network, contract
-signing, a perturbed-memory interpreter, Cao et al.'s integer programs,
-the coupon collector, 3-SAT, the bounded retransmission protocol,
-Circulette's netlists and the Dice paper's small programs. tddlog reads
-every one, with its own front ends or as a translation of the original
-program. Alea.jl+tddlog and Roulette+tddlog, tddlog behind those
-systems' own front ends, are [below](#integrations), and the circuits
-Alea.jl exports [below](#circuits).
-
-<!-- results:functional-programs-table -->
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| Roulette | 198 | 34 h | 1.4 h | 29× |
-| Alea.jl | 190 | 24 h | 1.2 h | 17× |
-| Dice | 138 | 41 h | 1.2 h | 63× |
-| Geni | 134 | 42 h | 1.2 h | 77× |
-| Pluck | 129 | 25 h | 34 min | 639× |
-| 5 others: Genfer, WebPPL, Psi, noDice, SPPL | 57 to 80 | over 20 min each | 1.8 s to 1.5 h | at least 52× |
-<!-- /results:functional-programs-table -->
-
-- Where others win: WebPPL answers simpleCaesar at k = 100000 in 279 s,
-  and tddlog runs out of memory. On 20 more a native system is at least
-  twice as fast where tddlog takes 1 s or more: Pluck on pmc1, up to 13 s
-  against tddlog's 184 s; WebPPL on the Caesar ciphers and gcd; Geni and
-  Alea.jl on the bounded retransmission protocol; Dice on the ladder and
-  the HMM joints; Alea.jl on three of Cao et al.'s integer programs.
-
-### All programs
-
-<p align="center">
-  <img src="docs/images/results-all-programs.svg"
-       alt="All programs answered within each time limit, and tddlog's time against the fastest other system's">
-</p>
-
-<!-- results:all-programs -->
-tddlog answers **1807 of 1942** programs.
-<!-- /results:all-programs -->
-
-All programs are the five types together, every system on every program
-it is given, natively or through a translation.
-
-<!-- results:all-programs-table -->
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| Ace | 993 | 137 h | 3.3 h | 61× |
-| libDAI | 878 | 171 h | 3.5 h | 82× |
-| TensorInference.jl | 859 | 185 h | 3.5 h | 61× |
-| pyAgrum | 823 | 180 h | 3.3 h | 99× |
-| Merlin | 814 | 187 h | 3.5 h | 87× |
-| 19 others: PITA, ProbLog, pgmpy, aspmc, Alea.jl, Roulette, Dice, Storm, Pluck, noDice, PSouffle, PRISM, ProvSQL, Geni, WebPPL, Genfer, SPPL, Psi, Scallop | 119 to 724 | over 9.6 h each | 21 min to 4.7 h | at least 26× |
-<!-- /results:all-programs-table -->
-
-- Where others win, beyond the native systems above, on programs
-  translated into their languages: Storm answers the largest sizes of
-  Roulette's diamond, ladder, hardware and motivating loops, of noDice's
-  coupon collector and, with PRISM, of Geni's weather factory, where
-  tddlog runs out of time or memory. pgmpy answers grid25, a path query
-  across a 25 by 25 grid, in 150 s on its ground network; libDAI, pgmpy
-  and Merlin the database query liftsep11 in 7 to 26 s; aspmc the Markov
-  network or_chain_156 in 285 s.
-
-### Circuits
-
-<p align="center">
-  <img src="docs/images/results-circuits.svg"
-       alt="Circuits answered within each time limit, and tddlog's time against the fastest other system's">
-</p>
-
-<!-- results:circuits -->
-tddlog answers **255 of 293** circuits, of 33 families.
-<!-- /results:circuits -->
-
-The circuits are an evaluation of their own, apart from the five types:
-each circuit Alea.jl exports of its programs, the bit-blasted arithmetic
-and the integer programs and sequence models among the functional
-programs. Every system reads the circuit, as it is or translated into
-its language, and no one pays for its export.
-
-<!-- results:circuits-table -->
-| System | Answers | Its total time | tddlog's total time | tddlog faster |
-|---|--:|--:|--:|--:|
-| Roulette | 123 | 46 h | 2.3 h | 33× |
-| Ace | 98 | 54 h | 2.3 h | 80× |
-| PITA | 82 | 60 h | 2.3 h | 151× |
-| aspmc | 81 | 60 h | 2.3 h | 211× |
-| Pluck | 77 | 59 h | 2.2 h | 46× |
-| 16 others: Merlin, pyAgrum, libDAI, pgmpy, ProbLog, Storm, TensorInference.jl, Dice, PRISM, noDice, SPPL, Genfer, WebPPL, Geni, Scallop, Psi | 0 to 64 | over 63 h each | 2.1 h to 2.3 h | at least 138× |
-<!-- /results:circuits-table -->
-
-### Integrations
-
-X+tddlog runs X's own code, then tddlog's inference on what X exports,
-against X alone, whose numbers are in brackets. The
-[integrations' pages](https://tractables.github.io/tddlog/#/integrations)
-have the programs and plots. Each integration lives in its system's own
-code base, under that system's licence: Alea.jl+tddlog is Alea.jl's tddlog
-backend, on the branch [`tddlog` of
-Tractables/Alea.jl](https://github.com/Tractables/Alea.jl/tree/tddlog), and
-Roulette+tddlog is Roulette's tddlog engine, on the branch [`tddlog` of
-Tractables/roulette](https://github.com/Tractables/roulette/tree/tddlog), a
-fork of neuppl/roulette.
-
-<!-- results:integrations -->
-| Integration | Instances | Answers | Total time | Faster |
-|---|--:|--:|--:|--:|
-| Alea.jl+tddlog against Alea.jl | 1001 | 647 (Alea.jl 379) | 6.5 h (Alea.jl 92 h) | 12× |
-| Roulette+tddlog against Roulette | 1269 | 802 (Roulette 509) | 8.6 h (Roulette 90 h) | 9.3× |
-<!-- /results:integrations -->
+The guide shows [one example in each](https://tractables.github.io/tddlog/guide/#library).
 
 ## Building and testing
 
-From a checkout, `cargo build --release` builds `target/release/tddlog`,
-and `cargo test --profile quick` checks it against ProbLog's answers on
-the examples and on ProbLog's own system tests, as CI does; a plain
-`cargo test` builds without optimization and takes about an hour.
-[CONTRIBUTING.md](.github/CONTRIBUTING.md) lists the checks a change runs.
+From a checkout, `cargo build --release` builds `target/release/tddlog`.
+`cargo test --profile quick` checks it against ProbLog's answers, as CI
+does. [CONTRIBUTING.md](.github/CONTRIBUTING.md) lists the checks a change
+runs.
 
 ## Citing
 
@@ -600,4 +231,3 @@ compiled into the binaries.
 [playground]: https://tractables.github.io/tddlog/playground/
 [Rust API]: https://tractables.github.io/tddlog/api/tddlog/
 [`tddlog::solve`]: https://tractables.github.io/tddlog/api/tddlog/fn.solve.html
-[`tddlog::read`]: https://tractables.github.io/tddlog/api/tddlog/fn.read.html

@@ -7,23 +7,20 @@
   <a href="https://github.com/Tractables/tddlog/actions/workflows/c-bindings.yml"><img
      src="https://github.com/Tractables/tddlog/actions/workflows/c-bindings.yml/badge.svg"
      alt="C bindings"></a>
+  <a href="https://tractables.github.io/tddlog/"><img
+     src="https://img.shields.io/badge/website-results%2C%20playground%2C%20guide-e3a72f" alt="Website: results, playground, guide"></a>
   <a href="https://tractables.github.io/tddlog/c/"><img
      src="https://img.shields.io/badge/docs-C-blue" alt="C API"></a>
-  <a href="https://tractables.github.io/tddlog/guide/"><img
-     src="https://img.shields.io/badge/docs-guide-blue" alt="Guide"></a>
 </p>
 
 **Exact probabilistic inference from C and C++.**
 
 tddlog computes exact probabilities for ProbLog programs, LPADs, Dice
-programs, Circulette netlists and Bayesian and Markov networks, by
-compiling them into tree decision diagrams. This library exposes the
-same Rust implementation as the
-[command line and Rust crate](https://github.com/Tractables/tddlog) and
-the [Python package](https://tractables.github.io/tddlog/python/)
-through a C interface: a program goes in as text, in any of these
-formats, with the command line's options, and the probabilities of its queries come out through an
-opaque solution handle.
+programs, Circulette netlists and Bayesian and Markov networks. This
+library exposes the same Rust implementation as the
+[command line](https://github.com/Tractables/tddlog) through a C
+interface. A program goes in as text, and the probabilities of its
+queries come out through an opaque solution handle.
 
 **The ABI is unstable before 1.0.** Struct layouts, status codes and
 signatures can change in any release. Build against the version you ship
@@ -31,72 +28,28 @@ with and check `tddlog_version()` at run time.
 
 ## Install
 
-Each GitHub release ([v0.1.0](https://github.com/Tractables/tddlog/releases/tag/v0.1.0), the latest)
-attaches a prebuilt archive for Linux x86-64 and ARM64, macOS ARM64 and
-x86-64 and Windows x86-64 (`tddlog-c-v0.1.0-<target>.tar.gz`, `.zip` on
-Windows, each with a `.sha256`), which needs no Rust toolchain. A
-`.tar.gz` is the installed package below: the header in `include/`, the
-shared library beside the static one, the CMake package and
-`lib/pkgconfig` in `lib/`, and the license and notices in
-`share/licenses/tddlog`. Set `CMAKE_PREFIX_PATH` to the unpacked
-directory, or `PKG_CONFIG_PATH` to its `lib/pkgconfig`. The Windows zip
-holds the header, `tddlog_c.dll`, its import library `tddlog_c.dll.lib`
-and the static `tddlog_c.lib`. Each archive's `NATIVE-STATIC-LIBS.txt`
-names the system libraries a static link needs on that platform. On
-Linux x86-64, for example:
+The [release](https://github.com/Tractables/tddlog/releases/tag/v0.1.0)
+has a prebuilt archive for Linux x86-64 and ARM64, macOS ARM64 and
+x86-64, and Windows x86-64. It needs no Rust toolchain. On Linux x86-64:
 
 ```sh
 curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-c-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
 export PKG_CONFIG_PATH=$PWD/tddlog-c-v0.1.0-x86_64-unknown-linux-gnu/lib/pkgconfig
-```
-
-To build and install the package from a checkout instead, with Rust 1.88
-or newer ([rustup](https://rustup.rs) installs it), a C++20 compiler (GCC 11 or newer or Clang 14 or newer) for the
-tree-decomposition solvers goatd vendors, a C compiler, `make` and CMake
-3.16 or newer; the command line's
-[install notes](https://github.com/Tractables/tddlog#install) say what
-to do when the default `cargo` or `g++` is older. The build takes a few
-minutes on eight cores:
-
-```sh
-git clone --depth 1 https://github.com/Tractables/tddlog
-cd tddlog
-cmake -S bindings/c -B build/c -DCMAKE_BUILD_TYPE=Release
-cmake --build build/c --config Release
-ctest --test-dir build/c -C Release --output-on-failure
-cmake --install build/c --config Release --prefix /your/install/prefix
-```
-
-The installation holds the header, the shared library, a CMake package,
-a pkg-config file, and the license and notices under
-`share/licenses/tddlog`. An application then uses
-`find_package(tddlog CONFIG REQUIRED)` and links `tddlog::tddlog`, with
-`CMAKE_PREFIX_PATH` set to the prefix, or reads its flags from
-pkg-config:
-
-```sh
-export PKG_CONFIG_PATH=/your/install/prefix/lib/pkgconfig
 cc prog.c $(pkg-config --cflags --libs tddlog) -o prog
 ```
 
-The dynamic loader has to find the library at run time (an rpath,
-`LD_LIBRARY_PATH` on Linux, `DYLD_LIBRARY_PATH` on macOS). The CMake
-package is for Linux and macOS.
-
-Without CMake, as on Windows,
-`cargo build --release --manifest-path bindings/c/Cargo.toml` builds the
-libraries in `bindings/c/target/release`: `libtddlog_c.so`
-(`libtddlog_c.dylib` on macOS) and `libtddlog_c.a`, or on Windows
-`tddlog_c.dll`, `tddlog_c.dll.lib` and `tddlog_c.lib`. The header is
-`bindings/c/include/tddlog.h`. A static link also needs the C++ runtime
-and the system libraries that
-`cargo rustc --release --manifest-path bindings/c/Cargo.toml -- --print native-static-libs`
-prints, after the archive. On Linux:
-
-```sh
-cc -Ibindings/c/include prog.c bindings/c/target/release/libtddlog_c.a \
-   -lstdc++ -lgcc_s -lutil -lrt -lpthread -lm -ldl -lc -o prog
-```
+- A `.tar.gz` holds the header in `include/`, the shared and static
+  libraries, the CMake package and `lib/pkgconfig` in `lib/`, and the
+  license and notices in `share/licenses/tddlog`.
+- With CMake, set `CMAKE_PREFIX_PATH` to the unpacked directory, call
+  `find_package(tddlog CONFIG REQUIRED)` and link `tddlog::tddlog`. The
+  CMake package is for Linux and macOS.
+- The Windows zip holds the header, `tddlog_c.dll`, its import library
+  `tddlog_c.dll.lib` and the static `tddlog_c.lib`.
+- `NATIVE-STATIC-LIBS.txt` in each archive names the system libraries a
+  static link needs.
+- The dynamic loader has to find the library at run time: an rpath,
+  `LD_LIBRARY_PATH` on Linux or `DYLD_LIBRARY_PATH` on macOS.
 
 ## Getting started
 
@@ -121,75 +74,77 @@ if (tddlog_solution_evidence_probability(solution, &evidence, &log10_evidence))
 tddlog_solution_free(solution);
 ```
 
-`examples/alarm.c` runs it on the alarm example and checks the answers
-against the probabilities worked out by hand. It calls `log10`, so it
-links the maths library too, `-lm` after the package's flags or `m`
-after `tddlog::tddlog` in CMake:
+`examples/alarm.c` runs it on the alarm example and checks the answers.
+It calls `log10`, so it links the maths library too:
 
 ```sh
 cc bindings/c/examples/alarm.c $(pkg-config --cflags --libs tddlog) -lm -o alarm
 ```
 
-- `TddlogOptions` holds the command line's options: `vtree` (`--vtree`,
-  null for `"auto"`), `evidence_probability` (`--evidence-probability`)
-  and `queries` (false for `--no-queries`, which needs
-  `evidence_probability`). Null options are the defaults.
-- `format` in the options says what the text is, as the command line
-  tells it by the file's extension: `"problog"` or null (an LPAD where it
-  holds `:- begin_lpad.`), `"dice"`, `"circulette"` (a `.cql` netlist),
-  or a network's, `"bif"`, `"hugin"`
-  (`.net`), `"xdsl"` or `"uai"`, with every variable queried. A network's
-  `evidence` is the text of its evidence file, an Ace `.inst` file or,
-  for a UAI network, a UAI `.evid` file. For a UAI network,
-  `P(e)` is the partition function given the evidence.
-- `arguments` in the options, `num_arguments` strings, are a ProbLog
-  program's, an LPAD's or a Dice program's arguments, the values the
-  command line takes after the program's file: each the text of a term
-  that takes the places `$1`, `$2`, ... of the program; in a Dice
-  program a place stands for an integer, and its argument is a natural
-  number.
+- `TddlogOptions` holds the command line's options: `vtree`,
+  `evidence_probability` and `queries`. Null options are the defaults.
+- `format` says what the text is: `"problog"` or null (LPADs included),
+  `"dice"`, `"circulette"`, or a network's `"bif"`, `"hugin"`, `"xdsl"`
+  or `"uai"`.
+- `evidence` is the text of a network's evidence file (Ace's `.inst` or
+  UAI's `.evid`).
+- `arguments` are strings that take the program's places `$1`, `$2`, ...
 - `tddlog_solve` returns `TDDLOG_OK` or an error status, and
-  `tddlog_last_error_message()` the message the command line prints:
-  `TDDLOG_ERROR_INVALID_INPUT` for a null pointer, an unknown format or
-  strategy, evidence for a program that is not a network, arguments for
-  a network, an argument that is not a term (for a Dice program, not a
-  natural number) or that no place takes, or options that ask for
-  nothing;
-  `TDDLOG_ERROR_PARSE`, `TDDLOG_ERROR_GROUND` and `TDDLOG_ERROR_COMPILE`
-  for a program tddlog cannot answer; `TDDLOG_ERROR_PANIC` for a bug.
-- The answers are in the order of the program's queries, each as ProbLog
-  prints it. Where the evidence is inconsistent,
-  `tddlog_solution_consistent` is false and there are none.
-- `tddlog_solution_evidence_probability` gives `P(e)` and its base-10
-  logarithm, which stays exact where `P(e)` is under the least double,
-  when `evidence_probability` asked for them, and returns false
-  otherwise.
-- The caller frees the solution with `tddlog_solution_free`; its query
-  strings live until then. The string from `tddlog_last_error_message()`
-  lives until the next `tddlog_solve` on that thread.
-- tddlog is single-threaded: each thread may solve its own program, and
+  `tddlog_last_error_message()` gives the command line's message.
+- The answers are in the order of the program's queries. Where the
+  evidence is inconsistent, `tddlog_solution_consistent` is false and
+  there are none.
+- The caller frees the solution with `tddlog_solution_free`. Its query
+  strings live until then.
+- tddlog is single-threaded. Each thread may solve its own program, and
   error messages are kept per thread.
 
 The [header](https://github.com/Tractables/tddlog/blob/main/bindings/c/include/tddlog.h)
-documents every type and function, and the
+documents every type, function and status code. The
 [guide](https://tractables.github.io/tddlog/guide/) describes the
-language, with worked examples that open in the
-[playground](https://tractables.github.io/tddlog/playground/).
+language, and its worked examples open in the
+[playground](https://tractables.github.io/tddlog/playground/). The
+[website](https://tractables.github.io/tddlog/) has the benchmark results.
 
-## Develop
+## Build from source
 
-`python bindings/c/check.py` builds, tests and installs the package with
-CMake, then builds and runs the example against the installed package,
-moved to another prefix, through both CMake and pkg-config (which it
-needs on PATH). `tests/answers.c` checks 14 of ProbLog's system
-tests against ProbLog's answers under several vtree strategies, and a
-Dice program and networks read in their formats.
+This needs Rust 1.88 or newer ([rustup](https://rustup.rs) installs it),
+a C++20 compiler, a C compiler, `make` and CMake 3.16 or newer. The
+guide's
+[getting started](https://tractables.github.io/tddlog/guide/#getting-started)
+says what to do if the build fails.
 
+```sh
+git clone --depth 1 https://github.com/Tractables/tddlog
+cd tddlog
+cmake -S bindings/c -B build/c -DCMAKE_BUILD_TYPE=Release
+cmake --build build/c --config Release
+ctest --test-dir build/c -C Release --output-on-failure
+cmake --install build/c --config Release --prefix /your/install/prefix
+```
+
+The installation is laid out as the archive above. Without CMake, as on
+Windows, cargo builds the libraries in `bindings/c/target/release`, and
+the header is `bindings/c/include/tddlog.h`:
+
+```sh
+cargo build --release --manifest-path bindings/c/Cargo.toml
+```
+
+A static link also needs the C++ runtime and the system libraries that
+`cargo rustc --release --manifest-path bindings/c/Cargo.toml -- --print native-static-libs`
+prints. On Linux:
+
+```sh
+cc -Ibindings/c/include prog.c bindings/c/target/release/libtddlog_c.a \
+   -lstdc++ -lgcc_s -lutil -lrt -lpthread -lm -ldl -lc -o prog
+```
+
+`python bindings/c/check.py` builds, tests and installs the package, then
+builds the example against it through CMake and pkg-config.
 `include/tddlog.h` is generated from `src/lib.rs` by
-[cbindgen](https://github.com/mozilla/cbindgen), which the crate's build
-script runs, and committed. `check.py` fails where the committed copy has
-drifted; after changing `src/lib.rs`, run
-`python bindings/c/check.py --write-header`.
+[cbindgen](https://github.com/mozilla/cbindgen) and committed. After
+changing `src/lib.rs`, run `python bindings/c/check.py --write-header`.
 
 ## Acknowledgements
 
