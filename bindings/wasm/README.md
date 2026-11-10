@@ -100,7 +100,7 @@ results page's app through its `extend` hooks and reads the results
 page's data and `next/views.json`, which is generated with it: each
 comparison's kind on each instance, the comparisons over each kind, and
 the census of the programs tddlog does not run. The addresses the front
-page once had (`#/tools/...`, `#/system/...`, the draft at `next/`) open
+page once had (`#/tools/...`, `#/system/...`) open
 the same views. Beside every view of the front page and of the results
 page is the site's menu (`results.js`'s rail): each section a heading with
 its entries under it, the ten baselines that answer most and the rest
