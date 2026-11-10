@@ -69,9 +69,9 @@ The results page shows the release run against every exact system that
 accepts a suite's programs, one view at a time, named by the address's
 hash and browsed from a rail beside it: an overview of the kinds of
 problems; for each kind, the instances each system answers within a time
-limit and its total time, as the README's figures; for each suite a plot,
-tddlog against each system, the findings, its families and a table of
-every instance's times; and for each family of instances their times,
+limit and its total time, as the README's figures, narrowed to a family
+(a suite's address opens its kind's view of its family);
+and for each family of instances their times,
 each instance's programs in every language a system was given, its
 answers, and every run of a system in a drawer beside the view.
 `results/results.js` draws it from `suites.json` (the networks and the

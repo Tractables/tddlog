@@ -20,7 +20,7 @@
 //   #/methods              how the runs were made and the results counted, a table
 // #/tools/... and #/system/... are the addresses these pages once had. A
 // type of program is results.js's view (#/category/C), with its comparisons
-// head-to-head and translated before the rest; a suite, a family and an
+// head-to-head and translated before the rest; a family and an
 // instance are results.js's views as they are.
 //
 // The data is views.json (written by the results' processing): each system's kind
