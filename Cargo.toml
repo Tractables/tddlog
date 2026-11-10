@@ -1,6 +1,6 @@
 [package]
 name = "tddlog"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Guy Van den Broeck"]
 edition = "2024"
 rust-version = "1.88"
@@ -12,13 +12,18 @@ documentation = "https://tractables.github.io/tddlog/api/tddlog/"
 readme = "README.md"
 keywords = ["problog", "probabilistic", "logic-programming", "decision-diagram", "inference"]
 categories = ["science", "command-line-utilities"]
+# What crates.io ships: the library, the command line and the examples. The
+# tests, the bindings and the site stay in the repository.
+include = ["/src/**", "/examples/**", "/Cargo.toml", "/Cargo.lock", "/README.md", "/LICENSE", "/NOTICE", "/THIRD-PARTY.md", "/CITATION.cff"]
 
 [dependencies]
+# tididi and goatd: this repository builds the pinned commits; the package on
+# crates.io depends on the releases that `version` names, the same code.
 # The TDD library.
-tididi = { git = "https://github.com/Tractables/tididi", rev = "22975ce64eed6cf6ec6f95d6cd60c7d52cae409b" }
+tididi = { git = "https://github.com/Tractables/tididi", rev = "61bb57c8f9afd3e001625fa35717b4996a377597", version = "0.2.0" }
 # Tree decompositions for the structure-aware vtree strategies. Its build.rs
 # compiles a vendored C++ FlowCutter, so building needs a C++ compiler.
-goatd = { git = "https://github.com/Tractables/goatd", rev = "e592d1e2233d4f724c6cb3475a4810d95e0b847a" }
+goatd = { git = "https://github.com/Tractables/goatd", rev = "e592d1e2233d4f724c6cb3475a4810d95e0b847a", version = "0.3.0" }
 rustc-hash = "2"
 # Exact weights for the sum-out's weight store (`src/query/sum_out.rs`), as
 # tididi's `RationalWeights` takes them.

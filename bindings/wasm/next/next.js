@@ -17,10 +17,11 @@
 //   #/circuits             the circuits Alea.jl exports, every system on them (results.js's view of a category)
 //   #/coverage             the programs each system's sources hold that tddlog does not run, and why
 //   #/how[/WALK[/N]]       how a program is answered: a run's stages, a walkthrough at its step N
+//   #/why                  why it is fast: the three gains that compound, and tddlog's optimizations, a card each
 //   #/methods              how the runs were made and the results counted, a table
 // #/tools/... and #/system/... are the addresses these pages once had. A
 // type of program is results.js's view (#/category/C), with its comparisons
-// head-to-head and translated before the rest; a suite, a family and an
+// head-to-head and translated before the rest; a family and an
 // instance are results.js's views as they are.
 //
 // The data is views.json (written by the results' processing): each system's kind
@@ -530,8 +531,18 @@ function typeSplit(c, route) {
 // A source of the census: what it holds, how many programs and how many
 // tddlog runs, each in a cell of its own, and why it does not run the others
 // (folded on the census's page, open on a baseline's, where it is the point).
+// A long text's first sentence, the rest folded under "More".
+function brief(text, cls) {
+  const cut = text.search(/(?<=[a-z0-9)'"]\.) (?=[A-Z])/);
+  if (cut < 0 || text.length < 260) return prose("p", text, { class: cls });
+  const box = element("div", { class: cls });
+  box.append(prose("p", text.slice(0, cut)), element("details", { class: "more" }, element("summary", {}, "More"),
+    prose("p", text.slice(cut + 1))));
+  return box;
+}
+
 // A reason of the census as its badge, what it means on hover.
-const reason = (k) => element("span", { class: `cls cls-${k.replace(/ /g, "-")}`, title: draft.views.census.classes[k] ?? null }, k);
+const reason =(k) => element("span", { class: `cls cls-${k.replace(/ /g, "-")}`, title: draft.views.census.classes[k] ?? null }, k);
 
 function censusSource(src, tool = false, open = false) {
   const n = (x) => (typeof x === "number" ? count(x) : x);
@@ -596,14 +607,14 @@ function coverageView() {
 // and its answers (docs/design.md, "How a program is answered"): what each
 // does, and where the code is.
 const STAGES = [
-  ["read", "a ProbLog file, a network or a Dice program, as a program", "src/input.rs"],
-  ["parse", "the program's clauses, queries and evidence", "src/syntax"],
-  ["ground", "rules without variables over the atoms the queries and evidence need", "src/ground"],
-  ["rewrite", "linear recursion written without recursion; indicators", "src/ground"],
-  ["layout", "a vtree over the facts, by auto's trials", "src/vtree"],
-  ["compile", "a TDD per derived atom, component by component", "src/tp"],
-  ["evidence", "weighted model counts of the queries against the evidence", "src/query"],
-  ["answers", "the probabilities, in the program's order", "src/solve"],
+  ["read", "a ProbLog program or LPAD, a Dice program, a netlist or a network file, read as one program", ["src/input.rs"]],
+  ["parse", "the program's clauses, queries and evidence", ["src/syntax"]],
+  ["ground", "the rules without variables that the queries and evidence need, simplified", ["src/ground"]],
+  ["rewrite", "linear recursion written out, and copies of atoms where the layout reads them", ["src/ground/eliminate.rs", "src/indicators"]],
+  ["layout", "a vtree over the facts: auto tries a few layouts, and the first to finish answers", ["src/vtree", "src/auto"]],
+  ["compile", "a TDD per derived atom, component by component", ["src/tp"]],
+  ["evidence", "the evidence conjoined, and each query counted against it", ["src/query", "src/eval"]],
+  ["answers", "the probabilities, in the program's order", ["src/solve"]],
 ];
 
 // A walkthrough's steps as a strip of the stages' names, one line, each
@@ -618,38 +629,25 @@ function stepper(w, steps, on) {
 // lists): a run of tddlog on each program, its trace
 // (walk/KEY.json, written by the command shown, `tddlog --trace`) drawn by
 // trace.js a step per stage, and a caption by hand over each step. Each
-// fact a caption states is the trace's or docs/design.md's.
+// fact a caption states is the trace's or docs/design.md's. A caption says
+// what is particular to the program in a sentence or two: what the stage
+// does is its line beside the heading, and its counts are the cells the
+// trace draws under the caption.
 const WALKS = [
   {
-    key: "reach", what: "Recursion, written without recursion before the compile; the fixpoint where a cycle stays.",
+    key: "reach", what: "Recursion over a graph with cycles, written without recursion before the compile.",
     file: "examples/cycle_graph.pl", example: "reachability", evidence: false,
     command: "tddlog --trace reach.json examples/cycle_graph.pl",
-    lede: "The probability that node 1 reaches each node of a graph with cycles, its 14 edges each with a probability of its own. The recursion is linear, so tddlog writes it without recursion.",
+    lede: "The probability that node 1 reaches each node of a graph with cycles, its 14 edges each with a probability of its own.",
     captions: {
-      read: "`tddlog::read` takes the bytes and their format. A ProbLog file is its own program, so there is no translation to show.",
-      parse: "The 14 edges as probabilistic facts, the two rules of `path/2`, the second reading `path` itself, and six queries `path(1,Y)`.",
-      ground: "Rules without variables over the atoms the queries need, paths from node 1 alone: one cyclic component of six atoms, round the graph.",
-      rewrite: "Reachability is written without recursion, its atoms eliminated one at a time as in Floyd and Warshall's algorithm (src/ground/eliminate.rs): eight acyclic components.",
-      layout: "`auto` gives a recursive program the `dynamic` trial, which finished in its first attempt: a vtree right-linear over a min-fill order of the 12 edges.",
-      compile: "Each atom's formula over the edges, in dependency order, by TDD operations; the largest, `path(1,6)`, has 79 pairs. No component is cyclic, so no fixpoint runs.",
-      evidence: "No evidence: each query was counted during the compile, once nothing read its formula.",
-      answers: "What `tddlog examples/cycle_graph.pl` prints, and ProbLog 2.3.0's answers (tests/it/examples.rs).",
-    },
-  },
-  {
-    key: "gears", what: "Atoms that support only each other are false; the loop left is written without recursion.",
-    file: "examples/gearwheels.pl", example: "gears", evidence: false,
-    command: "tddlog --trace gears.json examples/gearwheels.pl",
-    lede: "Two gear wheels that turn each other and a button for each (Bogaerts and Van den Broeck 2015, Example 4.13): not stratified, so its meaning is its well-founded model.",
-    captions: {
-      read: "A ProbLog file is its own program, so there is no translation to show.",
-      parse: "10 clauses: the two buttons as probabilistic facts and 8 rules, two reading `turns1(0)` and `turns2(0)` under negation; three queries.",
-      ground: "At time 0, `turns1(0)` and `turns2(0)` support only each other, so both are false and the rules reading them simplify; `turns1(1)` and `turns2(1)` form one cycle.",
-      rewrite: "Each rule reads one atom of the cycle, so it is written without recursion: `turns1(1)` reads the two buttons, `turns2(1)` its button and `turns1(1)`.",
-      layout: "`auto` gives this program the `dynamic` trial, and it finished in its first attempt. The vtree's two leaves are the buttons.",
-      compile: "`turns1(1)` first, then `turns2(1)`, which reads it, each from its rules' bodies by TDD operations, 3 pairs each. No component is cyclic, so no fixpoint runs.",
-      evidence: "No evidence: the queries were counted during the compile, and `turns1(0)` is false.",
-      answers: "0 at time 0, and 1 − 0.7 × 0.4 = 0.72 for each wheel at time 1: ProbLog 2.3.0's answers (tests/it/examples.rs).",
+      read: "A ProbLog file is the program as it stands: there is nothing to translate.",
+      parse: "The 14 edges as probabilistic facts, the two rules of `path/2` (the second reads `path` itself) and six queries `path(1,Y)`.",
+      ground: "Only the paths from node 1 are ground, since the queries need no others. They form one cyclic component of six atoms, round the graph.",
+      rewrite: "The recursion is linear, so tddlog writes it out: the cycle's atoms are eliminated one at a time, as in Floyd and Warshall's algorithm. Eight acyclic components are left.",
+      layout: "`auto` gives this program one trial, `dynamic`, and it finished in its first attempt. The vtree is right-linear over a min-fill order of the 12 edges.",
+      compile: "Each atom's formula over the edges is built by TDD operations, in dependency order. The largest, `path(1,6)`, has 79 pairs. No cycle is left, so no fixpoint runs.",
+      evidence: "There is no evidence, so each query was counted during the compile.",
+      answers: "What `tddlog examples/cycle_graph.pl` prints. ProbLog 2.3.0 gives the same answers (tests/it/examples.rs).",
     },
   },
   {
@@ -658,76 +656,76 @@ const WALKS = [
     command: "tddlog --trace tpch.json examples/tpch_q2.pl",
     lede: "TPC-H's query 2 as a Boolean query: is a brass part of size 15 supplied from Europe? Five relations of 334 tuples, each an independent probabilistic fact.",
     captions: {
-      read: "A ProbLog file is its own program: each relation's tuples as probabilistic facts, then the query.",
-      parse: "335 clauses: the 334 tuples of `region`, `nation`, `supplier`, `part` and `partsupp`, and the rule of `q2`; one query.",
-      ground: "Grounding evaluates the joins and selections as a database does: one part is brass of size 15, and two of its four suppliers are in Europe. Left: the lineage, 2 rules over 8 tuples.",
-      rewrite: "No recursion to write out and no indicators: the two rules compile as ground.",
-      layout: "`auto`'s `td` trial finished in its first attempt: a vtree over the 8 tuples, from a tree decomposition of width 5.",
-      compile: "`q2`, the disjunction of its two rules' conjunctions, by TDD operations: one component of 30 pairs, stored as its negation (the dual).",
-      evidence: "No evidence: `q2` was counted during the compile, once nothing read its formula.",
-      answers: "0.017751203, the product formula in the program's header, each tuple read once, and ProbLog 2.3.0's answer (tests/it/examples.rs).",
+      read: "A ProbLog file: each relation's tuples as probabilistic facts, then the query.",
+      parse: "The 334 tuples of `region`, `nation`, `supplier`, `part` and `partsupp`, and the one rule of `q2`.",
+      ground: "Grounding evaluates the joins and selections as a database does: one part is brass of size 15, and two of its four suppliers are in Europe. The lineage is 2 rules over 8 tuples. The lone query is observed, which fixes the two tuples both rules read, of `part` and `region`, and keeps their product as a factor: 6 tuples are left.",
+      rewrite: "Nothing to rewrite: there is no recursion, and this layout reads no copies.",
+      layout: "`auto`'s `td` trial finished in its first attempt: a vtree over the 6 tuples, from a tree decomposition of width 3.",
+      compile: "`q2` is the disjunction of its two rules' conjunctions: one component of 21 pairs.",
+      evidence: "The program has no evidence of its own. The observed `q2` is conjoined into 19 pairs, whose count times the factor answers the query.",
+      answers: "0.017751203. The product formula in the program's header, which reads each tuple once, and ProbLog 2.3.0 give the same (tests/it/examples.rs).",
     },
   },
   {
-    key: "network", what: "A network file read as a program: its tables, its families and the evidence.",
+    key: "network", what: "A network file read as a program: its tables, then the evidence.",
     file: "examples/car.net", example: "car", evidence: true,
     command: "tddlog --trace network.json --evidence-probability --evidence examples/car.inst --query fuel,plugs,starter examples/car.net",
-    lede: "A car that does not start on a cold morning, a Hugin network of 13 variables: the headlights are bright, the fuel gauge low (examples/car.inst). Is it the fuel, the plugs or the starter?",
+    lede: "A car that does not start on a cold morning, a Hugin network of 13 variables. The headlights are bright and the fuel gauge is low (examples/car.inst): is it the fuel, the plugs or the starter?",
     captions: {
-      read: "The network and its evidence are read as one program, `tddlog --program`'s: each row of a table an annotated disjunction over the values it gives a chance. It is examples/bn_car_evidence.pl.",
-      parse: "42 clauses: 31 annotated disjunctions and 11 rules, the rows certain of one value (`cranks(no) :- battery(flat), starter(faulty)`); four observations and seven queries.",
-      ground: "A choice among n values becomes n − 1 switches, each given the ones before (`'$swbattery_3_1'` at 0.4/0.8 = 0.5). `weather(cold)` is fixed, its 0.3 a factor of P(e): 24 components.",
-      rewrite: "`families:0` reads each atom another family reads through a copy (`'$v'`, 29 copies of 21 atoms), tied to it by an observed link (`'$c'`): 16 observations, 3 of the network's and 13 links.",
-      layout: "`auto`'s `families:0` trial finished in its first attempt: 23 families in 12 groups, laid out by a tree decomposition of width 2; 65 leaves, 36 switches and 29 copies.",
-      compile: "37 components of one atom, none cyclic, each stored as its negation (the dual). The links hold the tables' rows; the largest, `cranks(yes)` as `starts(no)` reads it, has 106 pairs.",
+      read: "The network and its evidence are read as one program, the one `tddlog --program` prints (examples/bn_car_evidence.pl). Each row of a table is an annotated disjunction over the values it gives a chance.",
+      parse: "31 annotated disjunctions, and 11 rules for the rows certain of one value, such as `cranks(no) :- battery(flat), starter(faulty)`; four observations and seven queries.",
+      ground: "A choice among n values becomes n − 1 switches, each given the ones before. The observed `weather(cold)` is fixed here, and its 0.3 is kept as a factor of P(e).",
+      rewrite: "The `families:0` layout reads an atom of another family through a copy, a variable of its own tied to the atom by an observed link: 29 copies of 21 atoms, and 13 links beside 3 of the network's observations.",
+      layout: "`auto`'s `families:0` trial finished in its first attempt: 23 families in 12 groups, laid out by a tree decomposition of width 2. The vtree's 65 leaves are 36 switches and 29 copies.",
+      compile: "37 components of one atom each, none cyclic. The links hold the tables' rows. The largest formula, 106 pairs, is `cranks(yes)` as `starts(no)` reads it.",
       evidence: "The 16 observations are conjoined along the vtree into 438 pairs, whose count is P(e) = 0.0226. Each query is counted against it: P(q | e) = WMC(q ∧ e) / WMC(e).",
-      answers: "An empty tank goes from 0.10 to 0.29, fouled plugs from 0.20 on a cold day to 0.47, a faulty starter from 0.03 to 0.10: a sum over the worlds' answers and ProbLog's (tests/it/networks.rs).",
+      answers: "An empty tank goes from 0.10 to 0.29, fouled plugs from 0.20 on a cold day to 0.47, a faulty starter from 0.03 to 0.10. A sum over the worlds and ProbLog give the same answers (tests/it/networks.rs).",
     },
   },
   {
-    key: "markov", what: "A UAI Markov network: its factors as observed atoms, its colour symmetry broken, Z from P(e).",
+    key: "markov", what: "A UAI Markov network: its factors as observed atoms, and Z from P(e).",
     file: "tests/regress/potts.uai", example: null, evidence: false,
     command: "tddlog --trace markov.json --no-queries --evidence-probability tests/regress/potts.uai",
     lede: "A UAI Markov network: five variables of three values and six Potts factors over pairs, a weighted graph colouring. Asked nothing (`--no-queries`), tddlog answers Z.",
     captions: {
-      read: "Each variable an annotated disjunction, each factor an observed atom `fJ(ok)` with a rule per nonzero entry; fixing `x0` breaks the colours' symmetry, a third of Z left (docs/design.md).",
-      parse: "55 clauses: the fact `x0(v_0)`, four annotated disjunctions, 50 rules (19 of them probabilistic) and seven observations, `f0` to `f6`.",
-      ground: "The observations fix `x0` and `x2` before any diagram is built, and rows of one weight share a class atom: 41 rules over 42 atoms become 33 over 29, none cyclic.",
-      rewrite: "`families:0` reads each atom another family reads through a copy (`'$v'`, 22 copies of 13 atoms), tied to it by an observed link (`'$c'`).",
-      layout: "`auto`'s `families:0` trial finished in its first attempt: 14 families in 10 groups, laid out by a tree decomposition of width 2; 32 leaves, 10 switches and 22 copies.",
-      compile: "27 components of one atom, in dependency order, each stored as its negation (the dual). The largest, `f3(ok)` at 34 pairs, is the one factor nothing fixed.",
-      evidence: "The 14 observations are conjoined along the vtree, each variable summed out once nothing later reads it: 11 summing joins, one pair. P(e) = 5/81, about 0.0617.",
-      answers: "Z = P(e) × 10^c, c the offset of the program's first line: 112.5, the 225/2 that tests/it/networks.rs takes from an enumeration of the worlds.",
+      read: "Each variable is an annotated disjunction, and each factor an observed atom `fJ(ok)` with a rule per nonzero entry. Fixing `x0` breaks the colours' symmetry and leaves a third of Z (docs/design.md).",
+      parse: "The fact `x0(v_0)`, four annotated disjunctions, 50 rules (19 of them probabilistic) and seven observations: the six factors, `f0` to `f5`, and `f6`, which symmetry breaking adds.",
+      ground: "The observations fix `x0` and `x2` before any diagram is built, and rows of one weight share a class atom: 41 rules over 42 atoms become 33 over 29.",
+      rewrite: "As for a Bayesian network, the `families:0` layout reads an atom of another family through a copy tied to it by an observed link: 22 copies of 13 atoms.",
+      layout: "`auto`'s `families:0` trial finished in its first attempt: 14 families in 10 groups, laid out by a tree decomposition of width 2. The vtree's 32 leaves are 10 switches and 22 copies.",
+      compile: "27 components of one atom each, in dependency order. The largest, `f3(ok)` at 34 pairs, is the one factor nothing fixed.",
+      evidence: "Only P(e) is wanted, so as the 14 observations are conjoined along the vtree, each variable is summed out once nothing later reads it: 11 summing joins leave one pair. P(e) = 5/81, about 0.0617.",
+      answers: "Z = P(e) × 10^c, with c the offset on the program's first line: 112.5, the 225/2 that tests/it/networks.rs takes from an enumeration of the worlds.",
     },
   },
   {
     key: "dice", what: "A probabilistic functional program: integers held as bits, a derived atom per bit and step.",
     file: "tests/dice/walk.dice", example: "walk", evidence: true,
     command: "tddlog --trace dice.json --evidence-probability tests/dice/walk.dice",
-    lede: "A random walk on 0..7 in Dice: ten steps of plus or minus one from 3, absorbed at either end, observed not to end at 0. tddlog reads Dice itself, an integer as bits.",
+    lede: "A random walk on 0..7 in Dice: ten steps of plus or minus one from 3, absorbed at either end, observed not to end at 0. tddlog reads Dice itself and holds an integer as bits.",
     captions: {
-      read: "The Dice front end evaluates the program symbolically into Datalog: the count a fact `steps(10)`, `x` three bits per step, each step's flip `0.4::x_c_3(T)`, and a query `x(V)` per value.",
-      parse: "45 clauses: the flip as a probabilistic rule, the count and the start as facts, and 41 rules; eight queries and the observation `obs`.",
-      ground: "The steps are ground level by level, constants proved as each completes, and equal gates merged (`swept`: proved equal by a SAT solver): 216 atoms become 90.",
-      rewrite: "No recursion is left once the steps are ground, and `closed` reads no indicators: the program compiles as ground.",
-      layout: "`closed` is `auto`'s first trial for few facts with many derived atoms per fact (here 10 and 80): new facts on a right-linear spine, over the ten flips a chain.",
-      compile: "Each of the 80 gates is a component, compiled in dependency order a step after the other; the formulas grow with the steps, up to 59 pairs.",
-      evidence: "The observation is conjoined into 41 pairs, whose count is P(e) = 0.432898, the probability that the walk does not end at 0.",
-      answers: "Ten steps from 3 end on an odd number unless absorbed at 0, which is observed away, so the even values have probability 0. Dice's answers are the same (tests/it/examples.rs).",
+      read: "The Dice front end evaluates the program symbolically into Datalog: `x` is three bits per step, each step's flip is `0.4::x_c_3(T)`, the count is a fact `steps(10)`, and each value has a query `x(V)`.",
+      parse: "The flip as a probabilistic rule, the count and the start as facts, and 41 rules; eight queries and the observation `obs`.",
+      ground: "The steps are ground level by level, constants are proved as each level completes, and equal gates are merged, some proved equal by a SAT solver (`swept`): 216 atoms become 90.",
+      rewrite: "No recursion is left once the steps are ground. The `program` layout keeps the views in place, and names 13 atoms, bits of the walk's position that cross its 5 narrow cuts, each through a copy and an observed link.",
+      layout: "`auto`'s first trial here is `program`, since the program is built of gates and ties no tables. The vtree is right-linear, an OBDD, and its 23 leaves are the ten flips and the 13 copies, step by step.",
+      compile: "165 components, a derived atom each, compiled in dependency order, one step after the other. Past a cut a formula reads the copies, not the steps before, and the largest has 34 pairs.",
+      evidence: "The observation and the 13 links are conjoined into 117 pairs, whose count is P(e) = 0.432898: the probability that the walk does not end at 0.",
+      answers: "Ten steps from 3 end on an odd number unless absorbed at 0, which is observed away, so the even values have probability 0. Dice gives the same answers (tests/it/examples.rs).",
     },
   },
   {
-    key: "circuit", what: "The and-inverter graph of Alea.jl's circuit, optimized, then compiled gate by gate in dependency order.",
+    key: "circuit", what: "Alea.jl+tddlog: Alea.jl builds a circuit of the program, and tddlog optimizes it and compiles it gate by gate.",
     file: "examples/alea_dice.pl", example: "circuit", evidence: true,
     command: "tddlog --trace circuit.json --evidence-probability examples/alea_dice.pl",
     lede: "Two dice, the first at least 4, as the circuit Alea.jl builds (8 flips, 78 gates), in ProbLog. The queries: the sum is 7 (`q1`), the first shows more (`q2`).",
     captions: {
-      read: "A probabilistic fact per flip, `f1` to `f8`; an and-gate a rule, an or-gate a rule per input, a negated input written `\\+`.",
-      parse: "119 clauses: the 8 flips and 111 rules; two queries and one observation.",
-      ground: "The gates are optimized as an and-inverter graph before any diagram: 24 views inlined, 19 atoms merged, 4 proved equal by SAT sweeping; 88 atoms and 111 rules become 40 and 49.",
-      rewrite: "The `program` layout keeps the views in place, the 81 derived atoms as written, and names `g76`, which crosses the one narrow cut, through a copy and an observed link.",
-      layout: "`auto`'s first trial is `program`: a vtree right-linear over the flips, an OBDD in the order Alea.jl's BDD package built the circuit in; 9 leaves, the 8 flips and the copy.",
-      compile: "81 components, a derived atom each, bottom-up in dependency order, each gate once. Each is stored as its negation (the dual), so the trace counts no disjunctions; the largest has 60 pairs.",
+      read: "Alea.jl+tddlog: Alea.jl builds the circuit, and its tddlog backend writes it as this program. A flip is a probabilistic fact `f1` to `f8`, an and-gate a rule, an or-gate a rule per input, and a negated input is written `\\+`.",
+      parse: "The 8 flips and 111 rules; two queries and one observation.",
+      ground: "Before any diagram is built, the gates are optimized as an and-inverter graph: 24 views inlined, 19 atoms merged, 4 proved equal by SAT sweeping. 88 atoms and 111 rules become 40 and 49.",
+      rewrite: "The `program` layout keeps the views in place, the 81 derived atoms as written. It names one, `g76`, which crosses the one narrow cut, through a copy and an observed link.",
+      layout: "`auto`'s first trial here is `program`: a vtree right-linear over the flips, an OBDD in the order Alea.jl's BDD package built the circuit in. Its 9 leaves are the 8 flips and the copy.",
+      compile: "81 components, a derived atom each, bottom-up in dependency order, each gate once; the largest has 60 pairs. Each formula is stored as its negation, so the operations count no disjunctions.",
       evidence: "The observation and the link are conjoined into 40 pairs: P(e) = 0.5, the first die at least 4. Both queries are counted against it.",
       answers: "1/6 and 2/3, the answers the two dice give by hand (tests/it/examples.rs).",
     },
@@ -738,14 +736,30 @@ const WALKS = [
     command: "tddlog --trace roulette.json --evidence-probability tests/roulette/lib/diagnosis.pl",
     lede: "A fault diagnosis in Roulette (tests/roulette/lib/diagnosis.rkt): an and gate fails with probability 0.1, an or gate with 0.2, and the output is observed wrong. Which gate failed?",
     captions: {
-      read: "Roulette+tddlog: Roulette runs the program symbolically into a circuit, which Roulette's tddlog engine writes as this program: a flip per random choice, a rule per gate.",
-      parse: "20 clauses: 4 flips (the inputs, of probability 1 and 0, and the faults `f3` and `f4`), 15 rules and a fact; the output `g9` observed, and 4 queries.",
-      ground: "The inputs are constants, so the gates fold away: 16 rules over 17 atoms become 6 over 7, the output the exclusive or of the faults. The observation makes `q4(1)` false.",
-      rewrite: "No recursion to write out and no indicators: the program compiles as ground.",
-      layout: "`auto`'s `td` trial finished in its first attempt: a vtree of two leaves, the faults.",
-      compile: "5 components of one atom each, in dependency order; the largest, `g9`, has 2 pairs.",
-      evidence: "The observations, `g9` true and `q4(1)` false, are conjoined into 2 pairs: P(e) = 0.26, the probability that exactly one gate fails.",
-      answers: "The and gate failed with probability 0.08 / 0.26, the or gate with 0.18 / 0.26, never both: the answers computed by hand in the program (tests/it/examples.rs).",
+      read: "Roulette+tddlog: Roulette runs the program symbolically into a circuit, and its tddlog engine writes the circuit as this program: a flip per random choice, a rule per gate.",
+      parse: "4 flips (the inputs, of probability 1 and 0, and the faults `f3` and `f4`), 15 rules and a fact; the output `g9` is observed, and there are 4 queries.",
+      ground: "The inputs are constants, so the first gates fold away: 16 rules over 17 atoms become 8 over 9. `g6` is the fault `f3` itself and takes its place, and the output is the exclusive or of `g6` and `f4`.",
+      rewrite: "Nothing to rewrite: there is no recursion, and this layout reads no copies.",
+      layout: "`auto`'s `program` trial finished in its first attempt: a vtree of two leaves, the faults `g6` and `f4`.",
+      compile: "7 components of one atom each, in dependency order; the largest, `g9`, has 2 pairs.",
+      evidence: "The observation, `g9` true, is 2 pairs: P(e) = 0.26, the probability that exactly one gate fails.",
+      answers: "The and gate failed with probability 0.08 / 0.26 and the or gate with 0.18 / 0.26, never both: the answers computed by hand in the program (tests/it/examples.rs).",
+    },
+  },
+  {
+    key: "gears", what: "Negation through a loop: atoms that support only each other are false.",
+    file: "examples/gearwheels.pl", example: "gears", evidence: false,
+    command: "tddlog --trace gears.json examples/gearwheels.pl",
+    lede: "Two gear wheels that turn each other, and a button for each (Bogaerts and Van den Broeck 2015, Example 4.13). The program is not stratified, so its meaning is its well-founded model.",
+    captions: {
+      read: "A ProbLog file is the program as it stands: there is nothing to translate.",
+      parse: "The two buttons as probabilistic facts and 8 rules, two of which read `turns1(0)` and `turns2(0)` under negation; three queries.",
+      ground: "At time 0, `turns1(0)` and `turns2(0)` support only each other, so both are false. At time 1, `turns1(1)` and `turns2(1)` form one cycle.",
+      rewrite: "Each rule reads one atom of the cycle, so the cycle is written out: `turns1(1)` reads the two buttons, and `turns2(1)` reads its button and `turns1(1)`.",
+      layout: "`auto` gives this program one trial, `dynamic`, and it finished in its first attempt. The vtree's two leaves are the buttons.",
+      compile: "`turns1(1)` first, then `turns2(1)`, which reads it: 3 pairs each. No cycle is left, so no fixpoint runs.",
+      evidence: "There is no evidence: the queries were counted during the compile, and `turns1(0)` is false.",
+      answers: "0 at time 0, and 1 − 0.7 × 0.4 = 0.72 for each wheel at time 1. ProbLog 2.3.0 gives the same answers (tests/it/examples.rs).",
     },
   },
 ];
@@ -766,9 +780,33 @@ function walkTrace(key) {
   return draft.walks[key];
 }
 
-// A caption as a paragraph, `code` between backticks.
-const caption = (text, cls) => element("p", cls ? { class: cls } : {},
-  ...text.split("`").map((part, i) => (i % 2 ? element("code", {}, part) : part)));
+// The guide's terms a caption links, the first use of each in a step:
+// what matches, and the term's id in the guide (guide/#term-ID).
+const TERMS = [[/\bvtrees?\b/, "vtree"], [/\bpairs\b/, "pairs"], [/\btrials?\b/, "trial"], [/\blayouts?\b/, "layout"],
+  [/\bcomponents?\b/, "component"], [/\bTDDs?\b/, "tdd"], [/P\(e\)/, "evidence-probability"]];
+
+// A text with the terms not yet in `seen` linked to the guide, each once.
+function withTerms(text, seen) {
+  const out = [];
+  let rest = text;
+  while (rest) {
+    let first = null;
+    for (const [re, id] of TERMS) {
+      const m = seen.has(id) ? null : re.exec(rest);
+      if (m && (!first || m.index < first.m.index)) first = { m, id };
+    }
+    if (!first) break;
+    seen.add(first.id);
+    out.push(rest.slice(0, first.m.index), element("a", { href: `guide/#term-${first.id}`, class: "term" }, first.m[0]));
+    rest = rest.slice(first.m.index + first.m[0].length);
+  }
+  return [...out, rest];
+}
+
+// A caption as a paragraph, `code` between backticks; with `seen`, the
+// guide's terms outside the code linked (withTerms).
+const caption = (text, cls, seen) => element("p", cls ? { class: cls } : {},
+  ...text.split("`").map((part, i) => (i % 2 ? element("code", {}, part) : seen ? withTerms(part, seen) : part)));
 
 const playgroundHref = (w) => `playground/?example=${w.example}${w.evidence ? "&evidence=1" : ""}&trace=1`;
 
@@ -789,8 +827,9 @@ function howView(route) {
   const w = WALKS.find((x) => x.key === route.walk) ?? WALKS[0];
   const out = [crumbs(HOME, ...(route.walk ? [inSection("how"), [w.title]] : [[sectionName("how")]])),
     element("h2", {}, sectionName("how")),
-    element("p", { class: "lede one" }, "A run of tddlog a stage at a time, from its trace (", element("code", {}, "tddlog --trace"), "); ",
-      element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"), " describes each stage."),
+    element("p", { class: "lede one" }, "Pick a program and step through tddlog's run on it, drawn from the run's own trace (", element("code", {}, "tddlog --trace"), "). ",
+      element("a", { href: `${BRANCH}main/docs/design.md#how-a-program-is-answered` }, "docs/design.md"), " describes each stage. ",
+      link({ view: "why" }, WHY), ": the optimizations, each with an example."),
     element("nav", { class: "walks", "aria-label": "Walkthroughs" }, ...WALKS.map((x) =>
       element("a", { href: `#/how/${x.key}`, title: x.what, "aria-current": x === w ? "page" : null }, x.title)))];
   showMarked(out[out.length - 1]);
@@ -805,9 +844,12 @@ function howView(route) {
       element("p", { class: "small run" }, element("code", {}, w.command.slice(0, -w.file.length),
         element("a", { href: `${BRANCH}main/${w.file}` }, w.file)),
         ...(w.example ? [element("a", { href: playgroundHref(w), class: "try-btn" }, "Open in playground")] : [])));
+    // the stage's line beside the heading, its code a link each; the guide's terms linked once in the step
+    const seen = new Set();
     const body = element("div", { class: "step" }, element("h3", {}, `${i + 1}. ${s.title}`,
-      ...(stage ? [element("span", { class: "muted small" }, `${stage[1]}, in `, element("code", {}, stage[2]))] : [])));
-    if (w.captions[s.key]) body.append(caption(w.captions[s.key]));
+      ...(stage ? [element("span", { class: "muted small" }, ...withTerms(stage[1], seen), ", in ",
+        ...stage[2].flatMap((src, k) => [k ? " and " : "", element("a", { href: `${BRANCH}main/${src}` }, element("code", {}, src))]))] : [])));
+    if (w.captions[s.key]) body.append(caption(w.captions[s.key], null, seen));
     const drawn = element("div", { class: "walk-trace" });
     drawn.innerHTML = tddlogTrace.stepHtml(s);
     body.append(drawn);
@@ -817,6 +859,180 @@ function howView(route) {
     walk.replaceChildren(strip, head, body, nav);
     showMarked(strip);
   }, (e) => walk.replaceChildren(note(`The trace did not load: ${e.message}.`)));
+  return out;
+}
+
+// ------------------------------------------------------------- why it is fast
+
+const TP_PAPER = ["Tp-compilation", "Vlasselaer, Van den Broeck, Kimmig, Meert and De Raedt, IJCAI 2015", "https://www.ijcai.org/proceedings/2015/263"];
+
+// The three gains that compound: whose it is, what it is, its link, its
+// colour, and the paper its link is.
+const GAINS = [
+  ["tddlog", "optimizations in the pipeline", null, "mine"],
+  ["tididi", "highly optimized kernels", "https://github.com/Tractables/tididi", "lib"],
+  ["TDDs", "superpolynomial advantage over OBDDs", "https://arxiv.org/abs/2604.05537", "tdd", "A Canonical Generalization of OBDD"],
+];
+
+// The example the first two optimizations read: its program and its answer.
+const WHY_EXAMPLE = `0.6::edge(a,b).  0.3::edge(a,c).
+0.7::edge(b,c).  0.4::edge(c,b).
+0.8::edge(b,d).
+
+path(X,Y) :- edge(X,Y).
+path(X,Y) :- edge(X,Z), path(Z,Y).
+reach(Y) :- path(a,Y), \\+path(c,Y).
+
+evidence(path(a,c)).
+query(reach(d)).`;
+
+// The optimizations, in the pipeline's order. Each: its title; what it does
+// and why it helps, a line or two (code between backticks); what shows it
+// (`show`: {pre, cap} a program under its caption, {head, rows} a table, a
+// subscript written _{x}); the measured effect in a cell ([label, value]);
+// the papers it comes from ([technique, authors and venue, link]); the
+// walkthrough steps that show it ([walk, stage, the stage's step there],
+// which the browser test checks against the walkthrough's trace); and its
+// section of docs/design.md ([title, id]).
+const OPTIMIZATIONS = [
+  {
+    title: "Eliminate linear recursion",
+    lines: ["A cycle in the ground rules would make Tp-compilation iterate TDDs to a fixpoint.",
+      "Inlining `path(c,d)` gives a rule that reads its own head. It is true in no more worlds, so it is dropped: the least model is unchanged, and no fixpoint runs over large TDDs."],
+    show: [{ cap: "The recursive part of the ground rules: a cycle", pre: "path(b,d) :- edge(b,d).\npath(b,d) :- edge(b,c), path(c,d).\npath(c,d) :- edge(c,b), path(b,d)." },
+      { cap: "The second rule with path(c,d) inlined: dropped", pre: "path(b,d) :- edge(b,c), edge(c,b), path(b,d)." }],
+    effect: ["random graph g24_76", "over 150 s → 2.4 s"],
+    credit: [TP_PAPER],
+    walks: [["reach", "rewrite", 4]],
+    design: ["Grounding", "grounding-srcground"],
+  },
+  {
+    title: "Compile stratum by stratum",
+    lines: ["Each TDD is built from the finished TDDs of its rules' bodies."],
+    show: [{ head: ["stratum", "ground atom", "TDD operation"], rows: [
+      ["1", "`path(b,d)`", "D_{bd} ← e_{bd}"],
+      ["2", "`path(c,d)`", "D_{cd} ← AND(e_{cb}, D_{bd})"],
+      ["3", "`path(a,d)`", "D_{ad} ← OR(AND(e_{ab}, D_{bd}), AND(e_{ac}, D_{cd}))"],
+      ["4", "`reach(d)`", "Q ← AND NOT(D_{ad}, D_{cd})"]] }],
+    walks: [["reach", "compile", 6]],
+    design: ["Compilation", "compilation-srctp"],
+  },
+  {
+    title: "An indicator cuts a long chain",
+    lines: ["Compiled bottom up, D_{3} takes in every variable of the chain before it.",
+      "With an indicator x for `rain(2)`, x ⇔ D_{2} is conjoined later, and x is a leaf of the vtree. Heuristics decide where an indicator pays off, and inline the others."],
+    show: [{ cap: "Ground rules of a weather chain", pre: "rain(2) :- rain(1), stay(1).\nrain(2) :- \\+rain(1), start(1).\nrain(3) :- rain(2), stay(2).\nrain(3) :- \\+rain(2), start(2)." },
+      { head: ["", "D_{3}", "its variables"], rows: [
+        ["bottom up", "(D_{2} ∧ s_{2}) ∨ (¬D_{2} ∧ t_{2})", "r_{1}, s_{1}, t_{1}, s_{2}, t_{2}"],
+        ["with the indicator x", "(x ∧ s_{2}) ∨ (¬x ∧ t_{2})", "x, s_{2}, t_{2}"]] }],
+    effect: ["time over the benchmarks", "41% less"],
+    credit: [TP_PAPER],
+    walks: [["dice", "rewrite", 4], ["circuit", "rewrite", 4]],
+    design: ["Indicators and clause tables", "indicators-and-clause-tables-srcindicators"],
+  },
+  {
+    title: "Vtrees from tree decompositions",
+    lines: ["A tree decomposition of the ground rules becomes the vtree."],
+    show: [{ head: ["", ""], rows: [
+      ["ground rules", "`h :- a, b.` `k :- b, c.`"],
+      ["interaction graph", "the triangles a, b, h and b, c, k, sharing b"],
+      ["tree decomposition", "{a, b, h} — {b, c, k}"],
+      ["vtree", "c beside the pair of b and a"]] }],
+    walks: [["tpch", "layout", 5]],
+    design: ["Vtrees", "vtrees-srcvtree"],
+  },
+  {
+    title: "A portfolio of vtrees, in turns",
+    lines: ["Layouts take turns, each budget doubling: the first to finish answers."],
+    show: [{ head: ["", "layout", "its vtree"], rows: [
+      ["1", "program order", "the facts as the program states them (an OBDD)"],
+      ["2", "fan-in order", "the facts in the order the rules read them"],
+      ["3", "tree decomposition", "of the facts' interaction graph"],
+      ["4", "dependencies", "a subtree per atom, above the atoms it reads"],
+      ["5", "indicators", "a tree decomposition over indicators, at once"],
+      ["6", "indicators, searched", "the same, after a costly search for a narrower one"],
+      ["7", "decisions", "an if-then-else's guard above the facts it chooses between"],
+      ["8", "dynamic", "vtree rotations during the compile"]] }],
+    walks: [],
+    design: ["auto", "auto-srcauto"],
+  },
+  {
+    title: "Evidence once, then every query",
+    lines: ["One compile for the evidence, and every query is read off it."],
+    show: [{ head: ["", ""], rows: [
+      ["evidence", "one TDD, built once along the vtree"],
+      ["a query q that is a variable of the evidence's TDD", "one backward pass"],
+      ["any other query q", "its TDD counted against the evidence's: no TDD for q ∧ e, and the evidence's TDD unchanged"],
+      ["P(e) alone", "variables summed out once nothing reads them"]] }],
+    effect: ["network BN_22, P(e) alone", "93 s → 3.4 s"],
+    walks: [["network", "evidence", 7], ["markov", "evidence", 7]],
+    design: ["Evidence and queries", "evidence-and-queries-srcquery-srceval"],
+  },
+  {
+    title: "Find local structure",
+    lines: ["Six rows, twelve probabilities: two variables."],
+    show: [{ cap: "A network's table", head: ["battery", "fuel", "starts"], rows: [["ok", "full", "0.95"], ["weak", "full", "0.6"], ["ok", "empty", "0"],
+      ["weak", "empty", "0"], ["flat", "full", "0"], ["flat", "empty", "0"]] },
+    { cap: "The ground program, starts(no) observed", pre: "0.95::w1.   0.6::w2.\nstarts(no) :- battery(ok), fuel(full), \\+w1.\nstarts(no) :- battery(weak), fuel(full), \\+w2.\n"
+        + "starts(no) :- battery(ok), fuel(empty).\nstarts(no) :- battery(weak), fuel(empty).\nstarts(no) :- battery(flat), fuel(full).\nstarts(no) :- battery(flat), fuel(empty)." }],
+    credit: [["Local structure", "Chavira and Darwiche, AIJ 2008", "https://doi.org/10.1016/j.artint.2007.11.002"],
+      ["flip hoisting", "Cheng, Millstein, Van den Broeck and Holtzen, arXiv 2021", "https://arxiv.org/abs/2110.10284"]],
+    walks: [["network", "parse", 2], ["markov", "ground", 3]],
+    design: ["Grounding", "grounding-srcground"],
+  },
+];
+for (const o of OPTIMIZATIONS) {
+  for (const [key] of o.walks) if (!WALKS.some((w) => w.key === key)) throw new Error(`${o.title}: no walkthrough ${key}`);
+}
+
+// A text with `code` between backticks and a subscript written _{x}.
+function marked(text) {
+  return text.split("`").flatMap((part, i) => (i % 2 ? [element("code", {}, part)]
+    : part.split(/_\{([^}]*)\}/).map((piece, k) => (k % 2 ? element("sub", {}, piece) : piece))));
+}
+
+// What shows an optimization: a program under its caption, or a small table.
+function shown({ cap, pre, head, rows }) {
+  const out = cap ? [element("p", { class: "cap" }, cap)] : [];
+  if (pre) out.push(element("pre", {}, pre));
+  else {
+    const named = head.some(Boolean);
+    out.push(element("div", { class: "tscroll" }, element("table", { class: "board" },
+      ...(named ? [element("thead", {}, element("tr", {}, ...head.map((h) => element("th", { scope: "col" }, ...marked(h)))))] : []),
+      element("tbody", {}, ...rows.map(([first, ...rest]) => element("tr", {}, element("th", { scope: "row" }, ...marked(first)),
+        ...rest.map((cell) => element("td", {}, ...marked(cell)))))))));
+  }
+  return out;
+}
+
+// Why it is fast (#/why): the three gains that compound, then tddlog's
+// optimizations in the pipeline's order, each a card: what it does, what
+// shows it, its measured effect in a cell, the papers it comes from, and
+// links to the walkthrough steps that show it and to docs/design.md.
+function whyView() {
+  const out = [crumbs(HOME, inSection("how"), [WHY]), element("h2", {}, WHY),
+    element("div", { class: "gains" }, ...GAINS.flatMap(([name, what, url, cls, paper], i) => [
+      ...(i ? [element("span", { class: "times", "aria-hidden": "true" }, "×")] : []),
+      element("div", { class: `gain ${cls}` }, url ? element("a", { href: url, title: paper }, element("b", {}, name)) : element("b", {}, name), element("span", {}, what))])),
+    note("Three gains that compound. tddlog's optimizations follow, in the pipeline's order."),
+    element("section", { class: "opt example" },
+      element("div", { class: "say" }, element("h3", {}, "The running example"),
+        element("p", {}, "Independent probabilistic facts define a random graph. Reachable from a but not from c: negation over a recursive relation."),
+        cells(["P(reach(d) | path(a,c))", "0.383"])),
+      element("div", { class: "show" }, element("pre", {}, WHY_EXAMPLE)))];
+  OPTIMIZATIONS.forEach((o, i) => {
+    const links = element("p", { class: "links" }, ...o.walks.map(([key, , step]) => element("a", { href: `#/how/${key}/${step}`, class: "walk-link" },
+      `Walkthrough: ${WALKS.find((w) => w.key === key).title}, step ${step}`)),
+    element("a", { href: `${BRANCH}main/docs/design.md#${o.design[1]}` }, `docs/design.md: ${o.design[0]}`));
+    out.push(element("section", { class: "opt", id: `opt-${i + 1}` },
+      element("div", { class: "say" }, element("h3", {}, element("span", { class: "k" }, `${i + 1}`), o.title),
+        ...o.lines.map((line) => element("p", {}, ...marked(line))),
+        ...(o.effect ? [cells(o.effect)] : []),
+        ...(o.credit ? [element("p", { class: "credit" }, ...o.credit.flatMap(([what, who, url], k) => [k ? "; " : "",
+          `${what}: `, element("a", { href: url }, who)]), ".")] : []),
+        links),
+      element("div", { class: "show" }, ...o.show.flatMap(shown))));
+  });
   return out;
 }
 
@@ -837,8 +1053,9 @@ function methodsView() {
     element("table", { class: "board methods" },
       group("How the runs were made", data.methods.flatMap((row) => (row[0] === "memory" ? [row, ["time limits", limits.join("; ")]] : [row]))),
       group("How the results are counted", [
-        ["answers", "Over all of a type's instances: a run out of time or memory, wrong, refused or not given is unanswered"],
-        [`total (PAR-${par})`, `Over the instances a system is given and either answers: an unanswered run at ${twice(par)} its time limit, `
+        ["answers", "A run out of time or memory, wrong, refused or not given is unanswered; a type's tables count a system's answers on the "
+          + "instances it is given as its users would write them, its plots every instance"],
+        [`total (PAR-${par})`, `Over the instances a system is given (in a type, as its users would write them) and either answers: an unanswered run at ${twice(par)} its time limit, `
           + `a time under ${floor} s at ${floor} s`],
         ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s) and over each instance only one of the two `
           + `answers, the other at its limit, where that raises the multiplier of the system that answered it, so that `
@@ -871,7 +1088,7 @@ const staleNote = (stale) => note(`These views (views.json) were written from ot
   + "the results' processing writes them again from the results page's data.");
 
 const DRAFT_VIEWS = { "draft-home": draftHome, baselines: baselinesView, baseline: baselineView, integrations: integrationsView,
-  integration: integrationView, types: home, coverage: coverageView, how: howView, methods: methodsView };
+  integration: integrationView, types: home, coverage: coverageView, how: howView, why: whyView, methods: methodsView };
 
 Object.assign(extend, {
   load: async () => {
@@ -902,7 +1119,7 @@ Object.assign(extend, {
       // an integration the data does not have yet opens their page
       return data.integrations?.[key] ? { view: "integration", key } : { view: "integrations" };
     }
-    if (parts.length === 1 && ["types", "coverage", "how", "methods"].includes(first)) return { view: first };
+    if (parts.length === 1 && ["types", "coverage", "how", "why", "methods"].includes(first)) return { view: first };
     if (first === "how" && WALKS.some((w) => w.key === key)) {
       if (parts.length === 2) return { view: "how", walk: key, step: 0 };
       if (parts.length === 3 && /^[1-9]\d{0,2}$/.test(at)) return { view: "how", walk: key, step: Number(at) - 1 };
@@ -911,17 +1128,17 @@ Object.assign(extend, {
   },
   href: (route) => ({ "draft-home": "#/", baselines: "#/baselines",
     baseline: `#/baselines/${encodeURIComponent(route.system)}${route.tab ? `/${route.tab}` : ""}`,
-    integrations: "#/integrations", integration: `#/integrations/${route.key}`, types: "#/types", coverage: "#/coverage", methods: "#/methods",
+    integrations: "#/integrations", integration: `#/integrations/${route.key}`, types: "#/types", coverage: "#/coverage", why: "#/why", methods: "#/methods",
     how: route.walk ? `#/how/${route.walk}${route.step ? `/${route.step + 1}` : ""}` : "#/how" })[route.view] ?? null,
   draw: (route) => {
     if (!(route.view in DRAFT_VIEWS)) return null;
     const stale = staleViews();
-    if (stale.length && !["draft-home", "types", "how", "methods"].includes(route.view) && !route.view.startsWith("integration")) return [staleNote(stale)];
+    if (stale.length && !["draft-home", "types", "how", "why", "methods"].includes(route.view) && !route.view.startsWith("integration")) return [staleNote(stale)];
     return DRAFT_VIEWS[route.view](route);
   },
   title: (route) => ({ "draft-home": null, baselines: sectionName("baselines"), baseline: `tddlog against ${data.names[route.system]}`,
     integrations: sectionName("integrations"), integration: data.integrations?.[route.key]?.title, types: sectionName("types"),
-    coverage: COVERAGE, methods: METHODS, how: route.walk ? `${sectionName("how")}: ${WALKS.find((w) => w.key === route.walk).title}` : sectionName("how") })[route.view] ?? null,
+    coverage: COVERAGE, why: WHY, methods: METHODS, how: route.walk ? `${sectionName("how")}: ${WALKS.find((w) => w.key === route.walk).title}` : sectionName("how") })[route.view] ?? null,
   // the circuits are no type: views.json splits only the types
   category: (c, route, rows) => (c.key === APART ? [] : staleViews().length ? [staleNote(staleViews())] : typeSplit(c, route, rows)),
   // a translator's or generator's name in a line on how a file was made, as a link to its source

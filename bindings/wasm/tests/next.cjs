@@ -89,8 +89,8 @@ function drawn(page) {
     }
   }
   // the walkthroughs: each one's key, playground example (none for a run the playground does not make) and steps
-  const WALKS = [["reach", "reachability"], ["gears", "gears"], ["tpch", "tpch"], ["network", "car"], ["markov", null], ["dice", "walk"],
-    ["circuit", "circuit"], ["roulette", "roulette"]].map(([key, example]) =>
+  const WALKS = [["reach", "reachability"], ["tpch", "tpch"], ["network", "car"], ["markov", null], ["dice", "walk"],
+    ["circuit", "circuit"], ["roulette", "roulette"], ["gears", "gears"]].map(([key, example]) =>
     [key, example, tddlogTrace.steps(JSON.parse(fs.readFileSync(path.join(site, "next", "walk", `${key}.json`), "utf8")))]);
   const integrations = Object.keys(cats.integrations ?? {});
   const checks = [
@@ -238,6 +238,31 @@ function drawn(page) {
       assert.equal(await page.locator("nav.walks a").count(), WALKS.length);
       assert.equal(await page.textContent("ol.pipeline a[aria-current]"), `1. ${steps[0].title}`);
       assert.equal(await page.locator('#view a[href="#/methods"]').count(), 1, "how it works: a link to the methods");
+      assert.equal(await page.locator('#view p.lede a[href="#/why"]').count(), 1, "how it works: a link to why it is fast");
+    }],
+    // why it is fast: the three gains, a times sign between them, and the seven optimizations, each with what shows it,
+    // its section of docs/design.md, and its walkthrough steps, each the step of the stage that shows it
+    ["#/why", "why", async () => {
+      assert.equal(await page.textContent("#view h2"), "Why it is fast");
+      assert.deepEqual(await page.$$eval(".gains > *", (xs) => xs.map((x) => (x.className === "times" ? "×" : x.querySelector("b").textContent))),
+        ["tddlog", "×", "tididi", "×", "TDDs"], "why: the three gains");
+      assert.deepEqual(await page.$$eval(".gains a", (as) => as.map((a) => a.getAttribute("href"))),
+        ["https://github.com/Tractables/tididi", "https://arxiv.org/abs/2604.05537"], "why: the library and the paper");
+      const cards = await page.$$eval("section.opt:not(.example)", (ss) => ss.map((s) => ({
+        k: s.querySelector("h3 .k").textContent, shows: s.querySelectorAll(".show pre, .show table").length,
+        design: s.querySelectorAll('p.links a[href*="/docs/design.md#"]').length,
+        walks: [...s.querySelectorAll("a.walk-link")].map((a) => a.getAttribute("href")) })));
+      assert.deepEqual(cards.map((c) => c.k), ["1", "2", "3", "4", "5", "6", "7"], "why: the seven optimizations");
+      const stages = await page.evaluate(() => OPTIMIZATIONS.map((o) => o.walks));
+      cards.forEach((c, i) => {
+        assert.ok(c.shows >= 1, `why ${c.k}: what shows it`);
+        assert.equal(c.design, 1, `why ${c.k}: its section of docs/design.md`);
+        assert.deepEqual(c.walks, stages[i].map(([key, , step]) => `#/how/${key}/${step}`), `why ${c.k}: its walkthrough steps`);
+        for (const [key, stage, step] of stages[i]) {
+          assert.equal(WALKS.find(([k]) => k === key)[2][step - 1]?.key, stage, `why ${c.k}: step ${step} of ${key} is its ${stage}`);
+        }
+      });
+      assert.equal(await page.locator("section.opt .cell").count(), 4, "why: the example's answer and three measured effects, a cell each");
     }],
     // the methods table: the facts of the runs, each type's time limits after the memory's, how the results are counted, the data's stamp
     ["#/methods", "methods", async () => {
@@ -368,7 +393,7 @@ function drawn(page) {
 
   // both themes, at a desktop's width and a phone's, a page each
   const wide = ["#/", "#/baselines", `#/baselines/${x}`, "#/integrations", ...integrations.map((k) => `#/integrations/${k}`), "#/types",
-    "#/category/functional-programs", "#/coverage", "#/how", "#/how/reach/5", "#/how/circuit/6"];
+    "#/category/functional-programs", "#/coverage", "#/how", "#/why", "#/how/reach/5", "#/how/circuit/6"];
   for (const colorScheme of ["light", "dark"]) {
     for (const width of [1280, 390]) {
       for (const hash of wide) {

@@ -1028,6 +1028,7 @@
      "geni_link_28"
     ],
     "key": "link",
+    "program": "link.pl",
     "title": "Router grid, failing links"
    },
    {
@@ -1051,6 +1052,7 @@
      "geni_router_72"
     ],
     "key": "router",
+    "program": "router.pl",
     "title": "Router grid, failing routers"
    },
    {
@@ -1096,6 +1098,7 @@
      "geni_weather_n19"
     ],
     "key": "weather",
+    "program": "weather.pl",
     "title": "Weather factory",
     "values": {
      "geni_weather_h1": [

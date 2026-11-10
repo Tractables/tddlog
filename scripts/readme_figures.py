@@ -8,15 +8,16 @@ printed as JSON.
 --png also writes each figure as a PNG at the SVG's own size, to look at;
 --data reads another categories.json than the tree's; --readme rewrites
 README's generated blocks from the same data, and --check only compares
-them, each failing (exit 1) where a block differs from the data, a block
-or its marker is missing, or the sentence under the overview no longer
-holds (ahead). A generated block is the text between `<!-- results:KEY -->`
-and `<!-- /results:KEY -->` (blocks): the overview's caption and the
-setup line, each with the data's stamp (when and on which commit of the
-source tree they were processed), each type's headline and table, the
-circuits' and the integrations' table. The setup block names the SHA-256 of the
-categories.json it was written from, which release/push_check.sh checks
-against the file pushed beside it.
+them, each failing (exit 1) where a block differs from the data or a
+block or its marker is missing. A generated block is the text between
+`<!-- results:KEY -->` and `<!-- /results:KEY -->` (blocks): the headline
+(tddlog's speed-up over the leading system of two types, HEADLINE), the
+overview's caption, with the data's date, and the integrations' table. The
+README links to the site's pages for each category's own figure and
+table; the figures are written and the numbers printed all the same.
+The overview's block names the SHA-256 of the categories.json it was
+written from, which release/push_check.sh checks against the file pushed
+beside it.
 
 The results are partitioned by type of program: each instance counts in
 one type, whatever language its source was written in, and all programs
@@ -308,6 +309,7 @@ def cactus(ax, cat, systems, hi, c, col):
 LEGEND_BLOCK, LEGEND_HEAD, LEGEND_ROW = 4.5, 0.3, 0.235
 LEGEND_COLUMNS = [('answers', 2.8), ('tddlog faster', 4.35)]
 NONE = 'nothing to measure'  # a comparison with no instance both answer over 0.2 s and none only one answers
+ANSWERS_NONE = 'answers none'  # a system that answers no instance: its speed-up is the measure's ceiling, the limit over 0.2 s
 
 
 def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col, cat):
@@ -334,7 +336,7 @@ def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col, cat):
             fig.text((x0 + 0.4) / WIDTH, y, name, ha='left', va='center', fontsize=11.5,
                      fontweight='bold' if is_mine(s) else 'normal', color=c['text'] if s in lit(cat) else c['muted'])
             for j, ((_, right), v) in enumerate(zip(LEGEND_COLUMNS, numbers)):
-                fig.text((x0 + right) / WIDTH, y, str(v), ha='right', va='center', fontsize=9.5 if v == NONE else 11.5,
+                fig.text((x0 + right) / WIDTH, y, str(v), ha='right', va='center', fontsize=9.5 if v in (NONE, ANSWERS_NONE) else 11.5,
                          color=c['text'] if j == 0 else c['muted'])
 
 
@@ -390,8 +392,11 @@ def scatter(ax, cat, others, hi, c, col, other, label, me):
 
 def faster(v):
     """tddlog's speed-up of a comparison (the data's vs, rule 16): 14×, 1.3×
-    slower, or NONE where there is nothing to measure."""
-    return NONE if v['speedup'] is None else ratio_text(v['speedup'])
+    slower, NONE where there is nothing to measure, or ANSWERS_NONE where
+    the other system answers no instance."""
+    if v['speedup'] is None:
+        return NONE
+    return ANSWERS_NONE if v['answers'] == 0 else ratio_text(v['speedup'])
 
 
 def results(cat, names, col, out):
@@ -470,24 +475,17 @@ def at_least(t):
     return seconds(math.floor(t * 10) / 10)
 
 
-def speed_mark(ax, x, y, r, transform, colour, muted, least=False):
+def speed_mark(ax, x, y, r, transform, colour, muted, least=False, none=False, quiet=False):
     """tddlog's speed-up r at x of the overview's right column, bold, teal
-    where tddlog is faster, with least "at least"; NONE where r is None."""
-    if r is None:
-        ax.text(x, y, 'nothing to\nmeasure', transform=transform, ha='left', va='center', fontsize=9.5, color=muted,
-                linespacing=1.05)
+    where tddlog is faster, with least "at least"; NONE where r is None,
+    ANSWERS_NONE with none (the other system answers no instance); quiet,
+    muted and not bold (one of the others tddlog leads most)."""
+    if r is None or none:
+        ax.text(x, y, 'answers\nnone' if none else 'nothing to\nmeasure', transform=transform, ha='left', va='center',
+                fontsize=9.5, color=muted, linespacing=1.05)
         return
     ax.text(x, y, ratio_text(r, least=least), transform=transform, ha='left', va='center', fontsize=12.5,
-            fontweight='bold', color=TDDLOG if r >= 1 else colour)
-
-
-WORDS = 'no one two three four five six seven eight nine ten'.split()
-
-
-def times_par(m):
-    """How a run that does not answer counts, from the data's parameters
-    of the measure (panels.py's): twice its time limit."""
-    return 'twice' if m['par'] == 2 else f"{m['par']:g} times"
+            fontweight='normal' if quiet else 'bold', color=muted if quiet else TDDLOG if r >= 1 else colour)
 
 
 def others_text(o, names):
@@ -504,7 +502,9 @@ def overview(data, names, col, out):
     answers to the left, its total time and tddlog's over the instances it
     is given and either answers (PAR-2) as points on one time axis, and
     tddlog's speed-up over it to the right; the other native systems in one
-    row that names them, the least of their totals and of their speed-ups."""
+    row that names them, the least of their totals and of their speed-ups,
+    and below it the others tddlog leads most (cat['others']['leads']), each
+    in a row of its own, muted."""
     c = style()
     lines = []
     for cat in data['categories']:
@@ -515,12 +515,17 @@ def overview(data, names, col, out):
                       f"{'answers' if len(set(my_keys(cat))) == 1 else 'answer'} {my_answers(cat)}", None, None))
         for x in cat['named']:
             v = cat['vs'][x]
-            lines.append(('row', names[x], cat['answers'][x], (x, v['tddlog_total'], v['total'], v['speedup'])))
+            lines.append(('row', names[x], v['answers'], (x, v['tddlog_total'], v['total'], v['speedup'])))
+            # (its answers are those of the comparison beside them: in a type, the instances
+            # as their users would write them)
         o = cat['others']
         if o['systems']:
             text = textwrap.fill(others_text(o, names), 70)
             lines.append(('others', f"{len(o['systems'])} others", None, (text, o['speedup'])))
-    ts = [t for kind, _, _, st in lines if kind == 'row' for t in st[1:3]]
+        for x in o.get('leads', []):
+            v = cat['vs'][x]
+            lines.append(('lead', names[x], v['answers'], (x, v['tddlog_total'], v['total'], v['speedup'])))
+    ts = [t for kind, _, _, st in lines if kind in ('row', 'lead') for t in st[1:3]]
     ts += [o['others']['total'] for o in data['categories'] if o['key'] != ALL and o['others']['total']]
     names_w, ratio_w, row, top, bottom = 2.6, 1.2, 0.34, 1.0, 0.55
     # each line's height in rows, and its middle, from the top
@@ -533,8 +538,9 @@ def overview(data, names, col, out):
     ax = fig.add_axes([names_w / WIDTH, bottom / h, axes_w / WIDTH, n * row / h])
     at = ax.get_yaxis_transform()
     ratio_x = 1 + 0.25 / axes_w
-    lo, hi = min(ts) / 3, max(ts) * 3
-    ys, labels = [], []
+    # room left of the smallest time for its label, which sits to the left of its point
+    lo, hi = min(ts) / 10, max(ts) * 3
+    ys, labels, quiet = [], [], []
     for y, (kind, name, answers, st) in zip(mids, lines):
         y = -y
         if kind == 'head':
@@ -543,6 +549,7 @@ def overview(data, names, col, out):
             continue
         ys.append(y)
         labels.append(name)
+        quiet.append(kind == 'lead')
         if kind == 'others':
             text, r = st
             ax.text(0.01, y, text, transform=at, ha='left', va='center', fontsize=10.5, color=c['muted'],
@@ -550,9 +557,10 @@ def overview(data, names, col, out):
             speed_mark(ax, ratio_x, y, r, at, c['muted'], c['muted'], least=True)
             continue
         x, mine, t, r = st
-        colour = col[x][0]
+        colour = c['muted'] if kind == 'lead' else col[x][0]
         ax.plot([mine, t], [y, y], color=c['grid'], lw=3, solid_capstyle='round', zorder=2)
-        speed_mark(ax, ratio_x, y, r, at, colour, c['muted'])
+        speed_mark(ax, ratio_x, y, r, at, colour, c['muted'], none=answers == 0 and r is not None,
+                   quiet=kind == 'lead')
         ax.scatter([t], [y], s=64, color=colour, lw=0, zorder=3)
         ax.scatter([mine], [y], s=64, color=TDDLOG, lw=0, zorder=4)
         out_right = t >= mine
@@ -567,6 +575,9 @@ def overview(data, names, col, out):
     ax.set_ylim(-n, 0)
     ax.set_yticks(ys)
     ax.set_yticklabels(labels, fontsize=12)
+    for label, q in zip(ax.get_yticklabels(), quiet):
+        if q:
+            label.set_color(c['muted'])
     ax.tick_params(axis='y', length=0, pad=56)
     ax.tick_params(axis='x', length=0, pad=6)
     ax.grid(True, axis='x', color=c['grid'], lw=0.7)
@@ -587,20 +598,6 @@ def overview(data, names, col, out):
 def misses(cat):
     """tddlog's records on the instances it does not answer, by kind."""
     return dict(collections.Counter(v for _, v in my_column(cat) if not answered(v)))
-
-
-def ahead(cat):
-    """The native systems that answer as many of a type's instances as
-    tddlog, or take no more total time than it over the instances they are
-    given and either answers. The README's sentence under the overview says
-    that on every type of program tddlog answers more instances than each
-    native system, in less total time; a system here makes it false.
-    All programs and the circuits are not on the overview."""
-    if cat['key'] in (ALL, APART):
-        return []
-    mine = my_answers(cat)
-    return [x for x in cat['native'] if cat['answers'][x] >= mine
-            or x in cat['vs'] and cat['vs'][x]['tddlog_total'] >= cat['vs'][x]['total']]
 
 
 def wins(cat):
@@ -635,13 +632,16 @@ def table(cat, names):
     every system), rule 16: each named system's answers, its total time,
     tddlog's and tddlog's speed-up; the others in one row, the range of
     their answers, the least of their totals, the range of tddlog's and the
-    least of their speed-ups."""
+    least of their speed-ups; then the others tddlog leads most, a row each."""
     who = subject(cat, names, 'or')
     lines = [f"| System | Answers | Its total time | {who}'s total time | {who} faster |", '|---|--:|--:|--:|--:|']
-    for x in cat['named']:
+
+    def row(x):
         v = cat['vs'][x]
-        lines.append(f"| {names[x]} | {cat['answers'][x]} | {seconds(v['total'])} | {seconds(v['tddlog_total'])} | "
+        lines.append(f"| {names[x]} | {v['answers']} | {seconds(v['total'])} | {seconds(v['tddlog_total'])} | "
                      f"{faster(v)} |")
+    for x in cat['named']:
+        row(x)
     o = cat['others']
     if o['systems']:
         span = lambda lo, hi: lo if lo == hi else f'{lo} to {hi}'
@@ -649,6 +649,8 @@ def table(cat, names):
         total = f"over {at_least(o['total'])} each" if o['total'] else '–'
         lines.append(f"| {len(o['systems'])} others: {', '.join(names[x] for x in o['systems'])} | "
                      f"{span(*o['answers'])} | {total} | {mine} | {least_text(o['speedup'])} |")
+    for x in o.get('leads', []):
+        row(x)
     return lines
 
 
@@ -672,52 +674,55 @@ def integrations(data, names):
     return dict(out, table=lines)
 
 
-REPO = 'https://github.com/Tractables/tddlog'
 SITE = 'https://tractables.github.io/tddlog'
 # a generated block of the README: its key, then its text up to its end marker
 BLOCK = re.compile(r'<!-- results:(?P<key>[\w-]+) -->\n(?P<body>.*?)<!-- /results:(?P=key) -->', re.S)
 
 
-def in_words(xs):
-    xs = [str(x) for x in xs]
-    return xs[0] if len(xs) == 1 else f"{', '.join(xs[:-1])} or {xs[-1]}"
-
-
-def stamp_text(data):
-    """When and on which commit of the source tree the data were processed."""
-    s = data['stamp']
-    return f"Results as of {s['date']}, public main [{s['source']}]({REPO}/commit/{s['source']})."
-
-
 def blocks(data, numbers, names, digest):
     """{key: text} of the README's generated blocks, from the data and the
-    numbers main computes of it: the overview's caption and key, the setup
-    line (the stamp and the time limits, digest the SHA-256 of the
-    categories.json read), each type's headline and its table (KEY-table,
-    with the native systems too few of whose instances it was given to be
-    drawn), the circuits' headline and table, and the integrations' table."""
-    m = data['measure']
-    limits = sorted({r[2] for c in written(data) for r in c['rows']})
+    numbers main computes of it: the headline (headline), the overview's
+    caption (the data's date; digest, the SHA-256 of the categories.json
+    read, in a comment) and the integrations' table. The setup, the
+    measure and each category's own figure and table are the site's pages,
+    which the overview links to (the owner, 2026-11-09: "these are details
+    that don't belong in a README"; "People can click on the figure")."""
     out = {
-        'overview': (f"<sub>{stamp_text(data)} Each row: a native system's answers of the type's instances, its "
-                     f"total time (its colour) and tddlog's (teal) over the instances it is given as its users would "
-                     f"write them and either answers, "
-                     f"and how many times faster tddlog is ([how it is counted]({SITE}/#/methods)).</sub>"),
-        'setup': (f"<!-- written from bindings/wasm/results/categories.json, sha256 {digest} -->\n"
-                  f"{stamp_text(data)} Runs are single-threaded, under a time limit of {in_words(limits)} s by "
-                  f"suite; a run that does not answer counts as {times_par(m)} its limit, and a time under "
-                  f"{m['floor']:g} s as {m['floor']:g} s."),
+        'overview': (f"<!-- written from bindings/wasm/results/categories.json, sha256 {digest} -->\n"
+                     f"<sub>As of {data['stamp']['date']}. Click the figure for every result.</sub>"),
         'integrations': '\n'.join(numbers['integrations']['table']),
     }
-    for cat in written(data):
-        res = numbers['categories'][cat['key']]
-        verb = 'answers' if len(set(my_keys(cat))) == 1 else 'answer'
-        families = '' if cat['key'] == ALL else f", of {len(cat['groups'])} families"
-        out[cat['key']] = f"{res['subject']} {verb} **{res['my_answers']} of {cat['instances']}** {cat['noun']}{families}."
-        few = [f"{names[x]} was given {cat['given'][x]} of the {cat['noun']} and answers {cat['answers'][x]}."
-               for x in cat['native'] if x not in cat['drawn'] and cat['given'][x]]
-        out[f"{cat['key']}-table"] = '\n'.join(res['table'] + ([''] + few if few else []))
+    out['headline'] = headline(data, names)
     return out
+
+
+# The README's headline types, as it names them: the two whose systems most
+# readers know (the owner, 2026-11-09: "tddlog outperforms existing [probabilistic
+# logic programming] systems 214x and ... the best existing Bayesian network
+# solvers 55x. I think those are the two highlights").
+HEADLINE = (('logic-programs', 'probabilistic logic programs'), ('bayesian-networks', 'Bayesian networks'))
+
+
+def headline(data, names):
+    """The README's first numbers: tddlog's speed-up over the first of the
+    named native systems (the one that answers the most) of each HEADLINE
+    type, linked to the type's page; a type without a measured speed-up is
+    left out."""
+    cats = {c['key']: c for c in data['categories']}
+    parts = []
+    for key, what in HEADLINE:
+        c = cats.get(key)
+        if not c or not c['named'] or faster(c['vs'][c['named'][0]]) in (NONE, ANSWERS_NONE):
+            continue
+        x = c['named'][0]
+        r = c['vs'][x]['speedup']
+        how = f"**{ratio_text(max(r, 1 / r))}** {'faster' if r >= 1 else 'slower'} than {names[x]}"
+        parts.append(f"On [{what}]({SITE}/#/category/{key}), {names['tddlog']} is {how}" if not parts
+                     else f"on [{what}]({SITE}/#/category/{key}) {how}")
+    if not parts:
+        return ''
+    return (f"{', and '.join(parts)}, the existing system that answers the most of {'each' if len(parts) > 1 else 'them'}. "
+            f"[Detailed results below](#how-well-does-it-work).")
 
 
 def readme(text, want):
@@ -776,10 +781,6 @@ def main():
         res['wins'], res['groups'] = wins(cat), {g['key']: len(g['rows']) for g in cat['groups']}
         res['within'] = within(cat, cat['drawn'])
         res['table'] = table(cat, names)
-        res['ahead'] = ahead(cat)
-        if res['ahead']:
-            print(f"README.md: the sentence under the overview no longer holds for {cat['title']}: "
-                  + ', '.join(names[x] for x in res['ahead']), file=sys.stderr)
         numbers[cat['key']] = res
     overview(data, names, col, out)
     printed = dict(categories=numbers, integrations=integrations(data, names))
@@ -792,10 +793,8 @@ def main():
         if write:
             open(write, 'w').write(new)
             changed = []
-        late = [names[x] for res in numbers.values() for x in res['ahead']]
-        if changed or late:
-            sys.exit(f"README.md: {'the blocks ' + ', '.join(changed) + ' differ from the data; ' if changed else ''}"
-                     + (f"the sentence under the overview no longer holds for {', '.join(late)}" if late else ''))
+        if changed:
+            sys.exit(f"README.md: the blocks {', '.join(changed)} differ from the data")
 
 
 if __name__ == '__main__':

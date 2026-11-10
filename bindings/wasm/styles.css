@@ -645,6 +645,8 @@ footer {
 .prose dt { margin-top: 0.7rem; }
 .prose dd { margin: 0.2rem 0 0 1.4rem; }
 .prose .try { margin-top: 0.4rem; font-weight: 500; }
+.prose details { margin: 0.2rem 0 0.6rem; }
+.prose details > summary { cursor: pointer; color: var(--muted); font-size: 0.95em; }
 .prose h4 { margin: 1.2rem 0 0.3rem; font-size: 0.95rem; font-weight: 600; }
 .contents ol { margin: 0; padding-left: 1.4rem; }
 
@@ -963,6 +965,8 @@ svg.overview { display: block; max-width: 100%; }
 .overview text.ratio { font-size: 13px; font-weight: 700; fill: var(--accent-ink); }
 .overview text.ratio.slower { fill: var(--muted); }
 .overview text.ratio.few { font-size: 11px; font-weight: 400; fill: var(--muted); }
+.overview a.lead text.name { fill: var(--muted); }
+.overview a.lead text.ratio { font-weight: 400; fill: var(--muted); }
 
 section.kind-figs { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 section.kind-figs h3 { margin: 0; font-size: 1.1rem; }
@@ -1049,12 +1053,9 @@ table.board thead th { position: sticky; top: 0; background: var(--card); white-
 /* A group's name over its columns (head2): the system's, or tddlog's. */
 table.board thead tr + tr th { position: static; }
 table.board thead th.group { color: var(--ink); font-weight: 600; text-align: center; border-bottom: 1px solid var(--line); }
-table.h2h td.ratio { font-weight: 600; }
 /* A speed-up's name, a link to the methods table that defines it (speedName). */
 a.defined { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
 svg a.defined text { text-decoration: underline dotted; }
-table.h2h tr.words td { white-space: normal; background: var(--bg); font-size: 14px; }
-table.h2h tr.words p { max-width: 80ch; }
 .finding-text { max-width: 80ch; font-size: 14px; }
 ul.losses { max-width: 80ch; margin: 0; padding-left: 1.2rem; font-size: 14px; }
 ul.losses li { margin: 0.3rem 0; }
@@ -1193,9 +1194,7 @@ svg.cactus:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .tip span { display: flex; align-items: center; gap: 0.4rem; }
 .tip span.picked { font-weight: 600; }
 
-/* Every instance's times of a suite, sortable. */
-details.instances { margin-top: 2rem; }
-details.instances .check { margin: 0.7rem 0 0.5rem; }
+/* A table of instances' times. */
 table.times { font-size: 13px; }
 table.times th, table.times td { padding: 0.25rem 0.6rem; white-space: nowrap; }
 table.times thead th { position: sticky; top: 0; z-index: 2; background: var(--card); }

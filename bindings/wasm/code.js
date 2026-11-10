@@ -148,7 +148,7 @@ const tddlogCode = (() => {
   // places ($1, $2, ...) and consults its data, which the playground cannot
   // give. For tddlog's file `file` of instance `inst` (in its tab `tab`, the
   // family's texts `texts`) that has places: the instance's program of its
-  // own name in another ProbLog tab, the same program with its arguments in
+  // own name in a ProbLog tab, `tab` included, the same program with its arguments in
   // their places and its consults inlined, as the ProbLog systems read it
   // (the one they read where there are several), as { tab, file }. Null
   // where `file` has no places or the results show no such program.
@@ -161,8 +161,8 @@ const tddlogCode = (() => {
     const given = new RegExp(`(^|\\s)${name}\\s+\\S`);
     const places = text !== undefined ? /\$[1-9]/.test(text) : (tab.cmds ?? []).some(([who, line]) => who === "tddlog" && given.test(line));
     if (!places) return null;
-    const filled = (inst.tabs ?? []).filter((t) => t !== tab && t.lang === "ProbLog")
-      .flatMap((t) => t.files.filter((x) => x.name === `${inst.name}.pl`).map((x) => ({ tab: t, file: x })));
+    const filled = (inst.tabs ?? []).filter((t) => t.lang === "ProbLog")
+      .flatMap((t) => t.files.filter((x) => x !== file && x.name === `${inst.name}.pl`).map((x) => ({ tab: t, file: x })));
     return filled.find(({ tab: t, file: x }) => (x.readers ?? t.readers).some((r) => r.startsWith("ProbLog"))) ?? filled[0] ?? null;
   }
 

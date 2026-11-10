@@ -26,13 +26,14 @@ if (/[?&](example|strategy|evidence|digits|format)=/.test(location.search) || /^
   </div>
   <button id="menu" class="plain" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
   <nav class="site-nav" id="site-nav" aria-label="Site">
+    <a href="#/types" data-section="#/types">By program type</a>
     <a href="#/baselines" data-section="#/baselines">By baseline</a>
     <a href="#/integrations" data-section="#/integrations">By integration</a>
-    <a href="#/types" data-section="#/types">By program type</a>
     <a href="#/circuits" data-section="#/circuits">Circuits</a>
     <a href="#/how" data-section="#/how">How it works</a>
     <a href="playground/">Playground</a>
     <details class="docs"><summary>Docs</summary><div>
+      <a href="guide/#getting-started">Install</a>
       <a href="guide/">Guide</a>
       <a href="api/">Rust API</a>
       <a href="python/">Python</a>
@@ -45,7 +46,7 @@ if (/[?&](example|strategy|evidence|digits|format)=/.test(location.search) || /^
 
 <div class="shell">
   <aside id="rail" aria-label="The site's menu">
-    <input id="search" type="search" placeholder="Find a system or instance" aria-label="Find a kind, suite, family, system or instance by its name"
+    <input id="search" type="search" placeholder="Find a system or instance" aria-label="Find a type of program, family, system or instance by its name"
       autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="found-list" aria-expanded="false">
     <div id="found"><p id="found-n" class="n" aria-live="polite"></p><ul id="found-list" role="listbox" aria-label="Found"></ul></div>
     <nav id="tree" aria-label="The site's sections and their entries"></nav>
