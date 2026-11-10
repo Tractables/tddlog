@@ -669,14 +669,20 @@ function programName(c, g) {
 // which opens on its program, named after the program.
 const programCell = (c, g) => element("td", { class: "program" }, link({ view: "category", category: c.key, only: g.key }, programName(c, g)));
 
+// The type and its family (c.groups) that hold an instance: data.place's, the
+// circuits' where it is in no type; null where neither holds it.
+function placeOf(suite, name) {
+  const key = `${suite}/${name}`;
+  return data.place.get(key) ?? (data.circuit.has(key) ? { c: data.circuits, g: data.circuit.get(key) } : null);
+}
+
 // The families of rows (catRows'), each { c, g, rows }: the type and the
-// family there of each (data.place; the circuits' where it is in no type), in
-// the types' order and each type's; the rows of neither last, as { rows }.
+// family there of each (placeOf), in the types' order and each type's; the
+// rows of neither last, as { rows }.
 function familiesOfRows(rows) {
   const out = new Map();
   for (const r of rows) {
-    const key = `${r.suite}/${r.name}`;
-    const at = data.place.get(key) ?? (data.circuit.has(key) ? { c: data.circuits, g: data.circuit.get(key) } : null);
+    const at = placeOf(r.suite, r.name);
     const id = at ? `${at.c.key}/${at.g.key}` : "";
     if (!out.has(id)) out.set(id, { ...at, rows: [] });
     out.get(id).rows.push(r);
@@ -1438,10 +1444,11 @@ function categoryView(route) {
   // the circuits' entry is their section's page (#/circuits): one crumb for both
   const out = [crumbs(HOME, ...(c.key === APART ? [] : [inSection("types")]), g ? [c.title, { view: "category", category: c.key }] : [c.title], ...(g ? [[g.title]] : [])),
     element("h2", {}, g ? g.title : c.title)];
-  // a family: what it is and where it comes from
+  // a family: what it is and where it comes from, its program and its times by instance
+  const family = g?.source ? familyInstances(c, g, route) : null;
   if (g && !g.source) out.push(prose("p", g.about, { class: "lede" }), note("The type on its own, against the systems native to it: ",
     link({ view: "category", category: g.key }, g.title), "."));
-  else if (g) out.push(prose("p", g.about, { class: "lede" }), note(`From ${g.source}.`), programSection(c, g, route));
+  else if (g) out.push(prose("p", g.about, { class: "lede" }), note(`From ${g.source}.`), programSection(c, g, route, family), familyTimes(c, g, route, family));
   // the families' table, last, and a way to it from the top: each family's program is a click away
   const famHead = g ? null : element("h3", {}, c.key === ALL ? "Types of program" : "Families");
   out.push(headline(c, rows, tal, only));
@@ -1511,17 +1518,72 @@ function categoryView(route) {
         element("th", { scope: "col", class: "num" }, `${me} answers`), element("th", { scope: "col" }, "the most answers of another system"),
         element("th", { scope: "col" }, "from"))), body))));
   }
-  if (c.losses?.length) {
-    out.push(element("h3", {}, `Where ${me} is slower`), element("ul", { class: "losses" }, ...c.losses.map((text) => prose("li", text))));
-  }
-  // The data's family of suites the category's first suite is in: the
-  // findings that are no suite's are the category's where the category
-  // starts with the family's first suite.
-  const family = data.suites.get(c.rows[0][0]).home;
-  const general = c.key !== ALL && family.suites[0].key === c.rows[0][0] ? (family.findings ?? []).filter((card) => !card.suite) : [];
-  if (general.length) out.push(element("h3", {}, "Findings"), findings(general));
-  out.push(setup(family), raw("categories.json"));
+  // a family's times show where another system is faster; elsewhere, the instances where one is
+  if (!family) out.push(...fasterOn(c, rows, me));
+  out.push(setup(data.suites.get(c.rows[0][0]).home), raw("categories.json"));
   return out;
+}
+
+// The instances of rows (catRows') where a native system (on all programs
+// and the circuits, any other) is faster than tddlog: it answers in at most
+// half tddlog's time where tddlog takes 1 s or more (each time at least
+// 0.2 s), or answers where tddlog does not (but where tddlog does not read
+// the program, or cannot express it). A row an instance: its fastest such
+// system, the two times and how many times faster it is, tddlog's failures
+// first and then the largest leads; past the first LEADS_SHOWN, the rest on
+// asking. None where no instance counts. `me` names tddlog's side.
+const LEADS_SHOWN = 6;
+function fasterOn(c, rows, me) {
+  const others = (c.native ?? []).filter((x) => !isMine(x));
+  const found = [];
+  for (const r of rows) {
+    const k = myKey(r);
+    if (k === undefined || r.v[k] === "unread" || r.v[k] === "unsupported") continue;
+    const mine = myTime(r);
+    const faster = others.filter((x) => r.t[x] !== null && r.t[x] !== undefined
+      && (mine === null || (mine >= 1 && 2 * Math.max(r.t[x], FLOOR) <= mine)));
+    if (!faster.length) continue;
+    const x = faster.reduce((a, b) => (r.t[b] < r.t[a] ? b : a));
+    found.push({ r, k, x, t: r.t[x], mine, lead: (mine ?? r.limit) / Math.max(r.t[x], FLOOR) });
+  }
+  if (!found.length) return [];
+  found.sort((a, b) => (a.mine !== null) - (b.mine !== null) || b.lead - a.lead);
+  const num = (...text) => element("td", { class: "num" }, ...text);
+  const body = element("tbody", {}, ...found.map(({ r, k, x, t, mine, lead }, i) => {
+    const at = placeOf(r.suite, r.name);
+    // (a copy's family holds the instance it copies, which the address names)
+    const shown = at?.g.rows.some((j) => at.c.rows[j][0] === r.suite && at.c.rows[j][1] === r.name);
+    const name = element("code", {}, r.name);
+    const [fail, meaning] = mine === null ? FAILURES[r.v[k]] ?? [() => r.v[k], r.v[k]] : [];
+    return element("tr", { class: i < LEADS_SHOWN ? null : "more" },
+      element("th", { scope: "row", title: at ? at.g.title : null },
+        at ? link({ view: "category", category: at.c.key, only: at.g.key, program: shown ? [r.suite, r.name] : undefined }, name) : name),
+      element("td", {}, swatch(x), ` ${data.names[x]}`), num(`${seconds(t)} s`),
+      mine === null ? element("td", { class: "num fail", title: `${data.names[k]}: ${meaning}` }, fail(r.limit)) : num(`${seconds(mine)} s`),
+      num(mine === null ? `≥ ${times(lead, 1, true)}` : times(lead, 1)));
+  }));
+  const table = element("table", { class: "board leads" }, element("thead", {}, element("tr", {},
+    element("th", { scope: "col" }, "instance"), element("th", { scope: "col" }, "faster system"),
+    element("th", { scope: "col", class: "num" }, "its time"), element("th", { scope: "col", class: "num" }, me),
+    element("th", { scope: "col", class: "num", title: `${me}'s time over the system's, each at least ${FLOOR} s; where ${me} fails, its time limit` }, "faster by"))), body);
+  const which = c.key === ALL || c.key === APART ? "another" : "a native";
+  return [element("h3", {}, `Where ${which} system is faster`), scroller(stacked(table), "whole"), moreRows(table, found.length, LEADS_SHOWN, "instances")]
+    .filter(Boolean);
+}
+
+// A long table's rows past its first `shown` (rows of class "more", the
+// caller's), folded under a button that shows them all; none where it has
+// no more than those.
+function moreRows(table, n, shown, noun) {
+  if (n <= shown) return null;
+  table.classList.add("folded");
+  const label = (open) => (open ? `Only the first ${shown} ${noun}` : `All ${count(n)} ${noun}`);
+  const more = element("button", { type: "button", class: "plain more-rows", "aria-expanded": "false", onclick: () => {
+    const open = table.classList.toggle("folded") === false;
+    more.setAttribute("aria-expanded", String(open));
+    more.textContent = label(open);
+  } }, label(false));
+  return more;
 }
 
 // A baseline's parts, which the front page's page of it shows after tddlog
@@ -1586,15 +1648,6 @@ function solverParts(x) {
   return { s, types, own, facts };
 }
 
-function findings(list) {
-  const box = element("div", { class: "findings" });
-  for (const card of list) {
-    box.append(element("details", { class: "finding" }, element("summary", {}, card.title),
-      ...card.paras.map((para) => prose("p", para))));
-  }
-  return box;
-}
-
 // How the runs were made: the methods table (next.js's), one line under a
 // category, not the suites' own paragraphs again.
 function setup(home) {
@@ -1634,7 +1687,15 @@ function familyView(route, view) {
     element("div", { class: "chips" }, element("span", { class: "chip" }, plural(f.instances.length, "instance")),
       element("span", { class: "chip" }, `${s.limit} s a run`))];
   const programs = element("section", { class: "programs", id: "programs" }, note("Loading the programs and the runs…"));
-  out.push(programs, element("h3", {}, "Times"), timesGrid(s, f, rows, short, route), raw(`benchmarks/${s.key}/${f.key}.json`, s.file));
+  // a time opens the system's runs; the same instance's keep its file on show, another's show its first
+  const grid = f.instances.map((name) => {
+    const row = rows.get(name);
+    return { suite: s.key, name, named: f.values?.[name] ?? [short.get(name)], open: { ...pageOf(route), instance: name },
+      v: Object.fromEntries(s.systems.map((x) => [x, row[column(s, x)]])), limit: s.limit,
+      runs: (x) => ({ ...now, instance: name, file: name === now.instance ? now.file : undefined, runs: x }) };
+  });
+  out.push(programs, element("h3", {}, "Times"), timesGrid(grid, s.systems, f.axes ?? ["instance"], route.instance),
+    raw(`benchmarks/${s.key}/${f.key}.json`, s.file));
   // the instance's whole name where the choice shows a shorter one; a family of one shows its name alone
   const here = { view: "family", suite: s.key, family: f.key };
   const one = f.instances.length === 1;
@@ -1654,28 +1715,30 @@ function familyView(route, view) {
 // marked, a failure by its word; a time opens the system's runs of the
 // instance, a name the instance's programs. A family of one model along
 // several axes (its question, its evidence, its sizes) names each instance
-// by its values, a column an axis, the first opening its programs.
+// by its values, a column an axis, the first opening its programs; down
+// the rows, a system's column is how it scales. Each of `rows` is an
+// instance: { suite, name, named (its value on each axis), open (the route
+// its first value opens), v (its records by system), limit, runs (the
+// route a time of system x opens) }. `on` is the instance on show, `vs`
+// the system the view sets against tddlog's, whose column is marked.
 let showAll = false;
-function timesGrid(s, f, rows, short, route) {
-  const given = s.systems.filter((x) => f.instances.some((name) => rows.get(name)[column(s, x)] !== null));
-  const cols = showAll ? s.systems : given;
-  const axes = f.axes ?? ["instance"];
+function timesGrid(rows, systems, axes, on, vs) {
+  const given = systems.filter((x) => rows.some((r) => r.v[x] !== null));
+  const cols = showAll ? systems : given;
   const head = element("tr", {}, ...axes.map((a) => element("th", { scope: "col" }, a)),
-    ...cols.map((x) => element("th", { scope: "col", class: `sys${isMine(x) ? " mine" : ""}`,
+    ...cols.map((x) => element("th", { scope: "col", class: `sys${isMine(x) ? " mine" : ""}${x === vs ? " vs" : ""}`,
       title: dashed(x) ? `${data.names[x]}: the whole process, with the language's start and compilation` : data.names[x] }, element("span", {}, data.names[x]))));
   const body = element("tbody");
   const seen = new Set();
-  for (const name of f.instances) {
-    const row = rows.get(name);
-    const fastest = fastestOf(cols.filter((x) => !dashed(x)).map((x) => row[column(s, x)]));
-    const named = f.values?.[name] ?? [short.get(name)];
-    const tr = element("tr", { class: name === route.instance ? "on" : null },
-      ...named.map((v, k) => element("th", { scope: "row", title: k ? null : name }, k ? v : link({ ...pageOf(route), instance: name }, v))));
+  for (const r of rows) {
+    const fastest = fastestOf(cols.filter((x) => !dashed(x)).map((x) => r.v[x]));
+    const tr = element("tr", { class: r.name === on ? "on" : null },
+      ...r.named.map((v, k) => element("th", { scope: "row", title: k ? null : r.name }, k ? v : link(r.open, v))));
     for (const x of cols) {
-      const v = row[column(s, x)];
-      const mine = isMine(x) ? "mine" : "";
+      const v = r.v[x];
+      const mine = `${isMine(x) ? " mine" : ""}${x === vs ? " vs" : ""}`;
       if (v === null) {
-        tr.append(element("td", { class: `none ${mine}`, title: `${data.names[x]}: not given` }));
+        tr.append(element("td", { class: `none${mine}`, title: `${data.names[x]}: not given` }));
         continue;
       }
       const { cls, p, slower } = rated(v, fastest);
@@ -1686,20 +1749,19 @@ function timesGrid(s, f, rows, short, route) {
       } else {
         seen.add(v);
         const [t, meaning] = FAILURES[v] ?? [() => v, v];
-        text = t(s.limit);
+        text = t(r.limit);
         title = `${data.names[x]}: ${meaning}`;
       }
-      // The same instance's runs keep its file on show; another's show its first.
-      tr.append(element("td", { class: `${cls} ${mine}`.trim() }, element("button", { type: "button", style: `--p:${p.toFixed(3)}`, title,
-        "data-runs": `${s.key}/${name}/${x}`,
-        onclick: () => go({ ...now, instance: name, file: name === now.instance ? now.file : undefined, runs: x }) }, text)));
+      tr.append(element("td", { class: `${cls}${mine}` }, element("button", { type: "button", style: `--p:${p.toFixed(3)}`, title,
+        "data-runs": `${r.suite}/${r.name}/${x}`, onclick: () => go(r.runs(x)) }, text)));
     }
     body.append(tr);
   }
+  const limits = [...new Set(rows.map((r) => r.limit))];
   const key = shades(seen.has("unsupported"));
-  for (const v of Object.keys(FAILURES)) if (v !== "unsupported" && seen.has(v)) key.push(failureKey(v, s.limit));
+  for (const v of Object.keys(FAILURES)) if (v !== "unsupported" && seen.has(v)) key.push(failureKey(v, limits.length === 1 ? limits[0] : "limit"));
   key.push(element("span", {}, "a time opens its runs"));
-  const hidden = s.systems.length - given.length;
+  const hidden = systems.length - given.length;
   const box = element("div", { class: "times-box" }, scroller(element("table", { class: "grid" }, element("thead", {}, head), body)),
     element("p", { class: "key" }, ...key));
   if (hidden) {
@@ -1878,28 +1940,41 @@ function instanceView(s, f, fam, route, pick, name, where = {}) {
   return out.filter(Boolean);
 }
 
-// A family's program on its view in its type (family g of category c): an
-// instance of it (route.program, else its first) and its programs, as a
-// benchmark's view shows them, the instance chosen among the family's by
-// what each is: its values where its benchmarks' family names some, else its
-// name less the start its benchmarks' family shares; where two are alike,
-// the suite of each as a small label. A family of several suites lists its
-// instances by name, one suite's in its order (by size).
-function programSection(c, g, route) {
-  const box = element("section", { class: "programs", id: "programs" });
-  const rows = g.rows.map((i) => ({ suite: c.rows[i][0], name: c.rows[i][1], f: familyOf(c.rows[i][0], c.rows[i][1]) })).filter((r) => r.f);
-  if (!rows.length) return element("section", { id: "programs", hidden: true });   // the site without the benchmarks' data
+// The instances of family g of category c as its view lists them (its
+// program's picker and its times), each { suite, name, f (its benchmarks'
+// family, where the site has their data), label, tag }: what each is, its
+// values where f names some, else its name less the start f's instances
+// share (its whole name without f); where two are alike, the suite of each
+// its tag. A family of several suites lists its instances by label, one
+// suite's in f's order (by size). `on` is the instance the address names
+// (route.program) among those of a benchmarks' family, else the first of
+// them; none without the benchmarks' data.
+function familyInstances(c, g, route) {
+  const rows = g.rows.map((i, k) => ({ k, suite: c.rows[i][0], name: c.rows[i][1], f: familyOf(c.rows[i][0], c.rows[i][1]) }));
   const shorts = new Map();
-  for (const r of rows) if (!shorts.has(r.f)) shorts.set(r.f, shortNames(r.f.instances));
-  const label = (r) => (r.f.values?.[r.name]?.filter(Boolean).join(", ") || shorts.get(r.f).get(r.name));
-  const suites = new Set(rows.map((r) => r.suite));
-  const order = suites.size > 1 ? [...rows].sort((a, b) => label(a).localeCompare(label(b), undefined, { numeric: true }))
-    : [...rows].sort((a, b) => a.f.instances.indexOf(a.name) - b.f.instances.indexOf(b.name));
-  const twice = new Set(order.map(label).filter((l, i, all) => all.indexOf(l) !== i));
-  const on = order.find((r) => route.program?.[0] === r.suite && route.program?.[1] === r.name) ?? order[0];
-  const at = { view: "category", category: c.key, only: g.key };
-  const pick = order.length > 1 ? picker(order.map((r) => ({ route: { ...at, program: [r.suite, r.name] }, label: label(r),
-    tag: twice.has(label(r)) ? data.suites.get(r.suite).title : null, on: r === on }))) : null;
+  for (const r of rows) if (r.f && !shorts.has(r.f)) shorts.set(r.f, shortNames(r.f.instances));
+  for (const r of rows) r.label = r.f ? r.f.values?.[r.name]?.filter(Boolean).join(", ") || shorts.get(r.f).get(r.name) : r.name;
+  const place = (r) => (r.f ? r.f.instances.indexOf(r.name) : r.k);
+  const order = new Set(rows.map((r) => r.suite)).size > 1 ? rows.sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))
+    : rows.sort((a, b) => place(a) - place(b));
+  const twice = new Set(order.map((r) => r.label).filter((l, i, all) => all.indexOf(l) !== i));
+  for (const r of order) r.tag = twice.has(r.label) ? data.suites.get(r.suite).title : null;
+  const read = order.filter((r) => r.f);
+  return { order, on: read.find((r) => route.program?.[0] === r.suite && route.program?.[1] === r.name) ?? read[0] };
+}
+
+// A family's program on its view in its type (family g of category c, its
+// instances `list`, familyInstances'): the instance on show and its
+// programs, as a benchmark's view shows them, the instance chosen among
+// those of a benchmarks' family.
+function programSection(c, g, route, list) {
+  const box = element("section", { class: "programs", id: "programs" });
+  const { order: all, on } = list;
+  if (!on) return element("section", { id: "programs", hidden: true });   // the site without the benchmarks' data
+  const order = all.filter((r) => r.f);
+  const at = { view: "category", category: c.key, only: g.key, vs: route.vs };
+  const pick = order.length > 1 ? picker(order.map((r) => ({ route: { ...at, program: [r.suite, r.name] }, label: r.label,
+    tag: r.tag, on: r === on }))) : null;
   // the instance's name opens its benchmark's view, with its times by system
   const name = link({ view: "family", suite: on.suite, family: on.f.key, instance: on.name }, element("code", { class: "inst" }, on.name));
   name.title = "Its times by system";
@@ -1912,6 +1987,36 @@ function programSection(c, g, route) {
     box.replaceChildren(element("p", { class: "failed" }, `The programs did not load: ${failure.message}`));
   });
   return box;
+}
+
+// A family's times on its view in its type (family g of category c, its
+// instances `list`, familyInstances'): its instances in that order by the
+// systems given them (timesGrid), named by their benchmarks' family's axes
+// where they share them, else by their labels in one column. The systems
+// in the scoreboard's order: tddlog's, the system the view sets against
+// them, the native ones by their answers here, then the others. An
+// instance's name shows it in the view; a time opens the system's runs of
+// it on its benchmark's view (on this view where the site has no
+// benchmarks' data).
+function familyTimes(c, g, route, list) {
+  const all = catRows(c, g.key);
+  const records = new Map(all.map((r) => [`${r.suite}/${r.name}`, r]));
+  const vs = route.vs && !isMine(route.vs) ? [route.vs] : [];
+  const tal = tally(c, all, g.key);
+  const native = ranked(c, (c.native ?? []).filter((x) => tal[x] && !vs.includes(x)), tal, g.key);
+  const systems = [...c.systems.filter(isMine), ...vs, ...native, ...c.systems.filter((x) => !isMine(x) && !vs.includes(x) && !native.includes(x))];
+  const { order, on } = list;
+  const axes = order[0]?.f?.axes;
+  const same = Boolean(axes) && order.every((r) => String(r.f?.axes) === String(axes) && r.f.values?.[r.name]);
+  const at = { view: "category", category: c.key, only: g.key, vs: route.vs };
+  const rows = order.map((r) => {
+    const { v, limit } = records.get(`${r.suite}/${r.name}`);
+    const open = { ...at, program: [r.suite, r.name] };
+    return { suite: r.suite, name: r.name, named: same ? r.f.values[r.name] : [r.tag ? `${r.label} (${r.tag})` : r.label], open, v, limit,
+      runs: (x) => (r.f ? { view: "family", suite: r.suite, family: r.f.key, instance: r.name, runs: x } : open) };
+  });
+  return element("section", { id: "times" }, element("h3", {}, `Times by ${same ? and(axes) : "instance"}`),
+    timesGrid(rows, systems, same ? axes : ["instance"], on?.name, route.vs));
 }
 
 function size(bytes) {
@@ -2533,9 +2638,13 @@ function show(again = false) {
     document.title = t === null ? pageTitle : `${t} · ${pageTitle}`;
   } else if (route.view === "category" && route.vs === before.vs && route.only === before.only
     && String(route.program ?? "") !== String(before.program ?? "")) {
-    // another instance of the family on show: its programs drawn again in place
-    const c = categoryOf(route.category);
-    document.getElementById("programs")?.replaceWith(programSection(c, groupOf(c, route.only), route));
+    // another instance of the family on show: its programs and its times, the instance marked, drawn again in place
+    const c = categoryOf(route.category), g = groupOf(c, route.only);
+    if (g.source) {
+      const list = familyInstances(c, g, route);
+      document.getElementById("programs")?.replaceWith(programSection(c, g, route, list));
+      document.getElementById("times")?.replaceWith(familyTimes(c, g, route, list));
+    }
   } else if (route.view === "category" && (route.vs !== before.vs || route.only !== before.only)) {
     // the same category narrowed otherwise, or against another system: drawn
     // again in place, the menu marking the family it is narrowed to

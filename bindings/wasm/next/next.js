@@ -229,18 +229,13 @@ function familyTable(v, name) {
       : element("th", { scope: "row" }, title(f.family)),
     f.families ? element("td") : programCell(type(f.family[0]), group(f.family)),
     ...[count(f.n), count(f.vs.answers), duration(f.vs.total), count(f.vs.tddlog_answers), duration(f.vs.tddlog_total), speedCell(f.vs)].map(num))));
-  const table = element("table", { class: `board fams-tr${v.families.length > FAMILY_ROWS ? " folded" : ""}` },
+  const table = element("table", { class: "board fams-tr" },
     head2(["family"], ["program", "Opens the family's view on its program, with the programs both read"], ["instances", null, "num"],
       { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
       { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up, a dash where there is nothing to measure`, "num"]] }), body);
   // past the first rows, the rest on asking
-  const more = v.families.length > FAMILY_ROWS ? element("button", { type: "button", class: "plain more-rows", "aria-expanded": "false", onclick: () => {
-    const open = table.classList.toggle("folded") === false;
-    more.setAttribute("aria-expanded", String(open));
-    more.textContent = open ? `Only the first ${FAMILY_ROWS} families` : `All ${count(v.families.length)} families`;
-  } }, `All ${count(v.families.length)} families`) : null;
-  return [scroller(stacked(table), "whole"), more,
-    readLine(v.read)];
+  return [scroller(stacked(table), "whole"), moreRows(table, v.families.length, FAMILY_ROWS, "families"),
+    readLine(v.read)].filter(Boolean);
 }
 
 // The tabs of a baseline's page, by the ids a link names (#/baselines/X/TAB;

@@ -12,8 +12,9 @@
 // guide's links, the pages' links within the site, the
 // results page (the overview, each type against its native systems; the
 // menu of the site's sections and their entries; each category's plot, drawing its systems over all of its
-// instances with their answers and total times, its board and its
-// filters; each baseline's page from its old address; each suite's address, which opens its
+// instances with their answers and total times, its board, its
+// filters and the instances where another system is faster; a family's
+// times on its type; each baseline's page from its old address; each suite's address, which opens its
 // type's view; the hover layer
 // and the keyboard's, the lines in colour, an
 // address of nothing; where the site has the benchmarks' data, a family's
@@ -877,6 +878,32 @@ function benchmarksOf(root) {
       }
       return [String(faster), String(slower)];
     };
+    // The rows where a native system (on all programs any other) is faster
+    // than the row's subject, a row each in the table of a view that is no
+    // family's: one answers in at most half the subject's time where that is
+    // 1 s or more, each time at least 0.2 s, or answers where the subject does
+    // not, but where the subject does not read the program or cannot express it.
+    const fasterRows = (c, rows) => rows.filter((r) => {
+      const k = myKey(r);
+      if (k === undefined || r.v[k] === "unread" || r.v[k] === "unsupported") return false;
+      const mine = number(r.v[k]) ? r.v[k] : null;
+      return c.native.some((x) => !isMine(x) && number(r.v[x]) && (mine === null || (mine >= 1 && 2 * Math.max(r.v[x], floor) <= mine)));
+    });
+    // That table on the view on show: its rows, the first six shown and the
+    // rest on asking, tddlog's failures first.
+    const leadsShown = async (rows, what) => {
+      const n = rows.length;
+      assert.equal(await page.locator("#view table.board.leads tbody tr").count(), n, `${what}: the instances where another system is faster`);
+      assert.equal(await page.locator("#view table.board.leads tbody tr:visible").count(), Math.min(n, 6), `${what}: the first six of them shown`);
+      assert.equal(await page.locator("#view button.more-rows").count(), n > 6 ? 1 : 0, `${what}: the rest on asking`);
+      const fails = await page.$$eval("#view table.board.leads tbody tr", (trs) => trs.map((tr) => tr.querySelector("td.fail") !== null));
+      assert.deepEqual(fails, [...fails].sort((a, b) => b - a), `${what}: tddlog's failures first`);
+      assert.equal(fails.filter(Boolean).length, rows.filter((r) => !number(r.v[myKey(r)])).length, `${what}: tddlog's failures`);
+      if (n > 6) {
+        await page.click("#view button.more-rows");
+        assert.equal(await page.locator("#view table.board.leads tbody tr:visible").count(), n, `${what}: all of them on asking`);
+      }
+    };
     // The data: each category's answers, systems given, native and drawn,
     // and each system's comparison with tddlog, over the category and
     // narrowed to each family and each system's own benchmarks, are its rows'.
@@ -1046,7 +1073,15 @@ function benchmarksOf(root) {
           const n = rows.filter((r) => r.v[x] === null).length;
           return n ? String(n) : "";
         }), `${what}: the instances each system was not given`);
-      assert.equal((await page.$$("#view ul.losses li")).length, c.losses?.length ?? 0, `${what}: where tddlog is slower`);
+      // where a native system is faster, each instance a link to its family's view with it on show
+      const faster = fasterRows(c, rows);
+      if (c.key !== ALL) {
+        const at = (r) => `#/category/${c.key}/in/${encodeURIComponent(c.groups.find((g) => g.rows.includes(rows.indexOf(r))).key)}`
+          + `/program/${encodeURIComponent(r.suite)}/${encodeURIComponent(r.name)}`;
+        assert.deepEqual((await page.$$eval("#view table.board.leads tbody th a", (as) => as.map((a) => a.getAttribute("href")))).sort(),
+          faster.map(at).sort(), `${what}: each instance where another system is faster opens its family's view`);
+      }
+      await leadsShown(faster, what);
       assert.deepEqual(await page.$eval("#view figure.scatter", (f) => [f.dataset.faster, f.dataset.slower]),
         sides(rows, c.drawn.filter((x) => !isMine(x))), `${what}: tddlog against the fastest other system`);
       // each member of tddlog's labelled, a subject given every instance not repeated
@@ -1126,9 +1161,28 @@ function benchmarksOf(root) {
               await page.waitForFunction((h) => location.hash.startsWith(`${h}/program/`), h);
               await page.waitForSelector(`${seg} [aria-current], ${menu}`);
               assert.equal(await page.$eval("#view h2", (e) => e.textContent), g.title, `${c.key} narrowed to ${only}: another instance in place`);
+              // (the times in the picker's order, the instance on show marked)
+              await page.waitForFunction(() => document.querySelector("#view section#times tbody tr:nth-child(2)")?.classList.contains("on"));
+              assert.equal(await page.locator("#view section#times tbody tr.on").count(), 1, `${c.key} narrowed to ${only}: the instance on show marked in its times`);
             }
           }
-        }
+          // The family's times, a row an instance, where the table of where
+          // another system is faster would be the times again; set against a
+          // system, its column marked.
+          if (g.source) {
+            assert.equal(await page.locator("#view section#times table.grid tbody tr").count(), rows.length, `${c.key} narrowed to ${only}: its times, a row an instance`);
+            assert.match(await page.textContent("#view section#times h3"), /^Times by \S/, `${c.key} narrowed to ${only}: its times' heading`);
+            assert.equal(await page.locator("#view table.board.leads").count(), 0, `${c.key} narrowed to ${only}: no table of where another system is faster`);
+            const y = c.native.find((s) => rows.some((r) => r.v[s] !== null));
+            if (y) {
+              await page.evaluate((to) => { location.hash = to; }, `${h}/vs/${y}`);
+              await page.waitForSelector("#view section#times table.grid thead th.vs");
+              assert.deepEqual(await page.$$eval("#view section#times table.grid thead th.vs", (ths) => ths.map((th) => th.textContent)), [names[y]],
+                `${c.key} narrowed to ${only} against ${y}: its column marked`);
+              assert.equal(await page.locator("#view section#times table.grid tbody td.vs").count(), rows.length, `${c.key} narrowed to ${only} against ${y}: a cell an instance`);
+            }
+          }
+        } else await leadsShown(fasterRows(c, rows), `${c.key} narrowed to ${only}`);
         console.log(`ok ${c.key} narrowed to ${only}, ${rows.length} instances`);
       }
     }
@@ -1283,23 +1337,21 @@ function benchmarksOf(root) {
     assert.equal(await page.title(), "Not found · tddlog results");
     console.log(`ok the results page's plot: ${categories[0].key}${greyed ? `, ${greyed.key}'s colours` : ""}; the former addresses; an address of nothing`);
 
-    // The README's sentences on where tddlog is slower, on a category's
-    // page: given to a category that has none in the data.
-    const plain = categories.find((c) => !c.losses?.length);
-    if (plain) {
-      const routed = await context.newPage();
-      routed.on("pageerror", (error) => errors.push(String(error)));
-      await routed.route((url) => url.pathname === "/results/categories.json", async (route) => {
-        const response = await route.fetch();
-        const json = await response.json();
-        json.categories.find((c) => c.key === plain.key).losses = ["Another system is faster on **these** instances."];
-        await route.fulfill({ response, json });
-      });
-      await routed.goto(`${base}results/#/category/${plain.key}`);
-      await routed.waitForSelector("#view ul.losses li");
-      assert.equal(await routed.textContent("#view ul.losses li"), "Another system is faster on these instances.");
-      await routed.close();
-      console.log(`ok ${plain.key}: where tddlog is slower, where the data says`);
+    // An instance where another system is faster opens its family's view
+    // on its type, the instance on show and marked in the family's times.
+    {
+      const c = types.find((x) => fasterRows(x, rowsOf(x)).length);
+      if (c) {
+        await visit(`#/category/${c.key}`, "table.board.leads");
+        const a = page.locator("#view table.board.leads tbody th a").first();
+        const [to, name] = [await a.getAttribute("href"), await a.textContent()];
+        await a.click();
+        await page.waitForFunction((to) => location.hash === to && document.querySelector("#view section#times table.grid"), to);
+        if (await page.$("#view section#programs:not([hidden])")) {
+          assert.equal(await page.$eval("#view section#times tbody tr.on th", (th) => th.title), name, `${c.key}: ${name} marked in its family's times`);
+        }
+        console.log(`ok ${c.key}: ${name}, where another system is faster, on its family's view`);
+      }
     }
 
     // The benchmarks' data, where the site has it: every suite's families
