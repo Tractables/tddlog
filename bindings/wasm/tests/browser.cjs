@@ -1031,13 +1031,15 @@ function benchmarksOf(root) {
       linear(fig, what);
       const board = await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => [r.cells[0].textContent.trim(),
         r.cells[1].textContent.trim().replace(/,/g, "")]));
-      assert.deepEqual(board, [...c.mine, ...c.native].map((x) => [names[x], String(c.answers[x])]), `${what}: its board`);
+      // the board ranks by the answers it shows, all of them; the overview by the idiomatic ones
+      const boardOrder = [...c.mine, ...ranked(c, c.native)];
+      assert.deepEqual(board, boardOrder.map((x) => [names[x], String(c.answers[x])]), `${what}: its board`);
       const pageOf = (x) => (isMine(x) ? `../#/integrations/${x === "tddlog" ? x : x.replace(/-tddlog$/, "")}` : `../#/baselines/${x}`);
       assert.deepEqual(await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[0].querySelector("a").getAttribute("href"))),
-        [...c.mine, ...c.native].map(pageOf), `${what}: each system's name opens its page`);
+        boardOrder.map(pageOf), `${what}: each system's name opens its page`);
       // how many each system was not given, in the board's last column, empty for none
       assert.deepEqual(await page.$eval("#view table.board", (t) => [...t.tBodies[0].rows].map((r) => r.cells[r.cells.length - 1].textContent.replace(/,/g, ""))),
-        [...c.mine, ...c.native].map((x) => {
+        boardOrder.map((x) => {
           const n = rows.filter((r) => r.v[x] === null).length;
           return n ? String(n) : "";
         }), `${what}: the instances each system was not given`);
