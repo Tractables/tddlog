@@ -31,12 +31,35 @@ with and check `tddlog_version()` at run time.
 
 ## Install
 
-There are no prebuilt archives yet. Build and install the package from a
-checkout, with Rust 1.88 or newer, a C++20 compiler for the
-tree-decomposition solvers goatd vendors, a C compiler and CMake:
+Each GitHub release ([v0.1.0](https://github.com/Tractables/tddlog/releases/tag/v0.1.0), the latest)
+attaches a prebuilt archive for Linux x86-64 and ARM64, macOS ARM64 and
+x86-64 and Windows x86-64 (`tddlog-c-v0.1.0-<target>.tar.gz`, `.zip` on
+Windows, each with a `.sha256`), which needs no Rust toolchain. A
+`.tar.gz` is the installed package below: the header in `include/`, the
+shared library beside the static one, the CMake package and
+`lib/pkgconfig` in `lib/`, and the license and notices in
+`share/licenses/tddlog`. Set `CMAKE_PREFIX_PATH` to the unpacked
+directory, or `PKG_CONFIG_PATH` to its `lib/pkgconfig`. The Windows zip
+holds the header, `tddlog_c.dll`, its import library `tddlog_c.dll.lib`
+and the static `tddlog_c.lib`. Each archive's `NATIVE-STATIC-LIBS.txt`
+names the system libraries a static link needs on that platform. On
+Linux x86-64, for example:
 
 ```sh
-git clone https://github.com/Tractables/tddlog
+curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-c-v0.1.0-x86_64-unknown-linux-gnu.tar.gz | tar xz
+export PKG_CONFIG_PATH=$PWD/tddlog-c-v0.1.0-x86_64-unknown-linux-gnu/lib/pkgconfig
+```
+
+To build and install the package from a checkout instead, with Rust 1.88
+or newer ([rustup](https://rustup.rs) installs it), a C++20 compiler (GCC 11 or newer or Clang 14 or newer) for the
+tree-decomposition solvers goatd vendors, a C compiler, `make` and CMake
+3.16 or newer; the command line's
+[install notes](https://github.com/Tractables/tddlog#install) say what
+to do when the default `cargo` or `g++` is older. The build takes about
+three minutes on eight cores:
+
+```sh
+git clone --depth 1 https://github.com/Tractables/tddlog
 cd tddlog
 cmake -S bindings/c -B build/c -DCMAKE_BUILD_TYPE=Release
 cmake --build build/c --config Release
@@ -99,7 +122,13 @@ tddlog_solution_free(solution);
 ```
 
 `examples/alarm.c` runs it on the alarm example and checks the answers
-against the probabilities worked out by hand.
+against the probabilities worked out by hand. It calls `log10`, so it
+links the maths library too, `-lm` after the package's flags or `m`
+after `tddlog::tddlog` in CMake:
+
+```sh
+cc bindings/c/examples/alarm.c $(pkg-config --cflags --libs tddlog) -lm -o alarm
+```
 
 - `TddlogOptions` holds the command line's options: `vtree` (`--vtree`,
   null for `"auto"`), `evidence_probability` (`--evidence-probability`)
@@ -111,7 +140,7 @@ against the probabilities worked out by hand.
   or a network's, `"bif"`, `"hugin"`
   (`.net`), `"xdsl"` or `"uai"`, with every variable queried. A network's
   `evidence` is the text of its evidence file, an Ace `.inst` file or,
-  for a UAI network, a UAI `.evid` file. For a UAI `MARKOV` network,
+  for a UAI network, a UAI `.evid` file. For a UAI network,
   `P(e)` is the partition function given the evidence.
 - `arguments` in the options, `num_arguments` strings, are a ProbLog
   program's, an LPAD's or a Dice program's arguments, the values the

@@ -3,23 +3,29 @@
 //! variable changing fastest. The variables are named `x0`, `x1`, ... and
 //! their values `0`, `1`, ... (written `v_0`, `v_1`, ...).
 //!
+//! The file's functions are read as written: `Z` is the sum over all
+//! assignments of the product of their entries, as the UAI PR task asks.
 //! A `BAYES` function is the table of its scope's last variable given the
 //! others. A `MARKOV` network that is a Bayesian network as written, each
 //! function a conditional table of one variable of its scope, each
 //! variable the child of one function, and the child relation acyclic (the
 //! UAI suites' Promedus and Pedigree, and the networks of the UAI 2006
 //! evaluation that are written as `MARKOV` files), is read as that network
-//! ([`conditional_tables`]): its partition function is one, and its offset
-//! zero. A row that sums to one up to the rounding of its decimals counts,
-//! and is divided by its sum as a `BAYES` file's row is. Any other `MARKOV` network's variables get uniform priors, times
-//! their unary factors normalized, and every other factor `f` becomes a
-//! variable `fJ` of one value `ok` whose row for each assignment of its
-//! scope holds the factor's entry divided by its largest, observed. In
-//! each assignment the program's weight is then the product of the
-//! factors divided by each prior's sum and each factor's largest entry,
-//! and by the entry of each factor with one distinct entry, which is left
-//! out: so `log10 Z = log10 P(e) + c`, where the offset `c` is the sum of
-//! the base-10 logarithms of all of these ([`partition_offset`]).
+//! ([`conditional_tables`]); a row counts as a table's where it sums to one
+//! up to the rounding of its decimals. Either way a table whose rows do not
+//! sum to one, rounded or not, is the product of its rows divided by their
+//! sums and of the factor of those sums over its parents ([`as_written`]).
+//! Any other `MARKOV` network's variables get uniform priors, times their
+//! unary factors normalized. Every other factor `f`, those sums included,
+//! becomes a variable `fJ` of one value `ok` whose row for each assignment
+//! of its scope holds the factor's entry divided by its largest, observed;
+//! a factor of one distinct entry is left out. In each assignment the
+//! program's weight is then the product of the functions divided by each
+//! prior's sum and each factor's largest entry, and by the entry of each
+//! factor left out: so `log10 Z = log10 P(e) + c`, where the offset `c` is
+//! the sum of the base-10 logarithms of all of these ([`partition_offset`]).
+//! A `BAYES` file whose rows all sum to one has no offset: its `Z` is its
+//! program's `P(e)`.
 //!
 //! For a program that asks nothing and observes nothing, a `MARKOV`
 //! network whose variables all have the same `k` values and whose
@@ -29,7 +35,7 @@
 //! ([`colour_symmetry`]), which leaves `Z` a `k`-th of the network's, and
 //! the offset holds `log10 k` besides.
 
-use super::rows::{fsum, sums_to_one};
+use super::rows::{fsum, split, sums_to_one};
 use super::{Network, Read};
 
 /// A UAI file's parts: whether it is `MARKOV`, the domain sizes, the
@@ -117,40 +123,29 @@ pub(super) fn parse(text: &str, colours: bool) -> Result<Read, String> {
         network.declare(&format!("x{i}"), (0..k).map(|u| u.to_string()).collect())?;
     }
     if !markov {
+        let mut tabled = vec![false; sizes.len()];
+        let mut conditional = Vec::with_capacity(scopes.len());
         for (scope, table) in scopes.into_iter().zip(tables) {
-            let (&child, parents) = scope
-                .split_last()
-                .ok_or("UAI BAYES function of an empty scope")?;
-            if network.tables[child].is_some() {
+            let &child = scope.last().ok_or("UAI BAYES function of an empty scope")?;
+            if std::mem::replace(&mut tabled[child], true) {
                 return Err(format!("UAI BAYES file with two tables for x{child}"));
             }
-            network.set_product_table(child, parents.to_vec(), table)?;
+            conditional.push((scope, table));
         }
-        if let Some(v) = network.tables.iter().position(Option::is_none) {
+        if let Some(v) = tabled.iter().position(|&t| !t) {
             return Err(format!("UAI BAYES file without a table for x{v}"));
         }
-        return Ok(Read::of(network));
+        return as_written(network, conditional, false);
     }
     if let Some(conditional) = conditional_tables(&sizes, &scopes, &tables) {
-        for (v, (scope, table)) in conditional.into_iter().enumerate() {
-            network.set_product_table(v, scope[..scope.len() - 1].to_vec(), table)?;
-        }
-        return Ok(Read {
-            network,
-            forced: Vec::new(),
-            log10_offset: Some(0.0),
-        });
+        return as_written(network, conditional, true);
     }
-    let n = sizes.len();
     let mut prior: Vec<Vec<f64>> = sizes.iter().map(|&k| vec![1.0; k]).collect();
-    let mut factors = Vec::new();
-    // The constant factors, which the program leaves out: their entries
-    // are factors of Z that P(e) does not hold.
-    let mut constants = Vec::new();
+    let mut factors = Factors::default();
     if colours && let Some((s, t)) = colour_symmetry(&sizes, &scopes, &tables) {
         // The network's Z is k times that of the functions so broken.
         (scopes, tables) = (s, t);
-        constants.push(sizes[0] as f64);
+        factors.logs.push((sizes[0] as f64).log10());
     }
     for (scope, table) in scopes.into_iter().zip(tables) {
         if table.iter().any(|&w| w < 0.0) {
@@ -160,43 +155,101 @@ pub(super) fn parse(text: &str, colours: bool) -> Result<Read, String> {
             for (a, b) in prior[scope[0]].iter_mut().zip(&table) {
                 *a *= b;
             }
-        } else if table.iter().any(|&w| w != table[0]) {
-            factors.push((scope, table));
-        } else if table[0] == 0.0 {
-            return Err("UAI factor that is zero everywhere".into());
         } else {
-            constants.push(table[0]);
+            factors.add(&mut network, scope, &table)?;
         }
     }
-    let mut logs = Vec::with_capacity(n + factors.len() + constants.len());
     for (i, weights) in prior.into_iter().enumerate() {
         let total = fsum(&weights);
         if total == 0.0 {
             return Err(format!("x{i}: its unary factors are zero everywhere"));
         }
-        logs.push(total.log10());
+        factors.logs.push(total.log10());
         network.set_product_table(i, Vec::new(), weights.iter().map(|w| w / total).collect())?;
     }
-    let mut forced = Vec::with_capacity(factors.len());
-    for (j, (scope, table)) in factors.into_iter().enumerate() {
-        let top = table.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-        logs.push(top.log10());
-        let f = network.declare(&format!("f{j}"), vec!["ok".into()])?;
-        network.set_product_table(f, scope, table.iter().map(|w| w / top).collect())?;
-        forced.push(f);
-    }
-    logs.extend(constants.iter().map(|c| c.log10()));
-    Ok(Read {
-        network,
-        forced,
-        log10_offset: Some(partition_offset(&logs)),
-    })
+    Ok(factors.read(network, true))
 }
 
-/// `log10 Z - log10 P(e)` of a Markov network's program, the sum of the
-/// base-10 logarithms of each prior's sum, each factor's largest entry and
-/// each constant factor's entry (`logs`): in each assignment the program's
-/// weight is the product of the factors divided by all of these, so
+/// The network of a file's conditional tables as written, each a scope
+/// with its child last and the table in that order: `BAYES`, or a
+/// `MARKOV` file read as its network (`markov`). A table is the product
+/// of its rows divided by their sums ([`split`]) and of the factor of
+/// those sums over its parents ([`Factors::add`]): an offset where every
+/// row has one sum, as a table rounded alike in every row does, and
+/// otherwise a variable observed. A `BAYES` file whose rows all sum to one
+/// reads as its network, and its program's `P(e)` is its `Z`.
+fn as_written(
+    mut network: Network,
+    conditional: Vec<ConditionalTable>,
+    markov: bool,
+) -> Result<Read, String> {
+    let mut factors = Factors::default();
+    for (scope, mut table) in conditional {
+        let (&v, parents) = scope.split_last().expect("a scope holds its child");
+        let sums = split(&mut table, network.values[v].len()).map_err(|e| format!("x{v}: {e}"))?;
+        network.set_product_table(v, parents.to_vec(), table)?;
+        factors.add(&mut network, parents.to_vec(), &sums)?;
+    }
+    Ok(factors.read(network, markov))
+}
+
+/// The factors a program holds besides a network's tables: each written
+/// as a variable of one value, observed, and the base-10 logarithms of
+/// what the program's weights are divided by.
+#[derive(Default)]
+struct Factors {
+    forced: Vec<usize>,
+    logs: Vec<f64>,
+}
+
+impl Factors {
+    /// Adds the factor `table` over `scope`, the scope's last variable
+    /// changing fastest. One of a single distinct entry, a constant, is
+    /// left out, its entry in the offset. Any other becomes a variable `fJ`
+    /// of one value `ok`, observed, whose row for each assignment of the
+    /// scope holds the factor's entry divided by its largest, which goes
+    /// into the offset. A factor that is zero everywhere is an error.
+    fn add(
+        &mut self,
+        network: &mut Network,
+        scope: Vec<usize>,
+        table: &[f64],
+    ) -> Result<(), String> {
+        let top = table.iter().copied().fold(0.0, f64::max);
+        if top == 0.0 {
+            return Err("UAI factor that is zero everywhere".into());
+        }
+        if top != 1.0 {
+            self.logs.push(top.log10());
+        }
+        if table.iter().all(|&w| w == top) {
+            return Ok(());
+        }
+        let f = network.declare(&format!("f{}", self.forced.len()), vec!["ok".into()])?;
+        network.set_product_table(f, scope, table.iter().map(|w| w / top).collect())?;
+        self.forced.push(f);
+        Ok(())
+    }
+
+    /// The network read, observing the factors, with its offset `log10 Z -
+    /// log10 P(e)`, the sum of `logs` ([`partition_offset`]); none for a
+    /// `BAYES` file that holds no factor and divides by nothing
+    /// (`!markov`), whose `Z` is its program's `P(e)`.
+    fn read(self, network: Network, markov: bool) -> Read {
+        let log10_offset = (markov || !self.forced.is_empty() || !self.logs.is_empty())
+            .then(|| partition_offset(&self.logs));
+        Read {
+            network,
+            forced: self.forced,
+            log10_offset,
+        }
+    }
+}
+
+/// `log10 Z - log10 P(e)` of a network's program, the sum of the base-10
+/// logarithms of each prior's sum, each factor's largest entry and each
+/// constant factor's entry (`logs`): in each assignment the program's
+/// weight is the product of the functions divided by all of these, so
 /// `P(e) · 10^offset` is `Z` given the same evidence.
 fn partition_offset(logs: &[f64]) -> f64 {
     fsum(logs)
@@ -472,6 +525,26 @@ mod tests {
     }
 
     #[test]
+    fn a_bayes_table_whose_rows_share_one_sum_is_an_offset() {
+        // x0's row sums to 0.999999 and both of x1's to 0.5: each table's
+        // sums are one constant, a factor of the empty scope, which needs
+        // no variable and is the offset of Z from P(e).
+        let read = parse(
+            "BAYES 2 2 2 2 1 0 2 0 1 2 0.333333 0.666666 4 0.1 0.4 0.3 0.2",
+            false,
+        )
+        .unwrap();
+        assert!(read.forced.is_empty());
+        let s = fsum(&[0.333333, 0.666666]);
+        let c = read.log10_offset.unwrap();
+        assert!((c - (s.log10() + 0.5f64.log10())).abs() < 1e-15, "{c}");
+        let t = read.network.tables[0].as_ref().unwrap();
+        assert_eq!(t.probs, [0.333333 / s, 0.666666 / s]);
+        let t = read.network.tables[1].as_ref().unwrap();
+        assert_eq!(t.probs, [0.2, 0.8, 0.6, 0.4]);
+    }
+
+    #[test]
     fn a_markov_file_of_conditional_tables_is_the_network() {
         // x1's table given x0 is written with x1 first in its scope.
         let read = parse(
@@ -490,16 +563,23 @@ mod tests {
     fn a_markov_file_of_tables_rounded_to_their_decimals_is_the_network() {
         // x1's row at x0 = 0, 0.160598 and 0.839403, sums to 1.000001: two
         // halves rounded up, as the UAI 2006 evaluation's networks write.
+        // The row is divided by its sum, and the sums of x1's rows, 1.000001
+        // and 1, are a factor over x0, observed.
         let read = parse(
             "MARKOV 2 2 2 2 1 0 2 1 0 2 0.2 0.8 4 0.160598 0.6 0.839403 0.4",
             false,
         )
         .unwrap();
-        assert_eq!(read.log10_offset, Some(0.0));
-        assert!(read.forced.is_empty());
+        let s = fsum(&[0.160598, 0.839403]);
+        assert!((s - 1.000001).abs() < 1e-15);
+        assert_eq!(read.log10_offset, Some(s.log10()));
+        assert_eq!(read.forced, [2]);
         let t = read.network.tables[1].as_ref().unwrap();
         assert_eq!(t.parents, [0]);
-        assert_eq!(t.probs, [0.160598, 0.839403, 0.6, 0.4]);
+        assert_eq!(t.probs, [0.160598 / s, 0.839403 / s, 0.6, 0.4]);
+        let f = read.network.tables[2].as_ref().unwrap();
+        assert_eq!(f.parents, [0]);
+        assert_eq!(f.probs, [1.0, 1.0 / s]);
         // A row short of one by more than its decimals' rounding is a
         // factor's, not a table's.
         let read = parse(

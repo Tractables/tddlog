@@ -316,7 +316,9 @@ fn ground_tried(
     // original stands then. It is ground only while it stays within the
     // original's grounding before `finish`, which shrinks the two alike: on
     // the sickness programs it grew 13 to 138 times, and grounding and
-    // finishing it took most of the run.
+    // finishing it took most of the run. Resolved top-down, its work counts
+    // too ([`engine::topdown`]): diamond's loop written down from its query
+    // kept no more than the original, in work quadratic in its steps.
     let Some((linear, from_bound_end)) = linear::rewrite(&norm) else {
         return Ok((gp, kept));
     };
@@ -889,6 +891,39 @@ mod tests {
         assert!(bound.stats.levels > 0);
         assert!(bound.stats.from_bound_end.is_empty());
         assert_eq!(bound.stats.walked, free.stats.walked);
+    }
+
+    /// The bound-end rewrite is ground only while it stays within the
+    /// first grounding, in the literals it resolves as well as in what it
+    /// keeps. Written down from its query, a loop's chain from the bound
+    /// end is resolved top-down, which calls `step(J)` once for each `J`,
+    /// and each call enumerates `between(1, n, T1)`: work quadratic in the
+    /// steps for a grounding linear in them, 50 s at 10 000 steps. Under
+    /// twice the first grounding's size, what it keeps fits and its work
+    /// does not.
+    #[test]
+    fn the_bound_end_rewrite_gives_up_once_its_work_passes_the_first_grounding() {
+        let n = 400;
+        let source = format!(
+            "0.5::route(T) :- step(T).\n\
+             0.0001::drop(T) :- step(T).\n\
+             step(T) :- between(1, {n}, T1), T is T1 - 1.\n\
+             s(0).\n\
+             s(T) :- T > 0, J is T - 1, s(J), route(J).\n\
+             s(T) :- T > 0, J is T - 1, s(J), \\+route(J), \\+drop(J).\n\
+             query(s({n})).\n"
+        );
+        let program = crate::syntax::parse_program(&source).expect("parses");
+        let (program, counted) = super::terms::lower(&program).expect("lowers");
+        let norm = super::normalize::normalize(&program, counted).expect("normalizes");
+        let opts = GroundOptions::default();
+        let (_, size, _) = super::ground_norm(&norm, &opts, None, 0).expect("grounds");
+        let (linear, rewritten) = super::linear::rewrite(&norm).expect("rewrites");
+        assert_eq!(rewritten, ["s/1"]);
+        assert!(matches!(
+            super::ground_norm(&linear, &opts, Some(2 * size), 0),
+            Err(super::GroundError::OverBound)
+        ));
     }
 
     /// Under a demand, the atoms of facts are numbered as the demand reaches

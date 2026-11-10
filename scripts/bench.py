@@ -6313,7 +6313,9 @@ def checker_command(args, system, variant, model, props, dice=True):
     10 000 iterations: on an acyclic chain they stop once nothing changes,
     after as many as the chain is long."""
     if system == 'storm':
-        return [args.storm, os.path.join(HERE, 'storm_check.py'), model, variant, props]
+        share = getattr(args, 'storm_sylvan_share', None)
+        share = ['--sylvan-share', share] if variant == 'dd' and share else []
+        return [args.storm, os.path.join(HERE, 'storm_check.py'), model, variant, props] + share
     cmd = [os.path.join(os.path.abspath(args.prism), 'bin', 'prism'), model] + ([props] if dice else ['-pf', props]) + \
         ['-' + variant, '-javamaxmem', args.prism_heap, '-cuddmaxmem', args.prism_heap]
     return cmd + (['-epsilon', '1e-15', '-maxiters', '1000000000'] if dice else [])
@@ -7274,6 +7276,8 @@ def ace_defaults(args):
         raise SystemExit('--sharpsat-td-decot without --sharpsat-td: sharpSAT-TD is not run')
     if getattr(args, 'roulette_variants', None) is not None and not getattr(args, 'roulette', ''):
         raise SystemExit('--roulette-variants without --roulette: Roulette is not run')
+    if getattr(args, 'storm_sylvan_share', None) and (not args.storm or 'dd' not in (args.storm_variants or ['dd'])):
+        raise SystemExit('--storm-sylvan-share sizes Storm dd\'s Sylvan, and Storm dd is not run')
     # Under the memory cap the Java systems' heaps are set from it: Ace's at
     # 0.8 of it (the JVM's own memory and c2d's beside the heap), PRISM's
     # heap and its decision diagrams' memory 0.8 each (the cap kills a run that
@@ -7355,6 +7359,9 @@ def main():
                    'and the Markov chains dice2prism.py writes of the Dice programs (scripts/storm_check.py); '
                    'empty = not run')
     r.add_argument('--storm-variants', type=lambda s: s.split(','), help='sparse, exact, dd (all by default)')
+    r.add_argument('--storm-sylvan-share', choices=['3/4'],
+                   help="Sylvan's memory for Storm dd, three quarters of the cap in place of half: the retry of "
+                        'an instance whose unique table filled (storm_check.py --sylvan-share)')
     r.add_argument('--prism', default='', help="PRISM's directory (bin/prism), for the weather factory and the "
                    'Markov chains of the Dice programs; empty = not run')
     r.add_argument('--prism-variants', type=lambda s: s.split(','), help='the engines sparse, hybrid (both by default)')

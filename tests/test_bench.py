@@ -1654,6 +1654,20 @@ class SkipTests(unittest.TestCase):
             self.assertEqual(cmd[cmd.index('-cuddmaxmem') + 1], '24576m')   # not CUDD's default of 1 GB
             self.assertEqual('-epsilon' in cmd, dice)
 
+    def test_storm_dd_gets_three_quarters_only_when_asked(self):
+        def cmd(variant, share=None):
+            return bench.checker_command(SimpleNamespace(storm='py', storm_sylvan_share=share), 'storm', variant, 'm', 'p')
+        self.assertEqual(cmd('dd')[2:], ['m', 'dd', 'p'])   # half, storm_check.py's default
+        self.assertEqual(cmd('dd', '3/4')[2:], ['m', 'dd', 'p', '--sylvan-share', '3/4'])
+        self.assertEqual(cmd('sparse', '3/4')[2:], ['m', 'sparse', 'p'])
+        base = dict(cmd='run', suite='standard', ace_benchmarks=None, uai_benchmarks=None, biomine_benchmarks=None,
+                    ace='', ace_variants=None, ace_heap=None, ace_java=None, sharpsat_td='', sharpsat_td_decot=None,
+                    prism_heap=None, mem_cap=None, storm_sylvan_share='3/4')
+        for given in [dict(storm=''), dict(storm='py', storm_variants=['sparse', 'exact'])]:
+            with self.assertRaisesRegex(SystemExit, 'Storm dd is not run'):
+                bench.ace_defaults(SimpleNamespace(**(base | given)))
+        bench.ace_defaults(SimpleNamespace(**(base | dict(storm='py', storm_variants=None))))
+
     def test_a_record_keeps_its_commands_memory(self):
         bench.LANE.usage = {}
         r = bench.timed([sys.executable, '-c', 'b = bytearray(64 << 20); print(len(b))'], 60)

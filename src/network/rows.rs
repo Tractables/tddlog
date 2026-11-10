@@ -66,10 +66,43 @@ enum Sum {
     Short,
 }
 
-fn sum(row: &[f64]) -> Result<Sum, String> {
-    if let Some(&p) = row.iter().find(|p| !p.is_finite() || **p < 0.0) {
-        return Err(format!("{p} is not a probability"));
+/// An error for a row that holds a negative or not finite entry.
+fn checked(row: &[f64]) -> Result<(), String> {
+    match row.iter().find(|p| !p.is_finite() || **p < 0.0) {
+        Some(p) => Err(format!("{p} is not a probability")),
+        None => Ok(()),
     }
+}
+
+/// Each row of `k` entries of `probs` divided by its sum, in place, and
+/// the sums in order: a function of a UAI file is the table of its rows so
+/// divided times the factor of their sums over its parents (`uai.rs`). A
+/// row whose entries sum to one up to their parsing, within `k` units of
+/// roundoff, stays as it is, of sum one, so that the noise of reading
+/// decimals in binary makes no factor; so does a row of zeros, of sum
+/// zero. A row with a negative or not finite entry is an error.
+pub(super) fn split(probs: &mut [f64], k: usize) -> Result<Vec<f64>, String> {
+    let k = k.max(1);
+    let mut sums = Vec::with_capacity(probs.len() / k);
+    for row in probs.chunks_mut(k) {
+        checked(row)?;
+        let total = fsum(row);
+        if (total - 1.0).abs() <= k as f64 * f64::EPSILON {
+            sums.push(1.0);
+            continue;
+        }
+        if total > 0.0 {
+            for p in row.iter_mut() {
+                *p /= total;
+            }
+        }
+        sums.push(total);
+    }
+    Ok(sums)
+}
+
+fn sum(row: &[f64]) -> Result<Sum, String> {
+    checked(row)?;
     let total = fsum(row);
     if (1.0 - ROUNDING..=1.0).contains(&total) {
         Ok(Sum::One)

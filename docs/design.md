@@ -570,6 +570,13 @@ precision, which it refused past 1e-9, and an excess equal to the slack,
 which it refused, and the two decide alike on every
 row of every network the script read. `--rescale` divides
 every row by its sum first, for Ace's tables in percent or as weights.
+A UAI file is the exception: its functions are read as written, since
+the PR task's `Z` is their product, so each table is split into its rows
+divided by their sums (`rows::split`) and the factor of those sums over
+its parents, which the next paragraph's factors hold. A row within a few
+units of roundoff of one stays as it is; a table whose rows all have one
+sum (`0.3333333` three times) needs no variable, only the offset.
+`--rescale` is refused for a UAI file.
 
 **Markov networks** (`uai.rs`). A `MARKOV` file whose functions are each
 a conditional table of one variable of its scope, one function per
@@ -577,16 +584,17 @@ variable and the child relation acyclic (Promedus, Pedigree, and the UAI
 2006 networks written as `MARKOV` files), is that Bayesian network. A
 table's row over its child's values counts where the rule above divides
 it or keeps it as summing to one (`rows::sums_to_one`), so that a file
-rounded to six decimals reads as its `BAYES` writing would, and its rows
-are then divided as that writing's are. In any other, every variable gets a uniform prior times
+rounded to six decimals reads as its `BAYES` writing would, its tables
+split as that writing's are. In any other, every variable gets a uniform prior times
 its unary factors, normalized, and every other factor `f` becomes a
 variable `fJ` of one value, observed, whose row for each assignment of the
 factor's scope is its entry over its largest; a constant factor is left
-out. The program's `P(e)` times `10^c`, where `c` sums the base-10
-logarithms of the priors' sums, the factors' largest entries and the
-constants, is the partition function given the evidence: the program
-states `c` on its first line, and the binary prints `Z:` for such a
-file where it would print `P(e):` ([The probability of the
+out. The factors of a table's rows' sums are such factors too. The
+program's `P(e)` times `10^c`, where `c` sums the base-10 logarithms of
+the priors' sums, the factors' largest entries and the constants, is the
+partition function given the evidence: the program states `c` on its
+first line, and the binary prints `Z:` for a `MARKOV` file, or a `BAYES`
+one whose rows do not all sum to one, where it would print `P(e):` ([The probability of the
 evidence](#evidence-and-queries-srcquery-srceval)). Under `--no-queries`
 without observations, a network of Potts tables over pairs of variables of
 `k` values each (a graph colouring) has its colour symmetry broken: one
@@ -1541,7 +1549,8 @@ root, is built. Put where the two readers' copies meet instead, the tie
 would meet the copies below that free of the inputs.
 
 **Network files.** A network's row whose gap from one the rounding of its
-entries explains (`0.3333333` three times) is rescaled
+entries explains (`0.3333333` three times) is rescaled, or for a UAI
+file split into the row over its sum and a factor
 ([Network files](#network-files-srcnetwork)); a row like `0.5, 0.499` is
 kept, and its missing mass goes to no value as in ProbLog. Rows that do
 not sum to one fall outside the clause encoding.
@@ -1725,17 +1734,21 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   compile is unprojected, since a projected scope stops being a projection
   after the first move. A stopped compile resumes inside a cyclic
   component at the update that stopped.
-- **`program`** (`auto`'s first trial where views were inlined, its last
-  elsewhere): right-linear over the facts in the reverse of the order the
-  program states them. A right-linear vtree over x1 .. xn is read as an
-  OBDD reading xn first, so the diagram reads the facts in program order.
-  A bit-blasted circuit exported with its flips in creation order
-  (Alea's) is then laid out in the variable order its BDD package built it
-  in, and on some circuits this is the one layout that compiles. On
-  programs with something to order it is `auto`'s first trial where the
-  grounder inlined views, which the exported circuits all have and the
-  networks, grids and graphs do not, and its last elsewhere, where it
-  takes its share of the work until another trial wins.
+- **`program`** (`auto`'s first trial on a program built gate by gate,
+  its last elsewhere): right-linear over the facts in the reverse of the
+  order the program states them. A right-linear vtree over x1 .. xn is
+  read as an OBDD reading xn first, so the diagram reads the facts in
+  program order. A bit-blasted circuit exported with its flips in creation
+  order (Alea's) is then laid out in the variable order its BDD package
+  built it in, and on some circuits this is the one layout that compiles.
+  On programs with something to order it is `auto`'s first trial where
+  the program is built gate by gate (`built_of_gates`): a quarter of its
+  rules read derived atoms alone, or half its derived atoms are read by
+  one rule each, whatever their own rules, and `families:0`'s rewrite
+  ties no table by clauses. The exported circuits are; the networks,
+  grids and graphs, whose rules each read a fact or whose tables
+  partition their inputs, are not. It is the last trial elsewhere, where
+  it takes its share of the work until another trial wins.
 
   Where the order has narrow cuts, `program` and `program:fanin` name the
   derived atoms that cross them (`vtree/naming.rs`). The width of the
@@ -1784,8 +1797,8 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   and the copies at its start, and the evidence holds the links, the
   history, once. On a Markov chain such as GeNI's weather the cut is the
   day's frontier, the 11 state bits and the goal of 42 facts a day.
-- **`program:fanin`** (`auto`'s second trial where views were inlined,
-  absent elsewhere): right-linear as `program`, over the facts in the
+- **`program:fanin`** (`auto`'s second trial on a program built gate by
+  gate, absent elsewhere): right-linear as `program`, over the facts in the
   fan-in order of BDD variable ordering (Malik, Wang, Brayton and
   Sangiovanni-Vincentelli, ICCAD 1988), interleaved over the roots, the
   observed and queried atoms, as Fujii, Ootomo and Hori interleave it
@@ -1803,8 +1816,8 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   after both). The walk loses where the file states the facts in the
   order of a model's time (a hidden Markov model, trueskill, a grammar, a
   grid of link failures). Since neither order wins everywhere, `auto`
-  tries both where views were inlined. Every atom comes after the atoms
-  it reads, which the names along the order need (above): an atom that
+  tries both on a program built gate by gate. Every atom comes after the
+  atoms it reads, which the names along the order need (above): an atom that
   reads one this walk placed after its anchor and one an earlier walk
   placed before it moves to right after the last atom it reads. The
   grounder sorts each ground body by atom id, so the walk reads a rule's
@@ -1870,7 +1883,7 @@ A program gets these trials (`candidates`), in order:
 | `nothing_to_order`, every rule reads facts alone | `td`, `dynamic`, `closed` |
 | `nothing_to_order`, otherwise | `dynamic`, `closed`, `td` |
 | a CNF over facts the conditioning copied | `td`, `closed` |
-| otherwise | `program` and `program:fanin` where views were inlined, `families:0`, `closed`, `td` where no view was inlined, `families`, `program` where no view was inlined |
+| otherwise | `program` and `program:fanin` where built gate by gate with no table tied by clauses, `families:0`, `closed`, `td` where not, `families`, `program` where not |
 
 The CNF over facts is the conditioning's (Grounding, step 9). `closed`
 comes before `families:0` where the program has `FEW_FACTS` facts or
@@ -1887,15 +1900,33 @@ its facts to them, and a grid's boundary chains, views over facts, are
 then read by every later row, which widens the cuts and leaves fewer of
 them to name. `program:fanin`, whose order comes from the rules, reads
 the inlined program, which serves it better. `program` comes first where
-the grounder inlined views (Grounding: atoms of one rule read once), the
-gates of a circuit built gate by gate, and last elsewhere: first on every
-program, it costs the networks and grids, which have no views, several
-times their time. Where it comes first, `program:fanin`, the facts in the
-order the gates read them, comes second. A front end that bit-blasts a
-program states the bits of each variable together and the variables in
-the source's order, the order Alea and Dice hand CUDD and their own
-diagrams. On circuits whose every other layout runs out of memory it may
-be small, and `program:fanin` compiles Alea's adders in a hundredth of
+the program is built gate by gate (`built_of_gates`), as a circuit is,
+and last elsewhere: first on every program, it costs the networks and
+grids, whose rules each read a fact, several times their time. The
+property is read off the program as ground, whatever the grounder
+inlined, so that a program and the ground program `tddlog --ground`
+prints of it get the same trials. The benchmark programs did, all but 5
+of the 449 whose two writings both come to this choice; whether the
+grounder had inlined views, the earlier test, gave the two writings
+different trials on 221 of them. A network's tables that read their
+rows' classes (Grounding) are gates by that count too, a third to two
+fifths of the rules of the UAI networks BN_115 to BN_125, and what sets
+a network apart is a table whose rows partition their inputs, which
+`families:0`'s rewrite ties by clauses: 266 of the 268 benchmark networks
+built gate by gate have one, and 5 of the 270 writings of the 135
+circuits. `program` leads only where the rewrite ties none. The rewrite
+is `families:0`'s own, and `auto` asks it where the two orders part, at
+the first attempt that one would give another trial than the other
+(`run_within`): at once where `program` would lead, never where an
+earlier trial wins first, as `decision` does on the guarded circuits,
+whose rewrites take 5 to 9 s. Where it ties a table, the run goes on in
+the network's order, and `families:0` keeps the rewrite either way.
+Where it comes first, `program:fanin`, the facts in the order the gates read them, comes
+second. A front end that bit-blasts a program states the bits of each
+variable together and the variables in the source's order, the order
+Alea and Dice hand CUDD and their own diagrams. On circuits whose every
+other layout runs out of memory it may be small, and `program:fanin`
+compiles Alea's adders in a hundredth of
 `program`'s work (Vtrees). Their layouts cost nothing to build; as the
 last trial `program` has its turn after the others, and as the first the
 two and the trial after them start with short turns (`LEAD_SHARE`,
@@ -1973,12 +2004,15 @@ guards gives the `decision` layout (`ground::Decisions`).
 
 **Turns.** Each trial has a weight, 8 (`FAMILIES_WEIGHT`) for
 `families:0`, a `decision` trial, or the searched families trial in
-`families:0`'s place (below), 1 otherwise. Where `program` leads,
-`families:0` and `decision` hold it only where `families:0`'s rewrite
-ties tables by clauses (`families_weighted`), which reads the rewrite
-alone, so the layout waits for `families:0`'s first attempt. Weighted
-otherwise, on the circuits that `program` leads, layouts over the
-families took the weight's share for nothing. Each trial also has a target, the engine work
+`families:0`'s place (below), 1 otherwise. The weight is a bet on
+networks, and `families:0` holds it only where its rewrite ties tables
+by clauses (`policy::weight`), whichever trial goes first: it is
+weighed as it is given its rewrite, before its first attempt, and its
+layout waits for that attempt too. Weighted otherwise, on the circuits
+that `program` leads, layouts over the families took the weight's share
+for nothing, and on relational programs that `closed` wins its first
+turn took eight shares (cora8000: 2^31 units in 13 s, where `closed` then
+answered in 9.6 M). Each trial also has a target, the engine work
 it may have spent by the end of its turn, at first its weight times
 `FIRST_PAIRS` times `WORK_PER_PAIR` (2^28) units. Each attempt goes to
 the trial whose target is least for its weight, the first in the
@@ -2015,8 +2049,8 @@ walk that sums out its whole scope: it makes a weight, its nodes are
 folded away as it builds them, and it runs under the work stop and the
 memory budget alone. Where `program` goes first, it,
 `program:fanin` and the trial after them start at a 256th of their first
-targets (`LEAD_SHARE`): the circuits whose views were inlined are won by
-one of the three. The trial left alone runs without bounds (`attempt`).
+targets (`LEAD_SHARE`): the circuits built gate by gate are won by one
+of the three. The trial left alone runs without bounds (`attempt`).
 Every bound is in pairs or work, never seconds, so the winner is the same
 on every machine. At equal shares the run spends on each other trial
 about its weight's share of twice the winner's work, which costs most
@@ -2588,7 +2622,8 @@ Dropping detached evidence would leave out factors of `P(e)`, so the
 binary grounds with it off under the option. The line is
 `P(e):<tab>p<tab>log10 l`; below the least normal float the mantissa and
 exponent of `p` are read off the logarithm. Inconsistent evidence prints
-`0` and `-inf`, none `1` and `0`. For a UAI `MARKOV` file the binary
+`0` and `-inf`, none `1` and `0`. For a UAI `MARKOV` file, or a `BAYES`
+one whose rows do not all sum to one, the binary
 prints the partition function given the evidence instead,
 `Z:<tab>z<tab>log10 l`: `P(e)` times ten to the offset the reader computes
 ([Network files](#network-files-srcnetwork)), the UAI PR task. The
@@ -2879,9 +2914,9 @@ compare only within the run they come from.
   finished, `auto` with the walk in place of `program`'s order took 0.895
   of `auto`'s time in geometric mean and answered 15 programs more and
   one fewer. In the timed runs of the circuits, GeNI's networks and
-  Roulette's programs, all built with views, `td` won none, and its turns
-  took a fifth of what the losing trials spent on the circuits of a
-  second or more.
+  Roulette's programs, on which `program` then went first, `td` won none,
+  and its turns took a fifth of what the losing trials spent on the
+  circuits of a second or more.
 - **The `decision` trial.** The full weekend circuit of the bit-blasting
   paper runs out of memory under every other trial and compiles under
   `decision`; its conditioning makes 578 k atoms for 160 k derived.

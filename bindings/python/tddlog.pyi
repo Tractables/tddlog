@@ -27,7 +27,7 @@ class Solution:
         program's order; ``None`` where the evidence is inconsistent."""
     @property
     def evidence_probability(self) -> float | None:
-        """P(e), for a UAI MARKOV network the partition function given
+        """P(e), for a UAI network the partition function given
         the evidence; ``None`` unless asked for."""
     @property
     def log10_evidence_probability(self) -> float | None:

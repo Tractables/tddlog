@@ -1,0 +1,260 @@
+name: Binaries
+
+# Builds the `tddlog` command line for Linux (x86-64, ARM64), macOS (ARM64,
+# x86-64) and Windows x86-64, packs each with the license, the notices and
+# the example programs, and checks every archive on a runner other than the
+# one that built it, as a user would: the checksum, `--help`, `--version` and
+# the README's first example. When a GitHub release is published it attaches
+# the archives to it. A run by hand builds and checks them, and with a tag
+# builds that tag and attaches what its release lacks.
+
+on:
+  release:
+    types: [published]
+  pull_request:
+    paths:
+      - ".github/workflows/binaries.yml"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build the binaries for and attach them to
+        required: false
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # As in the C bindings: the archive tag, and one version across the crate
+  # and the bindings, which a release tag must name. "dev" stands in for
+  # anything that is not a release tag. The dispatch input reaches the script
+  # through the environment rather than `${{ }}`, which would paste it into
+  # the shell.
+  versions:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      is-release: ${{ steps.tag.outputs.is-release }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || '' }}
+      - name: Determine the archive tag
+        id: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            tag="$INPUT_TAG"; is_release=true
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            tag="$GITHUB_REF_NAME"; is_release=true
+          else
+            tag=dev; is_release=false
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "is-release=$is_release" >> "$GITHUB_OUTPUT"
+      - name: Check the release metadata
+        env:
+          TAG: ${{ steps.tag.outputs.is-release == 'true' && steps.tag.outputs.tag || '' }}
+        run: python3 .github/scripts/check_release.py --release-tag "$TAG"
+
+  build:
+    needs: versions
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The manylinux image, as for the wheels, fixes the oldest glibc
+          # the binary needs (2.28: RHEL 8, Debian 10, Ubuntu 18.10 and
+          # later) and carries a C++20 gcc for goatd's vendored solvers.
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            container: quay.io/pypa/manylinux_2_28_x86_64
+          # jemalloc is built for the largest page it may meet, 64 KiB:
+          # built for the runner's 4 KiB pages it aborts at start on the
+          # 16 KiB and 64 KiB kernels of some ARM64 machines.
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            container: quay.io/pypa/manylinux_2_28_aarch64
+            lg-page: "16"
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    env:
+      NAME: tddlog-${{ needs.versions.outputs.tag }}-${{ matrix.target }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || '' }}
+
+      - name: Install Rust in the container
+        if: matrix.container != ''
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: matrix.container == ''
+
+      # The release profile, without the line tables it keeps for profiling,
+      # which would make the binary several times larger and not faster. On
+      # Windows the C runtime is linked in, Rust's and the vendored C++'s, so
+      # the binary runs without the Visual C++ redistributable.
+      - name: Build
+        env:
+          CARGO_PROFILE_RELEASE_DEBUG: "0"
+          LG_PAGE: ${{ matrix.lg-page }}
+        run: |
+          set -eux
+          if [ -n "$LG_PAGE" ]; then export JEMALLOC_SYS_WITH_LG_PAGE="$LG_PAGE"; fi
+          if [ "$RUNNER_OS" = Windows ]; then export RUSTFLAGS="-C target-feature=+crt-static"; fi
+          cargo build --release --locked --bin tddlog
+
+      # The newest glibc and libstdc++ symbol versions the binary asks for,
+      # which no newer system lacks.
+      - name: Check the libraries the binary needs (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          set -eux
+          objdump -p target/release/tddlog | grep NEEDED
+          glibc=$(objdump -T target/release/tddlog | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -n 1)
+          glibcxx=$(objdump -T target/release/tddlog | grep -o 'GLIBCXX_[0-9.]*' | sort -uV | tail -n 1)
+          echo "needs $glibc and $glibcxx"
+          test "$(printf '%s\n' "$glibc" GLIBC_2.28 | sort -V | tail -n 1)" = GLIBC_2.28
+
+      # The x86-64 binary, built for macOS 10.12, names it in the older load
+      # command.
+      - name: Show the oldest macOS the binary runs on
+        if: runner.os == 'macOS'
+        run: otool -l target/release/tddlog | grep -A 4 -E "LC_BUILD_VERSION|LC_VERSION_MIN_MACOSX"
+
+      # The binary beside LICENSE, NOTICE and THIRD-PARTY.md (goatd's vendored
+      # solvers are BSD-2-Clause and MIT, and their notices travel with the
+      # binary they are compiled into), and examples/, so that the README's
+      # commands run in the unpacked directory. A zip on Windows, which opens
+      # it without extra tools.
+      - name: Package the archive
+        run: |
+          set -eux
+          mkdir "$NAME"
+          cp LICENSE NOTICE THIRD-PARTY.md "$NAME"
+          cp -R examples "$NAME"
+          if [ "$RUNNER_OS" = Windows ]; then
+            cp target/release/tddlog.exe "$NAME"
+            7z a "$NAME.zip" "$NAME"
+            sha256sum "$NAME.zip" > "$NAME.zip.sha256"
+          else
+            cp target/release/tddlog "$NAME"
+            tar czf "$NAME.tar.gz" "$NAME"
+            if command -v sha256sum; then
+              sha256sum "$NAME.tar.gz" > "$NAME.tar.gz.sha256"
+            else
+              shasum -a 256 "$NAME.tar.gz" > "$NAME.tar.gz.sha256"
+            fi
+          fi
+          ls -l "$NAME".*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tddlog-${{ matrix.target }}
+          path: |
+            tddlog-*.tar.gz*
+            tddlog-*.zip*
+
+  # Each archive on a runner without the build's toolchain or container, the
+  # Linux ones on the oldest Ubuntu image and the ARM64 macOS one on the
+  # oldest macOS image there are, then attached to the release.
+  check:
+    needs: [versions, build]
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-22.04-arm
+            target: aarch64-unknown-linux-gnu
+          - os: macos-15
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    env:
+      TAG: ${{ needs.versions.outputs.tag }}
+      IS_RELEASE: ${{ needs.versions.outputs.is-release }}
+      NAME: tddlog-${{ needs.versions.outputs.tag }}-${{ matrix.target }}
+      ARCHIVE: tddlog-${{ needs.versions.outputs.tag }}-${{ matrix.target }}.${{ matrix.target == 'x86_64-pc-windows-msvc' && 'zip' || 'tar.gz' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: tddlog-${{ matrix.target }}
+
+      # The README's first example, whose answers it prints, read from the
+      # unpacked directory; nothing on standard error. Each answer is
+      # `atom:<tab>probability`, as ProbLog prints it; carriage returns are
+      # dropped before the comparison.
+      - name: Verify, unpack and run
+        run: |
+          set -eux
+          if command -v sha256sum; then
+            sha256sum -c "$ARCHIVE.sha256"
+          else
+            shasum -a 256 -c "$ARCHIVE.sha256"
+          fi
+          mkdir unpacked
+          if [ "$RUNNER_OS" = Windows ]; then
+            7z x -ounpacked "$ARCHIVE"
+          else
+            tar xzf "$ARCHIVE" -C unpacked
+          fi
+          cd "unpacked/$NAME"
+          ls -l
+          ./tddlog --help > help.txt
+          head -n 3 help.txt
+          ./tddlog --version | tee version.txt
+          if [ "$IS_RELEASE" = true ]; then
+            test "$(tr -d '\r' < version.txt)" = "tddlog ${TAG#v}"
+          fi
+          ./tddlog examples/alarm.pl > answers.txt 2> errors.txt
+          cat answers.txt errors.txt
+          printf 'burglary:\t0.357143\nearthquake:\t0.714286\ncalls(mary):\t0.400000\n' > expected.txt
+          tr -d '\r' < answers.txt | diff expected.txt -
+          test ! -s errors.txt
+
+      # An archive attached to a published release, and the checksum people
+      # verify it against, are never replaced: a pair already there is kept,
+      # and one half of a pair is an error. To rebuild an archive, delete
+      # both from the release and run this workflow with the tag.
+      - name: Attach to the release
+        if: env.IS_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          assets=$(gh release view "$TAG" --json assets --jq '.assets[].name')
+          have() { grep -qxF "$1" <<< "$assets"; }
+          if have "$ARCHIVE" && have "$ARCHIVE.sha256"; then
+            echo "$ARCHIVE and its checksum are already attached; kept"
+          elif have "$ARCHIVE" || have "$ARCHIVE.sha256"; then
+            echo "only one of $ARCHIVE and $ARCHIVE.sha256 is attached: delete it and run again"
+            exit 1
+          else
+            gh release upload "$TAG" "$ARCHIVE" "$ARCHIVE.sha256"
+          fi

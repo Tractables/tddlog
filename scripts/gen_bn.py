@@ -47,7 +47,14 @@ way they were chosen and a Markov network's factors among them, as an
 network and evidence. `--rescale`
 divides every row by its sum, for a file that writes a table in percent or
 as weights (`rescaled`); without it a row that sums to more than one beyond
-rounding is an error.
+rounding is an error. A UAI file is not rescaled: its functions are read
+as written, `Z` the sum over the assignments of the product of their
+entries, as the UAI PR task asks and tddlog's reader reads them. A BAYES
+function whose rows do not sum to one up to the parsing of their decimals
+is the table of its rows divided by their sums times the factor of those
+sums over its parents (`as_written`): a constant where every row has one
+sum, in the offset below, and otherwise a factor written as a Markov
+network's is. A BAYES file whose rows all sum to one has no offset line.
 A Markov network's variables get uniform priors, times their unary factors
 normalized, and every other factor f becomes a variable of one value `ok`
 whose row for each assignment of its scope holds the factor's entry divided
@@ -66,8 +73,8 @@ by under 5e-10 for each factor with such a row. A Markov network that
 is a Bayesian network as written, each factor the conditional table of
 one variable of its scope and the child relation acyclic (the UAI
 suite's Promedus and Pedigree), is written as that network instead
-(`conditional_tables`): its partition function is one, so the offset is
-0.0. Under `--query none`, a Markov network without evidence whose
+(`conditional_tables`), its tables read as a BAYES file's: where its rows
+sum to one its partition function is one, so the offset is 0.0. Under `--query none`, a Markov network without evidence whose
 variables all have the same k values and whose functions are all Potts
 tables over two variables (one entry on the diagonal, one off it), such
 as a graph colouring, is invariant under any permutation of the values:
@@ -86,7 +93,7 @@ per entry (ENC1, the default), or with `--encoding chains` the conditional
 tables as Sang, Beame and Kautz's chains of switches (ENC2), or with
 `--encoding enc5` a parameter per distinct entry of a table, implied by
 the entries' merged cubes (ENC5). `--evidence K` samples
-forward, which a Markov network does not allow.
+forward, which a network with factors does not allow.
 Names are lowercased and non-alphanumerics become underscores; a clash is an
 error. In the Dice format every variable is a `discrete` under nested
 conditionals on its parents (the encoding of Dice's own bngen), whose
@@ -244,93 +251,192 @@ def uai_variables(sizes):
     return [f'x{i}' for i in range(len(sizes))], {f'x{i}': [str(u) for u in range(k)] for i, k in enumerate(sizes)}
 
 
+def uai_rows(variables, scope, table, width):
+    """The rows of a UAI function's `table` over `scope`, `width` entries
+    each, keyed by the values of the scope's variables, the last changing
+    fastest."""
+    return {key: table[j * width:(j + 1) * width]
+            for j, key in enumerate(itertools.product(*[variables[f'x{v}'] for v in scope]))}
+
+
 def parse_uai(text, colours=False):
     """A UAI model file (`read_uai`), the network the program is written
-    from. A BAYES function is the table of its scope's last variable given
-    the others. Returns the network, the observations a MARKOV network's
-    factors make, and for a MARKOV network `log10 Z - log10 P(e)` of the
-    program (`gen_bn.py` docstring), None for a BAYES one. With `colours`,
-    for a program that asks no query and observes nothing, a MARKOV
-    network's colour symmetry is broken where it has one
-    (`colour_symmetry`)."""
+    from, its functions read as written: `Z` is the sum over all
+    assignments of the product of their entries, as the UAI PR task asks
+    (tddlog's reader, src/network/uai.rs, reads it alike). A BAYES
+    function is the table of its scope's last variable given the others,
+    and so is each function of a MARKOV network that is a Bayesian network
+    as written (`conditional_tables`); a table whose rows do not sum to one
+    is the product of its rows divided by their sums and of the factor of
+    those sums over its parents (`as_written`). Returns the network, the
+    observations its factors make, and `log10 Z - log10 P(e)` of the
+    program (`gen_bn.py` docstring), None for a BAYES file whose rows all
+    sum to one. With `colours`, for a program that asks no query and
+    observes nothing, a MARKOV network's colour symmetry is broken where
+    it has one (`colour_symmetry`)."""
     kind, sizes, scopes, tables = read_uai(text)
     n = len(sizes)
     order, variables = uai_variables(sizes)
-    rows_of = lambda scope, table, width: {
-        key: table[j * width:(j + 1) * width]
-        for j, key in enumerate(itertools.product(*[variables[f'x{v}'] for v in scope]))}
-    out = {}
+    network = (order, variables, {})
     if kind == 'BAYES':
+        conditional, tabled = [], set()
         for scope, table in zip(scopes, tables):
-            child = f'x{scope[-1]}'
-            if child in out:
-                sys.exit(f'UAI BAYES file with two tables for {child}')
-            out[child] = ([f'x{v}' for v in scope[:-1]], rows_of(scope[:-1], table, sizes[scope[-1]]))
-        if len(out) != n:
-            sys.exit(f'UAI BAYES file with tables for {len(out)} of {n} variables')
-        return (order, variables, out), [], None
-    network = conditional_tables(sizes, scopes, tables)
-    if network is not None:
-        for v, (scope, table) in enumerate(network):
-            out[f'x{v}'] = ([f'x{u}' for u in scope[:-1]], rows_of(scope[:-1], table, sizes[v]))
-        return (order, variables, out), [], 0.0
+            if not scope:
+                sys.exit('UAI BAYES function of an empty scope')
+            if scope[-1] in tabled:
+                sys.exit(f'UAI BAYES file with two tables for x{scope[-1]}')
+            tabled.add(scope[-1])
+            conditional.append((scope, table))
+        missing = next((v for v in range(n) if v not in tabled), None)
+        if missing is not None:
+            sys.exit(f'UAI BAYES file without a table for x{missing}')
+        return as_written(network, conditional, False)
+    conditional = conditional_tables(sizes, scopes, tables)
+    if conditional is not None:
+        return as_written(network, conditional, True)
     prior = [[1.0] * sizes[i] for i in range(n)]
-    factors = []
-    # The constant factors, which the program leaves out: their entries are
-    # factors of Z that P(e) does not hold.
-    constants = []
+    factors = Factors()
     broken = colour_symmetry(sizes, scopes, tables) if colours else None
     if broken is not None:
         # The network's Z is k times that of the functions so broken.
         scopes, tables = broken
-        constants.append(float(sizes[0]))
+        factors.logs.append(math.log10(sizes[0]))
+    wide = []
     for scope, table in zip(scopes, tables):
         if min(table) < 0:
             sys.exit('UAI factor with a negative entry')
         if len(scope) == 1:
             prior[scope[0]] = [a * b for a, b in zip(prior[scope[0]], table)]
-        elif len(set(table)) > 1:
-            factors.append((scope, table))
-        elif table[0] == 0:
-            sys.exit('UAI factor that is zero everywhere')
         else:
-            constants.append(table[0])
-    totals = []
+            wide.append((scope, table))
+    out = network[2]
     for i in range(n):
         total = math.fsum(prior[i])
         if total == 0:
             sys.exit(f'x{i}: its unary factors are zero everywhere')
-        totals.append(total)
+        factors.logs.append(math.log10(total))
         out[f'x{i}'] = ([], {(): [w / total for w in prior[i]]})
-    forced = []
-    for j, (scope, table) in enumerate(factors):
-        f, top = f'f{j}', max(table)
+    for scope, table in wide:
+        factors.add(network, scope, table)
+    return factors.read(network, True)
+
+
+def as_written(network, conditional, markov):
+    """The network of a UAI file's conditional tables as written, each a
+    scope with its child last and the table in that order: BAYES, or a
+    MARKOV file read as its network (`markov`). A table is the product of
+    its rows divided by their sums (`split`) and of the factor of those
+    sums over its parents (`Factors.add`): an offset where every row has
+    one sum, as a table rounded alike in every row does, and otherwise a
+    variable observed. A BAYES file whose rows all sum to one reads as its
+    network, and its program's P(e) is its Z."""
+    order, variables, out = network
+    factors = Factors()
+    for scope, table in conditional:
+        child, parents = f'x{scope[-1]}', scope[:-1]
+        k = len(variables[child])
+        table, sums = split(table, k, child)
+        out[child] = ([f'x{u}' for u in parents], uai_rows(variables, parents, table, k))
+        factors.add(network, parents, sums)
+    return factors.read(network, markov)
+
+
+def split(table, k, where):
+    """Each row of `k` entries of `table` divided by its sum, and the sums
+    in order: a function of a UAI file is the table of its rows so divided
+    times the factor of their sums over its parents (`as_written`). A row
+    whose entries sum to one up to their parsing, within `k` units of
+    roundoff, stays as it is, of sum one, so that the noise of reading
+    decimals in binary makes no factor; so does a row of zeros, of sum
+    zero. A row with a negative or not finite entry is an error. tddlog's
+    reader's `rows::split`."""
+    out, sums = [], []
+    for j in range(0, len(table), k):
+        row = table[j:j + k]
+        bad = next((p for p in row if not (math.isfinite(p) and p >= 0)), None)
+        if bad is not None:
+            sys.exit(f'{where}: {bad!r} is not a probability')
+        total = math.fsum(row)
+        if abs(total - 1) <= k * sys.float_info.epsilon:
+            out += row
+            sums.append(1.0)
+            continue
+        out += [p / total for p in row] if total > 0 else row
+        sums.append(total)
+    return out, sums
+
+
+class Factors:
+    """The factors a program holds besides a network's tables: each written
+    as a variable of one value, observed (`forced`), and the base-10
+    logarithms of what the program's weights are divided by (`logs`).
+    tddlog's reader's `Factors`."""
+
+    def __init__(self):
+        self.forced, self.logs = [], []
+
+    def add(self, network, scope, table):
+        """Adds the factor `table` over `scope` (indices of the file's
+        variables), the scope's last variable changing fastest. One of a
+        single distinct entry, a constant, is left out, its entry in the
+        offset. Any other becomes a variable `fJ` of one value `ok`,
+        observed, whose row for each assignment of the scope holds the
+        factor's entry divided by its largest, which goes into the offset.
+        A factor that is zero everywhere is an error."""
+        top = max([0.0, *table])
+        if top == 0:
+            sys.exit('UAI factor that is zero everywhere')
+        if top != 1:
+            self.logs.append(math.log10(top))
+        if all(w == top for w in table):
+            return
+        order, variables, out = network
+        f = f'f{len(self.forced)}'
         order.append(f)
         variables[f] = ['ok']
-        out[f] = ([f'x{v}' for v in scope], rows_of(scope, [w / top for w in table], 1))
-        forced.append((f, 'ok'))
-    return (order, variables, out), forced, partition_offset(totals, [max(t) for _, t in factors], constants)
+        out[f] = ([f'x{v}' for v in scope], uai_rows(variables, scope, [w / top for w in table], 1))
+        self.forced.append((f, 'ok'))
+
+    def read(self, network, markov):
+        """The network, the observations of its factors and its offset
+        `log10 Z - log10 P(e)` (`partition_offset`); None for a BAYES file
+        that holds no factor and divides by nothing (not `markov`), whose Z
+        is its program's P(e)."""
+        offset = partition_offset(self.logs) if markov or self.forced or self.logs else None
+        return network, self.forced, offset
 
 
 def conditional_tables(sizes, scopes, tables):
     """A Markov network that is a Bayesian network as written: each
     function a conditional table of one variable of its scope (its child:
     for each assignment of the others the entries over the child's values
-    sum to one within 1e-9), each variable the child of one function, and
-    the child relation acyclic. Returns each variable's scope, its child
-    last, and its table in that order; None for another network. A
-    function that is a table of two of its variables, an identity say,
-    takes the child a matching of functions to variables gives it."""
+    sum to one up to the rounding of their decimals, as a BAYES table's
+    row, `sums_to_one`), each variable the child of one function, and the
+    child relation acyclic. Returns each variable's scope, its child last,
+    and its table in that order; None for another network. A function that
+    is a table of two of its variables, an identity say, takes the child a
+    matching of functions to variables gives it."""
     n = len(sizes)
     if len(scopes) != n:
         return None
+
+    def rows_sum_to_one(table, k, stride):
+        last = None
+        for r in range(len(table)):
+            if r // stride % k == 0:
+                row = [table[r + stride * x] for x in range(k)]
+                # A row as the last one passed, as a table of one distinct
+                # entry's rows all are, passes.
+                if row != last:
+                    if not sums_to_one(row):
+                        return False
+                    last = row
+        return True
     candidates = []
     for scope, table in zip(scopes, tables):
         strides = [math.prod(sizes[u] for u in scope[i + 1:]) for i in range(len(scope))]
-        candidates.append([
-            i for i, (v, stride) in enumerate(zip(scope, strides))
-            if all(abs(math.fsum(table[r + stride * x] for x in range(sizes[v])) - 1) <= 1e-9
-                   for r in range(len(table)) if r // stride % sizes[v] == 0)])
+        candidates.append([i for i, (v, stride) in enumerate(zip(scope, strides))
+                           if rows_sum_to_one(table, sizes[v], stride)])
         if not candidates[-1]:
             return None
     # Kuhn's augmenting paths, functions to the variables they may be the
@@ -441,14 +547,13 @@ def colour_symmetry(sizes, scopes, tables):
     return scopes, tables
 
 
-def partition_offset(totals, tops, constants):
-    """`log10 Z - log10 P(e)` of a Markov network's program: each variable's
-    prior is its unary factors divided by their sum over its values
-    (`totals`), each other factor is divided by its largest entry (`tops`),
-    and a factor with one distinct entry is left out (`constants`). In each
-    assignment the program's weight is the product of the factors divided
-    by all of these, so `P(e) · 10^offset` is `Z` given the same evidence."""
-    return math.fsum(math.log10(x) for x in totals + tops + constants)
+def partition_offset(logs):
+    """`log10 Z - log10 P(e)` of a network's program, the sum of the base-10
+    logarithms of each prior's sum, each factor's largest entry and each
+    constant factor's entry (`logs`, `Factors`): in each assignment the
+    program's weight is the product of the functions divided by all of
+    these, so `P(e) · 10^offset` is `Z` given the same evidence."""
+    return math.fsum(logs)
 
 
 def uai_cnf(path, evidence, encoding='enc1'):
@@ -571,10 +676,10 @@ def write_uai(network, evidence):
 def write_hugin(network):
     """The network as a Hugin .net file, for Ace on a network read from a
     UAI file. Each table holds the rows as the program has them
-    (`normalized`). A variable of one value, as a Markov network's factor
-    is (`parse_uai`), gets a second value `not_<value>` holding the rest
-    of each row, so that every row sums to one as a Bayesian network's
-    must; observing the first value then weighs each assignment of the
+    (`normalized`). A variable of one value, as a factor of a Markov
+    network or of a BAYES table's row sums is (`Factors`), gets a second
+    value `not_<value>` holding the rest of each row, so that every row
+    sums to one as a Bayesian network's must; observing the first value then weighs each assignment of the
     factor's scope by its row as the program's evidence does. A
     variable of the network with one value (the pedigrees have them) gets
     the second value too, of probability zero, and the tables it is a
@@ -651,6 +756,44 @@ def meant_decimal(x):
     return Decimal(repr(x)).normalize()
 
 
+def row_sum(probs):
+    """How the row `probs` stands to one, and its sum: 'one' (one, or
+    within 1e-9 under it), 'rounded' (off one by the rounding of its
+    entries), or 'short' (short of one by more: the rest is left to no
+    value); a ValueError for a row that sums to more than one by more than
+    rounding explains, or that holds a negative or not finite entry
+    (`normalized`). tddlog's reader's `rows::sum`."""
+    bad = next((p for p in probs if not (math.isfinite(p) and p >= 0)), None)
+    if bad is not None:
+        raise ValueError(f'{bad!r} is not a probability')
+    total = math.fsum(probs)
+    if 1 - 1e-9 <= total <= 1:
+        return 'one', total
+    if total < 1:
+        if len(probs) == 1:
+            return 'short', total
+        exact, slack = rounding_slack(probs)
+        return ('rounded' if abs(exact - 1) < slack else 'short'), total
+    if total - 1 <= (len(probs) + 1) * 2.0 ** -24:
+        return 'rounded', total
+    exact, slack = rounding_slack(probs)
+    if abs(exact - 1) <= slack:
+        return 'rounded', total
+    raise ValueError(f'probabilities sum to {exact}')
+
+
+def sums_to_one(probs):
+    """Whether the row `probs` sums to one up to the rounding `normalized`
+    divides out: a MARKOV file's function is a conditional table where
+    every row of the child's values does (`conditional_tables`), so that a
+    file whose tables are rounded to their decimals is read as the Bayesian
+    network it is, as its BAYES writing would be."""
+    try:
+        return row_sum(probs)[0] != 'short'
+    except ValueError:
+        return False
+
+
 def normalized(probs, where):
     # `math.fsum`, not `sum`: CPython 3.12 sums floats with compensation and
     # older versions do not, so `sum([0.55, 0.34, 0.11])` is 1.0 on one and
@@ -677,16 +820,11 @@ def normalized(probs, where):
     # it is rescaled. This is tddlog's network reader's rule
     # (src/network/rows.rs), so that the program below is the one
     # `tddlog --program` prints.
-    total = math.fsum(probs)
-    if (len(probs) == 1 and total <= 1) or 1 - 1e-9 <= total <= 1:
-        return probs
-    exact, slack = rounding_slack(probs)
-    if total < 1:
-        if abs(exact - 1) >= slack:
-            return probs
-    elif total - 1 > (len(probs) + 1) * 2.0 ** -24 and abs(exact - 1) > slack:
-        sys.exit(f'{where}: probabilities sum to {exact}')
-    return [p / total for p in probs]   # rounding in the file
+    try:
+        kind, total = row_sum(probs)
+    except ValueError as x:
+        sys.exit(f'{where}: {x}')
+    return [p / total for p in probs] if kind == 'rounded' else probs   # rounding in the file
 
 
 def rescaled(network):
@@ -948,10 +1086,10 @@ def bif_number(p):
 
 def bayesian(network):
     """Whether the network (`model`'s) is a Bayesian network, which a BIF file
-    holds: each variable of one value has every row 1. A Markov network's
-    factors are variables of one value whose rows are the factor's entries
-    over its largest, some below 1 (`parse_uai` leaves out a constant
-    factor); a Bayesian network's variable of one value is certain (Ace's
+    holds: each variable of one value has every row 1. A factor (a Markov
+    network's, or a BAYES table's row sums, `Factors`) is a variable of
+    one value whose rows are the factor's entries over its largest, some
+    below 1 (`Factors.add` leaves out a constant factor); a Bayesian network's variable of one value is certain (Ace's
     munin1, munin3 and munin4 have three, DIFFN_DUMMY_1 to 3)."""
     order, variables, tables = network
     return all(len(variables[v]) > 1 or all(p == 1 for row in tables[v][1].values() for p in row)
@@ -1078,10 +1216,10 @@ def model(a, pe=False):
         sys.exit('--cnf encodes the functions of a UAI file, and the network is not one')
     if a.encoding and not a.cnf:
         sys.exit('--encoding chooses how --cnf writes the tables, and there is no --cnf')
-    if a.cnf and a.rescale:
-        sys.exit("--cnf encodes the UAI file's own entries, which --rescale does not change")
+    if uai and a.rescale:
+        sys.exit('--rescale is not for a UAI file, whose functions are read as written')
     if forced and a.evidence:
-        sys.exit('a Markov network cannot be sampled forward (--evidence)')
+        sys.exit('a network with factors cannot be sampled forward (--evidence)')
     if a.evid and (a.evidence or a.evidence_file):
         sys.exit('--evid, --evidence and --evidence-file each choose the observations: one of them')
     if a.rescale:

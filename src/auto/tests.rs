@@ -23,6 +23,7 @@ fn run_with_watch(
             decision: false,
         },
         trials,
+        None,
         projection,
         Watch {
             first_pairs,
@@ -49,6 +50,7 @@ fn run_in_memory(
             decision: false,
         },
         trials,
+        None,
         Projection::default(),
         Watch {
             memory_bytes: Some(memory_bytes),
@@ -98,8 +100,8 @@ fn assert_turns(notes: &[String], trials: &[Kind]) {
 
 #[test]
 fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
-    // The programs as written: with their views inlined, a chain of
-    // atoms each read once is one rule (`GroundOptions::views`).
+    // The programs as written, with no view inlined
+    // (`GroundOptions::views`).
     let options = crate::GroundOptions {
         views: false,
         ..crate::GroundOptions::default()
@@ -111,26 +113,28 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
         )
         .expect("grounds")
     };
-    let strategies = |gp: &GroundProgram| candidates(gp);
-    // A chain of derived atoms, each reading the one before it and a
-    // fact of its own: four components in a dependency order, which is
-    // an order the search can move things in.
-    let chain = |n: usize| {
-        let mut src = String::new();
-        for i in 0..n {
-            let before = if i == 0 {
-                String::new()
-            } else {
-                format!("a{}, ", i - 1)
-            };
-            src += &format!("0.5::f{i}. a{i} :- {before}f{i}.\n");
+    let strategies = |gp: &GroundProgram| candidates(gp, false);
+    // A chain of derived atoms, each the one before it equal to a fact
+    // of its own: components in a dependency order, which is an order
+    // the search can move things in. Each atom has two rules, each
+    // reading a fact, and is read by two, so the chain is not built gate
+    // by gate (`built_of_gates`).
+    let step = |i: usize| {
+        if i == 0 {
+            "0.5::f0. a0 :- f0.\n".to_string()
+        } else {
+            let p = i - 1;
+            format!("0.5::f{i}. a{i} :- a{p}, f{i}. a{i} :- \\+a{p}, \\+f{i}.\n")
         }
+    };
+    let chain = |n: usize| {
+        let src: String = (0..n).map(step).collect();
         ground(&format!("{src}query(a{}).", n - 1))
     };
     let laid = Kind::Families { search: false };
     let searched = Kind::Families { search: true };
     assert_eq!(
-        candidates(&chain(FEW_FACTS + 1)),
+        candidates(&chain(FEW_FACTS + 1), false),
         vec![
             laid,
             Kind::Closed,
@@ -141,21 +145,15 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
     );
     // With few facts but one derived atom per fact the families
     // layout still comes first.
-    assert_eq!(candidates(&chain(4))[0], laid);
+    assert_eq!(candidates(&chain(4), false)[0], laid);
     // With few facts and many derived atoms per fact `closed` comes
-    // first: the chain of four, read by a chain of 36 atoms of no fact.
-    let mut src = String::new();
-    for i in 0..4 {
-        let before = if i == 0 {
-            String::new()
-        } else {
-            format!("a{}, ", i - 1)
-        };
-        src += &format!("0.5::f{i}. a{i} :- {before}f{i}.\n");
-    }
+    // first: the chain of four, read by a chain of 36 derived atoms over
+    // the same four facts.
+    let mut src: String = (0..4).map(step).collect();
     src += "c0 :- a0, a1.\n";
     for j in 1..36 {
-        src += &format!("c{j} :- c{}, a{}.\n", j - 1, j % 4);
+        let (p, a, f) = (j - 1, j % 4, (j + 1) % 4);
+        src += &format!("c{j} :- c{p}, a{a}, f{a}. c{j} :- c{p}, \\+a{a}, f{f}.\n");
     }
     let gp = ground(&format!("{src}query(c35)."));
     assert!(
@@ -165,7 +163,7 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
         gp.num_facts()
     );
     assert_eq!(
-        candidates(&gp),
+        candidates(&gp, false),
         vec![
             Kind::Closed,
             laid,
@@ -199,48 +197,139 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
                      query(p(1,2)). query(p(1,3)). query(p(1,4)). query(p(1,5)).
                      query(p(2,4)). query(p(3,5)). query(p(5,3)).",
     );
-    assert_eq!(candidates(&gp), vec![Kind::Dynamic]);
+    assert_eq!(candidates(&gp, false), vec![Kind::Dynamic]);
 }
+
+/// A two-bit adder and a test that its sum is 7: its sum and carry gates
+/// read other gates, and the test reads a gate `p` of one rule read once,
+/// a view, which the grounder inlines where views are on.
+const ADDER: &str = "0.5::x0. 0.5::x1. 0.5::y0. 0.5::y1.
+                     s0 :- x0, \\+y0. s0 :- \\+x0, y0.
+                     c0 :- x0, y0.
+                     t1 :- x1, \\+y1. t1 :- \\+x1, y1.
+                     s1 :- t1, \\+c0. s1 :- \\+t1, c0.
+                     c1 :- x1, y1. c1 :- t1, c0.
+                     p :- s0, s1. seven :- p, c1.
+                     query(s0). query(s1). query(c1). query(seven).";
 
 #[test]
 fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
-    // A mux and a gate of one rule read once, which the grounder
-    // inlines as a view: `program` is the first trial and
-    // `program:fanin` the second, and `td` is none. The same program
-    // ground without inlining has no view, and `program` alone goes
-    // last.
-    let src = "0.5::f0. 0.5::f1. 0.5::f2. 0.5::f3. 0.5::f4. 0.5::f5.
+    // Both writings of the adder are built gate by gate (`built_of_gates`):
+    // where `families:0`'s rewrite ties no table, `program` is the first
+    // trial and `program:fanin` the second, and `td` is none; where it
+    // ties one, the order is a network's.
+    let adder = ADDER;
+    // A chain of ors of ands over facts, each read negated by one rule of
+    // the next: gates that read facts, none a view, which the grounder
+    // keeps, so both writings are the same program.
+    let ors = "0.5::f0. 0.5::f1. 0.5::f2. 0.5::f3. 0.5::f4. 0.5::f5. 0.5::f6.
+               0.5::f7. 0.5::f8. 0.5::f9. 0.5::f10. 0.5::f11. 0.5::f12.
+               a :- f0, f1. a :- f2, f3.
+               b :- \\+a, f4. b :- f5, f6.
+               c :- \\+b, f7. c :- f8, f9.
+               q :- \\+c, f10. q :- f11, f12.
+               query(q).";
+    // A mux whose rules each read a fact, with a view `g2`: neither
+    // writing is, and `program` alone goes last.
+    let mux = "0.5::f0. 0.5::f1. 0.5::f2. 0.5::f3. 0.5::f4. 0.5::f5.
                g1 :- f0, f1. g1 :- f2, \\+f0.
                g2 :- g1, f3.
                q :- g2, f4. q :- f5, \\+g1.
                query(q).";
-    let program = crate::syntax::parse_program(src).expect("parses");
-    let laid = Kind::Families { search: false };
-    let searched = Kind::Families { search: true };
-    let gp = crate::ground::ground(&program, &crate::GroundOptions::default()).expect("grounds");
-    assert_eq!(gp.stats.inlined, 1);
-    assert_eq!(
-        candidates(&gp),
-        vec![
-            Kind::Program { fan_in: false },
-            Kind::Program { fan_in: true },
-            laid,
-            Kind::Closed,
-            searched,
-        ],
-    );
-    let options = crate::GroundOptions {
-        views: false,
-        ..crate::GroundOptions::default()
+    let ground = |src: &str, views: bool| {
+        let options = crate::GroundOptions {
+            views,
+            ..crate::GroundOptions::default()
+        };
+        crate::ground::ground(
+            &crate::syntax::parse_program(src).expect("parses"),
+            &options,
+        )
+        .expect("grounds")
     };
-    let gp = crate::ground::ground(&program, &options).expect("grounds");
-    assert_eq!(gp.stats.inlined, 0);
-    assert_eq!(
-        candidates(&gp).last(),
-        Some(&Kind::Program { fan_in: false })
+    let network = vec![
+        Kind::Families { search: false },
+        Kind::Closed,
+        Kind::Td,
+        Kind::Families { search: true },
+        Kind::Program { fan_in: false },
+    ];
+    for views in [true, false] {
+        let gp = ground(adder, views);
+        assert_eq!(gp.stats.inlined, usize::from(views));
+        assert_eq!(candidates(&gp, false), program_leads());
+        assert_eq!(candidates(&gp, true), network);
+        let gp = ground(ors, views);
+        assert_eq!(gp.stats.inlined, 0);
+        assert_eq!(candidates(&gp, false), program_leads());
+        let gp = ground(mux, views);
+        assert_eq!(gp.stats.inlined, usize::from(views));
+        assert_eq!(candidates(&gp, false), network);
+        assert_eq!(candidates(&gp, true), network);
+    }
+}
+
+#[test]
+fn families_0_s_rewrite_settles_the_order_at_the_first_attempt_where_it_matters() {
+    // Handed `program`'s order and a network's, `auto` asks `families:0`'s
+    // rewrite at the first attempt, `program`'s in the one and
+    // `families:0`'s in the other. A network's rewrite ties its tables by
+    // clauses, and it goes on in the network's order, `families:0` first
+    // and `program:fanin` gone; the adder's ties none, and `program` goes
+    // first. A first round of two pairs, so that no trial finishes alone.
+    let run = |gp: GroundProgram| {
+        let tabled = candidates(&gp, true);
+        run_within(
+            Programs {
+                ground: Arc::new(gp),
+                written: None,
+                conditioned: None,
+                decision: false,
+            },
+            program_leads(),
+            Some(tabled),
+            Projection::default(),
+            Watch {
+                first_pairs: 2,
+                ..Watch::default()
+            },
+            None,
+            false,
+        )
+        .unwrap()
+    };
+    let name = |k: Kind| format!("{k} indicators={}", k.indicators_name());
+    let network = run(regress(include_str!("../../examples/bn_split.pl")));
+    let notes = &network.vtree_notes;
+    assert!(
+        notes.iter().any(|n| n
+            == "turn: families:0 indicators=all ties tables by clauses, asked at program's first attempt"),
+        "{notes:#?}"
     );
-    assert!(!candidates(&gp).contains(&Kind::Program { fan_in: true }));
-    assert!(candidates(&gp).contains(&Kind::Td));
+    let tried = attempts(notes);
+    assert_eq!(
+        tried.first().map(|(_, t)| t.clone()),
+        Some(name(Kind::Families { search: false })),
+        "{notes:#?}"
+    );
+    assert!(
+        !tried
+            .iter()
+            .any(|(_, t)| *t == name(Kind::Program { fan_in: true })),
+        "{notes:#?}"
+    );
+    let adder = run(regress(ADDER));
+    let notes = &adder.vtree_notes;
+    assert!(
+        notes.iter().any(|n| n
+            == "turn: families:0 indicators=all ties no tables by clauses, asked at program's first attempt"),
+        "{notes:#?}"
+    );
+    assert_eq!(
+        attempts(notes).first().map(|(_, t)| t.clone()),
+        Some(name(Kind::Program { fan_in: false })),
+        "{notes:#?}"
+    );
 }
 
 /// Where `decision` is no trial, the conditioned program goes to
@@ -306,10 +395,26 @@ fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
     }
 }
 
+/// The trials [`candidates`] gives a program built gate by gate with
+/// fewer than [`DERIVED_PER_FACT`] derived atoms per fact: `program`
+/// leads, `program:fanin` second.
+fn program_leads() -> Vec<Kind> {
+    vec![
+        Kind::Program { fan_in: false },
+        Kind::Program { fan_in: true },
+        Kind::Families { search: false },
+        Kind::Closed,
+        Kind::Families { search: true },
+    ]
+}
+
 /// A Dice diamond loop of `steps` steps, unrolled as Dice programs were
 /// translated before a loop became recursion over a step index: each
 /// step drops the signal with probability 1e-4 on one of its two routes,
-/// so that the query keeps it with probability (1 - 0.5e-4)^steps.
+/// so that the query keeps it with probability (1 - 0.5e-4)^steps. Its
+/// views inlined, each step's two rules read facts of their own, and
+/// `auto` puts `program` last (`built_of_gates`); the tests of the turns
+/// give it [`program_leads`]' trials, where `program` leads.
 fn diamond_loop(steps: usize) -> GroundProgram {
     let mut src = String::from(
         "0.5::route.\n0.0001::drop.\nresult :- \\+route, \\+drop.\nresult_1 :- route.\nresult_1 :- result.\n",
@@ -332,9 +437,8 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
     // it in the square of the steps (24 M units under `program` at 400
     // steps); `program` now names each step's result at a cut of width one
     // (src/vtree/naming.rs), as `families:0` cuts each step at an
-    // indicator, and both are linear. `program` leads (the grounder
-    // inlines each step's views), `program:fanin` lays out the same named
-    // order and is dropped, and `program` and `families:0` take turns of
+    // indicator, and both are linear. `program` leads ([`program_leads`]),
+    // `program:fanin` lays out the same named order and is dropped, and `program` and `families:0` take turns of
     // doubling work from 2^15 units (a first watch of 2^15 pairs): one of
     // them finishes (`program`, projected to finish its compile within
     // two doublings, takes its turns ahead), and neither has spent more
@@ -342,18 +446,9 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
     // move it ahead, and one more for its turn.
     let steps = 400;
     let gp = diamond_loop(steps);
-    assert!(gp.stats.inlined > 0);
-    assert_eq!(
-        candidates(&gp)[..3],
-        [
-            Kind::Program { fan_in: false },
-            Kind::Program { fan_in: true },
-            Kind::Families { search: false }
-        ]
-    );
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        program_leads(),
         Projection::default(),
         1 << 15,
         tp::DYNAMIC_FIRST_PAIRS,
@@ -424,7 +519,7 @@ fn a_turn_projected_past_its_horizon_ends_between_components() {
     let gp = diamond_loop(steps);
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        program_leads(),
         Projection::default(),
         1 << 4,
         tp::DYNAMIC_FIRST_PAIRS,
@@ -469,7 +564,7 @@ fn settling_past_its_budget_is_the_trials_work() {
     let gp = diamond_loop(steps);
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        program_leads(),
         Projection::default(),
         1 << 15,
         tp::DYNAMIC_FIRST_PAIRS,
@@ -514,7 +609,7 @@ fn a_cnf_of_several_units_with_copies_takes_no_families_trial() {
     .unwrap();
     assert_eq!(gp.stats.conditioned.merged, 1);
     assert!(!shape::nothing_to_order(&gp) && shape::clauses_over_facts(&gp));
-    assert_eq!(candidates(&gp), vec![Kind::Td, Kind::Closed]);
+    assert_eq!(candidates(&gp, false), vec![Kind::Td, Kind::Closed]);
 }
 
 /// `closed` with `td` after it, for a program of facts alone, so that
@@ -574,7 +669,7 @@ fn competing_rewrites_preserve_the_problog_posteriors() {
     ];
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        candidates(&gp, false),
         Projection::default(),
         2,
         tp::DYNAMIC_FIRST_PAIRS,
@@ -584,7 +679,7 @@ fn competing_rewrites_preserve_the_problog_posteriors() {
         run.attempts > 4,
         "the program must exercise multiple bounded trials"
     );
-    assert_turns(&run.vtree_notes, &candidates(&gp));
+    assert_turns(&run.vtree_notes, &candidates(&gp, false));
     let answers = run.results.unwrap();
     assert_eq!(answers.len(), expected.len());
     for (name, p) in expected {
@@ -600,7 +695,7 @@ fn competing_rewrites_preserve_the_problog_posteriors() {
 #[test]
 fn a_trial_with_indicators_ties_tables_by_clauses() {
     let gp = regress(include_str!("../../examples/bn_split.pl"));
-    let rewritten: Vec<_> = candidates(&gp)
+    let rewritten: Vec<_> = candidates(&gp, false)
         .into_iter()
         .filter(|k| k.indicators())
         .collect();
@@ -639,6 +734,36 @@ fn a_trial_with_indicators_ties_tables_by_clauses() {
             .probability;
         assert!((got - p).abs() < 1e-7, "{name}: {got} versus ProbLog {p}");
     }
+}
+
+#[test]
+fn families_0_holds_the_weight_only_where_its_rewrite_ties_tables_by_clauses() {
+    // A network's rewrite ties its tables by clauses, and `families:0`'s
+    // first watch is that of a weighted first target; UW-CSE's ties none,
+    // and its first watch is any trial's. A first round of two pairs.
+    let first_watch = |gp: GroundProgram| {
+        let trials = candidates(&gp, false);
+        let run = run_with_watch(
+            gp,
+            trials,
+            Projection::default(),
+            2,
+            tp::DYNAMIC_FIRST_PAIRS,
+        )
+        .unwrap();
+        let laid = Kind::Families { search: false };
+        let laid = format!("{laid} indicators={}", laid.indicators_name());
+        attempts(&run.vtree_notes)
+            .into_iter()
+            .find(|(_, t)| *t == laid)
+            .map(|(w, _)| w)
+            .unwrap_or_else(|| panic!("{:#?}", run.vtree_notes))
+    };
+    let unweighted = (2 * WORK_PER_PAIR / WORK_PER_HELD_PAIR) as usize;
+    let network = regress(include_str!("../../examples/bn_split.pl"));
+    assert_eq!(first_watch(network), FAMILIES_WEIGHT as usize * unweighted);
+    let relational = regress(include_str!("../../examples/uwcse.pl"));
+    assert_eq!(first_watch(relational), unweighted);
 }
 
 /// Trial `strategy` on `gp` written without its linear recursion, in
@@ -697,7 +822,7 @@ fn a_program_with_nothing_to_order_matches_problog_round_after_round() {
         path(X,Y) :- edge(X,Z), path(Z,Y).
         query(path(1,2)). query(path(1,3)). query(path(1,4)). query(path(1,5)). query(path(1,6)). query(path(1,7)).";
     let gp = regress(source);
-    assert_eq!(candidates(&gp), vec![Kind::Dynamic]);
+    assert_eq!(candidates(&gp, false), vec![Kind::Dynamic]);
     // ProbLog 2.3.0.
     let expected = [0.632256, 0.460356, 0.399624, 0.754432, 0.5716992, 0.199812];
     for trial in [Kind::Dynamic, Kind::Closed] {
@@ -734,7 +859,14 @@ fn a_trial_alone_runs_in_one_unbounded_attempt() {
         path(X,Y) :- edge(X,Z), path(Z,Y).
         query(path(1,2)). query(path(1,3)). query(path(1,4)). query(path(1,5)). query(path(1,6)). query(path(1,7)).";
     let gp = regress(source);
-    let run = run_with_watch(gp.clone(), candidates(&gp), Projection::default(), 2, 0).unwrap();
+    let run = run_with_watch(
+        gp.clone(),
+        candidates(&gp, false),
+        Projection::default(),
+        2,
+        0,
+    )
+    .unwrap();
     assert_eq!(run.attempts, 1, "{:?}", run.vtree_notes);
     assert!(
         run.vtree_notes
@@ -879,10 +1011,13 @@ fn a_loop_the_watch_refused_is_taken_in_the_trials_next_attempt() {
     // rather than build it again and finishes the compile; `td` finishes.
     let (gp, p) = lineage_of_orders(10, 4, 5);
     let td = Kind::Td;
-    assert_eq!(candidates(&gp), vec![td, Kind::Dynamic, Kind::Closed]);
+    assert_eq!(
+        candidates(&gp, false),
+        vec![td, Kind::Dynamic, Kind::Closed]
+    );
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        candidates(&gp, false),
         Projection::default(),
         32,
         tp::DYNAMIC_FIRST_PAIRS,
@@ -1099,14 +1234,14 @@ fn a_grid_answers_round_after_round() {
     let gp = regress(&source);
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        candidates(&gp, false),
         Projection::default(),
         2,
         tp::DYNAMIC_FIRST_PAIRS,
     )
     .unwrap();
     assert!(run.attempts > 1);
-    assert_turns(&run.vtree_notes, &candidates(&gp));
+    assert_turns(&run.vtree_notes, &candidates(&gp, false));
     let answers = run.results.unwrap();
     assert!(
         (answers[0].probability - 0.13566659244461016).abs() < 1e-12,
@@ -1153,14 +1288,14 @@ fn a_markov_network_answers_round_after_round() {
     let gp = regress(&source);
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        candidates(&gp, false),
         Projection::default(),
         2,
         tp::DYNAMIC_FIRST_PAIRS,
     )
     .unwrap();
     assert!(run.attempts > 1);
-    assert_turns(&run.vtree_notes, &candidates(&gp));
+    assert_turns(&run.vtree_notes, &candidates(&gp, false));
     // By enumeration of the 4096 worlds; ProbLog 2.3.0 agrees to the
     // eight digits it prints, one query at a time.
     let expected = [
@@ -1221,14 +1356,14 @@ fn a_noisy_or_network_from_the_literature_answers_round_after_round() {
     let gp = regress(include_str!("../../tests/regress/noisyor15_22.pl"));
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        candidates(&gp, false),
         Projection::default(),
         256,
         tp::DYNAMIC_FIRST_PAIRS,
     )
     .unwrap();
     assert!(run.attempts > 1);
-    assert_turns(&run.vtree_notes, &candidates(&gp));
+    assert_turns(&run.vtree_notes, &candidates(&gp, false));
     let expected = [
         0.02061970492365235,
         0.9064593852653364,
@@ -1262,14 +1397,14 @@ fn mastermind_answers_round_after_round() {
     let gp = regress(include_str!("../../tests/regress/mastermind3_4_3.pl"));
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        candidates(&gp, false),
         Projection::default(),
         256,
         tp::DYNAMIC_FIRST_PAIRS,
     )
     .unwrap();
     assert!(run.attempts > 1);
-    assert_turns(&run.vtree_notes, &candidates(&gp));
+    assert_turns(&run.vtree_notes, &candidates(&gp, false));
     let expected = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.5, 0.5, 0.0, 0.5, 0.5, 0.0];
     let answers = run.results.unwrap();
     assert_eq!(answers.len(), expected.len());
@@ -1291,7 +1426,7 @@ fn a_lost_query_operation_is_not_lost_again_under_the_same_bounds() {
     let gp = regress(&source);
     let run = run_with_watch(
         gp.clone(),
-        candidates(&gp),
+        candidates(&gp, false),
         Projection::default(),
         128,
         tp::DYNAMIC_FIRST_PAIRS,
@@ -1391,7 +1526,7 @@ fn query_counting_obeys_the_batch_work_limit() {
     ) = vtree::build(&gp, &Deps::of(&gp), Kind::Closed).unwrap();
     tree.context().run(|engine| {
         let backend = tp::TddBackend::new(engine, tree.clone());
-        let compiled = tp::compile(
+        let mut compiled = tp::compile(
             &gp,
             tp::fact_variables(&gp, &order),
             tp::Formulation::Dual,
@@ -1407,11 +1542,11 @@ fn query_counting_obeys_the_batch_work_limit() {
         {
             let _guard = engine.limits().scope(stopped);
             assert!(matches!(
-                query::query_probabilities(&gp, &backend, &compiled),
+                query::query_probabilities(&gp, &backend, &mut compiled),
                 Err(tp::CompileError::Tdd(tididi::OperationError::Stopped))
             ));
         }
-        let (answers, _) = query::query_probabilities(&gp, &backend, &compiled).unwrap();
+        let (answers, _) = query::query_probabilities(&gp, &backend, &mut compiled).unwrap();
         let answers = answers.unwrap();
         assert!((answers[0].probability - 0.2).abs() < 1e-12);
         assert!((answers[1].probability - 0.5).abs() < 1e-12);
@@ -1504,6 +1639,7 @@ fn a_trial_refused_memory_takes_what_the_others_hold() {
             decision: false,
         },
         trials,
+        None,
         Projection::default(),
         Watch {
             first_pairs: 1,
@@ -1559,6 +1695,7 @@ fn run_query_beside_evidence(budget: u64) -> (bool, Vec<String>) {
             Kind::Closed,
             Kind::Families { search: false },
         ],
+        None,
         Projection::default(),
         Watch {
             first_pairs: 1,
@@ -1704,10 +1841,13 @@ fn closed_follows_dynamic_where_nothing_to_order_has_no_recursion() {
     ];
     for (source, expected, budget) in cases {
         let gp = regress(source);
-        assert_eq!(candidates(&gp), vec![Kind::Dynamic, Kind::Closed, Kind::Td]);
+        assert_eq!(
+            candidates(&gp, false),
+            vec![Kind::Dynamic, Kind::Closed, Kind::Td]
+        );
         let alone = run_in_memory(gp.clone(), vec![Kind::Dynamic], budget);
         assert!(refused(&alone), "{:?}", alone.map(|r| r.kind));
-        let run = run_in_memory(gp.clone(), candidates(&gp), budget).unwrap();
+        let run = run_in_memory(gp.clone(), candidates(&gp, false), budget).unwrap();
         assert_eq!(run.kind, Kind::Closed);
         assert!(
             run.vtree_notes
@@ -1744,7 +1884,7 @@ fn td_comes_first_where_the_rules_read_copies_of_facts() {
             .any(|r| r.body.iter().any(|l| !gp.is_fact(l.atom()))),
         "a rule reads the copy"
     );
-    let trials = candidates(&gp);
+    let trials = candidates(&gp, false);
     assert_eq!(trials, vec![Kind::Td, Kind::Dynamic, Kind::Closed]);
     let run = run_with_watch(
         gp,
@@ -1777,14 +1917,17 @@ fn dynamic_answers_a_database_query_from_its_elimination_tree() {
     // round. `td`, first there, keeps its decomposition's fold too, and
     // finishes in the first round as well. [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py).
     let gp = regress(include_str!("../../tests/regress/pdb40.pl"));
-    assert_eq!(candidates(&gp), vec![Kind::Td, Kind::Dynamic, Kind::Closed]);
+    assert_eq!(
+        candidates(&gp, false),
+        vec![Kind::Td, Kind::Dynamic, Kind::Closed]
+    );
     let expected = [
         ("h0", 0.389617084615),
         ("h1", 0.795336660308),
         ("safe", 0.656349231681),
     ];
     for (trials, strategy) in [
-        (candidates(&gp), Kind::Td),
+        (candidates(&gp, false), Kind::Td),
         (vec![Kind::Dynamic], Kind::Dynamic),
     ] {
         let run = run_with_watch(
@@ -1816,7 +1959,7 @@ fn dynamic_answers_a_noisy_or_network() {
     // [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py). Every rule reads facts alone, and `td` comes
     // first there; `dynamic` alone is the run below.
     let gp = regress(include_str!("../../tests/regress/noisyor20_30.pl"));
-    assert_eq!(candidates(&gp)[0], Kind::Td);
+    assert_eq!(candidates(&gp, false)[0], Kind::Td);
     let run = run_with_watch(
         gp,
         vec![Kind::Dynamic],

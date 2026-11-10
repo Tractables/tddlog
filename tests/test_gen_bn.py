@@ -859,6 +859,111 @@ probability ( Cancer | Smoker ) {
             gen_bn.rescaled(gen_bn.parse(zero))
 
 
+def random_rounded_network(rng):
+    """A random Bayesian network of two to four variables whose rows need
+    not sum to one: a table of eighths, which sum to one; of thirds
+    rounded to six decimals, rows of one sum short of one; or of entries
+    of any sum, zeros and rows of zeros among them. Written as a BAYES
+    file and as a MARKOV one, each scope in random order and its table
+    laid out to match; and a UAI evidence file observing none or one
+    variable."""
+    n = rng.randint(2, 4)
+    sizes = [rng.randint(2, 3) for _ in range(n)]
+    parents, rows = [], []
+    for v in range(n):
+        parents.append(rng.sample(range(v), rng.randint(0, min(2, v))))
+        kind, table = rng.choice(['eighths', 'thirds', 'any']), {}
+        for key in itertools.product(*(range(sizes[u]) for u in parents[v])):
+            if kind == 'eighths':
+                cuts = sorted(rng.randint(0, 8) for _ in range(sizes[v] - 1))
+                table[key] = [str(float(Fraction(b - a, 8))) for a, b in zip([0] + cuts, cuts + [8])]
+            elif kind == 'thirds':
+                table[key] = ['0.333333'] * sizes[v]
+            else:
+                table[key] = [rng.choice(['0', '0.1', '0.160598', '0.5', '0.839403', '1', '2.25'])
+                              for _ in range(sizes[v])]
+        if all(p == '0' for row in table.values() for p in row):
+            next(iter(table.values()))[0] = '1'   # a factor zero everywhere is an error
+        rows.append(table)
+
+    def written(kind, shuffle):
+        scopes, tables = [], []
+        for v in range(n):
+            scope = parents[v] + [v]
+            if shuffle:
+                rng.shuffle(scope)
+            tables.append([rows[v][tuple(value[u] for u in parents[v])][value[v]]
+                           for world in itertools.product(*(range(sizes[u]) for u in scope))
+                           for value in [dict(zip(scope, world))]])
+            scopes.append(scope)
+        lines = [kind, str(n), ' '.join(map(str, sizes)), str(n)]
+        lines += [' '.join(map(str, [len(s)] + s)) for s in scopes]
+        for t in tables:
+            lines += [str(len(t)), ' ' + ' '.join(t)]
+        return '\n'.join(lines) + '\n'
+    v = rng.randrange(n)
+    evid = rng.choice(['', f'1 {v} {rng.randrange(sizes[v])}'])
+    return written('BAYES', False), written('MARKOV', True), evid
+
+
+class AsWrittenTests(unittest.TestCase):
+    def scratch(self, name, data):
+        path = Path(__file__).resolve().parents[1] / 'tmp' / name
+        path.parent.mkdir(exist_ok=True)
+        path.write_bytes(data)
+        return str(path)
+
+    def test_a_uai_file_is_the_product_of_its_functions_as_written(self):
+        """tests/networks/as_written.uai, its MARKOV writing and random
+        networks whose rows need not sum to one, written as BAYES and as
+        MARKOV files, with and without evidence: P(e) of gen_bn.py's tables
+        and of the Hugin file Ace reads (`write_hugin`), each by
+        enumeration, plus the offset, is log10 Z by enumeration of the
+        file's worlds in exact fractions, as tests/it/networks.rs checks
+        tddlog's. A table whose rows share one sum is an offset, and one
+        whose rows do not a factor, observed."""
+        import random
+        net = SOURCE / 'tests' / 'networks'
+        evid = (net / 'as_written.uai.evid').read_text()
+        cases = [((net / name).read_text(), e) for name in ['as_written.uai', 'as_written_markov.uai']
+                 for e in ['', evid]]
+        rng = random.Random(13)
+        for _ in range(40):
+            bayes, markov, e = random_rounded_network(rng)
+            cases += [(bayes, e), (markov, e)]
+        for k, (model, e) in enumerate(cases):
+            z = brute_force_z(model, e)
+            network, forced, offset = gen_bn.parse(self.scratch('written.uai', model.encode()))
+            evidence = forced + (gen_bn.read_evid(self.scratch('written.uai.evid', e.encode()), network)
+                                 if e else [])
+            order, variables, tables = gen_bn.parse(self.scratch('written.net',
+                                                                 gen_bn.write_hugin(network).encode()))
+            given = dict(evidence)
+            hugin = math.fsum(
+                math.prod(tables[v][1][tuple(value[u] for u in tables[v][0])][variables[v].index(value[v])]
+                          for v in order)
+                for world in itertools.product(*(variables[v] for v in order))
+                for value in [dict(zip(order, world))]
+                if all(value[v] == u for v, u in given.items()))
+            for pe in [program_pe(network, evidence), hugin]:
+                got = math.log10(pe) + (offset or 0.0) if pe > 0 else -math.inf
+                if z == 0:
+                    self.assertEqual(got, -math.inf, msg=(k, model, e))
+                else:
+                    self.assertAlmostEqual(got, math.log10(z), places=12, msg=(k, model, e))
+        # x0's one row sums to 0.999999, an offset; x1's three rows, x2's two
+        # and x3's four have sums of their own, factors over their parents.
+        network, forced, offset = gen_bn.parse(str(net / 'as_written.uai'))
+        self.assertEqual(forced, [('f0', 'ok'), ('f1', 'ok'), ('f2', 'ok')])
+        self.assertEqual([network[2][f][0] for f, _ in forced], [['x0'], ['x1'], ['x1', 'x2']])
+        for p in network[2]['x0'][1][()]:
+            self.assertAlmostEqual(p, 1 / 3, places=15)
+        # A BAYES file whose rows all sum to one has no offset.
+        self.assertIsNone(gen_bn.parse(self.scratch('one.uai', b'BAYES\n1\n2\n1\n1 0\n2\n 0.25 0.75\n'))[2])
+        with self.assertRaisesRegex(SystemExit, 'not for a UAI file'):
+            gen_bn.model(gen_bn.arguments().parse_args([str(net / 'as_written.uai'), '--rescale']))
+
+
 class ReaderTests(unittest.TestCase):
     def test_the_programs_tddlog_reads_networks_as_are_gen_bn_pys(self):
         """tddlog reads each network file as the program beside it

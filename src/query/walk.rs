@@ -174,6 +174,7 @@
 //! result. The cap keeps the attempt cheap where a join grows little, and
 //! [`DEFER_FROM`] keeps small joins from waiting for nothing.
 
+use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
@@ -187,7 +188,9 @@ use super::sum_out::SumOut;
 use super::{Formula, QuerySizes, Scopes};
 use crate::ground::AtomId;
 use crate::tp::backend::{FullSchedule, Part};
-use crate::tp::{CompileError, Compiled, NegationSource, Reduce, TddBackend, VtreeScope};
+use crate::tp::{
+    CompileError, Compiled, NegationSource, Reduce, ScopeTable, TddBackend, VtreeScope,
+};
 
 /// The evidence phase puts a node's smaller items off while they total under
 /// 1/PUT_OFF_BELOW of its largest (see the module doc).
@@ -404,6 +407,9 @@ pub(super) struct EvidenceWalk {
     /// the place in `observed` of the read that consumes each
     /// ([`EvidenceWalk::take_last_reads`]).
     taken: FxHashMap<usize, Tdd>,
+    /// Whether each read in `observed` is its atom's last that needs the
+    /// stored formula ([`EvidenceWalk::mark_last_reads`]).
+    last_reads: Vec<bool>,
     /// The observations put at each vtree node, and what each node built,
     /// until its parent plans: held by node, as only the nodes with an
     /// observation or a frontier of the walk have any.
@@ -500,6 +506,7 @@ impl EvidenceWalk {
             observed,
             next_observed: 0,
             taken: FxHashMap::default(),
+            last_reads: Vec::new(),
             at: FxHashMap::default(),
             built: FxHashMap::default(),
             nodes: tree.bottomup().collect(),
@@ -532,26 +539,36 @@ impl EvidenceWalk {
         }
     }
 
-    /// Takes from `compiled` the stored formula of each atom observed from
-    /// here on, for its last read in `observed` to negate or embed in place
-    /// of a copy, but for the atoms of ties and those `read_after` names,
-    /// whose formulas are read after the walk or by a tie
-    /// (`tp/tie.rs`). A read that fails may have consumed its
-    /// formula, and the walk cannot go on after an error.
-    pub(super) fn take_last_reads(
+    /// Marks each atom's last read in `observed`, but for the atoms of ties
+    /// and those `read_after` names, whose formulas are read after the walk
+    /// or by a tie (`tp/tie.rs`): no read needs the atom's stored formula
+    /// after that one, which takes it ([`Self::take_last_reads`]) or drops
+    /// it once its copy is in a slot.
+    pub(super) fn mark_last_reads(
         &mut self,
-        compiled: &mut Compiled,
+        compiled: &Compiled,
         read_after: impl Fn(AtomId) -> bool,
-    ) -> bool {
+    ) {
         let mut last: FxHashMap<AtomId, usize> = FxHashMap::default();
-        for (i, &(a, _)) in self.observed.iter().enumerate().skip(self.next_observed) {
+        for (i, &(a, _)) in self.observed.iter().enumerate() {
             last.insert(a, i);
         }
+        self.last_reads = vec![false; self.observed.len()];
         for (a, i) in last {
-            if compiled.for_queries.ties.contains_key(&a) || read_after(a) {
+            self.last_reads[i] = !compiled.for_queries.ties.contains_key(&a) && !read_after(a);
+        }
+    }
+
+    /// Takes from `compiled` the stored formula of each atom whose last
+    /// read ([`Self::mark_last_reads`]) is still to come, to negate or
+    /// embed in place of a copy. A read that fails may have consumed its
+    /// formula, and the walk cannot go on after an error.
+    pub(super) fn take_last_reads(&mut self, compiled: &mut Compiled) -> bool {
+        for i in self.next_observed..self.observed.len() {
+            if !self.last_reads[i] {
                 continue;
             }
-            if let Some(f) = compiled.formulas.take(a as usize) {
+            if let Some(f) = compiled.formulas.take(self.observed[i].0 as usize) {
                 // No read of a formula outlives its compile: nothing is copied.
                 self.taken.insert(i, Arc::unwrap_or_clone(f));
             }
@@ -1085,12 +1102,21 @@ impl EvidenceWalk {
 
     /// Runs the walk on from where it stopped: places the observations,
     /// then joins the planned conjunctions and plans each node's in turn,
-    /// bottom up, until the root's result is the evidence formula.
+    /// bottom up, until the root's result is the evidence formula, on the
+    /// query phase's scopes `table`.
+    ///
+    /// An atom's last read ([`Self::mark_last_reads`]) that copies its
+    /// stored formula drops it from `compiled` once the copy is in its
+    /// slot, as the compile drops a formula after its last reader: a walk
+    /// under a watch copies every formula it reads, and diamond at 3
+    /// million steps placed 3.6 GB of copies beside the formulas they
+    /// copied. A walk that sums out keeps them, for the walk that may start
+    /// over in its place ([`Self::walks_again`]).
     pub(super) fn run(
         &mut self,
         backend: &TddBackend,
-        compiled: &Compiled,
-        scopes: &Scopes,
+        compiled: &mut Compiled,
+        table: &RefCell<ScopeTable>,
         sizes: &mut QuerySizes,
         watch: Option<usize>,
     ) -> Result<Option<Formula>, CompileError> {
@@ -1098,8 +1124,20 @@ impl EvidenceWalk {
         while self.next_observed < self.observed.len() {
             backend.pause()?;
             self.room(1)?;
-            self.observe_next(backend, compiled, scopes, sizes)?;
+            let scopes = Scopes {
+                backend,
+                compiled,
+                table,
+            };
+            if let Some(a) = self.observe_next(backend, compiled, &scopes, sizes)? {
+                compiled.formulas.take(a as usize);
+            }
         }
+        let scopes = &Scopes {
+            backend,
+            compiled,
+            table,
+        };
         loop {
             while let Some(join) = self.joins.front() {
                 backend.pause()?;
@@ -1163,15 +1201,17 @@ impl EvidenceWalk {
     }
 
     /// Puts the next observation's formula in a slot of the lowest node
-    /// over its scope.
+    /// over its scope, and the atom whose stored formula no read needs any
+    /// more, where the read copied it ([`Self::run`]).
     fn observe_next(
         &mut self,
         backend: &TddBackend,
         compiled: &Compiled,
         scopes: &Scopes,
         sizes: &mut QuerySizes,
-    ) -> Result<(), CompileError> {
+    ) -> Result<Option<AtomId>, CompileError> {
         let (a, value) = self.observed[self.next_observed];
+        let mut copied = false;
         // A link tied to another reader's copies goes where the link would
         // have, and weighs what the link would: the plan below reads its items'
         // pairs, and the readers' links are one loop with the copies renamed.
@@ -1205,7 +1245,10 @@ impl EvidenceWalk {
                     Some(f) => {
                         compiled.taken_literal_formula(backend, &own, a, f, value, negations)?
                     }
-                    None => compiled.literal_formula(backend, &own, a, value, negations)?,
+                    None => {
+                        copied = true;
+                        compiled.literal_formula(backend, &own, a, value, negations)?
+                    }
                 };
                 let pairs = backend.size(&formula);
                 (own, node, formula, pairs)
@@ -1216,9 +1259,10 @@ impl EvidenceWalk {
         }
         let id = self.slot(Some((formula, own)), pairs);
         self.at.entry(node.idx()).or_default().push(id);
+        let last = self.last_reads[self.next_observed];
         self.next_observed += 1;
         backend.kept();
-        Ok(())
+        Ok((copied && last && self.sum_out.is_none()).then_some(a))
     }
 
     /// Splits the front join, of several slots smallest first, into the

@@ -54,8 +54,9 @@
 //!   recorded as a derivation, its clause's group and what each body
 //!   literal reads.
 //!
-//! The answers, the rules and the derivations count against the
-//! grounding's bound, and a ground term deeper than
+//! The answers, the rules, the derivations and the literals resolved
+//! count against the grounding's bound, so that a grounding bounded by
+//! another's size also stops once its work passes it, and a ground term deeper than
 //! [`MAX_DEPTH`](super::MAX_DEPTH), or calls or a term with variables
 //! nested deeper than [`MAX_NESTING`], give the grounding up with the goal
 //! that reached them.
@@ -225,8 +226,8 @@ fn identical(a: &T, b: &T) -> bool {
 }
 
 /// The ground program of `norm`, resolved from its queries, its evidence
-/// and its query rules; [`GroundError::OverBound`] once its answers and
-/// rules outgrow `bound` terms.
+/// and its query rules; [`GroundError::OverBound`] once its answers, its
+/// rules and the literals it resolves outgrow `bound` terms.
 pub(crate) fn ground(
     norm: &NormProgram,
     bound: Option<usize>,
@@ -288,8 +289,8 @@ struct TopDown<'a> {
     collected: FxHashMap<(u32, Box<[Val]>), Lists>,
     /// The predicate of the lists' atoms, and the next one's number.
     states: Option<(u32, i64)>,
-    /// The answers, the rules' terms and the derivations' steps, against
-    /// `bound`.
+    /// The answers, the rules' terms, the derivations' steps and the
+    /// literals resolved, against `bound`.
     size: usize,
     bound: usize,
 }
@@ -978,6 +979,11 @@ impl<'a> TopDown<'a> {
         i: usize,
         steps: &mut Vec<Step>,
     ) -> Result<(), GroundError> {
+        // Each literal resolved counts against the bound too: the work of a
+        // call resolved again for each binding of an argument its rules
+        // read only after enumerating (`step(J) :- between(1, N, T1), J is
+        // T1 - 1`, called for each `J`) grows past what it keeps.
+        self.grow(1)?;
         let Some(lit) = rule.body.get(i) else {
             return self.answer(t, rule.group, steps);
         };

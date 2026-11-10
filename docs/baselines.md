@@ -554,9 +554,6 @@ skip rule, its programs captured in the same job:
 - the circuits Alea.jl exports (the bit-blasted circuits and Alea.jl's
   programs' circuits), as their ground programs (below).
 
-The model counting competition's CNFs (internal) ask no query and are
-not given to it, as to the rest of the ProbLog family.
-
 A circuit Alea.jl exports has no first-order source: it is an evaluation
 of its own that every system reads as the circuit or a translation of
 it. Scallop reads the ground program `tddlog --ground`
@@ -2892,8 +2889,20 @@ solver, which on an acyclic chain computes each state's value once from
 its successors' (Storm's default for doubles, GMRES to 1e-6, would not
 be exact); `dd` iterates to a relative precision of 1e-15, with Sylvan's
 tables given half of the memory the process may take where it is bounded,
-its address-space limit or else its cgroup's `memory.max` (its default of
-4 GB filled on circuits). PRISM with `-sparse` or `-hybrid` (`-exact`
+its address-space limit or else its cgroup's `memory.max`
+(`--sylvan:maxmem`; its default of 4 GB filled on circuits). Sylvan
+doubles its unique table and its cache together while twice their size,
+60 bytes an entry, stays under that: at the 31 GB cap half of it holds the
+table to 2^27 entries. Where the unique table filled ("BDD Unique table
+full": pdb15, pdb20, a satisfiability program, an arithmetic program and a
+circuit), the instance was run again with three quarters, which allow
+2^28 (`--storm-sylvan-share 3/4`). Three quarters is not the default since
+the larger table costs time where the smaller one sufficed: pdb10 took
+16.6 s with it against 8.6 s with half. The `dd` records on the circuits
+of three Alea.jl programs among the functional programs
+(arith_disease_small, arith_plankton, pluck_string_editing) fail on the
+full unique table at half and were not run again, as the harness no
+longer writes those circuits. PRISM with `-sparse` or `-hybrid` (`-exact`
 refuses bounded until), `-javamaxmem` and `-cuddmaxmem` both
 `--prism-heap` on every model (4g by default, 0.8 of `--mem-cap` under the
 cap; the release runs gave it a third of the lane's memory, as 4g ran out

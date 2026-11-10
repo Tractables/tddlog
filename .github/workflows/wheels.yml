@@ -186,9 +186,10 @@ jobs:
           path: bindings/python/dist/*.tar.gz
 
   # Only for a published release, and only once every wheel has been built and
-  # tested. Trusted publishing means GitHub proves this workflow's identity to
-  # PyPI with a short-lived token, so no API token is stored in the
-  # repository; the `pypi` environment is where a required reviewer goes,
+  # tested. The upload uses the repository secret PYPI_API_TOKEN where it is
+  # set, and otherwise trusted publishing, where GitHub proves this workflow's
+  # identity to PyPI with a short-lived token and no API token is stored in the
+  # repository. The `pypi` environment is where a required reviewer goes,
   # since an upload can be yanked but never withdrawn.
   publish:
     needs: [wheels, sdist]
@@ -204,4 +205,8 @@ jobs:
           merge-multiple: true
           path: dist
 
+      # An empty password, which an unset secret gives, makes the action
+      # publish through the trusted publisher.
       - uses: pypa/gh-action-pypi-publish@v1.14.2
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}

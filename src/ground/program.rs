@@ -459,6 +459,20 @@ impl GroundProgram {
             structure: OnceLock::new(),
         }
     }
+    /// Gives back the room the program's lists hold past their lengths,
+    /// which a rewrite that grew them by doubling leaves, where the
+    /// compile holds the program to its end ([`crate::indicators::name`]).
+    pub(crate) fn shrink_to_fit(&mut self) {
+        self.atoms.shrink_to_fit();
+        self.kinds.shrink_to_fit();
+        self.rules.shrink_to_fit();
+        self.queries.shrink_to_fit();
+        self.evidence.shrink_to_fit();
+        self.encoding.indicators.shrink_to_fit();
+        self.encoding.codes.shrink_to_fit();
+        self.encoding.siblings.shrink_to_fit();
+        self.encoding.segments.shrink_to_fit();
+    }
     /// The fact literal each atom stands for where it is a copy of a fact:
     /// an atom whose one rule reads one fact, `g :- f` or `g :- \+f`, as the
     /// conditioning on the evidence makes of facts it finds equal

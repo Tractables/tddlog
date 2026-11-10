@@ -266,16 +266,17 @@ fn a_markov_network_prints_its_partition_function() {
     );
 }
 
-/// Z of a MARKOV file by enumerating its worlds: the product of its
-/// tables' entries, each read with the scope's last variable changing
-/// fastest, summed over every assignment.
-fn enumerated_z(path: &str) -> f64 {
+/// Z of a UAI file by enumerating its worlds: the product of its
+/// functions' entries as written, each read with the scope's last
+/// variable changing fastest, summed over every assignment that agrees
+/// with `evidence`, a `.evid` file's text.
+fn enumerated_z(path: &str, evidence: Option<&str>) -> f64 {
     fn int(tok: &mut std::str::SplitWhitespace) -> usize {
         tok.next().unwrap().parse().unwrap()
     }
     let text = std::fs::read_to_string(path).unwrap();
     let mut tok = text.split_whitespace();
-    assert_eq!(tok.next(), Some("MARKOV"));
+    assert!(matches!(tok.next(), Some("MARKOV" | "BAYES")));
     let n = int(&mut tok);
     let cards: Vec<usize> = (0..n).map(|_| int(&mut tok)).collect();
     let scopes: Vec<Vec<usize>> = (0..int(&mut tok))
@@ -293,6 +294,12 @@ fn enumerated_z(path: &str) -> f64 {
                 .collect()
         })
         .collect();
+    let observed: Vec<(usize, usize)> = evidence.map_or(Vec::new(), |e| {
+        let mut tok = e.split_whitespace();
+        (0..int(&mut tok))
+            .map(|_| (int(&mut tok), int(&mut tok)))
+            .collect()
+    });
     let mut x = vec![0; n];
     let mut z = 0.0;
     for w in 0..cards.iter().product() {
@@ -300,6 +307,9 @@ fn enumerated_z(path: &str) -> f64 {
         for v in (0..n).rev() {
             x[v] = rest % cards[v];
             rest /= cards[v];
+        }
+        if observed.iter().any(|&(v, value)| x[v] != value) {
+            continue;
         }
         z += scopes
             .iter()
@@ -329,18 +339,19 @@ fn a_summed_out_variable_stays_while_a_scope_holds_it() {
     ]);
     let (_, log10_z) = answers(&out, "Z");
     let got = log10_z.expect("a Z line");
-    let want = enumerated_z(path).log10();
+    let want = enumerated_z(path, None).log10();
     assert!((got - want).abs() < 1e-12, "log10 Z = {got} against {want}");
 }
 
 #[test]
-fn a_markov_file_of_rounded_tables_answers_as_its_network() {
+fn a_markov_file_of_rounded_tables_is_its_network_as_written() {
     // tests/networks/rounded.uai holds x0's table and x1's given x0, x1
     // first in its scope; x1's row at x0 = v_0, 0.160598 and 0.839403,
     // sums to 1.000001, which six decimals rounded up explain. The file is
-    // read as the Bayesian network, the row divided by its sum: Z is one,
-    // and P(x1 = v_0) = 0.2 * 0.160598 / 1.000001 + 0.8 * 0.6, where the
-    // factors' Z would give 0.5121196 / 1.0000002.
+    // read as the Bayesian network, and its functions as written: the row
+    // divided by its sum times a factor of x1's rows' sums over x0, so that
+    // Z = 0.2 * 1.000001 + 0.8 and P(x1 = v_0) = (0.2 * 0.160598 + 0.8 *
+    // 0.6) / Z, the factors' answers.
     let out = tddlog(&[
         "tests/networks/rounded.uai",
         "--evidence-probability",
@@ -348,15 +359,57 @@ fn a_markov_file_of_rounded_tables_answers_as_its_network() {
         "15",
     ]);
     let (got, log10_z) = answers(&out, "Z");
-    let p = 0.2 * (0.160598 / 1.000001) + 0.8 * 0.6;
+    let z = 0.2 * 1.000001 + 0.8;
+    let p = (0.2 * 0.160598 + 0.8 * 0.6) / z;
     let expected = [
-        ("x0(v_0)", 0.2),
-        ("x0(v_1)", 0.8),
+        ("x0(v_0)", 0.2 * 1.000001 / z),
+        ("x0(v_1)", 0.8 / z),
         ("x1(v_0)", p),
         ("x1(v_1)", 1.0 - p),
     ];
     assert_close("rounded.uai", &got, &expected, 1e-12);
-    assert!(log10_z.expect("a Z line").abs() < 1e-12, "{log10_z:?}");
+    let log10_z = log10_z.expect("a Z line");
+    assert!((log10_z - z.log10()).abs() < 1e-12, "{log10_z}");
+}
+
+/// A UAI file's functions are read as written, whatever they sum to: the
+/// PR task's `Z` is their product summed over the worlds.
+#[test]
+fn a_uai_network_is_the_product_of_its_functions_as_written() {
+    // tests/networks/as_written.uai's functions are conditional tables
+    // whose rows do not all sum to one: x0's, 0.333333 three times, to a
+    // constant; x1's given x0 to 1.000001, 1 and 1.000002; x2's given x1
+    // to 1 and 0.8; and x3's given x1 and x2, which no question reads, to
+    // 1, 1.000002, 1 and 0, a row of zeros. as_written_markov.uai is the
+    // same file as MARKOV, whose rows over 1.000001 make it a Markov
+    // network rather than a Bayesian one. log10 Z of each, alone and
+    // given x2 = v_0, is the enumeration's.
+    let evid = "tests/networks/as_written.uai.evid";
+    let evidence = std::fs::read_to_string(evid).unwrap();
+    for path in [
+        "tests/networks/as_written.uai",
+        "tests/networks/as_written_markov.uai",
+    ] {
+        for observed in [None, Some(evidence.as_str())] {
+            let mut args = vec![
+                path,
+                "--no-queries",
+                "--evidence-probability",
+                "--precision",
+                "13",
+            ];
+            if observed.is_some() {
+                args.extend(["--evidence", evid]);
+            }
+            let (_, log10_z) = answers(&tddlog(&args), "Z");
+            let got = log10_z.unwrap_or_else(|| panic!("{args:?}: no Z line"));
+            let want = enumerated_z(path, observed).log10();
+            assert!(
+                (got - want).abs() < 1e-12,
+                "{args:?}: log10 Z = {got} against {want}"
+            );
+        }
+    }
 }
 
 #[test]
@@ -472,9 +525,9 @@ fn a_network_answers_as_problog_and_enumeration_do() {
         (
             &["tests/networks/chain.uai", "--query", "leaves"][..],
             &[
-                ("x2(v_0)", 0.25833517),
-                ("x2(v_1)", 0.29227303),
-                ("x2(v_2)", 0.31681688),
+                ("x2(v_0)", 0.29701244),
+                ("x2(v_1)", 0.33693348),
+                ("x2(v_2)", 0.36605407),
             ][..],
         ),
         (
@@ -498,12 +551,16 @@ fn a_network_answers_as_problog_and_enumeration_do() {
 }
 
 #[test]
-fn a_row_that_sums_to_one_in_single_precision_is_divided_by_its_sum() {
+fn a_row_that_sums_to_one_in_single_precision_is_read_as_written() {
     // single.uai's rows of x1 are two of diagnose_a's (the UAI classics),
     // written to eight decimals from single precision: they sum to
     // 1.00000004 and 1.00000005, more than the decimals explain and within
-    // the 3 · 2^-24 of a row of two computed in single precision. Each is
-    // divided by its sum.
+    // the 3 · 2^-24 of a row of two computed in single precision. The
+    // functions are read as written, and the marginals are the product's:
+    // to 1e-10, since the factor of the sums over x0 is 1.00000004 /
+    // 1.00000005 at x0 = v_0, within the 1e-8 of one that the grounder
+    // reads as one (`ground::normalize::SUM_TOLERANCE`), which moves them
+    // by 8e-12.
     let out = tddlog(&[
         "tests/networks/single.uai",
         "--query",
@@ -512,11 +569,12 @@ fn a_row_that_sums_to_one_in_single_precision_is_divided_by_its_sum() {
         "13",
     ]);
     let (a, b) = (1.00000004, 1.00000005);
+    let z = 0.3 * a + 0.7 * b;
     let expected = [
-        ("x1(v_0)", 0.3 * 0.99800204 / a + 0.7 * 0.99400605 / b),
-        ("x1(v_1)", 0.3 * 0.001998 / a + 0.7 * 0.005994 / b),
+        ("x1(v_0)", (0.3 * 0.99800204 + 0.7 * 0.99400605) / z),
+        ("x1(v_1)", (0.3 * 0.001998 + 0.7 * 0.005994) / z),
     ];
-    assert_close("single.uai", &answers(&out, "P(e)").0, &expected, 1e-12);
+    assert_close("single.uai", &answers(&out, "P(e)").0, &expected, 1e-10);
 }
 
 #[test]
@@ -569,9 +627,11 @@ fn network_options_fail_where_they_would_do_nothing() {
             String::from_utf8_lossy(&out.stderr)
         );
     }
-    // A network the reader refuses, and UAI evidence for another format.
+    // A network the reader refuses, UAI evidence for another format, and
+    // a UAI file's functions rescaled, which are read as written.
     for args in [
         &["tests/networks/sprinkler.bif", "--query", "Nothing"][..],
+        &["tests/networks/chain.uai", "--rescale"][..],
         &[
             "tests/networks/asia.net",
             "--evidence",

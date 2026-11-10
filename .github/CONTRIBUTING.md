@@ -4,7 +4,7 @@
 
 ```sh
 cargo fmt --check
-cargo test --release
+cargo test --profile quick
 cargo clippy --all-targets -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
 python3 -m unittest discover -s tests -p 'test_*.py'
@@ -12,9 +12,10 @@ python3 .github/scripts/check_release.py
 ```
 
 `cargo test` runs `tests/it/`, the differential tests against ProbLog's
-answers and exact sums, and the crate's doctests; CI runs it under
-`--profile quick`, which builds without link-time optimization and gives
-the same answers, and also checks that Rust 1.88 builds the crate. The
+answers and exact sums, and the crate's doctests. `--profile quick`
+builds without link-time optimization and gives release's answers, as CI
+runs it; a plain `cargo test` builds without optimization and takes about
+an hour. CI also checks that Rust 1.88 builds the crate. The
 Python tests check the scripts and need numpy; `check_release.py` checks
 that the crate and the bindings declare one version.
 

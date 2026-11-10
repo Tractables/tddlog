@@ -86,8 +86,8 @@ fn compile(
                 Err(e) => panic!("{e}"),
             }
         }
-        let compiled = compilation.finish(&backend).expect("finishes");
-        let (results, _) = query_probabilities(gp, &backend, &compiled).expect("answers");
+        let mut compiled = compilation.finish(&backend).expect("finishes");
+        let (results, _) = query_probabilities(gp, &backend, &mut compiled).expect("answers");
         (
             results
                 .expect("no evidence")
@@ -226,8 +226,8 @@ fn compile_retaking(
                 Err(e) => panic!("{e}"),
             }
         }
-        let compiled = compilation.finish(&backend).expect("finishes");
-        let (results, _) = query_probabilities(gp, &backend, &compiled).expect("answers");
+        let mut compiled = compilation.finish(&backend).expect("finishes");
+        let (results, _) = query_probabilities(gp, &backend, &mut compiled).expect("answers");
         (
             results
                 .expect("no evidence")
@@ -379,9 +379,9 @@ fn a_loop_at_the_end_of_its_turn_goes_on_in_the_next_run() {
                     Err(e) => panic!("{e}"),
                 }
             }
-            let compiled = compilation.finish(&backend).expect("finishes");
+            let mut compiled = compilation.finish(&backend).expect("finishes");
             backend.end_turn_at(u64::MAX);
-            let (results, _) = query_probabilities(&gp, &backend, &compiled).expect("answers");
+            let (results, _) = query_probabilities(&gp, &backend, &mut compiled).expect("answers");
             (
                 results.expect("no evidence")[0].probability,
                 compiled.stats.work_units,

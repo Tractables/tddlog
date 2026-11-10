@@ -23,12 +23,12 @@
 // head-to-head and translated before the rest; a suite, a family and an
 // instance are results.js's views as they are.
 //
-// The data is views.json (release/results/rel/views.py): each system's kind
+// The data is views.json (written by the results' processing): each system's kind
 // of comparison on each instance of each type (head-to-head, translated for
 // it, for tddlog or for both, or a translation not idiomatic for it, out of
 // a type's comparisons and in all programs'), and the comparisons over each kind, which
-// are panels.py's (rule 16), and the census of the programs tddlog does not
-// run; and categories.json's integrations (panels.py's). A system is
+// are the processing's, and the census of the programs tddlog does not
+// run; and categories.json's integrations. A system is
 // compared on each instance with tddlog or one of its pipelines (views.json's
 // mine): in a type, with the instance's subject (the type's with); on the
 // system's own page, with its own pipeline where that ran (Roulette+tddlog
@@ -62,7 +62,7 @@ function systemRows(x) {
   return typesOf(x).flatMap((c) => kindRows(c, x, true).map((r) => ({ ...r, c })));
 }
 
-// The types a system natively handles (panels.py NATIVE_TO, as the data's
+// The types a system natively handles (as the data's
 // categories name them).
 const nativeTo = (x) => data.types.filter((c) => c.native.includes(x));
 
@@ -76,10 +76,10 @@ function scriptLink(name, path) {
 
 // ------------------------------------------------------------- the parts
 
-// tddlog's speed-up in a table's cell: a dash, its title saying why, where too few instances both
-// answer.
+// tddlog's speed-up in a table's cell: a dash, its title saying why, where there is nothing to
+// measure (no instance both answer over the floor and none only one answers).
 const speedCell = (v) => (v?.speedup == null
-  ? element("span", { class: "few", title: `fewer than ${data.measure.common} instances both answer` }, "–") : speedup(v));
+  ? element("span", { class: "few", title: `nothing to measure: no instance both answer over ${data.measure.floor} s and none only one answers` }, "–") : speedup(v));
 
 // A comparison in cells, each side's under its name: the instances; the
 // system's answers and its PAR-2 total over the instances it is given and
@@ -148,7 +148,7 @@ function draftHome() {
   const lines = integrationsOf().filter((k) => data.integrations[k].system).map((k) => {
     const i = data.integrations[k];
     return element("li", {}, link({ view: "integration", key: k }, i.title), ` against ${data.names[i.system]}: `,
-      `${speedup(i.vs[i.system], true)}, on ${plural(i.instances, "instance")} of ${data.names[i.system]}'s.`);
+      `${speedup(i.vs[i.system], true)}, on the ${plural(i.instances, "instance")} ${data.names[i.system]} reads.`);
   });
   return [
     element("section", { class: "intro" },
@@ -156,7 +156,7 @@ function draftHome() {
         + "Bayesian and Markov networks, and probabilistic functional programs, by compiling them into tree decision diagrams."),
       element("p", { class: "lede" }, `It answers ${count(all.answers.tddlog ?? 0)} of ${count(all.instances)} instances of `
         + `${inWords(data.types.length)} types of program, against ${count(others)} baselines. `,
-        element("a", { href: "playground/" }, "The playground"), " runs it in the browser."),
+        element("a", { href: "playground/" }, "The playground"), " runs it in the browser; ", element("a", { href: "guide/#getting-started" }, "the guide"), " installs it."),
       stampLine()),
     element("h2", { class: "home-h" }, "Each type of program against its best baselines"),
     scroller(stacked(element("table", { class: "board home-t" }, element("thead", {}, element("tr", {},
@@ -164,7 +164,7 @@ function draftHome() {
       element("th", { scope: "col", class: "num" }, "tddlog answers"),
       element("th", { scope: "col", title: "the baselines that answer most, each with tddlog's speed-up over it" }, "its best baselines, and tddlog's ", speedName("speed-up")))),
     body)), "whole"),
-    ...(lines.length ? [element("h2", { class: "home-h" }, "tddlog after another system's own code"), element("ul", { class: "home-int" }, ...lines)] : []),
+    ...(lines.length ? [element("h2", { class: "home-h" }, "tddlog as another system's backend"), element("ul", { class: "home-int" }, ...lines)] : []),
     note(measureLine()),
   ];
 }
@@ -231,7 +231,7 @@ function familyTable(v, name) {
   const table = element("table", { class: `board fams-tr${v.families.length > FAMILY_ROWS ? " folded" : ""}` },
     head2(["family"], ["program", "Opens the family's view on its program, with the programs both read"], ["instances", null, "num"],
       { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
-      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up, a dash where fewer than ${data.measure.common} instances both answer`, "num"]] }), body);
+      { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up, a dash where there is nothing to measure`, "num"]] }), body);
   // past the first rows, the rest on asking
   const more = v.families.length > FAMILY_ROWS ? element("button", { type: "button", class: "plain more-rows", "aria-expanded": "false", onclick: () => {
     const open = table.classList.toggle("folded") === false;
@@ -821,13 +821,13 @@ function howView(route) {
 }
 
 // The methods table (#/methods), the one place that says how the runs were
-// made and how the results are counted (rules 16 and 20): a row a fact, the
+// made and how the results are counted: a row a fact, the
 // runs' from the data (data/systems.json's `methods`), each type's time
 // limits from its rows, the measure from data.measure and the data's stamp.
 // Under a table, the views say the measure in one line (measureLine), and
 // every speed-up's header links here (results.js's speedName).
 function methodsView() {
-  const { floor, par, common } = data.measure;
+  const { floor, par } = data.measure;
   const limits = data.categories.filter((c) => c.key !== ALL).map((c) =>
     `${c.title} ${[...new Set(c.rows.map((r) => r[2]))].sort((a, b) => a - b).join(" or ")} s`);
   const { date, source } = data.stamp;
@@ -842,7 +842,7 @@ function methodsView() {
           + `a time under ${floor} s at ${floor} s`],
         ["speed-up", `The ratio of the totals over the instances both answer (not both under ${floor} s) and over each instance only one of the two `
           + `answers, the other at its limit, where that raises the multiplier of the system that answered it, so that `
-          + `a system's answers the other misses only help it; none with fewer than ${common} in common`],
+          + `a system's answers the other misses only help it; no minimum number of instances in common`],
         ["X+tddlog", "X's own code, then tddlog's inference; its time includes X's after its warm-up, so that against X it differs only in the inference"],
         ["circuits", "Every circuit Alea.jl exports, read by every system and timed without its export; the functional programs among them are also in their type"],
         ["data", element("span", {}, `Processed ${date}, on public main `,
@@ -852,14 +852,14 @@ function methodsView() {
 // ------------------------------------------------------------- the routes
 
 // FNV-1a (32 bits) of a category's rows' SUITE/NAME, a line each, as
-// views.py computes it.
+// the processing computes it.
 function fingerprint(rows) {
   let h = 0x811c9dc5;
   for (const b of new TextEncoder().encode(rows.map((r) => `${r[0]}/${r[1]}`).join("\n"))) h = Math.imul(h ^ b, 0x01000193) >>> 0;
   return h;
 }
 
-// The types whose rows views.json was not written from (rule 3: its kinds
+// The types whose rows views.json was not written from (its kinds
 // would be another instance's).
 function staleViews() {
   if (draft.stale === undefined) {
@@ -868,7 +868,7 @@ function staleViews() {
   return draft.stale;
 }
 const staleNote = (stale) => note(`These views (views.json) were written from other results than these (${and(stale)}); `
-  + "views.py writes them again from the results page's data.");
+  + "the results' processing writes them again from the results page's data.");
 
 const DRAFT_VIEWS = { "draft-home": draftHome, baselines: baselinesView, baseline: baselineView, integrations: integrationsView,
   integration: integrationView, types: home, coverage: coverageView, how: howView, methods: methodsView };

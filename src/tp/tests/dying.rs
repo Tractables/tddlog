@@ -92,12 +92,12 @@ fn formulas_are_dropped_after_their_last_reader() {
                 compilation = compilation.dynamic(first);
             }
             compilation.run(&gp, &backend, None).expect("compiles");
-            let compiled = compilation.finish(&backend).expect("finishes");
+            let mut compiled = compilation.finish(&backend).expect("finishes");
             let formulas: Vec<bool> = [a, b, c, d]
                 .iter()
                 .map(|&x| compiled.formulas[x].is_some())
                 .collect();
-            let (results, _) = query_probabilities(&gp, &backend, &compiled).expect("answers");
+            let (results, _) = query_probabilities(&gp, &backend, &mut compiled).expect("answers");
             (formulas, results.expect("evidence possible")[0].probability)
         });
         assert_eq!(formulas, [false, false, true, true], "{first_pairs:?}");
@@ -147,13 +147,14 @@ fn without_evidence_a_query_is_counted_where_its_formula_is_dropped() {
                     compilation = compilation.dynamic(first);
                 }
                 compilation.run(&gp, &backend, None).expect("compiles");
-                let compiled = compilation.finish(&backend).expect("finishes");
+                let mut compiled = compilation.finish(&backend).expect("finishes");
                 let kept: Vec<bool> = [a, b, c]
                     .iter()
                     .map(|&x| compiled.formulas[x].is_some())
                     .collect();
                 let counted = compiled.stats.queries_counted;
-                let (results, _) = query_probabilities(&gp, &backend, &compiled).expect("answers");
+                let (results, _) =
+                    query_probabilities(&gp, &backend, &mut compiled).expect("answers");
                 (
                     kept,
                     counted,
@@ -218,9 +219,9 @@ fn the_last_reader_takes_a_formula_in_a_run_without_a_watch() {
                         compilation = compilation.dynamic(first);
                     }
                     compilation.run(&gp, &backend, watch).expect("compiles");
-                    let compiled = compilation.finish(&backend).expect("finishes");
+                    let mut compiled = compilation.finish(&backend).expect("finishes");
                     let (results, _) =
-                        query_probabilities(&gp, &backend, &compiled).expect("answers");
+                        query_probabilities(&gp, &backend, &mut compiled).expect("answers");
                     (
                         compiled.stats.taken,
                         results

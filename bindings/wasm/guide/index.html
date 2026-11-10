@@ -76,32 +76,71 @@ playground.</p>
   <p>tddlog is an exact inference engine for probabilistic Datalog. It
   reads a probabilistic logic program written in ProbLog, or a Bayesian
   or Markov network, and prints the probability of each of its queries
-  given its evidence; translators reduce Dice programs and LPADs to
-  ProbLog (<a href="#networks">below</a>). The answers are exact:
+  given its evidence; it also reads Dice programs, Circulette netlists
+  and LPADs (<a href="#networks">below</a>). The answers are exact:
   tddlog grounds the program to probabilistic Datalog, compiles it into
   tree decision diagrams and counts the queries on them.</p>
-  <p>There are three ways to run it:</p>
+  <p>There are four ways to run it:</p>
   <ul>
     <li>In the browser: the <a href="../playground/">playground</a> runs tddlog in
     the tab, built for WebAssembly. Nothing is installed.</li>
-    <li>On the command line: Cargo builds <code>tddlog</code> from the
+    <li>On the command line, prebuilt: the
+    <a href="https://github.com/Tractables/tddlog/releases/tag/v0.1.0">release</a>
+    has an archive of <code>tddlog</code> for Linux x86-64 and ARM64
+    (glibc 2.28 or newer), macOS ARM64 and x86-64, and Windows x86-64,
+    which needs nothing else installed. It unpacks to a directory with the
+    binary and the repository's <code>examples/</code>; on a Mac with
+    Apple silicon:
+<pre data-lang="shell">curl -L https://github.com/Tractables/tddlog/releases/download/v0.1.0/tddlog-v0.1.0-aarch64-apple-darwin.tar.gz | tar xz
+cd tddlog-v0.1.0-aarch64-apple-darwin
+./tddlog examples/alarm.pl</pre>
+    The other archives are named for their platforms
+    (<code>x86_64-apple-darwin</code>, <code>x86_64-unknown-linux-gnu</code>,
+    <code>aarch64-unknown-linux-gnu</code>, and
+    <code>x86_64-pc-windows-msvc</code>, a <code>.zip</code>). macOS
+    refuses to open a binary downloaded with a browser, which it
+    quarantines; <code>xattr -d com.apple.quarantine tddlog</code> lifts
+    that. Moving <code>tddlog</code> into a directory on your
+    <code>PATH</code>, such as <code>/usr/local/bin</code>, lets you run
+    it as <code>tddlog</code> anywhere, as the commands below do.</li>
+    <li>On the command line, from source: Cargo builds <code>tddlog</code> from the
     repository and installs it in its <code>bin</code> directory
     (<code>$HOME/.cargo/bin</code>):
 <pre data-lang="shell">cargo install --locked --git https://github.com/Tractables/tddlog tddlog</pre>
-    The build needs Rust 1.88 or newer and a C++ compiler (gcc 12 or
-    newer, or a recent clang) for the tree-decomposition solver that the
-    goatd library vendors. <code>--locked</code> builds with the versions
-    of the dependencies that the repository's tests ran with. In a
-    checkout of the repository, <code>cargo build --release</code> builds
-    the same program as <code>target/release/tddlog</code>.</li>
-    <li>From Python: build the package from a checkout, as the
-    <a href="../python/">Python page</a> shows, then
+    The build needs:
+    <ul>
+      <li>Rust 1.88 or newer, from <a href="https://rustup.rs">rustup</a>.
+      A distribution's cargo is often older and stops with "feature
+      <code>edition2024</code> is required". rustup puts <code>cargo</code>
+      on the PATH of new shells; in the shell that ran it, run
+      <code>. "$HOME/.cargo/env"</code> first.</li>
+      <li>A C++20 compiler, GCC 11 or newer or Clang 14 or newer, for the
+      tree-decomposition solver that the goatd library vendors, and
+      <code>make</code>, for jemalloc: <code>sudo apt install
+      build-essential</code> on Debian and Ubuntu, <code>xcode-select
+      --install</code> on macOS. An older <code>g++</code> stops with
+      "unrecognized command line option '-std=c++20'": install a newer
+      one, which the build finds by the name <code>g++-12</code>,
+      <code>g++-13</code> or <code>g++-14</code>, or name it in
+      <code>GOATD_CXX</code> (<code>GOATD_CXX=g++-11 cargo install
+      ...</code>); <code>CXX</code> does not choose it.</li>
+    </ul>
+    The build takes about five minutes on eight cores.
+    <code>--locked</code> builds with the versions of the dependencies
+    that the repository's tests ran with. In a checkout of the repository,
+    <code>cargo build --release</code> builds the same program as
+    <code>target/release/tddlog</code>.</li>
+    <li>From Python: <code>pip install tddlog</code>, then
     <code>tddlog.solve(program)</code>
     (<a href="#library">below</a>).</li>
   </ul>
   <p>The commands below run in a checkout of the repository
-  (<code>git clone https://github.com/Tractables/tddlog</code>), whose
-  <code>examples/</code> holds the programs they read.</p>
+  (<code>git clone --depth 1 https://github.com/Tractables/tddlog</code>)
+  or in the directory an archive unpacks to, whose
+  <code>examples/</code> holds the programs they read; the few that read
+  <code>tests/</code> need the checkout. Without one, a
+  program is fetched on its own, then run as <code>tddlog alarm.pl</code>:</p>
+<pre data-lang="shell">curl -O https://raw.githubusercontent.com/Tractables/tddlog/main/examples/alarm.pl</pre>
 
   <h3 id="first-program">A first program</h3>
   <p><a href="https://github.com/Tractables/tddlog/blob/main/examples/alarm.pl"><code>examples/alarm.pl</code></a> is the alarm example of
@@ -635,12 +674,14 @@ tddlog --program examples/car.net &gt; car.pl</pre>
   <code>--query a,b</code> those of the variables named), and its answers
   are the network's marginals given the evidence, an Ace
   <code>.inst</code> file or, for a UAI network, a UAI <code>.evid</code>
-  file (<code>--evidence</code>). For a Markov network,
+  file (<code>--evidence</code>). For a UAI network,
   <code>--evidence-probability</code> prints the partition function given
-  the evidence on a <code>Z:</code> line in place of <code>P(e):</code>,
+  the evidence, on a <code>Z:</code> line in place of <code>P(e):</code>
+  where the two differ,
   and with <code>--no-queries</code> that line alone, the UAI PR task.
   <code>--rescale</code> divides every row by its sum, for a file that
-  writes its tables in percent. <code>--program</code> prints the
+  writes its tables in percent; a UAI file is read as written.
+  <code>--program</code> prints the
   program, which the benchmarks give the other systems that read ProbLog
   programs;
   <a href="https://github.com/Tractables/tddlog/blob/main/docs/design.md#network-files-srcnetwork">Network
@@ -795,8 +836,11 @@ solution = tddlog.solve(open("examples/alarm.pl").read(), evidence_probability=T
 for query, probability in solution.answers.items():
     print(f"{query}: {probability:.6f}")
 print(f"P(e) = {solution.evidence_probability:.6f}")</pre>
-  <p>The package is not on PyPI yet: it builds from a checkout, with
-  Python 3.10 or later. <code>solve</code> takes the
+  <p><code>pip install tddlog</code> installs a wheel for CPython 3.10 or
+  later on Linux and macOS (x86-64 and ARM64) and Windows x86-64, and
+  elsewhere builds from source, as the <a href="../python/">Python
+  page</a> says.
+  <code>solve</code> takes the
   options as keywords (<code>format</code>, <code>evidence</code>,
   <code>vtree</code>, <code>evidence_probability</code>,
   <code>queries</code>, and <code>arguments</code>, a list of the
@@ -821,7 +865,7 @@ tddlog_solution_free(solution);</pre>
   ProbLog), <code>options.evidence</code> holds a network's evidence
   file (NULL for none), and <code>options.arguments</code> points to
   <code>options.num_arguments</code> strings, the program's arguments.
-  The C library installs with CMake, as a CMake
+  The C library comes prebuilt in the release's C archives, or installs with CMake, as a CMake
   package and a pkg-config file; the <a href="../c/">C page</a> covers
   building, linking and the header.</p>
 </section>

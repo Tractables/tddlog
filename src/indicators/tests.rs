@@ -70,3 +70,37 @@ fn a_rewrite_refused_room_for_its_copies_gives_up() {
         }
     }
 }
+
+/// The rewrite holds no room past its lists' lengths: they grow by doubling
+/// as its rules, links and evidence are written, and the compile holds the
+/// rewrite to its end, where on a loop of 100 000 steps the room past the
+/// rules and the evidence came to megabytes.
+#[test]
+fn the_rewrite_holds_no_room_past_its_lists() {
+    let options = GroundOptions {
+        views: false,
+        contexts: false,
+        ..GroundOptions::default()
+    };
+    let gp = ground(&parse_program(SOURCE).expect("parses"), &options).expect("grounds");
+    let rewrite = super::introduce(&gp).expect("rewrites");
+    assert!(!rewrite.encoding.is_empty(), "the rewrite reads copies");
+    let room = [
+        ("atoms", rewrite.atoms.capacity(), rewrite.atoms.len()),
+        ("kinds", rewrite.kinds.capacity(), rewrite.kinds.len()),
+        ("rules", rewrite.rules.capacity(), rewrite.rules.len()),
+        (
+            "evidence",
+            rewrite.evidence.capacity(),
+            rewrite.evidence.len(),
+        ),
+        (
+            "indicators",
+            rewrite.encoding.indicators.capacity(),
+            rewrite.encoding.indicators.len(),
+        ),
+    ];
+    for (list, capacity, len) in room {
+        assert_eq!(capacity, len, "the room of the rewrite's {list}");
+    }
+}

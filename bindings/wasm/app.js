@@ -465,7 +465,7 @@ if (typeof document !== "undefined") {
     if (larger && !tddlogExamples[i - 1]?.larger) {
       const label = document.createElement("span");
       label.className = "larger";
-      label.textContent = "Larger, a few seconds each:";
+      label.textContent = "Larger, a few seconds each (Mastermind about 20):";
       examples.append(label);
     }
     const chip = document.createElement("button");

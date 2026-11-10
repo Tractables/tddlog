@@ -309,7 +309,7 @@ fn on_vtree(
     vtree.context().run(|engine| {
         let backend = crate::tp::TddBackend::new(engine, vtree.clone());
         let var_of = crate::tp::fact_variables(gp, &order);
-        let compiled = crate::tp::compile(
+        let mut compiled = crate::tp::compile(
             gp,
             var_of,
             Formulation::Dual,
@@ -318,7 +318,7 @@ fn on_vtree(
             None,
         )
         .unwrap();
-        let (results, _) = crate::query::query_probabilities(gp, &backend, &compiled).unwrap();
+        let (results, _) = crate::query::query_probabilities(gp, &backend, &mut compiled).unwrap();
         (
             compiled.stats.clause_memo,
             results.expect("evidence and queries"),

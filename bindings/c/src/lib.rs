@@ -308,7 +308,7 @@ pub unsafe extern "C" fn tddlog_solution_probability(
 /// asked for it: writes it to `*probability` and its base-10 logarithm, exact
 /// beyond a double's range, to `*log10_probability`, and returns true. `P(e)`
 /// is 1 with no evidence, 0 with inconsistent evidence (its logarithm
-/// `-INFINITY`), and 0 too where it is under the least double; for a Markov
+/// `-INFINITY`), and 0 too where it is under the least double; for a UAI
 /// network it is the partition function given the evidence, `Z`. Returns
 /// false, writing nothing, where it was not asked for. Either output may be
 /// null.

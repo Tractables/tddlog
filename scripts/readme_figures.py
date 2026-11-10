@@ -37,8 +37,8 @@ raises the multiplier of the system that answered it: one only tddlog
 answers where the limit over its time is at least the speed-up, one only
 the other answers where the limit over its time is at least the
 speed-up's inverse, so that swapping the two gives the inverse. A time under
-0.2 s counts as 0.2 s, and with fewer than 20 instances both answer
-(leaving out those both answer in under 0.2 s) there is no speed-up. The
+0.2 s counts as 0.2 s, and a comparison with nothing to measure (no
+instance both answer over 0.2 s and none only one answers) has no speed-up. The
 figures draw a category's drawn systems (tddlog and the native systems
 given at least 20 of its instances), and their legends' numbers are the
 data's, which the results page shows.
@@ -307,7 +307,7 @@ def cactus(ax, cat, systems, hi, c, col):
 # the right edges of its columns of numbers
 LEGEND_BLOCK, LEGEND_HEAD, LEGEND_ROW = 4.5, 0.3, 0.235
 LEGEND_COLUMNS = [('answers', 2.8), ('tddlog faster', 4.35)]
-FEW = 'too few in common'  # a comparison with fewer than 20 instances both answer
+NONE = 'nothing to measure'  # a comparison with no instance both answer over 0.2 s and none only one answers
 
 
 def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col, cat):
@@ -334,7 +334,7 @@ def legend_table(fig, h, x, top, entries, n, noun, ncol, c, col, cat):
             fig.text((x0 + 0.4) / WIDTH, y, name, ha='left', va='center', fontsize=11.5,
                      fontweight='bold' if is_mine(s) else 'normal', color=c['text'] if s in lit(cat) else c['muted'])
             for j, ((_, right), v) in enumerate(zip(LEGEND_COLUMNS, numbers)):
-                fig.text((x0 + right) / WIDTH, y, str(v), ha='right', va='center', fontsize=9.5 if v == FEW else 11.5,
+                fig.text((x0 + right) / WIDTH, y, str(v), ha='right', va='center', fontsize=9.5 if v == NONE else 11.5,
                          color=c['text'] if j == 0 else c['muted'])
 
 
@@ -390,8 +390,8 @@ def scatter(ax, cat, others, hi, c, col, other, label, me):
 
 def faster(v):
     """tddlog's speed-up of a comparison (the data's vs, rule 16): 14×, 1.3×
-    slower, or FEW where fewer than 20 instances both answer."""
-    return FEW if v['speedup'] is None else ratio_text(v['speedup'])
+    slower, or NONE where there is nothing to measure."""
+    return NONE if v['speedup'] is None else ratio_text(v['speedup'])
 
 
 def results(cat, names, col, out):
@@ -472,9 +472,9 @@ def at_least(t):
 
 def speed_mark(ax, x, y, r, transform, colour, muted, least=False):
     """tddlog's speed-up r at x of the overview's right column, bold, teal
-    where tddlog is faster, with least "at least"; FEW where r is None."""
+    where tddlog is faster, with least "at least"; NONE where r is None."""
     if r is None:
-        ax.text(x, y, 'too few\nin common', transform=transform, ha='left', va='center', fontsize=9.5, color=muted,
+        ax.text(x, y, 'nothing to\nmeasure', transform=transform, ha='left', va='center', fontsize=9.5, color=muted,
                 linespacing=1.05)
         return
     ax.text(x, y, ratio_text(r, least=least), transform=transform, ha='left', va='center', fontsize=12.5,
@@ -625,7 +625,7 @@ def within(cat, systems, limits=(1, 2, 10)):
 def least_text(r):
     """A table's "at least" speed-up: at least 400×, at most 1.3× slower."""
     if r is None:
-        return FEW
+        return NONE
     text = ratio_text(r, least=True)
     return ('at most ' if r < 1 else 'at least ') + text.lstrip('≤≥')
 

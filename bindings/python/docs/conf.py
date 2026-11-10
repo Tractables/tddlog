@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 project = "tddlog for Python"
+copyright = "2026, Guy Van den Broeck. tddlog is open source under the Apache-2.0 license"
 release = tddlog.__version__
 extensions = ["myst_parser", "sphinx.ext.autodoc"]
 html_theme = "furo"

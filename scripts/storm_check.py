@@ -4,14 +4,16 @@ properties, for `bench.py run --storm`: Rubicon's weather factory with its
 bounded reachability property, and the models dice2prism.py writes with
 theirs. Usage:
 
-    storm_check.py MODEL.prism ENGINE PROPERTIES
+    storm_check.py MODEL.prism ENGINE PROPERTIES [--sylvan-share 3/4]
 
 PROPERTIES is a file of properties, one a line (an optional `"name":`, a
 `;` at the end and `//` comments, as dice2prism.py writes them), or one
 property. ENGINE is `sparse` (the explicit model in double precision),
 `exact` (the explicit model in rational numbers) or `dd` (the model as
 decision diagrams, Sylvan on one thread with half the memory the process
-may take where it is bounded, double precision). The explicit
+may take where it is bounded, double precision). `--sylvan-share 3/4`
+gives Sylvan three quarters instead, for `dd` alone: a retry where its
+unique table filled at half. The explicit
 engines solve unbounded reachability with Storm's topological solver, which
 on an acyclic chain computes each state's value once from its successors'
 (Storm's default for doubles, GMRES to a precision of 1e-6, would not be
@@ -29,9 +31,14 @@ import stormpy
 
 import memcap   # beside this script
 
-model_path, engine, spec = sys.argv[1:4]
+model_path, engine, spec, *opts = sys.argv[1:]
 if engine not in ('sparse', 'exact', 'dd'):
     sys.exit(f'engine {engine}: sparse, exact or dd')
+if opts and opts != ['--sylvan-share', '3/4']:
+    sys.exit(f'{" ".join(opts)}: the one option is --sylvan-share 3/4')
+if opts and engine != 'dd':
+    sys.exit(f'--sylvan-share sizes Sylvan, which engine {engine} does not use')   # an inert option fails
+num, den = (3, 4) if opts else (1, 2)
 lines = open(spec).read().splitlines() if os.path.exists(spec) else [spec]
 formulas = []
 for line in lines:
@@ -40,13 +47,20 @@ for line in lines:
         line = line.split('":', 1)[1].strip()   # the property's name
     if line:
         formulas.append(line)
-# Sylvan's tables grow to --sylvan:maxmem (4096 MB by default): half the
+# Sylvan's tables grow to --sylvan:maxmem (4096 MB by default): half of the
 # memory the process may take where it is bounded, as in a lane: its
 # address-space limit (ulimit -v), else its cgroup's memory.max (bench.py
-# --mem-cap runs each command in a cgroup of its own)
+# --mem-cap runs each command in a cgroup of its own). Sylvan doubles its
+# unique table and its operation cache together while twice their size (60
+# bytes an entry) is under the cap: at a cap of 31 GB, half of it holds the
+# table to 2^27 entries (8 GB), which filled ("BDD Unique table full") on
+# pdb15 and pdb20, and three quarters allow 2^28 (16 GB). The larger table
+# costs time where the smaller one sufficed (pdb10: 8.6 s with half of 31
+# GB, 16.6 s with three quarters), so three quarters is the retry of a full
+# table alone.
 limit = resource.getrlimit(resource.RLIMIT_AS)[0]
 limit = memcap.cgroup_max() if limit == resource.RLIM_INFINITY else limit
-maxmem = max(4096, limit // 2 // 2 ** 20) if limit is not None else 4096
+maxmem = max(4096, limit * num // den // 2 ** 20) if limit is not None else 4096
 stormpy.set_settings(['--sylvan:threads', '1'] +
                      (['--precision', '1e-15', '--sylvan:maxmem', str(maxmem)] if engine == 'dd'
                       else ['--eqsolver', 'topological']))
