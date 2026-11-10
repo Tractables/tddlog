@@ -173,3 +173,7 @@ jobs:
       - name: Publish the site
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          # Pages has at times taken more than its default 10 minutes to
+          # sync a deployment's changed files.
+          timeout: 1800000
