@@ -27,7 +27,7 @@ Markov networks, and Dice programs. It is a command-line tool and a Rust
 library, with Python, C and WebAssembly bindings.
 
 <!-- results:headline -->
-On [probabilistic logic programs](https://tractables.github.io/tddlog/#/category/logic-programs), tddlog is **214×** faster than ProbLog, and on [Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks) **55×** faster than Ace, the existing system that answers the most of each. [Detailed results below](#how-well-does-it-work).
+On [probabilistic logic programs](https://tractables.github.io/tddlog/#/category/logic-programs), tddlog is **214×** faster than ProbLog, and on [Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks) **58×** faster than Ace, the existing system that answers the most of each. [Detailed results below](#how-well-does-it-work).
 <!-- /results:headline -->
 
 **Website: [tractables.github.io/tddlog](https://tractables.github.io/tddlog/).**
@@ -45,8 +45,8 @@ was checked against an exact reference.
        alt="Each type of program against the exact inference systems native to it: their answers, their total times and tddlog's, and tddlog's speed-up over each"></a>
   <br>
 <!-- results:overview -->
-<!-- written from bindings/wasm/results/categories.json, sha256 0981c0666314f4bdc186c5f01d6c7d50704cd6e99fd1f8c7a1aad1e27f949dc1 -->
-<sub>As of 2026-11-10. Click the figure for every result.</sub>
+<!-- written from bindings/wasm/results/categories.json, sha256 8dbb47cf73a2aa08861f00e58f1c91b42f5fde4e6f435b04d2607595e2498753 -->
+<sub>As of 2026-11-11. Click the figure for every result.</sub>
 <!-- /results:overview -->
 </p>
 

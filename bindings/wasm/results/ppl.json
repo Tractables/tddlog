@@ -1,5 +1,5 @@
 {
- "version":"0.1.0",
+ "version":"0.1.1",
  "names":{"tddlog":"tddlog","alea":"Alea.jl","alea-process":"Alea.jl with start-up","dice":"Dice","roulette":"Roulette","roulette-process":"Roulette with start-up","problog":"ProbLog","geni":"Geni","nodice":"noDice","psi":"Psi","genfer":"Genfer","sppl":"SPPL","pluck":"Pluck","webppl":"WebPPL","pita":"PITA","aspmc":"aspmc","scallop":"Scallop","psouffle":"PSouffle","storm":"Storm","prism":"PRISM","ace":"Ace","merlin":"Merlin","agrum":"pyAgrum","pgmpy":"pgmpy","libdai":"libDAI","tensorinference":"TensorInference.jl","alea-tddlog":"Alea.jl+tddlog","roulette-tddlog":"Roulette+tddlog"},
  "families":[
   {

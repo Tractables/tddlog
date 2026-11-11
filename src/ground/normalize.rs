@@ -14,9 +14,11 @@
 //! of a ground instance are independent and exactly one head, or none if
 //! the probabilities sum below one, is selected per ground instance. A
 //! single probabilistic head `p::h :- body` is the case `n = 1`, with
-//! `q_1 = p`. Probabilities that sum to one within [`SUM_TOLERANCE`] leave
-//! no mass of no head, so the last head gets `q_n = 1`, and its switch is a
-//! certain fact that grounding removes.
+//! `q_1 = p`. Two or more probabilities that sum to one within
+//! [`SUM_TOLERANCE`] leave no mass of no head, so the last head gets
+//! `q_n = 1`, and its switch is a certain fact that grounding removes. A
+//! single head's probability is its own number, not a sum, and leaves the
+//! mass of no head it says ([`whole`]).
 //! Clauses sharing a `group` (one source clause split on a body disjunction)
 //! share their switches.
 //!
@@ -109,9 +111,23 @@ pub(super) fn switch_prefix<'n>(names: impl IntoIterator<Item = &'n str>) -> Str
     prefix
 }
 
-/// How far from one the probabilities of an annotated disjunction may sum
-/// and still be read as a full distribution.
+/// How far from one the probabilities of an annotated disjunction of two
+/// heads or more may sum and still be read as a full distribution.
 pub(super) const SUM_TOLERANCE: f64 = 1e-8;
+
+/// Whether `heads` heads whose masses sum to `total` are a full
+/// distribution, of no mass of no head. Several heads are one where their
+/// sum is one up to [`SUM_TOLERANCE`], the rounding of the numbers as
+/// written. A single head's probability is a number and not a sum, so that
+/// `0.999999995::a.` keeps its mass of no head; it is whole only at one, or
+/// above it by the reader's allowance.
+pub(super) fn whole(total: f64, heads: usize) -> bool {
+    if heads > 1 {
+        (total - 1.0).abs() <= SUM_TOLERANCE
+    } else {
+        total >= 1.0
+    }
+}
 
 /// A normalized program: deterministic rules plus switch declarations.
 #[derive(Clone, Debug, Default)]
@@ -508,7 +524,7 @@ pub(super) fn switch_weights(masses: &[f64], qs: &mut Vec<Prob>) -> Result<(), f
     // written are a full distribution, of no mass of no head. Read as
     // written, they leave a residual of no head (bn_mildew's rows, given
     // to nine decimals, would), and a set with such a row is not a table.
-    let none = if (total - 1.0).abs() <= SUM_TOLERANCE {
+    let none = if whole(total, masses.len()) {
         0.0
     } else {
         residual(masses)
@@ -750,6 +766,24 @@ mod tests {
         assert!((d.p - 0.6999 / 0.7).abs() < 1e-12);
     }
 
+    /// A single head's probability is its number: within the tolerance of
+    /// a sum under one, it keeps its mass of no head, as a rule's head and
+    /// as a fact.
+    #[test]
+    fn a_single_head_keeps_its_number() {
+        let p = parse_program("0.999999995::a :- c.\n0.999999995::b.\nc.\n").unwrap();
+        let n = normalize(&p, Default::default()).unwrap();
+        let a = fixed(&n.switches[&(Name::from(format!("{SWITCH_PREFIX}a_0_0")), 0)]);
+        assert_eq!(a.p, 0.999999995);
+        assert!((a.not - 5e-9).abs() < 1e-15);
+        let (_, b) = n.facts.iter().find(|(_, f)| &*f.name == "b").unwrap();
+        let b = b.probs[0].unwrap();
+        assert_eq!(b.p, 0.999999995);
+        assert!((b.not - 5e-9).abs() < 1e-15);
+        assert!(whole(1.0, 1) && !whole(1.0 - 1e-10, 1));
+        assert!(whole(1.0 - 1e-10, 2) && !whole(1.0 + 2e-8, 2));
+    }
+
     #[test]
     fn nonground_fact_is_switch_predicate() {
         let p = parse_program("0.5::b(X).\ns(X) :- p(X), b(X).\n").unwrap();
@@ -794,7 +828,7 @@ mod tests {
             .collect();
         assert_eq!(facts[0].1, Some(Prob::new(0.3)));
         assert_eq!(facts[1].1, None);
-        assert_eq!(facts[2].1, Some(Prob::TRUE));
+        assert_eq!(facts[2].1, Some(Prob::new(0.999999999999)));
         assert_eq!(facts[1].0, "[Int(2), Int(3)]");
     }
 }

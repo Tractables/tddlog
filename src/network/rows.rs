@@ -7,10 +7,12 @@
 //! tables of a ground network are computed in doubles, so that some of
 //! Ace's rows sum to `1.00000000000000008`, or in single precision, so
 //! that diagnose_b of the UAI classics writes `0.94297521, 0.05702495`,
-//! which sum to `1.00000016`. Such a row is divided by its sum. A gap that
-//! the rounding of the entries does not explain, `0.9, 0.099` say, is the
-//! table's own: short of one, the rest is left to no value, as ProbLog
-//! reads an annotated disjunction; over one, it is an error.
+//! which sum to `1.00000016`, or `0.99999984` in tcc4e. Such a row is
+//! divided by its sum. A gap that the rounding of the entries does not
+//! explain, `0.9, 0.099` say, is the table's own: short of one, the rest is
+//! left to no value, as ProbLog reads an annotated disjunction; over one, it
+//! is an error. A row of one entry is that number, not a sum: a factor's
+//! entry over its largest, `0.999999995`, is not rounded to one.
 
 use std::cmp::Ordering;
 
@@ -22,29 +24,34 @@ const ROUNDING: f64 = 1e-9;
 const SINGLE: f64 = 1.0 / 16_777_216.0;
 
 /// `row` as the program writes it: divided by its sum where the sum
-/// differs from one by rounding, as read otherwise; an error for a row
-/// that sums to more than one by more than rounding explains, or that
-/// holds a negative or not finite entry.
+/// differs from one by rounding, as read otherwise; whether it is a
+/// distribution, of sum one up to rounding, so that one value of it alone
+/// is certain; an error for a row that sums to more than one by more than
+/// rounding explains, or that holds a negative or not finite entry.
 ///
 /// A sum within [`ROUNDING`] under one is binary rounding, and the row is
 /// kept, so that rows that sum to one but for the last bits keep their
-/// numbers. A sum further under one is rounding where the gap is under the
-/// row's slack ([`explained`]), and the row is divided by it; otherwise the
-/// shortfall is kept. A sum over one is rounding where the gap is at most
-/// the slack, which two halves rounded up reach, or at most `n + 1` times
-/// [`SINGLE`] for a row of `n` entries, the error of a row computed in
-/// single precision: its entries rounded there and divided by their sum,
-/// of `n - 1` rounded additions. The row is then divided by its sum, and
-/// otherwise the excess is an error. The sum is `math.fsum`'s, which
-/// decides whether a row of sum one up to its last bits is divided
-/// ([`fsum`]).
-pub(super) fn normalized(row: &mut [f64]) -> Result<(), String> {
-    if let Sum::Rounded(total) = sum(row)? {
-        for p in row {
-            *p /= total;
+/// numbers. Otherwise a sum is rounding where its gap from one, either
+/// way, is at most `n + 1` times [`SINGLE`] for a row of `n` entries, the
+/// error of a row computed in single precision: its entries rounded there
+/// and divided by their sum, of `n - 1` rounded additions; or where the gap
+/// is under the row's slack ([`explained`]), or equal to it over one, which
+/// two halves rounded up reach. The row is then divided by its sum. A
+/// shortfall that is not rounding is kept, and an excess is an error. A row
+/// of one entry has no sum to round: it is one only where its entry is. The
+/// sum is `math.fsum`'s, which decides whether a row of sum one up to its
+/// last bits is divided ([`fsum`]).
+pub(super) fn normalized(row: &mut [f64]) -> Result<bool, String> {
+    Ok(match sum(row)? {
+        Sum::One => true,
+        Sum::Rounded(total) => {
+            for p in row {
+                *p /= total;
+            }
+            true
         }
-    }
-    Ok(())
+        Sum::Short => false,
+    })
 }
 
 /// Whether `row` sums to one up to the rounding [`normalized`] divides
@@ -58,7 +65,8 @@ pub(super) fn sums_to_one(row: &[f64]) -> bool {
 
 /// How a row's sum stands to one ([`normalized`]).
 enum Sum {
-    /// One, or within [`ROUNDING`] under it.
+    /// One, or for a row of two entries or more within [`ROUNDING`] under
+    /// it.
     One,
     /// The sum, off one by the rounding of the entries.
     Rounded(f64),
@@ -75,22 +83,39 @@ fn checked(row: &[f64]) -> Result<(), String> {
 }
 
 /// Each row of `k` entries of `probs` divided by its sum, in place, and
-/// the sums in order: a function of a UAI file is the table of its rows so
-/// divided times the factor of their sums over its parents (`uai.rs`). A
-/// row whose entries sum to one up to their parsing, within `k` units of
+/// the factor of those sums over the rows, in order: a function of a UAI
+/// file is the table of its rows so divided times that factor over its
+/// parents (`uai.rs`). Where the sums differ, a row that sums to one up to
+/// the rounding [`normalized`] divides out has one in the factor: rounding
+/// is not structure, and a factor that varies by rounding alone would be a
+/// variable observed for nothing, which every reader of the program pays
+/// for. A table whose rows all have one sum keeps it, a constant factor,
+/// which costs nothing and keeps `Z` exact (`0.333333` three times). A row
+/// whose entries sum to one up to their parsing, within `k` units of
 /// roundoff, stays as it is, of sum one, so that the noise of reading
-/// decimals in binary makes no factor; so does a row of zeros, of sum
-/// zero. A row with a negative or not finite entry is an error.
+/// decimals in binary makes no factor; so does a row of zeros, of sum zero.
+/// A row with a negative or not finite entry is an error.
 pub(super) fn split(probs: &mut [f64], k: usize) -> Result<Vec<f64>, String> {
     let k = k.max(1);
     let mut sums = Vec::with_capacity(probs.len() / k);
+    let mut rounding = Vec::with_capacity(probs.len() / k);
+    // The last row read and its verdict: a table repeats its rows, and
+    // `explained` formats each entry.
+    let (mut last, mut verdict) = (Vec::with_capacity(k), false);
     for row in probs.chunks_mut(k) {
         checked(row)?;
         let total = fsum(row);
         if (total - 1.0).abs() <= k as f64 * f64::EPSILON {
             sums.push(1.0);
+            rounding.push(true);
             continue;
         }
+        if last[..] != row[..] {
+            last.clear();
+            last.extend_from_slice(row);
+            verdict = sums_to_one(row);
+        }
+        rounding.push(verdict);
         if total > 0.0 {
             for p in row.iter_mut() {
                 *p /= total;
@@ -98,23 +123,33 @@ pub(super) fn split(probs: &mut [f64], k: usize) -> Result<Vec<f64>, String> {
         }
         sums.push(total);
     }
+    if sums.iter().any(|&s| s != sums[0]) {
+        for (s, rounded) in sums.iter_mut().zip(rounding) {
+            if rounded {
+                *s = 1.0;
+            }
+        }
+    }
     Ok(sums)
 }
 
 fn sum(row: &[f64]) -> Result<Sum, String> {
     checked(row)?;
     let total = fsum(row);
-    if (1.0 - ROUNDING..=1.0).contains(&total) {
+    // A row of one entry is that number, of a gap from one that is its own.
+    let several = row.len() > 1;
+    let single = (row.len() + 1) as f64 * SINGLE;
+    if total == 1.0 || (several && (1.0 - ROUNDING..1.0).contains(&total)) {
         Ok(Sum::One)
     } else if total < 1.0 {
-        // A row of one entry in [0, 1] has a gap from one of at least a
-        // unit in its last place, more than its slack.
-        Ok(if row.len() > 1 && explained(row, false) {
-            Sum::Rounded(total)
-        } else {
-            Sum::Short
-        })
-    } else if total - 1.0 <= (row.len() + 1) as f64 * SINGLE || explained(row, true) {
+        Ok(
+            if several && (1.0 - total <= single || explained(row, false)) {
+                Sum::Rounded(total)
+            } else {
+                Sum::Short
+            },
+        )
+    } else if total - 1.0 <= single || explained(row, true) {
         Ok(Sum::Rounded(total))
     } else {
         Err(format!("probabilities sum to {total}"))
@@ -383,7 +418,11 @@ mod tests {
 
     fn row(xs: &[f64]) -> Result<Vec<f64>, String> {
         let mut r = xs.to_vec();
-        normalized(&mut r).map(|()| r)
+        normalized(&mut r).map(|_| r)
+    }
+
+    fn distribution(xs: &[f64]) -> bool {
+        normalized(&mut xs.to_vec()).unwrap()
     }
 
     #[test]
@@ -410,11 +449,62 @@ mod tests {
             &[0.5, 0.501],
             &[0.9, 0.101],
             &[0.9999999, 0.0000002],
+            // Short of one in single precision as much: emdec6g's and
+            // tcc4e's rows, written to eight decimals, fall short by up to
+            // 8e-8 and 1.6e-7, more than the decimals explain.
+            &[0.49999996, 0.49999996],
+            &[0.29999992, 0.69999992],
         ] {
             let out = row(r).unwrap();
             assert!((fsum(&out) - 1.0).abs() < 1e-15, "{r:?}");
             assert_ne!(out, r, "{r:?}");
+            assert!(distribution(r), "{r:?}");
         }
+    }
+
+    #[test]
+    fn a_row_of_one_entry_is_its_number() {
+        // A one-valued variable's row: the entry of a factor over its
+        // largest, which no rounding brings to one.
+        for p in [0.999999995, 1.0 - 1e-10, 0.99999992] {
+            assert_eq!(row(&[p]).unwrap(), [p]);
+            assert!(!distribution(&[p]), "{p}");
+            assert!(!sums_to_one(&[p]), "{p}");
+        }
+        assert!(distribution(&[1.0]));
+        // Two entries within 1e-9 under one are a distribution kept as it
+        // is, of which one value alone is certain.
+        assert_eq!(row(&[1.0 - 1e-10, 0.0]).unwrap(), [1.0 - 1e-10, 0.0]);
+        assert!(distribution(&[1.0 - 1e-10, 0.0]));
+    }
+
+    #[test]
+    fn a_tables_factor_varies_only_where_a_row_is_not_rounding() {
+        let close = |a: &[f64], b: &[f64]| {
+            a.len() == b.len() && a.iter().zip(b).all(|(x, y)| (x - y).abs() < 1e-15)
+        };
+        // Rows rounded alike keep their one sum, a constant.
+        let mut t = vec![0.333333; 6];
+        let sums = split(&mut t, 3).unwrap();
+        assert!(
+            close(&sums, &[0.999999; 2]) && sums[0] == sums[1],
+            "{sums:?}"
+        );
+        assert!(close(&t, &[1.0 / 3.0; 6]), "{t:?}");
+        // Rows of sums that differ by rounding alone have none: 1.000001
+        // (two halves rounded up), 1 and 0.99999992 (single precision).
+        let mut t = vec![0.160598, 0.839403, 0.6, 0.4, 0.49999996, 0.49999996];
+        assert_eq!(split(&mut t, 2).unwrap(), [1.0, 1.0, 1.0]);
+        assert!(close(
+            &t[..4],
+            &[0.160598 / 1.000001, 0.839403 / 1.000001, 0.6, 0.4]
+        ));
+        // A row that is not rounding keeps its sum, and so do zeros; the
+        // rounded rows beside them have one.
+        let mut t = vec![0.160598, 0.839403, 0.3, 0.5, 0.0, 0.0, 0.250001, 0.750001];
+        let sums = split(&mut t, 2).unwrap();
+        assert!(close(&sums, &[1.0, 0.8, 0.0, 1.000002]), "{sums:?}");
+        assert_eq!((sums[0], sums[2]), (1.0, 0.0));
     }
 
     #[test]

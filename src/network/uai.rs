@@ -15,6 +15,10 @@
 //! up to the rounding of its decimals. Either way a table whose rows do not
 //! sum to one, rounded or not, is the product of its rows divided by their
 //! sums and of the factor of those sums over its parents ([`as_written`]).
+//! Rounding is not structure: where the sums differ, a row that sums to one
+//! up to rounding has one in that factor, as the file's network means, and
+//! a factor that varies by rounding alone is none. Only a table whose rows
+//! all have one sum keeps a rounded one, as a constant.
 //! Any other `MARKOV` network's variables get uniform priors, times their
 //! unary factors normalized. Every other factor `f`, those sums included,
 //! becomes a variable `fJ` of one value `ok` whose row for each assignment
@@ -24,8 +28,8 @@
 //! prior's sum and each factor's largest entry, and by the entry of each
 //! factor left out: so `log10 Z = log10 P(e) + c`, where the offset `c` is
 //! the sum of the base-10 logarithms of all of these ([`partition_offset`]).
-//! A `BAYES` file whose rows all sum to one has no offset: its `Z` is its
-//! program's `P(e)`.
+//! A `BAYES` file all of whose factors are one has no offset: its `Z` is
+//! its program's `P(e)`.
 //!
 //! For a program that asks nothing and observes nothing, a `MARKOV`
 //! network whose variables all have the same `k` values and whose
@@ -173,11 +177,12 @@ pub(super) fn parse(text: &str, colours: bool) -> Result<Read, String> {
 /// The network of a file's conditional tables as written, each a scope
 /// with its child last and the table in that order: `BAYES`, or a
 /// `MARKOV` file read as its network (`markov`). A table is the product
-/// of its rows divided by their sums ([`split`]) and of the factor of
-/// those sums over its parents ([`Factors::add`]): an offset where every
-/// row has one sum, as a table rounded alike in every row does, and
-/// otherwise a variable observed. A `BAYES` file whose rows all sum to one
-/// reads as its network, and its program's `P(e)` is its `Z`.
+/// of its rows divided by their sums and of the factor of those sums over
+/// its parents, a rounded row's one where they differ ([`split`],
+/// [`Factors::add`]): an offset where every row has one sum, as a table
+/// rounded alike in every row does, and otherwise a variable observed. A
+/// `BAYES` file all of whose factors are one reads as its network, and its
+/// program's `P(e)` is its `Z`.
 fn as_written(
     mut network: Network,
     conditional: Vec<ConditionalTable>,
@@ -563,8 +568,9 @@ mod tests {
     fn a_markov_file_of_tables_rounded_to_their_decimals_is_the_network() {
         // x1's row at x0 = 0, 0.160598 and 0.839403, sums to 1.000001: two
         // halves rounded up, as the UAI 2006 evaluation's networks write.
-        // The row is divided by its sum, and the sums of x1's rows, 1.000001
-        // and 1, are a factor over x0, observed.
+        // The row is divided by its sum, and since rounding is not
+        // structure, its sum is one in the factor of x1's rows' sums over
+        // x0, which is none.
         let read = parse(
             "MARKOV 2 2 2 2 1 0 2 1 0 2 0.2 0.8 4 0.160598 0.6 0.839403 0.4",
             false,
@@ -572,14 +578,12 @@ mod tests {
         .unwrap();
         let s = fsum(&[0.160598, 0.839403]);
         assert!((s - 1.000001).abs() < 1e-15);
-        assert_eq!(read.log10_offset, Some(s.log10()));
-        assert_eq!(read.forced, [2]);
+        assert_eq!(read.log10_offset, Some(0.0));
+        assert!(read.forced.is_empty());
         let t = read.network.tables[1].as_ref().unwrap();
         assert_eq!(t.parents, [0]);
         assert_eq!(t.probs, [0.160598 / s, 0.839403 / s, 0.6, 0.4]);
-        let f = read.network.tables[2].as_ref().unwrap();
-        assert_eq!(f.parents, [0]);
-        assert_eq!(f.probs, [1.0, 1.0 / s]);
+        assert_eq!(read.network.tables.len(), 2);
         // A row short of one by more than its decimals' rounding is a
         // factor's, not a table's.
         let read = parse(
