@@ -243,14 +243,9 @@ fn parse_args() -> Result<Request, String> {
     let program_only = program_only.is_some();
     let cnf_only = cnf_only.is_some();
     if skip_grounding {
-        for (given, option) in [
-            (program_only, "--program"),
-            (cnf_only, "--cnf"),
-        ] {
+        for (given, option) in [(program_only, "--program"), (cnf_only, "--cnf")] {
             if given {
-                return Err(format!(
-                    "{option} does not work with --skip-grounding"
-                ));
+                return Err(format!("{option} does not work with --skip-grounding"));
             }
         }
     }
@@ -575,7 +570,8 @@ fn run(
         None => None,
     };
     let solve_fn = if args.skip_grounding {
-        tddlog::solve_ground_program as fn(&str, &Options, &mut dyn FnMut(Progress<'_>)) -> Result<_, _>
+        tddlog::solve_ground_program
+            as fn(&str, &Options, &mut dyn FnMut(Progress<'_>)) -> Result<_, _>
     } else {
         tddlog::solve as fn(&str, &Options, &mut dyn FnMut(Progress<'_>)) -> Result<_, _>
     };
