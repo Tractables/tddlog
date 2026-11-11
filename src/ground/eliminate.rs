@@ -13,25 +13,52 @@
 //! which are two-valued in every world, and each rule passes truth along
 //! one edge.
 //!
-//! Eliminating a node `k` connects each node `i` with an edge into `k` to
-//! each node `j` with an edge out of it, `i ≠ j`: the label of `i → j`
-//! gains the disjunct `label(i → k) ∧ label(k → j)`. After the nodes `v₁ …
-//! v_{k-1}` are gone, the label of `i → j` holds in a world exactly when a
-//! path from `i` to `j` runs there with every interior node among them
-//! (Floyd and Warshall's closure, one world at a time). Then
+//! The nodes are eliminated one at a time, and each label keeps one
+//! meaning throughout: the label of `i → j` holds in a world exactly when
+//! `j` follows from `i` there through a chain of the component's rules
+//! whose intermediate atoms have all been eliminated. On a path program,
+//! whose atoms are `path(X, t)` for a fixed target `t`, it is
+//! `reach(i, j, S)`: a path from `i` to `j` whose inner nodes all lie in
+//! `S`, the nodes eliminated so far. At the start `S` is empty and the
+//! labels are the rules' bodies. Eliminating `k` is Floyd and Warshall's
+//! step, one world at a time, for each `i` with an edge into `k` and each
+//! `j ≠ i` with an edge out of it:
+//!
+//! ```text
+//! reach(i, j, S+k) :- reach(i, j, S).                  % avoids k
+//! reach(i, j, S+k) :- reach(i, k, S), reach(k, j, S).  % passes through k
+//! ```
+//!
+//! A path that comes back to where it started adds nothing to
+//! reachability, so `i → i` is never made. The eliminated atom keeps its
+//! definition, its labels as it goes:
 //!
 //! ```text
 //! v_k  ⇔  A(k) ∨ ⋁_{j > k} v_j ∧ L(j, k)
 //! ```
 //!
-//! where `A(k)` and `L(j, k)` are the labels of `s → v_k` and `v_j → v_k` as
-//! `v_k` goes: of a path from `s` to `v_k`, take the last node before `v_k`
-//! that goes after it; the rest of the path runs through nodes that went
-//! before `v_k`. Each node reads only nodes that go after it, so the
-//! program becomes acyclic, and its atoms keep their names, so queries,
-//! evidence and the components above read them as before. A label that is
-//! a disjunction of several bodies and is conjoined with another becomes an
-//! atom of its own, `$e(n)`; a single body is copied.
+//! where `A(k)` and `L(j, k)` are the labels of `s → v_k` and `v_j → v_k`:
+//! of a path from `s` to `v_k`, take the last node before `v_k` that goes
+//! after it; the rest of the path runs through nodes that went before
+//! `v_k`. Each node reads only nodes that go after it, so the program
+//! becomes acyclic, and its atoms keep their names, so queries, evidence
+//! and the components above read them as before.
+//!
+//! A label that is a disjunction of several bodies and is conjoined with
+//! another becomes an atom of its own, named for what it means:
+//! `'$via'(I, J, K)` holds where `J` follows from `I` through the first `K`
+//! atoms of its component's order, `I` being `true` for the source (`J`
+//! is then derived from below the component). `--ground` prints each
+//! component's order as a comment. A pair is named at most once, when the
+//! first of its two nodes is eliminated, as no edge joins them after that;
+//! a single body is copied. Every atom the rewrite makes is a definition,
+//! fixed in every world by the facts, so the program's models,
+//! probabilities and counts are the recursive program's: no rank variables
+//! (Janhunen's translation, ECAI 2004), no guessed atoms, no per-context
+//! copies (ProbLog 2's proof-based cycle breaking). The labels share their
+//! parts: on a complete graph of `n` nodes the elimination takes about
+//! `n³/3` label products, while the simple paths they cover are
+//! exponentially many (109 601 from one node of K10 to another).
 //!
 //! The order is greedy on the labels standing ([`elimination_order`]), the
 //! atoms read outside the component (by a rule above it, a query or the
@@ -45,11 +72,12 @@ use std::sync::OnceLock;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{AtomId, AtomKind, GLit, GroundProgram, GroundRule, RulesByHead, deps, simplify};
-use crate::syntax::{Args, Atom, Term};
+use crate::syntax::{Atom, Name, Term};
 
-/// Names the atoms that hold a label of several bodies. Cannot clash with a
-/// user predicate, whose name never contains `$`.
-const LABEL_NAME: &str = "$e";
+/// Names the atoms that hold a label of several bodies, `'$via'(I, J, K)`:
+/// `J` follows from `I` through the first `K` atoms eliminated. Cannot
+/// clash with a user predicate, whose name never contains `$`.
+const LABEL_NAME: &str = "$via";
 /// Label products, an edge into a node by an edge out of it, that the
 /// rewrite of a program may take, each a conjoined body; the components
 /// past it are left recursive. The products of a dense component grow with
@@ -115,7 +143,7 @@ pub(crate) fn linear_recursion(gp: &mut GroundProgram) -> usize {
     let mut out = Out {
         gp,
         emitted: Vec::new(),
-        next_label: 0,
+        name: LABEL_NAME.into(),
     };
     let mut budget = MAX_PRODUCTS;
     let mut rewritten = 0;
@@ -195,26 +223,28 @@ fn by_rounds(gp: &GroundProgram) -> Vec<AtomId> {
     order
 }
 
-/// The program being rewritten and the rules the rewrite emits.
+/// The program being rewritten, the rules the rewrite emits, and the name
+/// of the labels' atoms.
 struct Out<'a> {
     gp: &'a mut GroundProgram,
     emitted: Vec<GroundRule>,
-    next_label: i64,
+    name: Name,
 }
 
 impl Out<'_> {
-    /// The label as one body: itself where it has one, else an atom of its
-    /// own, which the label then becomes.
-    fn body(&mut self, label: &mut Label) -> Vec<GLit> {
+    /// The label of `from → to` as one body, taken at the step that
+    /// eliminates the order's atom `step` (counting from 0), when it holds
+    /// through the first `step` atoms: itself where it has one, else an
+    /// atom of its own, `'$via'(from, to, step)`, which the label then
+    /// becomes.
+    fn body(&mut self, label: &mut Label, [from, to]: [&Term; 2], step: usize) -> Vec<GLit> {
         if label.len() == 1 {
             return label[0].clone();
         }
         let a = self.gp.atoms.len() as AtomId;
-        self.gp
-            .atoms
-            .push(Atom::new(LABEL_NAME, Args::One(Term::Int(self.next_label))));
+        let args = vec![from.clone(), to.clone(), Term::Int(step as i64)];
+        self.gp.atoms.push(Atom::new(self.name.clone(), args));
         self.gp.kinds.push(AtomKind::Derived);
-        self.next_label += 1;
         for body in label.drain(..) {
             self.emitted.push(GroundRule::new(a, body));
         }
@@ -292,10 +322,22 @@ fn eliminate(
             dropped[ri] = true;
         }
     }
+    // The nodes as the terms that name the labels, the source as `true`.
+    let atoms = &out.gp.atoms;
+    let terms: Vec<Term> = scc
+        .iter()
+        .map(|&a| atoms[a as usize].as_term())
+        .chain([Term::Const("true".into())])
+        .collect();
+    let eliminated = order
+        .iter()
+        .map(|&k| atoms[scc[k as usize] as usize].clone())
+        .collect();
+    out.gp.stats.eliminated.push(eliminated);
     // What each node's rules read as it goes: A(k), and L(j, k) by j.
     let mut reach: Vec<(Label, Vec<(usize, Label)>)> = vec![(Vec::new(), Vec::new()); n];
     let mut gone = vec![false; n + 1];
-    for &k in &order {
+    for (step, &k) in order.iter().enumerate() {
         let k = k as usize;
         gone[k] = true;
         let mut into: Vec<usize> = (0..=n)
@@ -310,7 +352,7 @@ fn eliminate(
             // Where nothing goes on from k, only k's own rules read the
             // label, one rule per body.
             if !onto.is_empty() {
-                from.push((i, out.body(&mut label)));
+                from.push((i, out.body(&mut label, [&terms[i], &terms[k]], step)));
             }
             if i == source {
                 reach[k].0 = label;
@@ -321,7 +363,7 @@ fn eliminate(
         let mut to: Vec<(usize, Vec<GLit>)> = Vec::with_capacity(onto.len());
         for &j in &onto {
             let mut label = labels[k].remove(&j).expect("an edge out of the node");
-            to.push((j, out.body(&mut label)));
+            to.push((j, out.body(&mut label, [&terms[k], &terms[j]], step)));
         }
         labels[k].clear();
         for (i, a) in &from {
@@ -502,6 +544,95 @@ mod tests {
         assert!(!recursive(&gp));
         for (got, want) in answers(src, Kind::Closed).into_iter().zip([0.53, 0.36]) {
             assert!((got - want).abs() < 1e-12, "{got} against {want}");
+        }
+    }
+
+    /// Each label's atom holds where its name says: `'$via'(I, J, K)` in
+    /// exactly the worlds where a path leads from `I`'s node (1, the
+    /// source, for `true`) to `J`'s with every inner node among the first
+    /// `K` eliminated. Checked in every world of examples/cycle_graph.pl,
+    /// whose atoms are `path(1, Y)`.
+    #[test]
+    fn a_label_holds_where_its_name_says() {
+        let src = "0.6::edge(1,2). 0.5::edge(2,3). 0.7::edge(3,1). 0.4::edge(3,4).
+            0.8::edge(4,5). 0.3::edge(5,3). 0.6::edge(5,6). 0.5::edge(6,4). 0.4::edge(2,6).
+            0.3::edge(6,1). 0.5::edge(4,7). 0.6::edge(7,2). 0.4::edge(7,5). 0.7::edge(1,5).
+            path(X,Y) :- edge(X,Y). path(X,Y) :- edge(X,Z), path(Z,Y).
+            query(path(1,2)). query(path(1,3)). query(path(1,4)). query(path(1,5)).
+            query(path(1,6)). query(path(1,7)).";
+        let mut gp = grounded(src);
+        assert_eq!(linear_recursion(&mut gp), 1);
+        let int = |t: &Term| match t {
+            Term::Int(n) => *n,
+            t => panic!("{t:?} is not a node"),
+        };
+        // `path(1, Y)` as its node Y.
+        let node = |t: &Term| match t.as_compound() {
+            Some((name, [_, y])) if &**name == "path" => int(y),
+            _ => panic!("{t:?} is not an atom of the component"),
+        };
+        let [order] = &gp.stats.eliminated[..] else {
+            panic!("one component")
+        };
+        let order: Vec<i64> = order.iter().map(|a| node(&a.as_term())).collect();
+        let edges: Vec<(AtomId, i64, i64)> = gp
+            .facts()
+            .map(|(a, _)| {
+                let args = &gp.atoms[a as usize].args;
+                (a, int(&args[0]), int(&args[1]))
+            })
+            .collect();
+        let labels: Vec<(AtomId, Option<i64>, i64, usize)> = (0..gp.num_atoms())
+            .filter(|&a| &*gp.atoms[a].name == LABEL_NAME)
+            .map(|a| {
+                let [from, to, k] = &gp.atoms[a].args[..] else {
+                    panic!("three arguments")
+                };
+                let from = (*from != Term::Const("true".into())).then(|| node(from));
+                (a as AtomId, from, node(to), int(k) as usize)
+            })
+            .collect();
+        assert!(labels.len() > 1, "{gp}");
+        assert!(gp.rules.iter().all(|r| !r.pairs));
+        for world in 0..1u32 << edges.len() {
+            let mut holds = vec![false; gp.num_atoms()];
+            for (i, &(a, ..)) in edges.iter().enumerate() {
+                holds[a as usize] = (world >> i) & 1 == 1;
+            }
+            // The least model, the program being acyclic and positive.
+            let mut changed = true;
+            while changed {
+                changed = false;
+                for r in &gp.rules {
+                    if !holds[r.head as usize] && r.body.iter().all(|l| holds[l.atom() as usize]) {
+                        holds[r.head as usize] = true;
+                        changed = true;
+                    }
+                }
+            }
+            for &(a, from, to, k) in &labels {
+                // The nodes reached from `from` through the first k eliminated.
+                let mut reached = vec![from.unwrap_or(1)];
+                let mut at = 0;
+                let mut path = false;
+                while at < reached.len() {
+                    let u = reached[at];
+                    at += 1;
+                    for &(e, x, y) in &edges {
+                        if x == u && holds[e as usize] {
+                            path |= y == to;
+                            if order[..k].contains(&y) && !reached.contains(&y) {
+                                reached.push(y);
+                            }
+                        }
+                    }
+                }
+                assert_eq!(
+                    holds[a as usize], path,
+                    "{} in world {world:b}",
+                    gp.atoms[a as usize]
+                );
+            }
         }
     }
 

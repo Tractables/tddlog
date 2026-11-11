@@ -175,14 +175,47 @@ fn ground_prints_the_ground_program_a_strategy_compiles() {
         "{printed}"
     );
     // A strategy compiles linear recursion written without recursion
-    // (src/ground/eliminate.rs), labels `'$e'(n)` and all; auto chooses its
-    // trials from the program as grounded, which `--ground` prints.
+    // (src/ground/eliminate.rs), its order printed as a comment and its
+    // labels named for what they mean: `'$via'(I,J,K)`, `J` following from
+    // `I` through the first `K` atoms of the order, `I` an atom of the
+    // component or `true`; auto chooses its trials from the program as
+    // grounded, which `--ground` prints.
     let out = tddlog(&["--ground", "--vtree", "td", "examples/cycle_graph.pl"]);
     assert!(out.status.success());
-    assert!(stdout(&out).contains("'$e'("), "{}", stdout(&out));
+    let printed = stdout(&out);
+    let order: Vec<&str> = printed
+        .lines()
+        .filter_map(|l| l.strip_prefix("% eliminated in this order: "))
+        .flat_map(|l| l.split(' '))
+        .collect();
+    assert_eq!(order.len(), 6, "{printed}");
+    assert!(order.iter().all(|a| a.starts_with("path(1,")), "{printed}");
+    let labels: Vec<&str> = printed
+        .lines()
+        .filter_map(|l| l.strip_prefix("'$via'(")?.split_once(") :- "))
+        .map(|(args, _)| args)
+        .collect();
+    assert!(!labels.is_empty(), "{printed}");
+    for args in labels {
+        // `path(1,X),path(1,Y),K` or `true,path(1,Y),K`
+        let (from, rest) = match args.strip_prefix("true,") {
+            Some(rest) => ("true", rest),
+            None => args.split_at(args.find("),").expect("two atoms") + 1),
+        };
+        let rest = rest.trim_start_matches(',');
+        let (to, k) = rest.rsplit_once(',').expect("an atom and a count");
+        let k: usize = k.parse().expect("a count");
+        assert!(from == "true" || order.contains(&from), "{args}");
+        assert!(order.contains(&to), "{args}");
+        // Named before either of its atoms goes, after the first K.
+        for a in [from, to] {
+            assert!(!order[..k].contains(&a), "{args}");
+        }
+    }
     let out = tddlog(&["--ground", "examples/cycle_graph.pl"]);
     assert!(out.status.success());
-    assert!(!stdout(&out).contains("'$e'("), "{}", stdout(&out));
+    assert!(!stdout(&out).contains("'$via'("), "{}", stdout(&out));
+    assert!(!stdout(&out).contains("% eliminated"), "{}", stdout(&out));
     // With `--evidence-probability` the program `P(e)` is computed on:
     // detach.pl's observations that no query depends on are kept, and
     // with `--no-queries` the queries are left out.

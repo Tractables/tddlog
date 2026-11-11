@@ -1195,6 +1195,8 @@ impl Compilation {
         let work = (spent as f64 * all as f64 / done as f64).log2();
         self.reach = Some(self.reach.map_or(work, |r| r.max(work)));
         if work > h.limit {
+            // The component it finished is kept: the stop loses nothing.
+            backend.kept();
             return Err(CompileError::Projected { work });
         }
         Ok(())

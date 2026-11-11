@@ -1,13 +1,19 @@
 //! The tables of a ground program, as the rewrites of their rows see
 //! them ([`Tables`]), over its structure ([`super::structure`]).
 
-use rustc_hash::FxHashMap;
+use std::hash::Hasher;
+
+use rustc_hash::{FxHashMap, FxHasher};
 
 use super::structure::Structure;
 use super::{AtomId, AtomKind, GLit, GroundProgram, RulesByHead};
+use crate::by_hash::ByHash;
+
+/// The most contexts [`Tables::exclusive`] compares two by two.
+const MOST_COMPARED: usize = 64;
 
 /// The tables of a ground program, as the rewrites of their rows see them
-/// ([`super::classes`], [`super::cover`]). A table is one exclusive set,
+/// ([`super::rows`], [`super::cover`]). A table is one exclusive set,
 /// the values of a network variable, or one derived atom in no set. A fact
 /// is a table's own when no query or evidence names it and every rule that
 /// reads it defines an atom of the table: a switch of the table's rows.
@@ -157,6 +163,99 @@ impl Tables {
                             && self.set_of[m.atom() as usize] == self.set_of[l.atom() as usize]
                     }))
         })
+    }
+
+    /// Whether every two of `n` contexts clash ([`Tables::clash`]),
+    /// `context(i)` the literals of the `i`-th: at once where, of the
+    /// exclusive sets that every context reads one atom of positively, no
+    /// two contexts read the same atoms, and two by two where they are
+    /// [`MOST_COMPARED`] at most. The rows of a table ([`super::rows`]) and
+    /// the readers of a choice ([`super::contexts`]) are tested so. A choice
+    /// may have tens of thousands of readers, each context the rest of a
+    /// rule's body, so the contexts are walked in place, and the walk stops
+    /// at the first two that read the same atoms of the sets kept so far:
+    /// they read the same atoms of the sets kept at the end too.
+    pub(crate) fn exclusive<'a, I>(&self, n: usize, context: impl Fn(usize) -> I) -> bool
+    where
+        I: Iterator<Item = &'a GLit>,
+    {
+        if n < 2 {
+            return true;
+        }
+        let set = |l: &GLit| {
+            Some(self.set_of[l.atom() as usize]).filter(|&s| l.is_positive() && s != usize::MAX)
+        };
+        // The sets the first context reads, then each context's atom of
+        // each, a set dropped where a context reads none of it or two, and
+        // the contexts walked so far found by their atoms of the sets kept,
+        // all of them found anew where a set is dropped.
+        let mut sets: Vec<usize> = context(0).filter_map(set).collect();
+        sets.sort_unstable();
+        sets.dedup();
+        let w = sets.len();
+        let mut atoms = vec![AtomId::MAX; n * w];
+        let mut kept = vec![true; w];
+        let mut left = w;
+        let mut seen = ByHash::default();
+        let mut distinct = w > 0;
+        for i in 0..n {
+            let read = &mut atoms[i * w..(i + 1) * w];
+            for l in context(i) {
+                if let Some(j) = set(l).and_then(|s| sets.binary_search(&s).ok()) {
+                    if read[j] == AtomId::MAX {
+                        read[j] = l.atom();
+                    } else {
+                        kept[j] = false;
+                    }
+                }
+            }
+            for (j, &a) in read.iter().enumerate() {
+                kept[j] &= a != AtomId::MAX;
+            }
+            let now = kept.iter().filter(|&&k| k).count();
+            if now == 0 {
+                distinct = false;
+                break;
+            }
+            let from = if now < left {
+                seen.clear();
+                0
+            } else {
+                i
+            };
+            left = now;
+            let tuple = |k: usize| atoms[k * w..(k + 1) * w].iter().zip(&kept);
+            let new = (from..=i).all(|k| {
+                let mut h = FxHasher::default();
+                tuple(k)
+                    .filter(|(_, on)| **on)
+                    .for_each(|(&a, _)| h.write_u32(a));
+                seen.find_or_push(h.finish(), |o| {
+                    tuple(o as usize)
+                        .zip(tuple(k))
+                        .all(|((a, on), (b, _))| !*on || a == b)
+                })
+                .1
+            });
+            if !new {
+                distinct = false;
+                break;
+            }
+        }
+        if distinct {
+            return true;
+        }
+        if n > MOST_COMPARED {
+            return false;
+        }
+        let contexts: Vec<Vec<GLit>> = (0..n)
+            .map(|i| {
+                let mut c: Vec<GLit> = context(i).copied().collect();
+                c.sort_unstable();
+                c
+            })
+            .collect();
+        (0..n).all(|i| (i + 1..n).all(|j| self.clash(&contexts[i], &contexts[j])))
     }
 
     /// Whether no atom of a table depends on an atom of the table. Only

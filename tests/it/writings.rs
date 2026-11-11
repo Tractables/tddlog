@@ -1273,10 +1273,10 @@ fn diamonds(n: usize, rules: &str, query: &str) -> String {
     )
 }
 
-/// Each writing answers 0.99995^n past the nesting a top-down resolution
-/// allows (1000 calls): the rewrite reads a step that a comparison bounds
-/// as a level, whichever way it moves, and the demand comes from its
-/// fixpoint, as for the port that counts up from `step(T)`.
+/// Each writing answers 0.99995^n from the rewrite, not resolved top-down:
+/// the rewrite reads a step that a comparison bounds as a level, whichever
+/// way it moves, and the demand comes from its fixpoint, as for the port
+/// that counts up from `step(T)`.
 #[test]
 fn a_loop_written_from_either_end_answers_as_written_from_its_start() {
     let n = 1500;
@@ -1310,11 +1310,16 @@ fn a_loop_written_from_either_end_answers_as_written_from_its_start() {
     let p = 0.99995f64.powi(n as i32);
     for (rules, query) in &writings {
         let source = diamonds(n, rules, query);
-        let run = common::run(
-            &source,
-            &common::options(Strategy::Auto, Projection::default()),
-        )
-        .unwrap_or_else(|e| panic!("{query}, {rules}: {e}"));
+        let options = common::options(Strategy::Auto, Projection::default());
+        let program = tddlog::syntax::parse_program(&source).expect("parses");
+        let gp = tddlog::ground::ground(&program, &options.ground_options())
+            .unwrap_or_else(|e| panic!("{query}, {rules}: {e}"));
+        assert_eq!(
+            gp.stats.top_down.0, 0,
+            "{query}, {rules}: resolved top-down"
+        );
+        let run =
+            tddlog::solve_ground(gp, &options).unwrap_or_else(|e| panic!("{query}, {rules}: {e}"));
         assert_answers(
             rules,
             &run.results.expect("no evidence"),

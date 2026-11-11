@@ -440,7 +440,22 @@ path(1,7):      0.199812</pre>
   grounds the rules only for the paths that start at node 1, which are
   all the queries need. It then writes the reachability without
   recursion before it compiles the program: it eliminates the nodes one
-  at a time, as Floyd and Warshall's transitive closure does.</p></details>
+  at a time, as Floyd and Warshall's transitive closure does. After each
+  step, what connects two nodes is a path whose inner nodes have all been
+  eliminated. Eliminating node <i>k</i> adds to each such connection
+  from <i>i</i> to <i>j</i> the paths that go from <i>i</i> to <i>k</i>
+  and on from <i>k</i> to <i>j</i>. Each eliminated <code>path(1,k)</code>
+  is defined from the nodes eliminated after it, so no cycle is left.
+  A connection that joins several paths and goes on becomes an atom of
+  its own, named for what it means:
+  <code>'$via'(path(1,2),path(1,4),2)</code> holds where a path leads
+  from 2 to 4 whose inner nodes are among the first two eliminated, 3
+  and 6.
+  <code>tddlog --ground --vtree closed examples/cycle_graph.pl</code>
+  prints the program without recursion, the order of the elimination
+  first. Every new atom is fixed by the edges, so the probabilities are
+  unchanged, and the atoms share their parts: the paths they cover are
+  never listed one by one.</p></details>
   <p class="try"><a href="../playground/?example=reachability">Open it in the
   playground</a>.</p>
 
@@ -961,8 +976,8 @@ tddlog_solution_free(solution);</pre>
   <ul>
     <li>TDDs: a tree decision diagram is a canonical decision diagram
     shaped by a vtree
-    (<a href="https://arxiv.org/abs/2604.05537">Capelli, Choi, Mengel,
-    Muñoz and Van den Broeck, 2026</a>).</li>
+    (<a href="https://doi.org/10.4230/LIPIcs.SAT.2026.10">Capelli, Choi, Mengel,
+    Muñoz and Van den Broeck, SAT 2026</a>).</li>
     <li>Simplification: the derived atoms outside recursion, the gates,
     are built into an and-inverter graph. Each gate is the OR of its
     rules' bodies, each body the AND of its literals. The two-input ANDs

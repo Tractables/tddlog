@@ -111,7 +111,7 @@ impl Encoding {
 /// parts of a whole unit read their value alone; below another split,
 /// reading alone ran bn_pathfinder out of memory.
 ///
-/// The row classes (`ground::classes`) read it too, to keep the tables
+/// The row classes (`ground::rows`) read it too, to keep the tables
 /// whose classes the rewrite would read so.
 pub(crate) const OWN_VALUE_FROM: usize = 16;
 
@@ -119,7 +119,7 @@ pub(crate) const OWN_VALUE_FROM: usize = 16;
 /// values, bits cut the work of bn_mildew's and bn_pathfinder's compile
 /// and query phase and leave bn_diabetes and bn_barley as they are. From
 /// fewer they cost bn_diabetes and bn_barley work: the row classes of each
-/// of bn_diabetes's `cho_t` ([`crate::ground::classes`]), 31 of them, are
+/// of bn_diabetes's `cho_t` ([`crate::ground::rows`]), 31 of them, are
 /// read by one unit, whose link as clauses is one factor that the evidence
 /// walk joins more cheaply than the five links of the bits. The
 /// conditioning's renormalization reads it too: a table whose contexts

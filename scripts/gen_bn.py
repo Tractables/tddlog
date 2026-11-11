@@ -54,7 +54,9 @@ function whose rows do not sum to one up to the parsing of their decimals
 is the table of its rows divided by their sums times the factor of those
 sums over its parents (`as_written`): a constant where every row has one
 sum, in the offset below, and otherwise a factor written as a Markov
-network's is. A BAYES file whose rows all sum to one has no offset line.
+network's is, in which a row that sums to one up to rounding has one, as
+the network the file writes means (rounding is not structure). A BAYES
+file all of whose factors are one has no offset line.
 A Markov network's variables get uniform priors, times their unary factors
 normalized, and every other factor f becomes a variable of one value `ok`
 whose row for each assignment of its scope holds the factor's entry divided
@@ -68,8 +70,9 @@ where it has none), of each other factor's largest entry, and of the
 entry of each factor that has one distinct entry, which is dropped
 (`partition_offset`); so `log10 Z = log10 P(e) + c`, also given evidence
 (`tddlog --evidence-probability` prints `log10 P(e)`). A factor row
-within 1e-9 of its largest is written as certain, which moves `log10 Z`
-by under 5e-10 for each factor with such a row. A Markov network that
+keeps its number however close to its largest; the Dice program writes
+one within 1e-9 of it as certain (`to_dice`), which moves `log10 Z` by
+under 5e-10 for each factor with such a row. A Markov network that
 is a Bayesian network as written, each factor the conditional table of
 one variable of its scope and the child relation acyclic (the UAI
 suite's Promedus and Pedigree), is written as that network instead
@@ -270,8 +273,8 @@ def parse_uai(text, colours=False):
     is the product of its rows divided by their sums and of the factor of
     those sums over its parents (`as_written`). Returns the network, the
     observations its factors make, and `log10 Z - log10 P(e)` of the
-    program (`gen_bn.py` docstring), None for a BAYES file whose rows all
-    sum to one. With `colours`, for a program that asks no query and
+    program (`gen_bn.py` docstring), None for a BAYES file all of whose
+    factors are one. With `colours`, for a program that asks no query and
     observes nothing, a MARKOV network's colour symmetry is broken where
     it has one (`colour_symmetry`)."""
     kind, sizes, scopes, tables = read_uai(text)
@@ -325,11 +328,12 @@ def as_written(network, conditional, markov):
     """The network of a UAI file's conditional tables as written, each a
     scope with its child last and the table in that order: BAYES, or a
     MARKOV file read as its network (`markov`). A table is the product of
-    its rows divided by their sums (`split`) and of the factor of those
-    sums over its parents (`Factors.add`): an offset where every row has
-    one sum, as a table rounded alike in every row does, and otherwise a
-    variable observed. A BAYES file whose rows all sum to one reads as its
-    network, and its program's P(e) is its Z."""
+    its rows divided by their sums and of the factor of those sums over its
+    parents, a rounded row's one where they differ (`split`,
+    `Factors.add`): an offset where every row has one sum, as a table
+    rounded alike in every row does, and otherwise a variable observed. A
+    BAYES file all of whose factors are one reads as its network, and its
+    program's P(e) is its Z."""
     order, variables, out = network
     factors = Factors()
     for scope, table in conditional:
@@ -342,15 +346,24 @@ def as_written(network, conditional, markov):
 
 
 def split(table, k, where):
-    """Each row of `k` entries of `table` divided by its sum, and the sums
-    in order: a function of a UAI file is the table of its rows so divided
-    times the factor of their sums over its parents (`as_written`). A row
+    """Each row of `k` entries of `table` divided by its sum, and the
+    factor of those sums over the rows, in order: a function of a UAI file
+    is the table of its rows so divided times that factor over its parents
+    (`as_written`). Where the sums differ, a row that sums to one up to the
+    rounding `normalized` divides out has one in the factor: rounding is
+    not structure, and a factor that varies by rounding alone would be a
+    variable observed for nothing, which every reader of the program pays
+    for. A table whose rows all have one sum keeps it, a constant factor,
+    which costs nothing and keeps Z exact (`0.333333` three times). A row
     whose entries sum to one up to their parsing, within `k` units of
     roundoff, stays as it is, of sum one, so that the noise of reading
     decimals in binary makes no factor; so does a row of zeros, of sum
     zero. A row with a negative or not finite entry is an error. tddlog's
     reader's `rows::split`."""
-    out, sums = [], []
+    out, sums, rounding = [], [], []
+    # The last row read and its verdict: a table repeats its rows, and
+    # `rounding_slack` is slow.
+    last, verdict = None, False
     for j in range(0, len(table), k):
         row = table[j:j + k]
         bad = next((p for p in row if not (math.isfinite(p) and p >= 0)), None)
@@ -360,9 +373,15 @@ def split(table, k, where):
         if abs(total - 1) <= k * sys.float_info.epsilon:
             out += row
             sums.append(1.0)
+            rounding.append(True)
             continue
+        if row != last:
+            last, verdict = row, sums_to_one(row)
+        rounding.append(verdict)
         out += [p / total for p in row] if total > 0 else row
         sums.append(total)
+    if any(s != sums[0] for s in sums):
+        sums = [1.0 if r else s for s, r in zip(sums, rounding)]
     return out, sums
 
 
@@ -757,24 +776,29 @@ def meant_decimal(x):
 
 
 def row_sum(probs):
-    """How the row `probs` stands to one, and its sum: 'one' (one, or
-    within 1e-9 under it), 'rounded' (off one by the rounding of its
-    entries), or 'short' (short of one by more: the rest is left to no
-    value); a ValueError for a row that sums to more than one by more than
-    rounding explains, or that holds a negative or not finite entry
-    (`normalized`). tddlog's reader's `rows::sum`."""
+    """How the row `probs` stands to one, and its sum: 'one' (one, or for a
+    row of two entries or more within 1e-9 under it), 'rounded' (off one by
+    the rounding of its entries), or 'short' (short of one by more: the
+    rest is left to no value); a ValueError for a row that sums to more
+    than one by more than rounding explains, or that holds a negative or
+    not finite entry (`normalized`). A row of one entry is that number, of
+    a gap from one that is its own. tddlog's reader's `rows::sum`."""
     bad = next((p for p in probs if not (math.isfinite(p) and p >= 0)), None)
     if bad is not None:
         raise ValueError(f'{bad!r} is not a probability')
     total = math.fsum(probs)
-    if 1 - 1e-9 <= total <= 1:
+    several = len(probs) > 1
+    single = (len(probs) + 1) * 2.0 ** -24
+    if total == 1 or (several and 1 - 1e-9 <= total < 1):
         return 'one', total
     if total < 1:
-        if len(probs) == 1:
+        if not several:
             return 'short', total
+        if 1 - total <= single:
+            return 'rounded', total
         exact, slack = rounding_slack(probs)
         return ('rounded' if abs(exact - 1) < slack else 'short'), total
-    if total - 1 <= (len(probs) + 1) * 2.0 ** -24:
+    if total - 1 <= single:
         return 'rounded', total
     exact, slack = rounding_slack(probs)
     if abs(exact - 1) <= slack:
@@ -813,18 +837,28 @@ def normalized(probs, where):
     # left as written, so that rows that sum to one but for binary rounding
     # keep their numbers. An excess is rounding where it is at most the
     # slack, which two halves rounded up reach (the UAI 2006 networks'
-    # `0.160598, 0.839403`), or at most (n + 1) 2⁻²⁴ for a row of n
-    # entries, the error of a row computed in single precision (the UAI
-    # classics' `0.94297521, 0.05702495`) and of the products and
-    # complements a ground network's tables are computed with in doubles;
-    # it is rescaled. This is tddlog's network reader's rule
-    # (src/network/rows.rs), so that the program below is the one
-    # `tddlog --program` prints.
+    # `0.160598, 0.839403`); a gap either way is rounding where it is at
+    # most (n + 1) 2⁻²⁴ for a row of n entries, the error of a row computed
+    # in single precision (the UAI classics' `0.94297521, 0.05702495`, and
+    # emdec6g's and tcc4e's rows short of one by up to 1.6e-7) and of the
+    # products and complements a ground network's tables are computed with
+    # in doubles; it is rescaled. A row of one entry is its number. This is
+    # tddlog's network reader's rule (src/network/rows.rs), so that the
+    # program below is the one `tddlog --program` prints.
+    return distribution(probs, where)[0]
+
+
+def distribution(probs, where):
+    """The row `probs` as `normalized` writes it, and whether it is a
+    distribution, of sum one up to rounding, so that one value of it alone
+    is certain: a lone value of a row short of one, or of a factor's,
+    keeps its number. tddlog's reader's `rows::normalized`."""
     try:
         kind, total = row_sum(probs)
     except ValueError as x:
         sys.exit(f'{where}: {x}')
-    return [p / total for p in probs] if kind == 'rounded' else probs   # rounding in the file
+    # rounding in the file
+    return ([p / total for p in probs] if kind == 'rounded' else probs), kind != 'short'
 
 
 def rescaled(network):
@@ -968,12 +1002,14 @@ def to_problog(network, query='all', evidence=()):
         parents, rows = tables[v]
         for key, probs in rows.items():
             assert len(probs) == len(variables[v]), (v, key)
-            probs = normalized(probs, f'{v} {key}')
+            probs, whole = distribution(probs, f'{v} {key}')
             body = ', '.join(f'{names[p]}({values[p][u]})' for p, u in zip(parents, key))
             heads = [(p, f'{names[v]}({values[v][u]})') for p, u in zip(probs, variables[v]) if p > 0]
             if not heads:
                 continue   # no value under this row: no rule
-            if len(heads) == 1 and abs(heads[0][0] - 1) < 1e-9:
+            # The one value of a distribution is certain; a lone value of a
+            # row short of one, or of a factor's, keeps its number.
+            if len(heads) == 1 and whole:
                 head = heads[0][1]
             else:
                 head = '; '.join(f'{p!r}::{a}' for p, a in heads)

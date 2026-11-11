@@ -57,7 +57,7 @@ impl Structure {
         }
     }
 
-    /// The structure of `gp`, which switch sharing ([`super::share`]) made
+    /// The structure of `gp`, which switch sharing ([`super::rows`]) made
     /// of the program this is the structure of, `map` the new number of
     /// each atom ([`super::simplify::compact`]). The sharing renames facts,
     /// each a table's own and read in rows that exclude each other, and

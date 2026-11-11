@@ -3,9 +3,10 @@
 Implementer's note. Source: https://starai.cs.ucla.edu/papers/ChengPROBPROG21.pdf.
 The paper generalizes the parameter sharing of Bayesian network encodings
 (Chavira and Darwiche 2008) to a program transformation on Dice programs.
-tddlog keeps its local form as switch sharing (`src/ground/share.rs`,
-narrowed to the tables where it pays), beside row classes and clause tables
-([design.md](../design.md)).
+tddlog keeps its local form as switch sharing (`src/ground/rows.rs`: in
+every table whose rows exclude each other in the weighted CNF, narrowed
+to the tables where it pays in the compile), beside row classes and
+clause tables ([design.md](../design.md)).
 
 ## The transformation (Sec. 3)
 
@@ -15,7 +16,7 @@ then couples two independent coins.
 
 - **Theorem 1 (path redundancy).** Hoisting flips i and j is sound if
   their path conditions (the conditions on flips under which execution
-  reaches each) are inconsistent. `share.rs` uses it with the rows'
+  reaches each) are inconsistent. `rows.rs` uses it with the rows'
   contexts as the path conditions.
 - **Local hoisting (Prop. 2).** Two flips of one parameter in disjoint
   branches of the same `if` are always hoistable: parameter sharing within

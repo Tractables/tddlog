@@ -384,6 +384,33 @@ fn a_networks_cnf_shares_its_equal_entries_and_writes_its_zeros_as_clauses() {
     }
 }
 
+/// A table of two parents shares its switches in the CNF, where the
+/// compile keeps them apart (src/ground/rows.rs): every two of its rows
+/// read different values of `a` or `b`.
+#[test]
+fn a_table_of_two_parents_shares_its_switches_in_the_cnf() {
+    // c's rows over (a, b): (1,1) and (2,2) hold [1/4, 1/4, 1/2], (1,2)
+    // [1/4, 1/2, 1/4], (2,1) [1/2, 1/4, 1/4]. Their switches, 1/4 and 1/3,
+    // 1/4 and 2/3, 1/2 and 1/2, 1/4 and 1/3, are five facts shared: one
+    // 1/4, one 1/3, the 2/3, and (2,1)'s two halves, which one row reads
+    // both of. With a's and b's switches, seven facts. By enumeration
+    // P(c(2)) = 0.4 · 0.3 · 0.25 + 0.4 · 0.7 · 0.5 + 0.6 · 0.3 · 0.25
+    // + 0.6 · 0.7 · 0.25 = 0.32.
+    let source = "0.4::a(1); 0.6::a(2). 0.3::b(1); 0.7::b(2).
+        0.25::c(1); 0.25::c(2); 0.5::c(3) :- a(1), b(1).
+        0.25::c(1); 0.5::c(2); 0.25::c(3) :- a(1), b(2).
+        0.5::c(1); 0.25::c(2); 0.25::c(3) :- a(2), b(1).
+        0.25::c(1); 0.25::c(2); 0.5::c(3) :- a(2), b(2).
+        query(c(2)).";
+    assert_counts("two parents", source);
+    let cnf = read(&cnf_text(source, &Options::default()));
+    assert_eq!(cnf.facts, 7, "{}", cnf_text(source, &Options::default()));
+    let (l, query) = &cnf.queries[0];
+    assert_eq!(query, "c(2)");
+    let p = count(&cnf, Some(*l)) / total(&cnf, "two parents");
+    assert!((p - 0.32).abs() < 1e-12, "P(c(2)) counts {p}");
+}
+
 #[test]
 fn a_program_that_keeps_a_cycle_has_no_cnf() {
     // Negation through a cycle: two-valued in every world, and undefined.

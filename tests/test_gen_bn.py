@@ -49,6 +49,49 @@ def brute_force_z(model, evid=''):
     return z
 
 
+def meant_z(model, evid=''):
+    """Z of a UAI file as tddlog reads it (tests/it/networks.rs's
+    `enumerated_z` with its rounded rows): the product of its functions as
+    written, summed over the worlds that agree with `evid`, but for one
+    thing. In a BAYES file, or a MARKOV one that is a Bayesian network
+    (`gen_bn.conditional_tables`), a table whose rows' sums differ has each
+    row that sums to one up to rounding (`gen_bn.sums_to_one`) divided by
+    its sum: rounding is not structure. Rows within a few units of
+    roundoff of one stay as they are."""
+    kind, sizes, scopes, tables = gen_bn.read_uai(model)
+    conditional = list(zip(scopes, tables)) if kind == 'BAYES' else gen_bn.conditional_tables(sizes, scopes, tables)
+    if conditional is None:
+        return brute_force_z(model, evid)
+    functions = []
+    for scope, table in conditional:
+        k = sizes[scope[-1]]
+        rows = [table[j:j + k] for j in range(0, len(table), k)]
+        exact = [abs(math.fsum(r) - 1) <= k * sys.float_info.epsilon for r in rows]
+        sums = [1.0 if e else math.fsum(r) for e, r in zip(exact, rows)]
+        differ = any(s != sums[0] for s in sums)
+        meant = []
+        for e, r in zip(exact, rows):
+            r = [Fraction(p) for p in r]
+            if differ and not e and gen_bn.sums_to_one([float(p) for p in r]):
+                r = [p / sum(r) for p in r]
+            meant += r
+        functions.append((scope, meant))
+    e = [int(t) for t in evid.split()]
+    given = dict(zip(e[1::2], e[2::2]))
+    z = Fraction(0)
+    for world in itertools.product(*(range(k) for k in sizes)):
+        if any(world[i] != u for i, u in given.items()):
+            continue
+        w = Fraction(1)
+        for scope, table in functions:
+            j = 0
+            for v in scope:
+                j = j * sizes[v] + world[v]
+            w *= table[j]
+        z += w
+    return z
+
+
 def program_pe(network, evidence):
     """P(e) of gen_bn.py's tables for a Markov network, by enumeration: a
     world of the network's variables weighs its priors times the chance of
@@ -177,8 +220,40 @@ class RowTests(unittest.TestCase):
                     # two halves rounded up, over one by the slack: the UAI
                     # 2006 networks (BN_133, BN_17), and at four or seven decimals
                     [0.160598, 0.839403], [0.450006, 0.549995], [0.5, 0.501], [0.9, 0.101],
-                    [0.9999999, 0.0000002]):
+                    [0.9999999, 0.0000002],
+                    # short of one in single precision as much: emdec6g's
+                    # and tcc4e's rows, written to eight decimals
+                    [0.49999996, 0.49999996], [0.29999992, 0.69999992]):
             self.assertAlmostEqual(math.fsum(gen_bn.normalized(row, 'x')), 1.0, places=15, msg=row)
+            self.assertTrue(gen_bn.distribution(row, 'x')[1], msg=row)
+
+    def test_a_row_of_one_entry_is_its_number(self):
+        # A one-valued variable's row: the entry of a factor over its
+        # largest, which no rounding brings to one.
+        for p in [0.999999995, 1 - 1e-10, 0.99999992]:
+            self.assertEqual(gen_bn.distribution([p], 'x'), ([p], False))
+            self.assertFalse(gen_bn.sums_to_one([p]))
+        self.assertEqual(gen_bn.distribution([1.0], 'x'), ([1.0], True))
+        # Two entries within 1e-9 under one are a distribution kept as it
+        # is, of which one value alone is certain.
+        self.assertEqual(gen_bn.distribution([1 - 1e-10, 0.0], 'x'), ([1 - 1e-10, 0.0], True))
+
+    def test_a_tables_factor_varies_only_where_a_row_is_not_rounding(self):
+        # Rows rounded alike keep their one sum, a constant.
+        t, sums = gen_bn.split([0.333333] * 6, 3, 'x')
+        self.assertEqual(sums, [math.fsum([0.333333] * 3)] * 2)
+        # Rows of sums that differ by rounding alone have none: 1.000001
+        # (two halves rounded up), 1 and 0.99999992 (single precision).
+        t, sums = gen_bn.split([0.160598, 0.839403, 0.6, 0.4, 0.49999996, 0.49999996], 2, 'x')
+        self.assertEqual(sums, [1.0, 1.0, 1.0])
+        self.assertAlmostEqual(math.fsum(t[:2]), 1.0, places=15)
+        # A row that is not rounding keeps its sum, and so do zeros; the
+        # rounded rows beside them have one.
+        t, sums = gen_bn.split([0.160598, 0.839403, 0.3, 0.5, 0.0, 0.0, 0.250001, 0.750001], 2, 'x')
+        self.assertEqual(sums[0], 1.0)
+        self.assertAlmostEqual(sums[1], 0.8, places=15)
+        self.assertEqual(sums[2], 0.0)
+        self.assertAlmostEqual(sums[3], 1.000002, places=15)
 
     def test_a_gap_that_rounding_does_not_explain_is_the_tables(self):
         self.assertEqual(gen_bn.normalized([0.5, 0.499], 'x'), [0.5, 0.499])
@@ -919,9 +994,10 @@ class AsWrittenTests(unittest.TestCase):
         MARKOV files, with and without evidence: P(e) of gen_bn.py's tables
         and of the Hugin file Ace reads (`write_hugin`), each by
         enumeration, plus the offset, is log10 Z by enumeration of the
-        file's worlds in exact fractions, as tests/it/networks.rs checks
-        tddlog's. A table whose rows share one sum is an offset, and one
-        whose rows do not a factor, observed."""
+        file's worlds in exact fractions, its rounded rows aside
+        (`meant_z`), as tests/it/networks.rs checks tddlog's. A table whose
+        rows share one sum is an offset, and one whose rows do not a
+        factor, observed, in which a rounded row has one."""
         import random
         net = SOURCE / 'tests' / 'networks'
         evid = (net / 'as_written.uai.evid').read_text()
@@ -932,7 +1008,7 @@ class AsWrittenTests(unittest.TestCase):
             bayes, markov, e = random_rounded_network(rng)
             cases += [(bayes, e), (markov, e)]
         for k, (model, e) in enumerate(cases):
-            z = brute_force_z(model, e)
+            z = meant_z(model, e)
             network, forced, offset = gen_bn.parse(self.scratch('written.uai', model.encode()))
             evidence = forced + (gen_bn.read_evid(self.scratch('written.uai.evid', e.encode()), network)
                                  if e else [])
@@ -952,7 +1028,8 @@ class AsWrittenTests(unittest.TestCase):
                 else:
                     self.assertAlmostEqual(got, math.log10(z), places=12, msg=(k, model, e))
         # x0's one row sums to 0.999999, an offset; x1's three rows, x2's two
-        # and x3's four have sums of their own, factors over their parents.
+        # and x3's four have sums of their own, factors over their parents,
+        # x1's first, 1.000001, rounding and one in its factor.
         network, forced, offset = gen_bn.parse(str(net / 'as_written.uai'))
         self.assertEqual(forced, [('f0', 'ok'), ('f1', 'ok'), ('f2', 'ok')])
         self.assertEqual([network[2][f][0] for f, _ in forced], [['x0'], ['x1'], ['x1', 'x2']])

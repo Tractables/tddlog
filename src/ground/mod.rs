@@ -52,7 +52,7 @@
 //!      the program: `negation` (negated atoms unfolded under their
 //!      rules), `inline` (views), `aig` (equal gates merged),
 //!      `contexts` (choices read through a fact per context),
-//!      `classes` (row classes), `share` (switch sharing), `cover` (atoms
+//!      `rows` (the parameters a table's rows share), `cover` (atoms
 //!      certain by cover) and `condition` (what the evidence implies, with
 //!      `preprocess`'s backbones, in an acyclic program). The program
 //!      keeps the structure the last one leaves.
@@ -72,7 +72,6 @@
 
 mod aig;
 mod chain;
-pub(crate) mod classes;
 mod condition;
 mod contexts;
 pub(crate) mod cover;
@@ -98,9 +97,9 @@ mod program;
 mod propagation;
 mod relevant;
 mod renormalize;
+pub(crate) mod rows;
 mod schedule;
 pub(crate) mod shape;
-mod share;
 mod simplify;
 mod steps;
 pub(crate) mod structure;
@@ -575,10 +574,10 @@ fn finished(simplified: Simplified, opts: &GroundOptions, inline: bool) -> Groun
 /// ([`inline::views`]) and the atoms with an earlier atom's rules merged
 /// into it ([`aig::reduce`]; not again after the guards' conditioning),
 /// the choices read through a fact per context ([`contexts::choices`]),
-/// the row classes, switch sharing and the cover applied, and `gp`
-/// conditioned on its evidence on the exclusive sets these read
-/// ([`condition::on_evidence`]); what the conditioning took out and its
-/// factor, and `gp` left with its structure.
+/// the parameters the rows of its tables share ([`rows::share`]) and the
+/// cover applied, and `gp` conditioned on its evidence on the exclusive
+/// sets these read ([`condition::on_evidence`]); what the conditioning
+/// took out and its factor, and `gp` left with its structure.
 fn conditioned_on_structure(
     gp: &mut GroundProgram,
     mut structure: Structure,
@@ -600,22 +599,21 @@ fn conditioned_on_structure(
             structure = Structure::of(gp);
         }
     }
-    // The row classes, switch sharing, the cover and the conditioning read
-    // the exclusive sets; each reads them anew where the one before
-    // rewrote the program, and the program keeps them where the cover and
-    // the conditioning left it as it was. After the sharing, which renames
-    // facts alone, they are the sets before, renumbered
-    // ([`Structure::renumbered`]).
+    // The choices, the rows' shared parameters, the cover and the
+    // conditioning read the exclusive sets; each reads them anew where the
+    // one before rewrote the program, and the program keeps them where the
+    // cover and the conditioning left it as it was.
     let mut tables = Tables::of_structure(gp, structure);
     if opts.contexts && contexts::choices(gp, &mut tables) > 0 {
         tables = Tables::of_structure(gp, Structure::of(gp));
     }
-    if opts.classes && classes::row_classes(gp, &mut tables) {
-        tables = Tables::of_structure(gp, Structure::of(gp));
-    }
-    if let Some(map) = share::share_switches(gp, &mut tables, share::Sharing::Compile) {
-        tables = tables.renumbered(gp, &map);
-    }
+    let tables = rows::share(
+        gp,
+        tables,
+        rows::Target::Compile {
+            classes: opts.classes,
+        },
+    );
     let cover = cover::Cover::of(gp, &tables);
     let (conditioned, weight) =
         condition::on_evidence(gp, &tables, &cover, opts.backbones, opts.renormalize);
@@ -635,15 +633,13 @@ fn conditioned_on_structure(
 /// The program a weighted CNF writes ([`crate::cnf`]), from `gp` as the
 /// layouts compile it ([`crate::vtree::Kind::eliminated`]): its switches
 /// shared in every table whose rows exclude each other
-/// ([`share::Sharing::Exclusive`]), where the grounder shares them only
-/// where the compile gains; with its tables, which say which rules exclude
-/// each other and which facts are a table's own, and their cover, which
-/// says which exclusive sets are exhaustive.
+/// ([`rows::Target::Cnf`]), where the grounder shares them only where the
+/// compile gains; with its tables, which say which rules exclude each other
+/// and which facts are a table's own, and their cover, which says which
+/// exclusive sets are exhaustive.
 pub(crate) fn shared_for_cnf(mut gp: GroundProgram) -> (GroundProgram, Tables, cover::Cover) {
-    let mut tables = Tables::of_structure(&gp, (*gp.structure()).clone());
-    if let Some(map) = share::share_switches(&mut gp, &mut tables, share::Sharing::Exclusive) {
-        tables = tables.renumbered(&gp, &map);
-    }
+    let tables = Tables::of_structure(&gp, (*gp.structure()).clone());
+    let tables = rows::share(&mut gp, tables, rows::Target::Cnf);
     let cover = cover::Cover::of(&gp, &tables);
     (gp, tables, cover)
 }

@@ -829,7 +829,7 @@ fn a_program_with_nothing_to_order_matches_problog_round_after_round() {
         let run = bounded_alone(&gp, trial);
         assert!(run.attempts > 1, "{trial}: one attempt");
         assert!(
-            run.ground.atoms.iter().any(|a| a.name.starts_with("$e")),
+            run.ground.atoms.iter().any(|a| &*a.name == "$via"),
             "{trial}: no label atoms"
         );
         if trial.is_dynamic() {
@@ -2178,6 +2178,30 @@ fn a_first_turn_is_projected_from_half_its_target() {
         t.progress,
         vec![(1 << 30, 0.35), (1 << 31, 0.55), (1 << 32, 0.75)]
     );
+}
+
+#[test]
+fn an_attempt_that_ends_at_its_last_step_again_records_no_pace() {
+    // The doubling to 2^21 units brought the compile to its last step; the
+    // attempt at 2^22 was stopped in that step. Its record would put the
+    // pace at none; the trial is projected from the doubling before.
+    let attempts = |done| {
+        let mut t = Trial::new(Kind::Closed);
+        for (target, done) in [(1 << 20, 50), (1 << 21, done), (1 << 22, done)] {
+            t.target = target;
+            t.spent = target;
+            t.record(false, Some((done, 100)), None);
+        }
+        t
+    };
+    let t = attempts(99);
+    assert_eq!(t.progress, vec![(1 << 20, 0.5), (1 << 21, 0.99)]);
+    assert_eq!(t.ahead(SOONER), 0.0);
+    // A step short of its last, a doubling that finished none is the pace
+    // it measured.
+    let t = attempts(98);
+    assert_eq!(t.projected(), Some(f64::INFINITY));
+    assert_eq!(t.ahead(SOONER), PROJECTED_DOUBLINGS);
 }
 
 #[test]

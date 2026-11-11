@@ -229,18 +229,13 @@ function familyTable(v, name) {
       : element("th", { scope: "row" }, title(f.family)),
     f.families ? element("td") : programCell(type(f.family[0]), group(f.family)),
     ...[count(f.n), count(f.vs.answers), duration(f.vs.total), count(f.vs.tddlog_answers), duration(f.vs.tddlog_total), speedCell(f.vs)].map(num))));
-  const table = element("table", { class: `board fams-tr${v.families.length > FAMILY_ROWS ? " folded" : ""}` },
+  const table = element("table", { class: "board fams-tr" },
     head2(["family"], ["program", "Opens the family's view on its program, with the programs both read"], ["instances", null, "num"],
       { group: name, cols: [["answers", null, "num"], ["total", par, "num"]] },
       { group: me, cols: [["answers", null, "num"], ["total", par, "num"], [speedName("faster"), `${me}'s speed-up, a dash where there is nothing to measure`, "num"]] }), body);
   // past the first rows, the rest on asking
-  const more = v.families.length > FAMILY_ROWS ? element("button", { type: "button", class: "plain more-rows", "aria-expanded": "false", onclick: () => {
-    const open = table.classList.toggle("folded") === false;
-    more.setAttribute("aria-expanded", String(open));
-    more.textContent = open ? `Only the first ${FAMILY_ROWS} families` : `All ${count(v.families.length)} families`;
-  } }, `All ${count(v.families.length)} families`) : null;
-  return [scroller(stacked(table), "whole"), more,
-    readLine(v.read)];
+  return [scroller(stacked(table), "whole"), moreRows(table, v.families.length, FAMILY_ROWS, "families"),
+    readLine(v.read)].filter(Boolean);
 }
 
 // The tabs of a baseline's page, by the ids a link names (#/baselines/X/TAB;
@@ -643,7 +638,7 @@ const WALKS = [
       read: "A ProbLog file is the program as it stands: there is nothing to translate.",
       parse: "The 14 edges as probabilistic facts, the two rules of `path/2` (the second reads `path` itself) and six queries `path(1,Y)`.",
       ground: "Only the paths from node 1 are ground, since the queries need no others. They form one cyclic component of six atoms, round the graph.",
-      rewrite: "The recursion is linear, so tddlog writes it out: the cycle's atoms are eliminated one at a time, as in Floyd and Warshall's algorithm. Eight acyclic components are left.",
+      rewrite: "The recursion is linear, so tddlog writes it out: the cycle's atoms are eliminated one at a time, as in Floyd and Warshall's algorithm, `path(1,3)` first. `'$via'(path(1,2),path(1,4),2)` holds where a path leads from 2 to 4 whose inner nodes are among the first two eliminated, 3 and 6. Eight acyclic components are left.",
       layout: "`auto` gives this program one trial, `dynamic`, and it finished in its first attempt. The vtree is right-linear over a min-fill order of the 12 edges.",
       compile: "Each atom's formula over the edges is built by TDD operations, in dependency order. The largest, `path(1,6)`, has 79 pairs. No cycle is left, so no fixpoint runs.",
       evidence: "There is no evidence, so each query was counted during the compile.",
@@ -871,7 +866,7 @@ const TP_PAPER = ["Tp-compilation", "Vlasselaer, Van den Broeck, Kimmig, Meert a
 const GAINS = [
   ["tddlog", "optimizations in the pipeline", null, "mine"],
   ["tididi", "highly optimized kernels", "https://github.com/Tractables/tididi", "lib"],
-  ["TDDs", "superpolynomial advantage over OBDDs", "https://arxiv.org/abs/2604.05537", "tdd", "A Canonical Generalization of OBDD"],
+  ["TDDs", "superpolynomial advantage over OBDDs", "https://doi.org/10.4230/LIPIcs.SAT.2026.10", "tdd", "A Canonical Generalization of OBDD"],
 ];
 
 // The example the first two optimizations read: its program and its answer.
@@ -958,7 +953,7 @@ const OPTIMIZATIONS = [
   },
   {
     title: "Evidence once, then every query",
-    lines: ["One compile for the evidence, and every query is read off it."],
+    lines: ["The evidence's TDD is built and counted once, and each query is counted against it."],
     show: [{ head: ["", ""], rows: [
       ["evidence", "one TDD, built once along the vtree"],
       ["a query q that is a variable of the evidence's TDD", "one backward pass"],

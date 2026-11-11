@@ -9,7 +9,7 @@
 //! takes it out of the bodies that read it.
 //!
 //! The case in point is a table whose rows all hold one distribution:
-//! [`super::classes`] reads it through one class atom with a rule per
+//! [`super::rows`] reads it through one class atom with a rule per
 //! context, and the contexts cover the parents' values. The class atom is
 //! certain, and the table has no parents left. bn_barley's aar_mod and
 //! spndx are such tables; taking their parents away halves bn_barley_ev's

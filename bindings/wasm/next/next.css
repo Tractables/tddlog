@@ -44,9 +44,6 @@ nav.tabs a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2p
 nav.tabs .n { margin-left: 0.35rem; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
 nav.tabs + .panel { margin-top: 0.6rem; border-top: 0; }
 .panel { margin-top: 1rem; padding-top: 0.1rem; border-top: 1px solid var(--line); scroll-margin-top: 0.5rem; }
-/* a long table's rows past its first, shown on asking */
-table.folded tr.more { display: none; }
-button.more-rows { margin: 0.4rem 0 0.2rem; font-size: 13px; }
 .panel > h3 { margin-top: 0.6rem; }
 .panel.split > h3 { font-size: 1.05rem; }
 .results h3.every { margin-top: 2.2rem; padding-top: 0.6rem; border-top: 1px solid var(--line); }

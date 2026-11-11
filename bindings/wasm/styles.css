@@ -1056,9 +1056,13 @@ table.board thead th.group { color: var(--ink); font-weight: 600; text-align: ce
 /* A speed-up's name, a link to the methods table that defines it (speedName). */
 a.defined { color: inherit; text-decoration: underline dotted; text-underline-offset: 2px; }
 svg a.defined text { text-decoration: underline dotted; }
-.finding-text { max-width: 80ch; font-size: 14px; }
-ul.losses { max-width: 80ch; margin: 0; padding-left: 1.2rem; font-size: 14px; }
-ul.losses li { margin: 0.3rem 0; }
+/* A long table's rows past its first, shown on asking (moreRows). */
+table.folded tr.more { display: none; }
+button.more-rows { margin: 0.4rem 0 0.2rem; font-size: 13px; }
+/* The instances where another system is faster (fasterOn): each one's name in
+   the code face, tddlog's failure in the grid's shade for no answer. */
+table.board.leads tbody th a code { padding: 0; background: none; color: inherit; font-size: 12.5px; }
+table.board.leads td.fail { background: var(--fail-fill); }
 /* Numbers in cells of their own, each under its label (cells). */
 .cells { display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin: 0.6rem 0; }
 .cell { display: flex; flex-direction: column; min-width: 4.5rem; }
@@ -1105,11 +1109,6 @@ div.facts dd { max-width: 80ch; min-width: 0; overflow-wrap: anywhere; }
 /* A section a link scrolled to, marked for a moment. */
 .reached { animation: reached 1.6s ease-out; }
 @keyframes reached { from { background: var(--accent-fill); } to { background: transparent; } }
-
-.findings { display: grid; gap: 0.6rem; }
-.finding { margin: 0; padding: 0.7rem 0.9rem; border: 1px solid var(--line); border-radius: 6px; background: var(--card); font-size: 14px; }
-.finding summary { color: var(--ink); font-size: 14px; font-weight: 600; }
-.finding p { max-width: 80ch; }
 
 /* A plot and its legend. Each system has its colour in every plot. */
 figure.plot { margin: 0 0 0.5rem; min-width: 0; }
@@ -1229,6 +1228,10 @@ table.grid tbody th .n { color: var(--muted); font-family: var(--sans); }
 table.grid tbody tr.on th { background: var(--accent-fill); }
 table.grid td { min-width: 3.2rem; height: 1.9rem; padding: 0; text-align: center; font-family: var(--mono); }
 table.grid td.mine { border-left: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+/* the system the view sets against tddlog's: its name on the accent's fill, its column framed lighter than tddlog's */
+table.grid thead th.vs { background: var(--accent-fill); color: var(--accent-ink); font-weight: 700; }
+table.grid td.vs { border-left: 2px solid color-mix(in oklab, var(--accent) 45%, var(--line)); border-right: 2px solid color-mix(in oklab, var(--accent) 45%, var(--line)); }
+table.grid td.none.vs { background: repeating-linear-gradient(135deg, var(--accent-fill) 0 4px, var(--line) 4px 5px); }
 table.grid td.none { background: repeating-linear-gradient(135deg, transparent 0 4px, var(--line) 4px 5px); }
 table.grid td button {
   display: block;

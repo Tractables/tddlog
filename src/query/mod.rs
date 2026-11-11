@@ -256,7 +256,7 @@ impl QueryEvaluation {
     }
 
     /// Whether the phase may start over with a walk that puts nothing off
-    /// ([`crate::evaluation::Evaluation::walk_again`]): its walk sums out,
+    /// ([`crate::evaluation::Evaluation::run`]): its walk sums out,
     /// has put items off, and holds no formula taken from the compile.
     pub(crate) fn walks_again(&self) -> bool {
         self.walk.walks_again() && !self.took

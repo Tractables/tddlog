@@ -64,7 +64,7 @@ fn check_text(file: &str, source: &str, expected: &[(&str, f64)]) {
         indicated(file, source, expected, true, strategy, Rows::Apart);
     }
     // Nor may row classes (the default): in each world at most one of the
-    // rows that read a class holds (src/ground/classes.rs).
+    // rows that read a class holds (src/ground/rows.rs).
     for (indicators, strategy) in [
         (false, Strategy::Trial(Kind::Closed)),
         (false, Strategy::Auto),

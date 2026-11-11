@@ -15,7 +15,8 @@
 //! error. Zero-probability heads are dropped, a row with one certain value
 //! is a plain rule, and a row that sums to one up to the rounding of its
 //! decimals is divided by its sum (`rows.rs`); a UAI file's rows are read
-//! as written instead, their sums kept as factors. The rules come in the
+//! as written instead, their sums kept as factors where they are more than
+//! rounding or where a table's rows all have one. The rules come in the
 //! order of a depth-first walk from each variable in turn to its parents.
 //!
 //! What tddlog answers is that program's rows of the variables the queries
@@ -32,7 +33,8 @@
 //! whose functions are the conditional tables of a Bayesian network, up to
 //! the rounding of their decimals, is read as that network. A table whose
 //! rows do not all sum to one is its rows divided by their sums times the
-//! factor of those sums over its parents. Any other `MARKOV` network's
+//! factor of those sums over its parents, in which a row that sums to one
+//! up to rounding has one where the sums differ. Any other `MARKOV` network's
 //! variables get uniform priors, times their unary factors normalized.
 //! Every other factor `f` becomes a variable `fJ` of one value `ok`,
 //! observed, whose row for each assignment of its scope holds the factor's
@@ -183,7 +185,7 @@ pub struct NetworkProgram {
     /// The program's text.
     pub program: String,
     /// For a UAI `MARKOV` network, or a `BAYES` one whose rows do not all
-    /// sum to one, `log10 Z - log10 P(e)`: the base-10
+    /// sum to one up to rounding, `log10 Z - log10 P(e)`: the base-10
     /// logarithm of the partition function given the evidence is the
     /// program's `log10 P(e)` plus this.
     pub log10_offset: Option<f64>,
@@ -512,7 +514,7 @@ impl Network {
                     last = Some(probs);
                     row.clear();
                     row.extend_from_slice(probs);
-                    rows::normalized(&mut row).map_err(|e| {
+                    let distribution = rows::normalized(&mut row).map_err(|e| {
                         let at: Vec<&str> = key
                             .iter()
                             .zip(&t.parents)
@@ -533,7 +535,10 @@ impl Network {
                     match heads[..] {
                         // No value under this row: no rule.
                         [] => {}
-                        [(p, u)] if (p - 1.0).abs() < 1e-9 => head.push_str(&atoms[v][u]),
+                        // The one value of a distribution is certain; a
+                        // lone value of a row short of one, or of a
+                        // factor's, keeps its number.
+                        [(_, u)] if distribution => head.push_str(&atoms[v][u]),
                         _ => {
                             for (j, &(p, u)) in heads.iter().enumerate() {
                                 if j > 0 {

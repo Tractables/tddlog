@@ -88,7 +88,10 @@ library caller alike.
    ([Queries in groups](#queries-in-groups-srcsolvesplitrs-split_check)).
 3. **Rewrite.** Linear recursion is written without recursion
    (`src/ground/eliminate.rs`, `ground::without_linear_recursion`) and the
-   acyclic result finished again. Every layout compiles the rewrite
+   acyclic result finished again: the recursive atoms are eliminated one
+   at a time, as in Floyd and Warshall's algorithm, each defined from the
+   atoms eliminated after it, and an atom `'$via'(I, J, K)` says that `J`
+   follows from `I` through the first `K` atoms eliminated (step 12). Every layout compiles the rewrite
    (`Kind::eliminated`, the first step of `Kind::rewrite`); `auto` chooses
    its trials from the program as grounded and writes it once for all of
    them. A layout may then read derived atoms through *indicators*
@@ -163,7 +166,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
 | `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice/`, a Dice program read as the program its symbolic evaluation writes (`tokens.rs`, `syntax.rs`, `values.rs`, `translate.rs`); `circulette.rs`, a Circulette netlist read as its gates' rules with a fault on each logic gate |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
-| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `classes.rs`, `share.rs`, `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
+| `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `rows.rs` (row classes and switch sharing), `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
 | `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, its eliminations (min-fill, weighted min-fill, in a given order), an elimination order annealed, the minor-min-width bound, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies, tested in `tests/copies.rs`), `closed.rs` with `order.rs`, `families.rs` with `nest.rs` (a group's block), `decision.rs` (with the names of its tree's contexts, of the atoms read outside it and of the atoms read beside those): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them, and `chained`, the wide bodies written as chains along `program`'s order |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `trace.rs`: `CompileTrace`, each component's compile as a trace records it; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
@@ -448,7 +451,7 @@ A predicate without clauses is not read as false: a query or an
 observation of one, and a call of one that is not a built-in above in a
 clause the queries and the evidence reach, is refused, as ProbLog refuses
 it ("No clauses found"), so that a misspelt name or a built-in of
-ProbLog's that tddlog does not evaluate (`write/1`, `call/1`) stops the
+ProbLog's that tddlog does not evaluate (`write/1`, `functor/3`) stops the
 run rather than give a wrong probability. ProbLog refuses a call only
 once its resolution reaches it, and answers where the call comes after a
 literal that never holds; tddlog, which checks predicates, refuses that
@@ -558,14 +561,17 @@ a unit in the most significant digits any entry of the row has
 10000/10001 and 1/10001 to four digits), and the gap of the decimals'
 exact sum is compared with the sum of these. An excess may equal that
 slack, entries rounded up by half a unit each (`0.160598, 0.839403` in
-the UAI 2006 networks); a shortfall must be under it. An excess also
-divides the row where it is at most `(n + 1) 2^-24` for `n` entries, the
-error of a row computed in single precision, its entries rounded to
-floats and divided by their sum of `n - 1` rounded additions: the UAI
-classics write such rows to eight decimals, diagnose_b's `0.94297521,
-0.05702495` over one by 1.6e-7. Otherwise a shortfall is the
+the UAI 2006 networks); a shortfall must be under it. A gap either way
+also divides the row where it is at most `(n + 1) 2^-24` for `n`
+entries, the error of a row computed in single precision, its entries
+rounded to floats and divided by their sum of `n - 1` rounded additions:
+the UAI classics write such rows to eight decimals, diagnose_b's
+`0.94297521, 0.05702495` over one by 1.6e-7, emdec6g's and tcc4e's short
+of it by up to 8e-8 and 1.6e-7. Otherwise a shortfall is the
 table's own, its mass left to no value as in ProbLog, and an excess is an
-error. The script decided by the same rule, but for the excess of single
+error. A row of one entry is that number and no sum: it rounds to
+nothing, and is one only where its entry is. The script decided by the
+same rule, but for the gaps of single
 precision, which it refused past 1e-9, and an excess equal to the slack,
 which it refused, and the two decide alike on every
 row of every network the script read. `--rescale` divides
@@ -573,10 +579,15 @@ every row by its sum first, for Ace's tables in percent or as weights.
 A UAI file is the exception: its functions are read as written, since
 the PR task's `Z` is their product, so each table is split into its rows
 divided by their sums (`rows::split`) and the factor of those sums over
-its parents, which the next paragraph's factors hold. A row within a few
-units of roundoff of one stays as it is; a table whose rows all have one
-sum (`0.3333333` three times) needs no variable, only the offset.
-`--rescale` is refused for a UAI file.
+its parents, which the next paragraph's factors hold. Rounding is not
+structure: where a table's sums differ, a row that sums to one up to the
+rounding above has one in that factor, as the network the file writes
+means, so that a factor that varies by rounding alone is none and a
+program does not observe a variable for each such row. A row within a
+few units of roundoff of one stays as it is; a table whose rows all have
+one sum (`0.3333333` three times) keeps it, which needs no variable,
+only the offset, and keeps `Z` exact. `--rescale` is refused for a UAI
+file.
 
 **Markov networks** (`uai.rs`). A `MARKOV` file whose functions are each
 a conditional table of one variable of its scope, one function per
@@ -594,7 +605,7 @@ program's `P(e)` times `10^c`, where `c` sums the base-10 logarithms of
 the priors' sums, the factors' largest entries and the constants, is the
 partition function given the evidence: the program states `c` on its
 first line, and the binary prints `Z:` for a `MARKOV` file, or a `BAYES`
-one whose rows do not all sum to one, where it would print `P(e):` ([The probability of the
+one whose rows' sums leave a factor, where it would print `P(e):` ([The probability of the
 evidence](#evidence-and-queries-srcquery-srceval)). Under `--no-queries`
 without observations, a network of Potts tables over pairs of variables of
 `k` values each (a graph colouring) has its colour symmetry broken: one
@@ -619,7 +630,7 @@ CNF in DIMACS for a weighted model counter, after every pass of the
 grounder (steps 5 to 11: the conditioning, backbones and equal facts,
 equal gates, bits over values, defined facts eliminated) but the row
 classes. The switches of every table whose rows exclude each other are
-shared first, in any number of parents (`share::Sharing::Exclusive`), so
+shared first, in any number of parents (`rows::Target::Cnf`), so
 that a table's equal entries are one fact; that is what the row classes
 give the compile, without their atoms, which cost the CNF a variable per
 class and a clause per row, an entry of one's included. Each fact is a variable weighed as the fact; each derived
@@ -690,7 +701,7 @@ are skipped. Several steps have a program in `examples/` that shows them.
 | 4 | `engine/` (`lists.rs`, `topdown.rs`) | stratified semi-naive bottom-up grounding, probabilistic findalls, or top-down grounding from the queries |
 | 5 | `simplify.rs`, `values.rs`, `noisy_or.rs` | certain atoms propagated, equal atoms merged, relevance, facts read as variables; variables held as bits written over their values; tables of one atom written as noisy-ors |
 | 6 | `exclusive.rs`, `negation.rs`, `inline.rs`, `aig.rs`, `contexts.rs` | exclusive sets; negated atoms unfolded; views; equal gates; choices read under exclusive contexts |
-| 7 | `classes.rs`, `share.rs` | row classes; switch sharing |
+| 7 | `rows.rs` | the parameters a table's rows share: row classes, switch sharing |
 | 8 | `cover.rs` | atoms certain by cover |
 | 9 | `condition.rs`, `preprocess/backbone.rs`, `renormalize.rs` | conditioning on the evidence: unit propagation, backbones, gates, renormalized rows |
 | 10 | `detach.rs` | evidence no query depends on dropped |
@@ -699,8 +710,8 @@ are skipped. Several steps have a program in `examples/` that shows them.
 
 0. **The heads' order** (`normalize::ordered_heads`). The chain of
    switches of an annotated disjunction (step 1) follows its heads'
-   order, and the passes that compare rows, the row classes and the
-   switch sharing (step 7), find two rows of one distribution alike only
+   order, and the pass that compares rows, for its classes and its
+   shared switches (step 7), finds two rows of one distribution alike only
    where their heads come in one order. Once the terms are lowered, the
    heads of every disjunction are put in an order that every disjunction
    keeps: numbered in the order they are first read, the heads go in a
@@ -747,7 +758,11 @@ are skipped. Several steps have a program in `examples/` that shows them.
    `chain_weights`), never `1 - q`: a tail after a head of nearly all the
    mass left keeps its mass. Switch predicates have no rules; their
    ground atoms are the random variables. A value that takes all the mass
-   left has no switch, and a head of probability zero none either.
+   left has no switch, and a head of probability zero none either. Two
+   heads or more whose masses sum to one within 1e-8, the rounding of the
+   numbers as written, leave nothing to no head (`SUM_TOLERANCE`); a
+   single head's probability is a number and no sum, so `0.999999995::a`
+   leaves `a` false with 5e-9 (`normalize::whole`).
    A clause with flexible probabilities has a switch per head, whose
    arguments end with every head's probability (a term the body computes
    is bound by an `is` after the body); its weights are a
@@ -880,10 +895,14 @@ are skipped. Several steps have a program in `examples/` that shows them.
    called with variables of its own call, directly or not, a call that
    did. The
    resolution emits the ground instances of the clauses it
-   used, which the grounder then grounds as a program without variables;
-   they count against the grounding bound, and a call or a term with
-   variables nested deeper than 1 000 gives the grounding up with the
-   goal that reached it. A program whose rewrite reads a findall inside a
+   used, which the grounder then grounds as a program without variables.
+   The resolution keeps its own stack on the heap, a frame for each
+   table being resolved and, for each literal of its clause, the
+   alternatives left, so that calls nest as deep as the tables made
+   allow: the tables, answers, rules and literals resolved count against
+   the grounding bound, and a term with variables nested deeper than
+   1 000 gives the grounding up with the goal that reached it. A program
+   whose rewrite reads a findall inside a
    recursion is resolved top-down too: two calls of one predicate with
    one binding pattern share a demand, which can close a loop through a
    findall's goal that the calls themselves do not close (ProbLog's urn
@@ -1201,11 +1220,10 @@ are skipped. Several steps have a program in `examples/` that shows them.
    table reads: an annotated disjunction without a body, normalized to a
    chain of switches. Where every rule that reads an atom of a choice
    reads one, positively, and the rest of every two such bodies clash
-   (each reads a different atom of one exclusive set, or the bodies are
-   compared two by two up to `MOST_COMPARED` readers), each reading rule
-   reads a fact of its own in place of the atom, of the atom's
-   probability, and the choice goes. At most one context holds in a
-   world, and where one does, the atom it read depends on facts nothing
+   (`Tables::exclusive`, the test step 7 makes of a table's rows), each
+   reading rule reads a fact of its own in place of the atom, of the
+   atom's probability, and the choice goes. At most one context holds in
+   a world, and where one does, the atom it read depends on facts nothing
    else reads, so the fact has the same effect. A choice is read so where
    it saves at least as many literals as it adds facts. Dice's `iterate`
    writes a step that draws a value and observes a function of it and a
@@ -1213,33 +1231,63 @@ are skipped. Several steps have a program in `examples/` that shows them.
    under one key is then one fact, not the chain of switches before its
    letter, and switch sharing then makes the facts of one probability
    one. The exclusive sets are found again after it.
-7. **Row classes** (`classes.rs`; `examples/row_classes.pl`). The rows of
-   a table that hold one distribution read it through a class atom, one
-   rule per row, and the table's rules for the class read it and the
-   switches of its first row. A table is rewritten where it has fewer than
-   half as many classes as rows (`CLASS_GAIN`) and some class has
-   switches. Tables of one parent are left alone, since a split on the
-   parent already reads them a row at a time. A table whose rows lie on
-   long spines (*Bodies of facts alone*, under Compilation) is rewritten
-   too, with up to `MOST_SELECTORS` classes and one per row if need be
-   (`SPINE_ROWS`, `OWN_VALUE_FROM`): a class atom then selects its rows,
-   and the table over the classes is split on them, its parts side by
-   side. A noisy-or over facts is left alone: its class atoms would be
-   copies of the facts and split one component into many.
+7. **The parameters a table's rows share** (`rows.rs`;
+   `examples/row_classes.pl`, `examples/shared_rows.pl`). A row is the
+   rules of a table with one context, the literals that are not the
+   table's own facts. One analysis per table finds:
+   - whether every two of its rows exclude each other
+     (`Tables::exclusive`): at once where the atoms the contexts read of
+     the exclusive sets that each reads one atom of differ from row to
+     row, two by two up to `MOST_COMPARED` rows otherwise;
+   - its *classes*, the rows of one distribution: the same heads over
+     switches of the same probabilities in the same places, every two
+     rows of a class exclusive;
+   - its shared switches (local flip-hoisting, Theorem 1 of Cheng et
+     al.): where its rows exclude each other, the k-th switch of
+     probability p of each unit is one fact, a unit being a named class
+     or a row. A switch two units read keeps its fact, and rows that can
+     hold together keep switches of their own
+     (`examples/shared_rows.pl`).
 
-   Then **switch sharing** (`share.rs`, local flip-hoisting, Theorem 1 of
-   Cheng et al.): in a table whose rows exclude each other, the k-th switch
-   of probability p of every row is one fact. A table shares where it has
-   one parent (its rows are the parent's values or its row classes), at
-   least `MIN_ROWS` rows, a quarter of its switches merged away
-   (`MIN_MERGED`), and, where the parent reads no fact, at least two rules
-   per row in the parent (`MIN_RULES_PER_ROW`). A shared fact read in two
-   parts of a split table keeps them on a spine instead of side by side,
-   so elsewhere sharing costs more than it saves. Rows that can hold
-   together keep switches of their own (`examples/shared_rows.pl`). The
-   weighted CNF (`--cnf`) shares in every table whose rows read one atom
-   of each of the same exclusive sets, whatever its size: a model
-   counter has no spine to keep.
+   A table some atom of which depends on another of its atoms is left
+   alone. What is written depends on the program's reader
+   (`rows::Target`). The weighted CNF (`--cnf`) has no layout: every
+   table whose rows exclude each other shares its switches, in any number
+   of parents, the rows of a class all of theirs, and no class is named,
+   which would cost a variable per class and a clause per row. The
+   compile makes two decisions, each in one place:
+   - *Classes named* (`classes_of`): a class's rows read a class atom,
+     one rule per row, and the table's rules for the class read it and
+     the switches of its first row. A table's classes are named where it
+     has fewer than half as many classes as rows (`CLASS_GAIN`) and some
+     class has switches. Tables of one parent are left alone, since a
+     split on the parent already reads them a row at a time. A table
+     whose rows lie on long spines (*Bodies of facts alone*, under
+     Compilation) is rewritten too, with up to `MOST_SELECTORS` classes
+     and one per row if need be (`SPINE_ROWS`, `OWN_VALUE_FROM`): a class
+     atom then selects its rows, and the table over the classes is split
+     on them, its parts side by side. A noisy-or over facts is left
+     alone: its class atoms would be copies of the facts and split one
+     component into many.
+   - *Switches shared* (`compile_shares`): where the units are the values
+     of the table's one parent, or its named classes with every two of
+     its rows exclusive; they are at least `MIN_ROWS`; a quarter of the
+     table's switches merge away (`MIN_MERGED`); and, where the units read
+     no fact, they have at least two rules each (`MIN_RULES_PER_ROW`). A
+     shared fact read in two parts of a split table keeps them on a spine
+     instead of side by side, so elsewhere sharing costs more than it
+     saves.
+
+   The program is then compacted once; its exclusive sets are found again
+   where classes were named, and renumbered where only switches were
+   shared. Two passes beside it read rows too and stay apart, since each
+   asks something else. The choices before it (step 6) are read on the
+   reader's side: a choice read under exclusive contexts becomes a fact
+   per reading rule, the reading table's own, which this pass then
+   shares, by the same test of exclusive contexts. The cover after it
+   (step 8) decides the validity of any derived atom's bodies: a table of
+   one class reads one class atom whose contexts cover its parents'
+   values, and the cover finds that atom certain.
 8. **Certain by cover** (`cover.rs`; `examples/cover.pl`). A derived atom
    whose rule bodies together are valid is certain and leaves the bodies
    that read it. Validity is decided by merging bodies equal but for one
@@ -1397,25 +1445,45 @@ are skipped. Several steps have a program in `examples/` that shows them.
     atom and a source `s`, an edge `b → h` labelled `L` for a rule
     `h :- b, L`, and `s → h` for a rule that reads no atom of the
     component; `h` holds exactly when a path from `s` to `h` has every
-    label true. Eliminating node `k` adds `label(i → k) ∧ label(k → j)` to
-    `label(i → j)` (Floyd and Warshall, one world at a time), and then
-    `v_k ⇔ A(k) ∨ ⋁_{j after k} v_j ∧ L(j, k)`: each atom reads only atoms
-    eliminated after it, so the program is acyclic, and the atoms keep
-    their names (a label of several bodies becomes an atom `$e(n)`). The
-    order is greedy on fill, the atoms read outside the component last;
-    past `MAX_PRODUCTS` label products the rest stays recursive. Steps 5
-    to 11 then run again, without step 6's views and equal gates
-    (`finish` with `inline` false): the elimination keeps its atoms apart
-    on purpose, and inlining would multiply them out. This is Gaussian
-    elimination for the algebraic path problem (Tarjan, JACM 1981) used
-    as cycle breaking, for linear positive recursion only: unlike
-    Janhunen's translation of normal programs (ECAI 2004) it adds no rank
-    variables, and unlike ProbLog 2's proof-based cycle breaking no
-    per-context copies. It is faster than the compile's Tp iteration on
-    the same program on the random graphs and grids, which the iteration
-    can run out of memory on.
+    label true. The nodes are eliminated one at a time, and a label keeps
+    one meaning throughout: `label(i → j)` holds where `j` follows from `i`
+    through a chain of the component's rules whose intermediate atoms are
+    all eliminated. On a path program, with atoms `path(X, t)` for a fixed
+    target `t` (or `path(1, Y)` from a fixed source), that is
+    `reach(i, j, S)`: a path from `i` to `j` whose inner nodes all lie in
+    `S`, the nodes eliminated so far. Eliminating node `k` is Floyd and
+    Warshall's step, one world at a time:
+
+    ```text
+    reach(i, j, S+k) :- reach(i, j, S).                  % avoids k
+    reach(i, j, S+k) :- reach(i, k, S), reach(k, j, S).  % passes through k
+    ```
+
+    and `v_k ⇔ A(k) ∨ ⋁_{j after k} v_j ∧ L(j, k)` is the eliminated atom's
+    definition: each atom reads only atoms eliminated after it, so the
+    program is acyclic, and the atoms keep their names. A label of several
+    bodies that is conjoined with another becomes an atom named for its
+    meaning, `'$via'(I, J, K)`: `J` follows from `I` through the first `K`
+    atoms of the component's order (`I` is `true` for the source), which
+    `--ground` prints as a comment. Every atom the elimination makes is a
+    definition, fixed in every world by the facts, so models, counts and
+    probabilities carry over: it adds no rank variables (Janhunen's
+    translation of normal programs, ECAI 2004), no guessed atoms and no
+    per-context copies (ProbLog 2's proof-based cycle breaking). The
+    labels share their parts, so the output is a circuit: on a complete
+    graph of `n` nodes about `n³/3` label products, while the simple paths
+    they cover are exponentially many (5 from one node of K4 to another,
+    109 601 in K10). The order is greedy on fill, the atoms read outside
+    the component last; past `MAX_PRODUCTS` label products the rest stays
+    recursive. Steps 5 to 11 then run again, without step 6's views and
+    equal gates (`finish` with `inline` false): the elimination keeps its
+    atoms apart on purpose, and inlining would multiply them out. This is
+    Gaussian elimination for the algebraic path problem (Tarjan, JACM
+    1981) used as cycle breaking, for linear positive recursion only. It
+    is faster than the compile's Tp iteration on the same program on the
+    random graphs and grids, which the iteration can run out of memory on.
     `tddlog --ground --vtree closed examples/cycle_graph.pl` prints the
-    acyclic program.
+    acyclic program, the order of the elimination first.
 
 ## Queries in groups (`src/solve/split.rs`, `split_check`)
 
@@ -1550,7 +1618,8 @@ would meet the copies below that free of the inputs.
 
 **Network files.** A network's row whose gap from one the rounding of its
 entries explains (`0.3333333` three times) is rescaled, or for a UAI
-file split into the row over its sum and a factor
+file split into the row over its sum and a factor, of one for such a row
+where a table's sums differ
 ([Network files](#network-files-srcnetwork)); a row like `0.5, 0.499` is
 kept, and its missing mass goes to no value as in ProbLog. Rows that do
 not sum to one fall outside the clause encoding.
@@ -2031,7 +2100,19 @@ work the stop lost: once after a turn that ended at a step, and where one
 step outweighs a turn, so that each try of it has at least twice the work
 of the last and the work it wastes is at most what it finally takes
 (rus_20_40, whose last join of 3.3 G units was otherwise stopped at
-2.1 G and given 2.1 G again). Ended inside an operation, as turns once
+2.1 G and given 2.1 G again). The target so raised is the level the
+next attempt brings the trial to, which its place in the turns counts;
+where the target only passed what the trial had spent and the room went
+into the attempt besides, trials whose later components outgrow the
+earlier ones took turns early and were refused memory, freeing the
+others' work (Alea.jl's trueskill and spacex circuits, 1.5 times the
+work). An attempt that ends at its phase's last step, as the record
+before it did, records no pace (`Trial::record_progress`): the share of
+a phase moves only when a step finishes, and at its last step only when
+the phase does, so that its record would put the pace of a trial one
+step from its finish at none, the most doublings past its target (1vfy,
+whose last join of 25.8 G units the guard stopped at 25.77 G). Ended
+inside an operation, as turns once
 were, every turn started its loop of clauses over (TPC-H's q7, whose
 formula is one loop of hundreds of bodies), or the walk's join under way.
 
@@ -2166,8 +2247,11 @@ one whose operation the guard cut short has nothing to resume and keeps
 its target (`Trial::lose_weight`).
 
 **Refusals.** A walk that sums out and is refused starts over first,
-once, putting nothing off (`Evaluation::walk_again`, under Put-offs
-below). Beyond that, memory goes to the trial that has spent the most. An
+once, putting nothing off, within the attempt, which goes on in its turn
+(`Evaluation::run`, under Put-offs below): its trial keeps its place in
+the turns, where a walk begun again at a later turn waited behind trials
+far from their finish (1rfs, whose walk outgrew an index at 9085 of its
+9086 steps). Beyond that, memory goes to the trial that has spent the most. An
 operation refused memory, by the allocator or tididi's byte budget,
 while other trials hold what their attempts built, frees that
 (`Trial::release`) where the refused trial has spent more work than each
@@ -2467,7 +2551,7 @@ density than the compile's (`QUERY_ROUTE`).
   fails conjoins them. On a right-linear vtree the observations otherwise
   each join a growing result.
   A walk that sums out (P(e) alone) and is refused memory or outgrows an
-  index starts over once putting nothing off (`Evaluation::walk_again`):
+  index starts over once putting nothing off (`Evaluation::run`), within the attempt:
   a factor put off keeps its variables unsummed until it meets the
   result, whose pairs then multiply with each factor (the UAI 2022 PR
   proteins 1cxy, 1fas, 1nkd and 1svy under `families:0`). Elsewhere
@@ -2623,7 +2707,7 @@ binary grounds with it off under the option. The line is
 `P(e):<tab>p<tab>log10 l`; below the least normal float the mantissa and
 exponent of `p` are read off the logarithm. Inconsistent evidence prints
 `0` and `-inf`, none `1` and `0`. For a UAI `MARKOV` file, or a `BAYES`
-one whose rows do not all sum to one, the binary
+one whose rows' sums leave a factor, the binary
 prints the partition function given the evidence instead,
 `Z:<tab>z<tab>log10 l`: `P(e)` times ten to the offset the reader computes
 ([Network files](#network-files-srcnetwork)), the UAI PR task. The
