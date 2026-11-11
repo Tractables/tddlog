@@ -247,7 +247,7 @@ function drawn(page) {
       assert.deepEqual(await page.$$eval(".gains > *", (xs) => xs.map((x) => (x.className === "times" ? "×" : x.querySelector("b").textContent))),
         ["tddlog", "×", "tididi", "×", "TDDs"], "why: the three gains");
       assert.deepEqual(await page.$$eval(".gains a", (as) => as.map((a) => a.getAttribute("href"))),
-        ["https://github.com/Tractables/tididi", "https://arxiv.org/abs/2604.05537"], "why: the library and the paper");
+        ["https://github.com/Tractables/tididi", "https://doi.org/10.4230/LIPIcs.SAT.2026.10"], "why: the library and the paper");
       const cards = await page.$$eval("section.opt:not(.example)", (ss) => ss.map((s) => ({
         k: s.querySelector("h3 .k").textContent, shows: s.querySelectorAll(".show pre, .show table").length,
         design: s.querySelectorAll('p.links a[href*="/docs/design.md#"]').length,

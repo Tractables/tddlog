@@ -1563,9 +1563,9 @@ function fasterOn(c, rows, me) {
       num(mine === null ? `≥ ${times(lead, 1, true)}` : times(lead, 1)));
   }));
   const table = element("table", { class: "board leads" }, element("thead", {}, element("tr", {},
-    element("th", { scope: "col" }, "instance"), element("th", { scope: "col" }, "faster system"),
+    element("th", { scope: "col" }, "instance"), element("th", { scope: "col" }, "system"),
     element("th", { scope: "col", class: "num" }, "its time"), element("th", { scope: "col", class: "num" }, me),
-    element("th", { scope: "col", class: "num", title: `${me}'s time over the system's, each at least ${FLOOR} s; where ${me} fails, its time limit` }, "faster by"))), body);
+    element("th", { scope: "col", class: "num", title: `${me}'s time over the system's, each at least ${FLOOR} s; where ${me} fails, its time limit` }, speedName("faster by")))), body);
   const which = c.key === ALL || c.key === APART ? "another" : "a native";
   return [element("h3", {}, `Where ${which} system is faster`), scroller(stacked(table), "whole"), moreRows(table, found.length, LEADS_SHOWN, "instances")]
     .filter(Boolean);
