@@ -115,7 +115,7 @@ pub use cnf::WeightedCnf;
 pub use ground::{GroundOptions, GroundProgram};
 pub use input::{Format, Input, consult, read};
 pub use query::QueryResult;
-pub use solve::{Options, Progress, Solution, rewritten, solve, solve_ground, weighted_cnf};
+pub use solve::{Options, Progress, Solution, rewritten, solve, solve_ground, solve_ground_program, weighted_cnf};
 pub use strategy::Strategy;
 pub use tp::Projection;
 pub use vtree::Kind;

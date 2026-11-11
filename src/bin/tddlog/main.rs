@@ -37,6 +37,9 @@ integer, `int($1)` or `iterate(step, x, $2)`, and its argument is a
 natural number.
 
 options:
+  --skip-grounding                      the input program is already ground; bypass the grounding
+                                        phase and use it directly (the program must contain no
+                                        variables and be in a form that the grounder outputs)
   --vtree <strategy>                    vtree over the probabilistic facts (default: auto)
       auto                              trials of the layouts below over rewrites of the program,
                                         each compiled with its evidence and queries under bounds
@@ -136,6 +139,8 @@ struct Args {
     cnf_only: bool,
     /// The file the trace of the run is written to.
     trace: Option<String>,
+    /// Whether the input program is already ground.
+    skip_grounding: bool,
 }
 
 fn parse_args() -> Result<Request, String> {
@@ -147,7 +152,7 @@ fn parse_args() -> Result<Request, String> {
     let (mut ground_only, mut stats, mut evidence_probability, mut no_queries) =
         (None, None, None, None);
     let (mut queries, mut evidence, mut rescale, mut program_only) = (None, None, None, None);
-    let (mut cnf_only, mut trace) = (None, None);
+    let (mut cnf_only, mut trace, mut skip_grounding) = (None, None, None);
     while let Some(a) = args.next() {
         match a.as_str() {
             "-h" | "--help" => return Ok(Request::Help),
@@ -157,6 +162,7 @@ fn parse_args() -> Result<Request, String> {
                 once(&mut strategy, v.parse::<Strategy>()?, option)?;
             }
             option @ "--ground" => once(&mut ground_only, (), option)?,
+            option @ "--skip-grounding" => once(&mut skip_grounding, (), option)?,
             option @ "--stats" => once(&mut stats, (), option)?,
             option @ "--evidence-probability" => once(&mut evidence_probability, (), option)?,
             option @ "--no-queries" => once(&mut no_queries, (), option)?,
@@ -195,12 +201,14 @@ fn parse_args() -> Result<Request, String> {
     }
     let file = file.ok_or_else(|| USAGE.to_string())?;
     let ground_only = ground_only.is_some();
+    let skip_grounding = skip_grounding.is_some();
     let stats = stats.is_some();
     if ground_only {
         for (given, option) in [
             (stats, "--stats"),
             (precision.is_some(), "--precision"),
             (trace.is_some(), "--trace"),
+            (skip_grounding, "--skip-grounding"),
         ] {
             if given {
                 return Err(format!(
@@ -233,6 +241,19 @@ fn parse_args() -> Result<Request, String> {
         );
     }
     let program_only = program_only.is_some();
+    let cnf_only = cnf_only.is_some();
+    if skip_grounding {
+        for (given, option) in [
+            (program_only, "--program"),
+            (cnf_only, "--cnf"),
+        ] {
+            if given {
+                return Err(format!(
+                    "{option} does not work with --skip-grounding"
+                ));
+            }
+        }
+    }
     if program_only {
         for (given, option) in [
             (ground_only, "--ground"),
@@ -241,6 +262,7 @@ fn parse_args() -> Result<Request, String> {
             (strategy.is_some(), "--vtree"),
             (evidence_probability.is_some(), "--evidence-probability"),
             (trace.is_some(), "--trace"),
+            (skip_grounding, "--skip-grounding"),
         ] {
             if given {
                 return Err(format!(
@@ -250,7 +272,6 @@ fn parse_args() -> Result<Request, String> {
         }
     }
     // The CNF comes before any layout, whatever the strategy.
-    let cnf_only = cnf_only.is_some();
     if cnf_only {
         for (given, option) in [
             (ground_only, "--ground"),
@@ -259,6 +280,7 @@ fn parse_args() -> Result<Request, String> {
             (precision.is_some(), "--precision"),
             (strategy.is_some(), "--vtree"),
             (trace.is_some(), "--trace"),
+            (skip_grounding, "--skip-grounding"),
         ] {
             if given {
                 return Err(format!(
@@ -290,6 +312,7 @@ fn parse_args() -> Result<Request, String> {
         program_only,
         cnf_only,
         trace,
+        skip_grounding,
     }))
 }
 
@@ -551,7 +574,12 @@ fn run(
         Some(file) => Some((Trace::new(args.format, data, input, &options)?, file)),
         None => None,
     };
-    let solved = tddlog::solve(&input.program, &options, &mut |progress| {
+    let solve_fn = if args.skip_grounding {
+        tddlog::solve_ground_program as fn(&str, &Options, &mut dyn FnMut(Progress<'_>)) -> Result<_, _>
+    } else {
+        tddlog::solve as fn(&str, &Options, &mut dyn FnMut(Progress<'_>)) -> Result<_, _>
+    };
+    let solved = solve_fn(&input.program, &options, &mut |progress| {
         if let Some((trace, _)) = trace.as_mut() {
             trace.observe(&progress);
         }

