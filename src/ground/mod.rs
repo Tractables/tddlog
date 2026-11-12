@@ -127,8 +127,9 @@ pub use program::{GLit, GroundProgram, GroundRule, GroundStats};
 use std::sync::{Arc, OnceLock};
 
 use crate::eval::Count;
-use crate::syntax::Program;
+use crate::syntax::{Name, Program};
 use preprocess::defined;
+use rustc_hash::FxHashSet;
 use structure::Structure;
 use tables::Tables;
 
@@ -289,6 +290,7 @@ fn ground_tried(
         };
         return Ok(finish_keeping(gp, opts, keep));
     }
+    let written = written_names(program);
     let mut norm = normalize::normalize(program, counted)?;
     // The predicates no query or observation reads are not ground
     // ([`relevant`]).
@@ -300,7 +302,7 @@ fn ground_tried(
     // form holds in every world, and the linear form is what the bound-end
     // rewrite below and the compile's elimination of linear recursion take.
     let norm = chain::linearize(&norm).unwrap_or(norm);
-    let (gp, ground_size, kept) = ground_norm(&norm, opts, None, keep)?;
+    let (gp, ground_size, kept) = ground_norm(&norm, opts, None, keep, &written)?;
     // A program grounded level by level, each recursive stratum a loop over
     // a rising level, is not rewritten, as [`ground_norm`] does not give it
     // the magic rewrite: the chains from its bound ends run down the levels
@@ -321,16 +323,18 @@ fn ground_tried(
     let Some((linear, from_bound_end)) = linear::rewrite(&norm) else {
         return Ok((gp, kept));
     };
-    Ok(match ground_norm(&linear, opts, Some(ground_size), keep) {
-        Ok((mut alt, _, mut alt_kept)) if alt.size() < gp.size() => {
-            if let Some(k) = &mut alt_kept {
-                k.gp.stats.from_bound_end = from_bound_end.clone();
+    Ok(
+        match ground_norm(&linear, opts, Some(ground_size), keep, &written) {
+            Ok((mut alt, _, mut alt_kept)) if alt.size() < gp.size() => {
+                if let Some(k) = &mut alt_kept {
+                    k.gp.stats.from_bound_end = from_bound_end.clone();
+                }
+                alt.stats.from_bound_end = from_bound_end;
+                (alt, alt_kept)
             }
-            alt.stats.from_bound_end = from_bound_end;
-            (alt, alt_kept)
-        }
-        _ => (gp, kept),
-    })
+            _ => (gp, kept),
+        },
+    )
 }
 
 /// The finished ground program of `norm`, its size as ground, before
@@ -342,6 +346,7 @@ fn ground_norm(
     opts: &GroundOptions,
     bound: Option<usize>,
     keep: usize,
+    written: &Arc<FxHashSet<Name>>,
 ) -> Result<(GroundProgram, usize, Option<Simplified>), GroundError> {
     // A program may be non-stratified, by itself or through the rewrite: a
     // recursive component with internal negation is then grounded as it is,
@@ -375,7 +380,7 @@ fn ground_norm(
     // ([`modes`]). One whose queries reach an arithmetic literal or a call
     // of a goal with a variable free there is refused, as ProbLog stops
     // on it.
-    let gp = if magic::is_ground(norm) {
+    let mut gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
     } else if modes::tests_unbound(norm)? {
         engine::topdown::ground(norm, bound)?
@@ -418,9 +423,25 @@ fn ground_norm(
             }
         }
     };
+    gp.written = Arc::clone(written);
     let size = gp.size();
     let (gp, kept) = finish_keeping(gp, opts, keep);
     Ok((gp, size, kept))
+}
+
+/// The names starting with `$` that `program` defines
+/// ([`GroundProgram::written`]).
+fn written_names(program: &Program) -> Arc<FxHashSet<Name>> {
+    Arc::new(
+        program
+            .clauses
+            .iter()
+            .flat_map(|c| &c.heads)
+            .map(|h| &h.atom.name)
+            .filter(|name| name.starts_with('$'))
+            .cloned()
+            .collect(),
+    )
 }
 
 /// `gp` finished under `opts` ([`finish`]), and a copy of it as simplified
@@ -913,11 +934,12 @@ mod tests {
         let (program, counted) = super::terms::lower(&program).expect("lowers");
         let norm = super::normalize::normalize(&program, counted).expect("normalizes");
         let opts = GroundOptions::default();
-        let (_, size, _) = super::ground_norm(&norm, &opts, None, 0).expect("grounds");
+        let written = std::sync::Arc::default();
+        let (_, size, _) = super::ground_norm(&norm, &opts, None, 0, &written).expect("grounds");
         let (linear, rewritten) = super::linear::rewrite(&norm).expect("rewrites");
         assert_eq!(rewritten, ["s/1"]);
         assert!(matches!(
-            super::ground_norm(&linear, &opts, Some(2 * size), 0),
+            super::ground_norm(&linear, &opts, Some(2 * size), 0, &written),
             Err(super::GroundError::OverBound)
         ));
     }

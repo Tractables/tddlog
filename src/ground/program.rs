@@ -5,9 +5,11 @@
 use std::fmt;
 use std::sync::{Arc, OnceLock};
 
+use rustc_hash::FxHashSet;
+
 use crate::by_hash::ByHash;
 use crate::eval::Count;
-use crate::syntax::Atom;
+use crate::syntax::{Atom, Name};
 
 use super::structure::Structure;
 use super::{Conditioned, Decisions, Defined, Encoding, GroundOptions};
@@ -285,6 +287,12 @@ pub struct GroundProgram {
     /// test grounds under options of its own and solves the program
     /// under the default ones (`solve_ground`).
     pub(super) options: GroundOptions,
+    /// The names starting with `$`, as the grounder names its own atoms,
+    /// that the source program defines itself, as a program the grounder
+    /// printed does (`--ground`): the program's atoms, which
+    /// [`super::simplify::merge_equal_atoms`] leaves to the merge that
+    /// knows the exclusive sets. Empty for nearly every program.
+    pub(crate) written: Arc<FxHashSet<Name>>,
     /// The structure the grounder computed for the program as it left it,
     /// or the first call of [`GroundProgram::structure`] after it.
     pub(super) structure: OnceLock<Arc<Structure>>,
@@ -385,6 +393,7 @@ impl Default for GroundProgram {
             weight: Count::ONE,
             stats: GroundStats::default(),
             options: GroundOptions::default(),
+            written: Arc::default(),
             structure: OnceLock::new(),
         }
     }
@@ -452,6 +461,7 @@ impl GroundProgram {
             weight,
             stats,
             options,
+            written,
             structure: _,
         } = self;
         GroundProgram {
@@ -465,6 +475,7 @@ impl GroundProgram {
             weight: *weight,
             stats: stats.clone(),
             options: *options,
+            written: Arc::clone(written),
             structure: OnceLock::new(),
         }
     }

@@ -189,7 +189,8 @@ fn propagate(
 }
 
 /// Merge away the atoms the grounder introduced (a predicate name starting
-/// with `$`) and no query or evidence names whose rules have the same
+/// with `$` that the source does not define, [`GroundProgram::written`])
+/// and no query or evidence names whose rules have the same
 /// bodies as another atom's: in every world each is true exactly when one
 /// of those bodies holds, so they are one function. The rules of an atom
 /// merged away are dropped and its readers read the atom it was merged
@@ -214,11 +215,23 @@ fn propagate(
 /// the acyclic atoms once each, as an and-inverter graph, where rounds
 /// would take one for each level of copied gates: 4 096 on GPA_w19, each
 /// over its 213 k rules.
+///
+/// A program the grounder printed (`--ground`) and read back defines atoms
+/// of `$` names, the row classes of its tables among them ([`super::rows`]),
+/// which this merge would take for the grounder's: on bn_munin it merged
+/// the classes of the tables of a left and a right nerve that read the same
+/// parents, the tables of each then read the other's classes, and the
+/// `families` layout's width went from 8 to 16 (out of memory at 8 GB,
+/// against 0.8 s for the program as written).
 pub(crate) fn merge_equal_atoms(gp: &mut GroundProgram) {
     let n = gp.atoms.len();
     // What a query or evidence names keeps its identity (a query driver's
     // `$query` atom among them), so the printed program defines it.
-    let mut away: Vec<bool> = gp.atoms.iter().map(|a| a.name.starts_with('$')).collect();
+    let mut away: Vec<bool> = gp
+        .atoms
+        .iter()
+        .map(|a| a.name.starts_with('$') && !gp.written.contains(&a.name))
+        .collect();
     for a in gp.named_atoms() {
         away[a as usize] = false;
     }

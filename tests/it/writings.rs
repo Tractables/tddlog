@@ -1328,3 +1328,73 @@ fn a_loop_written_from_either_end_answers_as_written_from_its_start() {
         );
     }
 }
+
+/// Two tables `l` and `r` of three values over the same parents `a` and
+/// `b`, each with one distribution where `i + j` is even and another where
+/// it is odd: rows that the grounder reads through class atoms, one set
+/// per table, with the same rules in both.
+const SHARED_A: [f64; 3] = [0.2, 0.3, 0.5];
+const SHARED_B: [f64; 3] = [0.6, 0.1, 0.3];
+const SHARED_ROWS: [[f64; 3]; 2] = [[0.2, 0.5, 0.3], [0.6, 0.1, 0.3]];
+
+fn shared_parents() -> String {
+    let mut s =
+        String::from("0.2::a(0); 0.3::a(1); 0.5::a(2).\n0.6::b(0); 0.1::b(1); 0.3::b(2).\n");
+    for x in ["l", "r"] {
+        for i in 0..3 {
+            for j in 0..3 {
+                let d = SHARED_ROWS[(i + j) % 2];
+                s.push_str(&format!(
+                    "{}::{x}(0); {}::{x}(1); {}::{x}(2) :- a({i}), b({j}).\n",
+                    d[0], d[1], d[2]
+                ));
+            }
+        }
+    }
+    s.push_str("s :- l(0), r(0).\nquery(l(0)).\nquery(l(1)).\nquery(r(2)).\nquery(s).\n");
+    s
+}
+
+/// The answers to `shared_parents`'s queries, by its parents' values.
+fn shared_enumerated() -> Vec<f64> {
+    let mut answers = vec![0.0; 4];
+    for i in 0..3 {
+        for j in 0..3 {
+            let w = SHARED_A[i] * SHARED_B[j];
+            let d = SHARED_ROWS[(i + j) % 2];
+            answers[0] += w * d[0];
+            answers[1] += w * d[1];
+            answers[2] += w * d[2];
+            answers[3] += w * d[0] * d[0];
+        }
+    }
+    answers
+}
+
+#[test]
+fn a_program_read_back_from_its_ground_form_grounds_as_it() {
+    // The ground form defines the class atoms of `l` and `r`, with `$`
+    // names and the same rules; read back, they stay the program's own and
+    // are not merged, so that each table reads its own classes, and the
+    // program grounds to as many atoms and rules as it was printed with.
+    let source = shared_parents();
+    let options = common::options(Strategy::Auto, Projection::default());
+    let printed = tddlog::rewritten(&source, &options).unwrap();
+    let ground_form = printed.to_string();
+    assert!(ground_form.contains("'$c_l_"), "{ground_form}");
+    assert!(ground_form.contains("'$c_r_"), "{ground_form}");
+    let again = tddlog::rewritten(&ground_form, &options).unwrap();
+    assert_eq!(
+        (again.num_atoms(), again.rules.len()),
+        (printed.num_atoms(), printed.rules.len()),
+        "{again}"
+    );
+    let expected: Vec<(&str, f64)> = ["l(0)", "l(1)", "r(2)", "s"]
+        .into_iter()
+        .zip(shared_enumerated())
+        .collect();
+    for (writing, text) in [("written", &source), ("ground", &ground_form)] {
+        let run = common::run(text, &options).unwrap_or_else(|e| panic!("{writing}: {e}"));
+        assert_answers(writing, &run.results.expect("no evidence"), &expected, 1e-9);
+    }
+}
