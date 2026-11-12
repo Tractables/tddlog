@@ -1700,6 +1700,7 @@ fn check_grid_words(
 #[cfg(test)]
 mod tests {
     use super::super::Count;
+    use super::super::kernel::COMPILED;
     use super::*;
 
     /// The passes over the pairs of a grid `dims` from `at`, as the passes
@@ -1760,8 +1761,9 @@ mod tests {
     /// node, give the bits of the passes over pairs, in floats and in
     /// `Count`s, and the plans settle their outputs as settling them after
     /// does: the range noted, bit for bit, and each `Count` normalized, its
-    /// sum out of the band. Every pass has a kernel among its ways, and
-    /// DBN_13's passes down relay their output.
+    /// sum out of the band. Where the target has kernels, every pass has
+    /// one among its ways, and DBN_13's passes down relay their output;
+    /// elsewhere no pass has one.
     #[test]
     fn census_shapes_run_through_kernels_to_the_bit() {
         let shapes: [((isize, isize), Vec<Dim>); 3] = [
@@ -1908,8 +1910,8 @@ mod tests {
                         .is_some_and(|k| k.relays[0].is_some());
                 }
             }
-            assert_eq!(kernels, [true; 3], "shape {s}: {} ways", ways.len());
-            if s == 0 {
+            assert_eq!(kernels, [COMPILED; 3], "shape {s}: {} ways", ways.len());
+            if s == 0 && COMPILED {
                 assert!(
                     relays_out[1],
                     "DBN_13's pass into the left child relays its output"
