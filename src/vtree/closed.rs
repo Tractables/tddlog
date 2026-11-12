@@ -23,7 +23,7 @@ use super::forest::Forest;
 /// graph, or of the Clark completion, does not know the direction and has
 /// subtrees of the first kind (`docs/design.md`).
 ///
-/// The components of [`super::order::search`] are taken in its order. Each is a
+/// The components are taken in [`super::order::components`]'s order. Each is a
 /// *block*: its facts not yet placed, on a right-linear spine whose
 /// first-used fact is deepest, above a balanced join of the blocks its rules
 /// read. A block read by a later component becomes part of that
@@ -32,7 +32,7 @@ use super::forest::Forest;
 /// component and sharing nothing are siblings, and that is the only place
 /// the tree branches: on a program where every component reads the one
 /// before it this is the right-linear vtree over the reverse of the
-/// search's first-use order. The blocks nothing reads, and the facts no
+/// facts' first-use order. The blocks nothing reads, and the facts no
 /// rule reads, are joined balanced at the root.
 ///
 /// A join is not taken where the component's rules pair the blocks' atoms
@@ -60,7 +60,7 @@ use super::forest::Forest;
 pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, usize, String)> {
     gp.facts().next()?;
     let by_head = &deps.by_head;
-    let (components, search_note) = super::order::search(gp, by_head, deps.sccs.clone());
+    let components = super::order::components(gp, by_head, deps.sccs.clone());
     let num_atoms = gp.num_atoms();
     let mut component_of = vec![usize::MAX; num_atoms];
     for (i, c) in components.iter().enumerate() {
@@ -171,7 +171,7 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
     }
     let root = forest.balanced(&tops)?;
     let mut note = format!(
-        "{search_note}\nclosed: {} components, {joins} of them joining two or more blocks (at most {widest}), \
+        "closed: {} components, {joins} of them joining two or more blocks (at most {widest}), \
          {unread} blocks at the root, {linearized} pairing joins made right-linear",
         components.len(),
     );
@@ -213,13 +213,13 @@ mod tests {
     }
 
     /// The right-linear vtree over the reverse of the order in which the
-    /// compiler consumes the facts when it takes the components in the
-    /// searched order `closed` starts from: what `closed` builds where it
-    /// finds nothing to join.
-    fn searched_right_linear(gp: &GroundProgram) -> (String, Vec<AtomId>) {
+    /// compiler consumes the facts when it takes the components in
+    /// `closed`'s order: what `closed` builds where it finds nothing to
+    /// join.
+    fn ordered_right_linear(gp: &GroundProgram) -> (String, Vec<AtomId>) {
         let by_head = gp.rules_by_head();
         let sccs = crate::ground::deps::derived_sccs(gp, &by_head);
-        let (components, _) = crate::vtree::order::search(gp, &by_head, sccs);
+        let components = crate::vtree::order::components(gp, &by_head, sccs);
         let mut order = facts_at_first_use(gp, &by_head, &components);
         order.reverse();
         let vars: Vec<VarId> = (1..=order.len() as u32).map(VarId).collect();
@@ -253,12 +253,11 @@ mod tests {
         // `p` and `q` read disjoint facts and `r` reads both: some node
         // joins the two, and `c`, the fact `r` introduces, sits above it.
         // Each reads two facts, so that neither is a fact under another
-        // name, and `s` reads `q` alone, so that the order search does not
-        // merge `p` and `q` as one variable's values. Six facts bound any
-        // compile below what a search costs, so the components keep the
-        // grounder's order (`order::search`), `r` before `s`. `t`, of
-        // two rules, is asked, so that none of them is a queried cube of
-        // facts, which would shape no layout.
+        // name, and `s` reads `q` alone, so that the merge does not take
+        // `p` and `q` as one variable's values. `t` is the one root, so the
+        // components keep the grounder's order (`order::components`), `r`
+        // before `s`. `t`, of two rules, is asked, so that none of them is
+        // a queried cube of facts, which would shape no layout.
         let src = "0.5::a. 0.5::b. 0.5::c. 0.5::d. 0.5::e. 0.5::f.
                    p :- a, d. q :- b, e. r :- p, q, c. s :- q, f.
                    t :- r. t :- s. query(t).";
@@ -283,7 +282,7 @@ mod tests {
         let (left, _) = vtree.children(above);
         assert_eq!(facts_under(&vtree, &order, left, &gp), ["c"]);
         // A chain, each atom reading the one before: nothing to join, and
-        // the vtree is right-linear over the searched order, leaf for leaf.
+        // the vtree is right-linear over the components' order, leaf for leaf.
         // `r` reads `d` too, so that it is not a queried cube.
         let src = "0.5::a. 0.5::b. 0.5::c. 0.5::d.
                    p :- a. q :- p, b. r :- q, c. r :- d.
@@ -297,7 +296,7 @@ mod tests {
             },
             _,
         ) = build(&gp, &Deps::of(&gp), Kind::Closed).expect("builds");
-        let (linear, linear_order) = searched_right_linear(&gp);
+        let (linear, linear_order) = ordered_right_linear(&gp);
         assert_eq!(closed.to_text(), linear);
         assert_eq!(closed_order, linear_order);
     }
@@ -305,7 +304,7 @@ mod tests {
     /// `q` reads the block of `u` and the block of `v`, and its rules pair
     /// their atoms up (`x1` with `y1`, `x2` with `y2`, `u` with `v`) instead
     /// of reading every combination: three combinations of the nine. The
-    /// join is not taken and the vtree is right-linear over the searched
+    /// join is not taken and the vtree is right-linear over the components'
     /// order, leaf for leaf.
     #[test]
     fn closed_does_not_join_blocks_whose_atoms_are_paired() {
@@ -326,7 +325,7 @@ mod tests {
         ) = build(&gp, &Deps::of(&gp), Kind::Closed).expect("builds");
         let note = note.unwrap_or_default();
         assert!(note.contains("1 pairing joins made right-linear"), "{note}");
-        let (linear, linear_order) = searched_right_linear(&gp);
+        let (linear, linear_order) = ordered_right_linear(&gp);
         assert_eq!(closed.to_text(), linear);
         assert_eq!(closed_order, linear_order);
     }

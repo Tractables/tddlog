@@ -245,13 +245,11 @@ pub(crate) fn has_internal_negation(
     })
 }
 
-/// The components the order search ranges over: the SCCs of the derived
-/// atoms with the ones that belong together merged into one, in two rounds.
-/// First,
-/// components that share a fact: the values of a Bayesian network variable
-/// read the same switch facts, and an order that separates them keeps
-/// every switch live in between, which the proxy prices at a bit per
-/// switch, so moving the values one at a time never pays. Then, until
+/// The components `closed` takes in order (`vtree::order`): the SCCs of
+/// the derived atoms with the ones that belong together merged into one,
+/// in two rounds. First, components that share a fact: the values of a
+/// Bayesian network variable read the same switch facts, and an order that
+/// separates them keeps every switch live in between. Then, until
 /// nothing changes, components with the same dependencies and the same
 /// consumers, taken over the merged components: the values of a
 /// deterministic variable share no fact, but once their parents are merged

@@ -112,10 +112,9 @@ pub enum Kind {
     /// Bushy where the program's dependencies let it be, right-linear
     /// everywhere else (`closed_forest`): every subtree holds a set of
     /// facts that decides the atoms it feeds without reading any atom from
-    /// outside it. The components are taken in a dependency order found by
-    /// local search (`order::search`) on a proxy for the diagram
-    /// sizes, which charges every fact inside a formula's span the
-    /// assignments to the atoms alive across its cut.
+    /// outside it. The components are taken in the compiler's dependency
+    /// order, root by root, with the values of a variable merged
+    /// (`order::components`).
     Closed,
     /// Right-linear over the facts in a pre-order of the min-fill
     /// elimination tree of the interaction graph (`facts_by_minfill`), the

@@ -1895,13 +1895,12 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   runs only where its hard cutoff, twice its budget, is more than the
   reductions and min-degree charged; below that its own eliminations stop
   part way and leave their vertices in one bag.
-- **`closed`** (`closed_forest`): components in the order of a local
-  search on a size proxy (`src/vtree/order.rs`: simulated annealing over
-  dependency orders, components sharing switches merged first; skipped
-  where 64 facts or fewer bound every formula, and where its budget of
-  steps pays for fewer than four moves per component). The search starts
-  from the compiler's order taken root by root, and keeps that order
-  where it is skipped: where the roots' cones (a root is a component
+- **`closed`** (`closed_forest`): components in the compiler's order
+  taken root by root, then merged where they share switches or have the
+  same dependencies and consumers (`src/vtree/order.rs`). A local search
+  over dependency orders on a size proxy, tried from that order, changed
+  the work by at most 1.1% on the programs `closed` wins and was
+  dropped. Root by root: where the roots' cones (a root is a component
   nothing reads) share no component, the components are grouped by
   root, the roots ordered so that each next adds the fewest facts to
   those of the roots before it among those that share one with them.

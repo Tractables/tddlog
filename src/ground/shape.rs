@@ -12,21 +12,20 @@ use super::{AtomId, GroundProgram, GroundRule};
 use crate::syntax::Atom;
 
 /// Whether the program has one component, or one recursive component that
-/// reads at least half the facts, so that there is no component order for
-/// `vtree::order::search` to find that matters.
+/// reads at least half the facts, so that there is no component order that
+/// matters.
 ///
-/// The search orders the components of the ground program
-/// ([`super::deps::components`]), and `closed` takes them in its
-/// order. A program whose derived atoms are one component admits exactly
-/// one such order, so the search takes zero moves and returns the
-/// compiler's own order: there it is not a search but the default, and only
-/// a candidate that reorders the facts themselves can do anything. The
-/// random graphs, the smokers programs and the one-atom dice programs are
-/// of that kind; `dynamic` searches the vtree itself instead.
+/// `closed` takes the components of the ground program
+/// ([`super::deps::components`]) in a dependency order. A program whose
+/// derived atoms are one component admits exactly one such order, the
+/// compiler's own, and only a candidate that reorders the facts themselves
+/// can do anything. The random graphs, the smokers programs and the
+/// one-atom dice programs are of that kind; `dynamic` searches the vtree
+/// itself instead.
 ///
 /// A reachability relation grounded from its source ([`crate::ground`])
 /// is one recursive component over the graph's strongly connected part and
-/// a few atoms for the nodes past it, which only read it. The search can
+/// a few atoms for the nodes past it, which only read it. An order can
 /// only place those atoms after the component, and an indicator on the
 /// atoms they read cuts nothing the component's own diagram does not
 /// already hold, so the program is of the same kind. `families:0`, first
