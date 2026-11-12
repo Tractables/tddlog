@@ -1,8 +1,14 @@
 name: CI
 on: [push, pull_request]
 jobs:
+  # x86-64 Linux, Linux on ARM and macOS on Apple silicon: the grid
+  # kernels must agree with the pair passes to the bit on each.
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
