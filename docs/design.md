@@ -1970,7 +1970,7 @@ then read by every later row, which widens the cuts and leaves fewer of
 them to name. `program:fanin`, whose order comes from the rules, reads
 the inlined program, which serves it better. `program` comes first where
 the program is built gate by gate (`built_of_gates`), as a circuit is,
-and last elsewhere: first on every program, it costs the networks and
+and is no trial elsewhere: first on every program, it costs the networks and
 grids, whose rules each read a fact, several times their time. The
 property is read off the program as ground, whatever the grounder
 inlined, so that a program and the ground program `tddlog --ground`
@@ -1996,10 +1996,10 @@ variable together and the variables in the source's order, the order
 Alea and Dice hand CUDD and their own diagrams. On circuits whose every
 other layout runs out of memory it may be small, and `program:fanin`
 compiles Alea's adders in a hundredth of
-`program`'s work (Vtrees). Their layouts cost nothing to build; as the
-last trial `program` has its turn after the others, and as the first the
-two and the trial after them start with short turns (`LEAD_SHARE`,
-Turns). Where they come first, `td` is no trial: its order comes from a
+`program`'s work (Vtrees). Their layouts cost nothing to build; where
+they come first, the first two
+and the trial after them start with short turns (`LEAD_SHARE`,
+Turns). There `td` is no trial: its order comes from a
 decomposition of the undirected interaction graph, which does not see the
 gates' direction (Vtrees, direction), where the two orders the program
 states and `closed`'s search over dependency orders follow it.

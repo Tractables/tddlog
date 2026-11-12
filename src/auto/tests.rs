@@ -135,13 +135,7 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
     let searched = Kind::Families { search: true };
     assert_eq!(
         candidates(&chain(FEW_FACTS + 1), false),
-        vec![
-            laid,
-            Kind::Closed,
-            Kind::Td,
-            searched,
-            Kind::Program { fan_in: false },
-        ],
+        vec![laid, Kind::Closed, Kind::Td, searched,],
     );
     // With few facts but one derived atom per fact the families
     // layout still comes first.
@@ -164,13 +158,7 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
     );
     assert_eq!(
         candidates(&gp, false),
-        vec![
-            Kind::Closed,
-            laid,
-            Kind::Td,
-            searched,
-            Kind::Program { fan_in: false },
-        ],
+        vec![Kind::Closed, laid, Kind::Td, searched,],
     );
     // The smokers program is one recursive component: `smokes` over
     // three people, merged with nothing to be merged with. Queried for
@@ -230,7 +218,7 @@ fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
                q :- \\+c, f10. q :- f11, f12.
                query(q).";
     // A mux whose rules each read a fact, with a view `g2`: neither
-    // writing is, and `program` alone goes last.
+    // writing is, and `program` is no trial.
     let mux = "0.5::f0. 0.5::f1. 0.5::f2. 0.5::f3. 0.5::f4. 0.5::f5.
                g1 :- f0, f1. g1 :- f2, \\+f0.
                g2 :- g1, f3.
@@ -252,7 +240,6 @@ fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
         Kind::Closed,
         Kind::Td,
         Kind::Families { search: true },
-        Kind::Program { fan_in: false },
     ];
     for views in [true, false] {
         let gp = ground(adder, views);
@@ -413,7 +400,7 @@ fn program_leads() -> Vec<Kind> {
 /// step drops the signal with probability 1e-4 on one of its two routes,
 /// so that the query keeps it with probability (1 - 0.5e-4)^steps. Its
 /// views inlined, each step's two rules read facts of their own, and
-/// `auto` puts `program` last (`built_of_gates`); the tests of the turns
+/// `auto` gives it no `program` trial (`built_of_gates`); the tests of the turns
 /// give it [`program_leads`]' trials, where `program` leads.
 fn diamond_loop(steps: usize) -> GroundProgram {
     let mut src = String::from(

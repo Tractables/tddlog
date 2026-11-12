@@ -272,8 +272,8 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// Where the program is built gate by gate ([`built_of_gates`]), as the
 /// circuits Alea, Dice and pluck export are, and states its flips in the
 /// order its front end created them, `program` comes first, then
-/// `program:fanin`, ahead of the families trials, and `program` alone
-/// comes last elsewhere: the circuits compile best in the order their
+/// `program:fanin`, ahead of the families trials, and `program` is no trial
+/// elsewhere: the circuits compile best in the order their
 /// front end built them (triangle_small 24 s to 0.7) or in the order their
 /// gates read the facts (`program:fanin`: an adder's operand bits side by
 /// side, addFun_sum at 19 bits in 42 M units of work against 4.3 G;
@@ -367,8 +367,6 @@ pub(super) fn candidates(gp: &GroundProgram, tables: bool) -> Vec<Kind> {
                 Kind::Program { fan_in: true },
             ],
         );
-    } else {
-        trials.push(Kind::Program { fan_in: false });
     }
     trials
 }
