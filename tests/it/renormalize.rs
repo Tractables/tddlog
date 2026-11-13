@@ -304,8 +304,8 @@ fn the_rows_keep_the_heads_left_and_their_masses() {
                 k - 1,
                 "{k} values, {rows:?}: the masses' facts:\n{ground}"
             );
-            for i in 0..k - 1 {
-                let m = 1.0 - net.c[i][2];
+            for row in &net.c[..k - 1] {
+                let m = 1.0 - row[2];
                 assert!(
                     masses.iter().any(|&w| (w - m).abs() < 1e-12),
                     "{k} values, {rows:?}: no mass {m} in {masses:?}:\n{ground}"

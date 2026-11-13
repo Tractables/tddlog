@@ -696,8 +696,8 @@ mod tests {
             (8, &[Neg(4), Pos(6), Pos(7)]),
         ];
         let mut gp = program(&[0.5, 0.0, 0.0, 0.0, 0.3, 0.2], 3, rules);
-        for a in 1..4 {
-            gp.kinds[a] = AtomKind::Derived;
+        for kind in &mut gp.kinds[1..4] {
+            *kind = AtomKind::Derived;
         }
         gp.queries = vec![
             (Atom::default(), Some(3), true),
