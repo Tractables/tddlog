@@ -83,9 +83,13 @@ pub(super) struct Windows {
 impl Windows {
     /// The windows of `gp` under `bounds`; `None` where it has no cut. A
     /// program read through indicators, or conditioned on its guards for
-    /// `decision`, is not cut.
+    /// `decision`, is not cut. Nor is one of fewer than two windows' rules,
+    /// which has no cut that leaves a window's rules on both sides; its
+    /// profile is not computed.
     pub(super) fn of(gp: &GroundProgram, bounds: &WindowBounds) -> Option<Windows> {
-        if !gp.encoding.is_empty() || gp.stats.decisions.is_some() || gp.rules.len() <= bounds.rules
+        if !gp.encoding.is_empty()
+            || gp.stats.decisions.is_some()
+            || gp.rules.len() < bounds.rules.saturating_mul(2)
         {
             return None;
         }
