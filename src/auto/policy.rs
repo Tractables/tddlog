@@ -244,7 +244,7 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// programs that compile in milliseconds.
 ///
 /// Where no derived atom depends on itself, the one component is acyclic
-/// atoms merged because they read the same facts ([`crate::ground::deps::components`]),
+/// atoms merged because they read the same facts ([`crate::ground::deps::unit_ranks`]),
 /// and the atoms still have a direction: a formula compiled bottom up wants
 /// its facts in reverse dependency order, which `closed` follows and
 /// `minfill`, `dynamic`'s start, does not see (`docs/design.md`, vtrees).

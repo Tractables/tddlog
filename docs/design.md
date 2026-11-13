@@ -1726,7 +1726,7 @@ admit one value of the copies, the atoms' values, so the count of
 `q ∧ e ∧ ⋀d` is `P(q ∧ e)` and the query ratio is unchanged.
 `examples/bn_split.pl` shows a split table (below).
 
-- **Units** are the merged components of `ground::deps::components`,
+- **Units** are the merged components of `ground::deps::unit_ranks`,
   joined again where they hold atoms of one exclusive set. A rule that
   reads a member of a set positively also reads the other members' copies
   negatively; without it a table's formula separates rows that two values
@@ -1896,9 +1896,9 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   reductions and min-degree charged; below that its own eliminations stop
   part way and leave their vertices in one bag.
 - **`closed`** (`closed_forest`): components in the compiler's order
-  taken root by root, then, up to 4,000 components and 50,000 facts,
-  merged where they share switches or have the same dependencies and
-  consumers (`src/vtree/order.rs`). A local search
+  taken root by root (`src/vtree/order.rs`). Merging the components of
+  one variable's values changed no work on the programs `closed` wins and
+  was dropped. A local search
   over dependency orders on a size proxy, tried from that order, changed
   the work by at most 1.1% on the programs `closed` wins and was
   dropped. Root by root: where the roots' cones (a root is a component
@@ -1913,9 +1913,9 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   component is a block with its new facts on a right-linear spine above
   a balanced join of the blocks it reads. Blocks that share nothing and
   are read by one component are siblings, the only place the tree
-  branches. A join whose rules pair up the blocks' atoms one to one
-  (UW-CSE's `advised_by(S,P), student_nb_publications(S,_)`) is not
-  taken.
+  branches. A test that kept a join out where its rules pair up the
+  blocks' atoms one to one fired on none of the programs `closed` wins
+  and was dropped.
 - **`families`** and **`families:0`** (`families_forest`, `nest`): for a
   program rewritten with indicators. A *family* is a formula the query
   phase conjoins (a link, a derived query or evidence atom); *groups* are
@@ -2488,7 +2488,7 @@ searched layouts come last because goatd's search has a floor of work.
 `closed` and `td` win the relational programs (uwcse, cora). Each trial
 has its own budget, so a trial that never wins first costs only its work.
 Where nothing is left to order but no atom is recursive, the one
-component is acyclic atoms that `ground::deps::components` merged because
+component is acyclic atoms that `ground::deps::unit_ranks` merged because
 they read the same facts; they still have a direction, which `dynamic`'s
 min-fill start does not see and `closed` follows (Vtrees, direction), so
 `closed` follows `dynamic`, and `td` follows `closed` (tuple-independent

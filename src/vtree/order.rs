@@ -1,42 +1,20 @@
 //! The order in which `closed` takes the derived components: the
-//! compiler's dependency order taken root by root ([`by_roots`]), with the
-//! components that belong together merged into one ([`deps::components`]).
+//! compiler's dependency order taken root by root ([`by_roots`]).
 //!
 //! `closed` lays the facts out in the order the compiler consumes them where
 //! nothing joins, so the order of the components decides the vtree. Any
 //! dependency order is sound. On a right-linear vtree, and on `closed`'s
 //! chains of blocks, a fact stays alive from its first reader to its last,
-//! so the order should keep the readers of a fact together. The merge does
-//! so for the values of a network variable, which share switch facts or,
-//! when deterministic, dependencies and consumers; [`by_roots`] does so for
-//! roots that read the same facts.
+//! so the order should keep the readers of a fact together; [`by_roots`]
+//! does so for roots that read the same facts. Merging the components of
+//! one network variable's values into one changed no work on the programs
+//! `closed` wins, and took clinicalTrial1 at width 10 to 13.6 times the
+//! time.
 
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 
-use crate::ground::{AtomId, GroundProgram, RulesByHead, deps};
-
-/// Components, and facts, beyond which the components are not merged.
-/// clinicalTrial1 at width 10 has 8,801 components: merged, its compile
-/// took 13.6 times the time and 5.3 times the memory.
-const MERGE_UNITS: usize = 4000;
-const MERGE_FACTS: usize = 50_000;
-
-/// The components of `sccs` (in a dependency order) as `closed` takes
-/// them, still a dependency order: taken root by root ([`by_roots`]), then
-/// merged ([`deps::components`]) up to [`MERGE_UNITS`] components and
-/// [`MERGE_FACTS`] facts.
-pub(super) fn components(
-    gp: &GroundProgram,
-    by_head: &RulesByHead,
-    sccs: Vec<Vec<AtomId>>,
-) -> Vec<Vec<AtomId>> {
-    let sccs = by_roots(gp, by_head, sccs);
-    if sccs.len() > MERGE_UNITS || gp.facts().count() > MERGE_FACTS {
-        return sccs;
-    }
-    deps::components(gp, by_head, sccs)
-}
+use crate::ground::{AtomId, GroundProgram, RulesByHead};
 
 /// `sccs`, a dependency order, taken root by root where the roots' cones
 /// share no component. The roots are the components nothing reads: the
@@ -62,7 +40,11 @@ pub(super) fn components(
 /// own components away from the shared ones changes which blocks absorb
 /// which: on zeroone, whose observations of equal points share their
 /// arithmetic, it made the compile up to 13 times the work.
-fn by_roots(gp: &GroundProgram, by_head: &RulesByHead, sccs: Vec<Vec<AtomId>>) -> Vec<Vec<AtomId>> {
+pub(super) fn by_roots(
+    gp: &GroundProgram,
+    by_head: &RulesByHead,
+    sccs: Vec<Vec<AtomId>>,
+) -> Vec<Vec<AtomId>> {
     let n = sccs.len();
     let mut comp_of = vec![usize::MAX; gp.num_atoms()];
     for (i, c) in sccs.iter().enumerate() {
@@ -171,6 +153,7 @@ fn by_roots(gp: &GroundProgram, by_head: &RulesByHead, sccs: Vec<Vec<AtomId>>) -
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ground::deps;
     use crate::ground::deps::tests::is_dependency_order;
 
     /// `src` ground with its derived atoms as written, each its own
@@ -197,7 +180,7 @@ mod tests {
         let by_head = gp.rules_by_head();
         let sccs = deps::derived_sccs(&gp, &by_head);
         assert!(is_dependency_order(&gp, &sccs));
-        let order = components(&gp, &by_head, sccs.clone());
+        let order = by_roots(&gp, &by_head, sccs.clone());
         assert!(is_dependency_order(&gp, &order));
         let mut a: Vec<AtomId> = order.iter().flatten().copied().collect();
         let mut b: Vec<AtomId> = sccs.iter().flatten().copied().collect();

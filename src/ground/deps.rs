@@ -1,7 +1,7 @@
 //! Analyses of the ground dependency graph: the strongly connected
 //! components of the derived atoms, whether one is cyclic or negates one of
-//! its own atoms, the merged components ([`components`]) that the
-//! component order of `closed`, the exclusive sets and `auto` read, and the
+//! its own atoms, the merged components ([`unit_ranks`]) that the
+//! indicators, the exclusive sets and `auto` read, and the
 //! depth-first fan-in walk ([`fan_in`]) that orders `program:fanin`'s
 //! facts and `decision`'s spines, and the predicates that depend on
 //! themselves ([`recursive_predicates`]), which the inlining and the sweep
@@ -245,38 +245,20 @@ pub(crate) fn has_internal_negation(
     })
 }
 
-/// The components `closed` takes in order (`vtree::order`): the SCCs of
-/// the derived atoms with the ones that belong together merged into one,
-/// in two rounds. First, components that share a fact: the values of a
-/// Bayesian network variable read the same switch facts, and an order that
-/// separates them keeps every switch live in between. Then, until
-/// nothing changes, components with the same dependencies and the same
-/// consumers, taken over the merged components: the values of a
-/// deterministic variable share no fact, but once their parents are merged
-/// they depend on the same components and feed the same ones. The merged
-/// components are put back in a dependency order (by earliest member); a
-/// merge that closes a cycle returns the components as they came.
-pub(crate) fn components(
-    gp: &GroundProgram,
-    by_head: &RulesByHead,
-    sccs: Vec<Vec<AtomId>>,
-) -> Vec<Vec<AtomId>> {
-    let (rank, units) = unit_ranks(gp, by_head, &sccs);
-    if units == sccs.len() {
-        return sccs;
-    }
-    let mut sorted: Vec<Vec<AtomId>> = vec![Vec::new(); units];
-    for (scc, &unit) in sccs.iter().zip(&rank) {
-        sorted[unit].extend_from_slice(scc);
-    }
-    sorted
-}
-
-/// The position of each SCC's merged component ([`components`]) in their
-/// dependency order, and how many there are; each SCC's own position where
-/// nothing merges or a merge closes a cycle. The lists of each component's
-/// dependencies and consumers are runs of flat lists, not a list per
-/// component and round: a program may have a hundred thousand components.
+/// The merged components of `sccs`, the SCCs of the derived atoms in a
+/// dependency order: the ones that belong together merged into one, in two
+/// rounds. First, components that share a fact: the values of a Bayesian
+/// network variable read the same switch facts. Then, until nothing
+/// changes, components with the same dependencies and the same consumers,
+/// taken over the merged components: the values of a deterministic
+/// variable share no fact, but once their parents are merged they depend
+/// on the same components and feed the same ones. Returns the position of
+/// each SCC's merged component in the merged components' dependency order
+/// (by earliest member), and how many there are; each SCC's own position
+/// where nothing merges or a merge closes a cycle. The lists of each
+/// component's dependencies and consumers are runs of flat lists, not a
+/// list per component and round: a program may have a hundred thousand
+/// components.
 pub(crate) fn unit_ranks(
     gp: &GroundProgram,
     by_head: &RulesByHead,
@@ -692,9 +674,13 @@ pub(crate) mod tests {
         let by_head = gp.rules_by_head();
         let sccs = derived_sccs(&gp, &by_head);
         assert_eq!(sccs.len(), 5);
-        let units = components(&gp, &by_head, sccs);
-        assert!(is_dependency_order(&gp, &units));
-        let mut sizes: Vec<usize> = units.iter().map(|u| u.len()).collect();
+        let (rank, units) = unit_ranks(&gp, &by_head, &sccs);
+        let mut merged: Vec<Vec<AtomId>> = vec![Vec::new(); units];
+        for (scc, &unit) in sccs.iter().zip(&rank) {
+            merged[unit].extend_from_slice(scc);
+        }
+        assert!(is_dependency_order(&gp, &merged));
+        let mut sizes: Vec<usize> = merged.iter().map(|u| u.len()).collect();
         sizes.sort_unstable();
         assert_eq!(sizes, vec![1, 1, 3]);
     }
@@ -775,7 +761,6 @@ pub(crate) mod tests {
         let gp = program("0.5::f. 0.5::g. x :- f. y :- x, g. z :- y, f. query(z).");
         let by_head = gp.rules_by_head();
         let sccs = derived_sccs(&gp, &by_head);
-        let units = components(&gp, &by_head, sccs.clone());
-        assert_eq!(units, sccs);
+        assert_eq!(unit_ranks(&gp, &by_head, &sccs).1, sccs.len());
     }
 }

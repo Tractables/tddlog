@@ -113,8 +113,7 @@ pub enum Kind {
     /// everywhere else (`closed_forest`): every subtree holds a set of
     /// facts that decides the atoms it feeds without reading any atom from
     /// outside it. The components are taken in the compiler's dependency
-    /// order, root by root, with the values of a variable merged
-    /// (`order::components`).
+    /// order, root by root (`order::by_roots`).
     Closed,
     /// Right-linear over the facts in a pre-order of the min-fill
     /// elimination tree of the interaction graph (`facts_by_minfill`), the

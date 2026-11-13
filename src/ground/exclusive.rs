@@ -103,7 +103,7 @@ struct AtomScratch {
 /// one value of each parental allele). Among them siblings with the same
 /// parents are not exclusive, and end up in sets of their own. An atom
 /// that reads no derived atom is compared with the atoms of its own unit
-/// in the sense of [`super::deps::components`]
+/// in the sense of [`super::deps::unit_ranks`]
 /// ([`super::structure::Structure::base_of`]), which holds the values of a
 /// table without parents.
 ///

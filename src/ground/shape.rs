@@ -15,8 +15,8 @@ use crate::syntax::Atom;
 /// reads at least half the facts, so that there is no component order that
 /// matters.
 ///
-/// `closed` takes the components of the ground program
-/// ([`super::deps::components`]) in a dependency order. A program whose
+/// `closed` takes the components of the ground program in a dependency
+/// order. A program whose
 /// derived atoms are one component admits exactly one such order, the
 /// compiler's own, and only a candidate that reorders the facts themselves
 /// can do anything. The random graphs, the smokers programs and the
