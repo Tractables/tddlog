@@ -453,7 +453,7 @@ fn finish_keeping(
     keep: usize,
 ) -> (GroundProgram, Option<Simplified>) {
     gp.stats.as_ground = (gp.num_atoms(), gp.rules.len());
-    let simplified = simplified(gp, opts);
+    let simplified = simplified(gp, opts, true);
     let kept = (simplified.gp.num_derived() >= keep).then(|| simplified.clone());
     (finished(simplified, opts, opts.views), kept)
 }
@@ -502,11 +502,13 @@ enum Stage {
 /// [`GroundOptions::defined`], where it is a CNF over its facts, the facts
 /// of probability one half its clauses define eliminated ([`defined`]).
 fn finish(gp: GroundProgram, opts: &GroundOptions, inline: bool) -> GroundProgram {
-    finished(simplified(gp, opts), opts, inline)
+    finished(simplified(gp, opts, true), opts, inline)
 }
 
-/// [`finish`]'s simplifications before the views are inlined.
-fn simplified(mut gp: GroundProgram, opts: &GroundOptions) -> Simplified {
+/// [`finish`]'s simplifications before the views are inlined, the
+/// variables held as bits written over their values where `write_values`
+/// holds.
+fn simplified(mut gp: GroundProgram, opts: &GroundOptions, write_values: bool) -> Simplified {
     gp.options = *opts;
     simplify::propagate_certain(&mut gp);
     simplify::merge_equal_atoms(&mut gp);
@@ -515,13 +517,12 @@ fn simplified(mut gp: GroundProgram, opts: &GroundOptions) -> Simplified {
     // A variable held as bits that its readers test together is written as
     // a table over its values ([`values`]).
     #[cfg(test)]
-    let written = if opts.values {
+    let write_values = write_values && opts.values;
+    let written = if write_values {
         values::bits_as_values(&mut gp)
     } else {
         0
     };
-    #[cfg(not(test))]
-    let written = values::bits_as_values(&mut gp);
     if written > 0 {
         gp.stats.values += written;
         simplify::restrict_to_relevant(&mut gp);
@@ -687,6 +688,11 @@ pub(crate) fn restricted(gp: &GroundProgram, queries: &[usize]) -> GroundProgram
 /// would be the evidence probability of the windows so far, not its own.
 /// Where `gp`'s lone query is observed, no window drops an observation
 /// ([`drop_detached`]): its probability is a factor of the answer.
+/// Its bits are not written over their values again: `gp`'s finish wrote
+/// them, and the one variable a window adds, its outgoing frontier, which
+/// its row queries test together, holds the whole window below it, which
+/// the pass would search to its work bound for nothing (a 131k-rule window
+/// of rl_ladder_300000: 1.9 s of its 2.3 s finish).
 pub(crate) fn window(gp: &GroundProgram, mut part: GroundProgram) -> GroundProgram {
     part.options = GroundOptions {
         observe_query: false,
@@ -696,7 +702,7 @@ pub(crate) fn window(gp: &GroundProgram, mut part: GroundProgram) -> GroundProgr
     part.written = Arc::clone(&gp.written);
     part.stats.detached = gp.stats.detached;
     let opts = part.options;
-    finish(part, &opts, opts.views)
+    finished(simplified(part, &opts, false), &opts, opts.views)
 }
 
 /// The observations no query depends on dropped where they can hold
