@@ -1896,8 +1896,9 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   reductions and min-degree charged; below that its own eliminations stop
   part way and leave their vertices in one bag.
 - **`closed`** (`closed_forest`): components in the compiler's order
-  taken root by root, then merged where they share switches or have the
-  same dependencies and consumers (`src/vtree/order.rs`). A local search
+  taken root by root, then, up to 4,000 components and 50,000 facts,
+  merged where they share switches or have the same dependencies and
+  consumers (`src/vtree/order.rs`). A local search
   over dependency orders on a size proxy, tried from that order, changed
   the work by at most 1.1% on the programs `closed` wins and was
   dropped. Root by root: where the roots' cones (a root is a component

@@ -16,15 +16,26 @@ use std::collections::BinaryHeap;
 
 use crate::ground::{AtomId, GroundProgram, RulesByHead, deps};
 
+/// Components, and facts, beyond which the components are not merged.
+/// clinicalTrial1 at width 10 has 8,801 components: merged, its compile
+/// took 13.6 times the time and 5.3 times the memory.
+const MERGE_UNITS: usize = 4000;
+const MERGE_FACTS: usize = 50_000;
+
 /// The components of `sccs` (in a dependency order) as `closed` takes
 /// them, still a dependency order: taken root by root ([`by_roots`]), then
-/// merged ([`deps::components`]).
+/// merged ([`deps::components`]) up to [`MERGE_UNITS`] components and
+/// [`MERGE_FACTS`] facts.
 pub(super) fn components(
     gp: &GroundProgram,
     by_head: &RulesByHead,
     sccs: Vec<Vec<AtomId>>,
 ) -> Vec<Vec<AtomId>> {
-    deps::components(gp, by_head, by_roots(gp, by_head, sccs))
+    let sccs = by_roots(gp, by_head, sccs);
+    if sccs.len() > MERGE_UNITS || gp.facts().count() > MERGE_FACTS {
+        return sccs;
+    }
+    deps::components(gp, by_head, sccs)
 }
 
 /// `sccs`, a dependency order, taken root by root where the roots' cones
