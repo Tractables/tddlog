@@ -223,6 +223,17 @@ fn solve_parsed(
         seconds: start.elapsed().as_secs_f64(),
         ground: &ground,
     });
+    // A program `auto` may not decide is cut before its kept grounding is
+    // finished again, and where it is cut, that grounding is dropped
+    // unfinished: no window and no run whole after the windows is handed
+    // anything ready.
+    let decide = auto::may_decide(&ground);
+    let mut windows = if decide {
+        None
+    } else {
+        Windows::of(&ground, &bounds.windows)
+    };
+    let kept = kept.filter(|_| windows.is_none());
     // Its time is counted as the first part's rewrite's.
     let start = Instant::now();
     let (mut ready, guarded) = auto::ready(&ground, kept, ground_options);
@@ -235,8 +246,11 @@ fn solve_parsed(
             auto::derived_unmerged(&ground)
         )));
     }
+    if decide && !decides {
+        windows = Windows::of(&ground, &bounds.windows);
+    }
     let mut program = program;
-    if !decides && let Some(windows) = Windows::of(&ground, &bounds.windows) {
+    if let Some(windows) = windows {
         // Nothing is handed ready to a window, nor to the whole program
         // where the windows give it back.
         ready = auto::Ready::default();
