@@ -503,11 +503,13 @@ impl<V: Value> Scaled<V> {
     }
 
     /// `self / mass` as a float, `mass` nonzero: a value under no power
-    /// divided as a `V`, and a scaled one as a [`Count`], so that the
-    /// quotient is that of a count in `Count`s wherever it is a normal
-    /// float.
+    /// divided as a `V` where `mass` is a normal float, and otherwise as a
+    /// [`Count`], so that the quotient is that of a count in `Count`s
+    /// wherever it is a normal float. A zero under no power, the count of a
+    /// false query, against a mass under the least float divided in floats
+    /// gave `0 / 0`.
     pub fn ratio(self, mass: Count) -> f64 {
-        if self.exp == 0 {
+        if self.exp == 0 && mass.to_f64().is_normal() {
             self.value.ratio(V::from_count(mass))
         } else {
             self.count().ratio(mass)
