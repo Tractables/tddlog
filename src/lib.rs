@@ -138,8 +138,7 @@ pub struct Run {
     /// Compilations started, including the ones that stopped at an oversize
     /// formula or a cap; one for a single layout.
     pub attempts: usize,
-    /// Diagnostic lines from the vtree searches that ran (`closed`, `td`,
-    /// `families`).
+    /// Diagnostic lines from the layouts that were built (`--stats`).
     pub vtree_notes: Vec<String>,
     /// Seconds of the rewrites of the program (`Kind::rewrite`), for
     /// `auto` over every trial's, and of the first part's `decision`

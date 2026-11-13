@@ -233,7 +233,7 @@ pub(super) fn weight(t: &Trial) -> u64 {
 ///
 /// A program whose derived atoms are one component, or one recursive
 /// component that reads most of the facts, has no boundary for an
-/// indicator to cut and no component order for `closed` to search that
+/// indicator to cut and no component order for `closed` to follow that
 /// matters ([`shape::nothing_to_order`]): only an order of the
 /// facts themselves can help, and its trial is `dynamic`: the min-fill
 /// vtree, searched by rotations between the compile's steps
@@ -282,7 +282,7 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// grids 3 to 60 times. `td` is no trial there: its order comes from a
 /// decomposition of the undirected interaction graph, which does not see
 /// the gates' direction, where the program's two orders and `closed`'s
-/// search over dependency orders follow it. In the timed runs of the
+/// dependency order follow it. In the timed runs of the
 /// circuits, GeNI's networks and Roulette's programs `td` won none, and
 /// its turns took a fifth of the time the losing trials spent on the
 /// circuits of a second or more. The property is read off the program as

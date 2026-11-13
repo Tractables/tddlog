@@ -310,7 +310,7 @@ impl Programs {
     /// a trial; where it is not, it goes to `program`, `closed` and `td`,
     /// whose layouts the rules' text does not set: `program`'s order is
     /// the one the program states its facts in, the same in both
-    /// programs, and `closed` and `td` search theirs on
+    /// programs, and `closed` and `td` read theirs off
     /// the program they get (`dynamic`, whose layout the text does not set
     /// either, is a trial only where nothing is left to order, and never
     /// beside a conditioned program). `program` and `program:fanin` rewrite

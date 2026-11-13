@@ -2187,7 +2187,7 @@ and the trial after them start with short turns (`LEAD_SHARE`,
 Turns). There `td` is no trial: its order comes from a
 decomposition of the undirected interaction graph, which does not see the
 gates' direction (Vtrees, direction), where the two orders the program
-states and `closed`'s search over dependency orders follow it.
+states and `closed`'s dependency order follow it.
 
 **The `decision` trial.** A program answered whole with at least
 `DECISION_DERIVED` (4 096) derived atoms, to which the conditioning on

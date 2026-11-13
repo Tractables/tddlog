@@ -224,9 +224,9 @@ pub(crate) struct Layout {
     /// The facts in the order of the variables: fact `order[i]` is
     /// `VarId(i + 1)`.
     pub(crate) order: Vec<AtomId>,
-    /// A diagnostic line for `--stats`: the search, when the strategy ran
-    /// one (`closed`, `td`, `families`, `dynamic`), or the names it made
-    /// (`program`, `decision`).
+    /// A diagnostic line for `--stats`: the search or the shape (`td`,
+    /// `families`, `dynamic`, `closed`), or the names it made (`program`,
+    /// `decision`).
     pub(crate) note: Option<String>,
     /// The pairs the layout's diagrams are estimated to hold, where the
     /// strategy estimates them.
