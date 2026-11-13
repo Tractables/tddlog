@@ -86,6 +86,10 @@ library caller alike.
    program are estimated much smaller than it, the queries are split into
    groups, each run on its part from stage 3 on
    ([Queries in groups](#queries-in-groups-srcsolvesplitrs-split_check)).
+   A long program whose order has narrow cuts is run as windows between
+   them instead, each window alone from stage 3 on, with the distribution
+   of the few atoms that cross the cut before it as its input
+   ([Windows](#windows-srcsolvewindowsrs)).
 3. **Rewrite.** Linear recursion is written without recursion
    (`src/ground/eliminate.rs`, `ground::without_linear_recursion`) and the
    acyclic result finished again: the recursive atoms are eliminated one
@@ -160,7 +164,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `lib.rs` | `Run`, `Error`, the public items |
 | `trace.rs` | `Trace`: a run's stages from `Progress`'s events, bounded, written as JSON (`tddlog --trace`, the browser build) |
 | `input.rs` | `Format` and `read`: every input (a ProbLog program or an LPAD, a Dice program, a Circulette netlist, a network file with its evidence file) read as the program `solve` takes, the one route of the binary and the bindings |
-| `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, what `auto` is handed ready, the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups; `subquery.rs`: `subquery/2,3` answered before grounding |
+| `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, what `auto` is handed ready, the windows or the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups; `windows.rs`: a long narrow program cut into windows, each window's program and the message it reads; `subquery.rs`: `subquery/2,3` answered before grounding |
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
 | `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
@@ -168,7 +172,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
 | `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `rows.rs` (row classes and switch sharing), `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
-| `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, its eliminations (min-fill, weighted min-fill, in a given order), an elimination order annealed, the minor-min-width bound, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies, tested in `tests/copies.rs`), `closed.rs` with `order.rs`, `families.rs` with `nest.rs` (a group's block), `decision.rs` (with the names of its tree's contexts, of the atoms read outside it and of the atoms read beside those): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them, and `chained`, the wide bodies written as chains along `program`'s order |
+| `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, its eliminations (min-fill, weighted min-fill, in a given order), an elimination order annealed, the minor-min-width bound, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies, tested in `tests/copies.rs`), `closed.rs` with `order.rs`, `families.rs` with `nest.rs` (a group's block), `decision.rs` (with the names of its tree's contexts, of the atoms read outside it and of the atoms read beside those): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them, `window_profile`, the order and the boundaries a run is cut into windows by, and `chained`, the wide bodies written as chains along `program`'s order |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `trace.rs`: `CompileTrace`, each component's compile as a trace records it; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
 | `query/` | `mod.rs`: `QueryEvaluation`, the query counts; `walk.rs`: the evidence walk; `sum_out.rs`: its finished subtrees summed out where only P(e) is wanted |
 | `eval/` | `mod.rs`: the module's exports; `number.rs`: `Value`, `Count`, `Range`, `Scaled`; `weights.rs`: the weights of facts and indicators; `count.rs`: a count's two passes; `conjunction.rs`: the count of a conjunction without building it; `grid.rs` and `kernel.rs`: count passes over levels read as grids, and their vector kernels; `tests.rs`: `count.rs`'s tests, the passes over grids and in `Count`s against those over pairs |
@@ -1521,6 +1525,172 @@ is much narrower. The floor comes before the weights, which cost more
 where it refuses the split. The tests in `src/solve/tests.rs` check the
 parts' answers.
 
+## Windows (`src/solve/windows.rs`)
+
+A long chain of narrow steps (a Markov chain unrolled over time, a loop
+over a level) compiles into formulas that the run holds to its end, so
+its memory grows with the chain. Where the ground program's order has
+narrow cuts far enough apart, `solve` runs it as a sequence of *windows*
+(`solve_windows`). Each window is a ground program of its own: it goes
+from the rewrites on through the pipeline every program takes
+(`run_part`: `auto` with nothing handed ready, or the layout asked for),
+and its run is freed before the next window compiles. What passes a cut
+is a *message*, the joint distribution of the few atoms that cross it.
+These are not the windows in which `program`'s naming looks for its cuts
+(Vtrees): a name ties the two sides of its cut by a link inside one
+compile, and a window's cut ends the compile.
+
+**The order** (`vtree::window_profile`, in `vtree/naming.rs`). The
+windows read naming's profile on an order of their own. The rules are
+ranked by the *late level* of their heads, then by their depth (the
+longest chain of rules below the atom, zero for a fact), the program's
+order among equals. An atom no rule reads has its depth as its late
+level, and any other atom is one level below its lowest reader, so each
+atom ranks as late as its readers allow. Each derived atom then goes at
+its last rule in the ranking and each fact right before its first
+reader, whatever order the program states the facts in. The order the
+grounder leaves a loop in has no boundary to cut: it runs from the
+loop's bound end backwards, each step after the steps that read it.
+Ranked by depth alone, a helper that each step computes and the next
+step reads, or an observation stated after the chain, has depth one: it
+goes with the chain's first steps and crosses every boundary up to its
+reader, and the chain is cut only near its end. At its late level it
+goes next to the step it belongs to, and the chain can be cut at every
+step. The width of a boundary is naming's, the atoms at or before it
+that a rule of a later atom reads, but that a query's atom counts as
+read at the position of the last observed atom, so that it crosses
+every boundary up to there (Evidence and queries, below).
+
+**The cuts** (`Windows::of`, `WindowBounds`). A boundary may be cut
+where at most `widest` atoms cross it (4), no rule before it reads an
+atom after it (within a cyclic component one does), and `rules` ground
+rules or more (2^17) come after it. Along the order, once the window
+since the last cut holds `rules` rules, the cut is the first such
+boundary, or a narrower one among those after it where the window holds
+fewer than twice as many, the narrowest and of those the earliest. Every
+window, the last included, so holds `rules` rules or more. A cut that
+left a short last window would make the window before it nearly the
+whole program, finished again and asked the rows of its frontier: slower
+than the whole run, and holding more memory. A program without a cut is
+one window, which is the run without windows. One of fewer than
+`2 * rules` rules has no cut, and its profile is not computed. A program
+read through indicators or conditioned on its guards for `decision` is
+not cut, nor is one whose first trial under `auto` is `decision`
+(`Ready::decides`): a program that may get that trial (`may_decide`) is
+looked at for cuts once that is known, and any other before its kept
+grounding is finished again, which a program that is cut drops
+unfinished. A program that is cut is not split into groups. Both bounds
+are counts, so a program is cut at the same places on every machine.
+
+**A window's program** (`Windows::program`). The atoms that cross a cut
+are its *frontier*: derived atoms a later rule reads, facts read on
+both sides, and queries held for later evidence. Window `j` holds the
+rules of the atoms between its two cuts, the queries and the
+observations that lie in it, and the atoms of the incoming frontier,
+which the message defines. Every window but the last also holds, for
+an outgoing frontier of `w` atoms, a row atom for each of the `2^w`
+conjunctions of their literals, each of them a query. The window is
+finished again as the grounder finishes a program (`ground::window`),
+which finds what the message proves certain or exclusive. The pass that
+writes variables held as bits over their values is left out: the whole
+program's finish has run it, and the one such variable a window adds,
+its outgoing frontier, which the row queries test together, holds the
+whole window below it, so the pass would search it to its work bound
+and write nothing.
+
+**The message.** The answers to a window's row queries are the joint
+distribution of its outgoing frontier given the evidence so far: the
+window's own, and through the incoming message the evidence before it.
+The next window reads them (`read_message`) as an annotated disjunction
+over the rows of non-zero probability, lowered as the grounder lowers
+one, into a chain of switches, with each frontier atom the disjunction
+of the rows it is true in. A frontier of one atom whose two
+probabilities are each zero or a normal float is a fact instead. A row
+of probability zero is absent, so an atom the evidence so far makes
+certain, or two atoms it makes exclusive, are so in the next window's
+rules, where the finish finds them.
+
+This is exact. No rule before a cut reads an atom after it, so the
+rules and the evidence before the cut enter the count of anything after
+it only through the frontier: as `M(f)`, the weight of the values of
+the facts before the cut under which the evidence so far holds and the
+frontier has the values `f`. Let `Z` be the sum of `M(f)` over `f`, the
+probability of the evidence so far. A program that gives the frontier
+the joint
+`M / Z` in place of the rules before the cut has `WMC(q ∧ e) / Z` and
+`WMC(e) / Z` for the program's `WMC(q ∧ e)` and `WMC(e)`, for every
+query `q` after the cut, so `P(q | e)` is the program's, and `P(e)` is
+`Z` times the evidence probability of what is left. `Z` is the next
+window's weight (`GroundProgram::weight`), so the last window's
+evidence probability is the program's.
+
+The rows are passed as `Count`s (`eval/number.rs`, a float with an
+exponent of its own), not as floats. On a chain that carries a running
+conjunction, such as the joint query of a hidden Markov model, a row is
+the probability that every step so far holds, and it falls under the
+least normal float: as a float it would reach the next window as zero
+or as a subnormal, read there as impossible or with digits lost. The
+query phase therefore answers each query as a `Count` beside its float
+(`QueryResult::count`), the quotient of the counts where the float is
+not normal (`Scaled::quotient`). In the next window the rows go from the
+least. Switch `t` is true with the probability of row `t` among the rows
+from `t` on, so every switch but the last fails with probability 1/2 or
+more, and only the chance that a switch holds can be under the least
+float. Such a switch is a derived atom (`switch`): the conjunction of
+facts of probability 2^-1000 each and one fact for what is left, whose
+product is the switch's probability. No row is rounded to zero, and no
+program is run whole because a message underflowed.
+
+**Evidence and queries.** An observation goes with the window of its
+atom. A query goes with the window of its atom, or with that of the last
+observed atom where that one is later: its atom is in every frontier up
+to there, and the row queries carry its joint with the rest of the
+frontier, so its answer is given all the evidence. A query after the
+last observation is answered in its own window, whose message is given
+all the evidence already. Each held query takes one atom of a cut's
+width, and where the held queries are wider than `widest` the program
+has no cut. A query or an observation of an atom that cannot hold goes
+with the first window. A window whose evidence cannot hold, given its
+message, ends the run without answers, as inconsistent evidence does
+for the whole program.
+
+Without `--evidence-probability` each window drops the observations
+none of its queries depends on (Grounding, step 10), the rows of its
+outgoing frontier among those queries; their count cancels in every
+answer. Once a window has dropped one, `Z` is no longer known, and the
+windows after it take the weight one. With the option no window drops
+any, as the whole program's grounding drops none. Where the program asks one query and observes
+nothing, and the grounder observed the query, its answer is the
+evidence probability, `Z` itself: no window drops an observation then,
+each passes `Z` on, and the last window holds the observed query. A
+window that itself holds one query and no observation does not have it
+observed (`GroundOptions::observe_query` off): the window's evidence
+probability is that of the windows so far, not the query's answer.
+
+**What it gives.** A window's formulas, vtree and count tables are the
+size of a window, so the largest formula and the memory of the compile
+and the query phase stay flat as the chain grows. Cut by hand at
+120 000 rules, two chains of 300 000 and 3 000 000 steps held 310 MB a
+window at either length, against 2.9 and 31 GB for the whole runs
+(`WindowBounds::DEFAULT`). The program is still ground whole, and the
+ground program is held beside each window's, so that part of the memory
+grows with the chain. A grounder that yields the windows one at a time,
+each ground when the one before is answered, would not hold it; that is
+not built. `--stats` prints `windows: N, cut at most W atoms wide` and,
+before each window's own lines, its rules, queries and frontier.
+
+The tests in `src/solve/tests.rs` cut small chains with `rules` at 8 to
+24 under `auto` and `closed` and check the answers and `P(e)` against
+the whole run's and against answers by hand to 1e-9: evidence in the
+middle, true and false, a query before later evidence, a ladder whose
+frontier is two atoms, an annotated disjunction across cuts, a cycle in
+each step, a helper read by the next step, observations stated after
+the chain, an observed lone query, rows under the least float passed on
+as counts (a running conjunction at 0.9 × 0.1^i over 400 steps),
+inconsistent evidence, held queries wider than a cut, a program whose
+own atoms have the names the windows give theirs, and the size of every
+window.
+
 ## Indicators and clause tables (`src/indicators/`)
 
 Tp-compilation composes every derived atom away: an atom's formula is over
@@ -2856,8 +3026,10 @@ and `Vtree`, `Compile` and `Trials` together a compile error. They run under the
   the programs of the files in `tests/networks/`, `tests/regress/` and
   `examples/` against the programs written for them, and the binary's
   answers and partition functions on them against enumeration and
-  ProbLog), and regressions (`tests/regress/`). Queries in groups are
-  tested in `src/solve/tests.rs`; `src/tp/tests/` compiles every example
+  ProbLog), and regressions (`tests/regress/`). Queries in groups and
+  windows are tested in `src/solve/tests.rs`, the windows' answers and
+  `P(e)` against the whole run's and against answers computed by hand;
+  `src/tp/tests/` compiles every example
   with a dynamic search after every step, checks formulas dropped as
   they die, resumes stopped cyclic components, and checks the primal's
   update in a cyclic component against enumeration.
