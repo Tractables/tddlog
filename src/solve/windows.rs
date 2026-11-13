@@ -328,10 +328,7 @@ fn read_message(part: &mut GroundProgram, j: usize, w: usize, message: &[Count])
     for (t, (&k, &(p, not))) in rows.iter().zip(&weights).enumerate() {
         let switch = switch(part, j, t, p, not);
         let row = new_atom(part, MESSAGE_ROW, j, t, AtomKind::Derived);
-        let mut body: Vec<GLit> = before.iter().map(|&s| GLit::Neg(s)).collect();
-        body.push(GLit::Pos(switch));
-        part.rules.push(GroundRule::new(row, body));
-        before.push(switch);
+        (part.rules).push(GroundRule::link(row, &mut before, Some(switch)));
         for i in (0..w).filter(|i| k >> i & 1 == 1) {
             part.rules
                 .push(GroundRule::new(i as AtomId, vec![GLit::Pos(row)]));

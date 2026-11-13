@@ -89,6 +89,20 @@ impl GroundRule {
         }
     }
 
+    /// Head `head` of a chain of switches, an annotated disjunction lowered
+    /// ([`super::normalize::chain_weights`]): true where `chain` holds, its
+    /// context and the switches before false, and its own `switch` true,
+    /// which joins the chain false. The last head of a chain of no mass of
+    /// no head has none.
+    pub(crate) fn link(head: AtomId, chain: &mut Vec<GLit>, switch: Option<AtomId>) -> Self {
+        let mut body = chain.clone();
+        if let Some(s) = switch {
+            body.push(GLit::Pos(s));
+            chain.push(GLit::Neg(s));
+        }
+        GroundRule::new(head, body)
+    }
+
     /// The rules the rule stands for: itself, or one per pair.
     pub(crate) fn clauses(&self) -> usize {
         if self.pairs {
