@@ -21,7 +21,7 @@ use super::{
     CompileError, CompileStats, Formulation, NegationSource, Negations, Projection,
     ProjectionStats, Reduce, ScopeTable, SearchStats, TddBackend, VtreeScope, aft, cone,
 };
-use crate::eval::Probabilities;
+use crate::eval::{Probabilities, noted};
 use crate::ground::deps::Deps;
 use crate::ground::{AtomId, AtomKind, GLit, GroundProgram, RulesByHead, deps};
 
@@ -816,6 +816,9 @@ pub(crate) struct ForQueries {
     /// Counts of `counted` taken again because the float count was not
     /// exact (`eval::Range`).
     pub(crate) recounts: usize,
+    /// Probabilities of `counted` under the least normal float whose counts
+    /// are not zero (`crate::query::QuerySizes::underflows`).
+    pub(crate) underflows: usize,
     /// The query atoms answered by another query atom's formula under other
     /// probabilities ([`templates`]), whose own formulas are not built.
     pub(crate) templates: FxHashMap<AtomId, Template>,
@@ -1238,32 +1241,36 @@ impl Compilation {
                 // counts are of the atom and its negation, in that order.
                 let mut negated = None;
                 let positive = self.fixpoint.positive.borrow()[a as usize];
-                let mut both =
-                    |w: &Probabilities, recounts: &mut usize| -> Result<(f64, f64), CompileError> {
-                        let m = crate::eval::mass(backend.engine, f, w, recounts)?.to_f64();
-                        let c = crate::eval::complement(m, || -> Result<f64, CompileError> {
-                            if negated.is_none() {
-                                negated = Some(self.negations.borrow_mut().negate(
-                                    backend,
-                                    NegationSource::Query,
-                                    &**f,
-                                )?);
-                            }
-                            Ok(crate::eval::mass(
-                                backend.engine,
-                                negated.as_ref().unwrap(),
-                                w,
-                                recounts,
-                            )?
-                            .to_f64())
-                        })?;
-                        Ok(if positive { (m, c) } else { (c, m) })
-                    };
-                let counts = both(&w, &mut self.for_queries.recounts)?;
+                let mut both = |w: &Probabilities,
+                                (recounts, underflows): (&mut usize, &mut usize)|
+                 -> Result<(f64, f64), CompileError> {
+                    let m = crate::eval::mass(backend.engine, f, w, recounts)?;
+                    let m = noted(m.to_f64(), || m, underflows);
+                    let c = crate::eval::complement(m, || -> Result<f64, CompileError> {
+                        if negated.is_none() {
+                            negated = Some(self.negations.borrow_mut().negate(
+                                backend,
+                                NegationSource::Query,
+                                &**f,
+                            )?);
+                        }
+                        let c = crate::eval::mass(
+                            backend.engine,
+                            negated.as_ref().unwrap(),
+                            w,
+                            recounts,
+                        )?;
+                        Ok(noted(c.to_f64(), || c, underflows))
+                    })?;
+                    Ok(if positive { (m, c) } else { (c, m) })
+                };
+                let q = &mut self.for_queries;
+                let counts = both(&w, (&mut q.recounts, &mut q.underflows))?;
                 self.for_queries.counted.insert(a, counts);
                 for &x in self.dying.answers.get(&a).map_or(&[][..], Vec::as_slice) {
                     let w = self.for_queries.templates[&x].weights(&w, &self.var_of, scope);
-                    let counts = both(&w, &mut self.for_queries.recounts)?;
+                    let q = &mut self.for_queries;
+                    let counts = both(&w, (&mut q.recounts, &mut q.underflows))?;
                     self.for_queries.counted.insert(x, counts);
                 }
             }

@@ -172,6 +172,16 @@ pub(crate) fn complement<E>(m: f64, count: impl FnOnce() -> Result<f64, E>) -> R
     }
 }
 
+/// `p`, a probability of count `count`, counted in `underflows` where it
+/// is under the least normal float and the count is not zero
+/// (`crate::query::QuerySizes::underflows`).
+pub(crate) fn noted(p: f64, count: impl FnOnce() -> Count, underflows: &mut usize) -> f64 {
+    if p < f64::MIN_POSITIVE && !count().is_zero() {
+        *underflows += 1;
+    }
+    p
+}
+
 /// The weighted count of `f` under `w` by the engine's evaluation in
 /// floats, which the engine's work clock is charged for; where that is not
 /// exact, by [`fn@count`]'s pass up in [`Count`]s, which is not charged, and

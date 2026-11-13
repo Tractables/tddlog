@@ -287,9 +287,21 @@ impl Windows {
     }
 
     /// The message to the window after one whose answers are `results`,
-    /// its own `places` first: its conjunction queries' answers.
-    pub(super) fn message(results: &[QueryResult], places: usize) -> Vec<f64> {
-        results[places..].iter().map(|r| r.probability).collect()
+    /// its own `places` first: its conjunction queries' answers. `None`
+    /// where a row may be under the least normal float against the rows'
+    /// sum without being impossible, which the next window would read as
+    /// impossible: a row under it that is not zero, or zero where the run
+    /// answered a query under the least normal float whose count is not
+    /// zero (`underflowed`, [`crate::query::QuerySizes::underflows`]).
+    pub(super) fn message(
+        results: &[QueryResult],
+        places: usize,
+        underflowed: bool,
+    ) -> Option<Vec<f64>> {
+        let rows: Vec<f64> = results[places..].iter().map(|r| r.probability).collect();
+        let least = f64::MIN_POSITIVE * rows.iter().sum::<f64>();
+        let passed = |p: f64| p >= least || p == 0.0 && !underflowed;
+        (least > 0.0 && rows.iter().all(|&p| passed(p))).then_some(rows)
     }
 }
 
@@ -305,7 +317,8 @@ fn new_atom(part: &mut GroundProgram, name: &str, j: usize, k: usize, kind: Atom
 
 /// The `w` atoms of window `j`'s incoming frontier, its first atoms,
 /// defined in `part` by `message`, the probability of each of their `2^w`
-/// rows given the evidence before the cut: one atom, a fact of its
+/// rows given the evidence before the cut, a row of probability zero
+/// impossible ([`Windows::message`]): one atom, a fact of its
 /// probability; more, an annotated disjunction over the rows of non-zero
 /// probability, each row a switch of the chain, and each atom the
 /// disjunction of the rows it holds in.
@@ -313,6 +326,7 @@ fn read_message(part: &mut GroundProgram, j: usize, w: usize, message: &[f64]) {
     debug_assert_eq!(message.len(), (1 << w) * usize::from(w > 0));
     if w == 1 {
         let total = message[0] + message[1];
+        debug_assert!(total > 0.0, "a message of rows {message:?}");
         part.kinds[0] = AtomKind::Fact(Prob {
             p: message[1] / total,
             not: message[0] / total,

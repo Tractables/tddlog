@@ -686,9 +686,12 @@ pub(crate) fn restricted(gp: &GroundProgram, queries: &[usize]) -> GroundProgram
 /// finishes a program, which finds what the incoming message proves certain
 /// or exclusive. A lone query of the window is not observed: its answer
 /// would be the evidence probability of the windows so far, not its own.
+/// Where `gp`'s lone query is observed, no window drops an observation
+/// ([`drop_detached`]): its probability is a factor of the answer.
 pub(crate) fn window(gp: &GroundProgram, mut part: GroundProgram) -> GroundProgram {
     part.options = GroundOptions {
         observe_query: false,
+        detach: gp.options.detach && gp.observed_query.is_none(),
         ..gp.options
     };
     part.written = Arc::clone(&gp.written);

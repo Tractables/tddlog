@@ -235,15 +235,21 @@ fn solve_parsed(
             auto::derived_unmerged(&ground)
         )));
     }
+    let mut program = program;
     if !decides && let Some(windows) = Windows::of(&ground, &bounds.windows) {
-        drop(ready);
-        return solve_windows(
-            (program, ground, windows),
+        // Nothing is handed ready to a window, nor to the whole program
+        // where the windows give it back.
+        ready = auto::Ready::default();
+        program = match solve_windows(
+            (program, &ground, windows),
             options,
             (projection, first_pairs),
             decided_seconds,
             progress,
-        );
+        )? {
+            Ok(solution) => return Ok(solution),
+            Err(program) => program,
+        };
     }
     let answering = if decides {
         Answering::Whole(None)
@@ -343,14 +349,16 @@ fn run_part(
 /// [`solve_parsed`] of `ground` cut into `windows`, each window's run
 /// freed before the next starts: each passes its frontier's joint to the
 /// next ([`Windows::program`]) and the probability of the evidence so far
-/// as its weight, and answers the queries that lie in it.
+/// as its weight, and answers the queries that lie in it. `Err` with
+/// `program` given back where a message cannot be passed in floats
+/// ([`Windows::message`]): the program is then run whole.
 fn solve_windows(
-    (program, ground, windows): (Program, GroundProgram, Windows),
+    (program, ground, windows): (Program, &GroundProgram, Windows),
     options: &Options,
     compile: (Projection, usize),
     decided_seconds: f64,
     progress: &mut dyn FnMut(Progress<'_>),
-) -> Result<Solution, Error> {
+) -> Result<Result<Solution, Program>, Error> {
     let count = windows.len();
     progress(Progress::Note(format!(
         "windows: {count}, cut at most {} atoms wide",
@@ -363,7 +371,14 @@ fn solve_windows(
     let (mut message, mut weight) = (Vec::new(), Some(ground.weight));
     let mut last: Option<Run> = None;
     for j in 0..count {
-        let (part, places) = windows.program(&ground, j, &message, weight.unwrap_or(Count::ONE));
+        // An observed lone query's answer is `Z`, which no window drops a
+        // factor of (`ground::window`).
+        let known = if ground.observed_query.is_some() {
+            weight.expect("the evidence probability of each window")
+        } else {
+            weight.unwrap_or(Count::ONE)
+        };
+        let (part, places) = windows.program(ground, j, &message, known);
         progress(Progress::Note(format!(
             "window {} of {count}: {} rules, {} queries, frontier {}",
             j + 1,
@@ -381,19 +396,35 @@ fn solve_windows(
         // `Z` is known while every window's is.
         weight = weight.and(run.evidence_probability);
         let Some(results) = &run.results else {
-            return Ok(Solution {
+            return Ok(Ok(Solution {
                 answers: None,
                 evidence_probability: weight.filter(|_| options.evidence_probability),
                 held: (program, run),
-            });
+            }));
         };
+        let rows = (1 << windows.frontier(j).len()) * usize::from(j + 1 < count);
+        assert_eq!(
+            results.len(),
+            places.len() + rows,
+            "an answer per query of the window and per row of its frontier"
+        );
         for (r, &at) in results.iter().zip(&places) {
             answers[at] = Some(r.clone());
         }
-        message = Windows::message(results, places.len());
+        if rows > 0 {
+            let underflowed = run.query_sizes.underflows > 0;
+            let Some(next) = Windows::message(results, places.len(), underflowed) else {
+                progress(Progress::Note(format!(
+                    "windows: a row after window {} may be below the least float and not zero; the program is run whole",
+                    j + 1
+                )));
+                return Ok(Err(program));
+            };
+            message = next;
+        }
         last = Some(run);
     }
-    Ok(Solution {
+    Ok(Ok(Solution {
         answers: Some(
             answers
                 .into_iter()
@@ -402,7 +433,7 @@ fn solve_windows(
         ),
         evidence_probability: weight.filter(|_| options.evidence_probability),
         held: (program, last.expect("a program has a window")),
-    })
+    }))
 }
 
 /// The program [`solve`] hands the compile under `options`, as `--ground`
