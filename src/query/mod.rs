@@ -17,7 +17,7 @@ use tididi::Tdd;
 use tididi::limits::SparseRoute;
 use tididi::vtree::{VarId, VtreeIdx};
 
-use crate::eval::{Count, Counted, Counts, Probabilities, Value, noted};
+use crate::eval::{Count, Counted, Counts, Probabilities, Value};
 use crate::ground::{AtomId, GroundProgram};
 use crate::tp::{
     CompileError, Compiled, Formula, NegationSource, Negations, ScopeTable, TddBackend, Template,
@@ -32,6 +32,9 @@ pub struct QueryResult {
     /// `false` for a `query(\+a)`.
     pub positive: bool,
     pub probability: f64,
+    /// The probability as a count, which a float under the least normal
+    /// one does not hold: what a window passes on (`solve::windows`).
+    pub(crate) count: Count,
 }
 
 /// The query as ProbLog prints it: the atom, `\+` before a negative one.
@@ -98,9 +101,6 @@ pub struct QuerySizes {
     /// not exact (`eval::Range`): the evidence formula's, which every query
     /// after reads, or a formula's mass.
     pub recounts: usize,
-    /// Answers under the least normal float whose counts are not zero, the
-    /// compile's among them: such an answer is zero or imprecise as a float.
-    pub underflows: usize,
     /// The evidence formula's pairs held as the description of a complete
     /// product (`TddLevel::implicit`) rather than written.
     pub evidence_implicit: usize,
@@ -242,7 +242,6 @@ impl QueryEvaluation {
             spent: false,
             sizes: QuerySizes {
                 recounts: compiled.for_queries.recounts,
-                underflows: compiled.for_queries.underflows,
                 negations: settled.negations,
                 names_kept: settled.kept,
                 names_expanded: settled.expanded,
@@ -423,9 +422,9 @@ impl QueryEvaluation {
             let p = match id {
                 None => {
                     if *positive {
-                        0.0
+                        Count::ZERO
                     } else {
-                        1.0
+                        Count::ONE
                     }
                 }
                 Some(a) => answers.probability(*a, *positive)?,
@@ -435,7 +434,8 @@ impl QueryEvaluation {
             out.push(QueryResult {
                 atom: atom.clone(),
                 positive: *positive,
-                probability: p.clamp(0.0, 1.0),
+                probability: p.to_f64().clamp(0.0, 1.0),
+                count: p,
             });
         }
         sizes.routes = counted
@@ -570,7 +570,7 @@ impl Answers<'_> {
     /// or where that is too small to keep its digits, the count of the
     /// complement's formula (`eval::complement`). A fact's literal and a
     /// literal of the evidence are counted in the polarity asked.
-    fn probability(&mut self, a: AtomId, positive: bool) -> Result<f64, CompileError> {
+    fn probability(&mut self, a: AtomId, positive: bool) -> Result<Count, CompileError> {
         // A literal's count reads the pass down, walked by the first
         // literal under each level.
         let t = Instant::now();
@@ -603,7 +603,7 @@ impl Answers<'_> {
 
     /// `P(l | e)` for the literal `l` of polarity `positive` on `a`, where
     /// `a` has a variable of its own on the evidence's scope.
-    fn literal(&mut self, a: AtomId, positive: bool) -> Result<Option<f64>, CompileError> {
+    fn literal(&mut self, a: AtomId, positive: bool) -> Result<Option<Count>, CompileError> {
         let Some(ev) = &self.evidence else {
             return Ok(None);
         };
@@ -630,13 +630,12 @@ impl Answers<'_> {
                 .leaf_of(var)
                 .expect("a scope's variables are its leaves");
         loop {
-            let mass = (ev.mass, &mut self.sizes.underflows);
             let p = match &c.counted {
                 Counts::Plain(plain) => {
-                    literal_ratio(plain, ev.e, leaf, var, positive, &ev.weights, mass)?
+                    literal_ratio(plain, ev.e, leaf, var, positive, &ev.weights, ev.mass)?
                 }
                 Counts::Wide(wide) => {
-                    literal_ratio(wide, ev.e, leaf, var, positive, &ev.weights, mass)?
+                    literal_ratio(wide, ev.e, leaf, var, positive, &ev.weights, ev.mass)?
                 }
             };
             match p {
@@ -654,7 +653,7 @@ impl Answers<'_> {
         a: AtomId,
         template: Option<&Template>,
         polarity: bool,
-    ) -> Result<f64, CompileError> {
+    ) -> Result<Count, CompileError> {
         let t = Instant::now();
         let mass = if self.evidence.is_none() {
             self.count_alone(a, template, polarity)?
@@ -672,7 +671,7 @@ impl Answers<'_> {
         a: AtomId,
         template: Option<&Template>,
         polarity: bool,
-    ) -> Result<f64, CompileError> {
+    ) -> Result<Count, CompileError> {
         if self
             .pending_query
             .as_ref()
@@ -692,8 +691,12 @@ impl Answers<'_> {
         );
         let w = self.weights_on(scope, template);
         self.sizes.record(self.backend.size(f), self.watch)?;
-        let m = crate::eval::mass(self.backend.engine, f, &w, &mut self.sizes.recounts)?;
-        Ok(noted(m.to_f64(), || m, &mut self.sizes.underflows))
+        Ok(crate::eval::mass(
+            self.backend.engine,
+            f,
+            &w,
+            &mut self.sizes.recounts,
+        )?)
     }
 
     /// `P(l | e)`: the formula of `l` counted where it was built, walked
@@ -704,7 +707,7 @@ impl Answers<'_> {
         a: AtomId,
         template: Option<&Template>,
         polarity: bool,
-    ) -> Result<f64, CompileError> {
+    ) -> Result<Count, CompileError> {
         self.sizes.products += 1;
         let built = self.formula(a, polarity)?;
         let (q, q_scope) = unpack(self.compiled, &built, a);
@@ -730,14 +733,13 @@ impl Answers<'_> {
         let host = |units: u64| self.backend.engine.limits().poll_host_work(units);
         let mut charged = false;
         loop {
-            let mass = (ev.mass, &mut self.sizes.underflows);
             let p = match &c.counted {
                 Counts::Plain(plain) => joint_ratio(
                     (ev.e, plain),
                     &c.shape,
                     (q, &q_w),
                     &leaf_in_e,
-                    mass,
+                    ev.mass,
                     &mut charged,
                     &host,
                 )?,
@@ -746,7 +748,7 @@ impl Answers<'_> {
                     &c.shape,
                     (q, &q_w),
                     &leaf_in_e,
-                    mass,
+                    ev.mass,
                     &mut charged,
                     &host,
                 )?,
@@ -861,10 +863,10 @@ fn literal_ratio<V: Value>(
     var: VarId,
     positive: bool,
     w: &Probabilities,
-    (mass, underflows): (Count, &mut usize),
-) -> Result<Option<f64>, tididi::OperationError> {
+    mass: Count,
+) -> Result<Option<Count>, tididi::OperationError> {
     Ok(c.with_literal(e, leaf, var, positive, w)?
-        .map(|with| noted(with.ratio(mass), || with.count(), underflows)))
+        .map(|with| with.quotient(mass)))
 }
 
 /// `P(q | e)` for the query formula `q`, counted against the evidence
@@ -877,17 +879,17 @@ fn joint_ratio<V: Value>(
     shape: &crate::eval::Shape,
     (q, q_w): (&Tdd, &Probabilities),
     leaf_in_e: &impl Fn(VarId) -> Option<VtreeIdx>,
-    (mass, underflows): (Count, &mut usize),
+    mass: Count,
     charged: &mut bool,
     host: &impl Fn(u64) -> Result<(), tididi::OperationError>,
-) -> Result<Option<f64>, tididi::OperationError> {
+) -> Result<Option<Count>, tididi::OperationError> {
     let q_counted = crate::eval::count::<V>(q, q_w)?;
     let charge = !*charged;
     let poll = |units: u64| if charge { host(units) } else { Ok(()) };
     let (joint, exact) =
         crate::eval::conjunction_count(e, c, shape, q, &q_counted, leaf_in_e, poll)?;
     *charged = true;
-    Ok(exact.then(|| noted(joint.ratio(mass), || joint.count(), underflows)))
+    Ok(exact.then(|| joint.quotient(mass)))
 }
 
 /// A query's formula kept across a size stop, and the polarity of the

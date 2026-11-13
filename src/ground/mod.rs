@@ -117,7 +117,6 @@ pub use engine::GroundError;
 pub(crate) use fact_copies::{FactCopy, add_fact_copies};
 pub use guards::Decisions;
 pub(crate) use guards::applies as guards_apply;
-pub(crate) use normalize::chain_weights;
 pub use preprocess::backbone::Search as BackboneSearch;
 pub use preprocess::defined::Defined;
 pub use preprocess::implied::ImpliedStats;

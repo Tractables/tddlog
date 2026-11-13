@@ -209,6 +209,7 @@ impl Evaluation {
                     atom: atom.clone(),
                     positive: *positive,
                     probability: p.to_f64().clamp(0.0, 1.0),
+                    count: p,
                 }])
             }
         };

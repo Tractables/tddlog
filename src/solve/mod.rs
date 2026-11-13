@@ -225,8 +225,7 @@ fn solve_parsed(
     });
     // A program `auto` may not decide is cut before its kept grounding is
     // finished again, and where it is cut, that grounding is dropped
-    // unfinished: no window and no run whole after the windows is handed
-    // anything ready.
+    // unfinished: no window is handed anything ready.
     let decide = auto::may_decide(&ground);
     let mut windows = if decide {
         None
@@ -249,21 +248,16 @@ fn solve_parsed(
     if decide && !decides {
         windows = Windows::of(&ground, &bounds.windows);
     }
-    let mut program = program;
     if let Some(windows) = windows {
-        // Nothing is handed ready to a window, nor to the whole program
-        // where the windows give it back.
-        ready = auto::Ready::default();
-        program = match solve_windows(
+        // Nothing is handed ready to a window.
+        drop(ready);
+        return solve_windows(
             (program, &ground, windows),
             options,
             (projection, first_pairs),
             decided_seconds,
             progress,
-        )? {
-            Ok(solution) => return Ok(solution),
-            Err(program) => program,
-        };
+        );
     }
     let answering = if decides {
         Answering::Whole(None)
@@ -363,16 +357,14 @@ fn run_part(
 /// [`solve_parsed`] of `ground` cut into `windows`, each window's run
 /// freed before the next starts: each passes its frontier's joint to the
 /// next ([`Windows::program`]) and the probability of the evidence so far
-/// as its weight, and answers the queries that lie in it. `Err` with
-/// `program` given back where a message cannot be passed in floats
-/// ([`Windows::message`]): the program is then run whole.
+/// as its weight, and answers the queries that lie in it.
 fn solve_windows(
     (program, ground, windows): (Program, &GroundProgram, Windows),
     options: &Options,
     compile: (Projection, usize),
     decided_seconds: f64,
     progress: &mut dyn FnMut(Progress<'_>),
-) -> Result<Result<Solution, Program>, Error> {
+) -> Result<Solution, Error> {
     let count = windows.len();
     progress(Progress::Note(format!(
         "windows: {count}, cut at most {} atoms wide",
@@ -410,11 +402,11 @@ fn solve_windows(
         // `Z` is known while every window's is.
         weight = weight.and(run.evidence_probability);
         let Some(results) = &run.results else {
-            return Ok(Ok(Solution {
+            return Ok(Solution {
                 answers: None,
                 evidence_probability: weight.filter(|_| options.evidence_probability),
                 held: (program, run),
-            }));
+            });
         };
         let rows = (1 << windows.frontier(j).len()) * usize::from(j + 1 < count);
         assert_eq!(
@@ -425,20 +417,11 @@ fn solve_windows(
         for (r, &at) in results.iter().zip(&places) {
             answers[at] = Some(r.clone());
         }
-        if rows > 0 {
-            let underflowed = run.query_sizes.underflows > 0;
-            let Some(next) = Windows::message(results, places.len(), underflowed) else {
-                progress(Progress::Note(format!(
-                    "windows: a row after window {} may be below the least float and not zero; the program is run whole",
-                    j + 1
-                )));
-                return Ok(Err(program));
-            };
-            message = next;
-        }
+        // The rows as counts, which keep a row under the least float.
+        message = results[places.len()..].iter().map(|r| r.count).collect();
         last = Some(run);
     }
-    Ok(Ok(Solution {
+    Ok(Solution {
         answers: Some(
             answers
                 .into_iter()
@@ -447,7 +430,7 @@ fn solve_windows(
         ),
         evidence_probability: weight.filter(|_| options.evidence_probability),
         held: (program, last.expect("a program has a window")),
-    }))
+    })
 }
 
 /// The program [`solve`] hands the compile under `options`, as `--ground`

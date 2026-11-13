@@ -21,7 +21,7 @@ use super::{
     CompileError, CompileStats, Formulation, NegationSource, Negations, Projection,
     ProjectionStats, Reduce, ScopeTable, SearchStats, TddBackend, VtreeScope, aft, cone,
 };
-use crate::eval::{Probabilities, noted};
+use crate::eval::{Count, Probabilities};
 use crate::ground::deps::Deps;
 use crate::ground::{AtomId, AtomKind, GLit, GroundProgram, RulesByHead, deps};
 
@@ -812,13 +812,10 @@ pub(crate) struct ForQueries {
     /// ([`crate::eval::complement`]), taken where the compile dropped the
     /// formula ([`dying_atoms`]); its entry in `formulas` is then `None`.
     /// Empty for a program with evidence.
-    pub(crate) counted: FxHashMap<AtomId, (f64, f64)>,
+    pub(crate) counted: FxHashMap<AtomId, (Count, Count)>,
     /// Counts of `counted` taken again because the float count was not
     /// exact (`eval::Range`).
     pub(crate) recounts: usize,
-    /// Probabilities of `counted` under the least normal float whose counts
-    /// are not zero (`crate::query::QuerySizes::underflows`).
-    pub(crate) underflows: usize,
     /// The query atoms answered by another query atom's formula under other
     /// probabilities ([`templates`]), whose own formulas are not built.
     pub(crate) templates: FxHashMap<AtomId, Template>,
@@ -1242,11 +1239,10 @@ impl Compilation {
                 let mut negated = None;
                 let positive = self.fixpoint.positive.borrow()[a as usize];
                 let mut both = |w: &Probabilities,
-                                (recounts, underflows): (&mut usize, &mut usize)|
-                 -> Result<(f64, f64), CompileError> {
+                                recounts: &mut usize|
+                 -> Result<(Count, Count), CompileError> {
                     let m = crate::eval::mass(backend.engine, f, w, recounts)?;
-                    let m = noted(m.to_f64(), || m, underflows);
-                    let c = crate::eval::complement(m, || -> Result<f64, CompileError> {
+                    let c = crate::eval::complement(m, || -> Result<Count, CompileError> {
                         if negated.is_none() {
                             negated = Some(self.negations.borrow_mut().negate(
                                 backend,
@@ -1254,23 +1250,20 @@ impl Compilation {
                                 &**f,
                             )?);
                         }
-                        let c = crate::eval::mass(
+                        Ok(crate::eval::mass(
                             backend.engine,
                             negated.as_ref().unwrap(),
                             w,
                             recounts,
-                        )?;
-                        Ok(noted(c.to_f64(), || c, underflows))
+                        )?)
                     })?;
                     Ok(if positive { (m, c) } else { (c, m) })
                 };
-                let q = &mut self.for_queries;
-                let counts = both(&w, (&mut q.recounts, &mut q.underflows))?;
+                let counts = both(&w, &mut self.for_queries.recounts)?;
                 self.for_queries.counted.insert(a, counts);
                 for &x in self.dying.answers.get(&a).map_or(&[][..], Vec::as_slice) {
                     let w = self.for_queries.templates[&x].weights(&w, &self.var_of, scope);
-                    let q = &mut self.for_queries;
-                    let counts = both(&w, (&mut q.recounts, &mut q.underflows))?;
+                    let counts = both(&w, &mut self.for_queries.recounts)?;
                     self.for_queries.counted.insert(x, counts);
                 }
             }

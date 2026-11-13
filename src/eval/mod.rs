@@ -40,4 +40,4 @@ pub use count::{Counted, Routes, count};
 pub(crate) use count::{Counts, count_exact, spans};
 pub use number::{Count, Range, Scaled, Value};
 pub use weights::{Probabilities, Weighing};
-pub(crate) use weights::{complement, mass, noted};
+pub(crate) use weights::{complement, mass};

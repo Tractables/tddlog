@@ -24,16 +24,16 @@
 //! lie in it, and, but for the last window, a query for each of the `2^w`
 //! conjunctions of the outgoing frontier's literals. Their answers, given
 //! the window's evidence and the evidence before it, are the frontier's
-//! joint: the message. The next window reads it as an annotated disjunction
-//! over the rows of non-zero probability, lowered as the grounder lowers
-//! one (a chain of switches, [`chain_weights`]), each frontier atom the
-//! disjunction of its rows; a frontier of one atom is a fact. The
+//! joint: the message, taken as counts, which keep a row under the least
+//! float. The next window reads it as an annotated disjunction over the
+//! rows of non-zero count, lowered as the grounder lowers one (a chain of
+//! switches, its sums taken from the end), each frontier atom the disjunction
+//! of its rows; a frontier of one atom is a fact where it can be. The
 //! probability of the evidence so far, `Z`, is the next window's weight,
 //! so the last window's evidence probability is the program's.
 
-use crate::QueryResult;
 use crate::eval::Count;
-use crate::ground::{self, AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob, chain_weights};
+use crate::ground::{self, AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::syntax::{Atom, Term};
 use crate::vtree::window_profile;
 
@@ -42,6 +42,8 @@ const ROW: &str = "$wq";
 /// The rows of an incoming message, and their switches.
 const MESSAGE_ROW: &str = "$wr";
 const SWITCH: &str = "$ws";
+/// The facts whose conjunction is a switch under the least float.
+const FACTORS: &str = "$wf";
 
 /// Where a program is cut into windows.
 #[derive(Clone, Copy, Debug)]
@@ -209,15 +211,15 @@ impl Windows {
     }
 
     /// Window `j`'s program, of weight `weight`, its incoming frontier
-    /// defined by `message`, the answers of the window before to its
-    /// conjunction queries ([`Self::message`]), finished again
+    /// defined by `message`, the counts of the window before's answers to
+    /// its conjunction queries, finished again
     /// ([`ground::window`]); and the places among `gp`'s queries of the
     /// answers it gives before its conjunctions'.
     pub(super) fn program(
         &self,
         gp: &GroundProgram,
         j: usize,
-        message: &[f64],
+        message: &[Count],
         weight: Count,
     ) -> (GroundProgram, Vec<usize>) {
         let incoming = if j == 0 {
@@ -297,24 +299,6 @@ impl Windows {
         part.weight = weight;
         (ground::window(gp, part), places)
     }
-
-    /// The message to the window after one whose answers are `results`,
-    /// its own `places` first: its conjunction queries' answers. `None`
-    /// where a row may be under the least normal float against the rows'
-    /// sum without being impossible, which the next window would read as
-    /// impossible: a row under it that is not zero, or zero where the run
-    /// answered a query under the least normal float whose count is not
-    /// zero (`underflowed`, [`crate::query::QuerySizes::underflows`]).
-    pub(super) fn message(
-        results: &[QueryResult],
-        places: usize,
-        underflowed: bool,
-    ) -> Option<Vec<f64>> {
-        let rows: Vec<f64> = results[places..].iter().map(|r| r.probability).collect();
-        let least = f64::MIN_POSITIVE * rows.iter().sum::<f64>();
-        let passed = |p: f64| p >= least || p == 0.0 && !underflowed;
-        (least > 0.0 && rows.iter().all(|&p| passed(p))).then_some(rows)
-    }
 }
 
 /// A new atom of `part` named `name(j, k)`, of kind `kind`.
@@ -329,29 +313,43 @@ fn new_atom(part: &mut GroundProgram, name: &str, j: usize, k: usize, kind: Atom
 
 /// The `w` atoms of window `j`'s incoming frontier, its first atoms,
 /// defined in `part` by `message`, the probability of each of their `2^w`
-/// rows given the evidence before the cut, a row of probability zero
-/// impossible ([`Windows::message`]): one atom, a fact of its
-/// probability; more, an annotated disjunction over the rows of non-zero
-/// probability, each row a switch of the chain, and each atom the
-/// disjunction of the rows it holds in.
-fn read_message(part: &mut GroundProgram, j: usize, w: usize, message: &[f64]) {
+/// rows given the evidence before the cut, a row of count zero impossible:
+/// one atom whose two rows are normal floats against their sum, a fact of
+/// its probability; else an annotated disjunction over the rows of
+/// non-zero probability, each row a switch of the chain ([`switch`]), and
+/// each atom the disjunction of the rows it holds in. The rows go from the
+/// least, so that each switch but the last fails with probability 1/2 or
+/// more, and only its truth may be under the least float.
+fn read_message(part: &mut GroundProgram, j: usize, w: usize, message: &[Count]) {
     debug_assert_eq!(message.len(), (1 << w) * usize::from(w > 0));
     if w == 1 {
-        let total = message[0] + message[1];
-        debug_assert!(total > 0.0, "a message of rows {message:?}");
-        part.kinds[0] = AtomKind::Fact(Prob {
-            p: message[1] / total,
-            not: message[0] / total,
-        });
-        return;
+        let total = (message[0] + message[1]).normalized();
+        debug_assert!(!total.is_zero(), "a message of rows {message:?}");
+        let [not, p] = [0, 1].map(|k| message[k].ratio(total));
+        if [(not, 0), (p, 1)]
+            .iter()
+            .all(|&(x, k)| x.is_normal() || message[k].is_zero())
+        {
+            part.kinds[0] = AtomKind::Fact(Prob { p, not });
+            return;
+        }
     }
-    let rows: Vec<usize> = (0..message.len()).filter(|&k| message[k] > 0.0).collect();
-    let masses: Vec<f64> = rows.iter().map(|&k| message[k]).collect();
-    let mut weights = Vec::new();
-    chain_weights(&masses, 0.0, &mut weights);
+    let mut rows: Vec<usize> = (0..message.len())
+        .filter(|&k| !message[k].is_zero())
+        .collect();
+    rows.sort_by(|&x, &y| message[x].ratio(message[y]).total_cmp(&1.0));
+    // Each switch's chance and its complement's: the row against the rows
+    // from it on.
+    let mut weights = vec![(Count::ONE, 0.0); rows.len()];
+    let mut after = Count::ZERO;
+    for (t, &k) in rows.iter().enumerate().rev() {
+        let from = (message[k] + after).normalized();
+        weights[t] = ((message[k] / from).normalized(), after.ratio(from));
+        after = from;
+    }
     let mut before = Vec::with_capacity(rows.len());
-    for (t, (&k, &q)) in rows.iter().zip(&weights).enumerate() {
-        let switch = new_atom(part, SWITCH, j, t, AtomKind::Fact(q));
+    for (t, (&k, &(p, not))) in rows.iter().zip(&weights).enumerate() {
+        let switch = switch(part, j, t, p, not);
         let row = new_atom(part, MESSAGE_ROW, j, t, AtomKind::Derived);
         let mut body: Vec<GLit> = before.iter().map(|&s| GLit::Neg(s)).collect();
         body.push(GLit::Pos(switch));
@@ -362,4 +360,44 @@ fn read_message(part: &mut GroundProgram, j: usize, w: usize, message: &[f64]) {
                 .push(GroundRule::new(i as AtomId, vec![GLit::Pos(row)]));
         }
     }
+}
+
+/// `2^-FACTOR`: the probability of each of the facts but the last whose
+/// conjunction is a switch under the least float.
+const FACTOR: i64 = 1000;
+
+/// Switch `t` of window `j`'s message, true with probability `p` and false
+/// with `not`: a fact, or where `p` is under the least normal float, an atom
+/// true where facts of `2^-FACTOR` each and one of the rest all hold, so
+/// that their product is `p` and its complement `not`.
+fn switch(part: &mut GroundProgram, j: usize, t: usize, p: Count, not: f64) -> AtomId {
+    let q = p.to_f64();
+    if q.is_normal() {
+        return new_atom(part, SWITCH, j, t, AtomKind::Fact(Prob { p: q, not }));
+    }
+    let switch = new_atom(part, SWITCH, j, t, AtomKind::Derived);
+    let (mut body, mut rest) = (Vec::new(), p);
+    loop {
+        let q = rest.to_f64();
+        let p = if q.is_normal() {
+            q
+        } else {
+            (-FACTOR as f64).exp2()
+        };
+        let k = part.atoms.len();
+        let fact = new_atom(
+            part,
+            FACTORS,
+            j,
+            k,
+            AtomKind::Fact(Prob { p, not: 1.0 - p }),
+        );
+        body.push(GLit::Pos(fact));
+        if q.is_normal() {
+            break;
+        }
+        rest = rest.shifted(FACTOR);
+    }
+    part.rules.push(GroundRule::new(switch, body));
+    switch
 }

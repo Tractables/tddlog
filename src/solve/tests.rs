@@ -392,8 +392,7 @@ fn the_check_under_auto_splits_as_under_a_layout_and_runs_as_solve_ground() {
 
 /// `source` cut into windows of `rules` ground rules or more
 /// ([`super::windows`]) under `options`: the runs answered (the windows,
-/// and the whole program where it was run whole after them), the notes and
-/// the solution.
+/// or the whole program), the notes and the solution.
 fn run_windowed(
     source: &str,
     rules: usize,
@@ -717,7 +716,7 @@ fn every_window_and_the_last_holds_the_bounds_rules() {
 }
 
 #[test]
-fn a_message_row_below_the_least_float_runs_the_program_whole() {
+fn a_message_row_below_the_least_float_is_passed_as_a_count() {
     // A hidden cause h = u, v at 0.25, with 2 200 observed effects at 0.4
     // under h and 0.2 under \+h, and 2 199 at 0.2 under h and 0.4 under
     // \+h: P(e | h) = 2 P(e | \+h), P(h | e) = 0.5 / 1.25 = 0.4, and x, one
@@ -755,13 +754,63 @@ fn a_message_row_below_the_least_float_runs_the_program_whole() {
                 "{what}: log10 P(e) {z} against {log10_e}"
             );
         }
-        // The first window's row \+h is the one under the least float.
-        assert!(
-            notes
-                .iter()
-                .any(|n| n.contains("after window 1 may") && n.contains("run whole")),
-            "{what}: {notes:?}"
-        );
+        // The first window's row \+h, under the least float, is passed on:
+        // every run is a window's.
+        let windows = notes.iter().filter(|n| n.starts_with("window ")).count();
+        assert!(runs >= 2 && runs == windows, "{what}: {notes:?}");
+    }
+}
+
+#[test]
+fn a_chain_whose_rows_are_under_the_least_float_runs_windowed() {
+    // s(0) at 0.9, s(i) at 0.1 after s(i - 1) and 0.6 after \+s(i - 1);
+    // a(i) holds where s(0) to s(i) all do, at 0.9 * 0.1^i. 500 effects
+    // of a(400), each at 0.9 under it and 1e-4 under \+a(400), are
+    // observed (an observation of a(400) itself would make the chain
+    // certain up to it): P(e) = 0.9^501 * 0.1^400 to 1e-1600 of it, and
+    // given e, a(400) and so s(0) to s(400) hold to as close. Every window
+    // before the observations has the row a(i), s(i) at 0.9 * 0.1^i,
+    // under the least float from i = 308 on, and the row a(i), \+s(i) at
+    // zero. Given s(400), P(s(400 + k)) = 0.4 + 0.6 (-0.5)^k.
+    let (n, m) = (400, 440);
+    let mut source = String::from("0.9::s(0).\na(0) :- s(0).\n");
+    for i in 1..=m {
+        let j = i - 1;
+        source += &format!("0.1::s({i}) :- s({j}).\n0.6::s({i}) :- \\+s({j}).\n");
+        if i <= n {
+            source += &format!("a({i}) :- a({j}), s({i}).\n");
+        }
+    }
+    for k in 0..500 {
+        source +=
+            &format!("0.9::f({k}) :- a({n}).\n0.0001::f({k}) :- \\+a({n}).\nevidence(f({k})).\n");
+    }
+    source += &format!("query(s({m})).\nquery(s(399)).\n");
+    let s = 0.4 + 0.6 * (-0.5f64).powi(m - n);
+    let log10_e = 501.0 * 0.9f64.log10() - f64::from(n);
+    for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+        let options = Options {
+            strategy,
+            evidence_probability: true,
+            ..Options::default()
+        };
+        for rules in [usize::MAX, 150] {
+            let (runs, notes, solution) = run_windowed(&source, rules, &options);
+            let what = format!("{strategy}, {runs} runs");
+            let windows = notes.iter().filter(|n| n.starts_with("window ")).count();
+            assert_eq!(runs > 1, rules == 150, "{what}: {notes:?}");
+            assert!(runs == windows.max(1), "{what}: {notes:?}");
+            let answers = solution.answers.expect("e is possible");
+            let expected = [(format!("s({m})"), s), ("s(399)".to_string(), 1.0)];
+            let expected: Vec<(&str, f64)> =
+                expected.iter().map(|(a, p)| (a.as_str(), *p)).collect();
+            assert_answers(&what, &answers, &expected, 1e-9);
+            let z = solution.evidence_probability.unwrap().log10();
+            assert!(
+                (z - log10_e).abs() < 1e-9 * log10_e.abs(),
+                "{what}: log10 P(e) {z} against {log10_e}"
+            );
+        }
     }
 }
 

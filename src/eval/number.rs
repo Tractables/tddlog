@@ -267,7 +267,7 @@ pub(super) const LOW: f64 = f64::from_bits(((1023 - BLOCK) as u64) << 52);
 /// level over the first 2 200 observations, a node under each of its
 /// values, their counts 2^2200 apart and each half the total
 /// (`tests/it/underflow.rs`).
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Count {
     pub(super) m: f64,
     pub(super) b: i32,
@@ -513,6 +513,18 @@ impl<V: Value> Scaled<V> {
             self.value.ratio(V::from_count(mass))
         } else {
             self.count().ratio(mass)
+        }
+    }
+
+    /// `self / mass` as a [`Count`], `mass` nonzero: [`Self::ratio`] where
+    /// that is a normal float, and otherwise the quotient of the counts,
+    /// which keeps a probability under the least float.
+    pub fn quotient(self, mass: Count) -> Count {
+        let p = self.ratio(mass);
+        if p.is_normal() {
+            Count::new(p)
+        } else {
+            (self.count() / mass).normalized()
         }
     }
 }

@@ -164,22 +164,16 @@ pub(crate) const COMPLEMENT_FLOOR: f64 = 1e-4;
 /// The probability of the complement of a formula of probability `m`:
 /// `1 - m`, or where that is under [`COMPLEMENT_FLOOR`], what `count` gives,
 /// the complement's own formula counted.
-pub(crate) fn complement<E>(m: f64, count: impl FnOnce() -> Result<f64, E>) -> Result<f64, E> {
-    if 1.0 - m >= COMPLEMENT_FLOOR {
-        Ok(1.0 - m)
+pub(crate) fn complement<E>(
+    m: Count,
+    count: impl FnOnce() -> Result<Count, E>,
+) -> Result<Count, E> {
+    let c = 1.0 - m.to_f64();
+    if c >= COMPLEMENT_FLOOR {
+        Ok(Count::new(c))
     } else {
         count()
     }
-}
-
-/// `p`, a probability of count `count`, counted in `underflows` where it
-/// is under the least normal float and the count is not zero
-/// (`crate::query::QuerySizes::underflows`).
-pub(crate) fn noted(p: f64, count: impl FnOnce() -> Count, underflows: &mut usize) -> f64 {
-    if p < f64::MIN_POSITIVE && !count().is_zero() {
-        *underflows += 1;
-    }
-    p
 }
 
 /// The weighted count of `f` under `w` by the engine's evaluation in
