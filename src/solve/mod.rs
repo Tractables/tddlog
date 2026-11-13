@@ -277,58 +277,67 @@ fn solve_parsed(
             (vec![ground], vec![queries])
         }
     };
-    let mut answers: Vec<Option<QueryResult>> = (0..places.iter().map(Vec::len).sum())
-        .map(|_| None)
-        .collect();
-    let (mut inconsistent, mut evidence_probability) = (false, None);
-    let count = parts.len();
-    let mut last = None;
-    for (i, (part, places)) in parts.into_iter().zip(places).enumerate() {
-        if count > 1 {
-            progress(Progress::Note(format!(
-                "part {} of {count}: {} queries",
-                i + 1,
-                places.len()
-            )));
+    let (queries, count) = (places.iter().map(Vec::len).sum(), parts.len());
+    let mut parts = parts.into_iter().zip(places);
+    let mut next = |j: usize, _: Option<&Run>| {
+        let (part, places) = parts.next().expect("a part");
+        let note = format!("part {} of {count}: {} queries", j + 1, places.len());
+        (part, places, 0, (count > 1).then_some(note))
+    };
+    let (parts, compile) = ((program, queries, count), (projection, first_pairs));
+    let first = (ready, decided_seconds);
+    solve_parts(parts, options, compile, first, &mut next, progress)
+}
+
+/// A part of a run: its program, the places among the program's queries of
+/// its first answers, how many answers follow them, and a note on it.
+type Part = (GroundProgram, Vec<usize>, usize, Option<String>);
+
+/// [`solve_parsed`]'s answers to `queries` queries, given by `count` parts:
+/// part `j` is `next(j, before)`, where `before` is the run of the part
+/// before, which is freed before part `j` compiles. The first is handed
+/// `ready` and charged `decided_seconds` of rewrite, and its `P(e)` is the
+/// solution's. Each run is reported to `progress`. Inconsistent evidence
+/// ends the run: every part holds the program's evidence.
+fn solve_parts(
+    (program, queries, count): (Program, usize, usize),
+    options: &Options,
+    compile: (Projection, usize),
+    (mut ready, decided_seconds): (auto::Ready, f64),
+    next: &mut dyn FnMut(usize, Option<&Run>) -> Part,
+    progress: &mut dyn FnMut(Progress<'_>),
+) -> Result<Solution, Error> {
+    let mut answers: Vec<Option<QueryResult>> = vec![None; queries];
+    let (mut last, mut evidence_probability) = (None::<Run>, None);
+    for j in 0..count {
+        let (part, places, rows, note) = next(j, last.as_ref());
+        if let Some(note) = note {
+            progress(Progress::Note(note));
         }
+        drop(last.take());
         let ready = std::mem::take(&mut ready);
-        let mut run = run_part(part, ready, options, (projection, first_pairs), progress)?;
-        if i == 0 {
+        let mut run = run_part(part, ready, options, compile, progress)?;
+        if j == 0 {
             run.rewrite_seconds += decided_seconds;
             evidence_probability = run.evidence_probability;
         }
         progress(Progress::Answered(&run));
-        match &run.results {
-            None => inconsistent = true,
-            Some(results) => {
-                assert_eq!(
-                    results.len(),
-                    places.len(),
-                    "an answer per query of the part"
-                );
-                for (r, &at) in results.iter().zip(&places) {
-                    answers[at] = Some(r.clone());
-                }
-            }
+        let Some(results) = &run.results else {
+            last = Some(run);
+            break;
+        };
+        assert_eq!(results.len(), places.len() + rows, "an answer each");
+        for (r, &at) in results.iter().zip(&places) {
+            answers[at] = Some(r.clone());
         }
-        // An earlier part's run is freed for the next.
         last = Some(run);
     }
-    let answers = (!inconsistent).then(|| {
-        answers
-            .into_iter()
-            .map(|r| r.expect("every part answered"))
-            .collect()
-    });
-    let evidence_probability = if options.evidence_probability {
-        evidence_probability
-    } else {
-        None
-    };
+    let last = last.expect("a program has a part");
+    let answers = answers.into_iter().map(|r| r.expect("every part answered"));
     Ok(Solution {
-        answers,
-        evidence_probability,
-        held: (program, last.expect("a program has a part")),
+        answers: last.results.as_ref().map(|_| answers.collect()),
+        evidence_probability: evidence_probability.filter(|_| options.evidence_probability),
+        held: (program, last),
     })
 }
 
@@ -354,10 +363,11 @@ fn run_part(
     }
 }
 
-/// [`solve_parsed`] of `ground` cut into `windows`, each window's run
-/// freed before the next starts: each passes its frontier's joint to the
-/// next ([`Windows::program`]) and the probability of the evidence so far
-/// as its weight, and answers the queries that lie in it.
+/// [`solve_parsed`] of `ground` cut into `windows`, as parts
+/// ([`solve_parts`]): each passes its frontier's joint to the next
+/// ([`Windows::program`]) and the probability of the evidence so far as
+/// its weight, so that the last one's is the program's, and answers the
+/// queries that lie in it.
 fn solve_windows(
     (program, ground, windows): (Program, &GroundProgram, Windows),
     options: &Options,
@@ -373,10 +383,17 @@ fn solve_windows(
             .max()
             .unwrap_or(0)
     )));
-    let mut answers: Vec<Option<QueryResult>> = vec![None; ground.num_queries()];
-    let (mut message, mut weight) = (Vec::new(), Some(ground.weight));
-    let mut last: Option<Run> = None;
-    for j in 0..count {
+    let mut weight = Some(ground.weight);
+    let mut next = |j: usize, before: Option<&Run>| {
+        let mut message = Vec::new();
+        if let Some(before) = before {
+            // `Z` is known while every window's is.
+            weight = weight.and(before.evidence_probability);
+            // The rows as counts, which keep a row under the least float.
+            let results = before.results.as_deref().expect("a consistent window");
+            let rows = &results[results.len() - (1 << windows.frontier(j - 1).len())..];
+            message = rows.iter().map(|r| r.count).collect();
+        }
         // An observed lone query's answer is `Z`, which no window drops a
         // factor of (`ground::window`).
         let known = if ground.observed_query.is_some() {
@@ -385,52 +402,22 @@ fn solve_windows(
             weight.unwrap_or(Count::ONE)
         };
         let (part, places) = windows.program(ground, j, &message, known);
-        progress(Progress::Note(format!(
+        let note = format!(
             "window {} of {count}: {} rules, {} queries, frontier {}",
             j + 1,
             part.rules.len(),
             places.len(),
             windows.frontier(j).len()
-        )));
-        // The window before is freed before this one compiles.
-        drop(last.take());
-        let mut run = run_part(part, auto::Ready::default(), options, compile, progress)?;
-        if j == 0 {
-            run.rewrite_seconds += decided_seconds;
-        }
-        progress(Progress::Answered(&run));
-        // `Z` is known while every window's is.
-        weight = weight.and(run.evidence_probability);
-        let Some(results) = &run.results else {
-            return Ok(Solution {
-                answers: None,
-                evidence_probability: weight.filter(|_| options.evidence_probability),
-                held: (program, run),
-            });
-        };
-        let rows = (1 << windows.frontier(j).len()) * usize::from(j + 1 < count);
-        assert_eq!(
-            results.len(),
-            places.len() + rows,
-            "an answer per query of the window and per row of its frontier"
         );
-        for (r, &at) in results.iter().zip(&places) {
-            answers[at] = Some(r.clone());
-        }
-        // The rows as counts, which keep a row under the least float.
-        message = results[places.len()..].iter().map(|r| r.count).collect();
-        last = Some(run);
-    }
-    Ok(Solution {
-        answers: Some(
-            answers
-                .into_iter()
-                .map(|r| r.expect("every window answered"))
-                .collect(),
-        ),
-        evidence_probability: weight.filter(|_| options.evidence_probability),
-        held: (program, last.expect("a program has a window")),
-    })
+        let rows = (1 << windows.frontier(j).len()) * usize::from(j + 1 < count);
+        (part, places, rows, Some(note))
+    };
+    let parts = (program, ground.num_queries(), count);
+    let first = (auto::Ready::default(), decided_seconds);
+    let mut solution = solve_parts(parts, options, compile, first, &mut next, progress)?;
+    let last = solution.held.1.evidence_probability;
+    solution.evidence_probability = weight.and(last).filter(|_| options.evidence_probability);
+    Ok(solution)
 }
 
 /// The program [`solve`] hands the compile under `options`, as `--ground`
