@@ -1542,21 +1542,36 @@ compile, and a window's cut ends the compile.
 
 **The order** (`vtree::window_profile`, in `vtree/naming.rs`). The
 windows read naming's profile on an order of their own. The rules are
-ranked by the *late level* of their heads, then by their depth (the
-longest chain of rules below the atom, zero for a fact), the program's
-order among equals. An atom no rule reads has its depth as its late
-level, and any other atom is one level below its lowest reader, so each
-atom ranks as late as its readers allow. Each derived atom then goes at
-its last rule in the ranking and each fact right before its first
-reader, whatever order the program states the facts in. The order the
-grounder leaves a loop in has no boundary to cut: it runs from the
-loop's bound end backwards, each step after the steps that read it.
-Ranked by depth alone, a helper that each step computes and the next
-step reads, or an observation stated after the chain, has depth one: it
-goes with the chain's first steps and crosses every boundary up to its
-reader, and the chain is cut only near its end. At its late level it
-goes next to the step it belongs to, and the chain can be cut at every
-step. The width of a boundary is naming's, the atoms at or before it
+ranked by the *level* of their heads, then by their depth (the longest
+chain of rules below the atom, zero for a fact), the program's order
+among equals. Each derived atom then goes at its last rule in the
+ranking and each fact right before its first reader, whatever order the
+program states the facts in. The order the grounder leaves a loop in
+has no boundary to cut: it runs from the loop's bound end backwards,
+each step after the steps that read it. Depth places each atom as early
+as it may go, which is too early for an atom that reads facts alone: a
+helper that each step computes and the next step reads, or an
+observation stated after the chain, has depth one, goes with the
+chain's first steps and crosses every boundary up to its reader, and
+the chain is cut only near its end. The *late level* places each atom
+as late as its readers allow: an atom no rule reads has its depth as
+its late level, and any other atom is one level below its lowest
+reader. That is too late for a chain that reads another and takes
+several of its steps a rule. The joint query over the last states of a
+hidden Markov model is such a chain once the grounder inlines it three
+steps to a rule, `j(T) :- j(T-3), h(T-2), h(T-1), h(T)`: it has a third
+as many late levels as the states it reads, so, counted back from the
+query, its first atoms rank with the states' last steps, each state
+crosses every boundary up to its reader, and the joint part of the
+chain is not cut. The level takes each placement where it is right, in
+two steps. A derived atom that reads no derived atom takes its late
+level, so a helper goes right before the step that reads it. Any other
+derived atom, taken in order of depth, goes one level past the highest
+level among the derived atoms it reads, so `j(T)` goes right after
+`h(T)`, and both chains can be cut at every step. Every atom so ranks
+after the atoms it reads, and none past its late level, since what it
+reads lies at lower late levels. The width of a boundary is naming's,
+the atoms at or before it
 that a rule of a later atom reads, but that a query's atom counts as
 read at the position of the last observed atom, so that it crosses
 every boundary up to there (Evidence and queries, below).
