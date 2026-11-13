@@ -495,8 +495,9 @@ pub(crate) struct Boundary {
     pub(crate) after: usize,
     /// The atoms at or before it that a rule of an atom after it reads.
     pub(crate) width: usize,
-    /// The facts at or before it.
-    facts: usize,
+    /// The facts, and the rules of the atoms, at or before it.
+    pub(crate) facts: usize,
+    pub(crate) rules: usize,
 }
 
 /// The order of `gp`'s atoms ([`positions`]) and its profile ([`profile`])
@@ -591,10 +592,12 @@ fn profile(
     for (p, &a) in order.iter().enumerate() {
         at[a as usize] = p as u32;
     }
-    // Each atom's last reader's position.
+    // Each atom's last reader's position, and the rules at each position.
     let mut last = vec![0u32; gp.num_atoms()];
+    let mut heads = vec![0usize; n];
     for r in &gp.rules {
         let p = at[r.head as usize];
+        heads[p as usize] += 1;
         for l in &r.body {
             let b = l.atom() as usize;
             last[b] = last[b].max(p);
@@ -622,9 +625,10 @@ fn profile(
         }
     }
     let mut boundaries = Vec::new();
-    let (mut width, mut derived, mut facts) = (0isize, 0isize, 0);
+    let (mut width, mut derived, mut facts, mut rules) = (0isize, 0isize, 0, 0);
     for (p, &a) in order.iter().enumerate() {
         (width, derived) = (width + change[p].0, derived + change[p].1);
+        rules += heads[p];
         if gp.is_fact(a) {
             facts += 1;
         } else if derived > 0 {
@@ -632,6 +636,7 @@ fn profile(
                 after: p,
                 width: width as usize,
                 facts,
+                rules,
             });
         }
     }
@@ -658,26 +663,10 @@ fn profile(
 /// cutting those halved a compile of 1.1 M work units and took a fifth more
 /// work in the walk.
 fn cuts(boundaries: &[Boundary]) -> Vec<Boundary> {
-    let mut cuts = Vec::new();
-    // The facts at or before the last cut, and the next boundary.
-    let (mut behind, mut i) = (0, 0);
-    while i < boundaries.len() {
-        let f = boundaries[i].facts - behind;
-        if boundaries[i].width > 2 * f {
-            i += 1;
-            continue;
-        }
-        let mut end = i;
-        while end + 1 < boundaries.len() && boundaries[end + 1].facts - behind <= 2 * f {
-            end += 1;
-        }
-        let best = (i..=end)
-            .min_by_key(|&j| (boundaries[j].width, j))
-            .expect("a window");
-        if boundaries[best].width > WIDEST {
-            i = end + 1;
-            continue;
-        }
+    let (mut cuts, mut behind) = (Vec::new(), 0);
+    let opens = |i: usize, f| (boundaries[i].width <= 2 * f).then_some(2 * f + 1);
+    let fits = |j: usize| boundaries[j].width <= WIDEST;
+    for (i, best) in cut_search(boundaries, |b| b.facts, opens, fits) {
         let skipped = (i..best)
             .filter(|&j| {
                 let b = boundaries[j];
@@ -688,7 +677,44 @@ fn cuts(boundaries: &[Boundary]) -> Vec<Boundary> {
             .min_by_key(|&j| (boundaries[j].width, j));
         cuts.extend(skipped.map(|j| boundaries[j]));
         cuts.push(boundaries[best]);
-        (behind, i) = (boundaries[best].facts, best + 1);
+        behind = boundaries[best].facts;
+    }
+    cuts
+}
+
+/// The cut rule's search, run by [`cuts`] over the facts and by the
+/// windows (`crate::solve`'s) over the rules, each boundary's `mass`: from
+/// the last cut, a window opens at the first boundary `i` where `opens(i,
+/// m)`, of mass `m` since the cut, gives the mass the window stays under,
+/// and spans the boundaries up to it. The cut is its narrowest boundary
+/// that `fits`, the earliest on a tie; a window with none is passed. Each
+/// cut as its window's first boundary and itself.
+pub(crate) fn cut_search(
+    boundaries: &[Boundary],
+    mass: fn(&Boundary) -> usize,
+    opens: impl Fn(usize, usize) -> Option<usize>,
+    fits: impl Fn(usize) -> bool,
+) -> Vec<(usize, usize)> {
+    let mut cuts = Vec::new();
+    // The mass at or before the last cut, and the next boundary.
+    let (mut behind, mut i) = (0, 0);
+    while i < boundaries.len() {
+        let Some(under) = opens(i, mass(&boundaries[i]) - behind) else {
+            i += 1;
+            continue;
+        };
+        let mut end = i;
+        while end + 1 < boundaries.len() && mass(&boundaries[end + 1]) - behind < under {
+            end += 1;
+        }
+        let window = (i..=end).filter(|&j| fits(j));
+        match window.min_by_key(|&j| (boundaries[j].width, j)) {
+            Some(best) => {
+                cuts.push((i, best));
+                (behind, i) = (mass(&boundaries[best]), best + 1);
+            }
+            None => i = end + 1,
+        }
     }
     cuts
 }
@@ -1030,6 +1056,7 @@ mod tests {
             after: facts,
             width,
             facts,
+            rules: 0,
         };
         let weather = [b(19, 70), b(19, 140), b(2, 208)];
         let facts: Vec<usize> = cuts(&weather).iter().map(|c| c.facts).collect();

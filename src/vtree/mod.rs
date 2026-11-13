@@ -45,7 +45,7 @@ mod separators;
 mod td;
 
 pub(crate) use graph::{log2_add, min_fill_weight};
-pub(crate) use naming::{chained, window_profile};
+pub(crate) use naming::{chained, cut_search, window_profile};
 
 use std::fmt;
 use std::str::FromStr;

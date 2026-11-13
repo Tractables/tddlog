@@ -35,7 +35,7 @@
 use crate::eval::Count;
 use crate::ground::{self, AtomId, AtomKind, GLit, GroundProgram, GroundRule, Prob};
 use crate::syntax::{Atom, Term};
-use crate::vtree::window_profile;
+use crate::vtree::{cut_search, window_profile};
 
 /// The conjunctions of a frontier's literals that a window asks.
 const ROW: &str = "$wq";
@@ -94,58 +94,31 @@ impl Windows {
             return None;
         }
         let (order, at, boundaries, last) = window_profile(gp);
-        let n = order.len();
-        // The rules up to each position, and the positions a rule reads
-        // back across.
-        let mut held = vec![0usize; n];
-        let mut back = vec![0isize; n + 1];
+        // The rules that read back across each position.
+        let mut back = vec![0isize; order.len() + 1];
         for r in &gp.rules {
             let h = at[r.head as usize] as usize;
-            held[h] += 1;
             let far = r.body.iter().map(|l| at[l.atom() as usize] as usize).max();
             if let Some(far) = far.filter(|&f| f > h) {
                 back[h] += 1;
                 back[far] -= 1;
             }
         }
-        let mut crossed = vec![false; n];
-        let (mut sum, mut open) = (0, 0);
-        for p in 0..n {
-            sum += held[p];
-            held[p] = sum;
-            open += back[p];
-            crossed[p] = open > 0;
+        for p in 1..back.len() {
+            back[p] += back[p - 1];
         }
         // A cut leaves a last window of `bounds.rules` rules or more: a
         // shorter one would make the window before it nearly the whole
         // program, finished again and asked its frontier's rows.
-        let total = gp.rules.len();
-        let fits = |p: usize| {
-            let after = boundaries[p].after;
-            boundaries[p].width <= bounds.widest
-                && !crossed[after]
-                && total - held[after] >= bounds.rules
+        let fits = |i: usize| {
+            let b = boundaries[i];
+            b.width <= bounds.widest
+                && back[b.after] == 0
+                && gp.rules.len() - b.rules >= bounds.rules
         };
-        let mut cuts = Vec::new();
-        let (mut behind, mut i) = (0, 0);
-        while i < boundaries.len() {
-            if held[boundaries[i].after] - behind < bounds.rules || !fits(i) {
-                i += 1;
-                continue;
-            }
-            let mut best = i;
-            let mut j = i + 1;
-            while j < boundaries.len() && held[boundaries[j].after] - behind < 2 * bounds.rules {
-                if fits(j) && boundaries[j].width < boundaries[best].width {
-                    best = j;
-                }
-                j += 1;
-            }
-            let after = boundaries[best].after;
-            cuts.push(after);
-            behind = held[after];
-            i = best + 1;
-        }
+        let opens = |i, m| (m >= bounds.rules && fits(i)).then_some(2 * bounds.rules);
+        let found = cut_search(&boundaries, |b| b.rules, opens, fits);
+        let cuts: Vec<usize> = found.iter().map(|&(_, c)| boundaries[c].after).collect();
         if cuts.is_empty() {
             return None;
         }
