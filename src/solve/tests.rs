@@ -4,7 +4,7 @@
 //! or by hand, and P(e) is the program's.
 
 use super::split::{Answering, Split, SplitBounds, query_parts, split_check};
-use super::windows::WindowBounds;
+use super::windows::{WindowBounds, Windows};
 use super::{Options, Progress, Strategy, solve_ground, solve_split};
 use crate::eval::Count;
 use crate::ground::{GroundOptions, GroundProgram};
@@ -677,6 +677,46 @@ fn a_lone_query_observed_without_a_window_dropping() {
 }
 
 #[test]
+fn every_window_and_the_last_holds_the_bounds_rules() {
+    let source = chain(60, "query(s(60)).\nquery(s(20)).\n");
+    let gp = ground(&source, true);
+    let total = gp.rules.len();
+    let of = |rules| {
+        let bounds = WindowBounds {
+            rules,
+            ..WindowBounds::DEFAULT
+        };
+        Windows::of(&gp, &bounds)
+    };
+    for rules in [12, 20, total / 3] {
+        let windows = of(rules).expect("a chain is cut");
+        let held: Vec<usize> = (0..windows.len()).map(|j| windows.held(j)).collect();
+        assert!(held.len() >= 2, "{rules}: {held:?}");
+        assert!(held.iter().all(|&h| h >= rules), "{rules}: {held:?}");
+    }
+    // Past half the program, a cut would leave fewer rules after it than a
+    // window holds: the program is one window, run whole.
+    let rules = total / 2 + 1;
+    assert!(of(rules).is_none(), "{rules} of {total}");
+    let expected = [("s(60)", marginal(60)), ("s(20)", marginal(20))];
+    for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+        let options = Options {
+            strategy,
+            ..Options::default()
+        };
+        let (runs, notes, solution) = run_windowed(&source, rules, &options);
+        assert_eq!(runs, 1, "{strategy}: {notes:?}");
+        assert!(!notes.iter().any(|n| n.starts_with("windows")), "{notes:?}");
+        assert_answers(
+            &strategy.to_string(),
+            &solution.answers.unwrap(),
+            &expected,
+            1e-9,
+        );
+    }
+}
+
+#[test]
 fn a_message_row_below_the_least_float_runs_the_program_whole() {
     // A hidden cause h = u, v at 0.25, with 2 200 observed effects at 0.4
     // under h and 0.2 under \+h, and 2 199 at 0.2 under h and 0.4 under
@@ -730,7 +770,7 @@ fn a_helper_of_each_step_read_by_the_next() {
     // h(i) = c(i) or d(i), 0.75; s(i) after s(i - 1) 0.75, after \+s(i - 1)
     // 0.15: s(i) = 0.375 + 0.525 * 0.6^i. Every h(i) ranks before s(2)
     // and crosses the boundaries before it: the program is cut only near
-    // its end.
+    // its end, into windows of 4 rules or more, the last one's.
     let mut source = String::from("0.9::s(0).\n");
     for i in 1..=60 {
         source += &format!(
@@ -740,7 +780,7 @@ fn a_helper_of_each_step_read_by_the_next() {
     }
     source += "query(s(7)).\nquery(s(60)).\n";
     let s = |i: i32| 0.375 + 0.525 * 0.6f64.powi(i);
-    windows_agree_in(&source, 12, &[("s(7)", s(7)), ("s(60)", s(60))], 1.0, 2..);
+    windows_agree_in(&source, 4, &[("s(7)", s(7)), ("s(60)", s(60))], 1.0, 2..);
 }
 
 #[test]

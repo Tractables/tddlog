@@ -14,9 +14,10 @@
 //! the narrowest boundary of width at most [`WindowBounds::widest`] among
 //! those where the window holds up to twice as many, the earliest on a tie,
 //! or else at the first such boundary after them. A boundary that a rule
-//! reads back across (a rule before it reads an atom after it) is none.
-//! Where no boundary is narrow, the program is one window, as without
-//! windows.
+//! reads back across (a rule before it reads an atom after it) is none, and
+//! so is one with fewer than [`WindowBounds::rules`] rules after it: every
+//! window, the last included, holds that many. Where no boundary is narrow,
+//! the program is one window, as without windows.
 //!
 //! Window `j` is the rules of the atoms between its cuts, the atoms of the
 //! incoming frontier defined by the message, the queries and evidence that
@@ -109,7 +110,16 @@ impl Windows {
             open += back[p];
             crossed[p] = open > 0;
         }
-        let fits = |p: usize| boundaries[p].width <= bounds.widest && !crossed[boundaries[p].after];
+        // A cut leaves a last window of `bounds.rules` rules or more: a
+        // shorter one would make the window before it nearly the whole
+        // program, finished again and asked its frontier's rows.
+        let total = gp.rules.len();
+        let fits = |p: usize| {
+            let after = boundaries[p].after;
+            boundaries[p].width <= bounds.widest
+                && !crossed[after]
+                && total - held[after] >= bounds.rules
+        };
         let mut cuts = Vec::new();
         let (mut behind, mut i) = (0, 0);
         while i < boundaries.len() {
@@ -126,10 +136,6 @@ impl Windows {
                 j += 1;
             }
             let after = boundaries[best].after;
-            // Nothing is left after the program's last rule.
-            if held[after] == gp.rules.len() {
-                break;
-            }
             cuts.push(after);
             behind = held[after];
             i = best + 1;
@@ -189,6 +195,12 @@ impl Windows {
     /// How many windows.
     pub(super) fn len(&self) -> usize {
         self.cuts.len() + 1
+    }
+
+    /// How many of the program's rules window `j` holds.
+    #[cfg(test)]
+    pub(super) fn held(&self, j: usize) -> usize {
+        self.rules[j].len()
     }
 
     /// The atoms that cross the cut after window `j`.
