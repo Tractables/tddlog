@@ -606,6 +606,19 @@ pub(crate) fn fan_in(gp: &GroundProgram, deepest: bool) -> Vec<u32> {
     place
 }
 
+/// The longest chain of rules below each atom of `gp`, zero for a fact
+/// ([`cone_depths`] from every atom).
+pub(crate) fn depths(gp: &GroundProgram) -> Vec<u32> {
+    let by_head = gp.rules_by_head();
+    let reads = |x: usize| {
+        by_head[x]
+            .iter()
+            .flat_map(|&r| gp.rules[r].body.iter().map(|l| l.atom() as usize))
+    };
+    let all: Vec<usize> = (0..gp.num_atoms()).collect();
+    cone_depths(gp.num_atoms(), &all, reads)
+}
+
 /// The longest chain of rules below each atom, a cycle cut where the walk
 /// meets an atom it is in.
 fn cone_depths<'a, I: Iterator<Item = usize>>(

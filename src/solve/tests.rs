@@ -4,6 +4,7 @@
 //! or by hand, and P(e) is the program's.
 
 use super::split::{Answering, Split, SplitBounds, query_parts, split_check};
+use super::windows::WindowBounds;
 use super::{Options, Progress, Strategy, solve_ground, solve_split};
 use crate::eval::Count;
 use crate::ground::{GroundOptions, GroundProgram};
@@ -386,4 +387,192 @@ fn the_check_under_auto_splits_as_under_a_layout_and_runs_as_solve_ground() {
         ),
         Answering::Whole(None)
     ));
+}
+
+/// The answers of `source` cut into windows of `rules` ground rules or
+/// more ([`super::windows`]) under `strategy`, the number of windows, and
+/// P(e), asked for.
+fn windowed(source: &str, rules: usize, strategy: Strategy) -> (usize, Vec<QueryResult>, Count) {
+    let options = Options {
+        strategy,
+        evidence_probability: true,
+        ..Options::default()
+    };
+    let bounds = SplitBounds {
+        windows: WindowBounds {
+            rules,
+            ..WindowBounds::DEFAULT
+        },
+        ..SplitBounds::default()
+    };
+    let mut windows = 0;
+    let solution = solve_split(source, &options, &bounds, &mut |p| {
+        if let Progress::Answered(_) = p {
+            windows += 1;
+        }
+    })
+    .unwrap();
+    (
+        windows,
+        solution.answers.unwrap(),
+        solution.evidence_probability.unwrap(),
+    )
+}
+
+/// `source`'s answers and P(e) cut into windows of `rules` rules, under
+/// `auto` and `closed`, against the whole program's to 1e-9 and against
+/// `expected`, computed by hand; and the windows, more than one.
+fn windows_agree(source: &str, rules: usize, expected: &[(&str, f64)], evidence: f64) {
+    for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+        let (one, whole, z) = windowed(source, usize::MAX, strategy);
+        let (count, cut, z_cut) = windowed(source, rules, strategy);
+        assert_eq!(one, 1, "{strategy}: the whole program is one window");
+        assert!(count > 2, "{strategy}: {count} windows");
+        let what = format!("{strategy}, {count} windows");
+        let at_whole: Vec<(String, f64)> = whole
+            .iter()
+            .map(|r| (r.to_string(), r.probability))
+            .collect();
+        let at_whole: Vec<(&str, f64)> = at_whole.iter().map(|(a, p)| (a.as_str(), *p)).collect();
+        assert_answers(&what, &cut, &at_whole, 1e-9);
+        assert_answers(&what, &cut, expected, 1e-9);
+        for z in [z, z_cut] {
+            assert!(
+                (z.to_f64() - evidence).abs() < 1e-9,
+                "{what}: P(e) {z:?} against {evidence}"
+            );
+        }
+    }
+}
+
+/// A Markov chain of `n` steps, `s(0)` with probability 0.9 and each step
+/// keeping `s` with 0.95 and making it with 0.05, written out; then
+/// `rest`. P(s(i)) = 0.5 + 0.4 * 0.9^i, and P(s(j) | s(i)) = 0.5 + 0.5 *
+/// 0.9^(j - i) for i < j.
+fn chain(n: usize, rest: &str) -> String {
+    let mut s = String::from("0.9::s(0).\n");
+    for i in 1..=n {
+        s += &format!(
+            "0.95::s({i}) :- s({}).\n0.05::s({i}) :- \\+s({}).\n",
+            i - 1,
+            i - 1
+        );
+    }
+    s + rest
+}
+
+fn marginal(i: usize) -> f64 {
+    0.5 + 0.4 * 0.9f64.powi(i as i32)
+}
+
+fn given(i: usize, j: usize) -> f64 {
+    0.5 + 0.5 * 0.9f64.powi((j - i) as i32)
+}
+
+#[test]
+fn a_chain_cut_into_windows_gives_the_programs_answers() {
+    let n = 60;
+    windows_agree(
+        &chain(n, "query(s(60)).\nquery(\\+s(30)).\n"),
+        12,
+        &[("s(60)", marginal(60)), ("\\+s(30)", 1.0 - marginal(30))],
+        1.0,
+    );
+}
+
+#[test]
+fn evidence_in_the_middle_is_passed_on_by_the_windows() {
+    // Given s(30), s(60) is a chain of 30 steps from a certain start.
+    windows_agree(
+        &chain(60, "evidence(s(30)).\nquery(s(60)).\nquery(s(45)).\n"),
+        12,
+        &[("s(60)", given(30, 60)), ("s(45)", given(30, 45))],
+        marginal(30),
+    );
+}
+
+#[test]
+fn a_query_before_later_evidence_is_carried_to_it() {
+    // P(s(15) | s(60)) = P(s(15)) P(s(60) | s(15)) / P(s(60)).
+    let (q, e) = (15, 60);
+    windows_agree(
+        &chain(e, "query(s(15)).\nevidence(s(60)).\n"),
+        12,
+        &[("s(15)", marginal(q) * given(q, e) / marginal(e))],
+        marginal(e),
+    );
+}
+
+/// A ladder of `n` steps written as a loop: a(i) and b(i) each read a(i - 1)
+/// and b(i - 1), through switches of their own, so that given the step
+/// before they are independent; then `rest`.
+fn ladder(n: usize, rest: &str) -> String {
+    format!(
+        "steps({n}).
+step(1).
+step(T1) :- step(T), steps(N), T1 is T + 1, T1 =< N.
+0.6::a(0).
+0.3::b(0).
+0.7::a(T) :- step(T), T0 is T - 1, a(T0), b(T0).
+0.4::a(T) :- step(T), T0 is T - 1, \\+a(T0).
+0.5::b(T) :- step(T), T0 is T - 1, a(T0).
+0.2::b(T) :- step(T), T0 is T - 1, \\+b(T0).
+{rest}"
+    )
+}
+
+#[test]
+fn a_ladder_passes_the_joint_of_two_atoms() {
+    // The joint of a(i) and b(i) is carried forward over the four states.
+    let n = 40;
+    let source = ladder(
+        n,
+        "evidence(b(20)).\nquery(a(40)).\nquery(b(40)).\nquery(a(10)).\n",
+    );
+    // P(a' | a, b) and P(b' | a, b): one minus the product of the rules
+    // that hold failing.
+    let next = |a: bool, b: bool| {
+        let pa = 1.0 - (1.0 - if a && b { 0.7 } else { 0.0 }) * (1.0 - if a { 0.0 } else { 0.4 });
+        let pb = 1.0 - (1.0 - if a { 0.5 } else { 0.0 }) * (1.0 - if b { 0.0 } else { 0.2 });
+        (pa, pb)
+    };
+    // The joint over (a, b), state 2a + b, forward from step `from` to
+    // step `to`.
+    let forward = |mut joint: [f64; 4], from: usize, to: usize| {
+        for _ in from..to {
+            let mut out = [0.0; 4];
+            for (s, &p) in joint.iter().enumerate() {
+                let (pa, pb) = next(s >= 2, s % 2 == 1);
+                for (t, o) in out.iter_mut().enumerate() {
+                    let fa = if t >= 2 { pa } else { 1.0 - pa };
+                    let fb = if t % 2 == 1 { pb } else { 1.0 - pb };
+                    *o += p * fa * fb;
+                }
+            }
+            joint = out;
+        }
+        joint
+    };
+    let start = [0.4 * 0.7, 0.4 * 0.3, 0.6 * 0.7, 0.6 * 0.3];
+    let at20 = forward(start, 0, 20);
+    let evidence = at20[1] + at20[3];
+    let observed = [0.0, at20[1] / evidence, 0.0, at20[3] / evidence];
+    let end = forward(observed, 20, n);
+    // P(a(10) | b(20)): forward to 10, split on a(10), forward each to 20.
+    let at10 = forward(start, 0, 10);
+    let b20 = |j: [f64; 4]| {
+        let f = forward(j, 10, 20);
+        f[1] + f[3]
+    };
+    let a10 = b20([0.0, 0.0, at10[2], at10[3]]) / evidence;
+    windows_agree(
+        &source,
+        24,
+        &[
+            ("a(40)", end[2] + end[3]),
+            ("b(40)", end[1] + end[3]),
+            ("a(10)", a10),
+        ],
+        evidence,
+    );
 }

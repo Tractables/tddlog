@@ -117,6 +117,7 @@ pub use engine::GroundError;
 pub(crate) use fact_copies::{FactCopy, add_fact_copies};
 pub use guards::Decisions;
 pub(crate) use guards::applies as guards_apply;
+pub(crate) use normalize::chain_weights;
 pub use preprocess::backbone::Search as BackboneSearch;
 pub use preprocess::defined::Defined;
 pub use preprocess::implied::ImpliedStats;
@@ -678,6 +679,22 @@ pub(crate) fn restricted(gp: &GroundProgram, queries: &[usize]) -> GroundProgram
         drop_detached(&mut part);
     }
     part
+}
+
+/// `part`, a window of `gp` that a run cut it into (`crate::solve`'s
+/// windows), under `gp`'s options and finished again as the grounder
+/// finishes a program, which finds what the incoming message proves certain
+/// or exclusive. A lone query of the window is not observed: its answer
+/// would be the evidence probability of the windows so far, not its own.
+pub(crate) fn window(gp: &GroundProgram, mut part: GroundProgram) -> GroundProgram {
+    part.options = GroundOptions {
+        observe_query: false,
+        ..gp.options
+    };
+    part.written = Arc::clone(&gp.written);
+    part.stats.detached = gp.stats.detached;
+    let opts = part.options;
+    finish(part, &opts, opts.views)
 }
 
 /// The observations no query depends on dropped where they can hold

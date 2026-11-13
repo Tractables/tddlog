@@ -8,11 +8,13 @@ mod split;
 mod subquery;
 #[cfg(test)]
 mod tests;
+mod windows;
 
 use std::time::Instant;
 
 use crate::auto;
 use crate::cnf::WeightedCnf;
+use crate::eval::Count;
 use crate::evaluation::Evaluation;
 use crate::ground::{self, GroundOptions, GroundProgram};
 use crate::strategy::{Prepared, Strategy};
@@ -21,6 +23,7 @@ use crate::tp::{self, Projection};
 use crate::vtree::Kind;
 use crate::{Error, QueryResult, Run, eval};
 use split::{Answering, SplitBounds, split_check};
+use windows::Windows;
 
 /// What a run is asked to do.
 #[derive(Clone, Copy, Debug)]
@@ -232,6 +235,16 @@ fn solve_parsed(
             auto::derived_unmerged(&ground)
         )));
     }
+    if !decides && let Some(windows) = Windows::of(&ground, &bounds.windows) {
+        drop(ready);
+        return solve_windows(
+            (program, ground, windows),
+            options,
+            (projection, first_pairs),
+            decided_seconds,
+            progress,
+        );
+    }
     let answering = if decides {
         Answering::Whole(None)
     } else {
@@ -264,17 +277,8 @@ fn solve_parsed(
                 places.len()
             )));
         }
-        let mut run = match options.strategy {
-            Strategy::Auto => {
-                progress(Progress::Compiling(&part));
-                auto::run(part, projection, std::mem::take(&mut ready), options.trace)?
-            }
-            Strategy::Trial(kind) => {
-                let prepared = kind.prepare(part)?;
-                progress(Progress::Compiling(&prepared.ground));
-                run_prepared(prepared, kind, (projection, first_pairs), options.trace)?
-            }
-        };
+        let ready = std::mem::take(&mut ready);
+        let mut run = run_part(part, ready, options, (projection, first_pairs), progress)?;
         if i == 0 {
             run.rewrite_seconds += decided_seconds;
             evidence_probability = run.evidence_probability;
@@ -311,6 +315,93 @@ fn solve_parsed(
         answers,
         evidence_probability,
         held: (program, last.expect("a program has a part")),
+    })
+}
+
+/// One part's run under `options`: `auto` handed `ready`, or the layout
+/// asked for.
+fn run_part(
+    part: GroundProgram,
+    ready: auto::Ready,
+    options: &Options,
+    (projection, first_pairs): (Projection, usize),
+    progress: &mut dyn FnMut(Progress<'_>),
+) -> Result<Run, Error> {
+    match options.strategy {
+        Strategy::Auto => {
+            progress(Progress::Compiling(&part));
+            auto::run(part, projection, ready, options.trace)
+        }
+        Strategy::Trial(kind) => {
+            let prepared = kind.prepare(part)?;
+            progress(Progress::Compiling(&prepared.ground));
+            run_prepared(prepared, kind, (projection, first_pairs), options.trace)
+        }
+    }
+}
+
+/// [`solve_parsed`] of `ground` cut into `windows`, each window's run
+/// freed before the next starts: each passes its frontier's joint to the
+/// next ([`Windows::program`]) and the probability of the evidence so far
+/// as its weight, and answers the queries that lie in it.
+fn solve_windows(
+    (program, ground, windows): (Program, GroundProgram, Windows),
+    options: &Options,
+    compile: (Projection, usize),
+    decided_seconds: f64,
+    progress: &mut dyn FnMut(Progress<'_>),
+) -> Result<Solution, Error> {
+    let count = windows.len();
+    progress(Progress::Note(format!(
+        "windows: {count}, cut at most {} atoms wide",
+        (0..count - 1)
+            .map(|j| windows.frontier(j).len())
+            .max()
+            .unwrap_or(0)
+    )));
+    let mut answers: Vec<Option<QueryResult>> = vec![None; ground.num_queries()];
+    let (mut message, mut weight) = (Vec::new(), Some(ground.weight));
+    let mut last: Option<Run> = None;
+    for j in 0..count {
+        let (part, places) = windows.program(&ground, j, &message, weight.unwrap_or(Count::ONE));
+        progress(Progress::Note(format!(
+            "window {} of {count}: {} rules, {} queries, frontier {}",
+            j + 1,
+            part.rules.len(),
+            places.len(),
+            windows.frontier(j).len()
+        )));
+        // The window before is freed before this one compiles.
+        drop(last.take());
+        let mut run = run_part(part, auto::Ready::default(), options, compile, progress)?;
+        if j == 0 {
+            run.rewrite_seconds += decided_seconds;
+        }
+        progress(Progress::Answered(&run));
+        // `Z` is known while every window's is.
+        weight = weight.and(run.evidence_probability);
+        let Some(results) = &run.results else {
+            return Ok(Solution {
+                answers: None,
+                evidence_probability: weight.filter(|_| options.evidence_probability),
+                held: (program, run),
+            });
+        };
+        for (r, &at) in results.iter().zip(&places) {
+            answers[at] = Some(r.clone());
+        }
+        message = Windows::message(results, places.len());
+        last = Some(run);
+    }
+    Ok(Solution {
+        answers: Some(
+            answers
+                .into_iter()
+                .map(|r| r.expect("every window answered"))
+                .collect(),
+        ),
+        evidence_probability: weight.filter(|_| options.evidence_probability),
+        held: (program, last.expect("a program has a window")),
     })
 }
 

@@ -23,6 +23,7 @@
 //! ([`SplitBounds`]); whether the parts pay is decided on `auto`'s
 //! estimates of their layouts ([`split_check`]).
 
+use super::windows::WindowBounds;
 use crate::auto;
 use crate::ground::{self, AtomId, AtomKind, GroundProgram, deps};
 use crate::strategy::{Prepared, Strategy};
@@ -54,6 +55,9 @@ pub(crate) struct SplitBounds {
     /// each charged `part_pairs`, must be estimated to hold together than
     /// the program's; zero or less leaves the estimates out.
     pub(crate) layout_gain: f64,
+    /// Where the program is cut into windows instead, each run alone
+    /// (`super::windows`).
+    pub(crate) windows: WindowBounds,
 }
 
 impl Default for SplitBounds {
@@ -64,6 +68,7 @@ impl Default for SplitBounds {
             min_pairs: (1u64 << 40) as f64,
             part_pairs: (1u64 << 20) as f64,
             layout_gain: 4.0,
+            windows: WindowBounds::DEFAULT,
         }
     }
 }
@@ -77,6 +82,7 @@ impl SplitBounds {
         min_pairs: 0.0,
         part_pairs: 0.0,
         layout_gain: 0.0,
+        windows: WindowBounds::DEFAULT,
     };
 }
 

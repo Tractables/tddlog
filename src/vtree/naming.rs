@@ -55,7 +55,7 @@ use std::sync::Arc;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-use crate::ground::deps::{Deps, fan_in};
+use crate::ground::deps::{Deps, depths, fan_in};
 use crate::ground::tables::Tables;
 use crate::ground::{AtomId, AtomKind, GLit, GroundProgram, GroundRule};
 use crate::indicators;
@@ -93,7 +93,7 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Result<L
     if !gp.encoding.is_empty() {
         return Ok(Laid { facts, named: None });
     }
-    let (at, boundaries, last) = profile(gp, &order);
+    let (at, boundaries, last) = profile(gp, &order, false);
     let cuts = hiding(gp, deps, &at, &last, &cuts(&boundaries));
     if cuts.is_empty() {
         return Ok(Laid { facts, named: None });
@@ -237,7 +237,7 @@ pub(crate) fn chained(gp: GroundProgram) -> GroundProgram {
     // never after the body it is chained from. Keys of `3 * rule`, before,
     // `3 * rule + 1`, the rule itself, and `3 * rule + 2`, after, sorted
     // stably, keep the rules' own order and each chain's.
-    let (first_read, last_rule) = rule_places(&gp);
+    let (first_read, last_rule) = rule_places(&gp, None);
     let mut out = gp.without_rules();
     let mut rules: Vec<(usize, GroundRule)> = Vec::with_capacity(gp.rules.len());
     let mut links = 0;
@@ -421,8 +421,20 @@ pub(super) fn positions(gp: &GroundProgram, fan_in_order: bool) -> Vec<AtomId> {
         order.sort_unstable_by_key(|&a| place[a as usize]);
         return order;
     }
-    let (first_read, last_rule) = rule_places(gp);
-    let facts: Vec<AtomId> = gp.facts().map(|(a, _)| a).collect();
+    in_rule_order(gp, None)
+}
+
+/// [`positions`] but for the fan-in order; or, for the windows a run is cut
+/// into ([`window_profile`]), the rules read in the order of `ranked`,
+/// their indices, and each fact right before its first reader, whatever
+/// order the program states the facts in.
+fn in_rule_order(gp: &GroundProgram, ranked: Option<&[u32]>) -> Vec<AtomId> {
+    let n = gp.num_atoms();
+    let (first_read, last_rule) = rule_places(gp, ranked);
+    let mut facts: Vec<AtomId> = gp.facts().map(|(a, _)| a).collect();
+    if ranked.is_some() {
+        facts.sort_by_key(|&f| first_read[f as usize]);
+    }
     // The rule each fact goes before: the first that reads it or a fact
     // after it.
     let mut slot = vec![usize::MAX; facts.len()];
@@ -433,7 +445,8 @@ pub(super) fn positions(gp: &GroundProgram, fan_in_order: bool) -> Vec<AtomId> {
     }
     let mut order = Vec::with_capacity(n);
     let mut f = 0;
-    for (ri, r) in gp.rules.iter().enumerate() {
+    for ri in 0..gp.rules.len() {
+        let r = nth_rule(gp, ranked, ri);
         while f < facts.len() && slot[f] <= ri {
             order.push(facts[f]);
             f += 1;
@@ -451,11 +464,13 @@ pub(super) fn positions(gp: &GroundProgram, fan_in_order: bool) -> Vec<AtomId> {
 
 /// Per atom, the first rule of `gp` that reads it and its own last rule,
 /// `usize::MAX` for none: what [`positions`] places a fact before and a
-/// derived atom at.
-fn rule_places(gp: &GroundProgram) -> (Vec<usize>, Vec<usize>) {
+/// derived atom at; the rules in the order of `ranked` where it is given
+/// ([`in_rule_order`]).
+fn rule_places(gp: &GroundProgram, ranked: Option<&[u32]>) -> (Vec<usize>, Vec<usize>) {
     let n = gp.num_atoms();
     let (mut first_read, mut last_rule) = (vec![usize::MAX; n], vec![usize::MAX; n]);
-    for (ri, r) in gp.rules.iter().enumerate() {
+    for ri in 0..gp.rules.len() {
+        let r = nth_rule(gp, ranked, ri);
         last_rule[r.head as usize] = ri;
         for l in &r.body {
             let f = &mut first_read[l.atom() as usize];
@@ -467,21 +482,53 @@ fn rule_places(gp: &GroundProgram) -> (Vec<usize>, Vec<usize>) {
     (first_read, last_rule)
 }
 
+/// Rule `i` of `gp` in the order of `ranked`, or of the program.
+fn nth_rule<'g>(gp: &'g GroundProgram, ranked: Option<&[u32]>, i: usize) -> &'g GroundRule {
+    &gp.rules[ranked.map_or(i, |r| r[i] as usize)]
+}
+
 /// A boundary of an order that a cut may take: one after a derived atom,
 /// crossed by a derived atom.
 #[derive(Clone, Copy, Debug)]
-struct Boundary {
+pub(crate) struct Boundary {
     /// The position it follows.
-    after: usize,
+    pub(crate) after: usize,
     /// The atoms at or before it that a rule of an atom after it reads.
-    width: usize,
+    pub(crate) width: usize,
     /// The facts at or before it.
     facts: usize,
 }
 
-/// Each atom's position in `order`, and the boundaries of `order` that a
-/// cut may take, with their widths: the profile, computed once.
-fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>, Vec<u32>) {
+/// The order of `gp`'s atoms ([`positions`]) and its profile ([`profile`])
+/// as a run cut into windows reads them (`crate::solve`'s windows): the
+/// rules by the depth of their heads ([`depths`]), the program's order
+/// among equals, and a query's atom crossing every boundary up to the last
+/// observed atom, whose window answers it. The grounder's own order runs a
+/// loop it grounds from its bound end backwards, each step's atoms placed
+/// at their last rule after the steps that read them: no boundary there
+/// could be cut, and a ladder of two atoms a step had none. The order,
+/// each atom's position, the boundaries, and each atom's last reader's
+/// position.
+pub(crate) fn window_profile(
+    gp: &GroundProgram,
+) -> (Vec<AtomId>, Vec<u32>, Vec<Boundary>, Vec<u32>) {
+    let depth = depths(gp);
+    let mut ranked: Vec<u32> = (0..gp.rules.len() as u32).collect();
+    ranked.sort_by_key(|&r| depth[gp.rules[r as usize].head as usize]);
+    let order = in_rule_order(gp, Some(&ranked));
+    let (at, boundaries, last) = profile(gp, &order, true);
+    (order, at, boundaries, last)
+}
+
+/// Each atom's position in `order`, the boundaries of `order` that a cut
+/// may take, with their widths, and each atom's last reader's position:
+/// the profile, computed once. With `held`, each query's atom is read at
+/// the last observed atom's position at least ([`window_profile`]).
+fn profile(
+    gp: &GroundProgram,
+    order: &[AtomId],
+    held: bool,
+) -> (Vec<u32>, Vec<Boundary>, Vec<u32>) {
     let n = order.len();
     let mut at = vec![0u32; gp.num_atoms()];
     for (p, &a) in order.iter().enumerate() {
@@ -494,6 +541,16 @@ fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>, Ve
         for l in &r.body {
             let b = l.atom() as usize;
             last[b] = last[b].max(p);
+        }
+    }
+    if held {
+        let observed = gp.evidence.iter().filter_map(|&(_, a, _)| a);
+        if let Some(end) = observed.map(|a| at[a as usize]).max() {
+            for &(_, q, _) in &gp.queries {
+                if let Some(q) = q {
+                    last[q as usize] = last[q as usize].max(end);
+                }
+            }
         }
     }
     // The atoms, and the derived atoms, that start and stop crossing at
@@ -870,7 +927,7 @@ mod tests {
         let gp = grounded(&chain(6));
         for fan_in in [false, true] {
             let order = positions(&gp, fan_in);
-            let cuts = cuts(&profile(&gp, &order).1);
+            let cuts = cuts(&profile(&gp, &order, false).1);
             assert_eq!(cuts.len(), 4, "fan_in {fan_in}: {cuts:?}");
             assert!(
                 cuts.iter().all(|c| c.width == 1),
@@ -952,7 +1009,7 @@ mod tests {
                 b :- a, h. b :- \\+a, i. z :- b, k. query(z).\n";
         let gp = grounded(&src);
         let order = positions(&gp, false);
-        let (_, boundaries, _) = profile(&gp, &order);
+        let (_, boundaries, _) = profile(&gp, &order, false);
         let cut_after: Vec<String> = cuts(&boundaries)
             .iter()
             .map(|c| gp.atoms[order[c.after] as usize].to_string())
@@ -980,7 +1037,7 @@ mod tests {
         src += "query(s6).\n";
         let gp = grounded(&src);
         let order = positions(&gp, false);
-        let (at, boundaries, last) = profile(&gp, &order);
+        let (at, boundaries, last) = profile(&gp, &order, false);
         let every = cuts(&boundaries);
         let stand = hiding(&gp, &Deps::of(&gp), &at, &last, &every);
         let after = |c: &Boundary| gp.atoms[order[c.after] as usize].to_string();
