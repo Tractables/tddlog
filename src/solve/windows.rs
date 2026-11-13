@@ -7,7 +7,7 @@
 //! memory is a window's, whatever the chain's length.
 //!
 //! The order and the widths of its boundaries are naming's
-//! ([`window_profile`]), the rules taken by the depth of their heads and
+//! ([`window_profile`]), the rules taken by the level of their heads and
 //! each fact right before its first reader, and a query's atom crossing
 //! every boundary up to the last observation, whose window answers it. A cut is taken once the
 //! window since the last cut holds [`WindowBounds::rules`] ground rules: at

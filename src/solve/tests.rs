@@ -870,6 +870,59 @@ fn a_chain_observed_in_rules_stated_after_it_is_cut_at_every_step() {
 }
 
 #[test]
+fn a_joint_over_the_second_half_of_a_chain_is_cut_at_every_step() {
+    // A hidden Markov model: x(0) at 0.1; x(k) at 0.9 after x(k - 1), 0.3
+    // after \+x(k - 1); v(k) observed, 0.65 under x(k) and 0.3 under
+    // \+x(k). all(k) is x(30) to x(k) all true, the joint its filtering
+    // asks. The grounder inlines all's rules a few steps to a rule, so by
+    // their late level alone they rank with the chain's last steps, each
+    // x(k) they read crosses every boundary up to its reader, and the joint
+    // is one window: 17 windows. Ranked after the atoms they read, each
+    // step of the joint can be cut too: 25 windows. By hand: the forward
+    // pass to x(30), then 0.9 * 0.65 a step.
+    let n = 60;
+    let mut source = String::from("0.1::x(0).\n");
+    for k in 1..=n {
+        source += &format!(
+            "0.9::a({k}).\n0.3::b({k}).\nx({k}) :- x({j}), a({k}).\nx({k}) :- \\+x({j}), b({k}).\n\
+             0.65::e1({k}).\n0.3::e0({k}).\nv({k}) :- x({k}), e1({k}).\nv({k}) :- \\+x({k}), e0({k}).\nevidence(v({k})).\n",
+            j = k - 1
+        );
+    }
+    source += "all(30) :- x(30).\n";
+    for k in 31..=n {
+        source += &format!("all({k}) :- all({j}), x({k}).\n", j = k - 1);
+    }
+    source += &format!("query(all({n})).\n");
+    // (P(not x(k), e so far), P(x(k), e so far))
+    let mut alpha = (0.9, 0.1);
+    let mut joint = 0.0;
+    for k in 1..=n {
+        alpha = (alpha.0 * 0.7 + alpha.1 * 0.1, alpha.0 * 0.3 + alpha.1 * 0.9);
+        alpha = (alpha.0 * 0.3, alpha.1 * 0.65);
+        if k == 30 {
+            joint = alpha.1;
+        } else if k > 30 {
+            joint *= 0.9 * 0.65;
+        }
+    }
+    let z = alpha.0 + alpha.1;
+    // Under `auto` alone: `closed` runs the whole program out of budget.
+    let (one, whole, z_whole) = windowed(&source, usize::MAX, Strategy::Auto);
+    let (count, cut, z_cut) = windowed(&source, 8, Strategy::Auto);
+    assert_eq!(one, 1);
+    assert!(count >= 24, "{count} windows");
+    let all = format!("all({n})");
+    for (what, answers, p_e) in [("whole", whole, z_whole), ("cut", cut, z_cut)] {
+        assert_answers(what, &answers, &[(all.as_str(), joint / z)], 1e-9);
+        assert!(
+            (p_e.to_f64() - z).abs() < 1e-9,
+            "{what}: P(e) {p_e:?} against {z}"
+        );
+    }
+}
+
+#[test]
 fn a_choice_across_cuts_with_later_evidence() {
     // m1 makes s(10) true, m2 s(50); s(60) observed.
     let z = 0.4 * given(10, 60) + 0.6 * given(50, 60);
