@@ -501,23 +501,50 @@ pub(crate) struct Boundary {
 
 /// The order of `gp`'s atoms ([`positions`]) and its profile ([`profile`])
 /// as a run cut into windows reads them (`crate::solve`'s windows): the
-/// rules by the depth of their heads ([`depths`]), the program's order
-/// among equals, and a query's atom crossing every boundary up to the last
-/// observed atom, whose window answers it. The grounder's own order runs a
-/// loop it grounds from its bound end backwards, each step's atoms placed
-/// at their last rule after the steps that read them: no boundary there
-/// could be cut, and a ladder of two atoms a step had none. The order,
-/// each atom's position, the boundaries, and each atom's last reader's
-/// position.
+/// rules by the late level of their heads ([`late_levels`]), then by
+/// depth ([`depths`]), the program's order among equals, and a query's atom
+/// crossing every boundary up to the last observed atom, whose window
+/// answers it. The grounder's own order runs a loop it grounds from its
+/// bound end backwards, each step's atoms placed at their last rule after
+/// the steps that read them: no boundary there could be cut, and a ladder
+/// of two atoms a step had none. By depth alone, a helper of each step
+/// that the next step reads, or an observation stated after the chain,
+/// ranks with the chain's first steps and crosses every boundary up to its
+/// reader. The order, each atom's position, the boundaries, and each atom's
+/// last reader's position.
 pub(crate) fn window_profile(
     gp: &GroundProgram,
 ) -> (Vec<AtomId>, Vec<u32>, Vec<Boundary>, Vec<u32>) {
     let depth = depths(gp);
+    let level = late_levels(gp, &depth);
     let mut ranked: Vec<u32> = (0..gp.rules.len() as u32).collect();
-    ranked.sort_by_key(|&r| depth[gp.rules[r as usize].head as usize]);
+    ranked.sort_by_key(|&r| {
+        let h = gp.rules[r as usize].head as usize;
+        (level[h], depth[h])
+    });
     let order = in_rule_order(gp, Some(&ranked));
     let (at, boundaries, last) = profile(gp, &order, true);
     (order, at, boundaries, last)
+}
+
+/// Each atom's late level: an atom no rule reads at its depth, any other
+/// one level below its lowest reader's, so that each atom ranks as late as
+/// its readers allow. Atoms are taken deepest first, so a reader is placed
+/// before what it reads, but in a cycle.
+fn late_levels(gp: &GroundProgram, depth: &[u32]) -> Vec<i64> {
+    let readers = gp.readers(|r, _| r);
+    let mut atoms: Vec<usize> = (0..gp.num_atoms()).collect();
+    atoms.sort_by_key(|&a| std::cmp::Reverse(depth[a]));
+    let mut level = vec![i64::MAX; gp.num_atoms()];
+    for a in atoms {
+        level[a] = readers[a]
+            .iter()
+            .map(|&r| level[gp.rules[r as usize].head as usize])
+            .filter(|&l| l != i64::MAX)
+            .min()
+            .map_or(i64::from(depth[a]), |l| l - 1);
+    }
+    level
 }
 
 /// Each atom's position in `order`, the boundaries of `order` that a cut

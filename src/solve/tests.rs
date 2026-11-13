@@ -817,9 +817,10 @@ fn a_chain_whose_rows_are_under_the_least_float_runs_windowed() {
 #[test]
 fn a_helper_of_each_step_read_by_the_next() {
     // h(i) = c(i) or d(i), 0.75; s(i) after s(i - 1) 0.75, after \+s(i - 1)
-    // 0.15: s(i) = 0.375 + 0.525 * 0.6^i. Every h(i) ranks before s(2)
-    // and crosses the boundaries before it: the program is cut only near
-    // its end, into windows of 4 rules or more, the last one's.
+    // 0.15: s(i) = 0.375 + 0.525 * 0.6^i. By depth every h(i) would rank
+    // before s(2) and cross the boundaries up to s(i); by its late level
+    // it ranks right before s(i), so the program can be cut at every step:
+    // 240 rules in windows of 8 rules or more, 29 windows (by depth, 2).
     let mut source = String::from("0.9::s(0).\n");
     for i in 1..=60 {
         source += &format!(
@@ -829,7 +830,43 @@ fn a_helper_of_each_step_read_by_the_next() {
     }
     source += "query(s(7)).\nquery(s(60)).\n";
     let s = |i: i32| 0.375 + 0.525 * 0.6f64.powi(i);
-    windows_agree_in(&source, 4, &[("s(7)", s(7)), ("s(60)", s(60))], 1.0, 2..);
+    windows_agree_in(&source, 8, &[("s(7)", s(7)), ("s(60)", s(60))], 1.0, 28..);
+}
+
+#[test]
+fn a_chain_observed_in_rules_stated_after_it_is_cut_at_every_step() {
+    // x(0) at 0.1; x(k) at 0.2 after x(k - 1), 0.3 after \+x(k - 1). An
+    // observation every 10 steps, 0.9 under x(k) and 0.2 under \+x(k), its
+    // rules and facts stated after the whole chain, where the program's
+    // order would leave them: the windows rank obs(k) right after x(k), and
+    // each step can be cut: 132 rules in windows of 8 rules or more, 16
+    // windows. By hand: the forward pass.
+    let n = 60;
+    let mut source = String::from("0.1::x(0).\n");
+    for k in 1..=n {
+        source += &format!(
+            "0.2::a({k}).\n0.3::b({k}).\nx({k}) :- x({j}), a({k}).\nx({k}) :- \\+x({j}), b({k}).\n",
+            j = k - 1
+        );
+    }
+    let observed = |k: usize| k % 10 == 5;
+    for k in (1..=n).filter(|&k| observed(k)) {
+        source += &format!(
+            "0.9::n1({k}).\n0.2::n0({k}).\nobs({k}) :- x({k}), n1({k}).\nobs({k}) :- \\+x({k}), n0({k}).\nevidence(obs({k})).\n"
+        );
+    }
+    source += &format!("query(x({n})).\n");
+    // (P(not x(k), e so far), P(x(k), e so far))
+    let mut alpha = (0.9, 0.1);
+    for k in 1..=n {
+        alpha = (alpha.0 * 0.7 + alpha.1 * 0.8, alpha.0 * 0.3 + alpha.1 * 0.2);
+        if observed(k) {
+            alpha = (alpha.0 * 0.2, alpha.1 * 0.9);
+        }
+    }
+    let z = alpha.0 + alpha.1;
+    let x = format!("x({n})");
+    windows_agree_in(&source, 8, &[(x.as_str(), alpha.1 / z)], z, 15..);
 }
 
 #[test]
