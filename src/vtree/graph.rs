@@ -279,8 +279,14 @@ pub(super) fn elimination_budget() -> Duration {
 /// the same.
 ///
 /// Past twice [`ELIMINATION_BUDGET_UNITS`] of work, on goatd's meter, the
-/// vertices left go as one clique, in the order of their numbers. `None`
-/// where goatd refuses the weights (one under 1, or a sum of 2^32 or more).
+/// vertices left go as one clique, in the order of their numbers. Weighted,
+/// the elimination is `None` there instead: it is a candidate beside the
+/// unweighted one, which every caller has, and goatd scores a weighted fill
+/// anew at each change, in the square of the vertex's degree, so that a hub
+/// of thousands of neighbours runs out the budget part way and leaves a bag
+/// of most of the graph, which the families layout weighs as cheap. `None`
+/// too where goatd refuses the weights (one under 1, or a sum of 2^32 or
+/// more).
 pub(super) fn min_fill_trace(graph: &goatd::Graph, weights: Option<&[u64]>) -> Option<Trace> {
     let ranks: Vec<u32> = (0..graph.num_vertices()).collect();
     let order = match weights {
@@ -290,7 +296,7 @@ pub(super) fn min_fill_trace(graph: &goatd::Graph, weights: Option<&[u64]>) -> O
         },
         None => Order::MinFillRanked { ranks: &ranks },
     };
-    traced(graph, order, true)
+    traced(graph, order, weights.is_none())
 }
 
 /// The elimination of `graph`'s vertices in `order`, every vertex one at a
