@@ -61,20 +61,19 @@ fn run_in_memory(
     )
 }
 
-/// The watch and the trial of each bounded attempt in `notes`, in order.
-fn attempts(notes: &[String]) -> Vec<(usize, String)> {
+/// The trial of each bounded attempt in `notes`, in order.
+fn attempts(notes: &[String]) -> Vec<String> {
     notes
         .iter()
         .filter_map(|n| {
-            let (trial, rest) = n.strip_prefix("trial: ")?.split_once(", watch=")?;
-            Some((rest.split(',').next()?.parse().ok()?, trial.to_string()))
+            let (trial, _) = n.strip_prefix("trial: ")?.split_once(", work=")?;
+            (!trial.ends_with(", alone")).then(|| trial.to_string())
         })
         .collect()
 }
 
 /// Asserts that the bounded attempts in `notes` go in turns: the trials
-/// take their first turns in the order of `trials`, and each trial's
-/// watch only grows from attempt to attempt, by powers of two.
+/// take their first turns in the order of `trials`.
 fn assert_turns(notes: &[String], trials: &[Kind]) {
     let name = |k: &Kind| format!("{k} indicators={}", k.indicators_name());
     let place = |t: &str| {
@@ -85,14 +84,10 @@ fn assert_turns(notes: &[String], trials: &[Kind]) {
     };
     let attempts = attempts(notes);
     let mut firsts: Vec<usize> = Vec::new();
-    let mut watch: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
-    for (w, t) in &attempts {
-        match watch.insert(t, *w) {
-            None => firsts.push(place(t)),
-            Some(before) => assert!(
-                *w >= before && (w / before).is_power_of_two() && w % before == 0,
-                "{t}: {before} then {w} in {notes:#?}"
-            ),
+    let mut seen = std::collections::HashSet::new();
+    for t in &attempts {
+        if seen.insert(t) {
+            firsts.push(place(t));
         }
     }
     assert!(firsts.is_sorted(), "{firsts:?} in {notes:#?}");
@@ -295,14 +290,14 @@ fn families_0_s_rewrite_settles_the_order_at_the_first_attempt_where_it_matters(
     );
     let tried = attempts(notes);
     assert_eq!(
-        tried.first().map(|(_, t)| t.clone()),
+        tried.first().cloned(),
         Some(name(Kind::Families { search: false })),
         "{notes:#?}"
     );
     assert!(
         !tried
             .iter()
-            .any(|(_, t)| *t == name(Kind::Program { fan_in: true })),
+            .any(|t| *t == name(Kind::Program { fan_in: true })),
         "{notes:#?}"
     );
     let adder = run(regress(ADDER));
@@ -313,7 +308,7 @@ fn families_0_s_rewrite_settles_the_order_at_the_first_attempt_where_it_matters(
         "{notes:#?}"
     );
     assert_eq!(
-        attempts(notes).first().map(|(_, t)| t.clone()),
+        attempts(notes).first().cloned(),
         Some(name(Kind::Program { fan_in: false })),
         "{notes:#?}"
     );
@@ -470,7 +465,7 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
             })
             .sum()
     };
-    let turns: Vec<_> = attempts(notes).into_iter().map(|(_, t)| t).collect();
+    let turns = attempts(notes);
     assert!(
         turns
             .iter()
@@ -564,10 +559,6 @@ fn settling_past_its_budget_is_the_trials_work() {
             .any(|n| n.starts_with("trial: program indicators=off,")
                 && n.contains(", phase=query, steps 0/")
                 && n.contains(", stopped, ")),
-        "{notes:#?}"
-    );
-    assert!(
-        attempts(notes).iter().all(|&(watch, _)| watch == 1 << 15),
         "{notes:#?}"
     );
     let p = run.results.unwrap()[0].probability;
@@ -723,36 +714,6 @@ fn a_trial_with_indicators_ties_tables_by_clauses() {
     }
 }
 
-#[test]
-fn families_0_holds_the_weight_only_where_its_rewrite_ties_tables_by_clauses() {
-    // A network's rewrite ties its tables by clauses, and `families:0`'s
-    // first watch is that of a weighted first target; UW-CSE's ties none,
-    // and its first watch is any trial's. A first round of two pairs.
-    let first_watch = |gp: GroundProgram| {
-        let trials = candidates(&gp, false);
-        let run = run_with_watch(
-            gp,
-            trials,
-            Projection::default(),
-            2,
-            tp::DYNAMIC_FIRST_PAIRS,
-        )
-        .unwrap();
-        let laid = Kind::Families { search: false };
-        let laid = format!("{laid} indicators={}", laid.indicators_name());
-        attempts(&run.vtree_notes)
-            .into_iter()
-            .find(|(_, t)| *t == laid)
-            .map(|(w, _)| w)
-            .unwrap_or_else(|| panic!("{:#?}", run.vtree_notes))
-    };
-    let unweighted = (2 * WORK_PER_PAIR / WORK_PER_HELD_PAIR) as usize;
-    let network = regress(include_str!("../../examples/bn_split.pl"));
-    assert_eq!(first_watch(network), FAMILIES_WEIGHT as usize * unweighted);
-    let relational = regress(include_str!("../../examples/uwcse.pl"));
-    assert_eq!(first_watch(relational), unweighted);
-}
-
 /// Trial `strategy` on `gp` written without its linear recursion, in
 /// attempts held to the bounds a trial gets beside others, round after
 /// round from two pairs. A trial alone runs unbounded, so this is how a
@@ -768,7 +729,6 @@ fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
     let mut ledger = Ledger::default();
     assert!(prepare(&mut trials, 0, &programs, &mut ledger).unwrap());
     let mut bounds = Bounds {
-        pairs: 2,
         work: 2 * WORK_PER_PAIR,
         projected_from: u64::MAX,
         horizon: f64::INFINITY,
@@ -783,9 +743,8 @@ fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
             &mut ledger,
         ) {
             Ok((results, sizes)) => return finish(&mut trials[0], results, sizes, ledger),
-            Err(e) => match Stop::of(bounds, trials[0].last_work, &e) {
+            Err(e) => match Stop::of(&e) {
                 Some(Stop::Work) => bounds.work *= 2,
-                Some(Stop::Size(pairs)) => bounds.pairs = pairs.next_power_of_two(),
                 Some(Stop::Projected) | None => panic!("{strategy}: {e:?}"),
             },
         }
@@ -858,7 +817,7 @@ fn a_trial_alone_runs_in_one_unbounded_attempt() {
     assert!(
         run.vtree_notes
             .iter()
-            .any(|n| n.starts_with("trial: dynamic") && n.contains("watch=none")),
+            .any(|n| n.starts_with("trial: dynamic") && n.contains(", alone, ")),
         "{:?}",
         run.vtree_notes
     );
@@ -903,129 +862,6 @@ fn a_dynamic_trial_compiles_primal_and_the_others_dual() {
     assert!(!r.kind.is_dynamic(), "{}", r.kind);
     assert_eq!(r.kind.formulation(), tp::Formulation::Dual);
     assert!((r.results.unwrap()[0].probability - 0.125).abs() < 1e-12);
-}
-
-#[test]
-fn an_operation_lost_in_flight_is_built_again_in_a_later_turn() {
-    // A first turn of 256 units holds a watch of 16 pairs and caps every
-    // operation at 32 nodes, so the conjunction of 40 observations stops
-    // in flight; the trial resumes in a later turn, under a larger cap,
-    // and answers. Each observed fact queried, so that the evidence is
-    // not dropped as detached (src/ground/detach.rs).
-    let mut source = String::new();
-    for i in 0..41 {
-        source.push_str(&format!("0.5::f({i}).\nquery(f({i})).\n"));
-        if i < 40 {
-            source.push_str(&format!("evidence(f({i}),true).\n"));
-        }
-    }
-    source.push_str("query(\\+f(40)).\n");
-    let gp = regress(&source);
-    let run = run_with_watch(
-        gp.clone(),
-        closed_then_td(),
-        Projection::default(),
-        1,
-        tp::DYNAMIC_FIRST_PAIRS,
-    )
-    .unwrap();
-    let trials: Vec<&String> = run
-        .vtree_notes
-        .iter()
-        .filter(|n| n.starts_with("trial: "))
-        .collect();
-    let name = |n: &str| n.split(", watch=").next().unwrap().to_string();
-    let lost = trials
-        .iter()
-        .position(|n| n.contains(", stopped,"))
-        .unwrap_or_else(|| panic!("{trials:#?}"));
-    assert!(
-        trials[lost + 1..]
-            .iter()
-            .any(|n| name(n) == name(trials[lost])),
-        "{trials:#?}"
-    );
-    let answers = run.results.unwrap();
-    assert_eq!(answers.len(), 42);
-    for (r, expected) in answers
-        .iter()
-        .zip([[1.0; 40].as_slice(), &[0.5, 0.5]].concat())
-    {
-        assert!((r.probability - expected).abs() < 1e-12, "{r:?}");
-    }
-}
-
-/// A Boolean query of TPC-H q18's shape ([`scripts/gen_tpch.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_tpch.py)): one
-/// rule per lineitem of an order of a customer, every body over facts
-/// alone, one component; and its probability by hand, the query being
-/// hierarchical, read once.
-fn lineage_of_orders(customers: usize, orders: usize, lines: usize) -> (GroundProgram, f64) {
-    let mut src = String::new();
-    let mut k = 0;
-    let mut p = || {
-        k += 1;
-        0.05 + 0.9 * ((k * 37) % 101) as f64 / 101.0
-    };
-    let mut none = 1.0;
-    for c in 0..customers {
-        let pc = p();
-        src += &format!("{pc}::customer({c}).\n");
-        let mut no_order = 1.0;
-        for o in 0..orders {
-            let id = c * orders + o;
-            let po = p();
-            src += &format!("{po}::orders({id},{c}).\n");
-            let mut no_line = 1.0;
-            for l in 0..lines {
-                let pl = p();
-                src += &format!("{pl}::lineitem({id},{l}).\n");
-                no_line *= 1.0 - pl;
-            }
-            no_order *= 1.0 - po * (1.0 - no_line);
-        }
-        none *= 1.0 - pc * (1.0 - no_order);
-    }
-    src += "q :- customer(C), orders(O,C), lineitem(O,_).\nquery(q).\n";
-    (regress(&src), 1.0 - none)
-}
-
-#[test]
-fn a_loop_the_watch_refused_is_taken_in_the_trials_next_attempt() {
-    // Under a first watch of 512 pairs (a first turn of 2^13 units)
-    // every trial's formula, one loop of clauses over the whole lineage,
-    // is refused whole, as TPC-H q18's are. `td`, first, keeps its loop,
-    // and its next attempt, under a watch that holds it, takes the loop
-    // rather than build it again and finishes the compile; `td` finishes.
-    let (gp, p) = lineage_of_orders(10, 4, 5);
-    let td = Kind::Td;
-    assert_eq!(
-        candidates(&gp, false),
-        vec![td, Kind::Dynamic, Kind::Closed]
-    );
-    let run = run_with_watch(
-        gp.clone(),
-        candidates(&gp, false),
-        Projection::default(),
-        32,
-        tp::DYNAMIC_FIRST_PAIRS,
-    )
-    .unwrap();
-    assert_eq!(run.kind, td);
-    let trials: Vec<&String> = run
-        .vtree_notes
-        .iter()
-        .filter(|n| n.starts_with("trial: td "))
-        .collect();
-    assert!(trials.len() >= 2, "{:#?}", run.vtree_notes);
-    assert!(trials[0].contains(", components 0/1, size,"), "{trials:#?}");
-    assert!(trials[1].contains(", phase=query, "), "{trials:#?}");
-    assert_eq!(run.stats.clause_memo.retaken, 1);
-    assert_eq!(run.stats.clause_memo.built, 1, "the loop was built twice");
-    let answers = run.results.unwrap();
-    assert!(
-        (answers[0].probability - p).abs() < 1e-12,
-        "{answers:?} against {p}"
-    );
 }
 
 #[test]

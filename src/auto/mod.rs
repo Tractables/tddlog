@@ -21,11 +21,7 @@
 //! by up to that many doublings. A compile notes its progress at half
 //! its first turn's target ([`tp::Horizon`]), so that the pace of that
 //! turn's second half projects it where it puts the compile's finish past
-//! the trial's next target ([`Trial::ahead`]). The attempt's watch, the largest formula
-//! it may complete, is a [`policy::WORK_PER_HELD_PAIR`]th of the target in
-//! pairs, or more where a formula past the watch stopped an earlier
-//! attempt: such a stop raises the watch to hold it ([`Trial::hold`]) and
-//! leaves the target alone. Where `families:0`'s estimate
+//! the trial's next target ([`Trial::ahead`]). Where `families:0`'s estimate
 //! calls for it, the searched families layout is built once `families:0`
 //! has spent what the search costs ([`policy::search_rent`]), and
 //! otherwise at its own turn; either way it may take `families:0`'s place
@@ -684,7 +680,6 @@ fn run_within(
         let left = t.target.saturating_sub(t.spent).max(1);
         let rent = if weighed { None } else { search_rent(t, left) };
         let bounds = Bounds {
-            pairs: t.watch(first_pairs),
             work: bet_left(t, rent.unwrap_or(left)),
             projected_from: projected_from(first_pairs),
             horizon: horizon(t),
@@ -706,17 +701,16 @@ fn run_within(
             Err(error) => error,
         };
         t.record_progress();
-        let Some(stop) = Stop::of(bounds, t.last_work, &error) else {
+        let Some(stop) = Stop::of(&error) else {
             if let tp::CompileError::Tdd(
                 e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
             ) = error
             {
                 let t = &mut trials[i];
                 ledger.notes.push(format!(
-                    "retired: {} indicators={} under a watch of {} pairs: {e}",
+                    "retired: {} indicators={} ({e})",
                     t.kind,
                     t.kind.indicators_name(),
-                    bounds.pairs
                 ));
                 t.retire();
                 refused = Some(e);
@@ -728,8 +722,6 @@ fn run_within(
             });
         };
         match stop {
-            // A formula past the watch: the trial's next attempt holds it.
-            Stop::Size(pairs) => t.hold(pairs, first_pairs),
             // Its target spent, the trial's next doubles until it leaves
             // the trial more than twice the work the stop lost. A turn
             // that ended at a step it kept lost nothing; where the guard
@@ -816,15 +808,12 @@ fn weigh_searched(
     Ok(())
 }
 
-/// The bounds on an attempt beside other trials: the pairs of a formula it
-/// completes (its watch; a formula past it stops the attempt by size),
-/// which also bound its operations in flight ([`attempt`]), the engine
-/// work it may spend, and the base-2 logarithm of the work past which a
+/// The bounds on an attempt beside other trials: the engine work it may
+/// spend, and the base-2 logarithm of the work past which a
 /// projected finish stops its compile between components, once its trial
 /// has spent `projected_from` ([`tp::Horizon`]).
 #[derive(Clone, Copy)]
 struct Bounds {
-    pairs: usize,
     work: u64,
     projected_from: u64,
     horizon: f64,
@@ -837,25 +826,15 @@ enum Stop {
     /// Its compile was projected, between components, to finish past its
     /// horizon ([`policy::horizon`], [`tp::Horizon`]).
     Projected,
-    /// It needs a watch of these pairs: a formula it completed was past
-    /// the watch, or an operation in flight past its nodes or pairs.
-    Size(usize),
 }
 
 impl Stop {
-    /// Why an attempt within `bounds` that spent `work` stopped with
-    /// `error`, `None` where `error` is no stop.
-    fn of(bounds: Bounds, work: u64, error: &tp::CompileError) -> Option<Stop> {
+    /// Why an attempt stopped with `error`, `None` where `error` is no
+    /// stop.
+    fn of(error: &tp::CompileError) -> Option<Stop> {
         match error {
-            tp::CompileError::Oversize { pairs, .. }
-            | tp::CompileError::QueryOversize { pairs } => Some(Stop::Size(*pairs)),
-            tp::CompileError::Tdd(tididi::OperationError::Stopped) if work >= bounds.work => {
-                Some(Stop::Work)
-            }
+            tp::CompileError::Tdd(tididi::OperationError::Stopped) => Some(Stop::Work),
             tp::CompileError::Projected { .. } => Some(Stop::Projected),
-            tp::CompileError::Tdd(
-                tididi::OperationError::OutputCap | tididi::OperationError::Stopped,
-            ) => Some(Stop::Size(bounds.pairs.saturating_add(1))),
             _ => None,
         }
     }
@@ -867,10 +846,7 @@ impl Stop {
 /// spent the bounds' work, besides what settling the names of `program`
 /// and `decision` spends (`tp::settle`), and the next attempt goes on from
 /// that step (`tp::TddBackend::pause`). An operation still in flight at
-/// twice the work is stopped, and lost. A formula it completes past the
-/// watch stops it by size; an operation in flight past twice the watch in
-/// nodes, or sixteen times it in pairs, is lost and built again in a later
-/// turn. Its compile stops between components where it is projected to
+/// twice the work is stopped, and lost. Its compile stops between components where it is projected to
 /// finish more than [`PROJECTED_DOUBLINGS`] doublings past its target over
 /// its weight ([`policy::horizon`], [`tp::Horizon`]): the turn cannot
 /// finish it, and the other trials take theirs before it goes on. Records
@@ -907,20 +883,13 @@ fn attempt(
     let result = tree.context().run(|engine| {
         let start_work = engine.limits().work_units();
         let mut limits = LimitConfig::none().with_memory_budget_bytes(memory_bytes);
-        if let Some(Bounds { pairs, work, .. }) = bounds {
+        if let Some(Bounds { work, .. }) = bounds {
             // The turn ends at the first step kept past its work
             // (`tp::TddBackend::pause`); one operation that runs on to
             // twice the work is stopped and lost.
             let guard_at = start_work.saturating_add(work.saturating_mul(2));
-            let stop = StopRules::default()
-                .with_unconditional(Some(StopAt::WorkUnits(guard_at)))
-                .with_after_pairs(Some((
-                    (pairs as u64).saturating_mul(16),
-                    StopAt::WorkUnits(0),
-                )));
-            limits = limits
-                .with_output_node_cap(Some((pairs as u64).saturating_mul(2)))
-                .with_stop_rules(stop);
+            let stop = StopRules::default().with_unconditional(Some(StopAt::WorkUnits(guard_at)));
+            limits = limits.with_stop_rules(stop);
         }
         let _guard = engine.limits().scope(limits);
         let horizon = bounds.map(|b| tp::Horizon {
@@ -938,7 +907,8 @@ fn attempt(
             &backend,
             (t.kind, projection),
             dynamic_first_pairs,
-            bounds.map(|b| b.pairs),
+            // A bounded run is resumable, under no watch on its formulas.
+            bounds.map(|_| usize::MAX),
             horizon,
         );
         work = engine.limits().work_units().saturating_sub(start_work);
@@ -969,7 +939,6 @@ fn attempt(
     ledger.trial_seconds += seconds;
     let outcome = match &result {
         Ok(_) => "finished",
-        Err(tp::CompileError::QueryOversize { .. } | tp::CompileError::Oversize { .. }) => "size",
         Err(tp::CompileError::Projected { .. }) => "projected",
         Err(_) => "stopped",
     };
@@ -1002,8 +971,8 @@ fn attempt(
             }
             None => format!(", steps {done}/{all}"),
         });
-    let watch = bounds.map_or("none".to_string(), |b| b.pairs.to_string());
-    ledger.notes.push(format!("trial: {} indicators={}, watch={watch}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
+    let alone = if bounds.is_none() { ", alone" } else { "" };
+    ledger.notes.push(format!("trial: {} indicators={}{alone}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
         t.kind, t.kind.indicators_name(), progress.unwrap_or_default()));
     result
 }

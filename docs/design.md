@@ -2122,8 +2122,7 @@ trials and keeps the first that finishes. A trial is a layout, a
 (`Kind::rewrite`): `families` and `families:0` read it through
 indicators, the others do not. The trials take turns: each turn lets one
 trial's compile or query phase go on until it has spent a target of
-engine work or would complete a formula larger than a watch in pairs, and
-a trial's target doubles once it has spent it. A trial wins only after
+engine work, and a trial's target doubles once it has spent it. A trial wins only after
 its compile, evidence and all queries complete; the first complete trial
 answers. This section gives which trials a program gets, the two trials
 that rewrite the program further (`program`'s and `decision`'s), how the
@@ -2295,19 +2294,8 @@ work). Ended inside an operation, as turns once
 were, every turn started its loop of clauses over (TPC-H's q7, whose
 formula is one loop of hundreds of bodies), or the walk's join under way.
 
-An attempt may complete formulas of up to its watch in pairs: a sixteenth
-of the target (`WORK_PER_HELD_PAIR`), `FIRST_PAIRS` at least, or more
-where a formula past the watch stopped an earlier attempt, since under a
-smaller watch it would build the formula again and be stopped again. Such
-a stop raises the watch, by powers of two, until it holds the formula
-(`Trial::hold`), and leaves the target alone, so the trial goes on where
-it is still the least: a formula's pairs need not follow its work, and a
-watch tied to the target would give the other trials turns for nothing.
-An operation in flight may output twice the watch in nodes, and a raw
-conjunction sixteen times it in pairs, but for a join of the evidence
-walk that sums out its whole scope: it makes a weight, its nodes are
-folded away as it builds them, and it runs under the work stop and the
-memory budget alone. Where `program` goes first, it,
+An attempt's formulas are bounded by its work and the memory budget
+alone. Where `program` goes first, it,
 `program:fanin` and the trial after them start at a 256th of their first
 targets (`LEAD_SHARE`): the circuits built gate by gate are won by one
 of the three. The trial left alone runs without bounds (`attempt`).
@@ -3196,9 +3184,7 @@ compare only within the run they come from.
   `families:0` layout of width 345 that takes 3.8 s to build. On the
   circuits that `program` leads, layouts over the families estimated at
   up to 1e14 pairs took the weight's share for nothing (pi_w12 8 s to
-  57). objectdetection_13's `families:0` completes 2^30 pairs on 1.15 G
-  units, and a watch tied to the target gave the other trials three turns
-  there. Against the rounds the doubling targets replaced, whose size
+  57). Against the rounds the doubling targets replaced, whose size
   stops ended a trial's round, Alea's arith_book (won by `closed`, third
   in order, at 0.6 G units of 4.4 G spent) went from 16 s to 47 s, GeNI's
   router_18 from 3.7 s to 7.4 (`program` and `closed` run on past size

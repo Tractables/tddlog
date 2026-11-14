@@ -9,7 +9,7 @@ use crate::ground::deps::Deps;
 use crate::tp;
 use crate::vtree::{self, Kind};
 
-use super::policy::{PROJECTED_DOUBLINGS, WORK_PER_HELD_PAIR};
+use super::policy::PROJECTED_DOUBLINGS;
 
 pub(super) struct Trial {
     pub(super) kind: Kind,
@@ -28,8 +28,6 @@ pub(super) struct Trial {
     pub(super) weight: u64,
     /// The work it may have spent by the end of its next turn.
     pub(super) target: u64,
-    /// The least watch that holds the formulas that stopped its attempts.
-    pub(super) held: usize,
     /// The engine work its attempts have spent, and its last attempt.
     pub(super) spent: u64,
     pub(super) last_work: u64,
@@ -60,7 +58,6 @@ impl Trial {
             kept: None,
             weight: 1,
             target: 0,
-            held: 0,
             spent: 0,
             last_work: 0,
             lost: 0,
@@ -84,25 +81,6 @@ impl Trial {
                 }
                 _ => false,
             }
-    }
-
-    /// The pairs of the largest formula its next attempt may complete: a
-    /// [`WORK_PER_HELD_PAIR`]th of its target, and at least `first_pairs`
-    /// and what holds the formulas that stopped it ([`Self::hold`]).
-    pub(super) fn watch(&self, first_pairs: usize) -> usize {
-        first_pairs
-            .max(self.held)
-            .max(usize::try_from(self.target / WORK_PER_HELD_PAIR).unwrap_or(usize::MAX))
-    }
-
-    /// Raises the watch, by powers of two, until it holds a formula of
-    /// `pairs` that stopped an attempt.
-    pub(super) fn hold(&mut self, pairs: usize, first_pairs: usize) {
-        let mut watch = self.watch(first_pairs);
-        while watch < pairs {
-            watch = watch.saturating_mul(2);
-        }
-        self.held = watch;
     }
 
     /// Takes its weight away, once it has spent past its layout's estimate
