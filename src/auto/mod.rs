@@ -18,10 +18,7 @@
 //! one further out, or none, counts that many, so that without
 //! projections the trials take equal shares for their weights, and a
 //! trial projected to finish soon takes its turns ahead of the others,
-//! by up to that many doublings. An attempt that ends at its phase's last
-//! step, as the one before it did, measures no pace: the share of a phase
-//! moves there only when the phase finishes ([`Trial::record_progress`]).
-//! A compile notes its progress at half
+//! by up to that many doublings. A compile notes its progress at half
 //! its first turn's target ([`tp::Horizon`]), so that the pace of that
 //! turn's second half projects it where it puts the compile's finish past
 //! the trial's next target ([`Trial::ahead`]). The attempt's watch, the largest formula
@@ -47,21 +44,10 @@
 //! ([`crate::evaluation::Evaluation::run`]): its trial keeps its place in
 //! the turns, where it lost it to trials far from their finish when the
 //! walk began again at a later turn (1rfs, whose walk outgrew an index at
-//! 9085 of 9086 steps). Beyond that, memory goes to the trial that has
-//! spent the most:
-//! refused it while other trials hold what their attempts built, and
-//! having spent more work than each of them, a trial takes it, once: what
-//! they hold is freed, each of them to begin its phase again at its next
-//! turn ([`Trial::release`]), and the refused trial resumes at its next
-//! turn. Refused otherwise (again, behind a trial that has spent as much,
-//! while no other trial holds anything, or past tididi's 32-bit indices),
-//! it is retired, and the run goes on with the others ([`Trial::retire`]).
-//! So a refusal discards less work than the refused trial has spent, from
-//! each other trial, and once a trial. A trial with no other left runs
-//! without bounds ([`attempt`]). A trial retired while another held what
-//! it built may have been refused for that memory alone: once no trial is
-//! left, each such trial runs again, once, with nothing held beside it
-//! ([`Trial::behind`]).
+//! 9085 of 9086 steps). Beyond that, a trial refused memory, or past
+//! tididi's 32-bit indices, is retired, and the run goes on with the
+//! others ([`Trial::retire`]). A trial with no other left runs
+//! without bounds ([`attempt`]).
 //!
 //! So the run spends on each other trial at most its weight's share of
 //! twice the winner's work, times two to the doublings by which the
@@ -635,24 +621,6 @@ fn run_within(
             .filter(|&i| !trials[i].disabled)
             .min_by(|&i, &j| trials[i].key(earliest).total_cmp(&trials[j].key(earliest)));
         let Some(i) = next else {
-            // Trials retired while another held memory, which is freed now,
-            // run again, once each.
-            let behind: Vec<usize> = (0..trials.len())
-                .filter(|&j| trials[j].behind && !trials[j].revived)
-                .collect();
-            if !behind.is_empty() {
-                for &j in &behind {
-                    let t = &mut trials[j];
-                    (t.disabled, t.revived) = (false, true);
-                    ledger.notes.push(format!(
-                        "revived: {} indicators={} ({} units), retired while another trial held memory",
-                        t.kind,
-                        t.kind.indicators_name(),
-                        t.spent
-                    ));
-                }
-                continue;
-            }
             let error = refused.map_or_else(
                 || Error::Vtree("auto has no trial left".into()),
                 |e| Error::Trials {
@@ -743,36 +711,6 @@ fn run_within(
                 e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
             ) = error
             {
-                // Memory refused goes to the trial refused it where it has
-                // spent more than each trial that holds any, once: what
-                // they built is freed, and it resumes at its next turn.
-                let others: Vec<usize> = (0..trials.len())
-                    .filter(|&j| j != i && trials[j].holds())
-                    .collect();
-                let leads = others.iter().all(|&j| trials[j].spent < trials[i].spent);
-                if e == tididi::OperationError::OverBudget
-                    && !others.is_empty()
-                    && leads
-                    && !trials[i].freed_for
-                {
-                    trials[i].freed_for = true;
-                    let freed: Vec<String> = others
-                        .iter()
-                        .map(|&j| {
-                            trials[j].release();
-                            format!("{} ({} units)", trials[j].kind, trials[j].spent)
-                        })
-                        .collect();
-                    ledger.notes.push(format!(
-                        "released: {} for {} indicators={} ({} units), refused memory under a watch of {} pairs",
-                        freed.join(", "),
-                        trials[i].kind,
-                        trials[i].kind.indicators_name(),
-                        trials[i].spent,
-                        bounds.pairs
-                    ));
-                    continue;
-                }
                 let t = &mut trials[i];
                 ledger.notes.push(format!(
                     "retired: {} indicators={} under a watch of {} pairs: {e}",
@@ -781,7 +719,6 @@ fn run_within(
                     bounds.pairs
                 ));
                 t.retire();
-                t.behind = e == tididi::OperationError::OverBudget && !others.is_empty();
                 refused = Some(e);
                 continue;
             }

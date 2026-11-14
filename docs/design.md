@@ -2291,13 +2291,7 @@ where the target only passed what the trial had spent and the room went
 into the attempt besides, trials whose later components outgrow the
 earlier ones took turns early and were refused memory, freeing the
 others' work (Alea.jl's trueskill and spacex circuits, 1.5 times the
-work). An attempt that ends at its phase's last step, as the record
-before it did, records no pace (`Trial::record_progress`): the share of
-a phase moves only when a step finishes, and at its last step only when
-the phase does, so that its record would put the pace of a trial one
-step from its finish at none, the most doublings past its target (1vfy,
-whose last join of 25.8 G units the guard stopped at 25.77 G). Ended
-inside an operation, as turns once
+work). Ended inside an operation, as turns once
 were, every turn started its loop of clauses over (TPC-H's q7, whose
 formula is one loop of hundreds of bodies), or the walk's join under way.
 
@@ -2436,25 +2430,13 @@ once, putting nothing off, within the attempt, which goes on in its turn
 (`Evaluation::run`, under Put-offs below): its trial keeps its place in
 the turns, where a walk begun again at a later turn waited behind trials
 far from their finish (1rfs, whose walk outgrew an index at 9085 of its
-9086 steps). Beyond that, memory goes to the trial that has spent the most. An
-operation refused memory, by the allocator or tididi's byte budget,
-while other trials hold what their attempts built, frees that
-(`Trial::release`) where the refused trial has spent more work than each
-of them, once a trial: each of them begins its phase again at its next
-turn, with its layout, target, watch and work spent, and the refused
-trial resumes at its next turn. Refused otherwise (again, behind a
-trial that has spent as much, while no other trial holds anything, or
-past tididi's 32-bit indices), the trial is retired (`Trial::retire`): a
+9086 steps). Beyond that, a trial with an operation refused memory, by
+the allocator or tididi's byte budget, or past tididi's 32-bit indices,
+is retired (`Trial::retire`): a
 later attempt would resume at the same operation with larger bounds and
 no more memory to take. What it built is freed, and the run goes on with
-the other trials; a trial retired for `OverBudget` while another trial
-held diagrams is marked `behind` (`Trial::behind`) and revived once
-(`Trial::revived`) when no active trial is left, since what the others
-held has been freed by then; the run fails with the refusal once none is
-left. So a
-refusal discards less work than the refused trial has spent from each
-other trial, and once: freed for whichever trial was refused, the others
-paid for an early refusal of a cheap trial. The compile and query phases
+the other trials; the run fails with the refusal once none is
+left. The compile and query phases
 copy a formula they keep wherever an operation would consume it, through
 tididi's fallible copy (`TddBackend::copy`), so a copy the allocator
 cannot serve is a refusal too: `Tdd`'s `Clone` would abort the process.

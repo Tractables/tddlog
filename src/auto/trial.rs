@@ -47,18 +47,6 @@ pub(super) struct Trial {
     pub(super) mark: Option<u64>,
     pub(super) evaluation: Evaluation,
     pub(super) disabled: bool,
-    /// Whether the others' memory has been freed for it, which happens at
-    /// most once a run ([`super::run`]).
-    pub(super) freed_for: bool,
-    /// Whether it was last retired for memory refused while another trial
-    /// held what its attempts built. Such a trial runs again once no trial
-    /// is left, since what the others held is freed by then
-    /// (`super::run_within`; on multimodal_w11 under a 40 GB address-space
-    /// limit, `closed` was refused while `program:fanin` held its formulas,
-    /// and `program:fanin` was refused alone after it).
-    pub(super) behind: bool,
-    /// Whether it has run again so ([`Self::behind`]), at most once a run.
-    pub(super) revived: bool,
 }
 
 impl Trial {
@@ -81,9 +69,6 @@ impl Trial {
             mark: None,
             evaluation: Evaluation::default(),
             disabled: false,
-            freed_for: false,
-            behind: false,
-            revived: false,
         }
     }
 
@@ -144,13 +129,7 @@ impl Trial {
     /// too ([`Evaluation::marked`]), so that the turn after its first has a
     /// doubling to be projected from. The first in its query phase drops
     /// those of its compile: the phase is projected from where it began
-    /// ([`Self::began`]). An attempt that ended at the phase's last step,
-    /// as the record before it did, records nothing: the share of the
-    /// phase moves only when a step finishes, and at the last step only
-    /// when the phase does, so that the record says nothing the one before
-    /// it did not, and would put the pace of a trial one step from its
-    /// finish at none (1vfy, whose last join was stopped at 25.77 G of its
-    /// 25.8 G units, and which then waited behind trials far from theirs).
+    /// ([`Self::began`]).
     pub(super) fn record_progress(&mut self) {
         self.record(
             self.evaluation.is_compiled(),
@@ -175,11 +154,6 @@ impl Trial {
         }
         if let Some((done, all)) = progress
             && all > 0
-            && !(done + 1 == all
-                && self
-                    .progress
-                    .last()
-                    .is_some_and(|&(_, d)| d == done as f64 / all as f64))
         {
             if self.progress.last().is_some_and(|&(t, _)| t == self.target) {
                 self.progress.pop();
@@ -301,16 +275,8 @@ impl Trial {
         (self.target.max(1) as f64).log2() + self.ahead(earliest) - (self.weight as f64).log2()
     }
 
-    /// Whether its attempts left anything built: the formulas of its phase,
-    /// or the vtree its engine kept between attempts.
-    pub(super) fn holds(&self) -> bool {
-        self.kept.is_some() || self.evaluation.is_compiled() || self.evaluation.progress().is_some()
-    }
-
-    /// Frees what its attempts built, and the scratch its engine kept: its
-    /// next attempt begins its phase again, on its layout, with the target,
-    /// the watch and the work spent it has (`super::run_within`, where
-    /// another trial is refused memory). The layout stays, so that a later
+    /// Frees what its attempts built, and the scratch its engine kept, where
+    /// it is retired ([`Self::retire`]). The layout stays, so that a later
     /// trial with the same one is not tried ([`super::prepare`]).
     pub(super) fn release(&mut self) {
         self.evaluation = Evaluation::new(self.evaluation.traced());
@@ -325,13 +291,11 @@ impl Trial {
     }
 
     /// Ends the trial for the run, where an operation of its attempt was
-    /// refused memory behind a trial that has spent as much, while no other
-    /// trial held any, or outgrew tididi's 32-bit indices: an attempt in a
+    /// refused memory or outgrew tididi's 32-bit indices: an attempt in a
     /// later turn would resume at that operation with larger bounds and no
     /// less held, so the run goes on with the other trials, and fails with
     /// the refusal once none is left (on latin5 and gnb30 `families:0` is
-    /// refused memory and `closed` finishes), unless one was retired behind
-    /// another's memory ([`Self::behind`]). What the trial built is freed
+    /// refused memory and `closed` finishes). What the trial built is freed
     /// ([`Self::release`]).
     pub(super) fn retire(&mut self) {
         self.release();
