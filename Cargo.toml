@@ -19,9 +19,9 @@ include = ["/src/**", "/examples/**", "/Cargo.toml", "/Cargo.lock", "/README.md"
 [dependencies]
 # tididi and goatd: this repository builds the pinned commits; the package on
 # crates.io depends on the releases that `version` names. This repository
-# builds tididi fa905ca2; the package uses tididi 0.2.0 until its next release.
+# builds tididi 93b5cd1b; the package uses tididi 0.2.0 until its next release.
 # The TDD library.
-tididi = { git = "https://github.com/Tractables/tididi", rev = "fa905ca2cc0033dcb082bf384016f70f8f7713cc", version = "0.2.0" }
+tididi = { git = "https://github.com/Tractables/tididi", rev = "93b5cd1bab8535c65975c4bf7a1776b1eaeee423", version = "0.2.0" }
 # Tree decompositions for the structure-aware vtree strategies. Its build.rs
 # compiles a vendored C++ FlowCutter, so building needs a C++ compiler.
 goatd = { git = "https://github.com/Tractables/goatd", rev = "b676c964af05381eab3bdd4838131b041d8be128", version = "0.3.0" }
