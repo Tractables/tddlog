@@ -27,7 +27,7 @@ checksum = "ef25905e51abafe4dcea6c15fec58c57b601cdbd0ee53d22ea1d3016c587d39b"
 [[package]]
 name = "goatd"
 version = "0.3.0"
-source = "git+https://github.com/Tractables/goatd?rev=e592d1e2233d4f724c6cb3475a4810d95e0b847a#e592d1e2233d4f724c6cb3475a4810d95e0b847a"
+source = "git+https://github.com/Tractables/goatd?rev=b676c964af05381eab3bdd4838131b041d8be128#b676c964af05381eab3bdd4838131b041d8be128"
 dependencies = [
  "cc",
  "libc",

@@ -405,8 +405,8 @@ fn eliminate(
 /// The labels' presence is simulated on its own, the bodies left for the
 /// rewrite. A node's score changes only when a label at it or between two of
 /// its neighbours does, so after each step its neighbours and theirs are
-/// scored again; the heap is corrected on pop, as in
-/// `vtree::graph::min_fill_elimination`.
+/// scored again; a heap entry that is no longer its node's score is passed
+/// over when it is popped.
 ///
 /// Returns the order and the label products the rewrite takes along it, an
 /// edge in by an edge out at each step, or `None` once those pass `limit`.

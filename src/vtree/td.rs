@@ -12,7 +12,7 @@ use crate::ground::{AtomId, GroundProgram, add_fact_copies};
 use super::TD_SEED;
 use super::forest::Forest;
 use super::graph::{
-    elimination_budget, facts_by_level, interaction_edges, min_fill_cliques, minor_min_width,
+    elimination_budget, facts_by_level, interaction_edges, min_fill_trace, minor_min_width,
 };
 use super::separators::{self, Atop, CopyRule};
 
@@ -608,9 +608,8 @@ fn fold(
 pub(super) fn min_fill_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, usize)> {
     let num_atoms = gp.num_atoms();
     gp.facts().next()?;
-    let edges = interaction_edges(gp);
-    let min_fill = min_fill_cliques(num_atoms, &edges);
-    let td = min_fill.decomposition(&goatd::Graph::new(num_atoms as u32, edges))?;
+    let graph = goatd::Graph::new(num_atoms as u32, interaction_edges(gp));
+    let td = min_fill_trace(&graph, None)?.decomposition(&graph).ok()?;
     let (forest, root, _) = fold(gp, deps, &td)?;
     Some((forest, root))
 }

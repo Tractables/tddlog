@@ -24,7 +24,7 @@ include = ["/src/**", "/examples/**", "/Cargo.toml", "/Cargo.lock", "/README.md"
 tididi = { git = "https://github.com/Tractables/tididi", rev = "fa905ca2cc0033dcb082bf384016f70f8f7713cc", version = "0.2.0" }
 # Tree decompositions for the structure-aware vtree strategies. Its build.rs
 # compiles a vendored C++ FlowCutter, so building needs a C++ compiler.
-goatd = { git = "https://github.com/Tractables/goatd", rev = "e592d1e2233d4f724c6cb3475a4810d95e0b847a", version = "0.3.0" }
+goatd = { git = "https://github.com/Tractables/goatd", rev = "b676c964af05381eab3bdd4838131b041d8be128", version = "0.3.0" }
 rustc-hash = "2"
 # Exact weights for the sum-out's weight store (`src/query/sum_out.rs`), as
 # tididi's `RationalWeights` takes them.

@@ -15,13 +15,13 @@ use crate::multisets::Multisets;
 use super::cost::{Interfaces, Open, Scope, Weighed};
 use super::forest::Forest;
 use super::graph::{
-    ELIMINATION_BUDGET_UNITS, Elimination, anneal_budget, annealed, edges_of_cliques,
-    eliminated_in_order, elimination_budget, facts_by_use, min_fill_cliques, minor_min_width,
-    weighted_min_fill,
+    anneal_budget, annealed, edges_of_cliques, eliminated_in_order, elimination_budget,
+    facts_by_use, min_fill_trace, minor_min_width, states,
 };
 use super::nest::{AtomMarks, NestScratch, Rows, nest};
 use super::td::{metered, portfolio_to_bound, root_bags, scaled_budget_units};
 use super::{Estimate, TD_SEED};
+use goatd::elimination::Trace;
 
 /// The min-fill width from which `families` searches for a narrower
 /// decomposition. Below it the network's joint is small whatever the width
@@ -1336,7 +1336,7 @@ struct Annealable {
     edges: Vec<(u32, u32)>,
     graph: goatd::Graph,
     weights: Vec<u64>,
-    weighted: Option<Elimination>,
+    weighted: Option<Trace>,
 }
 
 impl Decompositions {
@@ -1432,28 +1432,22 @@ impl Decompositions {
         // a time, and eliminating them so gives the grid its side as width,
         // narrower than min-fill's.
         let narrower = (min_fill.treewidth() as usize).checked_sub(1);
-        let in_order = narrower.and_then(|width| {
-            eliminated_in_order(
-                &edges,
-                (0..num_items as u32).collect(),
-                width,
-                2 * ELIMINATION_BUDGET_UNITS,
-            )
-        });
-        tds.extend(in_order.and_then(|elimination| elimination.decomposition(&graph)));
+        let numbering: Vec<u32> = (0..num_items as u32).collect();
+        let in_order = narrower.and_then(|width| eliminated_in_order(&graph, &numbering, width));
+        tds.extend(in_order.and_then(|trace| trace.decomposition(&graph).ok()));
         tds.push(min_fill);
         // The first numbering is also eliminated by min-fill weighted by
-        // the items' values ([`weighted_min_fill`]), where they differ: on
-        // equal values it is tddlog's min-fill, which ties as goatd's does
-        // not.
+        // the items' values ([`min_fill_trace`]), where they differ: unreduced,
+        // its ties going by degree and number rather than by goatd's salt.
         let weights: Vec<u64> = item_at.iter().map(|&i| self.item_values[i]).collect();
         let weighted = (k == 0 && !self.uniform).then(|| {
-            let (weighted, units, seconds) = metered(|| weighted_min_fill(&edges, &weights));
+            let (weighted, units, seconds) = metered(|| min_fill_trace(&graph, Some(&weights)));
             self.min_fill_units += units;
             self.min_fill_seconds += seconds;
             weighted
         });
-        tds.extend(weighted.as_ref().and_then(|e| e.decomposition(&graph)));
+        let weighted = weighted.flatten();
+        tds.extend(weighted.as_ref().and_then(|t| t.decomposition(&graph).ok()));
         for td in &tds {
             layouts.weigh(td, item_at)?;
         }
@@ -1469,7 +1463,7 @@ impl Decompositions {
     /// the cheapest layout of both numberings pays for it
     /// ([`anneal_budget`]), the better of the first numbering's min-fill
     /// and weighted min-fill eliminations by their states
-    /// ([`Elimination::states`]) improved by annealing, and laid out too.
+    /// ([`states`]) improved by annealing, and laid out too.
     ///
     /// It runs with the portfolio, whose charge `auto` already weighs, and
     /// where the portfolio does not run `families:0` has no search to
@@ -1502,18 +1496,17 @@ impl Decompositions {
         } = start;
         let bits: Vec<f64> = weights.iter().map(|&w| (w as f64).log2()).collect();
         let (found, units, seconds) = metered(|| {
-            let min_fill = min_fill_cliques(self.num_items, &edges);
+            let min_fill = min_fill_trace(&graph, None)?;
             let start = match weighted {
-                Some(w) if w.states(&bits) < min_fill.states(&bits) => w,
+                Some(w) if states(&w, &bits) < states(&min_fill, &bits) => w,
                 _ => min_fill,
             };
-            annealed(&edges, &bits, &start.order, budget).and_then(|order| {
-                eliminated_in_order(&edges, order, usize::MAX, 2 * ELIMINATION_BUDGET_UNITS)
-            })
+            annealed(&edges, &bits, start.order(), budget)
+                .and_then(|order| eliminated_in_order(&graph, &order, usize::MAX))
         });
         self.search_units += units;
         self.search_seconds += seconds;
-        if let Some(td) = found.and_then(|e| e.decomposition(&graph)) {
+        if let Some(td) = found.and_then(|t| t.decomposition(&graph).ok()) {
             layouts.weigh(&td, item_at)?;
         }
         Ok(())
