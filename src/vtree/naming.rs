@@ -1,175 +1,42 @@
-//! Naming the atoms that cross a narrow cut of `program`'s order.
+//! The orders the path layouts read a program in, and the wide bodies they
+//! are read through.
 //!
-//! The Tp compile expands every derived atom: its formula is over the facts
-//! of its cone. Where a program is a long chain of narrow steps (a hidden
-//! Markov model, a circuit unrolled over time), each step's formulas then
-//! hold the whole history before it, and the compile's work grows with the
-//! square of the length or worse. `program` and `program:fanin` lay the
-//! facts out right-linear along an order of all the atoms, facts and
-//! derived ([`positions`]). Where a boundary of that order is narrow, the
-//! derived atoms that cross it are named: a reader after the cut reads them
-//! through indicator copies ([`indicators::name`]), with the segments
-//! between the cuts as the units, and each copy is laid out at the start of
-//! its segment. A formula then holds its own segment's facts and the copies
-//! at its start, and the evidence holds the links, the history, once.
-//!
-//! The width of the boundary after a position is the number of atoms at or
-//! before it that a rule of an atom after it reads, facts among them. The
-//! queries and the evidence do not count: an observed atom's formula is
-//! over its own segment and the copies at its start, and the evidence ties
-//! the segments through the links.
-//!
-//! The cuts ([`cuts`]) take boundaries after a derived atom that a derived
-//! atom crosses: from the last cut, a window opens at the first whose
-//! width is at most twice the facts since the cut, and runs until those
-//! facts double; the cut is the narrowest boundary in the window, the
-//! earliest on a tie. A cut pays where its names are few against the facts
-//! behind it, which its readers' formulas would otherwise hold, and the
-//! narrowest place near the first that pays is the day's frontier on a
-//! Markov chain (GeNI's weather: the 11 state bits and the goal, of 42
-//! facts a day); cut at the first place that paid, the weather named 21
-//! atoms a day and its evidence grew 150 times. A window whose narrowest
-//! boundary is wider than [`WIDEST`] has no cut, and the segment runs on.
-//! Where no boundary is narrow, nothing is named and the layout is the
-//! order's.
-//!
-//! Two comparisons of a cut's names with what they hide refine the window.
-//! A boundary the window skips on its way to a narrower one is cut too
-//! where its names are no more than the facts on each side of it. Without
-//! it a window that reaches the end of a program runs its last two days of
-//! the weather together, the readers holding both days' facts. And a cut
-//! stands only where its names hide something ([`hiding`]): a fact or an
-//! atom behind the cut before that no later rule reads.
+//! `program` and `program:fanin` lay the facts out right-linear along an
+//! order of all the atoms, facts and derived ([`positions`]). A run cut
+//! into windows (`crate::solve`'s) reads the rules in an order of its own
+//! ([`window_profile`]) and cuts it where the boundaries are narrow
+//! ([`cut_search`]). The width of the boundary after a position is the
+//! number of atoms at or before it that a rule of an atom after it reads,
+//! facts among them.
 //!
 //! A body that reads more than [`WIDEST`] atoms crosses every boundary in
 //! its span with everything it has read before it, so no cut there could
-//! be narrow; every layout's rewrite writes it as a chain along the order
+//! be narrow, and a layout that reads the program's graph takes it for a
+//! clique; every layout's rewrite writes it as a chain along the order
 //! first ([`chained`]).
-//!
-//! Whether a cut's names pay is settled on the compiled program
-//! ([`crate::tp::settle`]): where the joint of a cut's links is larger than
-//! what the formulas reading its copies would hold with them expanded, the
-//! copies are composed away and the cut's links leave the evidence.
 
 use std::sync::Arc;
 
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 
 use crate::ground::deps::{Deps, depths, fan_in};
 use crate::ground::tables::Tables;
 use crate::ground::{AtomId, AtomKind, GLit, GroundProgram, GroundRule};
-use crate::indicators;
 use crate::syntax::{Atom, Term};
 
-/// The widest cut named. The evidence holds the joint of a cut's names,
-/// up to `2^width` pairs a level there, where the expanded formulas each
-/// hold their own atom's: GeNI's weather under the fan-in walk's order has
-/// a 46 wide cut, and naming it ran out of 13 GB. 2^20 pairs is the first
-/// watch `auto` puts on a trial's diagrams. The widest cuts that helped
-/// were 17 (link grids at side 16) and 14 (weather at 12 factories).
+/// The most atoms a body reads before it is chained ([`chained`]).
 const WIDEST: usize = 20;
 
 /// The name of a link of a chained body ([`chained`]).
 const NAME: &str = "$cj";
 
-/// `program`'s layout of `gp`: its facts in the order a right-linear vtree
-/// reads them last to first, and where the order has narrow cuts, the
-/// program with the atoms crossing them named, over its own facts and
-/// copies in that order, and a note for `--stats`.
-pub(super) struct Laid {
-    pub(super) facts: Vec<AtomId>,
-    pub(super) named: Option<(GroundProgram, String)>,
-}
-
-/// Lays `gp` out along the file's order, or with `fan_in` along the fan-in
-/// walk's ([`positions`]), naming the atoms that cross its narrow cuts.
-/// `Err` where the allocator refuses the named program room
-/// ([`super::refused`]).
-pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Result<Laid, String> {
-    let order = positions(gp, fan_in);
-    let facts: Vec<AtomId> = order.iter().copied().filter(|&a| gp.is_fact(a)).collect();
-    // A program that reads atoms through indicators already is compiled as
-    // it is (`crate::indicators`, `Prepared::lay_out`).
-    if !gp.encoding.is_empty() {
-        return Ok(Laid { facts, named: None });
-    }
-    let (at, boundaries, last) = profile(gp, &order, false);
-    let cuts = hiding(gp, deps, &at, &last, &cuts(&boundaries));
-    if cuts.is_empty() {
-        return Ok(Laid { facts, named: None });
-    }
-    // Each derived atom's unit is its segment, and a cyclic component's
-    // atoms share their first's, since the link is between components.
-    let mut segment = vec![0usize; order.len()];
-    let mut s = 0;
-    for (p, seg) in segment.iter_mut().enumerate() {
-        *seg = s;
-        if cuts.get(s).is_some_and(|c| c.after == p) {
-            s += 1;
-        }
-    }
-    let mut unit_of: Vec<usize> = (0..gp.num_atoms())
-        .map(|a| {
-            if gp.is_fact(a as AtomId) {
-                usize::MAX
-            } else {
-                segment[at[a] as usize]
-            }
-        })
-        .collect();
-    for scc in deps.sccs.iter().filter(|scc| scc.len() > 1) {
-        let u = unit_of[scc[0] as usize];
-        for &a in scc {
-            unit_of[a as usize] = u;
-        }
-    }
-    let (mut named, units) = indicators::name(gp, unit_of).map_err(super::refused)?;
-    if named.encoding.is_empty() {
-        return Ok(Laid { facts, named: None });
-    }
-    // The copies at the start of their segments, each segment's in the
-    // order of the atoms they stand for.
-    let mut copies: Vec<(usize, u32, AtomId)> = named
-        .encoding
-        .indicators
-        .iter()
-        .zip(&units)
-        .map(|(ind, &u)| {
-            (
-                u,
-                at.get(ind.atom as usize).copied().unwrap_or(u32::MAX),
-                ind.var,
-            )
-        })
-        .collect();
-    copies.sort_unstable();
-    let mut laid = Vec::with_capacity(facts.len() + copies.len());
-    let mut next = copies.iter().peekable();
-    for &a in &order {
-        let seg = segment[at[a as usize] as usize];
-        while let Some(&&(u, _, var)) = next.peek().filter(|c| c.0 <= seg) {
-            debug_assert!(u <= seg);
-            laid.push(var);
-            next.next();
-        }
-        if gp.is_fact(a) {
-            laid.push(a);
-        }
-    }
-    laid.extend(next.map(|c| c.2));
-    named.encoding.segments = units;
-    let atoms: FxHashSet<AtomId> = named.encoding.indicators.iter().map(|i| i.atom).collect();
-    let note = format!(
-        "naming: {} cuts, widest {}, {} copies of {} atoms",
-        cuts.len(),
-        cuts.iter().map(|c| c.width).max().unwrap_or(0),
-        named.encoding.indicators.len(),
-        atoms.len()
-    );
-    Ok(Laid {
-        facts: laid,
-        named: Some((named, note)),
-    })
+/// `program`'s layout of `gp`: its facts in the file's order, or with
+/// `fan_in` in the fan-in walk's ([`positions`]), the order a right-linear
+/// vtree reads them last to first.
+pub(super) fn lay_out(gp: &GroundProgram, fan_in: bool) -> Vec<AtomId> {
+    let mut facts = positions(gp, fan_in);
+    facts.retain(|&a| gp.is_fact(a));
+    facts
 }
 
 /// `gp` with each body that reads more atoms than [`WIDEST`] written as a
@@ -180,8 +47,7 @@ pub(super) fn lay_out(gp: &GroundProgram, deps: &Deps, fan_in: bool) -> Result<L
 /// model's joint query, the conjunction of its states, keeps the states of
 /// every step alive to the end. As a chain, each link the conjunction of
 /// the link before and the body's next literal in the order, it crosses
-/// each boundary as one atom, and the cuts name the link and the step's
-/// state there. The layouts that read the program's graph (`families`,
+/// each boundary as one atom. The layouts that read the program's graph (`families`,
 /// `closed`, `td`) take a wide body for a clique of its atoms: Roulette's
 /// circuits of a hardware design conjoin the check of every step in one
 /// body, and the families layout of 300 steps was 304 wide where the chain
@@ -408,8 +274,8 @@ fn wide_bodies(
 /// before the gate that first reads it (Alea's), this is the file's
 /// order; where it states every fact before every rule (Roulette's
 /// circuits, Alea's exported ones), the gates are interleaved with the
-/// facts as far as the facts' order allows, and the same circuit is cut
-/// alike however it is written. The facts after every rule's readers come
+/// facts as far as the facts' order allows, and the same circuit is laid
+/// out alike however it is written. The facts after every rule's readers come
 /// after the rules, and the derived atoms with no rule last. With `fan_in`,
 /// the fan-in order, the deepest roots first ([`fan_in`]): each atom after
 /// what it reads.
@@ -495,8 +361,7 @@ pub(crate) struct Boundary {
     pub(crate) after: usize,
     /// The atoms at or before it that a rule of an atom after it reads.
     pub(crate) width: usize,
-    /// The facts, and the rules of the atoms, at or before it.
-    pub(crate) facts: usize,
+    /// The rules of the atoms at or before it.
     pub(crate) rules: usize,
 }
 
@@ -521,7 +386,7 @@ pub(crate) fn window_profile(
         (level[h], depth[h])
     });
     let order = in_rule_order(gp, Some(&ranked));
-    let (at, boundaries, last) = profile(gp, &order, true);
+    let (at, boundaries, last) = profile(gp, &order);
     (order, at, boundaries, last)
 }
 
@@ -580,13 +445,9 @@ fn late_levels(gp: &GroundProgram, depth: &[u32]) -> Vec<i64> {
 
 /// Each atom's position in `order`, the boundaries of `order` that a cut
 /// may take, with their widths, and each atom's last reader's position:
-/// the profile, computed once. With `held`, each query's atom is read at
-/// the last observed atom's position at least ([`window_profile`]).
-fn profile(
-    gp: &GroundProgram,
-    order: &[AtomId],
-    held: bool,
-) -> (Vec<u32>, Vec<Boundary>, Vec<u32>) {
+/// the profile, computed once. Each query's atom is read at the last
+/// observed atom's position at least ([`window_profile`]).
+fn profile(gp: &GroundProgram, order: &[AtomId]) -> (Vec<u32>, Vec<Boundary>, Vec<u32>) {
     let n = order.len();
     let mut at = vec![0u32; gp.num_atoms()];
     for (p, &a) in order.iter().enumerate() {
@@ -603,13 +464,11 @@ fn profile(
             last[b] = last[b].max(p);
         }
     }
-    if held {
-        let observed = gp.evidence.iter().filter_map(|&(_, a, _)| a);
-        if let Some(end) = observed.map(|a| at[a as usize]).max() {
-            for &(_, q, _) in &gp.queries {
-                if let Some(q) = q {
-                    last[q as usize] = last[q as usize].max(end);
-                }
+    let observed = gp.evidence.iter().filter_map(|&(_, a, _)| a);
+    if let Some(end) = observed.map(|a| at[a as usize]).max() {
+        for &(_, q, _) in &gp.queries {
+            if let Some(q) = q {
+                last[q as usize] = last[q as usize].max(end);
             }
         }
     }
@@ -625,17 +484,14 @@ fn profile(
         }
     }
     let mut boundaries = Vec::new();
-    let (mut width, mut derived, mut facts, mut rules) = (0isize, 0isize, 0, 0);
+    let (mut width, mut derived, mut rules) = (0isize, 0isize, 0);
     for (p, &a) in order.iter().enumerate() {
         (width, derived) = (width + change[p].0, derived + change[p].1);
         rules += heads[p];
-        if gp.is_fact(a) {
-            facts += 1;
-        } else if derived > 0 {
+        if !gp.is_fact(a) && derived > 0 {
             boundaries.push(Boundary {
                 after: p,
                 width: width as usize,
-                facts,
                 rules,
             });
         }
@@ -643,143 +499,39 @@ fn profile(
     (at, boundaries, last)
 }
 
-/// The cuts among an order's `boundaries`: the one place the rule lives
-/// (the module's comment) that reads the profile alone. The window opens
-/// where the width is at most twice the facts since the last cut: GeNI's
-/// link grids, the Roulette chains and the weather at 12 factories took 10
-/// to 30% less work than at once the facts, the weather by days the same,
-/// and at four times the window opened inside a weather day and named 36
-/// atoms. A boundary inside a run of facts is no cut, as a boundary that
-/// only facts cross: cut inside the facts a program starts with, the
-/// weather at 3 days counted its facts from there and found no day's
-/// frontier.
-///
-/// The narrowest boundary the cut skips is cut too where its names are no
-/// more than the facts on each side of it. GeNI's weather at 17 factories
-/// has 70 facts a day and a window that ended at the program's last
-/// boundary, 2 wide, skipping that day's frontier, 19 wide: the compile
-/// took 3.57 G work units with it skipped and 30 M with it cut. The link
-/// grid at side 16 skips boundaries of 17 names with 9 facts on each side:
-/// cutting those halved a compile of 1.1 M work units and took a fifth more
-/// work in the walk.
-fn cuts(boundaries: &[Boundary]) -> Vec<Boundary> {
-    let (mut cuts, mut behind) = (Vec::new(), 0);
-    let opens = |i: usize, f| (boundaries[i].width <= 2 * f).then_some(2 * f + 1);
-    let fits = |j: usize| boundaries[j].width <= WIDEST;
-    for (i, best) in cut_search(boundaries, |b| b.facts, opens, fits) {
-        let skipped = (i..best)
-            .filter(|&j| {
-                let b = boundaries[j];
-                b.width <= WIDEST
-                    && b.width <= b.facts - behind
-                    && b.width <= boundaries[best].facts - b.facts
-            })
-            .min_by_key(|&j| (boundaries[j].width, j));
-        cuts.extend(skipped.map(|j| boundaries[j]));
-        cuts.push(boundaries[best]);
-        behind = boundaries[best].facts;
-    }
-    cuts
-}
-
-/// The cut rule's search, run by [`cuts`] over the facts and by the
-/// windows (`crate::solve`'s) over the rules, each boundary's `mass`: from
-/// the last cut, a window opens at the first boundary `i` where `opens(i,
-/// m)`, of mass `m` since the cut, gives the mass the window stays under,
-/// and spans the boundaries up to it. The cut is its narrowest boundary
-/// that `fits`, the earliest on a tie; a window with none is passed. Each
-/// cut as its window's first boundary and itself.
+/// The windows' cut search (`crate::solve`'s), over the rules: from the
+/// last cut, a window opens at the first boundary `i` where `opens(i, m)`,
+/// of `m` rules since the cut, gives the rules the window stays under, and
+/// spans the boundaries up to it. The cut is its narrowest boundary that
+/// `fits`, the earliest on a tie; a window with none is passed. Each cut as
+/// its window's first boundary and itself.
 pub(crate) fn cut_search(
     boundaries: &[Boundary],
-    mass: fn(&Boundary) -> usize,
     opens: impl Fn(usize, usize) -> Option<usize>,
     fits: impl Fn(usize) -> bool,
 ) -> Vec<(usize, usize)> {
     let mut cuts = Vec::new();
-    // The mass at or before the last cut, and the next boundary.
+    // The rules at or before the last cut, and the next boundary.
     let (mut behind, mut i) = (0, 0);
     while i < boundaries.len() {
-        let Some(under) = opens(i, mass(&boundaries[i]) - behind) else {
+        let Some(under) = opens(i, boundaries[i].rules - behind) else {
             i += 1;
             continue;
         };
         let mut end = i;
-        while end + 1 < boundaries.len() && mass(&boundaries[end + 1]) - behind < under {
+        while end + 1 < boundaries.len() && boundaries[end + 1].rules - behind < under {
             end += 1;
         }
         let window = (i..=end).filter(|&j| fits(j));
         match window.min_by_key(|&j| (boundaries[j].width, j)) {
             Some(best) => {
                 cuts.push((i, best));
-                (behind, i) = (mass(&boundaries[best]), best + 1);
+                (behind, i) = (boundaries[best].rules, best + 1);
             }
             None => i = end + 1,
         }
     }
     cuts
-}
-
-/// The `cuts` that stand, in order: those where the cones of the derived
-/// atoms crossing the cut, back to the last cut that stands, reach a fact or
-/// an atom behind that cut that no rule after this cut reads. A reader after
-/// the cut then holds a name in place of it. Anywhere else the names replace
-/// nothing the later formulas would otherwise hold, and leave the links in
-/// the evidence: a hidden Markov model's cut after an observation, with the
-/// state crossing it unchanged since the cut before (each of Roulette's
-/// models had a quarter to a half of its cuts so), or the pass-through cuts
-/// of linreg_w10, 10 of its 17, without which its query work falls by 40%.
-/// Pluck's sorted list has one such cut, and its compile goes from 1.37 G to
-/// 1.10 G work units without it.
-fn hiding(
-    gp: &GroundProgram,
-    deps: &Deps,
-    at: &[u32],
-    last: &[u32],
-    cuts: &[Boundary],
-) -> Vec<Boundary> {
-    let mut derived: Vec<AtomId> = (0..gp.num_atoms() as AtomId)
-        .filter(|&a| !gp.is_fact(a) && last[a as usize] > at[a as usize])
-        .collect();
-    derived.sort_unstable_by_key(|&a| at[a as usize]);
-    let mut derived = derived.into_iter().peekable();
-    let mut crossing: Vec<AtomId> = Vec::new();
-    let mut seen = vec![usize::MAX; gp.num_atoms()];
-    let mut stack: Vec<AtomId> = Vec::new();
-    let mut stand: Vec<Boundary> = Vec::new();
-    for (k, cut) in cuts.iter().enumerate() {
-        let p = cut.after as u32;
-        while let Some(a) = derived.next_if(|&a| at[a as usize] <= p) {
-            crossing.push(a);
-        }
-        crossing.retain(|&a| last[a as usize] > p);
-        stack.clear();
-        stack.extend_from_slice(&crossing);
-        for &a in &crossing {
-            seen[a as usize] = k;
-        }
-        while let Some(a) = stack.pop() {
-            let behind = stand
-                .last()
-                .is_some_and(|c| at[a as usize] as usize <= c.after);
-            if gp.is_fact(a) || behind {
-                if last[a as usize] <= p {
-                    stand.push(*cut);
-                    break;
-                }
-                continue;
-            }
-            for &r in &deps.by_head[a as usize] {
-                for l in &gp.rules[r].body {
-                    let b = l.atom();
-                    if seen[b as usize] != k {
-                        seen[b as usize] = k;
-                        stack.push(b);
-                    }
-                }
-            }
-        }
-    }
-    stand
 }
 
 #[cfg(test)]
@@ -805,8 +557,8 @@ mod tests {
     }
 
     /// A chain of steps, each reading its own two facts and the step
-    /// before: one atom crosses each step's boundary, and every step is a
-    /// segment of its own. Its facts stated as `facts` says.
+    /// before: one atom crosses each step's boundary. Its facts stated as
+    /// `facts` says.
     fn chain_written(steps: usize, facts: Facts) -> String {
         let fact = |i: usize| format!("0.3::a{i}. 0.6::b{i}.\n");
         let rules = |i: usize| format!("s{i} :- s{p}, a{i}. s{i} :- \\+s{p}, b{i}.\n", p = i - 1);
@@ -828,10 +580,6 @@ mod tests {
             src.extend((1..steps).map(fact));
         }
         src + &format!("query(s{}).", steps - 1)
-    }
-
-    fn chain(steps: usize) -> String {
-        chain_written(steps, Facts::WithTheirStep)
     }
 
     #[test]
@@ -878,22 +626,6 @@ mod tests {
         );
     }
 
-    /// The same chain is cut alike wherever its program states its facts:
-    /// the cuts follow the circuit, not the file.
-    #[test]
-    fn a_chain_is_cut_alike_wherever_its_facts_are_stated() {
-        let notes: Vec<String> = [Facts::First, Facts::WithTheirStep, Facts::Last]
-            .into_iter()
-            .map(|facts| {
-                let gp = grounded(&chain_written(8, facts));
-                let laid = lay_out(&gp, &Deps::of(&gp), false).unwrap();
-                laid.named.expect("named").1
-            })
-            .collect();
-        assert!(notes[0].contains("6 cuts, widest 1"), "{notes:?}");
-        assert!(notes.iter().all(|n| *n == notes[0]), "{notes:?}");
-    }
-
     /// How a joint over a chain's states is written.
     #[derive(Clone, Copy, Debug)]
     enum Joint {
@@ -935,36 +667,21 @@ mod tests {
         src + "query(joint)."
     }
 
-    /// A conjunction of more states than a cut is named for is cut after
-    /// every step, however its gates associate it, in the file's order and
-    /// in the fan-in order. The fan-in walk enters the chain at its end and
-    /// each link's body before the step's state, so it meets the states
-    /// from the first: entered at the last state, it would place every
-    /// step's first fact before the second's (the facts are stated first,
-    /// and the grounder lists them first in a body).
+    /// A conjunction of more states than [`WIDEST`] is one chain of links,
+    /// however its gates associate it: the gates are its views.
     #[test]
-    fn a_joint_is_cut_alike_however_its_gates_associate_it() {
-        let notes: Vec<String> = [Joint::Body, Joint::Forward, Joint::Backward]
-            .into_iter()
-            .flat_map(|joint| {
-                let gp = ground(
-                    &parse_program(&joint_written(30, joint)).expect("parses"),
-                    &GroundOptions {
-                        views: false,
-                        ..GroundOptions::default()
-                    },
-                )
-                .expect("grounds");
-                let gp = chained(gp);
-                assert_eq!(gp.stats.links, 28, "{joint:?}");
-                [false, true].map(|fan_in| {
-                    let laid = lay_out(&gp, &Deps::of(&gp), fan_in).unwrap();
-                    laid.named.expect("named").1
-                })
-            })
-            .collect();
-        assert!(notes[0].contains("29 cuts, widest 2"), "{notes:?}");
-        assert!(notes.iter().all(|n| *n == notes[0]), "{notes:?}");
+    fn a_joint_is_chained_alike_however_its_gates_associate_it() {
+        for joint in [Joint::Body, Joint::Forward, Joint::Backward] {
+            let gp = ground(
+                &parse_program(&joint_written(30, joint)).expect("parses"),
+                &GroundOptions {
+                    views: false,
+                    ..GroundOptions::default()
+                },
+            )
+            .expect("grounds");
+            assert_eq!(chained(gp).stats.links, 28, "{joint:?}");
+        }
     }
 
     /// The rows of an annotated disjunction of 40 values read its switches
@@ -1003,155 +720,5 @@ mod tests {
         assert_eq!(gp.stats.links, 39);
         let tails: Vec<&GroundRule> = gp.rules.iter().filter(|r| r.body.len() == 2).collect();
         assert_eq!(tails.len(), 39 + 3);
-    }
-
-    #[test]
-    fn a_chain_is_cut_after_every_step_but_the_last() {
-        let gp = grounded(&chain(6));
-        for fan_in in [false, true] {
-            let order = positions(&gp, fan_in);
-            let cuts = cuts(&profile(&gp, &order, false).1);
-            assert_eq!(cuts.len(), 4, "fan_in {fan_in}: {cuts:?}");
-            assert!(
-                cuts.iter().all(|c| c.width == 1),
-                "fan_in {fan_in}: {cuts:?}"
-            );
-            let laid = lay_out(&gp, &Deps::of(&gp), fan_in).unwrap();
-            let (named, note) = laid.named.expect("named");
-            assert!(note.contains("widest 1"), "{note}");
-            // Every fact of the rewrite is laid out once.
-            let facts: FxHashSet<AtomId> = named.facts().map(|(a, _)| a).collect();
-            assert_eq!(laid.facts.len(), facts.len());
-            assert_eq!(laid.facts.iter().copied().collect::<FxHashSet<_>>(), facts);
-            // Each copy comes after the facts of the step it names and
-            // before those of the step that reads it.
-            let place: Vec<usize> = {
-                let mut p = vec![usize::MAX; named.num_atoms()];
-                for (i, &a) in laid.facts.iter().enumerate() {
-                    p[a as usize] = i;
-                }
-                p
-            };
-            for ind in &named.encoding.indicators {
-                let step: usize = named.atoms[ind.atom as usize].to_string()[1..]
-                    .parse()
-                    .expect("s<i>");
-                let a = named
-                    .atoms
-                    .iter()
-                    .position(|x| x.to_string() == format!("a{}", step + 1))
-                    .expect("the next step");
-                assert!(place[ind.var as usize] < place[a], "{note}");
-            }
-        }
-    }
-
-    /// A boundary a window skips on its way to a narrower one is cut too
-    /// where its names are no more than the facts on each side, as the last
-    /// day but one of a weather whose last boundary is 2 wide, and not
-    /// where they are more, as on a link grid.
-    #[test]
-    fn a_skipped_boundary_is_cut_where_its_names_are_few_against_the_facts() {
-        let b = |width, facts| Boundary {
-            after: facts,
-            width,
-            facts,
-            rules: 0,
-        };
-        let weather = [b(19, 70), b(19, 140), b(2, 208)];
-        let facts: Vec<usize> = cuts(&weather).iter().map(|c| c.facts).collect();
-        assert_eq!(facts, [70, 140, 208]);
-        let grid = [b(17, 9), b(16, 18)];
-        let facts: Vec<usize> = cuts(&grid).iter().map(|c| c.facts).collect();
-        assert_eq!(facts, [18]);
-        // Wider than a cut is named: left out however many facts surround it.
-        let wide = [b(21, 60), b(2, 100)];
-        let facts: Vec<usize> = cuts(&wide).iter().map(|c| c.facts).collect();
-        assert_eq!(facts, [100]);
-    }
-
-    /// Three chains stated a day at a time, each day's facts first, and a
-    /// last day that reads them into one atom. The window from the last day
-    /// but one reaches that atom's boundary, 1 wide, and skips the day's
-    /// frontier, 3 wide with 6 facts on each side, which is cut too.
-    #[test]
-    fn a_program_that_narrows_at_its_end_keeps_the_day_before_it() {
-        let mut src = String::from("0.5::s0_0. 0.5::s0_1. 0.5::s0_2.\n");
-        for t in 1..=4 {
-            for j in 0..3 {
-                src += &format!("0.7::f{t}_{j}. 0.2::g{t}_{j}.\n");
-            }
-            for j in 0..3 {
-                src += &format!(
-                    "s{t}_{j} :- s{p}_{j}, f{t}_{j}. s{t}_{j} :- \\+s{p}_{j}, g{t}_{j}.\n",
-                    p = t - 1
-                );
-            }
-        }
-        src += "0.3::q0. 0.4::q1. 0.5::q2. 0.6::h. 0.2::i. 0.9::k.\n\
-                a :- s4_0, q0. a :- s4_1, q1. a :- s4_2, q2.\n\
-                b :- a, h. b :- \\+a, i. z :- b, k. query(z).\n";
-        let gp = grounded(&src);
-        let order = positions(&gp, false);
-        let (_, boundaries, _) = profile(&gp, &order, false);
-        let cut_after: Vec<String> = cuts(&boundaries)
-            .iter()
-            .map(|c| gp.atoms[order[c.after] as usize].to_string())
-            .collect();
-        for t in 1..=4 {
-            assert!(cut_after.contains(&format!("s{t}_2")), "{cut_after:?}");
-        }
-    }
-
-    /// A hidden Markov model stated step by step: each state reads the one
-    /// before and two facts, and each observation reads the state and two
-    /// facts of its own. The window cuts after every atom, and a cut after
-    /// an observation hides nothing: the state crossing it is the one
-    /// the cut before it named, and no atom it reaches stops crossing there.
-    #[test]
-    fn a_cut_that_hides_nothing_does_not_stand() {
-        let mut src = String::from("0.5::s0.\n");
-        for i in 1..=6 {
-            src += &format!(
-                "0.3::a{i}. 0.6::b{i}.\ns{i} :- s{p}, a{i}. s{i} :- \\+s{p}, b{i}.\n\
-                 0.9::c{i}. 0.2::d{i}.\no{i} :- s{i}, c{i}. o{i} :- \\+s{i}, d{i}.\nevidence(o{i}).\n",
-                p = i - 1
-            );
-        }
-        src += "query(s6).\n";
-        let gp = grounded(&src);
-        let order = positions(&gp, false);
-        let (at, boundaries, last) = profile(&gp, &order, false);
-        let every = cuts(&boundaries);
-        let stand = hiding(&gp, &Deps::of(&gp), &at, &last, &every);
-        let after = |c: &Boundary| gp.atoms[order[c.after] as usize].to_string();
-        let names: Vec<String> = stand.iter().map(after).collect();
-        assert!(
-            every.iter().map(after).any(|a| a.starts_with('o')),
-            "{every:?}"
-        );
-        assert!(names.iter().all(|a| a.starts_with('s')), "{names:?}");
-        assert!(names.len() >= 4, "{names:?}");
-    }
-
-    /// Where the rules read facts alone, no derived atom crosses a
-    /// boundary, and nothing is named.
-    #[test]
-    fn a_program_whose_rules_read_facts_alone_is_not_named() {
-        let gp = grounded(
-            "0.5::a. 0.5::b. 0.5::c. x :- a, b. x :- \\+c. y :- b, c. z :- \\+a, c. query(x). query(y). query(z).",
-        );
-        for fan_in in [false, true] {
-            let laid = lay_out(&gp, &Deps::of(&gp), fan_in).unwrap();
-            assert!(laid.named.is_none());
-            // The facts in the order's own order.
-            let mut facts: Vec<AtomId> = gp.facts().map(|(a, _)| a).collect();
-            if fan_in {
-                let place = crate::ground::deps::fan_in(&gp, true);
-                facts.sort_by_key(|&a| place[a as usize]);
-            }
-            assert_eq!(laid.facts.len(), 3);
-            assert_eq!(laid.facts, facts);
-        }
     }
 }

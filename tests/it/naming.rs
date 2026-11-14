@@ -1,21 +1,14 @@
-//! Naming the atoms that cross a narrow cut of `program`'s order
-//! (src/vtree/naming.rs) and settling which cuts keep their names
-//! (src/tp/settle.rs): on a Markov chain unrolled over days, on a
-//! link-failure grid and on a coupon collector, the answers and P(e) under
-//! `program`, `program:fanin` and `auto` equal an exact forward pass over
-//! the model's states, and `program` names atoms. The copies' weights are
-//! one, or one half on each side where a cut is expanded, so P(e) counts
-//! no copy. The coupon collector's cuts are expanded, its readers holding
-//! less than the joint of its links; so are those of a collector that
-//! draws two different coupons at a time (noDice's coupon), whose copies
-//! of one draw's coupon a clause table defines, under one link that the
-//! program observes false. A chain queried on the joint of its states,
-//! more than a cut is named for, is named alike whether the program states
-//! each step's facts with its rules or every fact first, and its joint in
-//! one body or as Roulette's circuits conjoin it, gate by gate from the
-//! last step back. And on cuts of Roulette's insurance and
-//! hailfinder networks whose links read copies of their own cut or that a
-//! tie stands on, the answers equal ProbLog's.
+//! The path layouts on chains (src/vtree/naming.rs): on a Markov chain
+//! unrolled over days, on a link-failure grid, on a coupon collector and
+//! on one that draws two different coupons at a time (noDice's coupon),
+//! the answers and P(e) under `program`, `program:fanin` and `auto` equal
+//! an exact forward pass over the model's states. A chain queried on the
+//! joint of its states answers alike whether the program states each
+//! step's facts with its rules or every fact first, and its joint in one
+//! body or as Roulette's circuits conjoin it, gate by gate from the last
+//! step back, and the joint is chained for every layout. And on parts of
+//! Roulette's insurance and hailfinder networks, the answers equal
+//! ProbLog's.
 
 use crate::common;
 
@@ -286,10 +279,8 @@ fn coupon_exact(draws: usize, observed: Option<usize>) -> (f64, f64) {
 }
 
 /// Asserts the answer to the one query of `source`, and its P(e), under
-/// each strategy; whether `program` named atoms, and whether it expanded
-/// a cut's names.
-fn check(what: &str, source: &str, want: f64, want_evidence: f64) -> (bool, bool) {
-    let (mut named, mut expanded) = (false, false);
+/// each strategy.
+fn check(what: &str, source: &str, want: f64, want_evidence: f64) {
     for strategy in STRATEGIES {
         let options = common::options(strategy, Projection::default());
         let run =
@@ -299,10 +290,6 @@ fn check(what: &str, source: &str, want: f64, want_evidence: f64) -> (bool, bool
             (got - want).abs() < 1e-12,
             "{what} {strategy:?}: {got} against {want}"
         );
-        if strategy == Strategy::Trial(Kind::Program { fan_in: false }) {
-            named = !run.ground.encoding.is_empty();
-            expanded = run.query_sizes.names_expanded > 0;
-        }
         let options = Options {
             evidence_probability: true,
             ..options
@@ -315,7 +302,6 @@ fn check(what: &str, source: &str, want: f64, want_evidence: f64) -> (bool, bool
             "{what} {strategy:?}: P(e) = {p} against {want_evidence}"
         );
     }
-    (named, expanded)
 }
 
 #[test]
@@ -326,7 +312,7 @@ fn weather_answers_and_evidence_are_the_forward_pass() {
         let what = format!("weather {factories} {days}");
         let (done, _) = weather.exact(None);
         // The query observed: P(e) is its probability.
-        let (named, _) = check(
+        check(
             &what,
             &weather.program(&format!("query(done_{last}).\n")),
             done,
@@ -347,17 +333,12 @@ fn weather_answers_and_evidence_are_the_forward_pass() {
             both / e,
             e,
         );
-        assert!(
-            named || days < 9,
-            "{what}: `program` names the days' states"
-        );
     }
 }
 
 /// Three independent chains stated a day at a time, each day's facts first,
-/// and a last day that reads them into one atom: the window reaches that
-/// atom's narrow boundary, and the last day's frontier before it is cut too.
-/// The answer is each chain's forward pass, combined.
+/// and a last day that reads them into one atom. The answer is each
+/// chain's forward pass, combined.
 #[test]
 fn a_program_that_narrows_at_its_end_keeps_the_forward_pass() {
     let (stay, turn) = (0.7, 0.2);
@@ -390,11 +371,10 @@ fn a_program_that_narrows_at_its_end_keeps_the_forward_pass() {
     }
 }
 
-/// A hidden Markov model stated step by step, every observation true. Half
-/// the window's cuts, those after an observation, hide nothing and do not
-/// stand; the answers are the forward pass's, with `program` still naming.
+/// A hidden Markov model stated step by step, every observation true: the
+/// answers are the forward pass's.
 #[test]
-fn a_hidden_markov_models_cuts_keep_the_forward_pass() {
+fn a_hidden_markov_model_answers_as_the_forward_pass() {
     let (a, b, c, d) = (0.7, 0.2, 0.9, 0.3);
     for steps in [3, 6, 12] {
         let mut src = String::from("0.5::s0.\n");
@@ -411,11 +391,7 @@ fn a_hidden_markov_models_cuts_keep_the_forward_pass() {
         }
         src += &format!("query(s{steps}).\n");
         let e = alpha[0] + alpha[1];
-        let (named, _) = check(&format!("hmm {steps}"), &src, alpha[1] / e, e);
-        assert!(
-            named || steps < 12,
-            "hmm {steps}: `program` names its states"
-        );
+        check(&format!("hmm {steps}"), &src, alpha[1] / e, e);
     }
 }
 
@@ -425,7 +401,7 @@ fn grid_answers_and_evidence_are_the_forward_pass() {
         let want = grid_exact(side);
         let last = side - 1;
         let what = format!("grid {side}");
-        let (named, _) = check(
+        check(
             &what,
             &grid(side, &format!("query(c_{last}_{last}).\n")),
             want,
@@ -440,10 +416,6 @@ fn grid_answers_and_evidence_are_the_forward_pass() {
             1.0,
             want,
         );
-        assert!(
-            named || side < 5,
-            "{what}: `program` names the rows' routers"
-        );
     }
 }
 
@@ -452,7 +424,7 @@ fn coupon_answers_and_evidence_are_the_forward_pass() {
     for draws in [4, 6, 8] {
         let what = format!("coupon {draws}");
         let (all, _) = coupon_exact(draws, None);
-        let (named, expanded) = check(&what, &coupon(draws, "query(all).\n"), all, 1.0);
+        check(&what, &coupon(draws, "query(all).\n"), all, 1.0);
         // A type drawn by the middle draw observed.
         let middle = draws / 2;
         let (both, e) = coupon_exact(draws, Some(middle));
@@ -461,14 +433,6 @@ fn coupon_answers_and_evidence_are_the_forward_pass() {
             &coupon(draws, &format!("evidence(g_0_{middle}).\nquery(all).\n")),
             both / e,
             e,
-        );
-        assert!(
-            named || draws < 8,
-            "{what}: `program` names the draws' sets"
-        );
-        assert!(
-            expanded || draws < 8,
-            "{what}: the readers hold less than the joint of the links"
         );
     }
 }
@@ -538,11 +502,10 @@ fn joint_chain_exact(steps: usize) -> f64 {
 }
 
 #[test]
-fn a_joint_over_a_chain_is_cut_however_it_is_written() {
+fn a_joint_over_a_chain_answers_however_it_is_written() {
     for steps in [8, 24] {
         let want = joint_chain_exact(steps);
         let middle = steps / 2;
-        let mut copies = Vec::new();
         for writing in [Writing::StepByStep, Writing::FactsFirst, Writing::Roulette] {
             let what = format!("joint chain {steps}, {writing:?}");
             check(
@@ -564,37 +527,13 @@ fn a_joint_over_a_chain_is_cut_however_it_is_written() {
                 value,
                 want,
             );
-            let options = asked(common::options(
-                Strategy::Trial(Kind::Program { fan_in: false }),
-                Projection::default(),
-            ));
-            let run = common::run(&joint_chain(steps, writing, "query(joint).\n"), &options)
-                .unwrap_or_else(|e| panic!("{what}: {e}"));
-            copies.push(run.ground.encoding.indicators.len());
         }
-        // Where the joint reads more states than a cut is named for (20),
-        // it is chained along the order, through Roulette's gates as well,
-        // and `program` names a state at each step's cut however the
-        // program is written. A narrower joint is not rewritten, and
-        // Roulette's gates, each after the gate of the step after it, are
-        // cut where they fall.
-        if steps <= 20 {
-            continue;
-        }
-        assert!(
-            copies.iter().all(|&c| c == copies[0]),
-            "joint chain {steps}: {copies:?}"
-        );
-        assert!(
-            copies[0] >= steps / 2,
-            "joint chain {steps}: {copies:?} copies"
-        );
     }
 }
 
 /// `options` with the joint asked, not observed
 /// (`GroundOptions::observe_query`): observed, the joint fixes every state
-/// and leaves no chain to name.
+/// and leaves no chain.
 fn asked(options: Options) -> Options {
     Options {
         ground: tddlog::GroundOptions {
@@ -694,15 +633,11 @@ fn paired_coupon_answers_and_evidence_are_the_forward_pass() {
             .map(|t| format!("evidence(obs_{t}).\n"))
             .collect();
         let (all, e) = pairs_exact(types, steps);
-        let (named, expanded) = check(
+        check(
             &what,
             &pairs(types, steps, &format!("{observed}query(all).\n")),
             all / e,
             e,
-        );
-        assert!(
-            named && expanded,
-            "{what}: `program` names the steps' sets and expands a cut"
         );
     }
 }
@@ -770,8 +705,7 @@ query(propcost(0)).
 #[test]
 fn a_link_that_reads_a_copy_of_its_own_cut() {
     let want = 1.0 - 0.97 * 0.2 * 0.95 * 0.9;
-    let (named, _) = check("insurance's cut", INSURANCE_CUT, want, 1.0);
-    assert!(named, "`program` names the atoms that cross its cuts");
+    check("insurance's cut", INSURANCE_CUT, want, 1.0);
 }
 
 /// Roulette's insurance network, cut down to the rules that keep `program`
@@ -816,8 +750,7 @@ propcost(million) :- thiscarcost(hundredthou).
 propcost(million) :- othercarcost(thousand).
 ";
 
-fn check_answers<S: AsRef<str>>(what: &str, source: &str, want: &[(S, f64)], eps: f64) -> bool {
-    let mut named = false;
+fn check_answers<S: AsRef<str>>(what: &str, source: &str, want: &[(S, f64)], eps: f64) {
     for strategy in STRATEGIES {
         let options = common::options(strategy, Projection::default());
         let run =
@@ -828,11 +761,7 @@ fn check_answers<S: AsRef<str>>(what: &str, source: &str, want: &[(S, f64)], eps
             want,
             eps,
         );
-        if strategy == Strategy::Trial(Kind::Program { fan_in: false }) {
-            named = !run.ground.encoding.is_empty();
-        }
     }
-    named
 }
 
 /// ProbLog 2.3.0 (`-k sdd`, one query at a time) answers 0.019884864,
@@ -849,10 +778,7 @@ fn a_split_tables_ties_read_copies_of_their_own_cut() {
         .map(|q| format!("propcost({q})"))
         .zip([0.019884864, 0.0085220844, 0.0, 0.016076784])
         .collect();
-    assert!(
-        check_answers("insurance's split", &source, &want, 1e-8),
-        "`program` names atoms"
-    );
+    check_answers("insurance's split", &source, &want, 1e-8);
 }
 
 /// Roulette's hailfinder network, cut down to the rules that keep

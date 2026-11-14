@@ -378,8 +378,8 @@ pub(crate) const DECISION_DERIVED: usize = 4096;
 /// Whether trials `a` and `b` compile one rewrite of one program: both
 /// rewrite the program [`Programs::of`] gives them, and both or neither
 /// read it through indicators. A `td` trial's layout may add separator
-/// copies to its rewrite, and the layouts of `program` and `decision`
-/// their names ([`Prepared::lay_out`], [`Trial::copied`]).
+/// copies to its rewrite, and the layout of `decision` its names
+/// ([`Prepared::lay_out`], [`Trial::copied`]).
 fn same_rewrite(a: &Trial, b: &Trial, programs: &Programs) -> bool {
     Arc::ptr_eq(programs.of(a.kind), programs.of(b.kind))
         && a.kind.indicators() == b.kind.indicators()
@@ -864,8 +864,8 @@ impl Stop {
 /// One attempt of trial `t` within `bounds`: it compiles what is not
 /// compiled yet, then runs the query phase, each resuming where its last
 /// attempt stopped. Its turn ends at the first step it keeps once it has
-/// spent the bounds' work, besides what settling the names of `program`
-/// and `decision` spends (`tp::settle`), and the next attempt goes on from
+/// spent the bounds' work, besides what settling the names of `decision`
+/// spends (`tp::settle`), and the next attempt goes on from
 /// that step (`tp::TddBackend::pause`). An operation still in flight at
 /// twice the work is stopped, and lost. A formula it completes past the
 /// watch stops it by size; an operation in flight past twice the watch in

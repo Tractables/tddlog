@@ -117,7 +117,7 @@ impl Windows {
                 && gp.rules.len() - b.rules >= bounds.rules
         };
         let opens = |i, m| (m >= bounds.rules && fits(i)).then_some(2 * bounds.rules);
-        let found = cut_search(&boundaries, |b| b.rules, opens, fits);
+        let found = cut_search(&boundaries, opens, fits);
         let cuts: Vec<usize> = found.iter().map(|&(_, c)| boundaries[c].after).collect();
         if cuts.is_empty() {
             return None;

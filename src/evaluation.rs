@@ -86,9 +86,8 @@ impl Evaluation {
         self.compilation.as_ref().and_then(|c| c.marked)
     }
 
-    /// The work units that settling the names of `program` and `decision`
-    /// has spent within its budget, over every call, which no turn is
-    /// charged for (`tp::settle`, `Settled::free`).
+    /// The work units that settling the names of `decision` has spent
+    /// within its budget, over every call, which no turn is charged for (`tp::settle`, `Settled::free`).
     pub(crate) fn settled_work(&self) -> u64 {
         self.compiled
             .as_ref()

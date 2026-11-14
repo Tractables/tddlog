@@ -172,7 +172,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
 | `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `rows.rs` (row classes and switch sharing), `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
 | `indicators/` | `mod.rs`: `introduce`, which fills the program's `Encoding` through `name` in steps (what the program reads, `Reads`, with the binary reads, `Bits`; the copies, `Copies`; the rules' bodies over them, `Bodies`; the bits' rules; the links, with the tables' rows as their readers' clauses), `clause_links`, and `name` and `name_once`, the copies that the names of `program` and `decision` are read through; `tables.rs`: clause tables; `splits.rs`: table splits and units |
-| `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, its eliminations (min-fill, weighted min-fill, in a given order), an elimination order annealed, the minor-min-width bound, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies, tested in `tests/copies.rs`), `closed.rs` with `order.rs`, `families.rs` with `nest.rs` (a group's block), `decision.rs` (with the names of its tree's contexts, of the atoms read outside it and of the atoms read beside those): the strategies' layouts; `naming.rs`: `program`'s narrow cuts and the atoms named across them, `window_profile`, the order and the boundaries a run is cut into windows by, and `chained`, the wide bodies written as chains along `program`'s order |
+| `vtree/` | `mod.rs`: `Kind`, `Layout`, `build`; `graph.rs`: interaction graph, its eliminations (min-fill, weighted min-fill, in a given order), an elimination order annealed, the minor-min-width bound, fact orders; `forest.rs`, `cost.rs`: the forest and its layout cost; `td.rs` with `separators.rs` (its separator copies, tested in `tests/copies.rs`), `closed.rs` with `order.rs`, `families.rs` with `nest.rs` (a group's block), `decision.rs` (with the names of its tree's contexts, of the atoms read outside it and of the atoms read beside those): the strategies' layouts; `naming.rs`: `program`'s order, `window_profile`, the order and the boundaries a run is cut into windows by, and `chained`, the wide bodies written as chains along `program`'s order |
 | `tp/` | `mod.rs`: `CompileError`, `Projection`, `Formulation`; `compile.rs`: `Compilation` (in parts: the fixpoint's state, the encoding by variable, the projection's scopes, the dying formulas, the dynamic search's schedule) and `Compiled`, with `ForQueries`, what the query phase takes over; `factoring.rs`, `clauses.rs`, `none_of.rs`, `rows.rs`: rule application, the clause memo, the level-by-level builder, a table's link from its models; `tie.rs`: readers of a clause table tied; `template.rs`: queries answered by another query's formula; `aft.rs`: negation through recursion; `cone.rs`: ancestor cones; `backend.rs`: diagram operations, minimization; `settle.rs`: which of the cuts of `program` and `decision` keep their names, and the copies of the others composed away; `scope.rs`, `projector.rs`: the scopes formulas live on (`VtreeScope`, `ScopeTable`) and the projection of the vtree that makes them; `stats.rs`: the compile's counters; `trace.rs`: `CompileTrace`, each component's compile as a trace records it; `tests/`: the dynamic search, dying formulas, resumption, the primal's update, the clause memo and projection on vtrees of their own |
 | `query/` | `mod.rs`: `QueryEvaluation`, the query counts; `walk.rs`: the evidence walk; `sum_out.rs`: its finished subtrees summed out where only P(e) is wanted |
 | `eval/` | `mod.rs`: the module's exports; `number.rs`: `Value`, `Count`, `Range`, `Scaled`; `weights.rs`: the weights of facts and indicators; `count.rs`: a count's two passes; `conjunction.rs`: the count of a conjunction without building it; `grid.rs` and `kernel.rs`: count passes over levels read as grids, and their vector kernels; `tests.rs`: `count.rs`'s tests, the passes over grids and in `Count`s against those over pairs |
@@ -1536,12 +1536,8 @@ from the rewrites on through the pipeline every program takes
 (`run_part`: `auto` with nothing handed ready, or the layout asked for),
 and its run is freed before the next window compiles. What passes a cut
 is a *message*, the joint distribution of the few atoms that cross it.
-These are not the windows in which `program`'s naming looks for its cuts
-(Vtrees): a name ties the two sides of its cut by a link inside one
-compile, and a window's cut ends the compile.
-
 **The order** (`vtree::window_profile`, in `vtree/naming.rs`). The
-windows read naming's profile on an order of their own. The rules are
+windows read the profile of an order of their own. The rules are
 ranked by the *level* of their heads, then by their depth (the longest
 chain of rules below the atom, zero for a fact), the program's order
 among equals. Each derived atom then goes at its last rule in the
@@ -1570,7 +1566,7 @@ derived atom, taken in order of depth, goes one level past the highest
 level among the derived atoms it reads, so `j(T)` goes right after
 `h(T)`, and both chains can be cut at every step. Every atom so ranks
 after the atoms it reads, and none past its late level, since what it
-reads lies at lower late levels. The width of a boundary is naming's,
+reads lies at lower late levels. The width of a boundary is
 the atoms at or before it
 that a rule of a later atom reads, but that a query's atom counts as
 read at the position of the last observed atom, so that it crosses
@@ -2004,29 +2000,16 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   partition their inputs, are not. It is the last trial elsewhere, where
   it takes its share of the work until another trial wins.
 
-  Where the order has narrow cuts, `program` and `program:fanin` name the
-  derived atoms that cross them (`vtree/naming.rs`). The width of the
-  boundary after a position is the number of atoms at or before it that a
-  rule of a later atom reads. From the last cut, a window opens at the
-  first boundary after a derived atom whose width is at most twice the
-  facts since the cut, and runs until those facts double; the cut is the
-  narrowest boundary in the window, and a window whose narrowest boundary
-  is wider than `WIDEST` (20) has none. The narrowest boundary the cut
-  skips is cut too where its names are no more than the facts on each side
-  of it, so that a window reaching a narrow end of the program does not run
-  two days of the weather together. A cut then stands only where its names
-  hide something: where the cones of the atoms crossing it, back to the
-  last cut that stands, reach a fact or an atom that no later rule reads.
-  The facts keep the order the
-  program states them in, the variable order its exporter chose, each as
-  late as that order allows (before the first rule that reads it or a
-  fact stated after it), and each derived atom goes at its last rule, so
-  that the cuts follow the circuit rather than where its file states the
-  facts: Roulette's circuits state every flip before every gate, and are
-  cut as the same circuit stated gate by gate.
-  A body that reads more than `WIDEST` atoms
-  crosses every boundary in its span with all it has read before it, so
-  it is first written as a chain along the order, each link the
+  The order is over every atom (`vtree/naming.rs`). The facts keep the
+  order the program states them in, the variable order its exporter
+  chose, each as late as that order allows (before the first rule that
+  reads it or a fact stated after it), and each derived atom goes at its
+  last rule, so that the order follows the circuit rather than where its
+  file states the facts: Roulette's circuits state every flip before
+  every gate, and are laid out as the same circuit stated gate by gate.
+  A body that reads more than `WIDEST` (20) atoms
+  crosses every boundary of the order in its span with all it has read
+  before it, so it is first written as a chain along the order, each link the
   conjunction of the link before and the body's next literal, its rule
   placed where that literal is: a hidden
   Markov model's joint query, the conjunction of every step's state, then
@@ -2044,13 +2027,6 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   annotated disjunction read its switches together, a table the families
   layout reads as one, and chained they took bn_pathfinder from 0.25 s to
   15 s.
-  A reader after a cut reads the
-  atoms crossing it through indicator copies, the segments between the
-  cuts being the units, and each segment's copies are laid out at its
-  start, before its facts. A formula then holds its own segment's facts
-  and the copies at its start, and the evidence holds the links, the
-  history, once. On a Markov chain such as GeNI's weather the cut is the
-  day's frontier, the 11 state bits and the goal of 42 facts a day.
 - **`program:fanin`** (`auto`'s second trial on a program built gate by
   gate, absent elsewhere): right-linear as `program`, over the facts in the
   fan-in order of BDD variable ordering (Malik, Wang, Brayton and
@@ -2071,7 +2047,7 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   order of a model's time (a hidden Markov model, trueskill, a grammar, a
   grid of link failures). Since neither order wins everywhere, `auto`
   tries both on a program built gate by gate. Every atom comes after the
-  atoms it reads, which the names along the order need (above): an atom that
+  atoms it reads: an atom that
   reads one this walk placed after its anchor and one an earlier walk
   placed before it moves to right after the last atom it reads. The
   grounder sorts each ground body by atom id, so the walk reads a rule's
@@ -2150,9 +2126,7 @@ the program states them, as an OBDD reads them (Vtrees). `program` reads
 the program ground with its views in place (`Kind::ground_options`;
 `auto` keeps the grounding before its views are inlined and finishes it
 again for them, `Programs::of`): a view inlined into its readers moves
-its facts to them, and a grid's boundary chains, views over facts, are
-then read by every later row, which widens the cuts and leaves fewer of
-them to name. `program:fanin`, whose order comes from the rules, reads
+its facts to them. `program:fanin`, whose order comes from the rules, reads
 the inlined program, which serves it better. `program` comes first where
 the program is built gate by gate (`built_of_gates`), as a circuit is,
 and is no trial elsewhere: first on every program, it costs the networks and
@@ -2651,9 +2625,8 @@ tddlog accepts the sound ones, e.g. `a :- \+b. b :- \+a. a :- f. b :- \+f.`
 unfoundedness step, and `examples/unsound.pl` is refused.
 
 **Settling the names** (`settle.rs`). Between the compile and the
-queries, `program`'s cuts are settled one by one in the order's
-direction, from the diagrams, and so are `decision`'s, the names above
-each node of its tree, up the tree. Named, the evidence holds the joint
+queries, `decision`'s cuts, the names above each node of its tree, are
+settled one by one up the tree, from the diagrams. Named, the evidence holds the joint
 `J` of the cut's links, built on the scope over them. Expanded, each
 formula whose diagram depends on the cut's copies is conjoined with the
 links it reads and the copies are summed out
@@ -2670,10 +2643,8 @@ count walks every pair of its nodes against the evidence's at each level,
 so its names pay where `R·(E + J) < (R + L)·E`, that is where
 `J < L·E/R`.
 
-On a Markov chain each day's readers are the next day's links and would
-carry two days' joint composed, so the weather and the link grids keep
-their cuts. Where the readers compress what they read, as the bits of a
-sum or a coupon collector's counts do, the cut is expanded. A cut's links
+Where the readers compress what they read, as the bits of a sum do, the
+cut is expanded. A cut's links
 may read its own copies (a split table's tie to the part before, an atom
 that reads a clause table's value through the table's first reader's
 copy): a reader is composed with the links it reads and those they read
@@ -3133,9 +3104,6 @@ compare only within the run they come from.
   (131 k pairs at most; `td`, `dynamic` and `families:0` run out of
   memory), though the largest formula grows with the square of the
   pieces, and the full program, at 4096, runs out of memory under it.
-  With names at its narrow cuts, nine days of GeNI's weather take 174 M
-  work units against 24 204 M without, and the 12 by 12 link grid 254 M
-  against 2 984 M.
 - **`program:fanin`.** On conjugate_gaussians_w21 the compile takes 78 M
   units of work under `program:fanin` against 7.2 G under `program`; on
   addFun_sum at 19 bits the largest formula is 58 k pairs and the compile
@@ -3154,10 +3122,7 @@ compare only within the run they come from.
 
 ### `auto`
 
-- **The `program` trials.** On geni_link_16 the inlined views take the
-  widest cut from 17 atoms to 30 and the cuts the naming finds from 67 to
-  21, and the compile reaches a formula of 113 M pairs in place of 3 022.
-  The circuits `program:fanin` wins took a third longer with the views in
+- **The `program` trials.** The circuits `program:fanin` wins took a third longer with the views in
   place. First on every program, `program` costs the networks and grids 3
   to 60 times. On circuits whose every other layout runs out of memory
   `program` may be small: pluck_hmm (199 flips, 346 gates) compiles in

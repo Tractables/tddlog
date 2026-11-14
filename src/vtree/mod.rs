@@ -19,8 +19,7 @@
 //! - [`Kind::Program`] reads no graph: it takes the facts in the
 //!   order the program states them or, as `program:fanin`, in the fan-in
 //!   order of the rules from the queries and the evidence, interleaved over
-//!   them (`ground::deps::fan_in`), and names the derived atoms that
-//!   cross a narrow cut of that order (`naming`).
+//!   them (`ground::deps::fan_in`).
 //! - [`Kind::Decision`] reads no graph either: it lays out the
 //!   decisions the grounder read the facts as guards in
 //!   ([`crate::ground::Decisions`]), and names the contexts of their tree,
@@ -135,9 +134,7 @@ pub enum Kind {
     /// interleaved over them, instead (`ground::deps::fan_in`): the bits of
     /// the operands a gate combines side by side, and those of an operand
     /// that several gates read beside each of the others', where a front
-    /// end states each number's bits together. Named `program:fanin`. Either
-    /// order names the derived atoms that cross its narrow cuts, read after
-    /// them through copies, where it has any.
+    /// end states each number's bits together. Named `program:fanin`.
     Program { fan_in: bool },
     /// The tree of the decisions the grounder read facts as guards in
     /// ([`crate::ground::Decisions`]): each fact above the facts it decides
@@ -282,8 +279,7 @@ fn variables(order: &[AtomId]) -> Vec<VarId> {
 
 /// Lay out the vtree over the facts, and the program it is over where
 /// that is not `gp`: `td`'s with the separator copies its fold makes
-/// ([`td_layout`]), `program`'s with the atoms crossing its narrow cuts
-/// named (`naming`), `decision`'s with its tree's contexts and the atoms
+/// ([`td_layout`]), `decision`'s with its tree's contexts and the atoms
 /// its readers outside it read named (`decision`). `families` estimates
 /// its layout's pairs by its layout cost
 /// ([`cost::Interfaces::layout_cost`]), which is near the evidence's pairs
@@ -329,13 +325,9 @@ fn build_model(
         Kind::Dynamic => Some((dynamic_layout(gp, deps), None)),
         Kind::Program { fan_in } => {
             // A right-linear vtree over x1 .. xn is read as an OBDD
-            // reading xn first. Where the order has narrow cuts, the vtree
-            // is over the program with the atoms crossing them named
-            // ([`naming`]).
-            let laid = naming::lay_out(gp, deps, fan_in)?;
-            let (program, note) = laid.named.unzip();
-            let order = laid.facts.into_iter().rev().collect();
-            Some((Layout::right_linear(order, note), program))
+            // reading xn first.
+            let order = naming::lay_out(gp, fan_in).into_iter().rev().collect();
+            Some((Layout::right_linear(order, None), None))
         }
         Kind::Decision => decision_layout(gp, deps)?,
     };
@@ -343,8 +335,7 @@ fn build_model(
 }
 
 /// A layout's `Err` where the allocator refuses room for one of its lists
-/// that grow with the program: the families' cones, which overlap, and
-/// the rules of a program the layout names atoms in. A push that grew
+/// that grow with the program: the families' cones, which overlap. A push that grew
 /// them past what the allocator would give aborted the run
 /// (bb_altermu2_p1024 and bb_wmi_star_n65536 under 14 GB), where a
 /// layout given up disables its trial.

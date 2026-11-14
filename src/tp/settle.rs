@@ -1,9 +1,6 @@
-//! Whether the names of `program` and `decision` pay, settled on the
-//! compiled program ([`crate::vtree`]'s naming).
+//! Whether the names of `decision` pay, settled on the compiled program.
 //!
-//! `program` names the derived atoms that cross each narrow cut of its
-//! order, and the compile builds every formula over its own segment and
-//! the copies at its start. `decision` names the atoms of its tree that
+//! `decision` names the atoms of its tree that
 //! atoms outside the tree read, a cut for each node of the tree they sit
 //! above, and the contexts of the tree, which are in no cut and keep their
 //! names (`vtree::decision`). What a cut's names cost and save shows only
@@ -31,10 +28,8 @@
 //! A cut's readers are the formulas that depend on its copies (their
 //! diagrams' support, not their scopes). The readers that are not queries
 //! grow from `R` pairs to `K`, and the names pay for them where
-//! `J < K - R`. On a Markov chain each day's readers are the next day's
-//! links, and composed each carries the joint of two days (GeNI's weather);
-//! where the readers compress what they read, as a coupon collector's
-//! counts or the bits of a sum do, the cut is expanded. The joint is
+//! `J < K - R`. Where the readers compress what they read, as the bits of
+//! a sum do, the cut is expanded. The joint is
 //! weighed first, up to [`GROWTH`] times the links' pairs `L`; where it is
 //! that small, the readers are composed only until they gain more than it,
 //! and a cut whose readers do keeps its names. Otherwise the readers are
@@ -67,9 +62,8 @@
 //!
 //! An expanded cut's links leave the evidence, and its copies, which no
 //! formula reads any more, weigh one half on each side, so that a count
-//! sums them to one as it does a fact. The cuts are settled in the
-//! order's direction, so that a cut's readers include the next cut's
-//! links as composed, and `decision`'s up its tree.
+//! sums them to one as it does a fact. The cuts are settled up the tree,
+//! so that a cut's readers include the next cut's links as composed.
 //! Settling spends at most the compile's work units;
 //! the cuts it has not reached by then keep their names, as does a cut a
 //! query reads as a literal of the evidence. Expanding a cut whose joint

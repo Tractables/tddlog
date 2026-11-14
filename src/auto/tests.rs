@@ -420,12 +420,11 @@ fn diamond_loop(steps: usize) -> GroundProgram {
 #[test]
 fn where_program_leads_it_and_the_next_trials_take_turns() {
     // Each step of the diamond loop reads every earlier one through the
-    // step before. Without names every layout without indicators compiled
-    // it in the square of the steps (24 M units under `program` at 400
-    // steps); `program` now names each step's result at a cut of width one
-    // (src/vtree/naming.rs), as `families:0` cuts each step at an
-    // indicator, and both are linear. `program` leads ([`program_leads`]),
-    // `program:fanin` lays out the same named order and is dropped, and `program` and `families:0` take turns of
+    // step before. Every layout without indicators compiles it in the
+    // square of the steps (24 M units under `program` at 400 steps), where
+    // `families:0` cuts each step at an indicator and is linear. `program`
+    // leads ([`program_leads`]), `program:fanin` lays out the same order
+    // and is dropped, and `program` and `families:0` take turns of
     // doubling work from 2^15 units (a first watch of 2^15 pairs): one of
     // them finishes (`program`, projected to finish its compile within
     // two doublings, takes its turns ahead), and neither has spent more
@@ -448,12 +447,6 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
             Kind::Families { search: false }
         ]
         .contains(&run.kind),
-        "{notes:#?}"
-    );
-    assert!(
-        notes
-            .iter()
-            .any(|n| n.starts_with("naming: ") && n.ends_with("widest 1, 399 copies of 399 atoms")),
         "{notes:#?}"
     );
     let work = |t: &str| -> u64 {
@@ -529,47 +522,6 @@ fn a_turn_projected_past_its_horizon_ends_between_components() {
             .unwrap_or_else(|| panic!("{n}"));
         assert!(reach > 8.0 + PROJECTED_DOUBLINGS, "{n}");
     }
-    let p = run.results.unwrap()[0].probability;
-    assert!(
-        (p - (1.0 - 0.5e-4f64).powi(steps as i32)).abs() < 1e-12,
-        "{p}"
-    );
-}
-
-#[test]
-fn settling_past_its_budget_is_the_trials_work() {
-    // At 120 steps `program`'s first attempt compiles and settles its
-    // names past the budget, the compile's work: past it each cut still
-    // reads its readers before it keeps its names. Its turn ends at the
-    // query phase's first step. Uncharged, that work moved the end of the
-    // turn and the run's stop past what the trial had spent, and a stop
-    // read as one by size: the watch doubled and the work did not, and
-    // each attempt settled a few cuts more (watches of 2^16 and 2^17
-    // pairs, where no formula holds 2^15). Charged to the trial, the stop
-    // is one by work, and no trial's watch moves.
-    let steps = 120;
-    let gp = diamond_loop(steps);
-    let run = run_with_watch(
-        gp.clone(),
-        program_leads(),
-        Projection::default(),
-        1 << 15,
-        tp::DYNAMIC_FIRST_PAIRS,
-    )
-    .unwrap();
-    let notes = &run.vtree_notes;
-    assert!(
-        notes
-            .iter()
-            .any(|n| n.starts_with("trial: program indicators=off,")
-                && n.contains(", phase=query, steps 0/")
-                && n.contains(", stopped, ")),
-        "{notes:#?}"
-    );
-    assert!(
-        attempts(notes).iter().all(|&(watch, _)| watch == 1 << 15),
-        "{notes:#?}"
-    );
     let p = run.results.unwrap()[0].probability;
     assert!(
         (p - (1.0 - 0.5e-4f64).powi(steps as i32)).abs() < 1e-12,

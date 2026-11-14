@@ -495,7 +495,7 @@ impl GroundProgram {
     }
     /// Gives back the room the program's lists hold past their lengths,
     /// which a rewrite that grew them by doubling leaves, where the
-    /// compile holds the program to its end ([`crate::indicators::name`]).
+    /// compile holds the program to its end ([`crate::indicators::introduce`]).
     pub(crate) fn shrink_to_fit(&mut self) {
         self.atoms.shrink_to_fit();
         self.kinds.shrink_to_fit();

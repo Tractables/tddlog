@@ -180,22 +180,15 @@ fn tie_copy(
 /// `Err` where the allocator refuses the rewrite's rules room.
 pub fn introduce(original: &GroundProgram) -> Result<GroundProgram, TryReserveError> {
     let structure = original.structure();
-    Ok(name(original, units(&structure.base_of, &structure.sets))?.0)
+    name(original, units(&structure.base_of, &structure.sets))
 }
 
 /// `original` with every derived atom that a rule of another unit reads
-/// read through indicators, as [`introduce`] reads it with the program's
-/// families for units; and the unit that reads each indicator, in the
-/// order of `encoding.indicators`. `unit_of` is each derived atom's unit
-/// (`usize::MAX` for a fact), and holds the atoms of a cyclic component in
-/// one unit. The `program` layouts name the atoms that cross a narrow cut
-/// of their order with the segments between the cuts for units
-/// ([`crate::vtree`]'s naming). `Err` where the allocator refuses the
-/// rewrite's rules room ([`push`]).
-pub(crate) fn name(
-    original: &GroundProgram,
-    unit_of: Vec<usize>,
-) -> Result<(GroundProgram, Vec<usize>), TryReserveError> {
+/// read through indicators ([`introduce`]). `unit_of` is each derived
+/// atom's unit (`usize::MAX` for a fact), and holds the atoms of a cyclic
+/// component in one unit. `Err` where the allocator refuses the rewrite's
+/// rules room ([`push`]).
+fn name(original: &GroundProgram, unit_of: Vec<usize>) -> Result<GroundProgram, TryReserveError> {
     assert!(
         original.encoding.is_empty(),
         "the program already reads atoms through indicators"
@@ -248,8 +241,7 @@ pub(crate) fn name(
     // The rules, the links' atoms and the evidence grew by doubling as
     // they were written, and the compile holds the rewrite to its end.
     gp.shrink_to_fit();
-    let units = copies.keys.iter().map(|&(_, u, _)| u).collect();
-    Ok((gp, units))
+    Ok(gp)
 }
 
 /// Pushes `rule` onto the rewrite's `rules`, or `Err` where the allocator
