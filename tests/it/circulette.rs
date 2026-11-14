@@ -199,11 +199,11 @@ fn compiled(text: &str, strategy: Strategy) -> (usize, Vec<(String, f64)>) {
 /// its elimination by the atoms' numbers, and its two writings differ 1.5
 /// times here. `closed` takes the components in the grounder's order,
 /// which here follows the writing: 94 pairs low bit first, 805 high bit
-/// first; `auto`'s two writings stay within a fifth of each other.
+/// first; `auto`, whose first trial here is `td`, as `td`'s.
 #[test]
 fn an_adder_compiles_alike_whichever_way_its_sum_is_listed() {
     let bounds = [
-        (Strategy::Auto, (6, 5)),
+        (Strategy::Auto, (2, 1)),
         (Strategy::Trial(Kind::Closed), (9, 1)),
         (Strategy::Trial(Kind::Td), (2, 1)),
     ];

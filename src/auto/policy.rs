@@ -235,7 +235,8 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// component that reads most of the facts, has no boundary for an
 /// indicator to cut and no component order for `closed` to follow that
 /// matters ([`shape::nothing_to_order`]): only an order of the
-/// facts themselves can help, and its trial is `dynamic`: the min-fill
+/// facts themselves can help. Where a derived atom depends on itself, its
+/// trial is `dynamic`: the min-fill
 /// vtree, searched by rotations between the compile's steps
 /// ([`crate::tp::Compilation::dynamic`]), unprojected, since the component's cone
 /// is most of the facts. The search beats the static min-fill vtree it
@@ -243,31 +244,26 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// min-fill there, and its decomposer's least budget costs seconds on
 /// programs that compile in milliseconds.
 ///
-/// Where no derived atom depends on itself, the one component is acyclic
-/// atoms merged because they read the same facts ([`crate::ground::deps::unit_ranks`]),
-/// and the atoms still have a direction: a formula compiled bottom up wants
-/// its facts in reverse dependency order, which `closed` follows and
-/// `minfill`, `dynamic`'s start, does not see (`docs/design.md`, vtrees).
-/// There `closed` follows `dynamic`: a noisy-or network with every finding
+/// Elsewhere the one component is acyclic atoms merged because they read
+/// the same facts ([`crate::ground::deps::unit_ranks`]), and the trials are
+/// `td`, `dynamic` and `closed`, in that order. Where every rule reads
+/// facts alone, or copies of facts, `td`'s vtree is its decomposition
+/// folded ([`crate::vtree::build`]) and its compile is projected, so the
+/// evidence walk conjoins each observation at the lowest vtree node over
+/// its facts. `dynamic` starts from a fold too, but compiles unprojected:
+/// every formula is on the global scope, and the walk conjoins every
+/// observation at the root. A weighted CNF, its clauses observed true, is
+/// such a program, and so are the literature's noisy-or networks and
+/// databases and the TPC-H queries, where `td` first takes less trial
+/// work; on the tuple-independent databases
+/// ([`scripts/gen_pdb.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_pdb.py))
+/// `td` alone finishes pdb40. Where the atoms have a direction, a formula
+/// compiled bottom up wants its facts in reverse dependency order, which
+/// `closed` follows and `minfill`, `dynamic`'s start, does not see
+/// (`docs/design.md`, vtrees): a noisy-or network with every finding
 /// observed is one such component, and so is the growing-head program,
 /// whose heads share each annotated disjunction's switches; `dynamic`
 /// finishes neither, and `closed` both.
-///
-/// `td` follows `closed` there: on the tuple-independent databases from
-/// the literature ([`scripts/gen_pdb.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_pdb.py)) both of the others stall, and
-/// `td` alone finishes pdb40.
-///
-/// Where every rule reads facts alone, or copies of facts
-/// ([`shape::reads_facts_alone`]), the atoms have no direction and `td`
-/// comes first, then `dynamic` and `closed`. `td`'s vtree there is its
-/// decomposition folded ([`crate::vtree::build`]) and its compile is projected, so
-/// the evidence walk conjoins each observation at the lowest vtree node
-/// over its facts. `dynamic` starts from a fold too, but compiles
-/// unprojected: every formula is on the global scope, and the walk conjoins
-/// every observation at the root. A weighted CNF, its clauses observed
-/// true, is such a program, and so are the literature's noisy-or networks
-/// and databases and the TPC-H queries, where `td` first takes less trial
-/// work.
 ///
 /// Where the program is built gate by gate ([`built_of_gates`]), as the
 /// circuits Alea, Dice and pluck export are, and states its flips in the
@@ -299,8 +295,8 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// Where the program is a CNF over its facts and there are several units
 /// ([`shape::clauses_over_facts`]: every derived atom a copy of a fact or
 /// observed false and read by nothing), the families trials are left out
-/// and `td` comes before `closed`, as where every rule reads facts alone: a
-/// clause reads facts or copies of facts. A weighted CNF is such a program,
+/// and the trials are those of one component, `td` first: a clause reads
+/// facts or copies of facts. A weighted CNF is such a program,
 /// its copies the facts the conditioning on the evidence makes equal, which
 /// split its clauses into several units where without them they are one,
 /// and `td` comes first above. The families trials spend their turns there
@@ -334,7 +330,8 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// the other ([`super::run_within`]): where an earlier trial wins first,
 /// as `decision` does on the guarded circuits, the rewrite is not built.
 pub(super) fn candidates(gp: &GroundProgram, tables: bool) -> Vec<Kind> {
-    if shape::nothing_to_order(gp) {
+    let nothing = shape::nothing_to_order(gp);
+    if nothing {
         let by_head = gp.rules_by_head();
         let recursive = ground::deps::derived_sccs(gp, &by_head)
             .iter()
@@ -342,13 +339,9 @@ pub(super) fn candidates(gp: &GroundProgram, tables: bool) -> Vec<Kind> {
         if recursive {
             return vec![Kind::Dynamic];
         }
-        if shape::reads_facts_alone(gp) {
-            return vec![Kind::Td, Kind::Dynamic, Kind::Closed];
-        }
-        return vec![Kind::Dynamic, Kind::Closed, Kind::Td];
     }
-    if shape::clauses_over_facts(gp) {
-        return vec![Kind::Td, Kind::Closed];
+    if nothing || shape::clauses_over_facts(gp) {
+        return vec![Kind::Td, Kind::Dynamic, Kind::Closed];
     }
     let laid = Kind::Families { search: false };
     let searched = Kind::Families { search: true };

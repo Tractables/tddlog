@@ -596,7 +596,10 @@ fn a_cnf_of_several_units_with_copies_takes_no_families_trial() {
     .unwrap();
     assert_eq!(gp.stats.conditioned.merged, 1);
     assert!(!shape::nothing_to_order(&gp) && shape::clauses_over_facts(&gp));
-    assert_eq!(candidates(&gp, false), vec![Kind::Td, Kind::Closed]);
+    assert_eq!(
+        candidates(&gp, false),
+        vec![Kind::Td, Kind::Dynamic, Kind::Closed]
+    );
 }
 
 /// `closed` with `td` after it, for a program of facts alone, so that
@@ -1644,7 +1647,7 @@ fn closed_follows_dynamic_where_nothing_to_order_has_no_recursion() {
         let gp = regress(source);
         assert_eq!(
             candidates(&gp, false),
-            vec![Kind::Dynamic, Kind::Closed, Kind::Td]
+            vec![Kind::Td, Kind::Dynamic, Kind::Closed]
         );
         let alone = run_in_memory(gp.clone(), vec![Kind::Dynamic], budget);
         assert!(refused(&alone), "{:?}", alone.map(|r| r.kind));
