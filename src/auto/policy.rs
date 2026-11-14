@@ -1,6 +1,6 @@
 //! `auto`'s policy: the trials a program gets, in order ([`candidates`]),
-//! their weights and first targets, and when the searched families layout
-//! takes `families:0`'s place.
+//! their weights and first targets, and when the families trial weighs its
+//! searched layout.
 
 use crate::GroundProgram;
 use crate::ground::{self, shape};
@@ -62,8 +62,8 @@ pub(super) fn projected_from(first_pairs: usize) -> u64 {
 pub(super) const LEAD_SHARE: u64 = 256;
 
 /// The share of the work `families:0` or a `decision` trial gets beside
-/// each other trial, and the searched families trial once it takes
-/// `families:0`'s place, whichever trial leads ([`super::weigh_searched`]).
+/// each other trial, and the families trial once it lays out its searched
+/// layout, whichever trial leads ([`super::search_families`]).
 /// Every benchmark
 /// network that no trial finishes in its first attempt is won by a
 /// families trial, and on those the other trials' work was most of the
@@ -79,10 +79,6 @@ pub(super) const LEAD_SHARE: u64 = 256;
 /// to 57, disease_small 66 s to 401, sorted_list 66 s to 102), and its
 /// first turn of eight shares on relational programs that `closed` wins
 /// (cora8000, 2^31 units in 13 s, where `closed` then answers in 9.6 M).
-/// The searched trial otherwise weighs 1: its layout
-/// estimated about as large as `families:0`'s, the bet is `families:0`'s,
-/// and at the weight its first attempt spent 2.1 G units on GeNI's
-/// weather_n7 and n8, which `program` wins.
 pub(super) const FAMILIES_WEIGHT: u64 = 8;
 
 /// The work a families trial may spend for each pair of its layout's
@@ -143,9 +139,12 @@ pub(super) fn horizon(t: &Trial) -> f64 {
 }
 
 /// How much smaller the searched `families` layout must be estimated than
-/// `families:0`'s to take its place ([`search_due`]). The estimate decides
-/// where the gap is wide (bn_munin1); where the gap is narrow it misleads
-/// by less than it (bn_andes). Past what a turn may hold both estimates
+/// `families:0`'s for the families trial to take it ([`super::search_families`]).
+/// The estimate decides where the gap is wide (bn_munin1); where the gap
+/// is narrow it misleads by less than it (bn_andes), and the searched
+/// layout runs out of memory where min-fill's answers (UAI's csp_11, at
+/// 0.91, 0.7 s on min-fill's layout; Alea's arith_book at 0.70, GeNI's
+/// weather_h200 at 0.93). Past what a turn may hold both estimates
 /// run far over the formulas, but the gap still points the right way
 /// (pedigree7_10, and GeNI's link_12 at 4.15, where the searched layout
 /// wins at its weight and `program` takes 27 s).
@@ -157,9 +156,9 @@ pub(super) const SEARCHED_GAP: f64 = 4.0;
 /// the network sets; quartiles 1.1 and 3.8).
 pub(super) const SEARCH_UNITS_PER_WORK: u64 = 2;
 
-/// The work past which `laid`, the `families:0` trial, has the searched
-/// `families` layout built and weighed against its own
-/// ([`SEARCHED_GAP`]) before `closed` and `td` have their turns: what the
+/// The work past which `laid`, the families trial on `families:0`'s
+/// layout, has the searched `families` layout built and weighed against
+/// its own ([`SEARCHED_GAP`]) before `closed` and `td` have their turns: what the
 /// search charges, in units of work ([`SEARCH_UNITS_PER_WORK`]), where
 /// `laid`'s layout is estimated past what its turn may hold and its
 /// rewrite ties tables by clauses. Otherwise `closed` and `td` spend their
@@ -207,12 +206,14 @@ pub(super) fn ties_tables_by_clauses(t: &Trial) -> bool {
 }
 
 /// The weight of `t`: [`FAMILIES_WEIGHT`] for `decision`, which goes first
-/// where the conditioning decided ([`super::run`]), and for `families:0`
-/// once it has its rewrite, where that ties tables by clauses
+/// where the conditioning decided ([`super::run`]), for the families trial
+/// on its searched layout, which it takes only on the estimate's bet
+/// ([`super::search_families`]), and for `families:0` once it has its
+/// rewrite, where that ties tables by clauses
 /// ([`ties_tables_by_clauses`]); 1 otherwise.
 pub(super) fn weight(t: &Trial) -> u64 {
     match t.kind {
-        Kind::Decision => FAMILIES_WEIGHT,
+        Kind::Decision | Kind::Families { search: true } => FAMILIES_WEIGHT,
         Kind::Families { search: false } if ties_tables_by_clauses(t) => FAMILIES_WEIGHT,
         _ => 1,
     }
@@ -224,9 +225,13 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// for each ([`FEW_FACTS`]): with `closed` first the networks would pay for
 /// a `closed` trial that `families` then beats, and with the decomposer's
 /// search in the first families trials the small programs would pay for a
-/// search that lowers nothing. The searched layouts come last, so a program
-/// pays for the search only once every cheaper layout has had its turn,
-/// unless `families:0`'s estimate calls for it sooner ([`search_charge`]).
+/// search that lowers nothing. There is one families trial: it starts on
+/// `families:0`'s layout, and builds the searched layout at the turn a
+/// trial last in this order would take, so that a program pays for the
+/// search only once every cheaper layout has had its turn, unless
+/// `families:0`'s estimate calls for it sooner ([`search_charge`]); it
+/// takes the searched layout only where that is estimated
+/// [`SEARCHED_GAP`] times smaller ([`super::search_families`]).
 ///
 /// Each trial has its own budget, so a trial that never finishes first
 /// changes no answer and only costs its work.
@@ -344,12 +349,11 @@ pub(super) fn candidates(gp: &GroundProgram, tables: bool) -> Vec<Kind> {
         return vec![Kind::Td, Kind::Dynamic, Kind::Closed];
     }
     let laid = Kind::Families { search: false };
-    let searched = Kind::Families { search: true };
     let mut trials =
         if gp.num_facts() <= FEW_FACTS && gp.num_derived() >= DERIVED_PER_FACT * gp.num_facts() {
-            vec![Kind::Closed, laid, Kind::Td, searched]
+            vec![Kind::Closed, laid, Kind::Td]
         } else {
-            vec![laid, Kind::Closed, Kind::Td, searched]
+            vec![laid, Kind::Closed, Kind::Td]
         };
     if built_of_gates(gp) && !tables {
         trials.retain(|&kind| kind != Kind::Td);

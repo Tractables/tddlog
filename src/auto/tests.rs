@@ -132,10 +132,9 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
         ground(&format!("{src}query(a{}).", n - 1))
     };
     let laid = Kind::Families { search: false };
-    let searched = Kind::Families { search: true };
     assert_eq!(
         candidates(&chain(FEW_FACTS + 1), false),
-        vec![laid, Kind::Closed, Kind::Td, searched,],
+        vec![laid, Kind::Closed, Kind::Td],
     );
     // With few facts but one derived atom per fact the families
     // layout still comes first.
@@ -156,10 +155,7 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
         gp.num_derived(),
         gp.num_facts()
     );
-    assert_eq!(
-        candidates(&gp, false),
-        vec![Kind::Closed, laid, Kind::Td, searched,],
-    );
+    assert_eq!(candidates(&gp, false), vec![Kind::Closed, laid, Kind::Td],);
     // The smokers program is one recursive component: `smokes` over
     // three people, merged with nothing to be merged with. Queried for
     // everyone, as the benchmark programs are; a query for one person is
@@ -235,12 +231,7 @@ fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
         )
         .expect("grounds")
     };
-    let network = vec![
-        Kind::Families { search: false },
-        Kind::Closed,
-        Kind::Td,
-        Kind::Families { search: true },
-    ];
+    let network = vec![Kind::Families { search: false }, Kind::Closed, Kind::Td];
     for views in [true, false] {
         let gp = ground(adder, views);
         assert_eq!(gp.stats.inlined, usize::from(views));
@@ -391,7 +382,6 @@ fn program_leads() -> Vec<Kind> {
         Kind::Program { fan_in: true },
         Kind::Families { search: false },
         Kind::Closed,
-        Kind::Families { search: true },
     ]
 }
 
@@ -1122,7 +1112,7 @@ fn a_trial_that_loses_its_bet_at_a_kept_step_takes_its_turns_at_its_level() {
 }
 
 #[test]
-fn a_searched_layout_that_would_not_search_is_not_built() {
+fn a_families_trial_that_would_not_search_builds_no_searched_layout() {
     let gp = regress(include_str!("../../examples/bn_split.pl"));
     let programs = Programs {
         ground: Arc::new(ground::without_linear_recursion(gp)),
@@ -1130,22 +1120,19 @@ fn a_searched_layout_that_would_not_search_is_not_built() {
         conditioned: None,
         decision: false,
     };
-    let mut trials = vec![
-        Trial::new(Kind::Families { search: false }),
-        Trial::new(Kind::Families { search: true }),
-    ];
+    let mut trials = vec![Trial::new(Kind::Families { search: false })];
     let mut ledger = Ledger::default();
     assert!(prepare(&mut trials, 0, &programs, &mut ledger).unwrap());
     assert!(trials[0].estimate.is_some_and(|e| e.search_units == 0));
     let notes = ledger.notes.len();
-    assert!(!prepare(&mut trials, 1, &programs, &mut ledger).unwrap());
-    assert!(trials[1].disabled && trials[1].built.is_none());
+    search_families(&mut trials, 1 << 28, &programs, &mut ledger).unwrap();
+    assert_eq!(trials[0].kind, Kind::Families { search: false });
     assert_eq!(ledger.notes.len(), notes);
     // The layout it would have built is `families:0`'s.
     let (searched, _) = vtree::build(
-        trials[1].ground.as_ref().unwrap(),
-        trials[1].deps.as_deref().unwrap(),
-        trials[1].kind,
+        trials[0].ground.as_ref().unwrap(),
+        trials[0].deps.as_deref().unwrap(),
+        Kind::Families { search: true },
     )
     .unwrap();
     assert!(same_layout(trials[0].built.as_ref().unwrap(), &searched));

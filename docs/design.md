@@ -167,7 +167,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, what `auto` is handed ready, the windows or the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups; `windows.rs`: a long narrow program cut into windows, each window's program and the message it reads; `subquery.rs`: `subquery/2,3` answered before grounding |
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
-| `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the searched layout takes `families:0`'s place; `trial.rs`, a trial and what it holds |
+| `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the families trial weighs its searched layout; `trial.rs`, a trial and what it holds |
 | `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice/`, a Dice program read as the program its symbolic evaluation writes (`tokens.rs`, `syntax.rs`, `values.rs`, `translate.rs`); `circulette.rs`, a Circulette netlist read as its gates' rules with a fault on each logic gate |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
 | `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `rows.rs` (row classes and switch sharing), `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
@@ -1949,7 +1949,11 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   where every head reads a part's facts under one context, as a row's
   switches, those facts go in a balanced tree beside the copies. The
   layout cost doubles as an estimate of the evidence's pairs
-  (`Estimate`), which `auto` reads.
+  (`Estimate`), which `auto` reads. `auto` has one families trial: it
+  starts on `families:0`'s layout and takes the searched one only where
+  that is estimated `SEARCHED_GAP` (4) times cheaper (`auto`, The
+  searched layout); `--vtree families` and `--vtree families:0` each run
+  one of the two layouts alone.
 - **`dynamic`**, or `dynamic:minfill` (`facts_by_minfill`,
   `Compilation::dynamic`, tididi `Engine::pool_search`): right-linear over
   a pre-order of the min-fill elimination tree of the interaction graph (a
@@ -2113,7 +2117,10 @@ A program gets these trials (`candidates`), in order:
 | `nothing_to_order`, every rule reads facts alone | `td`, `dynamic`, `closed` |
 | `nothing_to_order`, otherwise | `dynamic`, `closed`, `td` |
 | a CNF over facts the conditioning copied | `td`, `closed` |
-| otherwise | `program` and `program:fanin` where built gate by gate with no table tied by clauses, `families:0`, `closed`, `td` where not, `families`, `program` where not |
+| otherwise | `program` and `program:fanin` where built gate by gate with no table tied by clauses, `families:0`, `closed`, `td` where not, `program` where not |
+
+`families:0` is the one families trial: it may take the searched
+`families` layout in place of its own (The searched layout, below).
 
 The CNF over facts is the conditioning's (Grounding, step 9). `closed`
 comes before `families:0` where the program has `FEW_FACTS` facts or
@@ -2231,8 +2238,8 @@ tree's depth rather than its square. What the conditioning read as
 guards gives the `decision` layout (`ground::Decisions`).
 
 **Turns.** Each trial has a weight, 8 (`FAMILIES_WEIGHT`) for
-`families:0`, a `decision` trial, or the searched families trial in
-`families:0`'s place (below), 1 otherwise. The weight is a bet on
+`families:0`, a `decision` trial, or the families trial on its searched
+layout (below), 1 otherwise. The weight is a bet on
 networks, and `families:0` holds it only where its rewrite ties tables
 by clauses (`policy::weight`), whichever trial goes first: it is
 weighed as it is given its rewrite, before its first attempt, and its
@@ -2364,15 +2371,20 @@ share finished per doubling grows, so that by doublings such a compile
 is projected dozens of doublings out, where the linear projection holds
 it close to its finish.
 
-**The searched layout.** The searched `families` layout is weighed
-against `families:0`'s once in a run, when it is built (`weigh_searched`):
-where it is estimated `SEARCHED_GAP` (4) times smaller, its trial moves
-just before `families:0` with the weight, at the first target of that
-weight, and has the next attempt, and `families:0` loses its weight, the
-bet now being on the searched layout; otherwise `families:0` goes on, and
-the searched trial weighs 1. Estimated about as large, the searched
-layout makes no bet of its own. It is built at its own turn, after
-`closed`'s and `td`'s first, or sooner where `families:0`'s layout is
+**The searched layout.** The families trial starts on `families:0`'s
+layout. The searched `families` layout is built and weighed against it
+once in a run (`search_families`): where it is estimated `SEARCHED_GAP`
+(4) times smaller, the trial drops what it built and starts over on the
+searched layout with the weight, at the first target of that weight, and
+has the next attempt, the bet now being on the searched layout;
+otherwise the searched layout is dropped and the trial goes on. The gap
+keeps `families:0`'s layout where the two are estimated close and the
+searched one runs out of memory (UAI's csp_11, Alea's arith_book, GeNI's
+weather_h200, at 0.70 to 0.93 of `families:0`'s estimate), and takes the
+searched layout on the programs that only it answers (0.008 to 0.18). It
+is built at the turn a trial of weight 1, last in the order and with no
+attempt yet, would take, after `closed`'s and `td`'s first, whether or
+not the families trial has been retired, or sooner where `families:0`'s layout is
 estimated past what its turn may hold and its rewrite ties tables by
 clauses (a Bayesian network's rows, `ties_tables_by_clauses`): after the
 attempt of `families:0` that spends what the search charges
@@ -2434,13 +2446,14 @@ its limits and a single layout (`Strategy::Trial`) once without them.
 Rewrites and vtrees are built lazily, and equal layouts over the same
 rewrite are compiled once. A layout that cannot help disables its trial
 when its turn comes to be laid out: a `td` whose min-degree elimination
-does not finish (`build` returns an error), and a searched `families`
-where `families:0`'s estimate says no search would run
-(`Estimate::search_units` zero), whose layout would be `families:0`'s.
+does not finish (`build` returns an error). No searched `families` layout
+is built where `families:0`'s estimate says no search would run
+(`Estimate::search_units` zero), since it would be `families:0`'s.
 
 **Why this order.** `families:0` comes first and needs no search; with
 `closed` first the networks pay for a trial `families` then beats. The
-searched layouts come last because goatd's search has a floor of work.
+searched layout waits for the other trials' first turns because goatd's
+search has a floor of work.
 `closed` and `td` win the relational programs (uwcse, cora). Each trial
 has its own budget, so a trial that never wins first costs only its work.
 Where nothing is left to order but no atom is recursive, the one

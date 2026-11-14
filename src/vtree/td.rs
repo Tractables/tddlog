@@ -39,7 +39,7 @@ const MAX_TD_BUDGET_UNITS: u64 = 100_000_000;
 /// search below the floor returns a decomposition as narrow that lays out
 /// worse. On bn_munin1's 187 groups and 330 edges the scaled budget, 12.9 M
 /// units, found width 11 as the floor does, in 167 bags against 165, whose
-/// layout is estimated twice as costly, and the searched trial's compile
+/// layout is estimated twice as costly, and the searched layout's compile
 /// did twenty times the work. A budget twice the scaled one kept munin1's
 /// layout, but doubling every budget so cost 1npl's PR 1.7 times its time.
 /// The floor, 50 nominal milliseconds, is not felt in `auto` where the

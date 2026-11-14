@@ -25,11 +25,13 @@
 //! it may complete, is a [`policy::WORK_PER_HELD_PAIR`]th of the target in
 //! pairs, or more where a formula past the watch stopped an earlier
 //! attempt: such a stop raises the watch to hold it ([`Trial::hold`]) and
-//! leaves the target alone. Where `families:0`'s estimate
-//! calls for it, the searched families layout is built once `families:0`
-//! has spent what the search costs ([`policy::search_rent`]), and
-//! otherwise at its own turn; either way it may take `families:0`'s place
-//! and the weight ([`weigh_searched`]). A families trial's weight is a bet
+//! leaves the target alone. The families trial starts on
+//! `families:0`'s layout. Where its estimate calls for it, the searched
+//! families layout is built once the trial has spent what the search costs
+//! ([`policy::search_rent`]), and otherwise at the turn a trial last in
+//! the order would take; either way the trial starts over on it, with the
+//! weight, only where it is estimated much smaller ([`search_families`]).
+//! A families trial's weight is a bet
 //! on its layout's estimate: its attempts spend no more than the estimate
 //! allows while it holds the weight, and it loses the weight past that
 //! ([`policy::bet_left`]). A weighted trial's compile is stopped by a
@@ -72,8 +74,8 @@ use crate::{
 use tididi::limits::{LimitConfig, StopAt, StopRules};
 
 use policy::{
-    FAMILIES_WEIGHT, FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR,
-    bet_left, candidates, horizon, overspent_estimate, projected_from, search_due, search_rent,
+    FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR, bet_left,
+    candidates, horizon, overspent_estimate, projected_from, search_due, search_rent,
     ties_tables_by_clauses, weight,
 };
 use trial::Trial;
@@ -458,21 +460,6 @@ fn prepare(
     if !rewrite(trials, i, programs, ledger) {
         return Ok(false);
     }
-    // Where `families:0`'s layout says no search would run on this program
-    // ([`vtree::Estimate::search_units`]), the searched layout is
-    // `families:0`'s, and the trial is disabled before its layout is built
-    // rather than once it is found to be the same (below), which saves
-    // building the same layout twice.
-    if trials[i].built.is_none()
-        && trials[i].kind == (Kind::Families { search: true })
-        && trials[..i].iter().any(|t| {
-            t.kind == (Kind::Families { search: false })
-                && t.estimate.is_some_and(|e| e.search_units == 0)
-        })
-    {
-        trials[i].disabled = true;
-        return Ok(false);
-    }
     if trials[i].built.is_none() {
         let t = &mut trials[i];
         // A layout that cannot be built, or cannot help (`td` where no
@@ -497,10 +484,9 @@ fn prepare(
         };
         (t.ground, t.deps) = (Some(ground), Some(deps));
         book_layout(t, &mut layout, layout_seconds, ledger);
-        // The searched families layout is the min-fill one where the
-        // decomposer does not search, and the one-component trials
-        // can agree. Comparing their rewrites too prevents confusing a
-        // rewrite with the original just because their numbered trees match.
+        // The one-component trials' layouts can agree. Comparing their
+        // rewrites too prevents confusing a rewrite with the original just
+        // because their numbered trees match.
         if trials[..i].iter().any(|p| {
             same_rewrite(p, &trials[i], programs)
                 && p.built.as_ref().is_some_and(|b| same_layout(b, &layout))
@@ -602,13 +588,18 @@ fn run_within(
         return Err(Error::Vtree("auto has no trial left".into()));
     }
     first_targets(&mut trials, first_work);
-    // Whether the searched families layout has been weighed against the
-    // laid one ([`weigh_searched`]); once a run.
-    let mut weighed = false;
+    // Whether the families trial has weighed its searched layout
+    // ([`search_families`]); once a run, where there is one.
+    let mut weighed = !trials
+        .iter()
+        .any(|t| t.kind == (Kind::Families { search: false }));
     // The last refusal that retired a trial ([`Trial::retire`]), which the
     // run fails with once every trial is retired or disabled.
     let mut refused: Option<tididi::OperationError> = None;
     loop {
+        // The search's turn, until it is weighed: the key and finish of a
+        // trial of weight 1 that has had no attempt, last in the order.
+        let turn = (!weighed).then(|| (first_work as f64).log2() + PROJECTED_DOUBLINGS);
         // The next attempt goes to the trial projected to finish first, by
         // its target, the race's earliest projected finish and its weight
         // ([`Trial::key`]); the first in order on a tie.
@@ -616,7 +607,17 @@ fn run_within(
             .iter()
             .filter(|t| !t.disabled)
             .map(Trial::finish)
-            .fold(f64::INFINITY, f64::min);
+            .fold(turn.unwrap_or(f64::INFINITY), f64::min);
+        if let Some(turn) = turn
+            && trials
+                .iter()
+                .filter(|t| !t.disabled)
+                .all(|t| t.key(earliest) > turn)
+        {
+            weighed = true;
+            search_families(&mut trials, first_work, &programs, &mut ledger)?;
+            continue;
+        }
         let next = (0..trials.len())
             .filter(|&i| !trials[i].disabled)
             .min_by(|&i, &j| trials[i].key(earliest).total_cmp(&trials[j].key(earliest)));
@@ -657,11 +658,6 @@ fn run_within(
                 first_targets(&mut trials, first_work);
                 continue;
             }
-        }
-        if !weighed && trials[i].kind == (Kind::Families { search: true }) {
-            weighed = true;
-            weigh_searched(&mut trials, &programs, &mut ledger)?;
-            continue;
         }
         if !prepare(&mut trials, i, &programs, &mut ledger)? {
             continue;
@@ -757,62 +753,71 @@ fn run_within(
         }
         if !weighed && search_due(&trials[i]) {
             weighed = true;
-            weigh_searched(&mut trials, &programs, &mut ledger)?;
+            search_families(&mut trials, first_work, &programs, &mut ledger)?;
         }
     }
 }
 
-/// Builds the searched families layout and weighs it against that of
-/// `families:0`, once `families:0` has spent the search's charge
-/// ([`search_due`]) or at the searched trial's own turn: where the
-/// searched layout is estimated [`SEARCHED_GAP`] times smaller, its trial
-/// takes `families:0`'s place in the order, just before it, with
-/// [`FAMILIES_WEIGHT`] whether or not `families:0` held it, at the first
-/// target of that weight, and so takes the next attempt, and `families:0`
-/// loses its weight, the bet now being on the searched layout (pedigree51,
-/// where `families:0` otherwise spent eight shares beside it;
-/// geni_router_24, where it spent them until it was refused memory). It
-/// keeps its target, its weighted turn counted as spent, so that the
-/// searched trial takes the next attempt whatever `families:0`'s
-/// projection: by its steps, `families:0` at 99% of its walk (pedigree37,
-/// 24 of 3492 steps left) looks as close as at 76% (bn_munin1, which took
-/// 1.8 G units more at its level, where the searched trial answers in
-/// 63 M).
-/// Where `families:0`'s rewrite ties no table by clauses the gap is the
-/// bet's evidence: on GeNI's routers, whose rewrite ties none, the
-/// searched layout wins, and at weight 1 the other trials' equal shares
-/// took router_20 from 12 s to 21 and router_24 past its memory.
-fn weigh_searched(
-    trials: &mut Vec<Trial>,
+/// Builds the searched families layout and weighs it against
+/// `families:0`'s, which the families trial is on, once the trial has
+/// spent the search's charge ([`search_due`]) or at the search's turn
+/// ([`run_within`]), retired or not. Where the searched layout is
+/// estimated [`SEARCHED_GAP`] times smaller, the trial starts over on it,
+/// its diagrams on `families:0`'s layout dropped, with
+/// [`policy::FAMILIES_WEIGHT`] whether or not it held the weight, at the
+/// first target of that weight, and so takes the next attempt whatever
+/// its projection on `families:0`'s layout: by its steps, `families:0` at
+/// 99% of its walk (pedigree37, 24 of 3492 steps left) looks as close as
+/// at 76% (bn_munin1, which took 1.8 G units more at its level, where the
+/// searched layout answers in 63 M). Otherwise the searched layout is
+/// dropped and the trial goes on as it was. Where `families:0`'s rewrite
+/// ties no table by clauses the gap is the bet's evidence: on GeNI's
+/// routers, whose rewrite ties none, the searched layout wins, and at
+/// weight 1 the other trials' equal shares took router_20 from 12 s to 21
+/// and router_24 past its memory.
+fn search_families(
+    trials: &mut [Trial],
+    first_work: u64,
     programs: &Programs,
     ledger: &mut Ledger,
 ) -> Result<(), Error> {
-    let laid = trials
-        .iter()
-        .position(|t| t.kind == (Kind::Families { search: false }) && !t.disabled);
-    let searched = trials.iter().position(|t| {
-        t.kind == (Kind::Families { search: true }) && !t.disabled && t.built.is_none()
-    });
-    let (Some(i), Some(j)) = (laid, searched) else {
+    let Some(t) = trials
+        .iter_mut()
+        .find(|t| t.kind == (Kind::Families { search: false }))
+    else {
         return Ok(());
     };
-    if !prepare(trials, j, programs, ledger)? {
-        return Ok(());
-    }
-    let pairs = |t: &Trial| t.estimate.map(|e| e.pairs);
-    let (Some(laid), Some(searched)) = (pairs(&trials[i]), pairs(&trials[j])) else {
+    // Where `families:0`'s layout says no search would run on this program
+    // ([`vtree::Estimate::search_units`]), the searched layout is its own.
+    let Some(laid) = t.estimate.filter(|e| e.search_units > 0).map(|e| e.pairs) else {
         return Ok(());
     };
-    if searched * SEARCHED_GAP > laid {
+    let mut searched = Trial {
+        ground: t.ground.clone(),
+        deps: t.deps.clone(),
+        evaluation: crate::evaluation::Evaluation::new(t.evaluation.traced()),
+        ..Trial::new(Kind::Families { search: true })
+    };
+    if !prepare(std::slice::from_mut(&mut searched), 0, programs, ledger)? {
         return Ok(());
     }
-    ledger.notes.push(format!("turn: {} indicators={} takes the place of {}, its layout estimated at {searched:.3e} pairs against {laid:.3e}",
-        trials[j].kind, trials[j].kind.indicators_name(), trials[i].kind));
-    trials[i].weight = 1;
-    let mut t = trials.remove(j);
-    t.target = t.target / t.weight * FAMILIES_WEIGHT;
-    t.weight = FAMILIES_WEIGHT;
-    trials.insert(i, t);
+    let pairs = searched.estimate.map_or(f64::NAN, |e| e.pairs);
+    let taken = pairs * SEARCHED_GAP <= laid;
+    ledger.notes.push(format!(
+        "turn: {} indicators={} {}, its layout estimated at {pairs:.3e} pairs against {laid:.3e}",
+        searched.kind,
+        searched.kind.indicators_name(),
+        if taken {
+            "takes the place of families:0"
+        } else {
+            "dropped"
+        }
+    ));
+    if taken {
+        searched.weight = weight(&searched);
+        searched.target = first_work.saturating_mul(searched.weight);
+        *t = searched;
+    }
     Ok(())
 }
 
