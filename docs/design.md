@@ -2382,13 +2382,13 @@ keeps `families:0`'s layout where the two are estimated close and the
 searched one runs out of memory (UAI's csp_11, Alea's arith_book, GeNI's
 weather_h200, at 0.70 to 0.93 of `families:0`'s estimate), and takes the
 searched layout on the programs that only it answers (0.008 to 0.18). It
-is built at the turn a trial of weight 1, last in the order and with no
-attempt yet, would take, after `closed`'s and `td`'s first, whether or
-not the families trial has been retired, or sooner where `families:0`'s layout is
-estimated past what its turn may hold and its rewrite ties tables by
-clauses (a Bayesian network's rows, `ties_tables_by_clauses`): after the
-attempt of `families:0` that spends what the search charges
-(`search_charge`: goatd's search units over `SEARCH_UNITS_PER_WORK`). So
+is built only where `families:0`'s layout is estimated past what its turn
+may hold and its rewrite ties tables by clauses (a Bayesian network's
+rows, `ties_tables_by_clauses`): after the attempt of `families:0` that
+spends what the search charges (`search_charge`: goatd's search units
+over `SEARCH_UNITS_PER_WORK`). Built elsewhere, at the turn a last trial
+of weight 1 would take, the searched layout won no benchmark program and
+cost the search on each. So
 `families:0` may still finish for less than the search costs, as in
 renting until the rent paid equals the price. An attempt that would
 spend past twice the charge stops at the charge (`search_rent`);

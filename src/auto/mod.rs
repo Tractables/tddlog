@@ -28,9 +28,9 @@
 //! leaves the target alone. The families trial starts on
 //! `families:0`'s layout. Where its estimate calls for it, the searched
 //! families layout is built once the trial has spent what the search costs
-//! ([`policy::search_rent`]), and otherwise at the turn a trial last in
-//! the order would take; either way the trial starts over on it, with the
-//! weight, only where it is estimated much smaller ([`search_families`]).
+//! ([`policy::search_rent`]), and at no other time; the trial starts over
+//! on it, with the weight, only where it is estimated much smaller
+//! ([`search_families`]).
 //! A families trial's weight is a bet
 //! on its layout's estimate: its attempts spend no more than the estimate
 //! allows while it holds the weight, and it loses the weight past that
@@ -597,9 +597,6 @@ fn run_within(
     // run fails with once every trial is retired or disabled.
     let mut refused: Option<tididi::OperationError> = None;
     loop {
-        // The search's turn, until it is weighed: the key and finish of a
-        // trial of weight 1 that has had no attempt, last in the order.
-        let turn = (!weighed).then(|| (first_work as f64).log2() + PROJECTED_DOUBLINGS);
         // The next attempt goes to the trial projected to finish first, by
         // its target, the race's earliest projected finish and its weight
         // ([`Trial::key`]); the first in order on a tie.
@@ -607,17 +604,7 @@ fn run_within(
             .iter()
             .filter(|t| !t.disabled)
             .map(Trial::finish)
-            .fold(turn.unwrap_or(f64::INFINITY), f64::min);
-        if let Some(turn) = turn
-            && trials
-                .iter()
-                .filter(|t| !t.disabled)
-                .all(|t| t.key(earliest) > turn)
-        {
-            weighed = true;
-            search_families(&mut trials, first_work, &programs, &mut ledger)?;
-            continue;
-        }
+            .fold(f64::INFINITY, f64::min);
         let next = (0..trials.len())
             .filter(|&i| !trials[i].disabled)
             .min_by(|&i, &j| trials[i].key(earliest).total_cmp(&trials[j].key(earliest)));
@@ -760,8 +747,7 @@ fn run_within(
 
 /// Builds the searched families layout and weighs it against
 /// `families:0`'s, which the families trial is on, once the trial has
-/// spent the search's charge ([`search_due`]) or at the search's turn
-/// ([`run_within`]), retired or not. Where the searched layout is
+/// spent the search's charge ([`search_due`]). Where the searched layout is
 /// estimated [`SEARCHED_GAP`] times smaller, the trial starts over on it,
 /// its diagrams on `families:0`'s layout dropped, with
 /// [`policy::FAMILIES_WEIGHT`] whether or not it held the weight, at the

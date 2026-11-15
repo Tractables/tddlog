@@ -1139,6 +1139,45 @@ fn a_families_trial_that_would_not_search_builds_no_searched_layout() {
 }
 
 #[test]
+fn the_searched_layout_is_due_only_once_its_charge_is_spent() {
+    // The race builds the searched layout at one point: after the attempt
+    // of `families:0` that spends what the search charges. A network's
+    // rewrite ties its tables by clauses, and with an estimate past what
+    // its turn may hold the search is due from its charge on; UW-CSE's ties
+    // none, and the search is never due, whatever the trial spends.
+    let laid_out = |source: &str| {
+        let programs = Programs {
+            ground: Arc::new(ground::without_linear_recursion(regress(source))),
+            written: None,
+            conditioned: None,
+            decision: false,
+        };
+        let mut trials = vec![Trial::new(Kind::Families { search: false })];
+        let mut ledger = Ledger::default();
+        assert!(prepare(&mut trials, 0, &programs, &mut ledger).unwrap());
+        let mut t = trials.pop().unwrap();
+        t.estimate = Some(vtree::Estimate {
+            pairs: 1e12,
+            search_units: 1 << 30,
+        });
+        t.target = 1 << 28;
+        t
+    };
+    let charge = (1 << 30) / SEARCH_UNITS_PER_WORK;
+    let mut network = laid_out(include_str!("../../examples/bn_split.pl"));
+    assert!(ties_tables_by_clauses(&network));
+    assert_eq!(search_charge(&network), Some(charge));
+    network.spent = charge - 1;
+    assert!(!search_due(&network));
+    network.spent = charge;
+    assert!(search_due(&network));
+    let mut relational = laid_out(include_str!("../../examples/uwcse.pl"));
+    assert!(!ties_tables_by_clauses(&relational));
+    relational.spent = u64::MAX;
+    assert!(!search_due(&relational));
+}
+
+#[test]
 fn a_grid_answers_round_after_round() {
     // Reachability across a 4 × 4 grid, as tests/it/layouts/grid.rs builds
     // it, under a first round of two pairs. ProbLog 2.3.0 gives

@@ -226,12 +226,11 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// a `closed` trial that `families` then beats, and with the decomposer's
 /// search in the first families trials the small programs would pay for a
 /// search that lowers nothing. There is one families trial: it starts on
-/// `families:0`'s layout, and builds the searched layout at the turn a
-/// trial last in this order would take, so that a program pays for the
-/// search only once every cheaper layout has had its turn, unless
-/// `families:0`'s estimate calls for it sooner ([`search_charge`]); it
-/// takes the searched layout only where that is estimated
-/// [`SEARCHED_GAP`] times smaller ([`super::search_families`]).
+/// `families:0`'s layout, and builds the searched layout only where
+/// `families:0`'s estimate calls for it, once it has spent what the search
+/// charges ([`search_charge`]); it takes the searched layout only where
+/// that is estimated [`SEARCHED_GAP`] times smaller
+/// ([`super::search_families`]).
 ///
 /// Each trial has its own budget, so a trial that never finishes first
 /// changes no answer and only costs its work.
