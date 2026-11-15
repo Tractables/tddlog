@@ -9,7 +9,7 @@ use crate::ground::deps::Deps;
 use crate::tp;
 use crate::vtree::{self, Kind};
 
-use super::policy::{PROJECTED_DOUBLINGS, WORK_PER_HELD_PAIR};
+use super::policy::PROJECTED_DOUBLINGS;
 
 pub(super) struct Trial {
     pub(super) kind: Kind,
@@ -28,8 +28,6 @@ pub(super) struct Trial {
     pub(super) weight: u64,
     /// The work it may have spent by the end of its next turn.
     pub(super) target: u64,
-    /// The least watch that holds the formulas that stopped its attempts.
-    pub(super) held: usize,
     /// The engine work its attempts have spent, and its last attempt.
     pub(super) spent: u64,
     pub(super) last_work: u64,
@@ -60,7 +58,6 @@ impl Trial {
             kept: None,
             weight: 1,
             target: 0,
-            held: 0,
             spent: 0,
             last_work: 0,
             lost: 0,
@@ -84,25 +81,6 @@ impl Trial {
                 }
                 _ => false,
             }
-    }
-
-    /// The pairs of the largest formula its next attempt may complete: a
-    /// [`WORK_PER_HELD_PAIR`]th of its target, and at least `first_pairs`
-    /// and what holds the formulas that stopped it ([`Self::hold`]).
-    pub(super) fn watch(&self, first_pairs: usize) -> usize {
-        first_pairs
-            .max(self.held)
-            .max(usize::try_from(self.target / WORK_PER_HELD_PAIR).unwrap_or(usize::MAX))
-    }
-
-    /// Raises the watch, by powers of two, until it holds a formula of
-    /// `pairs` that stopped an attempt.
-    pub(super) fn hold(&mut self, pairs: usize, first_pairs: usize) {
-        let mut watch = self.watch(first_pairs);
-        while watch < pairs {
-            watch = watch.saturating_mul(2);
-        }
-        self.held = watch;
     }
 
     /// Takes its weight away, once it has spent past its layout's estimate
@@ -187,8 +165,20 @@ impl Trial {
     /// of two times the first, rather than by the work spent, which an
     /// attempt stopped by work overruns by a little: by the work, a record
     /// at a hair past half the last one went unread, and the projection
-    /// waited a doubling more.
+    /// waited a doubling more. `None` too while its last attempt lost the
+    /// operation under way at the guard ([`Self::lost`]): that step alone
+    /// cost more than the whole attempt, so the pace of the steps before it
+    /// projects nothing, and the trial counts [`PROJECTED_DOUBLINGS`] past
+    /// the target the loss raised (`families:0` on a loop of Caesar
+    /// ciphers, cut at 2^29 units at 81% of its query phase, was projected
+    /// to finish at 2^30.8 under its new target of 2^31 and took the next
+    /// attempt ahead of an untried `closed`, spending 3.2 G units in one
+    /// operation where `closed` answers in 3.1 M). The next attempt that
+    /// keeps a step projects again.
     pub(super) fn projected(&self) -> Option<f64> {
+        if self.lost > 0 {
+            return None;
+        }
         let &(target, done) = self.progress.last()?;
         let before = self.progress.iter().rev().find(|&&(t, _)| t <= target / 2);
         let (at, doublings, finished) = match before {

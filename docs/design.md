@@ -2102,8 +2102,7 @@ trials and keeps the first that finishes. A trial is a layout, a
 (`Kind::rewrite`): `families` and `families:0` read it through
 indicators, the others do not. The trials take turns: each turn lets one
 trial's compile or query phase go on until it has spent a target of
-engine work or would complete a formula larger than a watch in pairs, and
-a trial's target doubles once it has spent it. A trial wins only after
+engine work, and a trial's target doubles once it has spent it. A trial wins only after
 its compile, evidence and all queries complete; the first complete trial
 answers. This section gives which trials a program gets, the two trials
 that rewrite the program further (`program`'s and `decision`'s), how the
@@ -2272,23 +2271,20 @@ where the target only passed what the trial had spent and the room went
 into the attempt besides, trials whose later components outgrow the
 earlier ones took turns early and were refused memory, freeing the
 others' work (Alea.jl's trueskill and spacex circuits, 1.5 times the
-work). Ended inside an operation, as turns once
+work). A trial whose last attempt the guard stopped projects nothing
+(`Trial::projected`) until an attempt keeps a step again: the step it
+cut short cost more than the whole attempt, so the pace of the steps
+before it says nothing of the rest, and the trial counts
+`PROJECTED_DOUBLINGS` past its raised target. Read from those steps, the
+projection put `families:0` on Dice's caesar-iter at 2^30.8 units under
+a target of 2^31, ahead of an untried `closed`, and its next attempt
+spent 3.2 G units and 22 GiB in one operation where `closed` answers in
+3.1 M units. Ended inside an operation, as turns once
 were, every turn started its loop of clauses over (TPC-H's q7, whose
 formula is one loop of hundreds of bodies), or the walk's join under way.
 
-An attempt may complete formulas of up to its watch in pairs: a sixteenth
-of the target (`WORK_PER_HELD_PAIR`), `FIRST_PAIRS` at least, or more
-where a formula past the watch stopped an earlier attempt, since under a
-smaller watch it would build the formula again and be stopped again. Such
-a stop raises the watch, by powers of two, until it holds the formula
-(`Trial::hold`), and leaves the target alone, so the trial goes on where
-it is still the least: a formula's pairs need not follow its work, and a
-watch tied to the target would give the other trials turns for nothing.
-An operation in flight may output twice the watch in nodes, and a raw
-conjunction sixteen times it in pairs, but for a join of the evidence
-walk that sums out its whole scope: it makes a weight, its nodes are
-folded away as it builds them, and it runs under the work stop and the
-memory budget alone. Where `program` goes first, it,
+An attempt's formulas are bounded by its work and the memory budget
+alone. Where `program` goes first, it,
 `program:fanin` and the trial after them start at a 256th of their first
 targets (`LEAD_SHARE`): the circuits built gate by gate are won by one
 of the three. The trial left alone runs without bounds (`attempt`).
@@ -2363,7 +2359,7 @@ its target: the target doubles, and the other trials take their turns
 before it goes on. The weight buys a trial a larger share of the turns,
 not a farther projection. A stop between components loses nothing that the next
 attempt builds again. The projection is read once the trial has spent
-the work of its first watch, 2^24 units, about a tenth of a second:
+the work that holds its first pairs, 2^24 units, about a tenth of a second:
 before it the components done are too few to project from. This
 projection is linear in the work, where the one between turns is by
 doublings: early in a compile whose rules cost about alike the
@@ -2402,8 +2398,7 @@ are won by `closed` or `td`.
 `WORK_PER_ESTIMATED_PAIR` (64) units of work for each pair of its
 layout's estimate loses its weight, tested after each attempt: the
 weight bets on the estimate, and the families trials that win spend far
-fewer units a pair than those that lose. Their formulas need not reach
-the watch, which grows with the target. The bet costs what the estimate
+fewer units a pair than those that lose. The bet costs what the estimate
 says, not a weighted turn: an attempt of a families trial that holds the
 weight spends no more than the estimate leaves it (`bet_left`), and the
 test then takes the weight before its next turn. A trial the bet paused
@@ -3174,9 +3169,7 @@ compare only within the run they come from.
   `families:0` layout of width 345 that takes 3.8 s to build. On the
   circuits that `program` leads, layouts over the families estimated at
   up to 1e14 pairs took the weight's share for nothing (pi_w12 8 s to
-  57). objectdetection_13's `families:0` completes 2^30 pairs on 1.15 G
-  units, and a watch tied to the target gave the other trials three turns
-  there. Against the rounds the doubling targets replaced, whose size
+  57). Against the rounds the doubling targets replaced, whose size
   stops ended a trial's round, Alea's arith_book (won by `closed`, third
   in order, at 0.6 G units of 4.4 G spent) went from 16 s to 47 s, GeNI's
   router_18 from 3.7 s to 7.4 (`program` and `closed` run on past size

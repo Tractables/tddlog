@@ -8,20 +8,20 @@ use crate::vtree::Kind;
 
 use super::trial::Trial;
 
-/// A trial's first watch on the pairs of its formulas. A layout whose
-/// formulas outgrow the watch stops early, having spent little, and tries
-/// again with a watch that holds them.
+/// The pairs a trial's first turn is measured in ([`WORK_PER_PAIR`],
+/// [`projected_from`]).
 pub(super) const FIRST_PAIRS: usize = 1 << 20;
 
-/// The engine work a trial's first turn gets for each pair of the first
-/// watch, times its weight: 2^28 units, high enough that cheap compiles
-/// (Win95pts, digit) finish there, low enough to cap what a layout that
-/// does not suit the program costs before the next is tried.
+/// The engine work a trial's first turn gets for each of the
+/// [`FIRST_PAIRS`], times its weight: 2^28 units, high enough that cheap
+/// compiles (Win95pts, digit) finish there, low enough to cap what a
+/// layout that does not suit the program costs before the next is tried.
 pub(super) const WORK_PER_PAIR: u64 = 256;
 
-/// The work a turn's target gives for each pair its watch may grow to: a
-/// turn of 2^28 units may hold formulas of 2^24 pairs. A trial that needs
-/// more ends its turn and goes on in its next, with twice the target.
+/// The work a turn's target spends for each pair of the formulas it
+/// builds: a turn of 2^28 units holds formulas of about 2^24 pairs. A
+/// layout estimated past that is past what its turn may hold
+/// ([`search_charge`]).
 pub(super) const WORK_PER_HELD_PAIR: u64 = 16;
 
 /// The doublings past its target within which a trial's projected finish
@@ -42,7 +42,7 @@ pub(super) const PROJECTED_DOUBLINGS: f64 = 3.0;
 /// The work a trial has spent from which its compile stops between
 /// components where it is projected to finish more than
 /// [`PROJECTED_DOUBLINGS`] doublings past its target (`tp::Horizon`): the
-/// work whose watch is the first one, `first_pairs` ([`FIRST_PAIRS`] in a
+/// work that holds the first pairs, `first_pairs` ([`FIRST_PAIRS`] in a
 /// run) times [`WORK_PER_HELD_PAIR`], 2^24 units, about a tenth of a
 /// second. Before it the components done are too few to project from, and
 /// a turn of less costs nothing that matters. `decision` on SPPL's markov
@@ -89,7 +89,6 @@ pub(super) const FAMILIES_WEIGHT: u64 = 8;
 /// turn (mnist_sum96); those that lose have spent 300 and more (GeNI's
 /// links and weather networks, 3 600 on weather_n7), or never finish
 /// (Dice's simpleCaesar, estimated at 7.9e4 pairs, where `td` finishes).
-/// Their formulas need not reach the watch, which grows with the target.
 pub(super) const WORK_PER_ESTIMATED_PAIR: u64 = 64;
 
 /// The work `t`, a families trial, may spend on its layout's estimate
