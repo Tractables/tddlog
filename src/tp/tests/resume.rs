@@ -322,7 +322,6 @@ fn a_projected_stop_reads_the_rules_of_the_components_finished() {
             origin: 0,
             from: 0,
             limit: f64::NEG_INFINITY,
-            mark: 0,
         });
         let stopped = compilation.run(&gp, &backend, false);
         let Err(CompileError::Projected { work }) = stopped else {

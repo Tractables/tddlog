@@ -630,8 +630,6 @@ pub(crate) fn compile(
 /// those of the components left, at the pace of the trial so far; it reads
 /// nothing inside a component, and a stop between components loses nothing
 /// the next run would build again.
-/// A run that passes `mark` notes its progress there
-/// ([`Compilation::marked`]).
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Horizon {
     /// The backend's count of work units at which the trial had spent none.
@@ -641,8 +639,6 @@ pub(crate) struct Horizon {
     /// The base-2 logarithm of the work past which a projected finish
     /// stops the run.
     pub(crate) limit: f64,
-    /// The work at which a run that began short of it notes its progress.
-    pub(crate) mark: u64,
 }
 
 /// A compilation that can stop at the end of a turn and go on later,
@@ -659,13 +655,6 @@ pub(crate) struct Compilation {
     /// The largest base-2 logarithm of the work at which the last run's
     /// horizon projected the compile to finish, `None` where it read none.
     pub(crate) reach: Option<f64>,
-    /// The progress ([`Self::progress`]) at the end of the first
-    /// component that took the last run to its horizon's mark, where the
-    /// run began short of it; `None` where it did not pass the mark.
-    pub(crate) marked: Option<(usize, usize)>,
-    /// Whether the run under way began short of its horizon's mark and
-    /// has not passed it yet.
-    marking: bool,
     var_of: Vec<Option<VarId>>,
     formulation: Formulation,
     by_head: RulesByHead,
@@ -913,8 +902,6 @@ impl Compilation {
         Ok(Compilation {
             horizon: None,
             reach: None,
-            marked: None,
-            marking: false,
             var_of,
             formulation,
             by_head,
@@ -1061,10 +1048,6 @@ impl Compilation {
             dynamic.resumed = dynamic.since.is_some();
         }
         self.reach = None;
-        self.marked = None;
-        self.marking = self
-            .horizon
-            .is_some_and(|h| work.saturating_sub(h.origin) < h.mark);
         let result = (|| {
             // The component the guard last put back, and how often.
             let mut guarded = (usize::MAX, 0);
@@ -1168,18 +1151,13 @@ impl Compilation {
     }
 
     /// Stops the run, between components, where its [`Horizon`] projects
-    /// the compile to finish past its limit; notes the progress at the
-    /// first component that takes the run past the horizon's mark.
+    /// the compile to finish past its limit.
     fn look_ahead(&mut self, backend: &TddBackend) -> Result<(), CompileError> {
         let Some(h) = self.horizon else {
             return Ok(());
         };
         let (done, all) = self.progress();
         let spent = backend.work_units().saturating_sub(h.origin);
-        if self.marking && spent >= h.mark {
-            self.marking = false;
-            self.marked = Some((done, all));
-        }
         if done == 0 || done == all || spent < h.from {
             return Ok(());
         }

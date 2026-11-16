@@ -2309,17 +2309,15 @@ phase, the trial records, at the attempt's target, the share of the phase
 it has finished: in its compile, the rules of the components it has
 finished (`Compilation::progress`); in its query phase, its steps, which are the evidence walk's joins (each makes one formula of
 two, so the walk makes one of the observed factors in one fewer) and then
-the queries answered. A compile that passes half its first turn's target
-(`Horizon::mark`) also records its share there at half the target (`Trial::mark`), so that after its first turn it already has a
-doubling to project from. The records of its compile are dropped when its
+the queries answered. The records of its compile are dropped when its
 query phase starts (`Trial::record`); before the query phase has a record
 at half its last target or less, it is projected from the work the trial
 had spent when the query phase began (`Trial::began`), by the share it
 finished per doubling of the work spent since. Otherwise the share it
 finished over the last doubling of its target projects the doublings it
 still needs, (1 − f)/Δf, and so the work at which it finishes the phase
-(`Trial::projected`). A compile that has not yet passed its first turn's
-mark, or a query phase that has spent no work, makes no projection, and a
+(`Trial::projected`). A compile that has not yet doubled its target, or
+a query phase that has spent no work, makes no projection, and a
 trial that finished no step over the span is projected never to finish.
 The records are by target rather
 than by the work spent, which an attempt stopped by work overruns by a
@@ -2330,9 +2328,7 @@ Each turn goes to the trial projected to finish first for its weight
 (`Trial::key`): its projected finish, counted from its target
 (`Trial::ahead`), where it is projected to finish within the next turn,
 to `PROJECTED_DOUBLINGS` (three) doublings past it; a projection further
-out, and none, count three, as does a compile projected from its first
-turn's mark (`Trial::mark`) to finish within its target, whose next turn
-would spend the rest of its budget on the query phase. Without
+out, and none, count three. Without
 projections the trials take equal shares for their weights, as the
 doubling has them; a trial projected to finish soon takes its turns ahead
 of the others, up to three doublings ahead. The

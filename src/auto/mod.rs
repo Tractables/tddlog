@@ -18,10 +18,7 @@
 //! one further out, or none, counts that many, so that without
 //! projections the trials take equal shares for their weights, and a
 //! trial projected to finish soon takes its turns ahead of the others,
-//! by up to that many doublings. A compile notes its progress at half
-//! its first turn's target ([`tp::Horizon`]), so that the pace of that
-//! turn's second half projects it where it puts the compile's finish past
-//! the trial's next target ([`Trial::ahead`]). The families trial starts on
+//! by up to that many doublings. The families trial starts on
 //! `families:0`'s layout. Where its estimate calls for it, the searched
 //! families layout is built once the trial has spent what the search costs
 //! ([`policy::search_rent`]) or is retired before then, and at no other
@@ -892,7 +889,6 @@ fn attempt(
             origin: start_work.saturating_sub(t.spent),
             from: b.projected_from,
             limit: b.horizon,
-            mark: t.target / 2,
         });
         let backend = tp::TddBackend::resume(engine, tree.clone(), kept);
         if let Some(b) = bounds {
