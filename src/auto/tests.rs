@@ -1773,14 +1773,37 @@ fn a_first_turn_is_projected_from_half_its_target() {
     let mut t = first_turn(Some((35, 100)));
     assert_eq!(t.progress, vec![(1 << 30, 0.35), (1 << 31, 0.55)]);
     assert!(close(t.projected(), 33.25), "{:?}", t.projected());
-    // An attempt that lost its operation at the guard projects nothing,
-    // until an attempt keeps a step again.
+    // An attempt that lost its operation at the guard projects nothing
+    // where its 45 steps left, at the 2^29 units that one lost, would not
+    // fit in its next turn, until an attempt keeps a step again.
+    assert_eq!(t.left, 45);
     t.lost = 1 << 29;
+    t.target = 1 << 33;
     assert_eq!(t.projected(), None);
     assert_eq!(t.ahead(SOONER), PROJECTED_DOUBLINGS);
-    assert_eq!(t.finish(), 31.0 + PROJECTED_DOUBLINGS);
+    assert_eq!(t.finish(), 33.0 + PROJECTED_DOUBLINGS);
     t.lost = 0;
     assert!(close(t.projected(), 33.25), "{:?}", t.projected());
+    // Cut on the last of 100 steps, a trial that holds the weight keeps
+    // its projection: the step fits in the next turn, 2^33 units past the
+    // 2^31 spent. At weight 1 it projects nothing.
+    let mut late = Trial::new(Kind::Families { search: false });
+    late.target = 1 << 31;
+    late.spent = 1 << 31;
+    late.record(false, Some((99, 100)), Some((70, 100)));
+    late.lost = 1 << 30;
+    late.target = 1 << 33;
+    assert_eq!(late.projected(), None);
+    late.weight = FAMILIES_WEIGHT;
+    assert!(
+        close(late.projected(), 31.0 + 1.0 / 29.0),
+        "{:?}",
+        late.projected()
+    );
+    // Three steps left at that cost would not fit in a turn of 2^31.
+    late.target = 1 << 32;
+    late.left = 3;
+    assert_eq!(late.projected(), None);
     // Its target doubled, it takes its turns ahead of an unprojected trial
     // of its weight by 1.75 doublings.
     t.target = 1 << 32;

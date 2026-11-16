@@ -38,6 +38,8 @@ pub(super) struct Trial {
     /// attempt at that target that left it in that phase
     /// ([`Self::projected`]).
     pub(super) progress: Vec<(u64, f64)>,
+    /// The steps of its phase left after its last recorded attempt.
+    pub(super) left: usize,
     /// Whether `progress` measures its query phase.
     pub(super) querying: bool,
     /// The target of its compile's record at its first turn's mark, while
@@ -62,6 +64,7 @@ impl Trial {
             last_work: 0,
             lost: 0,
             progress: Vec::new(),
+            left: 0,
             querying: false,
             mark: None,
             evaluation: Evaluation::default(),
@@ -149,6 +152,7 @@ impl Trial {
                 self.mark = Some(self.target / 2);
             }
             self.progress.push((self.target, done as f64 / all as f64));
+            self.left = all.saturating_sub(done);
         }
     }
 
@@ -165,18 +169,40 @@ impl Trial {
     /// of two times the first, rather than by the work spent, which an
     /// attempt stopped by work overruns by a little: by the work, a record
     /// at a hair past half the last one went unread, and the projection
-    /// waited a doubling more. `None` too while its last attempt lost the
-    /// operation under way at the guard ([`Self::lost`]): that step alone
-    /// cost more than the whole attempt, so the pace of the steps before it
-    /// projects nothing, and the trial counts [`PROJECTED_DOUBLINGS`] past
-    /// the target the loss raised (`families:0` on a loop of Caesar
-    /// ciphers, cut at 2^29 units at 81% of its query phase, was projected
-    /// to finish at 2^30.8 under its new target of 2^31 and took the next
-    /// attempt ahead of an untried `closed`, spending 3.2 G units in one
-    /// operation where `closed` answers in 3.1 M). The next attempt that
-    /// keeps a step projects again.
+    /// waited a doubling more.
+    ///
+    /// `None` too while its last attempt lost the operation under way at
+    /// the guard ([`Self::lost`]), unless it holds the weight and the steps
+    /// left ([`Self::left`]), each costing what that one lost, fit in its
+    /// next turn: the step cut short cost more than the whole attempt, so
+    /// the pace of the steps before it projects nothing of a rest that may
+    /// hold more such steps, and the trial counts [`PROJECTED_DOUBLINGS`]
+    /// past the target the loss raised. What it lost is only a floor on
+    /// that step's cost, so the projection past it is a bet, which only the
+    /// trial the run bets on takes ([`super::policy::FAMILIES_WEIGHT`]): at
+    /// weight 1, `closed` on a weighted CNF benchmark, cut on the last of
+    /// 77 steps, spent 2.3 G units in its next turn without finishing it
+    /// where `td` finished in 0.2 G, and
+    /// `families:0` on an HMM of ProbLog's tutorial, its weight lost to its
+    /// estimate, spent 0.45 G units and 4 GiB where `closed` answers in
+    /// 0.4 M. `families:0` on a loop of Caesar ciphers, cut at 2^29
+    /// units at 81% of its query phase, was projected to finish at 2^30.8
+    /// under its new target of 2^31 and took the next attempt ahead of an
+    /// untried `closed`, spending 3.2 G units in one operation where
+    /// `closed` answers in 3.1 M; on Dice's counter, cut with 11 of 48
+    /// steps left, it was cut again at the same step and refused memory,
+    /// where `closed` answers in 27 K. Where they fit, as on the last step
+    /// of a phase, it keeps the projection: `families:0` on UAI's 1aie and
+    /// 1f94, cut on the last of 5552 and 7959 steps, otherwise counted the
+    /// most and gave `closed` and `td` 2.7 G and 5.4 G units of turns
+    /// before it finished. The next attempt that keeps a step projects
+    /// again.
     pub(super) fn projected(&self) -> Option<f64> {
-        if self.lost > 0 {
+        if self.lost > 0
+            && (self.weight <= 1
+                || (self.left as u64).saturating_mul(self.lost)
+                    > self.target.saturating_sub(self.spent))
+        {
             return None;
         }
         let &(target, done) = self.progress.last()?;

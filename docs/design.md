@@ -2272,14 +2272,24 @@ into the attempt besides, trials whose later components outgrow the
 earlier ones took turns early and were refused memory, freeing the
 others' work (Alea.jl's trueskill and spacex circuits, 1.5 times the
 work). A trial whose last attempt the guard stopped projects nothing
-(`Trial::projected`) until an attempt keeps a step again: the step it
-cut short cost more than the whole attempt, so the pace of the steps
-before it says nothing of the rest, and the trial counts
-`PROJECTED_DOUBLINGS` past its raised target. Read from those steps, the
-projection put `families:0` on Dice's caesar-iter at 2^30.8 units under
-a target of 2^31, ahead of an untried `closed`, and its next attempt
-spent 3.2 G units and 22 GiB in one operation where `closed` answers in
-3.1 M units. Ended inside an operation, as turns once
+(`Trial::projected`) until an attempt keeps a step again, unless it
+holds the weight and the steps its phase has left, each costing what the
+step cut short lost, fit in its next turn: that step cost more than the
+whole attempt, so the
+pace of the steps before it says nothing of a rest that may hold more
+such steps, and the trial counts `PROJECTED_DOUBLINGS` past its raised
+target. Read from those steps, the projection put `families:0` on Dice's
+caesar-iter, cut at 81% of its query phase, at 2^30.8 units under a
+target of 2^31, ahead of an untried `closed`, and its next attempt spent
+3.2 G units and 22 GiB in one operation where `closed` answers in 3.1 M
+units. Where the steps left fit, as on a phase's last step, the
+projection stands: `families:0` on UAI's 1aie and 1f94, cut on the last
+of 5552 and 7959 steps, otherwise counted the most and gave `closed` and
+`td` 2.7 G and 5.4 G units of turns before it finished. What the step
+cut short lost is only a floor on its cost, so the projection past it is
+a bet, taken only by the trial the run bets on: at weight 1, `closed` on
+a weighted CNF benchmark, cut on the last of 77 steps, spent 2.3 G units
+in its next turn without finishing it, where `td` finished in 0.2 G. Ended inside an operation, as turns once
 were, every turn started its loop of clauses over (TPC-H's q7, whose
 formula is one loop of hundreds of bodies), or the walk's join under way.
 
