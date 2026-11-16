@@ -77,8 +77,8 @@ systems, see the results <a href="../#/types">by program type</a>,
 <section class="card prose" id="getting-started">
   <h2>Getting started</h2>
   <p>tddlog computes exact probabilities for ProbLog programs and for
-  Bayesian and Markov networks. It also reads Dice programs, Circulette
-  netlists and LPADs (<a href="#networks">below</a>).</p>
+  Bayesian and Markov networks. It also reads Dice programs and
+  LPADs (<a href="#networks">below</a>).</p>
   <ul>
     <li><b>In the browser:</b> the <a href="../playground/">playground</a>,
     with nothing to install.</li>
@@ -690,7 +690,6 @@ query(reach($3)).</pre>
       <tr><td>Bayesian network, GeNIe</td><td><code>.xdsl</code></td><td><code>xdsl</code></td></tr>
       <tr><td>Bayesian or Markov network, UAI</td><td><code>.uai</code></td><td><code>uai</code></td></tr>
       <tr><td>Dice program</td><td><code>.dice</code></td><td><code>dice</code></td></tr>
-      <tr><td>Circulette netlist</td><td><code>.cql</code></td><td><code>circulette</code></td></tr>
     </tbody>
   </table>
   <p><a href="#alea">Alea.jl</a> and <a href="#roulette">Roulette</a>
@@ -763,27 +762,6 @@ tddlog --program examples/car.net &gt; car.pl</pre>
     refused.</li>
     <li><a href="https://github.com/Tractables/tddlog/tree/baselines/data/dice"><code>data/dice</code></a>
     on the baselines branch holds the Dice paper's programs.</li>
-  </ul></details>
-
-  <h3 id="circulette">Circulette netlists</h3>
-  <p>tddlog reads a <code>.cql</code> file as a netlist of
-  <a href="https://github.com/sandialabs/circulette">Circulette</a>, a tool
-  for the fault analysis of digital circuits on Roulette. It answers
-  Circulette's queries: every gate's fault, and every pair and triple of
-  faults, given that the circuit fails.</p>
-  <details><summary>How a netlist is read</summary>
-  <ul>
-    <li>The circuit is evaluated for one cycle with its inputs and
-    registers false.</li>
-    <li>Each logic gate the outputs read is faulty with probability
-    <code>1 - p-clean</code>, which flips its output.</li>
-    <li>The circuit fails where a bit of an output or of a register's
-    next value is one. The failure is the evidence.</li>
-    <li>The program states the netlist as facts, with one rule for each
-    kind of gate over its operands' bits. <code>tddlog --program</code>
-    prints it.</li>
-    <li><a href="https://github.com/Tractables/tddlog/tree/main/tests/circulette"><code>tests/circulette</code></a>
-    holds netlists written for the tests.</li>
   </ul></details>
 
   <h3 id="alea">Alea.jl programs</h3>

@@ -13,7 +13,6 @@ const tddlogRuntime = {
   formats: [
     ["problog", "ProbLog", []],
     ["dice", "Dice", [".dice"]],
-    ["circulette", "Circulette netlist", [".cql"]],
     ["bif", "BIF network", [".bif"]],
     ["hugin", "Hugin network", [".net", ".hugin"]],
     ["xdsl", "GeNIe network", [".xdsl"]],

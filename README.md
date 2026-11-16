@@ -130,7 +130,6 @@ example program.
 - [Bayesian networks](https://tractables.github.io/tddlog/guide/#network-files)
   in BIF, Hugin, GeNIe or UAI, and Markov networks in UAI.
 - [Dice programs](https://tractables.github.io/tddlog/guide/#dice).
-- [Circulette netlists](https://tractables.github.io/tddlog/guide/#circulette).
 - [Alea.jl](https://tractables.github.io/tddlog/guide/#alea) and
   [Roulette](https://tractables.github.io/tddlog/guide/#roulette) programs,
   through those systems' tddlog backends.

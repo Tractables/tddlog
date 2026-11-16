@@ -18,15 +18,13 @@ use tddlog::{Format, Input, Options, Progress, Strategy};
 use stats::{ground_line, print_stats};
 
 const USAGE: &str = "\
-usage: tddlog [options] <program.pl | program.dice | netlist.cql | network> [argument ...]
+usage: tddlog [options] <program.pl | program.dice | network> [argument ...]
 
 Prints one `atom:<tab>probability` line per query, like ProbLog. A network
 file, BIF (.bif), Hugin (.net, .hugin), GeNIe (.xdsl) or UAI (.uai), is
 read as a program of one annotated disjunction per row of its tables, a
-Dice program (.dice) as the program its symbolic evaluation writes, a
-Circulette netlist (.cql) as its gates' rules with a fault on each logic
-gate, and a program that holds `:- begin_lpad.` as an LPAD written for
-cplint.
+Dice program (.dice) as the program its symbolic evaluation writes, and a
+program that holds `:- begin_lpad.` as an LPAD written for cplint.
 
 The arguments after a ProbLog program or an LPAD take the places $1, $2,
 ... in its text, outside comments and quoted atoms, each read as a term:
@@ -81,7 +79,7 @@ options:
   --rescale                             for a network: divide every row of every table by its
                                         sum, for a file that writes its tables in percent or as
                                         weights; not for a .uai network, read as written
-  --program                             print the program a network, a Dice program, a netlist
+  --program                             print the program a network, a Dice program
                                         or an LPAD is read as, or a program with its arguments
                                         or consulted files in place, and exit
   --cnf                                 print the ground program, without its linear recursion,
@@ -457,9 +455,9 @@ fn answer(args: &Args, trace_file: &mut Option<std::fs::File>) -> ExitCode {
         let Cow::Owned(program) = &input.program else {
             eprintln!(
                 "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai), a Dice \
-                 program (.dice), a Circulette netlist (.cql), an LPAD (a program that holds \
-                 `:- begin_lpad.`), a program given arguments or a program that consults files, \
-                 and {} is none of them",
+                 program (.dice), an LPAD (a program that holds `:- begin_lpad.`), a \
+                 program given arguments or a program that consults files, and {} is none of \
+                 them",
                 args.file
             );
             return ExitCode::from(2);

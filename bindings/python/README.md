@@ -17,7 +17,7 @@
 **Exact probabilistic inference from Python.**
 
 tddlog computes exact probabilities for ProbLog programs, LPADs, Dice
-programs, Circulette netlists and Bayesian and Markov networks. This
+programs and Bayesian and Markov networks. This
 package calls the same Rust implementation as the
 [command line](https://github.com/Tractables/tddlog).
 
@@ -68,7 +68,7 @@ P(e) = 0.196000
   evidence, in the program's order. It is `None` where the evidence is
   inconsistent.
 - `format` says what the text is: `"problog"` (the default, LPADs
-  included), `"dice"`, `"circulette"`, or a network's `"bif"`, `"hugin"`,
+  included), `"dice"`, or a network's `"bif"`, `"hugin"`,
   `"xdsl"` or `"uai"`.
 - `evidence` is the text of a network's evidence file (Ace's `.inst` or
   UAI's `.evid`).

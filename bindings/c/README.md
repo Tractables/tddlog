@@ -16,7 +16,7 @@
 **Exact probabilistic inference from C and C++.**
 
 tddlog computes exact probabilities for ProbLog programs, LPADs, Dice
-programs, Circulette netlists and Bayesian and Markov networks. This
+programs and Bayesian and Markov networks. This
 library exposes the same Rust implementation as the
 [command line](https://github.com/Tractables/tddlog) through a C
 interface. A program goes in as text, and the probabilities of its
@@ -84,7 +84,7 @@ cc bindings/c/examples/alarm.c $(pkg-config --cflags --libs tddlog) -lm -o alarm
 - `TddlogOptions` holds the command line's options: `vtree`,
   `evidence_probability` and `queries`. Null options are the defaults.
 - `format` says what the text is: `"problog"` or null (LPADs included),
-  `"dice"`, `"circulette"`, or a network's `"bif"`, `"hugin"`, `"xdsl"`
+  `"dice"`, or a network's `"bif"`, `"hugin"`, `"xdsl"`
   or `"uai"`.
 - `evidence` is the text of a network's evidence file (Ace's `.inst` or
   UAI's `.evid`).
