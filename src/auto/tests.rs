@@ -1011,9 +1011,16 @@ fn the_searched_layout_is_due_only_once_its_charge_is_spent() {
     assert!(!search_due(&network));
     network.spent = charge;
     assert!(search_due(&network));
+    // Retired for memory before it has spent the charge, it would never
+    // spend the rest: the search is due then.
+    network.spent = 1;
+    network.retire();
+    assert!(search_due(&network));
     let mut relational = laid_out(include_str!("../../examples/uwcse.pl"));
     assert!(!ties_tables_by_clauses(&relational));
     relational.spent = u64::MAX;
+    assert!(!search_due(&relational));
+    relational.retire();
     assert!(!search_due(&relational));
 }
 

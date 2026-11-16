@@ -2392,7 +2392,11 @@ is built only where `families:0`'s layout is estimated past what its turn
 may hold and its rewrite ties tables by clauses (a Bayesian network's
 rows, `ties_tables_by_clauses`): after the attempt of `families:0` that
 spends what the search charges (`search_charge`: goatd's search units
-over `SEARCH_UNITS_PER_WORK`). Built elsewhere, at the turn a last trial
+over `SEARCH_UNITS_PER_WORK`), or after the attempt that retires it for
+memory before then, since a retired trial pays no more rent
+(`search_due`; on pedigree7_13 `families:0` is refused at 0.14 G units,
+the searched layout answers in 0.86 G, and without it `closed` and `td`
+run out of memory). Built elsewhere, at the turn a last trial
 of weight 1 would take, the searched layout won no benchmark program and
 cost the search on each. So
 `families:0` may still finish for less than the search costs, as in

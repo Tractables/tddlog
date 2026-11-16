@@ -190,9 +190,13 @@ pub(super) fn search_rent(laid: &Trial, left: u64) -> Option<u64> {
         .map(|charge| charge - laid.spent)
 }
 
-/// Whether `laid` has spent its [`search_charge`].
+/// Whether `laid` has spent its [`search_charge`], or was retired before
+/// it had: refused memory, it would never pay the rest of the rent, and the
+/// searched layout would not be built (pedigree7_13, whose `families:0`
+/// is refused at 0.14 G units, where the searched layout answers in
+/// 0.86 G and `closed` and `td` run out of memory).
 pub(super) fn search_due(laid: &Trial) -> bool {
-    search_charge(laid).is_some_and(|charge| laid.spent >= charge)
+    search_charge(laid).is_some_and(|charge| laid.spent >= charge || laid.disabled)
 }
 
 /// Whether `t`'s rewrite holds some table's clauses

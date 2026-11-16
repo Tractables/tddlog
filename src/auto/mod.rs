@@ -24,7 +24,8 @@
 //! the trial's next target ([`Trial::ahead`]). The families trial starts on
 //! `families:0`'s layout. Where its estimate calls for it, the searched
 //! families layout is built once the trial has spent what the search costs
-//! ([`policy::search_rent`]), and at no other time; the trial starts over
+//! ([`policy::search_rent`]) or is retired before then, and at no other
+//! time; the trial starts over
 //! on it, with the weight, only where it is estimated much smaller
 //! ([`search_families`]).
 //! A families trial's weight is a bet
@@ -697,6 +698,10 @@ fn run_within(
                 ));
                 t.retire();
                 refused = Some(e);
+                if !weighed && search_due(t) {
+                    weighed = true;
+                    search_families(&mut trials, first_work, &programs, &mut ledger)?;
+                }
                 continue;
             }
             return Err(Error::Trials {
@@ -739,7 +744,8 @@ fn run_within(
 
 /// Builds the searched families layout and weighs it against
 /// `families:0`'s, which the families trial is on, once the trial has
-/// spent the search's charge ([`search_due`]). Where the searched layout is
+/// spent the search's charge or been retired before it had
+/// ([`search_due`]). Where the searched layout is
 /// estimated [`SEARCHED_GAP`] times smaller, the trial starts over on it,
 /// its diagrams on `families:0`'s layout dropped, with
 /// [`policy::FAMILIES_WEIGHT`] whether or not it held the weight, at the
