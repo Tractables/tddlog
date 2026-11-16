@@ -1808,7 +1808,9 @@ not sum to one fall outside the clause encoding.
 ## Vtrees (`src/vtree/`)
 
 The vtree's leaves are the probabilistic facts (with indicators, the
-copies too). A structural TDD keeps a node at every vtree level whether or
+copies too); `tddlog --layout --vtree K` prints the vtree a layout lays
+out (`solve::layout`), in the `.vtree` text format, and the atom at each
+variable. A structural TDD keeps a node at every vtree level whether or
 not the function depends on the variables below it, and a node at vtree
 node `t` partitions the assignments to the variables under `t` by the
 function they leave outside. Two consequences decide the strategies.

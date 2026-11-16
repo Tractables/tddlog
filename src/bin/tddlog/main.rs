@@ -42,8 +42,9 @@ options:
       td                                right-linear over a fact order from a tree decomposition;
                                         fails where no elimination of the graph finishes within
                                         its budget
-      closed                            components in an order found by local search, each on a
-                                        right-linear spine, bushy where its parts share nothing
+      closed                            components in the compiler's order, taken root by root,
+                                        each on a right-linear spine, bushy where its parts share
+                                        nothing
       families, families:0              a tree decomposition of the program read through
                                         indicators (families:0 without the decomposer's search);
                                         fails for a program that reads no atom through one
@@ -58,6 +59,9 @@ options:
                                         strategy other than auto, as that strategy compiles it;
                                         with --evidence-probability, the program P(e) is
                                         computed on
+  --layout                              print the vtree a strategy other than auto lays out, in
+                                        the .vtree text format, then a line `v <i> <atom>` for
+                                        each variable i, and exit; needs --vtree
   --evidence-probability                after the query lines, print P(e), the probability of the
                                         evidence, as `P(e):<tab>p<tab>log10 l`: p in scientific
                                         notation and l its base-10 logarithm, exact beyond a
@@ -132,6 +136,7 @@ struct Args {
     rescale: bool,
     program_only: bool,
     cnf_only: bool,
+    layout_only: bool,
     /// The file the trace of the run is written to.
     trace: Option<String>,
 }
@@ -145,7 +150,7 @@ fn parse_args() -> Result<Request, String> {
     let (mut ground_only, mut stats, mut evidence_probability, mut no_queries) =
         (None, None, None, None);
     let (mut queries, mut evidence, mut rescale, mut program_only) = (None, None, None, None);
-    let (mut cnf_only, mut trace) = (None, None);
+    let (mut cnf_only, mut layout_only, mut trace) = (None, None, None);
     while let Some(a) = args.next() {
         match a.as_str() {
             "-h" | "--help" => return Ok(Request::Help),
@@ -174,6 +179,7 @@ fn parse_args() -> Result<Request, String> {
             option @ "--rescale" => once(&mut rescale, (), option)?,
             option @ "--program" => once(&mut program_only, (), option)?,
             option @ "--cnf" => once(&mut cnf_only, (), option)?,
+            option @ "--layout" => once(&mut layout_only, (), option)?,
             option @ "--trace" => {
                 let v = args.next().ok_or("--trace needs a file")?;
                 once(&mut trace, v, option)?;
@@ -194,6 +200,30 @@ fn parse_args() -> Result<Request, String> {
     let file = file.ok_or_else(|| USAGE.to_string())?;
     let ground_only = ground_only.is_some();
     let stats = stats.is_some();
+    let layout_only = layout_only.is_some();
+    if layout_only {
+        if matches!(strategy, None | Some(Strategy::Auto)) {
+            return Err(
+                "--layout prints the vtree of one strategy: name it with --vtree, \
+                        other than auto"
+                    .into(),
+            );
+        }
+        for (given, option) in [
+            (ground_only, "--ground"),
+            (program_only.is_some(), "--program"),
+            (cnf_only.is_some(), "--cnf"),
+            (stats, "--stats"),
+            (precision.is_some(), "--precision"),
+            (trace.is_some(), "--trace"),
+        ] {
+            if given {
+                return Err(format!(
+                    "--layout prints the vtree and stops, so {option} would do nothing"
+                ));
+            }
+        }
+    }
     if ground_only {
         for (given, option) in [
             (stats, "--stats"),
@@ -287,6 +317,7 @@ fn parse_args() -> Result<Request, String> {
         rescale: rescale.is_some(),
         program_only,
         cnf_only,
+        layout_only,
         trace,
     }))
 }
@@ -523,6 +554,10 @@ fn run(
     };
     if args.ground_only {
         print!("{}", tddlog::rewritten(&input.program, &options)?);
+        return Ok(());
+    }
+    if args.layout_only {
+        print!("{}", tddlog::layout(&input.program, &options)?);
         return Ok(());
     }
     if args.cnf_only {

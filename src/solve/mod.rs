@@ -428,16 +428,45 @@ fn solve_windows(
 /// factor the conditioning takes out, which the program printed does not
 /// carry.
 pub fn rewritten(source: &str, options: &Options) -> Result<GroundProgram, Error> {
+    let ground = printed_ground(source, options)?;
+    Ok(match options.strategy {
+        Strategy::Auto => ground,
+        Strategy::Trial(kind) => std::sync::Arc::unwrap_or_clone(kind.prepare(ground)?.ground),
+    })
+}
+
+/// The layout the strategy of `options` gives the program [`rewritten`]
+/// prints, as `--layout` prints it: the vtree in the `.vtree` text format
+/// (`Vtree::to_text`), then a line `v <i> <atom>` for each variable `i`,
+/// the atom of the program that is its leaf. `auto` lays out a vtree per
+/// trial, so it is refused.
+pub fn layout(source: &str, options: &Options) -> Result<String, Error> {
+    let Strategy::Trial(kind) = options.strategy else {
+        return Err(Error::Options(
+            "auto lays out a vtree for each trial: --layout needs a named --vtree".into(),
+        ));
+    };
+    let prepared = kind.prepare(printed_ground(source, options)?)?;
+    let mut text = prepared.layout.vtree.to_text();
+    for (i, &a) in prepared.layout.order.iter().enumerate() {
+        text.push_str(&format!(
+            "v {} {}\n",
+            i + 1,
+            prepared.ground.atoms[a as usize]
+        ));
+    }
+    Ok(text)
+}
+
+/// The program `source` ground under `options` with a lone query kept a
+/// query, as [`rewritten`] and [`layout`] start from.
+fn printed_ground(source: &str, options: &Options) -> Result<GroundProgram, Error> {
     options.checked()?;
     let opts = GroundOptions {
         observe_query: false,
         ..options.ground_options()
     };
-    let ground = ground::ground(&parsed(source, options)?, &opts)?;
-    Ok(match options.strategy {
-        Strategy::Auto => ground,
-        Strategy::Trial(kind) => std::sync::Arc::unwrap_or_clone(kind.prepare(ground)?.ground),
-    })
+    Ok(ground::ground(&parsed(source, options)?, &opts)?)
 }
 
 /// The program [`rewritten`] gives under `auto`, ground without row
