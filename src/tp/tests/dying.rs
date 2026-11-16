@@ -91,7 +91,7 @@ fn formulas_are_dropped_after_their_last_reader() {
             if let Some(first) = first_pairs {
                 compilation = compilation.dynamic(first);
             }
-            compilation.run(&gp, &backend, None).expect("compiles");
+            compilation.run(&gp, &backend, true).expect("compiles");
             let mut compiled = compilation.finish(&backend).expect("finishes");
             let formulas: Vec<bool> = [a, b, c, d]
                 .iter()
@@ -146,7 +146,7 @@ fn without_evidence_a_query_is_counted_where_its_formula_is_dropped() {
                 if let Some(first) = first_pairs {
                     compilation = compilation.dynamic(first);
                 }
-                compilation.run(&gp, &backend, None).expect("compiles");
+                compilation.run(&gp, &backend, true).expect("compiles");
                 let mut compiled = compilation.finish(&backend).expect("finishes");
                 let kept: Vec<bool> = [a, b, c]
                     .iter()
@@ -196,12 +196,12 @@ const READ_TWICE: &str = "
 ";
 
 #[test]
-fn the_last_reader_takes_a_formula_in_a_run_without_a_watch() {
+fn the_last_reader_takes_a_formula_in_the_last_run() {
     let gp = ground_as_written(READ_TWICE);
     let deps = Deps::of(&gp);
     for formulation in [Formulation::Primal, Formulation::Dual] {
         for first_pairs in [None, Some(0)] {
-            for watch in [None, Some(usize::MAX)] {
+            for last in [true, false] {
                 let (vtree::Layout { vtree, order, .. }, _) =
                     vtree::build(&gp, &deps, Kind::Dynamic).expect("builds");
                 let (taken, ps) = vtree.context().run(|engine| {
@@ -218,7 +218,7 @@ fn the_last_reader_takes_a_formula_in_a_run_without_a_watch() {
                     if let Some(first) = first_pairs {
                         compilation = compilation.dynamic(first);
                     }
-                    compilation.run(&gp, &backend, watch).expect("compiles");
+                    compilation.run(&gp, &backend, last).expect("compiles");
                     let mut compiled = compilation.finish(&backend).expect("finishes");
                     let (results, _) =
                         query_probabilities(&gp, &backend, &mut compiled).expect("answers");
@@ -231,11 +231,11 @@ fn the_last_reader_takes_a_formula_in_a_run_without_a_watch() {
                             .collect::<Vec<_>>(),
                     )
                 });
-                let at = format!("{formulation}, {first_pairs:?}, {watch:?}");
+                let at = format!("{formulation}, {first_pairs:?}, last {last}");
                 // `a` by the later of `b` and `c`, those two by `f`, and
                 // `a2` by `e`; the queries are counted where they are
                 // dropped, and nothing reads them.
-                assert_eq!(taken, if watch.is_none() { 4 } else { 0 }, "{at}");
+                assert_eq!(taken, if last { 4 } else { 0 }, "{at}");
                 for (p, want) in ps.iter().zip([0.528, 0.572]) {
                     assert!((p - want).abs() < 1e-12, "{at}: {ps:?}");
                 }

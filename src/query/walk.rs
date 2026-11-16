@@ -91,8 +91,7 @@
 //! Where the batch given up is the largest child's, which the node sets
 //! aside to meet its other items smallest first, those items are conjoined
 //! first, and their product goes into the target before the batch's
-//! operands: the chain is the node's last joins, and at the root the walk's,
-//! whose result the watch does not hold.
+//! operands: the chain is the node's last joins, and at the root the walk's.
 //!
 //! A result that meets a target is minimized in full off the schedule
 //! (see `EvidenceWalk::run`) where that costs less than the join it
@@ -1108,7 +1107,7 @@ impl EvidenceWalk {
     /// An atom's last read ([`Self::mark_last_reads`]) that copies its
     /// stored formula drops it from `compiled` once the copy is in its
     /// slot, as the compile drops a formula after its last reader: a walk
-    /// under a watch copies every formula it reads, and diamond at 3
+    /// short of the last call copies every formula it reads, and diamond at 3
     /// million steps placed 3.6 GB of copies beside the formulas they
     /// copied. A walk that sums out keeps them, for the walk that may start
     /// over in its place ([`Self::walks_again`]).
@@ -1118,7 +1117,6 @@ impl EvidenceWalk {
         compiled: &mut Compiled,
         table: &RefCell<ScopeTable>,
         sizes: &mut QuerySizes,
-        watch: Option<usize>,
     ) -> Result<Option<Formula>, CompileError> {
         let tree = &backend.vtree();
         while self.next_observed < self.observed.len() {
@@ -1157,7 +1155,7 @@ impl EvidenceWalk {
                         continue;
                     }
                 }
-                self.finish_join(a, b, out, backend, sizes, watch)?;
+                self.finish_join(a, b, out, backend, sizes)?;
             }
             let Some(&node) = self.nodes.get(self.next_node) else {
                 let main = self
@@ -1551,9 +1549,7 @@ impl EvidenceWalk {
     /// The walk's last join makes the evidence formula, which only counting
     /// reads, and counting needs no reduced diagram: it stays as the
     /// conjunction left it (a full reduction there can spend the rest of the
-    /// round's work). Nor is it held to the watch: what is left of the attempt
-    /// is counting it, which costs less than the reduction a stop would have
-    /// paid for.
+    /// round's work).
     ///
     /// The other joins' results are pruned after every join and minimized in
     /// full on the walk's own schedule (`FullSchedule`, kept here since a
@@ -1569,9 +1565,6 @@ impl EvidenceWalk {
     /// times the one it was last due on is pruned instead, and the schedule
     /// goes on as after a full plan that freed nothing.
     ///
-    /// A result over the watch is measured as the schedule left it: a full plan
-    /// there frees next to nothing and never brings a result under the watch.
-    ///
     /// The last result of a given-up batch's chain, and a batch's product that
     /// holds fewer pairs than its target, are minimized in full off the
     /// schedule (see the module documentation).
@@ -1582,7 +1575,6 @@ impl EvidenceWalk {
         out: usize,
         backend: &TddBackend,
         sizes: &mut QuerySizes,
-        watch: Option<usize>,
     ) -> Result<(), CompileError> {
         let last = self.at_last_join();
         let pending = self.pending.as_mut().unwrap();
@@ -1636,9 +1628,7 @@ impl EvidenceWalk {
         self.joins.pop_front();
         self.completed_joins += 1;
         backend.kept();
-        // Commit even an oversized result before yielding. The next call checks
-        // the saved high-water mark before using it.
-        sizes.record(size, if last { None } else { watch })?;
+        sizes.record(size);
         Ok(())
     }
 

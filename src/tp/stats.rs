@@ -42,8 +42,8 @@ pub struct CompileStats {
     /// Number of operations of each kind: conjunctions, disjunctions,
     /// minimizations, equivalence tests, negations.
     pub op_counts: [usize; 5],
-    /// Formulas their last reader took rather than copied, in a run
-    /// without a watch (`last_reads` in `compile.rs`).
+    /// Formulas their last reader took rather than copied, in the last
+    /// run (`last_reads` in `compile.rs`).
     pub taken: usize,
     /// The negations of `op_counts[4]` by source.
     pub negations: Negations,
@@ -260,11 +260,9 @@ pub struct ClauseMemoStats {
     /// Of the loops built, the links of tables built from their models
     /// (`TddBackend::of_models`).
     pub from_models: usize,
-    /// Loops built level by level that the watch refused and the compile
-    /// held (`clauses::Held`).
+    /// Loops built level by level that the guard of a `dynamic` compile's
+    /// round refused (`compile::GUARD`).
     pub refused: usize,
-    /// Refused loops the next run took rather than build them again.
-    pub retaken: usize,
     /// Loops held part way at the end of their turn (`clauses::Held`).
     pub paused: usize,
     /// Paused loops the next run went on with.

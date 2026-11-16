@@ -12,7 +12,7 @@ use tididi::vtree::VarId;
 
 use super::backend::{Part, Read};
 use super::clauses::ClauseMemo;
-use super::factoring::{Checked, Factoring, Pairs, Scratch};
+use super::factoring::{Factoring, Pairs, Scratch};
 use super::stats::Op;
 use super::template::{Template, templates};
 use super::tie::{Tie, ties};
@@ -605,9 +605,9 @@ impl Projected {
 /// variables whose formulas depend on a few (weekend_w30 15% faster).
 const NARROW_FROM: usize = 1024;
 
-/// Compile the whole program in one run under `watch`: `Compilation::new`,
-/// one [`Compilation::run`], `Compilation::finish`; the tests' compile of
-/// a program on a vtree of their own.
+/// Compile the whole program in one last run: `Compilation::new`, one
+/// [`Compilation::run`], `Compilation::finish`; the tests' compile of a
+/// program on a vtree of their own.
 #[cfg(test)]
 pub(crate) fn compile(
     gp: &GroundProgram,
@@ -615,11 +615,10 @@ pub(crate) fn compile(
     formulation: Formulation,
     backend: &TddBackend,
     projection: Projection,
-    watch: Option<usize>,
 ) -> Result<Compiled, CompileError> {
     let mut compilation =
         Compilation::new(gp, &Deps::of(gp), var_of, formulation, backend, projection)?;
-    compilation.run(gp, backend, watch)?;
+    compilation.run(gp, backend, true)?;
     compilation.finish(backend)
 }
 
@@ -646,10 +645,10 @@ pub(crate) struct Horizon {
     pub(crate) mark: u64,
 }
 
-/// A compilation that can stop at an oversize formula or at the end of a
-/// turn and go on later, keeping every component finished so far: `auto`
-/// raises a trial's watch turn by turn, and a turn need not compile the
-/// trial from the start again. An acyclic component where a run stops is
+/// A compilation that can stop at the end of a turn and go on later,
+/// keeping every component finished so far: `auto` gives a trial turn
+/// after turn, and a turn need not compile the trial from the start
+/// again. An acyclic component where a run stops is
 /// reset and starts over in the next run, but for the loop of clauses it
 /// stopped in, which the next run goes on with (`clauses::Held`); the
 /// other components' formulas are kept.
@@ -699,7 +698,7 @@ pub(crate) struct Compilation {
     /// The formula the guard refused in the round it put back ([`GUARD`]).
     refused: std::cell::RefCell<Option<Tdd>>,
     dying: Dying,
-    /// Whether a run without a watch failed: it may have taken formulas
+    /// Whether a last run failed: it may have taken formulas
     /// that the components it did not finish read, and cannot go on.
     spent: bool,
     /// What the query phase takes over ([`Compiled::for_queries`]).
@@ -1024,42 +1023,36 @@ impl Compilation {
         self.fixpoint.worklist.as_ref().map(|w| w.iterations)
     }
 
-    /// Compile from the first unfinished component on, under `watch`, a
-    /// size in pairs: an atom formula that ends up larger, or an
-    /// intermediate result of an atom update that is larger, stops the
-    /// compilation with [`CompileError::Oversize`]. Pairs produced inside a
-    /// single engine operation are the engine's limits' business. A run
-    /// under a watch also ends where its turn does, at the next component,
-    /// atom update or body of a loop of clauses ([`TddBackend::pause`]).
-    /// After an error the compilation stands at the component that failed,
-    /// ready for another run: a cyclic component at the atom update that
-    /// failed, with its rounds so far, the others from their start, which
-    /// the next run builds again up to a loop held where the turn ended or
-    /// the watch refused it (`clauses::Held`), and goes on with that loop.
-    /// Either way the next run reads the component's atoms again. A run
-    /// without a watch is the last: the last read of a formula takes it
-    /// rather than copying it ([`last_reads`]), so after an error there is
-    /// no other run. A dynamic compile's rounds run under [`GUARD`]'s watch
-    /// instead, until they take a formula.
+    /// Compile from the first unfinished component on. A run that is not
+    /// the `last` ends where its turn does, at the next component, atom
+    /// update or body of a loop of clauses ([`TddBackend::pause`]). After
+    /// an error the compilation stands at the component that failed, ready
+    /// for another run: a cyclic component at the atom update that failed,
+    /// with its rounds so far, the others from their start, which the next
+    /// run builds again up to a loop held where the turn ended
+    /// (`clauses::Held`), and goes on with that loop. Either way the next
+    /// run reads the component's atoms again. In the last run the last
+    /// read of a formula takes it rather than copying it ([`last_reads`]),
+    /// so after an error there is no other run; and a dynamic compile's
+    /// rounds run under [`GUARD`], a bound on their formulas' pairs, until
+    /// they take a formula: an atom formula that ends up larger, or an
+    /// intermediate result of an atom update that is larger, puts the
+    /// round back ([`CompileError::Oversize`]) for a search of the vtree.
     ///
     /// # Panics
     ///
-    /// When a run without a watch failed before, or a run without a watch
-    /// has a turn to end: it takes formulas, which a run that goes on after
-    /// it would read again.
+    /// When a last run failed before, or a last run has a turn to end: it
+    /// takes formulas, which a run that goes on after it would read again.
     pub(crate) fn run(
         &mut self,
         gp: &GroundProgram,
         backend: &TddBackend,
-        watch: Option<usize>,
+        last: bool,
     ) -> Result<(), CompileError> {
+        assert!(!self.spent, "a compile whose last run failed cannot go on");
         assert!(
-            !self.spent,
-            "a compile whose run without a watch failed cannot go on"
-        );
-        assert!(
-            watch.is_some() || !backend.in_turn(),
-            "a run without a watch takes formulas and has no turn to end"
+            !last || !backend.in_turn(),
+            "a last run takes formulas and has no turn to end"
         );
         let start = Instant::now();
         let work = backend.work_units();
@@ -1096,10 +1089,9 @@ impl Compilation {
                     self.scopes[self.next] = scope;
                 }
                 let tries = if guarded.0 == self.next { guarded.1 } else { 0 };
-                // The live pairs the guard's watch is a multiple of, and its
-                // floor.
+                // The live pairs the guard is a multiple of, and its floor.
                 let base = match &self.dynamic {
-                    Some(dynamic) if watch.is_none() && tries < GUARD_TRIES => Some((
+                    Some(dynamic) if last && tries < GUARD_TRIES => Some((
                         self.fixpoint.live.max(dynamic.first_pairs),
                         GUARD_FLOOR.saturating_mul(dynamic.first_pairs),
                     )),
@@ -1116,7 +1108,7 @@ impl Compilation {
                         backend.work_units(),
                     );
                 }
-                let finished = match self.round(gp, backend, watch, guard) {
+                let finished = match self.round(gp, backend, last, guard) {
                     Err(CompileError::Oversize { pairs, .. }) if guard.is_some() => {
                         guarded = (self.next, tries + 1);
                         if self.fixpoint.worklist.is_none() {
@@ -1126,8 +1118,7 @@ impl Compilation {
                             self.dying.put_back(self.next, &reads);
                         }
                         let refused = self.refused.get_mut().take();
-                        let kept = self.memo.get_mut().take_refused();
-                        let left = self.search(backend, refused.or(kept))?;
+                        let left = self.search(backend, refused)?;
                         if let (Some(left), Some((base, _))) = (left, base)
                             && left > self.fixpoint.live
                         {
@@ -1157,7 +1148,7 @@ impl Compilation {
         if result.is_err() && self.next < self.sccs.len() && self.fixpoint.worklist.is_none() {
             self.reset(self.next);
         }
-        self.spent = result.is_err() && watch.is_none();
+        self.spent = result.is_err() && last;
         // A run keeps only the loop it stopped in: one held by an earlier
         // run and not taken by this one is not where it stopped
         // (`clauses::Held`).
@@ -1384,12 +1375,13 @@ impl Compilation {
     }
 
     /// One step of component `self.next`: all of it, or one round of its
-    /// worklist when it is cyclic. Returns whether the component is done.
+    /// worklist when it is cyclic, in the `last` run or not, under `guard`
+    /// ([`GUARD`]). Returns whether the component is done.
     fn round(
         &mut self,
         gp: &GroundProgram,
         backend: &TddBackend,
-        watch: Option<usize>,
+        last: bool,
         guard: Option<usize>,
     ) -> Result<bool, CompileError> {
         let formulation = self.formulation;
@@ -1406,59 +1398,42 @@ impl Compilation {
         let comp_of = &self.comp_of;
         let scope = &self.scopes[self.next];
         let scope_of = |b: AtomId| &scopes[comp_of[b as usize] as usize];
-        // `watched(f, a)` passes `f` through unless it is over the watch.
+        // `watched(f, a)` passes `f` through unless it is over the guard,
+        // which holds until the round takes a formula: the round it refuses
+        // runs again from the formulas it read.
         //
         // A size read between operations counts whatever pairs the reduction
         // there left behind (`TddBackend::minimize`), and giving up a round
         // throws away the whole compile so far, so a formula that reads over
-        // the watch is reduced in full and read again before it is given up.
+        // the guard is reduced in full and read again before it is given up.
+        // The formula it refuses, reduced in full, is kept in `refused` for
+        // the search that runs before the round runs again.
         //
         // `watched_sized` takes `f`'s pairs as counted and returns them as
         // they are after: a count walks every node of the diagram, and an
-        // atom's formula is counted once for the largest formula, the watch
+        // atom's formula is counted once for the largest formula, the guard
         // and the live pairs.
         //
-        // `check` is the watch itself, and hands back the formula it
-        // refused, reduced in full, with its pairs, for a caller that keeps
-        // it for the next run (`checked`, [`Factoring::checked`]). The
-        // guard's watch holds until the round takes a formula: the round it
-        // refuses runs again from the formulas it read.
-        //
-        // With neither watch, `watched` and `checked` pass `f` through
-        // without counting it: nothing else reads that count.
+        // Without the guard, `watched` passes `f` through without counting
+        // it: nothing else reads that count.
         let (taken, untaken) = (&self.dying.taken, self.dying.taken.get());
-        let limit = || watch.or(guard.filter(|_| taken.get() == untaken));
-        let check = |mut f: Tdd, pairs: usize| -> Result<Checked<(Tdd, usize)>, CompileError> {
-            match limit() {
-                Some(w) if pairs > w => {
-                    backend.minimize(&mut f, Reduce::Settled)?;
-                    let pairs = backend.size(&f);
-                    Ok(if pairs <= w {
-                        Ok((f, pairs))
-                    } else {
-                        Err((f, pairs))
-                    })
-                }
-                _ => Ok(Ok((f, pairs))),
-            }
-        };
-        let refused = self.dynamic.is_some().then_some(&self.refused);
+        let limit = || guard.filter(|_| taken.get() == untaken);
+        let refused = &self.refused;
         let watched_sized =
-            |f: Tdd, pairs: usize, a: AtomId| -> Result<(Tdd, usize), CompileError> {
-                check(f, pairs)?.map_err(|(f, pairs)| {
-                    if let Some(refused) = refused {
-                        refused.replace(Some(f));
+            |mut f: Tdd, pairs: usize, a: AtomId| -> Result<(Tdd, usize), CompileError> {
+                match limit() {
+                    Some(w) if pairs > w => {
+                        backend.minimize(&mut f, Reduce::Settled)?;
+                        let pairs = backend.size(&f);
+                        if pairs > w {
+                            refused.replace(Some(f));
+                            return Err(CompileError::Oversize { atom: a, pairs });
+                        }
+                        Ok((f, pairs))
                     }
-                    CompileError::Oversize { atom: a, pairs }
-                })
+                    _ => Ok((f, pairs)),
+                }
             };
-        let checked = |f: Tdd| -> Result<Checked<Tdd>, CompileError> {
-            if limit().is_none() {
-                return Ok(Ok(f));
-            }
-            let pairs = backend.size(&f);
-            Ok(check(f, pairs)?.map(|(f, _)| f))
-        };
         let watched = |f: Tdd, a: AtomId| -> Result<Tdd, CompileError> {
             if limit().is_none() {
                 return Ok(f);
@@ -1497,9 +1472,9 @@ impl Compilation {
             self.next,
             &self.dying.taken,
         );
-        // A run without a watch is the last, and its last read of a formula
-        // takes it ([`last_reads`]).
-        let taking = watch.is_none();
+        // The last read of a formula in the last run takes it
+        // ([`last_reads`]).
+        let taking = last;
         // The formula of a derived body literal on its atom's own scope: the
         // stored formula where its polarity is the literal's, else its
         // negation, which the cache keeps (λ_b of an atom the dual stores
@@ -1511,8 +1486,8 @@ impl Compilation {
         // formula yet, in a cyclic component's first round, is false.
         //
         // The read stands for `covers` bodies of the component's rules,
-        // none where the caller may read the literal again. In a run
-        // without a watch the last read of a formula takes it, and the
+        // none where the caller may read the literal again. In the last
+        // run the last read of a formula takes it, and the
         // cached other polarity: the end of the component would drop them.
         // Another read shares them with the store ([`Read::shared`]), and
         // the conjunction that reads it reads it in place.
@@ -1677,8 +1652,7 @@ impl Compilation {
                 scratch,
                 memo,
                 watched: &watched,
-                checked: &checked,
-                watch: watch.or(guard),
+                guard,
                 count: &count,
                 negate: &negate,
                 term,
@@ -1734,8 +1708,8 @@ impl Compilation {
             // the smallest diagram for the function. Not for the fixpoint
             // test: the update settles its formula before the test, and
             // `Engine::equivalent` minimizes a copy of an operand that is
-            // not certified canonical. The `auto`'s watch does read the
-            // size, and an unpruned diagram counts its dead pairs.
+            // not certified canonical. The guard does read the size, and
+            // an unpruned diagram counts its dead pairs.
             backend.minimize(&mut f, Reduce::Between)?;
             count(Op::Minimize, 1);
             Ok((f, other))

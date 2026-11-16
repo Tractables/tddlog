@@ -158,7 +158,7 @@ struct Cut {
 
 /// Settle the names of `gp`, compiled as `compiled`, cut by cut (module
 /// doc), recording what it did in `compiled.for_queries`. An operation
-/// the engine refuses or a watch stops returns its error, the cut it was
+/// the engine refuses or a turn's end stops returns its error, the cut it was
 /// settling left as it was; a later call goes on from that cut.
 pub(crate) fn settle(
     gp: &GroundProgram,

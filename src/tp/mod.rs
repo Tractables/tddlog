@@ -75,16 +75,13 @@ pub enum CompileError {
     /// The well-founded model is three-valued in some world: this atom's
     /// lower and upper formulas differ, so it has no single probability.
     Unsound(crate::syntax::Atom),
-    /// A formula grew past the compile's watch: the finished formula of
-    /// `atom`, or an intermediate one while computing it. Not a failure of
-    /// the program but of the vtree. `pairs` is the formula's
-    /// size, fully reduced, that the watch refused.
+    /// A formula of a `dynamic` compile's round grew past the round's
+    /// guard: the finished formula of `atom`, or an intermediate one while
+    /// computing it. Not a failure of the program but of the vtree, which
+    /// the compile searches again before the round runs again. `pairs` is
+    /// the formula's size, fully reduced, that the guard refused.
     Oversize {
         atom: AtomId,
-        pairs: usize,
-    },
-    /// An evidence or query formula exceeded the trial watch.
-    QueryOversize {
         pairs: usize,
     },
     /// The compile, between components, was projected to finish past its
@@ -115,11 +112,7 @@ impl fmt::Display for CompileError {
             ),
             CompileError::Oversize { atom, pairs } => write!(
                 f,
-                "formula of atom {atom} grew to {pairs} pairs, past the watch"
-            ),
-            CompileError::QueryOversize { pairs } => write!(
-                f,
-                "evidence/query formula reached {pairs} pairs beyond the watch"
+                "formula of atom {atom} grew to {pairs} pairs, past the guard"
             ),
             CompileError::Projected { work } => write!(
                 f,

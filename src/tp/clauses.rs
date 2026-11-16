@@ -125,27 +125,21 @@ pub(super) struct ClauseMemo {
     pub(super) stats: ClauseMemoStats,
 }
 
-/// The loop of clauses where the last run stopped, for the next run to go
-/// on with, and what it is the loop of: its head, its scope, its groups and
-/// bodies, and whether it began from a formula (`one_by_one`'s `start`).
+/// The loop of clauses where the last run's turn ended, before its next
+/// body, for the next run to go on with, and what it is the loop of: its
+/// head, its scope, its groups and bodies, and whether it began from a
+/// formula (`one_by_one`'s `start`).
 ///
-/// A loop of bodies of facts alone built level by level from true
-/// (`TddBackend::none_of`) that the watch refused is held whole, reduced in
-/// full. The compile resets the component it stopped in, and the next run,
-/// under a larger watch, would build the loop again for the same work (on
-/// TPC-H q18 one loop covers the whole lineage). A loop at the end of its
-/// turn is held before its next body ([`TddBackend::pause`]), and the next
-/// run, which builds the component up to the loop again, goes on with it
-/// from there: TPC-H q7's formula is one loop of hundreds of bodies, which a
-/// stop inside an operation started over in every attempt.
+/// The compile resets the component it stopped in ([`TddBackend::pause`]),
+/// and the next run, which builds the component up to the loop again, goes
+/// on with it from there: TPC-H q7's formula is one loop of hundreds of
+/// bodies, which a stop inside an operation started over in every attempt.
 ///
 /// The next run takes it on the scope it was built on: a scope narrowed to
 /// the bodies' facts is projected anew in each run, and the next run's
 /// narrowing to the same facts takes the loop's ([`ClauseMemo::held_scope`]).
 /// Held until the next run, which in `auto` is the trial's next attempt,
-/// however many rounds later: no operation of a bounded attempt outputs more
-/// than twice its watch in nodes, so a waiting trial holds no more than that
-/// beside its finished formulas. A vtree search drops it, since it moves the
+/// however many rounds later. A vtree search drops it, since it moves the
 /// formulas the compile holds and not this one.
 struct Held {
     head: AtomId,
@@ -156,15 +150,7 @@ struct Held {
     groups: Vec<AtMostOne>,
     bodies: Vec<Vec<GLit>>,
     started: bool,
-    at: Stopped,
-}
-
-/// Where a [`Held`] loop stopped.
-enum Stopped {
-    /// Built whole, and refused by the watch.
-    Refused(Tdd),
-    /// At the end of its turn, before a body.
-    Paused(Loop),
+    at: Loop,
 }
 
 /// A loop of clauses part way through its bodies (`Factoring::clauses`):
@@ -230,7 +216,7 @@ impl ClauseMemo {
         groups: &[AtMostOne],
         bodies: &[Vec<GLit>],
         started: bool,
-    ) -> Option<Stopped> {
+    ) -> Option<Loop> {
         let held = self.held.take_if(|h| {
             h.head == head
                 && std::sync::Arc::ptr_eq(h.scope.vtree(), scope.vtree())
@@ -239,26 +225,20 @@ impl ClauseMemo {
                 && h.groups == groups
                 && h.bodies == bodies
         })?;
-        match held.at {
-            Stopped::Refused(_) => self.stats.retaken += 1,
-            Stopped::Paused(_) => self.stats.resumed += 1,
-        }
+        self.stats.resumed += 1;
         Some(held.at)
     }
 
     /// Holds `held`, where the run stops ([`Held`]).
     fn hold(&mut self, held: Held) {
-        match held.at {
-            Stopped::Refused(_) => self.stats.refused += 1,
-            Stopped::Paused(_) => self.stats.paused += 1,
-        }
+        self.stats.paused += 1;
         self.held = Some(held);
     }
 
-    /// The loops held so far, refused or paused: a run that holds none
-    /// leaves the count as it found it.
+    /// The loops held so far: a run that holds none leaves the count as it
+    /// found it.
     pub(super) fn holds(&self) -> usize {
-        self.stats.refused + self.stats.paused
+        self.stats.paused
     }
 
     /// The scope the held loop was built on, where it is the projection
@@ -274,15 +254,6 @@ impl ClauseMemo {
     /// Drops the held loop ([`Held`]).
     pub(super) fn forget_held(&mut self) {
         self.held = None;
-    }
-
-    /// The formula of the loop the watch refused, taken out; a loop held
-    /// otherwise is dropped.
-    pub(super) fn take_refused(&mut self) -> Option<Tdd> {
-        match self.held.take()?.at {
-            Stopped::Refused(f) => Some(f),
-            Stopped::Paused(_) => None,
-        }
     }
 }
 
@@ -381,36 +352,6 @@ impl Factoring<'_> {
             .borrow_mut()
             .keep((key, scope), &f, slots, shape, self.backend)?;
         Ok(f)
-    }
-
-    /// `f`, the loop of `groups` and `bodies` on `scope`, built from true,
-    /// through the watch; a loop the watch refuses is held for the next
-    /// run ([`Held`]).
-    fn kept_if_refused(
-        &self,
-        f: Tdd,
-        scope: &VtreeScope,
-        groups: &[AtMostOne],
-        bodies: &[Vec<GLit>],
-    ) -> Result<Tdd, CompileError> {
-        match (self.checked)(f)? {
-            Ok(f) => Ok(f),
-            Err((f, pairs)) => {
-                self.memo.borrow_mut().hold(Held {
-                    head: self.head,
-                    global: self.backend.vtree(),
-                    scope: scope.clone(),
-                    groups: groups.to_vec(),
-                    bodies: bodies.to_vec(),
-                    started: false,
-                    at: Stopped::Refused(f),
-                });
-                Err(CompileError::Oversize {
-                    atom: self.head,
-                    pairs,
-                })
-            }
-        }
     }
 
     /// The [`ClauseKey`] of bodies of facts alone and rules of pairs on
@@ -836,7 +777,11 @@ impl Factoring<'_> {
             memo.stats.left_out += left_out;
             drop(memo);
             let Some(acc) = acc.take() else {
-                return self.kept_if_refused(f, scope, groups, bodies).map(Some);
+                let f = (self.watched)(f, self.head);
+                if let Err(CompileError::Oversize { .. }) = f {
+                    self.memo.borrow_mut().stats.refused += 1;
+                }
+                return f.map(Some);
             };
             let acc = self.backend.and(acc, f)?;
             return (self.watched)(acc, self.head).map(Some);
@@ -868,13 +813,9 @@ impl Factoring<'_> {
             self.memo
                 .borrow_mut()
                 .take_held(self.head, scope, &groups, &bodies, start.is_some());
-        match held {
-            Some(Stopped::Refused(f)) => return self.kept_if_refused(f, scope, &groups, &bodies),
-            // The formula so far holds `start`.
-            Some(Stopped::Paused(at)) => {
-                return self.clauses(bodies, groups, start.is_some(), scope, at);
-            }
-            None => {}
+        // The formula so far holds `start`.
+        if let Some(at) = held {
+            return self.clauses(bodies, groups, start.is_some(), scope, at);
         }
         let started = start.is_some();
         let mut acc = start;
@@ -907,7 +848,7 @@ impl Factoring<'_> {
         let acc: Option<Formula> = acc.map(|f| (f, scope.clone()));
         // The formula's nodes after its last contraction. `and_clause`
         // charges the work clock the clause, not the levels it rebuilds, so
-        // neither the watch nor the schedule sees a run that splits elements
+        // neither the guard nor the schedule sees a run that splits elements
         // clause after clause; a run that doubles the nodes is contracted
         // where it stands (pdb30's `td` loop otherwise grows to a thousand
         // times its formula's pairs between contractions).
@@ -921,7 +862,7 @@ impl Factoring<'_> {
             every: CLAUSES_PER_CONTRACTION,
             settled_nodes,
             // The work clock at which the formula is next read, for the
-            // contraction schedule and the watch.
+            // contraction schedule and the guard.
             read_due: 0,
         };
         self.clauses(bodies, groups, started, scope, at)
@@ -956,7 +897,7 @@ impl Factoring<'_> {
                     groups,
                     bodies,
                     started,
-                    at: Stopped::Paused(at),
+                    at,
                 });
                 return Err(self.backend.end_turn());
             }
@@ -1068,7 +1009,7 @@ impl Factoring<'_> {
                     at.exclusive.take_pair(&fact_lits);
                     at.uncontracted += 1;
                     let grown = self.backend.nodes(&acc.0) > 2 * at.settled_nodes;
-                    // The watch reads the whole formula, which a clause
+                    // The guard reads the whole formula, which a clause
                     // does not touch outside its spine; it is read where
                     // the contraction has just walked it, and the store
                     // reads the result. Read after every clause or every
@@ -1093,7 +1034,7 @@ impl Factoring<'_> {
                             } else {
                                 CLAUSES_PER_CONTRACTION
                             };
-                            if let Some(w) = self.watch
+                            if let Some(w) = self.guard
                                 && size > w
                             {
                                 acc.0 = (self.watched)(acc.0, self.head)?;

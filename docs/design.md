@@ -2438,15 +2438,12 @@ cannot serve is a refusal too: `Tdd`'s `Clone` would abort the process.
 
 **Resumption.** A stopped compile keeps every finished component, and
 within a cyclic component its rounds so far (`tp::Compilation`). An
-acyclic component it stopped in starts over, but for one loop of clauses
-held for the next run (`clauses::Held`): a loop the turn ended in, before
-its next body, which the trial's next attempt goes on with once it has
-built the component up to it again; or a loop over facts alone that the
-watch refused, reduced in full, which the next attempt takes rather than
-build again. Either is no larger than the attempt's node cap, twice its
-watch, and is held however many turns later the next attempt comes. This
-serves a component whose formula is one loop over a whole lineage
-(TPC-H's q7 and q18). A stopped query phase keeps its
+acyclic component it stopped in starts over, but for the loop of clauses
+the turn ended in, before its next body, held for the next run
+(`clauses::Held`): the trial's next attempt goes on with it once it has
+built the component up to it again, however many turns later that
+attempt comes. This serves a component whose formula is one loop over a
+whole lineage (TPC-H's q7). A stopped query phase keeps its
 finished conjunctions, a pending reduction or count, and its answers
 (`QueryEvaluation`); a resumable conjunction keeps its operands until
 `and` succeeds, since `and` consumes them on failure. Both phases go
@@ -2514,8 +2511,8 @@ rather than negating the literal's formula. On a bit-blasted circuit,
 two thirds of whose atoms are gates of one rule, the two cut the
 negations by almost three quarters. A read shares the stored or cached
 formula (`Read::shared`): a conjunction or a negation reads it in place,
-and an embed or any other operation reads a copy (`Read::owned`). In a
-run without a watch (a single layout, or `auto`'s trial left alone) the
+and an embed or any other operation reads a copy (`Read::owned`). In the
+last run (a single layout, or `auto`'s trial left alone) the
 last read of a formula takes it and its cached negation instead, where
 the last component that reads it is one acyclic atom's (`last_reads`):
 the reads are counted per body of that atom's rules, and a read for

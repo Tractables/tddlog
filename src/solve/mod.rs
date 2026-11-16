@@ -527,7 +527,7 @@ pub(crate) fn run_prepared(
             &backend,
             (kind, projection),
             first_pairs,
-            None,
+            true,
             None,
         )?;
         Ok::<_, tp::CompileError>((answers, backend.vtree()))

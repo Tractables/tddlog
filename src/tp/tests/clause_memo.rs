@@ -315,7 +315,6 @@ fn on_vtree(
             Formulation::Dual,
             &backend,
             Projection::default(),
-            None,
         )
         .unwrap();
         let (results, _) = crate::query::query_probabilities(gp, &backend, &mut compiled).unwrap();

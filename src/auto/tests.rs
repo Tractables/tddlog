@@ -8,7 +8,7 @@ use crate::ground::shape;
 
 /// [`run_within`] from the first round's `first_pairs` and the live pairs
 /// at which a dynamic trial searches first, `dynamic_first_pairs`.
-fn run_with_watch(
+fn run_from(
     original: GroundProgram,
     trials: Vec<Kind>,
     projection: Projection,
@@ -25,7 +25,7 @@ fn run_with_watch(
         trials,
         None,
         projection,
-        Watch {
+        Start {
             first_pairs,
             dynamic_first_pairs,
             memory_bytes: None,
@@ -35,7 +35,7 @@ fn run_with_watch(
     )
 }
 
-/// [`run_within`] with every operation held to `memory_bytes` ([`Watch`]):
+/// [`run_within`] with every operation held to `memory_bytes` ([`Start`]):
 /// the tests' way to make a trial's operations refused on a small program.
 fn run_in_memory(
     original: GroundProgram,
@@ -52,9 +52,9 @@ fn run_in_memory(
         trials,
         None,
         Projection::default(),
-        Watch {
+        Start {
             memory_bytes: Some(memory_bytes),
-            ..Watch::default()
+            ..Start::default()
         },
         None,
         false,
@@ -262,9 +262,9 @@ fn families_0_s_rewrite_settles_the_order_at_the_first_attempt_where_it_matters(
             program_leads(),
             Some(tabled),
             Projection::default(),
-            Watch {
+            Start {
                 first_pairs: 2,
-                ..Watch::default()
+                ..Start::default()
             },
             None,
             false,
@@ -410,14 +410,14 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
     // `families:0` cuts each step at an indicator and is linear. `program`
     // leads ([`program_leads`]), `program:fanin` lays out the same order
     // and is dropped, and `program` and `families:0` take turns of
-    // doubling work from 2^15 units (a first watch of 2^15 pairs): one of
+    // doubling work from 2^15 units (first pairs of 2^15): one of
     // them finishes (`program`, projected to finish its compile within
     // two doublings, takes its turns ahead), and neither has spent more
     // than the other's work times two to the doublings a projection may
     // move it ahead, and one more for its turn.
     let steps = 400;
     let gp = diamond_loop(steps);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         program_leads(),
         Projection::default(),
@@ -474,7 +474,7 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
 
 #[test]
 fn a_turn_projected_past_its_horizon_ends_between_components() {
-    // At a first watch of 2^4 pairs the first turns are of 2^4 units where
+    // At first pairs of 2^4 the first turns are of 2^4 units where
     // `program` leads, and the projection is read from 2^8 units on. The
     // diamond loop's 400 steps are a component each, and `program`'s
     // compile, at the pace of its first components, is projected past its
@@ -482,7 +482,7 @@ fn a_turn_projected_past_its_horizon_ends_between_components() {
     // trials go on in later turns to the same answer.
     let steps = 400;
     let gp = diamond_loop(steps);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         program_leads(),
         Projection::default(),
@@ -560,7 +560,7 @@ fn a_small_compile_cannot_win_before_its_evidence_fits() {
     }
     source.push_str("query(\\+f(12)).\n");
     let gp = regress(&source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         closed_then_td(),
         Projection::default(),
@@ -594,7 +594,7 @@ fn competing_rewrites_preserve_the_problog_posteriors() {
         ("c(q)", 0.20266189),
         ("e(t)", 0.39609663),
     ];
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -635,7 +635,7 @@ fn a_trial_with_indicators_ties_tables_by_clauses() {
         ("c(q)", 0.20266189),
         ("e(t)", 0.39609663),
     ];
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         rewritten.clone(),
         Projection::default(),
@@ -745,7 +745,7 @@ fn a_program_with_nothing_to_order_matches_problog_round_after_round() {
 #[test]
 fn a_trial_alone_runs_in_one_unbounded_attempt() {
     // The program above, whose one trial is dynamic: under a first
-    // bound of two pairs it finishes in one attempt, without a watch,
+    // bound of two pairs it finishes in one last attempt,
     // with ProbLog's answers.
     let source = "0.6::edge(1,2). 0.5::edge(2,3). 0.7::edge(3,1). 0.4::edge(3,4). 0.8::edge(4,5).
         0.3::edge(5,3). 0.6::edge(5,6). 0.5::edge(6,4). 0.4::edge(2,6). 0.3::edge(6,1).
@@ -754,7 +754,7 @@ fn a_trial_alone_runs_in_one_unbounded_attempt() {
         path(X,Y) :- edge(X,Z), path(Z,Y).
         query(path(1,2)). query(path(1,3)). query(path(1,4)). query(path(1,5)). query(path(1,6)). query(path(1,7)).";
     let gp = regress(source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1047,7 +1047,7 @@ fn a_grid_answers_round_after_round() {
     source +=
         "path(X,Y) :- edge(X,Y).\npath(X,Y) :- edge(X,Z), path(Z,Y).\nquery(path(n0_0,n3_3)).\n";
     let gp = regress(&source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1101,7 +1101,7 @@ fn a_markov_network_answers_round_after_round() {
         source += &format!("query(y{j}(v_1)).\n");
     }
     let gp = regress(&source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1135,7 +1135,7 @@ fn the_shared_noisy_or_network_answers_round_after_round() {
     // does not come first. ProbLog 2.3.0.
     let gp = regress(include_str!("../../tests/regress/noisy_or_shared.pl"));
     let trials = vec![Kind::Dynamic, Kind::Closed, Kind::Td];
-    let run = run_with_watch(
+    let run = run_from(
         gp,
         trials.clone(),
         Projection::default(),
@@ -1169,7 +1169,7 @@ fn a_noisy_or_network_from_the_literature_answers_round_after_round() {
     // round of 256 pairs. [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py); ProbLog 2.3.0 agrees to
     // the eight digits it prints, one query at a time.
     let gp = regress(include_str!("../../tests/regress/noisyor15_22.pl"));
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1210,7 +1210,7 @@ fn mastermind_answers_round_after_round() {
     // [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py); ProbLog 2.3.0 gives the same, one query at a
     // time.
     let gp = regress(include_str!("../../tests/regress/mastermind3_4_3.pl"));
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1232,14 +1232,14 @@ fn mastermind_answers_round_after_round() {
 fn a_lost_query_operation_is_not_lost_again_under_the_same_bounds() {
     // UW-CSE with four students under a first round of 128 pairs: the
     // compiled `families:0` trial loses evidence conjunctions in flight
-    // to the node cap and to the round's work. No attempt repeats a
-    // stopped one at the same watch after the same work, which would lose
+    // to the round's work. No attempt repeats a stopped one under the
+    // same bounds after the same work, which would lose
     // the same operation twice: every round doubles both. ProbLog:
     // 0.094006751.
     let source = include_str!("../../examples/uwcse.pl")
         .replace("student(s2).", "student(s2).\nstudent(s3).\nstudent(s4).");
     let gp = regress(&source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1347,7 +1347,6 @@ fn query_counting_obeys_the_batch_work_limit() {
             tp::Formulation::Dual,
             &backend,
             Projection::default(),
-            None,
         )
         .unwrap();
         let stopped = LimitConfig::none().with_stop_rules(
@@ -1515,7 +1514,7 @@ fn td_comes_first_where_the_rules_read_copies_of_facts() {
     );
     let trials = candidates(&gp, false);
     assert_eq!(trials, vec![Kind::Td, Kind::Dynamic, Kind::Closed]);
-    let run = run_with_watch(
+    let run = run_from(
         gp,
         trials,
         Projection::default(),
@@ -1559,7 +1558,7 @@ fn dynamic_answers_a_database_query_from_its_elimination_tree() {
         (candidates(&gp, false), Kind::Td),
         (vec![Kind::Dynamic], Kind::Dynamic),
     ] {
-        let run = run_with_watch(
+        let run = run_from(
             gp.clone(),
             trials,
             Projection::default(),
@@ -1589,7 +1588,7 @@ fn dynamic_answers_a_noisy_or_network() {
     // first there; `dynamic` alone is the run below.
     let gp = regress(include_str!("../../tests/regress/noisyor20_30.pl"));
     assert_eq!(candidates(&gp, false)[0], Kind::Td);
-    let run = run_with_watch(
+    let run = run_from(
         gp,
         vec![Kind::Dynamic],
         Projection::default(),

@@ -27,7 +27,7 @@ fn answers(
         if let Some(first) = first_pairs {
             compilation = compilation.dynamic(first);
         }
-        compilation.run(gp, &backend, None).expect("compiles");
+        compilation.run(gp, &backend, true).expect("compiles");
         let mut compiled = compilation.finish(&backend).expect("finishes");
         let (results, _) = query_probabilities(gp, &backend, &mut compiled).expect("answers");
         (results, compiled.stats.search)

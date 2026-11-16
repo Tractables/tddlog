@@ -160,7 +160,7 @@ pub(crate) fn run(
         trials,
         tabled,
         projection,
-        Watch::default(),
+        Start::default(),
         laid,
         traced,
     )
@@ -334,22 +334,21 @@ impl Programs {
     }
 }
 
-/// What a run of trials starts from: the first watch's pairs, from which
-/// the first targets follow, the live pairs at which a dynamic trial
-/// searches first, and tididi's soft byte budget for every operation,
-/// which refuses an operation as the allocator does when the host's
-/// memory runs out. A run starts from the default; the tests start from
-/// smaller ones, to make a small program take several turns or have its
-/// operations refused.
-struct Watch {
+/// What a run of trials starts from: the first pairs, from which the first
+/// targets follow, the live pairs at which a dynamic trial searches first,
+/// and tididi's soft byte budget for every operation, which refuses an
+/// operation as the allocator does when the host's memory runs out. A run
+/// starts from the default; the tests start from smaller ones, to make a
+/// small program take several turns or have its operations refused.
+struct Start {
     first_pairs: usize,
     dynamic_first_pairs: usize,
     memory_bytes: Option<u64>,
 }
 
-impl Default for Watch {
+impl Default for Start {
     fn default() -> Self {
-        Watch {
+        Start {
             first_pairs: FIRST_PAIRS,
             dynamic_first_pairs: tp::DYNAMIC_FIRST_PAIRS,
             memory_bytes: None,
@@ -526,7 +525,7 @@ fn first_targets(trials: &mut [Trial], first_work: u64) {
     }
 }
 
-/// [`run`] over the given trials from `watch`, each trial's compile
+/// [`run`] over the given trials from `start`, each trial's compile
 /// recording its components for a trace of the run where `traced`. Where
 /// `tabled` is given, `trials` is the order where `families:0`'s rewrite
 /// ties no table by clauses and `tabled` the order where it does
@@ -538,15 +537,15 @@ fn run_within(
     trials: Vec<Kind>,
     mut tabled: Option<Vec<Kind>>,
     projection: Projection,
-    watch: Watch,
+    start: Start,
     laid: Option<Box<Prepared>>,
     traced: bool,
 ) -> Result<Run, Error> {
-    let Watch {
+    let Start {
         first_pairs,
         dynamic_first_pairs,
         memory_bytes,
-    } = watch;
+    } = start;
     // The trials' rewrites start from the program written without its
     // linear recursion.
     let start = Instant::now();
@@ -904,8 +903,9 @@ fn attempt(
             &backend,
             (t.kind, projection),
             dynamic_first_pairs,
-            // A bounded run is resumable, under no watch on its formulas.
-            bounds.map(|_| usize::MAX),
+            // A bounded run is resumable, and only a run without bounds is
+            // the last.
+            bounds.is_none(),
             horizon,
         );
         work = engine.limits().work_units().saturating_sub(start_work);
