@@ -2071,10 +2071,10 @@ impl<'a> Layouts<'a> {
         let items = self.items;
         let num_items = items.block.len();
         let bags = td.bags();
-        let (_, preorder, tops, children) = root_bags(td, 0);
+        let (tree, _) = root_bags(td, 0);
         let mut blocks_at: Vec<Vec<usize>> = vec![Vec::new(); bags.len()];
         let mut placed_item = vec![false; num_items];
-        for &b in &preorder {
+        for &b in tree.order.iter().rev() {
             let held: FxHashSet<usize> = bags[b]
                 .vertices()
                 .iter()
@@ -2089,16 +2089,19 @@ impl<'a> Layouts<'a> {
             }
         }
         let mut subtree: Vec<Option<(usize, Open)>> = vec![None; bags.len()];
-        for &b in preorder.iter().rev() {
+        for &b in &tree.order {
             let mut joined: Vec<(usize, Open)> = blocks_at[b]
                 .iter()
                 .filter_map(|&i| Some((items.block[i]?, self.block_open[i].clone()?)))
                 .collect();
-            joined.extend(children[b].iter().filter_map(|&c| subtree[c].take()));
+            joined.extend(tree.children[b].iter().filter_map(|&c| subtree[c].take()));
             subtree[b] = self.interfaces.paired(&mut self.forest, joined);
         }
-        let mut top_items: Vec<(usize, Open)> =
-            tops.iter().filter_map(|&t| subtree[t].take()).collect();
+        let mut top_items: Vec<(usize, Open)> = tree
+            .roots
+            .iter()
+            .filter_map(|&t| subtree[t].take())
+            .collect();
         // Items no bag placed (a decomposition places them all, but nothing
         // above depends on it), and facts no family reads.
         for i in (0..num_items).filter(|&i| !placed_item[i]) {

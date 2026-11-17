@@ -39,6 +39,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::ground::{AtomId, FactCopy, GLit, GroundProgram, RulesByHead};
 
+use super::fold::Atop;
 use super::forest::halves;
 use super::td::Rooted;
 
@@ -93,28 +94,6 @@ impl CopyRule {
     }
 }
 
-/// Atoms laid atop units of the fold ([`super::td::Rooted::lay_out`]): a
-/// bag's subtree, or the join of some of a bag's children.
-#[derive(Default)]
-pub(super) struct Atop {
-    bags: FxHashMap<usize, Vec<AtomId>>,
-    /// By the bag and the range `lo..hi` of its children with facts.
-    groups: FxHashMap<(usize, usize, usize), Vec<AtomId>>,
-}
-
-impl Atop {
-    /// The atoms above bag `b`'s subtree, the first topmost.
-    pub(super) fn bag(&self, b: usize) -> &[AtomId] {
-        self.bags.get(&b).map_or(&[], Vec::as_slice)
-    }
-
-    /// The atoms above the join of bag `b`'s children with facts `lo..hi`,
-    /// the first topmost.
-    pub(super) fn group(&self, b: usize, lo: usize, hi: usize) -> &[AtomId] {
-        self.groups.get(&(b, lo, hi)).map_or(&[], Vec::as_slice)
-    }
-}
-
 /// The copies a rule makes on a rooted decomposition ([`plan`]).
 pub(super) struct Plan {
     /// The copies, in the order [`crate::ground::add_fact_copies`] makes
@@ -158,6 +137,7 @@ impl Units {
     fn of(rooted: &Rooted) -> Units {
         let bags = rooted.parent.len();
         let kids: Vec<Vec<usize>> = rooted
+            .tree
             .children
             .iter()
             .map(|k| {
@@ -180,7 +160,13 @@ impl Units {
             Enter(usize),
             Leave(usize),
         }
-        let mut stack: Vec<Step> = rooted.roots.iter().rev().map(|&r| Step::Enter(r)).collect();
+        let mut stack: Vec<Step> = rooted
+            .tree
+            .roots
+            .iter()
+            .rev()
+            .map(|&r| Step::Enter(r))
+            .collect();
         while let Some(step) = stack.pop() {
             let u = match step {
                 Step::Leave(u) => {
@@ -369,8 +355,8 @@ pub(super) fn plan(
             continue;
         }
         match units.unit[u] {
-            Unit::Bag(b) => laid.bags.insert(b, atoms),
-            Unit::Group(b, lo, hi) => laid.groups.insert((b, lo, hi), atoms),
+            Unit::Bag(b) => laid.units.insert(b, atoms),
+            Unit::Group(b, lo, hi) => laid.joins.insert((b, lo, hi), atoms),
         };
     }
     Plan {

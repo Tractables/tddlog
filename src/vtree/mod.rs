@@ -35,6 +35,7 @@ mod closed;
 mod cost;
 mod decision;
 mod families;
+mod fold;
 mod forest;
 mod graph;
 mod naming;
@@ -384,9 +385,10 @@ fn decision_layout(
     let tree = decision::Tree::of(decisions, gp, deps);
     let homes = tree.homes();
     let named = tree.name();
+    let none = fold::Atop::default();
     let (program, above) = match &named {
-        Some(named) => (&named.gp, named.above.as_slice()),
-        None => (gp, &[][..]),
+        Some(named) => (&named.gp, &named.above),
+        None => (gp, &none),
     };
     let Some((forest, root)) = decision::decision_forest(decisions, program, above, &homes) else {
         return Ok(None);

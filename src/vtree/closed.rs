@@ -4,6 +4,7 @@ use crate::disjoint::find;
 use crate::ground::deps::Deps;
 use crate::ground::{AtomId, GroundProgram};
 
+use super::fold::{Atop, UnitTree, stacked};
 use super::forest::Forest;
 
 /// The `closed` vtree: bushy over the program's dependencies.
@@ -56,11 +57,11 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
             component_of[a as usize] = i;
         }
     }
-    let mut forest = Forest::default();
-    // Union-find over blocks, and the forest node of each block's tree,
-    // current at the roots.
+    // Union-find over blocks. Each block is a unit of the fold ([`stacked`]):
+    // its children the blocks it reads, its own facts those it places.
     let mut parent: Vec<usize> = Vec::new();
-    let mut tree: Vec<usize> = Vec::new();
+    let mut tree = UnitTree::default();
+    let mut own: Vec<Vec<AtomId>> = Vec::new();
     let mut size: Vec<usize> = Vec::new();
     let mut block_of = vec![usize::MAX; num_atoms];
     let mut fresh = vec![false; num_atoms];
@@ -89,12 +90,10 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
                 }
             }
         }
-        let items: Vec<usize> = reads.iter().map(|&b| tree[b]).collect();
-        let block_size = new.len() + reads.iter().map(|&r| size[r]).sum::<usize>();
-        let acc = forest.balanced(&items);
-        let Some(acc) = forest.spine_up(new.iter().copied(), acc) else {
+        if reads.is_empty() && new.is_empty() {
             continue;
-        };
+        }
+        let block_size = new.len() + reads.iter().map(|&r| size[r]).sum::<usize>();
         if reads.len() > 1 {
             joins += 1;
             widest = widest.max(reads.len());
@@ -106,7 +105,6 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
         }
         let b = parent.len();
         parent.push(b);
-        tree.push(acc);
         size.push(block_size);
         for &r in &reads {
             parent[r] = b;
@@ -114,21 +112,25 @@ pub(super) fn closed_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, 
         for &a in new.iter().chain(comp.iter()) {
             block_of[a as usize] = b;
         }
+        // The first-used fact deepest on the spine.
+        new.reverse();
+        own.push(new);
+        tree.children.push(reads);
+        tree.order.push(b);
     }
-    let mut tops: Vec<usize> = (0..parent.len())
-        .filter(|&b| parent[b] == b)
-        .map(|b| tree[b])
-        .collect();
-    let unread = tops.len();
-    let stray: Vec<AtomId> = gp
-        .facts()
-        .map(|(a, _)| a)
-        .filter(|&a| block_of[a as usize] == usize::MAX)
-        .collect();
-    for a in stray {
-        tops.push(forest.leaf(a));
+    // The blocks nothing reads, then each fact no rule reads as a unit of
+    // its own.
+    tree.roots = (0..parent.len()).filter(|&b| parent[b] == b).collect();
+    let unread = tree.roots.len();
+    for (a, _) in gp.facts() {
+        if block_of[a as usize] == usize::MAX {
+            tree.roots.push(own.len());
+            tree.order.push(own.len());
+            tree.children.push(Vec::new());
+            own.push(vec![a]);
+        }
     }
-    let root = forest.balanced(&tops)?;
+    let (forest, root) = stacked(&tree, &own, &Atop::default())?;
     let mut note = format!(
         "closed: {} components, {joins} of them joining two or more blocks (at most {widest}), \
          {unread} blocks at the root",
