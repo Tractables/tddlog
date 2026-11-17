@@ -2113,9 +2113,8 @@ A program gets these trials (`candidates`), in order:
 | program | trials |
 |---|---|
 | `nothing_to_order`, an atom recursive | `dynamic` |
-| `nothing_to_order`, every rule reads facts alone | `td`, `dynamic`, `closed` |
-| `nothing_to_order`, otherwise | `dynamic`, `closed`, `td` |
-| a CNF over facts the conditioning copied | `td`, `closed` |
+| `nothing_to_order`, no atom recursive | `td`, `dynamic`, `closed` |
+| a CNF over facts the conditioning copied | `td`, `dynamic`, `closed` |
 | otherwise | `program` and `program:fanin` where built gate by gate with no table tied by clauses, `families:0`, `closed`, `td` where not, `program` where not |
 
 `families:0` is the one families trial: it may take the searched
@@ -2464,16 +2463,22 @@ search has a floor of work.
 has its own budget, so a trial that never wins first costs only its work.
 Where nothing is left to order but no atom is recursive, the one
 component is acyclic atoms that `ground::deps::unit_ranks` merged because
-they read the same facts; they still have a direction, which `dynamic`'s
-min-fill start does not see and `closed` follows (Vtrees, direction), so
-`closed` follows `dynamic`, and `td` follows `closed` (tuple-independent
-databases). Where every rule reads facts alone (`reads_facts_alone`:
-noisy-or networks, tuple-independent databases, a weighted CNF with its
-clauses observed true), `td` comes first: both `td` and `dynamic` start
-from a fold, but `td` compiles projected and the walk conjoins each
+they read the same facts; a CNF over its facts is clauses that read facts
+or copies of facts. Both take one list, `td`, `dynamic`, `closed`, and the
+policy does not ask whether every rule reads facts alone. `td` comes
+first. Where every rule reads facts alone, or copies of facts (noisy-or
+networks, tuple-independent databases, the TPC-H queries, a weighted CNF
+with its clauses observed true), both `td` and `dynamic` start from a fold
+(Vtrees), but `td` compiles projected and the walk conjoins each
 observation at the lowest node over its facts, where `dynamic` compiles
 every formula on the global scope and conjoins every observation at the
-root. The trials are chosen from the program as grounded and each compiles
+root; on the tuple-independent databases `td` alone finishes pdb40.
+Where the atoms have a direction, `closed` follows it and `dynamic`'s
+min-fill start does not see it (Vtrees, direction): `closed` finishes a
+noisy-or network with every finding observed and the growing-head
+program, and `dynamic` neither. In a CNF `closed` lays each copied fact
+out below the clauses, away from where they read it (Grounding, step 9),
+so it comes after `td`. The trials are chosen from the program as grounded and each compiles
 the program written without its linear recursion (Grounding, step 12), on
 which `dynamic` takes less work than `closed` on the random graphs and
 grids and stays the one trial of a recursive component.

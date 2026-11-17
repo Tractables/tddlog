@@ -1498,7 +1498,8 @@ fn td_comes_first_where_the_rules_read_copies_of_facts() {
     // Clauses observed true, two of which make x(1) and x(2) equal: the
     // conditioning makes one a copy of the other, which a clause of
     // three literals reads. The copy's formula is a literal of a fact,
-    // so every rule reads facts alone, and `td` is first and answers.
+    // so every rule reads facts alone and `td`'s vtree is its
+    // decomposition folded. `td` is first and answers.
     // By hand in the program's comment; ProbLog 2.3.0 agrees to the
     // eight digits it prints.
     let gp = regress(include_str!("../../tests/regress/condition_copies.pl"));
@@ -1584,8 +1585,8 @@ fn dynamic_answers_a_noisy_or_network() {
     // observed absent tie no causes together in the interaction graph,
     // and `dynamic` reads the facts in a pre-order of the elimination
     // tree, each disease's links beside it, and answers.
-    // [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py). Every rule reads facts alone, and `td` comes
-    // first there; `dynamic` alone is the run below.
+    // [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py). `td` is its first trial;
+    // `dynamic` alone is the run below.
     let gp = regress(include_str!("../../tests/regress/noisyor20_30.pl"));
     assert_eq!(candidates(&gp, false)[0], Kind::Td);
     let run = run_from(
