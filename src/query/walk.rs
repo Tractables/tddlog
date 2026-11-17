@@ -1350,12 +1350,10 @@ impl EvidenceWalk {
             true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
             false => (None, None),
         };
-        // The walk keeps its operands until a result exists. `and_onto` moves
-        // them onto the join's scope and gives them back when stopped, each on
-        // the scope it was left on; a pair refused after its moves goes back on
-        // the join's scope, which the retry then needs none for. The cap's pair
-        // floor is for the conjunction: the moves put no pair in flight, so it
-        // cannot stop them.
+        // The walk keeps its operands until a result exists. `and_onto` gives
+        // them back when stopped, each on the scope it was left on, which may
+        // be its own: the slot keeps that scope, and the retry's join scope is
+        // read off the slots again.
         let (fa, fb) = (
             *self.slots[a].take().unwrap(),
             *self.slots[b].take().unwrap(),
@@ -1415,8 +1413,6 @@ impl EvidenceWalk {
             Ok(formula) => formula,
             Err(refused)
                 if matches!(refused.0, CompileError::Tdd(OperationError::Stopped))
-                    && refused.1.1.same(&scope)
-                    && refused.2.1.same(&scope)
                     && cap.is_some_and(|outer| !reached(outer.unconditional, backend)) =>
             {
                 // Past the cap: the operands go into the batch's target, or
