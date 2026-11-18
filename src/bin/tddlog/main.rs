@@ -1,7 +1,7 @@
 //! `tddlog`: answer ProbLog queries by Tp-compilation into TDDs.
 
-// jemalloc does not build with MSVC; there the system allocator serves.
-#[cfg(not(target_env = "msvc"))]
+// jemalloc does not build on Windows (MSVC or MinGW); there the system allocator serves.
+#[cfg(not(windows))]
 mod alloc;
 mod budget;
 mod stats;
@@ -332,7 +332,7 @@ fn once<T>(slot: &mut Option<T>, value: T, option: &str) -> Result<(), String> {
 
 fn main() -> ExitCode {
     budget::limit_to_cgroups();
-    #[cfg(all(unix, not(target_env = "msvc")))]
+    #[cfg(unix)]
     alloc::end_refusals_as_errors(format!("{}\n", refused()));
     // The run takes a thread whose stack is mapped whole as it starts. The
     // main thread's stack grows a page at a time, and a limit on the

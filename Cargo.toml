@@ -36,9 +36,9 @@ num-traits = "0.2"
 # The binary's allocator (`src/bin/tddlog/alloc.rs`), its purge (`mallctl`,
 # from the jemalloc that tikv-jemallocator links), and the switch of its huge
 # pages. The library uses none of them. For WebAssembly (`bindings/wasm`)
-# only the library is built, and jemalloc does not build with MSVC, so the
+# only the library is built, and jemalloc does not build on Windows (MSVC or MinGW), so the
 # binary uses the system allocator there.
-[target.'cfg(not(any(target_family = "wasm", target_env = "msvc")))'.dependencies]
+[target.'cfg(not(any(target_family = "wasm", target_os = "windows")))'.dependencies]
 tikv-jemallocator = "0.6"
 tikv-jemalloc-sys = "0.6.1"
 libc = "0.2"
