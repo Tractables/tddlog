@@ -1352,8 +1352,7 @@ impl EvidenceWalk {
         };
         // The walk keeps its operands until a result exists. `and_onto` gives
         // them back when stopped, each on the scope it was left on, which may
-        // be its own: the slot keeps that scope, and the retry's join scope is
-        // read off the slots again.
+        // be its own; the retry's join scope is read off the slots again.
         let (fa, fb) = (
             *self.slots[a].take().unwrap(),
             *self.slots[b].take().unwrap(),
@@ -1416,9 +1415,14 @@ impl EvidenceWalk {
                     && cap.is_some_and(|outer| !reached(outer.unconditional, backend)) =>
             {
                 // Past the cap: the operands go into the batch's target, or
-                // wait on the join's scope.
+                // wait on the join's scope. One handed back on its own scope
+                // is moved onto the join's, as a conjunction that moved it
+                // hands it back: a later join of it then covers its
+                // partner's variables too (rl_caesar_2000's join with its
+                // batch's target built 13 more levels of 2M cells on the
+                // smaller scope, 7% of the run's instructions).
                 let (_, fa, fb) = *refused;
-                self.restore_operands(a, b, fa, fb, backend)?;
+                self.restore_operands(a, b, fa, fb, Some(&scope), backend)?;
                 backend.kept();
                 if let Some(id) = batch {
                     self.unbatch(id)?;
@@ -1432,7 +1436,7 @@ impl EvidenceWalk {
             }
             Err(refused) => {
                 let (e, fa, fb) = *refused;
-                self.restore_operands(a, b, fa, fb, backend)?;
+                self.restore_operands(a, b, fa, fb, None, backend)?;
                 return Err(e);
             }
         };
@@ -1521,22 +1525,41 @@ impl EvidenceWalk {
         Ok((scope, merged))
     }
 
+    /// Puts the operands of a join that did not happen back in slots `a` and
+    /// `b`, each moved onto `onto` where given; a refused move leaves that
+    /// operand on its own scope and is the error returned.
     fn restore_operands(
         &mut self,
         a: usize,
         b: usize,
         fa: Part,
         fb: Part,
+        onto: Option<&VtreeScope>,
         backend: &TddBackend,
     ) -> Result<(), CompileError> {
         let (fa, fb) = (fa.owned(backend)?, fb.owned(backend)?);
+        let mut refused = None;
+        let mut moved = |(f, own): Formula| match onto {
+            Some(scope) if refused.is_none() && !own.same(scope) => {
+                match backend.embed_moving(f, &own, scope, None) {
+                    Ok(f) => (f, scope.clone()),
+                    Err(r) => {
+                        let (e, f) = *r;
+                        refused = Some(e);
+                        (f, own)
+                    }
+                }
+            }
+            _ => (f, own),
+        };
+        let (fa, fb) = (moved(fa), moved(fb));
         if let Some(so) = &mut self.sum_out {
             so.enter(&fa.1);
             so.enter(&fb.1);
         }
         self.slots[a] = Some(Box::new(fa));
         self.slots[b] = Some(Box::new(fb));
-        Ok(())
+        refused.map_or(Ok(()), Err)
     }
 
     /// Reduces the pending result of the front join, of slots `a` and `b`,
