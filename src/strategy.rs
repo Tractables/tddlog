@@ -74,13 +74,42 @@ impl Kind {
     /// views in place the circuits it wins took 2 901 s against 2 184
     /// (bb_pi_w18 4.4 times as long).
     pub(crate) fn ground_options(self, options: GroundOptions) -> GroundOptions {
-        match self {
-            Kind::Decision | Kind::Program { fan_in: false } => GroundOptions {
+        if self.views_in_place() {
+            GroundOptions {
                 views: false,
                 ..options
-            },
-            _ => options,
+            }
+        } else {
+            options
         }
+    }
+
+    /// Whether this layout reads the program with its views in place
+    /// ([`Kind::ground_options`]).
+    pub(crate) fn views_in_place(self) -> bool {
+        matches!(self, Kind::Decision | Kind::Program { fan_in: false })
+    }
+
+    /// Whether this layout compiles the program conditioned on its guards
+    /// where `auto` keeps one (`auto::ready`): the layouts whose order the
+    /// rules' bodies do not set. `program`'s order is the one the program
+    /// states its facts in, the same in both programs; `closed` and `td`
+    /// search theirs on the program they get; `decision`'s tree is the
+    /// conditioning's. The two that read the bodies literal by literal
+    /// compile the program as ground: `program:fanin` walks the atoms the
+    /// rules read, and the conditioning turns a test of a number's bits
+    /// into the cube of the flips on its path, so the walk no longer meets
+    /// each number's flips together; `families` makes an indicator for
+    /// every atom another component reads, and pays for every copy the
+    /// conditioning made (bb_normal_mixture_mu2_w7: 1.07 G units over its
+    /// turns against 133 M). On bb_weekend_p256 `program` on the
+    /// conditioned program takes a 35th of the work it takes on the
+    /// program as ground, and on bb_arith_disease_small `closed` half.
+    pub(crate) fn conditioned(self) -> bool {
+        matches!(
+            self,
+            Kind::Decision | Kind::Program { fan_in: false } | Kind::Closed | Kind::Td
+        )
     }
 
     /// Whether this layout reads its program through indicators: every

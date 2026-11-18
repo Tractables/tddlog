@@ -161,9 +161,9 @@ pub struct Solution {
 /// `options`.
 ///
 /// Under `auto`, a large circuit is ground again and conditioned on its
-/// guards (`auto::ready`), for `decision`, the first trial, where it is
-/// one (`auto::decides`), and for `program`, `closed` and `td` where it is
-/// not (`auto::Programs`). The queries are answered in groups,
+/// guards (`auto::ready`), for the layouts that compile it
+/// (`Kind::conditioned`), among them `decision`, the first trial where it
+/// is one (`auto::decides`). The queries are answered in groups,
 /// each on the part of the program it and the evidence depend on, where
 /// the parts' layouts are estimated much smaller than the program's
 /// (`split_check`); else all of them on the program, which under `auto`

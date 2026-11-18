@@ -121,7 +121,7 @@ pub(crate) fn lays_families_first(gp: &GroundProgram) -> bool {
 /// `auto` on `original`, as grounded, its trials the [`candidates`], each
 /// compiling its layout's rewrite of its program ([`Programs::of`]:
 /// `original`, or `ready`'s `written` or `conditioned`, each eliminated
-/// once for all of them, [`Kind::eliminated`]); the `families:0` trial
+/// once, [`Kind::eliminated`]); the `families:0` trial
 /// takes `ready`'s `laid` as its own, and where `ready`'s `conditioned`
 /// [`decides`], `decision` is the first trial. Where the order turns on
 /// whether `families:0`'s rewrite ties tables, it is the order where it
@@ -165,8 +165,8 @@ pub(crate) fn run(
 
 /// What [`run`] can be handed ready beside the program as ground, each
 /// where it was built: the program ground with its views in place, and
-/// that program conditioned on its guards ([`ready`]); and `families:0`'s
-/// program and layout, built from the program as ground by [`families`]
+/// that program conditioned on its guards ([`ready`],
+/// [`Kind::conditioned`]); and `families:0`'s program and layout, built from the program as ground by [`families`]
 /// (`solve::split_check`). Each is the whole program's: a part of a split
 /// is handed none.
 #[derive(Default)]
@@ -181,7 +181,7 @@ impl Ready {
     pub(crate) fn decides(&self, ground: &GroundProgram) -> bool {
         self.conditioned
             .as_ref()
-            .is_some_and(|c| decides(c, ground))
+            .is_some_and(|c| decides(c.stats.guarded, ground))
     }
 }
 
@@ -191,72 +191,68 @@ impl Ready {
 /// guards made where it ran. `written` is `kept` finished with its views
 /// in place under `options`, the options `ground` was ground under
 /// ([`Kind::ground_options`]), where the grounding inlined any atom, a
-/// view's or a chain's, or where [`may_decide`]; `conditioned` is
-/// `written` rewritten for `decision` ([`Kind::rewrite`]) where `ground`
-/// may decide, kept where the conditioning recorded decisions and made
-/// enough atoms for a trial to take it ([`takes_conditioned`]). `closed`
-/// takes less work on it: bb_altermu2_w11 2.29 G units against 14.4 G.
-/// The full weekend circuit of the bit-blasting paper (98 303 flips) runs
-/// out of memory under every other layout of the program as ground and
-/// compiles under `decision` in 533 M work units.
+/// view's or a chain's, or where `ground` [`may_decide`]; there,
+/// `conditioned` is `written` rewritten for `decision`
+/// ([`Kind::rewrite`]), kept where the conditioning recorded decisions and
+/// made enough atoms for a trial to take it ([`takes_conditioned`]). The
+/// full weekend circuit of the bit-blasting paper (98 303 flips) runs out of memory under every other
+/// layout of the program as ground and compiles under `decision` in 533 M
+/// work units.
 pub(crate) fn ready(
     ground: &GroundProgram,
     kept: Option<ground::Simplified>,
     options: GroundOptions,
 ) -> (Ready, Option<usize>) {
-    let Some(kept) = kept else {
+    let decide = may_decide(ground);
+    let Some(kept) = kept.filter(|_| decide || ground.stats.inlined + ground.stats.chained > 0)
+    else {
         return (Ready::default(), None);
     };
-    let decide = may_decide(ground);
-    let written = (ground.stats.inlined + ground.stats.chained > 0 || decide)
-        .then(|| ground::finish_kept(kept, &Kind::Decision.ground_options(options)));
-    let Some(program) = written.as_ref().filter(|_| decide) else {
-        return (
-            Ready {
-                written,
-                ..Ready::default()
-            },
-            None,
-        );
-    };
-    // `Kind::Decision.rewrite`, which `written`, read through no
+    let written = ground::finish_kept(kept, &Kind::Decision.ground_options(options));
+    if !decide {
+        let ready = Ready {
+            written: Some(written),
+            ..Ready::default()
+        };
+        return (ready, None);
+    }
+    // `Kind::Decision.rewrite`, which the program, read through no
     // indicator, takes in full, finished again only where a trial takes
     // it.
-    let decided = ground::guarded_where(Kind::eliminated(program.clone()), |made| {
+    let decided = ground::guarded_where(Kind::eliminated(written.clone()), |made| {
         takes_conditioned(made, ground)
     });
     let guarded = decided.as_ref().unwrap_or_else(|gp| gp).stats.guarded;
     let conditioned = decided.ok().filter(|gp| gp.stats.decisions.is_some());
     let ready = Ready {
-        written,
+        written: Some(written),
         conditioned,
         laid: None,
     };
     (ready, Some(guarded))
 }
 
-/// Whether `decision` is a trial on `conditioned`, `ground` conditioned on
-/// its guards: where the conditioning made at least as many atoms as
-/// `ground` has derived ones ([`derived_unmerged`]). The full weekend
-/// circuit of the bit-blasting paper makes 578 k for 160 k derived, and
-/// compiles only under `decision`; the arithmetic circuits make fewer
-/// (zeroone_w1: 960 for 7 238), and their `decision` compile does worse
-/// than the other trials' or runs out of memory.
-pub(crate) fn decides(conditioned: &GroundProgram, ground: &GroundProgram) -> bool {
-    conditioned.stats.guarded >= derived_unmerged(ground)
+/// Whether `decision` is a trial on `ground` conditioned on its guards,
+/// the conditioning having made `made` atoms: where it made at least as
+/// many as `ground` has derived ones ([`derived_unmerged`]). The full
+/// weekend circuit of the bit-blasting paper makes 578 k for 160 k
+/// derived, and compiles only under `decision`; the arithmetic circuits
+/// make fewer (zeroone_w1: 960 for 7 238), and their `decision` compile
+/// does worse than the other trials' or runs out of memory.
+pub(crate) fn decides(made: usize, ground: &GroundProgram) -> bool {
+    made >= derived_unmerged(ground)
 }
 
-/// Whether a trial takes `ground` conditioned on its guards, the
-/// conditioning having made `made` atoms ([`ready`]): where
-/// it made at least a quarter as many as `ground` has derived ones
-/// ([`derived_unmerged`]). `decision` takes it where it made as many
-/// ([`decides`]), and `program`, `closed` and `td` otherwise
-/// ([`Programs::of`]): `closed` wins bb_normal_mixture_theta_w9 (37 186
-/// made for 49 158) on it. The zeroone circuits make an eighth
-/// (bb_zeroone_w2_w25: 2 794 for 21 896), and the conditioned program,
-/// which the merge of equal gates does not follow (`ground::guarded`),
-/// holds 14 499 derived atoms where the program as ground holds 9 972;
-/// `auto` takes 27% longer with it.
+/// Whether `ready` keeps `ground` conditioned on its guards, the
+/// conditioning having made `made` atoms: where it made at least a quarter
+/// as many as `ground` has derived ones ([`derived_unmerged`]). The
+/// layouts that compile it ([`Kind::conditioned`]) take less work on it
+/// there: `closed` wins bb_normal_mixture_theta_w9 (37 186 made for
+/// 49 158) on it. The zeroone circuits make an eighth (bb_zeroone_w2_w25:
+/// 2 794 for 21 896), and the conditioned program, which the merge of
+/// equal gates does not follow (`ground::guarded`), holds 14 499 derived
+/// atoms where the program as ground holds 9 972; `auto` takes 27% longer
+/// with it.
 pub(crate) fn takes_conditioned(made: usize, ground: &GroundProgram) -> bool {
     made * 4 >= derived_unmerged(ground)
 }
@@ -273,12 +269,11 @@ pub(crate) fn derived_unmerged(ground: &GroundProgram) -> usize {
     ground.num_derived() + ground.stats.reduced
 }
 
-/// The programs `auto`'s trials rewrite: the program as ground, written
-/// without its linear recursion; the program ground with its views in
-/// place, where the grounding inlined any or `decision` may be a trial
-/// ([`ready`]); the program conditioned on its guards, where
-/// the conditioning records decisions; and whether `decision` is a trial
-/// on it ([`decides`]).
+/// The programs `auto`'s trials rewrite, each written without its linear
+/// recursion: the program as ground; the program ground with its views in
+/// place, where the grounding inlined any or `decision` may be a trial;
+/// and that program conditioned on its guards, where a trial takes it
+/// ([`ready`]); and whether `decision` is a trial ([`decides`]).
 struct Programs {
     ground: Arc<GroundProgram>,
     written: Option<Arc<GroundProgram>>,
@@ -287,45 +282,26 @@ struct Programs {
 }
 
 impl Programs {
-    /// The program trial `kind` rewrites. The conditioned program, where
-    /// there is one ([`takes_conditioned`]), goes to `decision` where it is
-    /// a trial; where it is not, it goes to `program`, `closed` and `td`,
-    /// whose layouts the rules' text does not set: `program`'s order is
-    /// the one the program states its facts in, the same in both
-    /// programs, and `closed` and `td` read theirs off
-    /// the program they get (`dynamic`, whose layout the text does not set
-    /// either, is a trial only where nothing is left to order, and never
-    /// beside a conditioned program). `program` and `program:fanin` rewrite
-    /// the program with its views in place otherwise
-    /// ([`Kind::ground_options`]), and the others the program as ground.
-    /// `program:fanin`
-    /// reads its order off the rules, a walk through the atoms they read,
-    /// and the conditioning rewrites what they read: a test of a number's
-    /// bits becomes the cube of the flips on its path, so the walk no
-    /// longer meets each number's flips together. In CUDD's model the
-    /// conditioned addFun_max_w17 under the order the walk reads off it
-    /// takes 29 times the recursive calls that either program takes under
-    /// the order it reads off the program as ground, while `program` takes
-    /// about the same work on both (8.85 G units against 8.64 G).
-    /// `families:0` takes more work on the conditioned program, its
-    /// indicators on every atom the conditioning made
-    /// (bb_normal_mixture_mu2_w7: 1.07 G units over its turns against
-    /// 133 M). Beside `decision` the order layouts get
-    /// further on the conditioned program and hold their diagrams between
-    /// turns: at 25 GB a process they starve bb_coinBias_w16's `decision`
-    /// of memory in its query phase, and the run runs out of time.
+    /// The program trial `kind` rewrites: the conditioned program, where
+    /// there is one, for the layouts that compile it
+    /// ([`Kind::conditioned`]); else the one its layout compiles alone,
+    /// grounded under [`Kind::ground_options`]. In the race `program` reads
+    /// the program with its views in place as it does alone; on the
+    /// program as ground its order looks cheap on bb_markov_n500 and
+    /// runs 1.07 G units before `families:0` finishes, where with the
+    /// views in place it projects past its target at its first attempt.
+    /// In CUDD's model the conditioned addFun_max_w17 under the order
+    /// `program:fanin`'s walk reads off it takes 29 times the recursive
+    /// calls, where `program` takes about the same work on both programs
+    /// (8.85 G units against 8.64 G). Beside `decision` the others leave
+    /// it to `decision`: the order layouts get further on it and hold
+    /// their diagrams between turns, and at 25 GB a process they starve
+    /// bb_coinBias_w16's `decision` of memory in its query phase.
     fn of(&self, kind: Kind) -> &Arc<GroundProgram> {
-        let conditioned = if self.decision {
-            kind == Kind::Decision
-        } else {
-            matches!(
-                kind,
-                Kind::Program { fan_in: false } | Kind::Closed | Kind::Td
-            )
-        };
+        let conditioned = kind.conditioned() && (kind == Kind::Decision || !self.decision);
         match (&self.conditioned, &self.written) {
             (Some(program), _) if conditioned => program,
-            (_, Some(program)) if kind == (Kind::Program { fan_in: false }) => program,
+            (_, Some(program)) if kind.views_in_place() => program,
             _ => &self.ground,
         }
     }

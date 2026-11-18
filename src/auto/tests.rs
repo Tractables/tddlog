@@ -305,66 +305,70 @@ fn families_0_s_rewrite_settles_the_order_at_the_first_attempt_where_it_matters(
     );
 }
 
-/// Where `decision` is no trial, the conditioned program goes to
-/// `program`, `closed` and `td` and the program as ground to
-/// `program:fanin` and the families trials, so `program` and
-/// `program:fanin` share no rewrite; where it is a trial, it goes to
-/// `decision` alone ([`Programs::of`], [`same_rewrite`]).
+/// The conditioned program goes to the layouts whose order the rules'
+/// bodies do not set ([`Kind::conditioned`]); otherwise each trial rewrites
+/// the program its layout compiles alone: the program with its views in
+/// place for `program`, and the program as ground for the others
+/// ([`Programs::of`], [`same_rewrite`]).
 #[test]
-fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
-    let as_ground = regress("0.5::f0. 0.5::f1. q :- f0, f1. query(q).");
-    let conditioned = regress("0.5::f0. 0.5::f1. q :- f0. q :- f1. query(q).");
+fn the_conditioned_program_goes_to_the_layouts_the_bodies_do_not_order() {
+    let as_ground = Arc::new(regress("0.5::f0. 0.5::f1. q :- f0, f1. query(q)."));
+    let written = Arc::new(regress("0.5::f0. 0.5::f1. v :- f0, f1. q :- v. query(q)."));
+    let conditioned = Arc::new(regress("0.5::f0. 0.5::f1. q :- f0. q :- f1. query(q)."));
     let program = Kind::Program { fan_in: false };
     let fan_in = Kind::Program { fan_in: true };
-    let laid = Kind::Families { search: false };
-    for decision in [false, true] {
+    let kinds = [
+        Kind::Decision,
+        program,
+        Kind::Closed,
+        Kind::Td,
+        fan_in,
+        Kind::Families { search: false },
+        Kind::Families { search: true },
+    ];
+    for (kept, decision) in [(true, false), (false, false), (true, true)] {
         let programs = Programs {
-            ground: Arc::new(as_ground.clone()),
-            written: None,
-            conditioned: Some(Arc::new(conditioned.clone())),
+            ground: as_ground.clone(),
+            written: Some(written.clone()),
+            conditioned: kept.then(|| conditioned.clone()),
             decision,
         };
-        let is_conditioned = |kind: Kind| {
-            std::ptr::eq(
-                programs.of(kind),
-                programs.conditioned.as_ref().expect("conditioned"),
-            )
+        // Beside a `decision` trial the conditioned program is
+        // `decision`'s alone.
+        let takes =
+            |kind: Kind| kept && kind.conditioned() && (kind == Kind::Decision || !decision);
+        let reads = |kind: Kind| {
+            let of = programs.of(kind);
+            if Arc::ptr_eq(of, &conditioned) {
+                "conditioned"
+            } else if Arc::ptr_eq(of, &written) {
+                "written"
+            } else {
+                "ground"
+            }
         };
-        for kind in [program, Kind::Closed, Kind::Td] {
-            assert_eq!(
-                is_conditioned(kind),
-                !decision,
-                "{kind} decision {decision}"
-            );
+        for kind in kinds {
+            let expected = if takes(kind) {
+                "conditioned"
+            } else if kind.views_in_place() {
+                "written"
+            } else {
+                "ground"
+            };
+            assert_eq!(reads(kind), expected, "{kind} kept {kept} {decision}");
         }
-        for kind in [fan_in, laid, Kind::Families { search: true }] {
-            assert!(!is_conditioned(kind), "{kind} decision {decision}");
-        }
-        assert_eq!(is_conditioned(Kind::Decision), decision);
+        let alone = kept && !decision;
+        assert_eq!(
+            reads(program),
+            if alone { "conditioned" } else { "written" }
+        );
+        assert_eq!(
+            reads(Kind::Closed),
+            if alone { "conditioned" } else { "ground" }
+        );
+        assert_eq!(reads(fan_in), "ground");
         let (a, b) = (Trial::new(program), Trial::new(fan_in));
-        assert_eq!(same_rewrite(&a, &b, &programs), decision);
-    }
-    // The program with its views in place goes to `program` and
-    // `program:fanin`, where the conditioned program does not.
-    let written = regress("0.5::f0. 0.5::f1. v :- f0, f1. q :- v. query(q).");
-    for decision in [false, true] {
-        let programs = Programs {
-            ground: Arc::new(as_ground.clone()),
-            written: Some(Arc::new(written.clone())),
-            conditioned: Some(Arc::new(conditioned.clone())),
-            decision,
-        };
-        let is_written = |kind: Kind| {
-            std::ptr::eq(
-                programs.of(kind),
-                programs.written.as_ref().expect("written"),
-            )
-        };
-        assert_eq!(is_written(program), decision, "decision {decision}");
-        assert!(!is_written(fan_in), "decision {decision}");
-        for kind in [laid, Kind::Closed, Kind::Td, Kind::Decision] {
-            assert!(!is_written(kind), "{kind} decision {decision}");
-        }
+        assert!(!same_rewrite(&a, &b, &programs));
     }
 }
 

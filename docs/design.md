@@ -167,7 +167,7 @@ the formulation and the projection besides its vtree. The modules, in
 | `solve/` | `mod.rs`: `Options`, `solve` (the one answer path: ground, what `auto` is handed ready, the windows or the split, each part's run), `solve_ground` (one program's run); `split.rs`: queries in groups; `windows.rs`: a long narrow program cut into windows, each window's program and the message it reads; `subquery.rs`: `subquery/2,3` answered before grounding |
 | `strategy.rs` | `Strategy` (`auto` or one layout), what a `Kind` decides besides its vtree (grounding, rewrite, formulation, projection), `Prepared`: a layout's program (with `td`'s separator copies, or the names of `program` and `decision`) and vtree |
 | `evaluation.rs` | `Evaluation`: a program's compile and query phase on one vtree, resumed across `auto`'s attempts |
-| `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, conditioned for `decision`, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the families trial weighs its searched layout; `trial.rs`, a trial and what it holds |
+| `auto/` | `auto`'s trials: `mod.rs`, the run of the trials in turns, and what it is handed ready (`Ready`: the program with its views in place, `program`'s, that program conditioned, and `families:0`'s layout); `policy.rs`, which trials a program gets, in order, their weights, and when the families trial weighs its searched layout; `trial.rs`, a trial and what it holds |
 | `syntax/` | lexer, parser, AST; `arguments.rs`, `$N` places in a program's text; `lpad.rs`, an LPAD written for cplint read as the program it holds; `dice/`, a Dice program read as the program its symbolic evaluation writes (`tokens.rs`, `syntax.rs`, `values.rs`, `translate.rs`); `circulette.rs`, a Circulette netlist read as its gates' rules with a fault on each logic gate |
 | `network/` | network files read as programs: `mod.rs`, `read` and the program written from a network's tables; `bif.rs`, `hugin.rs`, `xdsl.rs` (with Ace's `.inst` evidence) and `uai.rs` (with `.evid` evidence and Markov networks), the formats; `xml.rs` and `scan.rs`, what they are read with; `rows.rs`, the rows' rescaling and the probabilities' text |
 | `ground/` | `mod.rs`: the pipeline, `GroundOptions`, `ground`, `finish`; `program.rs`: `GroundProgram`, `GroundStats`, the shared helpers (`Lists`, `named_atoms`, `mix`); `interned.rs`: `Interned`, distinct lists in one buffer; `encoding.rs`: `Encoding`, what a rewrite through indicators records of its copies, links, codes and sibling groups; the passes in order: `terms.rs` (with `library.rs`, ProbLog's library clauses and `call/N`), `table.rs`, `noisy_or.rs`, `normalize.rs`, `relevant.rs`, `unread.rs`, `chain.rs`, `linear.rs`, `magic.rs`, `modes.rs` (ProbLog's call modes), `engine/` (with `lists.rs`, probabilistic findalls, and `topdown.rs`, top-down grounding), `schedule.rs` (body order, shared by the engine and the rewrites), `simplify.rs`, `values.rs` (variables held as bits written over their values), `negation.rs` (negated atoms unfolded), `inline.rs`, `aig.rs` (the and-inverter graph of the gates, structural hashing and SAT sweeping), `structure.rs` (the `Structure` kept with the program) over `exclusive.rs` (the exclusive sets) and `tables.rs` (`Tables`), `contexts.rs`, `rows.rs` (row classes and switch sharing), `cover.rs`, `condition.rs` (with `propagation.rs`, the unit propagation it and `detach.rs` drive, and `renormalize.rs`), `preprocess/` (`backbone.rs` and `sat.rs`, a CDCL solver; `implied.rs`, `defined.rs` with `support.rs`), `detach.rs`; the layouts' rewrites: `eliminate.rs` (linear recursion), `guards.rs` and `steps.rs` (`decision`'s), `fact_copies.rs` (`td`'s separator copies); `deps.rs`: derived SCCs, cyclicity, internal negation, merged components; `shape.rs`: the program's shape, which `auto` picks its trials by |
@@ -2129,12 +2129,14 @@ rewrite then copies many atoms per fact for a trial that `closed`
 beats). A trial with indicators ties tables by clauses.
 
 **The `program` trials.** A right-linear vtree over the facts in the order
-the program states them, as an OBDD reads them (Vtrees). `program` reads
-the program ground with its views in place (`Kind::ground_options`;
-`auto` keeps the grounding before its views are inlined and finishes it
-again for them, `Programs::of`): a view inlined into its readers moves
-its facts to them. `program:fanin`, whose order comes from the rules, reads
-the inlined program, which serves it better. `program` comes first where
+the program states them, as an OBDD reads them (Vtrees). `program`
+reads the program ground with its views in place
+(`Kind::ground_options`), alone and under `auto` where `auto` keeps no
+conditioned program (`Programs::of`); on the
+program as ground its order looks cheap on bb_markov_n500 and runs
+1.07 G units before `families:0` finishes, where with the views in place
+it projects past its target at its first attempt. `program:fanin` reads
+the program as ground. `program` comes first where
 the program is built gate by gate (`built_of_gates`), as a circuit is,
 and is no trial elsewhere: first on every program, it costs the networks and
 grids, whose rules each read a fact, several times their time. The
@@ -2177,11 +2179,10 @@ rule reads a fact within the range of one of its derived literals) and
 on which it gets under way (the pass, run on the program as ground with
 an eighth of its budgets, `TEST_BUDGET`, makes a quarter as many atoms as
 the program has derived ones, `TEST_MADE`), is rewritten for `decision`
-from the program ground with its views in place, which `program` takes
-too (`auto::ready`). Where that conditioning makes at
+from the program ground with its views in place (`auto::ready`). Where
+that conditioning makes at
 least as many atoms as the program has derived ones, the rewrite is a
-trial of its own, before the others, and shares its program with none of
-them; it takes its turns with the weight of a families trial, and the
+trial of its own, before the others; it takes its turns with the weight of a families trial, and the
 program is answered whole, without the split check, which would build the
 `families:0` trial's layout first. A circuit that compiles under
 `decision` alone makes many more atoms than it has derived ones; the
@@ -2192,28 +2193,32 @@ also charged for the cube literals it copies, at most `COPIED` (1 024)
 per literal of the program. `--stats` prints a `decision:` line wherever
 the program was ground again.
 
-Where the conditioning records decisions, the conditioned program goes
-to `decision` where it is a trial. Where it is not, it goes to the
-trials whose layout the rules' text does not set only where the pass
-made at least a quarter as many atoms as the program had derived ones
-before the merge of equal gates (`auto::takes_conditioned`): `program`,
-whose order is the one the program states its facts in, and `closed`
-and `td`, which search theirs on the program they get. On the zeroone
-circuits the pass makes an eighth as many atoms as derived ones, and the
-conditioned program holds 45% more derived atoms than the program as
-ground (bb_zeroone_w2_w25: 14 499 against 9 972); taken there, `auto`
-took 25 to 28% longer on three of them. The other trials compile the
-program as ground (`auto::Programs`; a `--vtree` layout compiles the program as
-ground). `closed` and `program` take less work on the conditioned
-program at about the same sizes. `program:fanin` reads its order off the
-rules, a walk through the atoms they read, and the conditioning rewrites
-what they read: a test of a number's bits becomes the cube of the flips
-on its path, so the walk no longer meets each number's flips together.
-`families:0` takes more work on the conditioned program, its indicators
-on every atom the conditioning made. Beside `decision` the order layouts
-compile the program as ground: on the conditioned program they get
-further and hold their diagrams between turns, which takes the memory
-`decision`'s query phase needs.
+The conditioned program is kept where the pass made at least a quarter
+as many atoms as the program had derived ones before the merge of equal
+gates (`auto::takes_conditioned`). Which program a trial compiles is a
+property of its layout (`Kind::conditioned`, `auto::Programs`): the
+layouts whose order the rules' bodies do not set compile the conditioned
+program where there is one: `decision`, whose tree the conditioning
+gives; `program`, whose order is the one the program states its facts
+in, the same in both programs; and `closed` and `td`, which search
+theirs on the program they get. On bb_weekend_p256 `program` takes a
+35th of its work on the program as ground, and on
+bb_arith_disease_small `closed` half. On the zeroone circuits the pass
+makes an eighth as many atoms as derived ones, and the conditioned
+program holds 45% more derived atoms than the program as ground
+(bb_zeroone_w2_w25: 14 499 against 9 972); taken there, `auto` took 25
+to 28% longer on three of them. The two layouts that read the bodies
+literal by literal compile the program as ground. `program:fanin` reads
+its order off the rules, a walk through the atoms they read, and the
+conditioning rewrites what they read: a test of a number's bits becomes
+the cube of the flips on its path, so the walk no longer meets each
+number's flips together. `families:0` takes more work on the conditioned
+program, its indicators on every atom the conditioning made. Beside a
+`decision` trial the others leave the conditioned program to it: on it
+the order layouts get further and hold their diagrams between turns,
+which takes the memory `decision`'s query phase needs. Otherwise
+`program` compiles the program with its views in place and the others
+the program as ground, as each layout does alone.
 
 The conditioning on guards (`src/ground/guards.rs`, `ground::guarded`):
 a rule `h :- f, x` reads `x` only where the fact `f` holds, so it may read
