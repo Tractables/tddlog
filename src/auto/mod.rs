@@ -657,7 +657,7 @@ fn run_within(
             Err(error) => error,
         };
         t.record_progress();
-        let Some(stop) = Stop::of(&error) else {
+        let Some(_) = Stop::of(&error) else {
             if let tp::CompileError::Tdd(
                 e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
             ) = error
@@ -681,24 +681,19 @@ fn run_within(
                 notes: ledger.notes,
             });
         };
-        match stop {
-            // Its target spent, the trial's next doubles until it leaves
-            // the trial more than twice the work the stop lost. A turn
-            // that ended at a step it kept lost nothing; where the guard
-            // stopped an operation, the step it cut short starts over, and
-            // each time it is cut short its next try has at least twice the
-            // work (rus_20_40,
-            // whose last join of 3.3 G units was otherwise stopped at
-            // 2.1 G and given 2.1 G again).
-            Stop::Work => {
-                while t.target.saturating_sub(t.spent) <= t.lost.saturating_mul(2) {
-                    t.target = t.target.saturating_mul(2);
-                }
-            }
-            // Its compile projected past its horizon, the turn ends there as
-            // one that spent its target.
-            Stop::Projected => t.target = t.target.saturating_mul(2),
-        }
+        // Its target spent, or its compile projected past its horizon, the
+        // trial's next turn may spend as much again as it will have spent
+        // once it has done again what its stop lost, and no less than its
+        // target: the target doubles from the larger of the two. A step
+        // the guard cut short so has more than four times the work it lost
+        // on its next try (rus_20_40, whose last join of 3.3 G units was
+        // otherwise stopped at 2.1 G and given 2.1 G again; UAI's 1aie,
+        // whose `families:0` was otherwise given 1 unit after its first
+        // cut, then the same 8.6 G twice).
+        t.target = t
+            .target
+            .max(t.spent.saturating_add(t.lost))
+            .saturating_mul(2);
         if t.weight > 1 && overspent_estimate(t) {
             ledger.notes.push(format!(
                 "turn: {} indicators={} spent past its layout's estimate",

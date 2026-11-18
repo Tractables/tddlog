@@ -2266,12 +2266,15 @@ operation still in flight at twice the turn's work is stopped by the
 engine, the guard against one operation that outweighs a turn, and loses
 the work since the phase last kept a step (`TddBackend::kept`): the next
 attempt does that step again from its start. Once the trial has spent its
-target, the target doubles until it leaves the trial more than twice the
-work the stop lost: once after a turn that ended at a step, and where one
-step outweighs a turn, so that each try of it has at least twice the work
-of the last and the work it wastes is at most what it finally takes
-(rus_20_40, whose last join of 3.3 G units was otherwise stopped at
-2.1 G and given 2.1 G again). The target so raised is the level the
+target, its next turn may spend as much again as it will have spent once
+it has done again what the stop lost: the target doubles from the larger
+of the target and that. After a turn that ended at a step, which lost
+nothing, that is one doubling; where one step outweighs a turn, its next
+try has more than four times the work the stop lost, so that each try of
+it has more than twice the work of the last and the work it wastes is at
+most what it finally takes (rus_20_40, whose last join of 3.3 G units
+was otherwise stopped at 2.1 G and given 2.1 G again). The target so
+raised is the level the
 next attempt brings the trial to, which its place in the turns counts;
 where the target only passed what the trial had spent and the room went
 into the attempt besides, trials whose later components outgrow the
