@@ -20,11 +20,12 @@
 //! into a weighted value before its pairs are kept). The weights are
 //! scaled floats (`Arithmetic::ScaledFloat`): a subtree whose parent the
 //! join also sums out keeps its values in columns of 8 bytes a value that
-//! the parent reads and drops, and only the topmost finished subtrees reach
-//! the result's weight store. The result carries the facts' weights; a
-//! later join with it places it with the weights (`Engine::embed_over`)
-//! and conjoins weighted, and the walk's last result is counted by its
-//! weighted value.
+//! the parent reads and drops, and only the topmost finished subtrees keep
+//! their values. The walk's scopes are vtrees weighted by the facts'
+//! weights (`ScopeTable::weighted`), so every diagram on them is weighted
+//! and carries no weights of its own; a later join places a result with a
+//! summed-out level by its values (`Engine::embed_over`) and conjoins
+//! weighted, and the walk's last result is counted by its weighted value.
 //! The UAI 2022 PR protein networks 1bxv and 1jer held 2.1 and 4.3 GB at
 //! their peak instead of 10.1 and 15.1 GB in signed logs and maximal
 //! subtrees.
@@ -32,7 +33,7 @@
 use std::borrow::Cow;
 
 use num_rational::BigRational;
-use tididi::diagram::{Arithmetic, LiteralWeights, RationalWeights, WeightStore};
+use tididi::diagram::LiteralWeights;
 use tididi::restructure::EmbedError;
 use tididi::vtree::{VarId, VtreeIdx};
 use tididi::{OperationError, Tdd};
@@ -45,8 +46,8 @@ use crate::tp::{CompileError, TddBackend, VtreeScope};
 /// A join refused: the error, and both operands.
 type Refused = Box<(CompileError, Part, Part)>;
 
-/// The finished subtrees of the walk's joins, and the facts' weights to
-/// sum them out under (see the module documentation).
+/// The finished subtrees of the walk's joins (see the module
+/// documentation).
 pub(super) struct SumOut {
     /// Per slot, the program variables of the observations conjoined into
     /// it, ascending, and how many more of them collapses dropped
@@ -67,8 +68,6 @@ pub(super) struct SumOut {
     shallowest: Vec<Vec<u32>>,
     /// A Fenwick tree over positions: the slots holding each variable.
     held: Vec<i64>,
-    /// The facts' weights, by program variable less one.
-    weights: Vec<LiteralWeights<BigRational>>,
     /// The join begun: its result's variables, the variables its
     /// operands share, whose holdings it dropped, and the variables
     /// collapses dropped from its operands and its result.
@@ -96,9 +95,8 @@ pub(super) struct SumOut {
 }
 
 impl SumOut {
-    /// On the global vtree `tree`, with the facts' weights `w`.
-    pub(super) fn new(tree: &tididi::Vtree, w: &Probabilities) -> Self {
-        let rational = |x: f64| BigRational::from_float(x).expect("a weight is finite");
+    /// On the global vtree `tree`.
+    pub(super) fn new(tree: &tididi::Vtree) -> Self {
         let n = tree.num_nodes();
         let mut range = vec![(0u32, 0u32); n];
         let mut depth = vec![0u32; n];
@@ -150,12 +148,6 @@ impl SumOut {
             shallowest.push(level);
             span *= 2;
         }
-        let weights = (1..w.pos.len())
-            .map(|v| LiteralWeights {
-                negative: rational(w.neg[v]),
-                positive: rational(w.pos[v]),
-            })
-            .collect();
         SumOut {
             support: Vec::new(),
             dropped_from: Vec::new(),
@@ -166,7 +158,6 @@ impl SumOut {
             leaf_at,
             shallowest,
             held: vec![0; leaves + 1],
-            weights,
             merged: Vec::new(),
             shared: Vec::new(),
             merged_dropped: 0,
@@ -406,11 +397,10 @@ impl SumOut {
             renamed[i + 1] = VarId(kept.len() as u32);
         }
         let reduced = scopes.over(&kept)?;
-        let store = self.store_for(&reduced);
         let local_of = |v: VarId| (!gone[v.0 as usize]).then(|| renamed[v.0 as usize]);
         let g = match backend
             .engine
-            .project_over(&f, reduced.vtree(), local_of, Some(store))
+            .project_over(&f, reduced.vtree(), local_of, None)
         {
             Ok(g) => g,
             Err(EmbedError::Operation(OperationError::OverBudget | OperationError::Stopped)) => {
@@ -496,24 +486,9 @@ impl SumOut {
             .collect()
     }
 
-    /// The facts' weights on `scope`, by its local variables.
-    fn store_for(&self, scope: &VtreeScope) -> WeightStore {
-        let table = match scope.vars() {
-            Some(vars) => vars
-                .iter()
-                .map(|v| self.weights[v.0 as usize - 1].clone())
-                .collect::<Vec<_>>(),
-            None => self.weights.clone(),
-        };
-        WeightStore::new(
-            RationalWeights::from_literals(&table),
-            Arithmetic::ScaledFloat,
-        )
-    }
-
-    /// Both operands on `scope`: one that carries weights copied there with
-    /// the facts' weights there (`Engine::embed_over`, which places
-    /// marginal levels), the other moved. Refused, each comes back on the
+    /// Both operands on `scope`: one with a summed-out level copied there
+    /// (`Engine::embed_over`, which places marginal levels), the other
+    /// moved. Refused, each comes back on the
     /// scope it was left on.
     fn place_both(
         &self,
@@ -521,10 +496,9 @@ impl SumOut {
         (fa, first): (Formula, Option<&[VarId]>),
         (fb, second): (Formula, Option<&[VarId]>),
         scope: &VtreeScope,
-        store: &WeightStore,
     ) -> Result<(Tdd, Tdd), Refused> {
         // The weighted operand first: a copy refused moves nothing.
-        let swapped = fa.0.weights().is_none() && fb.0.weights().is_some();
+        let swapped = !fa.0.has_marginal_level() && fb.0.has_marginal_level();
         let (fa, fb, first, second) = if swapped {
             (fb, fa, second, first)
         } else {
@@ -533,7 +507,7 @@ impl SumOut {
         let place =
             |f: Formula, map: Option<&[VarId]>| -> Result<Formula, Box<(CompileError, Formula)>> {
                 let (t, own) = f;
-                if t.weights().is_none() {
+                if !t.has_marginal_level() {
                     return backend
                         .embed_moving(t, &own, scope, map)
                         .map(|g| (g, scope.clone()))
@@ -552,12 +526,10 @@ impl SumOut {
                         Err(e) => return Err(Box::new((e, (t, own)))),
                     },
                 };
-                match backend.engine.embed_over(
-                    &t,
-                    scope.vtree(),
-                    |v| map[v.0 as usize - 1],
-                    Some(store.empty_like()),
-                ) {
+                match backend
+                    .engine
+                    .embed_over(&t, scope.vtree(), |v| map[v.0 as usize - 1], None)
+                {
                     Ok((g, _)) => Ok((g, scope.clone())),
                     Err(e) => Err(Box::new((e.into(), (t, own)))),
                 }
@@ -584,7 +556,7 @@ impl SumOut {
         }
     }
 
-    /// The walk's `and_onto` where an operand carries weights; refused
+    /// The walk's `and_onto` where an operand has a summed-out level; refused
     /// after the placements, both come back on `scope`.
     pub(super) fn and_onto(
         &mut self,
@@ -594,8 +566,7 @@ impl SumOut {
         scope: &VtreeScope,
     ) -> Result<Tdd, Refused> {
         self.weighted += 1;
-        let store = self.store_for(scope);
-        let (a, b) = self.place_both(backend, (fa, first), (fb, second), scope, &store)?;
+        let (a, b) = self.place_both(backend, (fa, first), (fb, second), scope)?;
         backend.engine.and_restoring(a, b).map_err(|refused| {
             let (f, g) = (refused.f.into_owned(), refused.g.into_owned());
             Box::new((
@@ -607,7 +578,7 @@ impl SumOut {
     }
 
     /// The conjunction on `scope` with `targets` summed out as it is built
-    /// (`Engine::and_marginalizing`), under the facts' weights; refused,
+    /// (`Engine::and_marginalizing`), under the scope's weights; refused,
     /// both operands come back on `scope` as they were placed.
     pub(super) fn and_marginalizing(
         &mut self,
@@ -617,19 +588,8 @@ impl SumOut {
         scope: &VtreeScope,
         targets: &[VtreeIdx],
     ) -> Result<Tdd, Refused> {
-        let store = self.store_for(scope);
-        let (mut a, b) = self.place_both(backend, (fa, first), (fb, second), scope, &store)?;
+        let (a, b) = self.place_both(backend, (fa, first), (fb, second), scope)?;
         self.summing += 1;
-        if a.weights().is_none()
-            && b.weights().is_none()
-            && let Err(e) = a.set_weights(store.empty_like())
-        {
-            return Err(Box::new((
-                CompileError::Tdd(OperationError::from(e)),
-                (a, scope.clone()).into(),
-                (b, scope.clone()).into(),
-            )));
-        }
         let targets: Vec<VtreeIdx> = targets
             .iter()
             .copied()
@@ -648,4 +608,16 @@ impl SumOut {
                 ))
             })
     }
+}
+
+/// The facts' weights `w`, by program variable less one, as the weighted
+/// scopes take them.
+pub(super) fn fact_weights(w: &Probabilities) -> Vec<LiteralWeights<BigRational>> {
+    let rational = |x: f64| BigRational::from_float(x).expect("a weight is finite");
+    (1..w.pos.len())
+        .map(|v| LiteralWeights {
+            negative: rational(w.neg[v]),
+            positive: rational(w.pos[v]),
+        })
+        .collect()
 }

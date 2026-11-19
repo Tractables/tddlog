@@ -575,10 +575,11 @@ impl EvidenceWalk {
         !self.taken.is_empty()
     }
 
-    /// The joins sum out what no later join reads, under the facts'
-    /// weights `w`, where no query reads the evidence formula.
-    pub(super) fn sum_out(&mut self, tree: &tididi::Vtree, w: &crate::eval::Probabilities) {
-        self.sum_out = Some(SumOut::new(tree, w));
+    /// The joins sum out what no later join reads, where no query reads the
+    /// evidence formula; the scopes are then weighted by the facts' weights
+    /// (`ScopeTable::weighted`).
+    pub(super) fn sum_out(&mut self, tree: &tididi::Vtree) {
+        self.sum_out = Some(SumOut::new(tree));
     }
 
     /// Whether a walk that puts nothing off may start over in place of
@@ -1252,9 +1253,14 @@ impl EvidenceWalk {
                 (own, node, formula, pairs)
             }
         };
-        if let Some(so) = &mut self.sum_out {
-            so.observe(self.slots.len(), &own);
-        }
+        let (formula, own) = match &mut self.sum_out {
+            Some(so) => {
+                let (formula, own) = scopes.adopt(formula, own)?;
+                so.observe(self.slots.len(), &own);
+                (formula, own)
+            }
+            None => (formula, own),
+        };
         let id = self.slot(Some((formula, own)), pairs);
         self.at.entry(node.idx()).or_default().push(id);
         let last = self.last_reads[self.next_observed];
@@ -1342,7 +1348,7 @@ impl EvidenceWalk {
                     && self.last_joins.contains(&out)))
         .then(|| backend.engine.limits().armed().stop_rules())
         .filter(|outer| outer.after_pairs.is_none_or(|(pairs, _)| pairs > floor));
-        let (scope, merged) = self.join_scope(a, b, out, backend, scopes)?;
+        let (scope, merged) = self.join_scope(a, b, out, scopes)?;
         if let Some(so) = &self.sum_out {
             so.check_scope(&scope);
         }
@@ -1358,9 +1364,9 @@ impl EvidenceWalk {
             *self.slots[b].take().unwrap(),
         );
         // Where only the evidence's count is wanted, the join sums out what no
-        // later join reads (`SumOut`); an operand that carries the facts'
-        // weights makes a weighted join.
-        let weighted = fa.0.weights().is_some() || fb.0.weights().is_some();
+        // later join reads (`SumOut`); an operand with a summed-out level
+        // makes a weighted join.
+        let weighted = fa.0.has_marginal_level() || fb.0.has_marginal_level();
         let pairs = self.slot_pairs[a] + self.slot_pairs[b];
         let targets = match &mut self.sum_out {
             Some(so) => {
@@ -1496,7 +1502,6 @@ impl EvidenceWalk {
         a: usize,
         b: usize,
         out: usize,
-        backend: &TddBackend,
         scopes: &Scopes,
     ) -> Result<(VtreeScope, bool), CompileError> {
         let (_, sa) = self.slots[a].as_deref().unwrap();
@@ -1520,7 +1525,7 @@ impl EvidenceWalk {
         } else if merged {
             scopes.over(&self.union.vars)?
         } else {
-            backend.global()
+            scopes.over(&[])?
         };
         Ok((scope, merged))
     }

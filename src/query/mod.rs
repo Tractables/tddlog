@@ -176,14 +176,6 @@ pub(crate) struct QueryEvaluation {
 
 impl QueryEvaluation {
     pub(crate) fn new(gp: &GroundProgram, backend: &TddBackend, compiled: &Compiled) -> Self {
-        let mut scopes = ScopeTable::default();
-        for scope in &compiled.scopes {
-            if let Some(vars) = scope.vars()
-                && scopes.get(vars).is_none()
-            {
-                scopes.insert(scope);
-            }
-        }
         // The links of names expanded are not observed (`tp::settle`).
         let dropped = &compiled.for_queries.dropped;
         let observed = gp
@@ -202,10 +194,24 @@ impl QueryEvaluation {
         }
         // Where no query reads the evidence formula, only its count is
         // wanted, and the walk sums out what no later join reads.
+        // Its scopes are then weighted by the facts' weights, and none is
+        // the compile's: a formula taken from the compile moves onto the
+        // weighted scope over its variables as it is observed.
         let mut walk = EvidenceWalk::new(observed, &backend.vtree());
-        if gp.queries.iter().all(|(_, id, _)| id.is_none()) {
-            walk.sum_out(&backend.vtree(), &weights);
-        }
+        let scopes = if gp.queries.iter().all(|(_, id, _)| id.is_none()) {
+            walk.sum_out(&backend.vtree());
+            ScopeTable::weighted(sum_out::fact_weights(&weights))
+        } else {
+            let mut scopes = ScopeTable::default();
+            for scope in &compiled.scopes {
+                if let Some(vars) = scope.vars()
+                    && scopes.get(vars).is_none()
+                {
+                    scopes.insert(scope);
+                }
+            }
+            scopes
+        };
         // The formulas read after the walk: those the ties stand on, and the
         // queries', as themselves or through a template.
         let for_queries = &compiled.for_queries;
@@ -450,14 +456,28 @@ impl Scopes<'_> {
     /// The scope over `vars`, ascending and distinct.
     fn over(&self, vars: &[VarId]) -> Result<VtreeScope, CompileError> {
         if vars.is_empty() {
-            return Ok(self.backend.global());
+            return self.table.borrow_mut().adopt(self.backend.global());
         }
         if let Some(scope) = self.table.borrow().get(vars) {
             return Ok(scope);
         }
-        let scope = self.backend.scope(vars)?;
+        let scope = self.table.borrow_mut().adopt(self.backend.scope(vars)?)?;
         self.table.borrow_mut().insert(&scope);
         Ok(scope)
+    }
+
+    /// `f`, on `own`, moved onto [`Scopes::over`] the same variables, which
+    /// differs from `own` where the table is weighted and `own` is the
+    /// compile's.
+    fn adopt(&self, f: Tdd, own: VtreeScope) -> Result<Formula, CompileError> {
+        let to = self.over(own.vars().unwrap_or(&[]))?;
+        if to.same(&own) {
+            return Ok((f, own));
+        }
+        match self.backend.engine.embed_moving(f, to.vtree(), |v| v) {
+            Ok((f, _)) => Ok((f, to)),
+            Err(refused) => Err(refused.error.into()),
+        }
     }
 
     /// The smallest scope the formula of atom `a` lives on: its component's

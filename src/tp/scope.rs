@@ -11,10 +11,14 @@
 
 use std::sync::{Arc, Weak};
 
+use num_rational::BigRational;
 use rustc_hash::FxHashMap;
 
-use tididi::Vtree;
+use tididi::diagram::{Arithmetic, LiteralWeights, RationalWeights, Weights};
 use tididi::vtree::{VarId, VtreeNode};
+use tididi::{OperationError, Vtree};
+
+use super::CompileError;
 
 /// A vtree a formula lives on, with the renaming of the program's variables
 /// into it.
@@ -91,9 +95,56 @@ pub(crate) struct ScopeTable {
     /// dropped: twice the entries left by the last time, so that each
     /// insertion pays for a constant number of entries looked at.
     purge_at: usize,
+    /// Where set ([`ScopeTable::weighted`]), the facts' weights by program
+    /// variable less one, and the global vtree's weighted copy once made.
+    weights: Option<Vec<LiteralWeights<BigRational>>>,
+    global: Option<VtreeScope>,
 }
 
 impl ScopeTable {
+    /// A table whose scopes are weighted by the facts' weights `weights`,
+    /// by program variable less one, in scaled floats: the vtrees of the
+    /// evidence walk that sums out (`query::sum_out`).
+    pub(crate) fn weighted(weights: Vec<LiteralWeights<BigRational>>) -> Self {
+        ScopeTable {
+            weights: Some(weights),
+            ..ScopeTable::default()
+        }
+    }
+
+    /// `scope`, just made, as this table holds it: weighted on a weighted
+    /// table, and on one the global scope is the copy it keeps.
+    pub(crate) fn adopt(&mut self, scope: VtreeScope) -> Result<VtreeScope, CompileError> {
+        let Some(all) = &self.weights else {
+            return Ok(scope);
+        };
+        if scope.vars.is_none()
+            && let Some(global) = &self.global
+        {
+            return Ok(global.clone());
+        }
+        let table: Vec<_> = match &scope.vars {
+            Some(vars) => vars.iter().map(|v| all[v.0 as usize - 1].clone()).collect(),
+            None => all.clone(),
+        };
+        let weights = Weights::new(
+            RationalWeights::from_literals(&table),
+            Arithmetic::ScaledFloat,
+        );
+        let vtree = Arc::try_unwrap(scope.vtree)
+            .unwrap_or_else(|shared| Vtree::clone(&shared))
+            .with_weights(weights)
+            .map_err(|e| CompileError::Tdd(OperationError::from(e)))?;
+        let scope = VtreeScope {
+            vtree: Arc::new(vtree),
+            vars: scope.vars,
+        };
+        if scope.vars.is_none() {
+            self.global = Some(scope.clone());
+        }
+        Ok(scope)
+    }
+
     /// The live scope over `vars`, ascending and distinct, if there is one.
     pub(crate) fn get(&self, vars: &[VarId]) -> Option<VtreeScope> {
         let (vars, vtree) = self.by_vars.get_key_value(vars)?;
