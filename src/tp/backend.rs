@@ -1085,7 +1085,9 @@ impl TddBackend<'_> {
         // the root complement orphans. Contraction is what the compiler
         // repeats, and tididi does not split `One` on the way in, so there
         // are next to no twins left for it to merge anyway.
-        Ok(self.engine.negate_with(a, ReductionPlan::Prune)?)
+        let mut n = self.engine.negate(a)?;
+        self.engine.reduce(&mut n, ReductionPlan::Prune)?;
+        Ok(n)
     }
     /// Reduce `f`. Between operations a backend may reduce less than fully,
     /// so the result is not necessarily the canonical form `equivalent`
