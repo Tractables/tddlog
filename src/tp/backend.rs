@@ -1082,8 +1082,13 @@ impl TddBackend<'_> {
         }
         Ok(self.engine.and_clause(a, &renamed)?)
     }
+    /// `¬a`, minimized: tididi leaves the twins of an uncertified operand in
+    /// its complement, and the conjunctions and vtree searches built on
+    /// negated bodies would carry them until the next minimization.
     pub(crate) fn negate<'f>(&self, a: impl Into<Cow<'f, Tdd>>) -> Result<Tdd, CompileError> {
-        Ok(self.engine.negate(a)?)
+        let mut n = self.engine.negate(a)?;
+        self.engine.minimize(&mut n)?;
+        Ok(n)
     }
     /// Reduce `f`. Between operations a backend may reduce less than fully,
     /// so the result is not necessarily the canonical form `equivalent`
