@@ -920,6 +920,8 @@ fn composed_under(
             let mut copies: Vec<VarId> = vars.iter().filter_map(|&v| scope.local_of(v)).collect();
             copies.sort_unstable();
             acc = backend.engine.and_exists(acc, conj, &copies)?;
+            // The bound below reads the size, which counts dead pairs and twins.
+            backend.engine.minimize(&mut acc)?;
             if (made + backend.size(&acc)).saturating_sub(held) > bound {
                 return Ok(None);
             }

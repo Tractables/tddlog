@@ -1062,8 +1062,12 @@ impl TddBackend<'_> {
             work,
         }
     }
+    /// `a ∨ b`, minimized: the alternating fixpoint folds bodies into one
+    /// accumulator, and each result is the operand of the next disjunction.
     pub(crate) fn or(&self, a: Tdd, b: Tdd) -> Result<Tdd, CompileError> {
-        Ok(self.engine.or(a, b)?)
+        let mut f = self.engine.or(a, b)?;
+        self.engine.minimize(&mut f)?;
+        Ok(f)
     }
     /// `a ∧ (l_1 ∨ ... ∨ l_k)`, with `a` on `scope`.
     pub(crate) fn and_clause(
@@ -1079,15 +1083,7 @@ impl TddBackend<'_> {
         Ok(self.engine.and_clause(a, &renamed)?)
     }
     pub(crate) fn negate<'f>(&self, a: impl Into<Cow<'f, Tdd>>) -> Result<Tdd, CompileError> {
-        // The compiler minimizes every result it keeps, so the full reduction
-        // `negate` ends with by default is paid twice. Pruning is the part
-        // negation cannot skip: it removes the operand's dead cone, the nodes
-        // the root complement orphans. Contraction is what the compiler
-        // repeats, and tididi does not split `One` on the way in, so there
-        // are next to no twins left for it to merge anyway.
-        let mut n = self.engine.negate(a)?;
-        self.engine.reduce(&mut n, ReductionPlan::Prune)?;
-        Ok(n)
+        Ok(self.engine.negate(a)?)
     }
     /// Reduce `f`. Between operations a backend may reduce less than fully,
     /// so the result is not necessarily the canonical form `equivalent`
