@@ -27,7 +27,7 @@ checksum = "ef25905e51abafe4dcea6c15fec58c57b601cdbd0ee53d22ea1d3016c587d39b"
 [[package]]
 name = "goatd"
 version = "0.3.0"
-source = "git+https://github.com/Tractables/goatd?rev=521c1b2dfc41366547ae2089deaf6a5d62fe00fe#521c1b2dfc41366547ae2089deaf6a5d62fe00fe"
+source = "git+https://github.com/Tractables/goatd?rev=ac072e71dab3efb91acd09fcfc7b9afe23e9a075#ac072e71dab3efb91acd09fcfc7b9afe23e9a075"
 dependencies = [
  "cc",
  "libc",
@@ -120,7 +120,7 @@ dependencies = [
 [[package]]
 name = "tididi"
 version = "0.2.0"
-source = "git+https://github.com/Tractables/tididi?rev=93b5cd1bab8535c65975c4bf7a1776b1eaeee423#93b5cd1bab8535c65975c4bf7a1776b1eaeee423"
+source = "git+https://github.com/Tractables/tididi?rev=419ede25001410efd6654469faf46b1d15209cee#419ede25001410efd6654469faf46b1d15209cee"
 dependencies = [
  "itoa",
  "num-bigint",
