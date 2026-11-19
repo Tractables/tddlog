@@ -399,10 +399,7 @@ impl SumOut {
         }
         let reduced = scopes.weighted(&scopes.over(&kept)?)?;
         let local_of = |v: VarId| (!gone[v.0 as usize]).then(|| renamed[v.0 as usize]);
-        let g = match backend
-            .engine
-            .project_over(&f, reduced.vtree(), local_of, None)
-        {
+        let g = match backend.engine.project_over(&f, reduced.vtree(), local_of) {
             Ok(g) => g,
             Err(EmbedError::Operation(OperationError::OverBudget | OperationError::Stopped)) => {
                 return Ok((f, scope));
@@ -529,7 +526,7 @@ impl SumOut {
                 };
                 match backend
                     .engine
-                    .embed_over(&t, scope.vtree(), |v| map[v.0 as usize - 1], None)
+                    .embed_over(&t, scope.vtree(), |v| map[v.0 as usize - 1])
                 {
                     Ok((g, _)) => Ok((g, scope.clone())),
                     Err(e) => Err(Box::new((e.into(), (t, own)))),
