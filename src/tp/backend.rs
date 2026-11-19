@@ -345,7 +345,11 @@ impl TddBackend<'_> {
     ) -> Result<Vec<VarId>, CompileError> {
         // Local leaf i + 1 of `from` carries program variable from.vars[i].
         let Some(vars) = from.vars() else {
-            return Err(CompileError::NotInScope(VarId(0)));
+            // The global scope and its weighted copy.
+            return match into.vars() {
+                None => Ok((1..=from.len() as u32).map(VarId).collect()),
+                Some(_) => Err(CompileError::NotInScope(VarId(0))),
+            };
         };
         let Some(held) = into.vars() else {
             return Ok(vars.to_vec());

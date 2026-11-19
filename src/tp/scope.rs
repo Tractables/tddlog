@@ -95,33 +95,43 @@ pub(crate) struct ScopeTable {
     /// dropped: twice the entries left by the last time, so that each
     /// insertion pays for a constant number of entries looked at.
     purge_at: usize,
-    /// Where set ([`ScopeTable::weighted`]), the facts' weights by program
-    /// variable less one, and the global vtree's weighted copy once made.
+    /// Where set ([`ScopeTable::weigh`]), the facts' weights by program
+    /// variable less one; the weighted copies of scopes, held as `by_vars`
+    /// holds scopes, and of the global scope once made.
     weights: Option<Vec<LiteralWeights<BigRational>>>,
+    twins: FxHashMap<Arc<[VarId]>, Weak<Vtree>>,
+    twins_purge_at: usize,
     global: Option<VtreeScope>,
 }
 
 impl ScopeTable {
-    /// A table whose scopes are weighted by the facts' weights `weights`,
-    /// by program variable less one, in scaled floats: the vtrees of the
-    /// evidence walk that sums out (`query::sum_out`).
-    pub(crate) fn weighted(weights: Vec<LiteralWeights<BigRational>>) -> Self {
-        ScopeTable {
-            weights: Some(weights),
-            ..ScopeTable::default()
-        }
+    /// Weigh the scopes [`ScopeTable::weighted`] gives by the facts'
+    /// weights `weights`, by program variable less one, in scaled floats:
+    /// the evidence walk that sums out (`query::sum_out`).
+    pub(crate) fn weigh(&mut self, weights: Vec<LiteralWeights<BigRational>>) {
+        self.weights = Some(weights);
     }
 
-    /// `scope`, just made, as this table holds it: weighted on a weighted
-    /// table, and on one the global scope is the copy it keeps.
-    pub(crate) fn adopt(&mut self, scope: VtreeScope) -> Result<VtreeScope, CompileError> {
-        let Some(all) = &self.weights else {
-            return Ok(scope);
+    /// The copy of `scope` weighted by the facts' weights, shared while it
+    /// lives as the table's scopes are; `scope` itself when it is that copy.
+    ///
+    /// # Panics
+    ///
+    /// On a table not given weights ([`ScopeTable::weigh`]).
+    pub(crate) fn weighted(&mut self, scope: &VtreeScope) -> Result<VtreeScope, CompileError> {
+        let all = self
+            .weights
+            .as_ref()
+            .expect("weighted scopes need the facts' weights");
+        let live = match &scope.vars {
+            Some(vars) => self.twins.get(vars).and_then(Weak::upgrade),
+            None => self.global.as_ref().map(|g| Arc::clone(&g.vtree)),
         };
-        if scope.vars.is_none()
-            && let Some(global) = &self.global
-        {
-            return Ok(global.clone());
+        if let Some(vtree) = live {
+            return Ok(VtreeScope {
+                vtree,
+                vars: scope.vars.clone(),
+            });
         }
         let table: Vec<_> = match &scope.vars {
             Some(vars) => vars.iter().map(|v| all[v.0 as usize - 1].clone()).collect(),
@@ -131,18 +141,25 @@ impl ScopeTable {
             RationalWeights::from_literals(&table),
             Arithmetic::ScaledFloat,
         );
-        let vtree = Arc::try_unwrap(scope.vtree)
-            .unwrap_or_else(|shared| Vtree::clone(&shared))
+        let vtree = Vtree::clone(&scope.vtree)
             .with_weights(weights)
             .map_err(|e| CompileError::Tdd(OperationError::from(e)))?;
-        let scope = VtreeScope {
+        let twin = VtreeScope {
             vtree: Arc::new(vtree),
-            vars: scope.vars,
+            vars: scope.vars.clone(),
         };
-        if scope.vars.is_none() {
-            self.global = Some(scope.clone());
+        match &twin.vars {
+            Some(vars) => {
+                if self.twins.len() >= self.twins_purge_at {
+                    self.twins.retain(|_, vtree| vtree.strong_count() > 0);
+                    self.twins_purge_at = (2 * self.twins.len()).max(64);
+                }
+                self.twins
+                    .insert(Arc::clone(vars), Arc::downgrade(&twin.vtree));
+            }
+            None => self.global = Some(twin.clone()),
         }
-        Ok(scope)
+        Ok(twin)
     }
 
     /// The live scope over `vars`, ascending and distinct, if there is one.

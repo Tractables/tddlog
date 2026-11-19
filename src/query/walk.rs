@@ -1253,14 +1253,9 @@ impl EvidenceWalk {
                 (own, node, formula, pairs)
             }
         };
-        let (formula, own) = match &mut self.sum_out {
-            Some(so) => {
-                let (formula, own) = scopes.adopt(formula, own)?;
-                so.observe(self.slots.len(), &own);
-                (formula, own)
-            }
-            None => (formula, own),
-        };
+        if let Some(so) = &mut self.sum_out {
+            so.observe(self.slots.len(), &own);
+        }
         let id = self.slot(Some((formula, own)), pairs);
         self.at.entry(node.idx()).or_default().push(id);
         let last = self.last_reads[self.next_observed];
@@ -1348,7 +1343,7 @@ impl EvidenceWalk {
                     && self.last_joins.contains(&out)))
         .then(|| backend.engine.limits().armed().stop_rules())
         .filter(|outer| outer.after_pairs.is_none_or(|(pairs, _)| pairs > floor));
-        let (scope, merged) = self.join_scope(a, b, out, scopes)?;
+        let (scope, merged) = self.join_scope(a, b, out, backend, scopes)?;
         if let Some(so) = &self.sum_out {
             so.check_scope(&scope);
         }
@@ -1365,7 +1360,7 @@ impl EvidenceWalk {
         );
         // Where only the evidence's count is wanted, the join sums out what no
         // later join reads (`SumOut`); an operand with a summed-out level
-        // makes a weighted join.
+        // makes a weighted join. Both run on the scope's weighted copy.
         let weighted = fa.0.has_marginal_level() || fb.0.has_marginal_level();
         let pairs = self.slot_pairs[a] + self.slot_pairs[b];
         let targets = match &mut self.sum_out {
@@ -1374,6 +1369,10 @@ impl EvidenceWalk {
                 so.targets(&scope, pairs)
             }
             None => Vec::new(),
+        };
+        let scope = match self.sum_out.is_some() && (weighted || !targets.is_empty()) {
+            true => scopes.weighted(&scope)?,
+            false => scope,
         };
         let mut join = |fa, fb| match (&mut self.sum_out, weighted, targets.is_empty()) {
             (Some(so), _, false) => {
@@ -1502,6 +1501,7 @@ impl EvidenceWalk {
         a: usize,
         b: usize,
         out: usize,
+        backend: &TddBackend,
         scopes: &Scopes,
     ) -> Result<(VtreeScope, bool), CompileError> {
         let (_, sa) = self.slots[a].as_deref().unwrap();
@@ -1525,7 +1525,7 @@ impl EvidenceWalk {
         } else if merged {
             scopes.over(&self.union.vars)?
         } else {
-            scopes.over(&[])?
+            backend.global()
         };
         Ok((scope, merged))
     }

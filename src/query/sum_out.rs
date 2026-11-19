@@ -21,11 +21,12 @@
 //! scaled floats (`Arithmetic::ScaledFloat`): a subtree whose parent the
 //! join also sums out keeps its values in columns of 8 bytes a value that
 //! the parent reads and drops, and only the topmost finished subtrees keep
-//! their values. The walk's scopes are vtrees weighted by the facts'
-//! weights (`ScopeTable::weighted`), so every diagram on them is weighted
+//! their values. Such a join runs on its scope's copy weighted by the
+//! facts' weights (`ScopeTable::weighted`), where every diagram is weighted
 //! and carries no weights of its own; a later join places a result with a
-//! summed-out level by its values (`Engine::embed_over`) and conjoins
-//! weighted, and the walk's last result is counted by its weighted value.
+//! summed-out level there by its values (`Engine::embed_over`) and
+//! conjoins weighted, and the walk's last result is counted by its
+//! weighted value.
 //! The UAI 2022 PR protein networks 1bxv and 1jer held 2.1 and 4.3 GB at
 //! their peak instead of 10.1 and 15.1 GB in signed logs and maximal
 //! subtrees.
@@ -396,7 +397,7 @@ impl SumOut {
             kept.push(v);
             renamed[i + 1] = VarId(kept.len() as u32);
         }
-        let reduced = scopes.over(&kept)?;
+        let reduced = scopes.weighted(&scopes.over(&kept)?)?;
         let local_of = |v: VarId| (!gone[v.0 as usize]).then(|| renamed[v.0 as usize]);
         let g = match backend
             .engine
