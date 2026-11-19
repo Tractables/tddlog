@@ -184,8 +184,9 @@ mod tests {
     use super::*;
 
     /// The projection built from lowest common ancestors is the one
-    /// `Vtree::project_to_vars` builds by walking every node, node for
-    /// node, on random trees and random variable sets of every size, and
+    /// `Vtree::project_to_vars` builds by walking every node, the same
+    /// shape with the same leaves (the library does not fix the node
+    /// numbering), on random trees and random variable sets of every size, and
     /// its lowest node over a set is the library's lowest common ancestor.
     /// The last trees span blocks enough for every row of the sparse table
     /// to answer.
@@ -230,12 +231,24 @@ mod tests {
                     expected.num_nodes(),
                     "seed {seed} vars {vars:?}"
                 );
-                for t in 0..got.num_nodes() {
+                let mut stack = vec![(got.root(), expected.root())];
+                while let Some((g, e)) = stack.pop() {
+                    let leaf = got.node(g).is_leaf();
                     assert_eq!(
-                        got.node(VtreeIdx(t as u32)),
-                        expected.node(VtreeIdx(t as u32)),
-                        "seed {seed} vars {vars:?} node {t}"
+                        leaf,
+                        expected.node(e).is_leaf(),
+                        "seed {seed} vars {vars:?}"
                     );
+                    if leaf {
+                        assert_eq!(
+                            got.leaf_var(g),
+                            expected.leaf_var(e),
+                            "seed {seed} vars {vars:?}"
+                        );
+                    } else {
+                        let ((gl, gr), (el, er)) = (got.children(g), expected.children(e));
+                        stack.extend([(gl, el), (gr, er)]);
+                    }
                 }
             }
         }

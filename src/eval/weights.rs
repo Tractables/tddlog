@@ -133,6 +133,9 @@ impl<V: Value> EvalAlgebra for Weighing<'_, V> {
     fn zero(&self) -> V {
         V::ZERO
     }
+    fn one(&self) -> V {
+        V::ONE
+    }
     fn leaf(&self, var: VarId, label: LeafLabel) -> V {
         self.settle(V::from_f64(self.weights.weight(var, label)))
     }

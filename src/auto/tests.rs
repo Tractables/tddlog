@@ -564,11 +564,13 @@ fn a_small_compile_cannot_win_before_its_evidence_fits() {
     }
     source.push_str("query(\\+f(12)).\n");
     let gp = regress(&source);
+    // The smallest first turn, which the compile must outgrow: a library
+    // that charges less work for it would let a larger one finish it.
     let run = run_from(
         gp.clone(),
         closed_then_td(),
         Projection::default(),
-        2,
+        1,
         tp::DYNAMIC_FIRST_PAIRS,
     )
     .unwrap();
