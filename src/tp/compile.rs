@@ -950,13 +950,12 @@ impl Compilation {
     /// once ([`TddBackend::restructure`]). A search sweeps until a sweep
     /// keeps no move, then, while a quarter of the components are left,
     /// restarts once from random moves ([`search_restarts`]), since a
-    /// smaller pool pays only over the components after it. Its budget is
-    /// the work the compile spent since the last search, and no more than
-    /// the components left are likely to take
-    /// ([`Dynamic::budget`]); what it spends past the budget, the compile
-    /// spends before the next search runs, so searching costs at most twice
-    /// what the compile does, plus the last search's excess, unless the
-    /// formulas double again meanwhile. A budget that
+    /// smaller pool pays only over the components after it. The schedule
+    /// reads live pairs only, not the backend's work clock
+    /// ([`Dynamic::due`]): a wait counted in work units moved the searches,
+    /// and with them the last vtree, whenever the backend changed what it
+    /// charges for a search (a chain test went from 42 MB to 15.6 GB, a
+    /// grid from 83 MB to 910 MB). A budget that
     /// stopped searches part way made each compile's outcome depend on
     /// where they stopped: moving it by 2% made single programs several
     /// times slower or faster. Rotations change how a formula is
@@ -977,9 +976,6 @@ impl Compilation {
         self.dynamic = Some(Dynamic {
             first_pairs,
             next_at: first_pairs,
-            since: None,
-            resumed: false,
-            debt: 0,
         });
         self.stats.search = Some(SearchStats::default());
         self
@@ -1044,9 +1040,6 @@ impl Compilation {
         let start = Instant::now();
         let work = backend.work_units();
         let holds = self.memo.get_mut().holds();
-        if let Some(dynamic) = self.dynamic.as_mut() {
-            dynamic.resumed = dynamic.since.is_some();
-        }
         self.reach = None;
         let result = (|| {
             // The component the guard last put back, and how often.
@@ -1074,10 +1067,9 @@ impl Compilation {
                 let tries = if guarded.0 == self.next { guarded.1 } else { 0 };
                 // The live pairs the guard is a multiple of, and its floor.
                 let base = match &self.dynamic {
-                    Some(dynamic) if last && tries < GUARD_TRIES => Some((
-                        self.fixpoint.live.max(dynamic.first_pairs),
-                        GUARD_FLOOR.saturating_mul(dynamic.first_pairs),
-                    )),
+                    Some(dynamic) if last && tries < GUARD_TRIES => {
+                        Some((self.fixpoint.live.max(dynamic.first_pairs), GUARD_FLOOR))
+                    }
                     _ => None,
                 };
                 let guard = base.map(|(base, floor)| factor.saturating_mul(base).max(floor));
@@ -1905,9 +1897,7 @@ impl Compilation {
         let Some(dynamic) = self.dynamic.as_mut() else {
             return Ok(None);
         };
-        let now = backend.work_units();
-        dynamic.since.get_or_insert(now);
-        if refused.is_none() && !dynamic.due(now, self.fixpoint.live) {
+        if refused.is_none() && !dynamic.due(self.fixpoint.live) {
             return Ok(None);
         }
         // The cached polarities are dropped rather than moved: they would
@@ -1918,7 +1908,6 @@ impl Compilation {
         self.memo.get_mut().forget_held();
         let mut members = self.fixpoint.formulas.formulas_mut();
         members.extend(refused.as_mut());
-        let budget = dynamic.budget(now, self.next, self.sccs.len() - self.next);
         let left = self.sccs.len() - self.next;
         let restarts = if 4 * left >= self.sccs.len() {
             search_restarts()
@@ -1940,10 +1929,7 @@ impl Compilation {
         self.fixpoint.live = self.fixpoint.sizes.iter().sum();
         let found = found?;
         let weak = found.pairs_after * 10 > found.pairs_before * 9;
-        dynamic.debt = found.work_units.saturating_sub(budget);
         dynamic.next_at = (2 * self.fixpoint.live).max(dynamic.first_pairs);
-        dynamic.since = Some(backend.work_units());
-        dynamic.resumed = false;
         let stats = self.stats.search.get_or_insert_with(SearchStats::default);
         stats.searches += 1;
         stats.weak += usize::from(weak);
@@ -2033,7 +2019,7 @@ impl Compilation {
 
 /// Live pairs the atoms' formulas reach before the first search of the
 /// `dynamic` strategies; CUDD's first reordering is at 4004 nodes.
-pub(crate) const DYNAMIC_FIRST_PAIRS: usize = 4096;
+pub(crate) const DYNAMIC_FIRST_PAIRS: usize = 16384;
 
 /// A round of a `dynamic` compile runs under a watch of this many times
 /// the live pairs, which count as at least the `first_pairs` its first
@@ -2052,12 +2038,11 @@ pub(crate) const DYNAMIC_FIRST_PAIRS: usize = 4096;
 /// at least the one that formula reached.
 const GUARD: usize = 8;
 
-/// The least watch of [`GUARD`], in multiples of `first_pairs` (1 M pairs
-/// at [`DYNAMIC_FIRST_PAIRS`]). A smaller formula costs little memory on
-/// any vtree, and the search after a refusal moves every formula: on
-/// g20_60 the guard refused one of 0.24 M pairs and the compile did 1.7
-/// times the work.
-const GUARD_FLOOR: usize = 256;
+/// The least watch of [`GUARD`], in pairs. A smaller formula costs little
+/// memory on any vtree, and the search after a refusal moves every
+/// formula: on g20_60 the guard refused one of 0.24 M pairs and the
+/// compile did 1.7 times the work.
+const GUARD_FLOOR: usize = 1 << 20;
 
 /// The rounds of one component the guard puts back; the next runs without
 /// it.
@@ -2082,51 +2067,15 @@ struct Dynamic {
     /// Live pairs at which the next search runs: twice what the last one
     /// left.
     next_at: usize,
-    /// The work clock when the last search ended, or when the compile
-    /// first stepped; a search may spend what the compile spent since.
-    since: Option<u64>,
-    /// Whether this run resumes a stopped compile and has not searched
-    /// yet. Each run is on a fresh work clock, so `since` is from an
-    /// earlier one; its first search has the budget the run's limits
-    /// allow and owes nothing (a budget of the work since, summed over the
-    /// runs, left g30_100 unfinished).
-    resumed: bool,
-    /// The work the last search spent past its budget, which the compile
-    /// spends before the next search unless the formulas outgrow it.
-    debt: u64,
 }
 
 impl Dynamic {
-    /// Whether a search is due at work clock `now` with the formulas at
-    /// `live` pairs: once they have doubled since the last, and once the
-    /// compile has spent, since the last search ended, what that search
-    /// spent past its budget, or the formulas have doubled again; at once
-    /// in a run that resumes a stopped compile, whose clock starts afresh.
-    /// Waiting out the excess past a second doubling let the formulas
-    /// grow on the old vtree to a hundred times the pairs the search was
-    /// due at.
-    fn due(&self, now: u64, live: usize) -> bool {
+    /// Whether a search is due with the formulas at `live` pairs: once
+    /// they reach `next_at`. It reads pairs only, never the backend's work
+    /// clock, so a change in what the backend charges for its operations
+    /// does not move the searches.
+    fn due(&self, live: usize) -> bool {
         live >= self.next_at
-            && (self.resumed
-                || now - self.since.unwrap_or(now) >= self.debt
-                || live >= self.next_at.saturating_mul(2))
-    }
-
-    /// The work the search due at work clock `now` spends before it owes
-    /// the excess, with `done` components finished and `left` to go: what
-    /// the compile spent since the last search, and no more than the
-    /// compile is likely to spend after it, its work so far per finished
-    /// component times the components left. A search pays only over the
-    /// steps after it, so one near the end owes more and holds off the
-    /// next for longer: on g30_100 a search two components before the end
-    /// spent several times what the rest of the compile took.
-    fn budget(&self, now: u64, done: usize, left: usize) -> u64 {
-        match self.since {
-            Some(since) if !self.resumed => {
-                (now - since).min(now.saturating_mul(left as u64) / done.max(1) as u64)
-            }
-            _ => u64::MAX,
-        }
     }
 }
 
