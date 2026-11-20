@@ -549,7 +549,8 @@ impl Factoring<'_> {
         self.and_facts(c, &facts, scope)
     }
 
-    /// `part ∧ ⋀ facts` on `scope`, each fact conjoined as a unit clause.
+    /// `part ∧ ⋀ facts` on `scope`, each fact conjoined as a unit clause,
+    /// minimized: tididi leaves a clause's result unreduced.
     fn and_facts(
         &self,
         part: Part,
@@ -560,6 +561,9 @@ impl Factoring<'_> {
         for &f in facts {
             c = self.backend.and_clause(scope, c, &[f])?;
             (self.count)(Op::And, 1);
+        }
+        if !facts.is_empty() {
+            self.backend.engine.minimize(&mut c)?;
         }
         Ok(c)
     }
