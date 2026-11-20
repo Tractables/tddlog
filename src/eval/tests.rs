@@ -127,7 +127,7 @@ fn table(eng: &Engine, flaw: Flaw) -> (Tdd, VtreeIdx) {
             match flaw {
                 Flaw::Listed => pairs.swap(2, 3),
                 Flaw::Moved if u == 5 => {
-                    pairs[2] = ChildPair::new(a[n0 + 8], c[(n1 + 9 + 16 * n2) % 32])
+                    pairs[2] = ChildPair::new(a[n0 + 8], c[n1 + 2 + 16 * n2])
                 }
                 Flaw::Short if u == 9 => drop(pairs.pop()),
                 _ => {}
