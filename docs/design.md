@@ -2255,9 +2255,14 @@ turn took eight shares (cora8000: 2^31 units in 13 s, where `closed` then
 answered in 9.6 M). Each trial also has a target, the engine work
 it may have spent by the end of its turn, at first its weight times
 `FIRST_PAIRS` times `WORK_PER_PAIR` (2^28) units. Each attempt goes to
-the trial whose target is least for its weight, the first in the
-candidates' order on a tie, so the trials take their first turns in
-order and later ones in proportion to their weights. The attempt's turn
+the trial whose target is least for its weight, so the trials take
+their first turns in order and later ones in proportion to their
+weights. Targets that double from the first stay on one grid and tie
+often: a tie goes to the trial projected fewer doublings past its
+target (below), then to one that has spent nothing, then to the first
+in the candidates' order (arith_gcd_small's untried `families:0`, which
+answers, otherwise waited while the three trials before it took another
+turn at the same target). The attempt's turn
 ends at the first step its phase keeps once it has spent the target less
 what the trial has spent (`TddBackend::pause`): a component, an atom's
 update, a body of a loop of clauses, an observation, a join, an answer.
@@ -2266,14 +2271,21 @@ operation still in flight at twice the turn's work is stopped by the
 engine, the guard against one operation that outweighs a turn, and loses
 the work since the phase last kept a step (`TddBackend::kept`): the next
 attempt does that step again from its start. Once the trial has spent its
-target, its next turn may spend as much again as it will have spent once
-it has done again what the stop lost: the target doubles from the larger
-of the target and that. After a turn that ended at a step, which lost
-nothing, that is one doubling; where one step outweighs a turn, its next
-try has more than four times the work the stop lost, so that each try of
-it has more than twice the work of the last and the work it wastes is at
-most what it finally takes (rus_20_40, whose last join of 3.3 G units
-was otherwise stopped at 2.1 G and given 2.1 G again). The target so
+target, or its compile projected past its horizon, the target doubles
+until it is past what the trial has spent. Where one step outweighs a
+turn, it doubles until it is at least twice what the trial will have
+spent once it has done that step again, so that each try of the step has
+more than twice the work of the last and the work it wastes is at most
+what it finally takes (rus_20_40, whose last join of 3.3 G units was
+otherwise stopped at 2.1 G and given 2.1 G again; 1aie's `families:0`,
+cut at 8.6 G, was otherwise given one unit). Only doublings keep every
+target on one grid. Raised from the work spent, past the overshoot of a
+turn's last step, the targets of the trials that lose a race outran
+their doublings (circ__bb_addFun_max_w17, 1.47 times the work); raised to
+exactly twice what a cut step will have spent, the near-equal targets of
+trials cut short ordered the race by the sizes of their cuts
+(nodice_coupon2-12-obs, 1.54 times the work, and nodice_coupon2-16-obs,
+whose `program` answers, 1.48). The target so
 raised is the level the
 next attempt brings the trial to, which its place in the turns counts;
 where the target only passed what the trial had spent and the room went
