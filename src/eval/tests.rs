@@ -14,7 +14,9 @@ enum Flaw {
     /// Every node's last two pairs swapped: the offsets are a grid's
     /// list.
     Listed,
-    /// One pair of node 5 names another node on the right.
+    /// One pair of node 5 names another node on the right, one that no
+    /// other pair of the level pairs with its left node: a level holds
+    /// no pair twice.
     Moved,
     /// Node 9 lacks its last pair.
     Short,
@@ -127,7 +129,7 @@ fn table(eng: &Engine, flaw: Flaw) -> (Tdd, VtreeIdx) {
             match flaw {
                 Flaw::Listed => pairs.swap(2, 3),
                 Flaw::Moved if u == 5 => {
-                    pairs[2] = ChildPair::new(a[n0 + 8], c[(n1 + 9 + 16 * n2) % 32])
+                    pairs[2] = ChildPair::new(a[n0 + 8], c[(n1 + 13 + 16 * n2) % 32])
                 }
                 Flaw::Short if u == 9 => drop(pairs.pop()),
                 _ => {}
