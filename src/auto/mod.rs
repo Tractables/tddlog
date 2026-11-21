@@ -69,7 +69,7 @@ use tididi::limits::{LimitConfig, StopAt, StopRules};
 
 use policy::{
     FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR, bet_left,
-    candidates, horizon, overspent_estimate, projected_from, search_due, search_rent,
+    candidates, horizon, projected_from, search_due, search_rent, spent_bet,
     ties_tables_by_clauses, weight,
 };
 use trial::Trial;
@@ -568,7 +568,13 @@ fn run_within(
     loop {
         // The next attempt goes to the trial projected to finish first, by
         // its target, the race's earliest projected finish and its weight
-        // ([`Trial::key`]); the first in order on a tie.
+        // ([`Trial::key`]). Targets that double from the first stay on one
+        // grid, so ties are common; a tie goes to the trial projected
+        // fewer doublings past its target ([`Trial::ahead`]), then to one
+        // that has spent nothing, then to the first in order.
+        // arith_gcd_small's untried `families:0`, which answers, otherwise
+        // waited while the three trials before it took a turn more at the
+        // same target.
         let earliest = trials
             .iter()
             .filter(|t| !t.disabled)
@@ -576,7 +582,13 @@ fn run_within(
             .fold(f64::INFINITY, f64::min);
         let next = (0..trials.len())
             .filter(|&i| !trials[i].disabled)
-            .min_by(|&i, &j| trials[i].key(earliest).total_cmp(&trials[j].key(earliest)));
+            .min_by(|&i, &j| {
+                let (a, b) = (&trials[i], &trials[j]);
+                (b.rushes().cmp(&a.rushes()))
+                    .then(a.key(earliest).total_cmp(&b.key(earliest)))
+                    .then(a.ahead(earliest).total_cmp(&b.ahead(earliest)))
+                    .then((a.spent > 0).cmp(&(b.spent > 0)))
+            });
         let Some(i) = next else {
             let error = refused.map_or_else(
                 || Error::Vtree("auto has no trial left".into()),
@@ -620,6 +632,7 @@ fn run_within(
         }
         let alone = trials.iter().enumerate().all(|(j, t)| j == i || t.disabled);
         let t = &mut trials[i];
+        t.rushed |= t.near_finished();
         if let Some(projected) = t
             .projected()
             .filter(|_| t.ahead(earliest) < PROJECTED_DOUBLINGS)
@@ -682,19 +695,32 @@ fn run_within(
             });
         };
         // Its target spent, or its compile projected past its horizon, the
-        // trial's next turn may spend as much again as it will have spent
-        // once it has done again what its stop lost, and no less than its
-        // target: the target doubles from the larger of the two. A step
-        // the guard cut short so has more than four times the work it lost
-        // on its next try (rus_20_40, whose last join of 3.3 G units was
-        // otherwise stopped at 2.1 G and given 2.1 G again; UAI's 1aie,
-        // whose `families:0` was otherwise given 1 unit after its first
-        // cut, then the same 8.6 G twice).
-        t.target = t
-            .target
-            .max(t.spent.saturating_add(t.lost))
-            .saturating_mul(2);
-        if t.weight > 1 && overspent_estimate(t) {
+        // trial's target doubles until it is past what the trial has spent,
+        // or, after a stop that cut a step short, until it is at least
+        // twice what the trial will have spent once it has done that step
+        // again, so the step's next try has more than twice the work it
+        // lost (rus_20_40, whose last join of 3.3 G units was otherwise
+        // stopped at 2.1 G and given 2.1 G again; UAI's 1aie, whose
+        // `families:0` was otherwise given 1 unit after its first cut).
+        // Only doublings keep every target on one grid. Raised from the
+        // work spent, the overshoot of a turn's last step carried into
+        // every later turn of the trials that lose a race
+        // (circ__bb_addFun_max_w17, 1.47 times the work); raised to
+        // exactly twice what a cut step will have spent, near-equal
+        // targets of trials cut short ordered the race by the size of
+        // their cuts (nodice_coupon2-12-obs, 1.54 times the work).
+        let floor = if t.lost > 0 {
+            t.spent.saturating_add(t.lost).saturating_mul(2)
+        } else {
+            t.spent.saturating_add(1)
+        };
+        loop {
+            t.target = t.target.max(1).saturating_mul(2);
+            if t.target >= floor || t.target == u64::MAX {
+                break;
+            }
+        }
+        if t.weight > 1 && spent_bet(t) {
             ledger.notes.push(format!(
                 "turn: {} indicators={} spent past its layout's estimate",
                 t.kind,
