@@ -172,6 +172,13 @@
 //! aside at the root, so that the walk decides as it would have on the
 //! result. The cap keeps the attempt cheap where a join grows little, and
 //! [`DEFER_FROM`] keeps small joins from waiting for nothing.
+//!
+//! A join stopped at its cap, a batch's or a node's last, neither waits nor
+//! gives its batch up while minimizing its operands in full frees a pair:
+//! it is tried again on them, and its result is minimized in full as well
+//! (`EvidenceWalk::settle_operands`). A result is only pruned off the
+//! full plan's schedule, and the twins a prune leaves multiply in the
+//! product the cap measures.
 
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -1429,6 +1436,10 @@ impl EvidenceWalk {
                 let (_, fa, fb) = *refused;
                 self.restore_operands(a, b, fa, fb, Some(&scope), backend)?;
                 backend.kept();
+                if self.settle_operands(a, b, backend)? {
+                    self.in_full.insert(out, None);
+                    return Ok(false);
+                }
                 if let Some(id) = batch {
                     self.unbatch(id)?;
                     return Ok(false);
@@ -1465,6 +1476,33 @@ impl EvidenceWalk {
         self.slots[b] = None;
         backend.kept();
         Ok(true)
+    }
+
+    /// Minimizes the operands of a join stopped at its cap in full, and
+    /// whether that freed a pair, in which case the join is tried again,
+    /// its result minimized in full too, before it waits or its batch is
+    /// given up. Pruned operands keep twins, which multiply in the product
+    /// the cap measures (uai_pedigree25: a batch's operands of 3042 and
+    /// 7780 pairs, 2127 and 7688 minimized, made 179 842 pairs where the
+    /// minimized ones make 38 793; given up, the batch's chain into its
+    /// target built 329 033).
+    fn settle_operands(
+        &mut self,
+        a: usize,
+        b: usize,
+        backend: &TddBackend,
+    ) -> Result<bool, CompileError> {
+        let mut freed = false;
+        for id in [a, b] {
+            let f = &mut self.slots[id].as_mut().expect("a stopped join's operand").0;
+            let before = backend.size(f);
+            backend.minimize(f, Reduce::Settled)?;
+            let after = backend.size(f);
+            self.slot_pairs[id] = after;
+            freed |= after < before;
+        }
+        backend.kept();
+        Ok(freed)
     }
 
     fn reschedule_waiting(&mut self, a: usize, b: usize, out: usize, last: bool) -> bool {
