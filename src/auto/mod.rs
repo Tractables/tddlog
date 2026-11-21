@@ -69,7 +69,7 @@ use tididi::limits::{LimitConfig, StopAt, StopRules};
 
 use policy::{
     FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR, bet_left,
-    candidates, horizon, overspent_estimate, projected_from, search_due, search_rent,
+    candidates, horizon, projected_from, search_due, search_rent, spent_bet,
     ties_tables_by_clauses, weight,
 };
 use trial::Trial;
@@ -719,7 +719,7 @@ fn run_within(
                 break;
             }
         }
-        if t.weight > 1 && overspent_estimate(t) {
+        if t.weight > 1 && spent_bet(t) {
             ledger.notes.push(format!(
                 "turn: {} indicators={} spent past its layout's estimate",
                 t.kind,

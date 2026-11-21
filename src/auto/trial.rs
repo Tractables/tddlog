@@ -82,8 +82,8 @@ impl Trial {
             }
     }
 
-    /// Takes its weight away, once it has spent past its layout's estimate
-    /// ([`super::policy::overspent_estimate`]). A trial whose attempt the
+    /// Takes its weight away, once it has spent its bet on its layout's estimate
+    /// ([`super::policy::spent_bet`]). A trial whose attempt the
     /// bet paused at a step it kept ([`Self::lost`] 0) resumes at its
     /// level, its target over its weight and past what it has spent; one
     /// whose operation the guard cut short, an operation that outgrew the
