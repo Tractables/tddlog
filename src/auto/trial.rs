@@ -11,6 +11,10 @@ use crate::vtree::{self, Kind};
 
 use super::policy::PROJECTED_DOUBLINGS;
 
+/// The share of its phase left within which a trial cut short is
+/// projected to finish in its next turn ([`Trial::projected`]).
+pub(super) const NEAR_FINISHED: f64 = 1.0 / 128.0;
+
 pub(super) struct Trial {
     pub(super) kind: Kind,
     pub(super) ground: Option<Arc<GroundProgram>>,
@@ -44,6 +48,9 @@ pub(super) struct Trial {
     pub(super) querying: bool,
     pub(super) evaluation: Evaluation,
     pub(super) disabled: bool,
+    /// Whether it has taken an attempt ahead of every trial
+    /// ([`Self::rushes`]).
+    pub(super) rushed: bool,
 }
 
 impl Trial {
@@ -65,6 +72,7 @@ impl Trial {
             querying: false,
             evaluation: Evaluation::default(),
             disabled: false,
+            rushed: false,
         }
     }
 
@@ -142,8 +150,8 @@ impl Trial {
     ///
     /// `None` too while its last attempt lost the operation under way at
     /// the guard ([`Self::lost`]), unless it holds the weight and the steps
-    /// left ([`Self::left`]), each costing what that one lost, fit in its
-    /// next turn: the step cut short cost more than the whole attempt, so
+    /// left ([`Self::left`]), each costing what that one lost, fit in twice
+    /// its next turn: the step cut short cost more than the whole attempt, so
     /// the pace of the steps before it projects nothing of a rest that may
     /// hold more such steps, and the trial counts [`PROJECTED_DOUBLINGS`]
     /// past the target the loss raised. What it lost is only a floor on
@@ -164,13 +172,29 @@ impl Trial {
     /// of a phase, it keeps the projection: `families:0` on UAI's 1aie and
     /// 1f94, cut on the last of 5552 and 7959 steps, otherwise counted the
     /// most and gave `closed` and `td` 2.7 G and 5.4 G units of turns
-    /// before it finished. The next attempt that keeps a step projects
-    /// again.
+    /// before it finished. The margin of twice the turn keeps that from
+    /// turning on a few percent of the cost of the step lost: 1aie, with
+    /// its query work charged 5% higher, lost the projection and gave
+    /// `closed` and `td` their turns, 1.18 times the instructions. The
+    /// next attempt that keeps a step projects again.
+    ///
+    /// A trial cut within the last [`NEAR_FINISHED`] of its phase is
+    /// projected to finish in its next turn, whatever it lost and whatever
+    /// its weight: pgrid18_17's `families:0`, cut at 885 of 888 query
+    /// steps with 0.52 G units lost on the last, otherwise waited while
+    /// `closed` and `td` took six turns of 2.7 G units in all, and then
+    /// finished in 1.28 G. The share is a step count, so it holds where
+    /// the work charged to the steps before it moves. The cuts above where
+    /// a projection cost, on the last of 77 steps and with 11 of 48 left,
+    /// are outside it.
     pub(super) fn projected(&self) -> Option<f64> {
+        if self.near_finished() {
+            return Some((self.target.max(1) as f64).log2());
+        }
         if self.lost > 0
             && (self.weight <= 1
                 || (self.left as u64).saturating_mul(self.lost)
-                    > self.target.saturating_sub(self.spent))
+                    > self.target.saturating_sub(self.spent).saturating_mul(2))
         {
             return None;
         }
@@ -195,6 +219,28 @@ impl Trial {
         } else {
             f64::INFINITY
         })
+    }
+
+    /// Whether its last attempt was cut within the last [`NEAR_FINISHED`]
+    /// of its phase.
+    pub(super) fn near_finished(&self) -> bool {
+        self.lost > 0
+            && self
+                .progress
+                .last()
+                .is_some_and(|&(_, done)| done >= 1.0 - NEAR_FINISHED)
+    }
+
+    /// Whether it takes the next attempt ahead of every trial: cut near
+    /// finished ([`Self::near_finished`]) and not yet rushed. Ranked by its
+    /// key, the doubling its target took to fit twice the step it lost
+    /// moved it behind trials a doubling short of it whenever that step
+    /// cost a little more: UAI's 1aie, cut at 5551 of 5552 steps, with
+    /// compile work charged 5% lower, gave `closed` and `td` their turns
+    /// first, 1.21 times the instructions. Once only, so that a last step
+    /// that no turn holds leaves the others their turns.
+    pub(super) fn rushes(&self) -> bool {
+        !self.rushed && self.near_finished()
     }
 
     /// The work it had spent when its query phase began: what it has spent

@@ -1813,10 +1813,26 @@ fn a_cut_trial_projects_only_where_the_steps_left_fit_its_turn() {
         "{:?}",
         late.projected()
     );
-    // Three steps left at that cost would not fit in a turn of 2^31.
+    // Five steps left at that cost would not fit in twice a turn of 2^31,
+    // three would.
     late.target = 1 << 32;
-    late.left = 3;
+    late.left = 5;
     assert_eq!(late.projected(), None);
+    late.left = 3;
+    assert!(late.projected().is_some());
+    // Cut within its last 1/128 of the phase, a trial is projected to
+    // finish in its next turn at any weight and any loss.
+    late.weight = 1;
+    late.record(false, Some((990, 1000)));
+    assert_eq!(late.projected(), None);
+    late.record(false, Some((995, 1000)));
+    assert_eq!(late.progress.last(), Some(&(1 << 32, 0.995)));
+    assert_eq!(late.projected(), Some(32.0));
+    // It takes the next attempt ahead of every trial, once.
+    assert!(late.rushes());
+    late.rushed = true;
+    assert!(!late.rushes());
+    late.weight = FAMILIES_WEIGHT;
     // Its target doubled, it takes its turns ahead of an unprojected trial
     // of its weight by 1.75 doublings.
     t.target = 1 << 32;

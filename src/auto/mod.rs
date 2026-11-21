@@ -584,8 +584,8 @@ fn run_within(
             .filter(|&i| !trials[i].disabled)
             .min_by(|&i, &j| {
                 let (a, b) = (&trials[i], &trials[j]);
-                a.key(earliest)
-                    .total_cmp(&b.key(earliest))
+                (b.rushes().cmp(&a.rushes()))
+                    .then(a.key(earliest).total_cmp(&b.key(earliest)))
                     .then(a.ahead(earliest).total_cmp(&b.ahead(earliest)))
                     .then((a.spent > 0).cmp(&(b.spent > 0)))
             });
@@ -632,6 +632,7 @@ fn run_within(
         }
         let alone = trials.iter().enumerate().all(|(j, t)| j == i || t.disabled);
         let t = &mut trials[i];
+        t.rushed |= t.near_finished();
         if let Some(projected) = t
             .projected()
             .filter(|_| t.ahead(earliest) < PROJECTED_DOUBLINGS)
