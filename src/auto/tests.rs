@@ -703,7 +703,8 @@ fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
 }
 
 /// [`bounded_alone`], each turn the rent before the families search
-/// ([`Bounds::rent`]) where `rent`.
+/// ([`Bounds::rent`]) where `rent`, its turns then from one unit up, a
+/// unit longer each, so that some turn ends inside a join's estimate.
 fn bounded_alone_on(gp: &GroundProgram, strategy: Kind, rent: bool) -> Run {
     let programs = Programs {
         ground: Arc::new(ground::without_linear_recursion(gp.clone())),
@@ -715,7 +716,7 @@ fn bounded_alone_on(gp: &GroundProgram, strategy: Kind, rent: bool) -> Run {
     let mut ledger = Ledger::default();
     assert!(prepare(&mut trials, 0, &programs, &mut ledger).unwrap());
     let mut bounds = Bounds {
-        work: 2 * WORK_PER_PAIR,
+        work: if rent { 1 } else { 2 * WORK_PER_PAIR },
         projected_from: u64::MAX,
         horizon: f64::INFINITY,
         rent,
@@ -731,6 +732,7 @@ fn bounded_alone_on(gp: &GroundProgram, strategy: Kind, rent: bool) -> Run {
         ) {
             Ok((results, sizes)) => return finish(&mut trials[0], results, sizes, ledger),
             Err(e) => match Stop::of(&e) {
+                Some(Stop::Work) if rent => bounds.work += 1,
                 Some(Stop::Work) => bounds.work *= 2,
                 Some(Stop::Projected) | None => panic!("{strategy}: {e:?}"),
             },
