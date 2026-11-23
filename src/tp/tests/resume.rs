@@ -138,64 +138,20 @@ fn a_stopped_cyclic_component_resumes_where_it_stopped() {
     }
 }
 
-/// A search may spend the work the compile charged since the last one, on
-/// the run's work clock. A run that resumes a stopped compile starts a
-/// fresh clock, behind the last search's mark; its first search spends
-/// what the run's limits allow rather than a difference across clocks.
+/// A search is due once the live pairs reach the mark the last one set,
+/// and on nothing else: `due` takes no work clock, so a change in what the
+/// backend charges cannot move a search, and a run that resumes a stopped
+/// compile on a fresh clock searches where an unstopped one would.
 #[test]
-fn a_resumed_runs_first_search_spends_what_the_run_allows() {
-    let mut dynamic = Dynamic {
-        first_pairs: 0,
-        next_at: 0,
-        since: Some(400),
-        resumed: false,
-        debt: 0,
-    };
-    assert_eq!(dynamic.budget(650, 1, 10), 250);
-    dynamic.resumed = true;
-    assert_eq!(dynamic.budget(60, 1, 10), u64::MAX);
-}
-
-/// Near the end of the compile a search may spend no more than the
-/// components left are likely to take: the work so far per finished
-/// component times the components left.
-#[test]
-fn a_search_spends_no_more_than_the_components_left_take() {
+fn a_search_is_due_on_live_pairs_alone() {
+    let due: fn(&Dynamic, usize) -> bool = Dynamic::due;
     let dynamic = Dynamic {
-        first_pairs: 0,
-        next_at: 0,
-        since: Some(400),
-        resumed: false,
-        debt: 0,
-    };
-    assert_eq!(dynamic.budget(1000, 9, 1), 111);
-    assert_eq!(dynamic.budget(1000, 1, 9), 600);
-    assert_eq!(
-        dynamic.budget(1000, 0, 3),
-        600,
-        "no component finished counts as one"
-    );
-}
-
-/// A search that spent past its budget holds the next until the compile
-/// has spent the excess since it ended, or until the formulas have doubled
-/// again past where the next was due; a run that resumes a stopped
-/// compile, on a fresh clock, does not wait.
-#[test]
-fn a_search_past_its_budget_waits_for_the_compile_to_spend_the_excess() {
-    let mut dynamic = Dynamic {
-        first_pairs: 0,
+        first_pairs: 1000,
         next_at: 2000,
-        since: Some(400),
-        resumed: false,
-        debt: 300,
     };
-    assert!(!dynamic.due(800, 1999));
-    assert!(!dynamic.due(699, 3999));
-    assert!(dynamic.due(699, 4000));
-    assert!(dynamic.due(700, 2000));
-    dynamic.resumed = true;
-    assert!(dynamic.due(10, 2000));
+    assert!(!due(&dynamic, 1999));
+    assert!(due(&dynamic, 2000));
+    assert!(due(&dynamic, 4000));
 }
 
 /// A run whose turn ends inside a loop of clauses holds the loop before

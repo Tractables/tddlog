@@ -1975,16 +1975,16 @@ The layouts (`Kind`, `build`), each a trial of `auto`:
   crossed rotations are the moves that change the leaf order. The first
   search runs at `DYNAMIC_FIRST_PAIRS` live pairs (CUDD's first reordering
   is at 4 004 nodes), the next whenever the live pairs have doubled. A
-  search sweeps until a sweep keeps nothing. Its budget is the work the
-  compile spent since the last one, and no more than its work so far per
-  finished component times the components left; what the search spends
-  past it, the compile spends before the next search runs, unless the
-  live pairs double again first, so searching costs at most twice what
-  compiling does, plus the last search's excess. A budget that stopped
-  searches part way made the outcome depend on where they stopped (a 2%
-  change of budget made single programs several times slower or faster).
-  A search that finds little ends within a sweep or two, and what it spent
-  past the budget holds off the next search. A formula is dropped once the
+  search sweeps until a sweep keeps nothing. The schedule reads live pairs
+  only, never the engine's work clock (`Dynamic::due`): an earlier rule
+  held the next search back until the compile had spent what the last
+  search spent past a budget in work units, so every change in what the
+  engine charges for a search moved the search points and the last vtree
+  (one such change took a chain test from 42 MB to 15.6 GB). A budget that
+  stopped searches part way made the outcome depend on where they stopped
+  (a 2% change of budget made single programs several times slower or
+  faster). A search that finds little ends within a sweep or two. A
+  formula is dropped once the
   last component whose rules read it is finished (`dying_atoms`), so the search
   does not fit the vtree to formulas the compile is done with. A dynamic
   compile is unprojected, since a projected scope stops being a projection
