@@ -834,7 +834,10 @@ fn a_families_trial_within_an_eighth_of_its_estimate_has_spent_its_bet() {
     let bet = 100 * WORK_PER_ESTIMATED_PAIR;
     assert!(!estimated(laid, bet - bet / 8));
     assert!(estimated(laid, bet - bet / 8 + 1));
-    assert!(estimated(Kind::Families { search: true }, bet - bet / 8 + 1));
+    assert!(estimated(
+        Kind::Families { search: true },
+        bet - bet / 8 + 1
+    ));
     assert!(!estimated(Kind::Closed, bet + 1));
     assert!(!spent_bet(&Trial {
         spent: u64::MAX,
