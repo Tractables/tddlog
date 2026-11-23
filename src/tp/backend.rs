@@ -176,6 +176,13 @@ pub(crate) struct TddBackend<'a> {
     /// The work clock at which `auto`'s turn ends ([`TddBackend::pause`]),
     /// `None` outside a turn.
     turn_end: Cell<Option<u64>>,
+    /// The work clock when the backend began.
+    began_at: u64,
+    /// Whether the turn ends before a step that would carry it past its
+    /// end ([`TddBackend::pause_before`]), and the estimate of the step it
+    /// ended before.
+    ends_before: Cell<bool>,
+    ended_before: Cell<u64>,
 }
 
 /// When a minimization between operations runs tididi's full plan, and
@@ -288,6 +295,9 @@ impl<'a> TddBackend<'a> {
             none_of: RefCell::default(),
             kept_at: Cell::new(engine.limits().work_units()),
             turn_end: Cell::new(None),
+            began_at: engine.limits().work_units(),
+            ends_before: Cell::new(false),
+            ended_before: Cell::new(0),
         }
     }
 
@@ -1203,6 +1213,36 @@ impl TddBackend<'_> {
             return Err(self.end_turn());
         }
         Ok(())
+    }
+
+    /// Makes the turn end before a step that would carry it past its end
+    /// ([`Self::pause_before`]).
+    pub(crate) fn end_turn_before(&self) {
+        self.ends_before.set(true);
+    }
+
+    /// The stop of [`Self::pause`] before a step estimated to cost `work`
+    /// units, where the turn ends before such steps
+    /// ([`Self::end_turn_before`]), the step would carry it past its end
+    /// and the backend has kept a step since it began, so that an
+    /// attempt's first step always runs. The estimate is what the turn is
+    /// charged for the step ([`Self::ended_before`]).
+    pub(crate) fn pause_before(&self, work: u64) -> Result<(), CompileError> {
+        let past = self
+            .turn_end
+            .get()
+            .is_some_and(|at| self.work_units().saturating_add(work) > at);
+        if past && self.ends_before.get() && self.kept_at.get() > self.began_at {
+            self.ended_before.set(work);
+            return Err(self.end_turn());
+        }
+        Ok(())
+    }
+
+    /// The estimate of the step the turn ended before
+    /// ([`Self::pause_before`]), 0 where it did not.
+    pub(crate) fn ended_before(&self) -> u64 {
+        self.ended_before.get()
     }
 
     /// The stop of [`Self::pause`], where the phase has kept what it holds
