@@ -820,7 +820,7 @@ fn a_dynamic_trial_compiles_primal_and_the_others_dual() {
 }
 
 #[test]
-fn a_families_trial_that_spends_past_its_estimate_has_overspent_it() {
+fn a_families_trial_within_an_eighth_of_its_estimate_has_spent_its_bet() {
     let estimated = |kind, spent| {
         let mut t = Trial::new(kind);
         t.estimate = Some(vtree::Estimate {
@@ -828,17 +828,15 @@ fn a_families_trial_that_spends_past_its_estimate_has_overspent_it() {
             search_units: 0,
         });
         t.spent = spent;
-        overspent_estimate(&t)
+        spent_bet(&t)
     };
     let laid = Kind::Families { search: false };
-    assert!(!estimated(laid, 100 * WORK_PER_ESTIMATED_PAIR));
-    assert!(estimated(laid, 100 * WORK_PER_ESTIMATED_PAIR + 1));
-    assert!(estimated(
-        Kind::Families { search: true },
-        100 * WORK_PER_ESTIMATED_PAIR + 1
-    ));
-    assert!(!estimated(Kind::Closed, 100 * WORK_PER_ESTIMATED_PAIR + 1));
-    assert!(!overspent_estimate(&Trial {
+    let bet = 100 * WORK_PER_ESTIMATED_PAIR;
+    assert!(!estimated(laid, bet - bet / 8));
+    assert!(estimated(laid, bet - bet / 8 + 1));
+    assert!(estimated(Kind::Families { search: true }, bet - bet / 8 + 1));
+    assert!(!estimated(Kind::Closed, bet + 1));
+    assert!(!spent_bet(&Trial {
         spent: u64::MAX,
         ..Trial::new(laid)
     }));
@@ -927,7 +925,7 @@ fn a_trial_that_loses_its_bet_at_a_kept_step_takes_its_turns_at_its_level() {
     let stopped = |lost| {
         let mut t = with_estimate(laid, 100.0, FAMILIES_WEIGHT, w + 1);
         (t.target, t.lost) = (FAMILIES_WEIGHT * first, lost);
-        assert!(overspent_estimate(&t));
+        assert!(spent_bet(&t));
         t.lose_weight();
         t
     };
@@ -1817,10 +1815,26 @@ fn a_cut_trial_projects_only_where_the_steps_left_fit_its_turn() {
         "{:?}",
         late.projected()
     );
-    // Three steps left at that cost would not fit in a turn of 2^31.
+    // Five steps left at that cost would not fit in twice a turn of 2^31,
+    // three would.
     late.target = 1 << 32;
-    late.left = 3;
+    late.left = 5;
     assert_eq!(late.projected(), None);
+    late.left = 3;
+    assert!(late.projected().is_some());
+    // Cut within its last 1/128 of the phase, a trial is projected to
+    // finish in its next turn at any weight and any loss.
+    late.weight = 1;
+    late.record(false, Some((990, 1000)));
+    assert_eq!(late.projected(), None);
+    late.record(false, Some((995, 1000)));
+    assert_eq!(late.progress.last(), Some(&(1 << 32, 0.995)));
+    assert_eq!(late.projected(), Some(32.0));
+    // It takes the next attempt ahead of every trial, once.
+    assert!(late.rushes());
+    late.rushed = true;
+    assert!(!late.rushes());
+    late.weight = FAMILIES_WEIGHT;
     // Its target doubled, it takes its turns ahead of an unprojected trial
     // of its weight by 1.75 doublings.
     t.target = 1 << 32;

@@ -102,16 +102,21 @@ pub(super) fn estimated_work(t: &Trial) -> Option<u64> {
         .map(|e| (e.pairs * WORK_PER_ESTIMATED_PAIR as f64).min(u64::MAX as f64) as u64)
 }
 
-/// Whether `t`, a families trial, has spent past its layout's estimate
-/// ([`estimated_work`]).
-pub(super) fn overspent_estimate(t: &Trial) -> bool {
-    estimated_work(t).is_some_and(|w| t.spent > w)
+/// Whether `t`, a families trial, has spent its bet on its layout's
+/// estimate ([`estimated_work`]): past all but an eighth of it. A turn on
+/// the rest would end short of its target and still double it. On
+/// rl_network_3000 with compile work charged 5% higher, `families:0`
+/// stopped just short of its estimate, took a turn of 0.47 M units on
+/// the rest, lost the weight a doubling behind, and `closed` and `td` took
+/// 4.3 G units of turns before it; at the estimate it answers in 51.6 M.
+pub(super) fn spent_bet(t: &Trial) -> bool {
+    estimated_work(t).is_some_and(|w| t.spent > w - w / 8)
 }
 
 /// The work of `left`, what its turn leaves it, that `t`'s next attempt
 /// may spend: where `t` holds the weight on its layout's estimate, no more
 /// than it takes to spend the estimate ([`estimated_work`]), past which it
-/// loses the weight ([`overspent_estimate`]). The bet costs what the
+/// loses the weight ([`spent_bet`]). The bet costs what the
 /// estimate says, not a weighted turn: on Roulette's caesar, whose
 /// `families:0` layout is estimated at 2.2e4 pairs and builds formulas
 /// exponential in the key's copies, its first attempt otherwise spent up
