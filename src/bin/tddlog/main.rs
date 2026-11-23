@@ -1,7 +1,7 @@
 //! `tddlog`: answer ProbLog queries by Tp-compilation into TDDs.
 
-// jemalloc does not build with MSVC; there the system allocator serves.
-#[cfg(not(target_env = "msvc"))]
+// jemalloc does not build on Windows (MSVC or MinGW); there the system allocator serves.
+#[cfg(not(windows))]
 mod alloc;
 mod budget;
 mod stats;
@@ -18,15 +18,13 @@ use tddlog::{Format, Input, Options, Progress, Strategy};
 use stats::{ground_line, print_stats};
 
 const USAGE: &str = "\
-usage: tddlog [options] <program.pl | program.dice | netlist.cql | network> [argument ...]
+usage: tddlog [options] <program.pl | program.dice | network> [argument ...]
 
 Prints one `atom:<tab>probability` line per query, like ProbLog. A network
 file, BIF (.bif), Hugin (.net, .hugin), GeNIe (.xdsl) or UAI (.uai), is
 read as a program of one annotated disjunction per row of its tables, a
-Dice program (.dice) as the program its symbolic evaluation writes, a
-Circulette netlist (.cql) as its gates' rules with a fault on each logic
-gate, and a program that holds `:- begin_lpad.` as an LPAD written for
-cplint.
+Dice program (.dice) as the program its symbolic evaluation writes, and a
+program that holds `:- begin_lpad.` as an LPAD written for cplint.
 
 The arguments after a ProbLog program or an LPAD take the places $1, $2,
 ... in its text, outside comments and quoted atoms, each read as a term:
@@ -44,8 +42,9 @@ options:
       td                                right-linear over a fact order from a tree decomposition;
                                         fails where no elimination of the graph finishes within
                                         its budget
-      closed                            components in an order found by local search, each on a
-                                        right-linear spine, bushy where its parts share nothing
+      closed                            components in the compiler's order, taken root by root,
+                                        each on a right-linear spine, bushy where its parts share
+                                        nothing
       families, families:0              a tree decomposition of the program read through
                                         indicators (families:0 without the decomposer's search);
                                         fails for a program that reads no atom through one
@@ -60,6 +59,9 @@ options:
                                         strategy other than auto, as that strategy compiles it;
                                         with --evidence-probability, the program P(e) is
                                         computed on
+  --layout                              print the vtree a strategy other than auto lays out, in
+                                        the .vtree text format, then a line `v <i> <atom>` for
+                                        each variable i, and exit; needs --vtree
   --evidence-probability                after the query lines, print P(e), the probability of the
                                         evidence, as `P(e):<tab>p<tab>log10 l`: p in scientific
                                         notation and l its base-10 logarithm, exact beyond a
@@ -81,7 +83,7 @@ options:
   --rescale                             for a network: divide every row of every table by its
                                         sum, for a file that writes its tables in percent or as
                                         weights; not for a .uai network, read as written
-  --program                             print the program a network, a Dice program, a netlist
+  --program                             print the program a network, a Dice program
                                         or an LPAD is read as, or a program with its arguments
                                         or consulted files in place, and exit
   --cnf                                 print the ground program, without its linear recursion,
@@ -134,6 +136,7 @@ struct Args {
     rescale: bool,
     program_only: bool,
     cnf_only: bool,
+    layout_only: bool,
     /// The file the trace of the run is written to.
     trace: Option<String>,
 }
@@ -147,7 +150,7 @@ fn parse_args() -> Result<Request, String> {
     let (mut ground_only, mut stats, mut evidence_probability, mut no_queries) =
         (None, None, None, None);
     let (mut queries, mut evidence, mut rescale, mut program_only) = (None, None, None, None);
-    let (mut cnf_only, mut trace) = (None, None);
+    let (mut cnf_only, mut layout_only, mut trace) = (None, None, None);
     while let Some(a) = args.next() {
         match a.as_str() {
             "-h" | "--help" => return Ok(Request::Help),
@@ -176,6 +179,7 @@ fn parse_args() -> Result<Request, String> {
             option @ "--rescale" => once(&mut rescale, (), option)?,
             option @ "--program" => once(&mut program_only, (), option)?,
             option @ "--cnf" => once(&mut cnf_only, (), option)?,
+            option @ "--layout" => once(&mut layout_only, (), option)?,
             option @ "--trace" => {
                 let v = args.next().ok_or("--trace needs a file")?;
                 once(&mut trace, v, option)?;
@@ -196,6 +200,30 @@ fn parse_args() -> Result<Request, String> {
     let file = file.ok_or_else(|| USAGE.to_string())?;
     let ground_only = ground_only.is_some();
     let stats = stats.is_some();
+    let layout_only = layout_only.is_some();
+    if layout_only {
+        if matches!(strategy, None | Some(Strategy::Auto)) {
+            return Err(
+                "--layout prints the vtree of one strategy: name it with --vtree, \
+                        other than auto"
+                    .into(),
+            );
+        }
+        for (given, option) in [
+            (ground_only, "--ground"),
+            (program_only.is_some(), "--program"),
+            (cnf_only.is_some(), "--cnf"),
+            (stats, "--stats"),
+            (precision.is_some(), "--precision"),
+            (trace.is_some(), "--trace"),
+        ] {
+            if given {
+                return Err(format!(
+                    "--layout prints the vtree and stops, so {option} would do nothing"
+                ));
+            }
+        }
+    }
     if ground_only {
         for (given, option) in [
             (stats, "--stats"),
@@ -289,6 +317,7 @@ fn parse_args() -> Result<Request, String> {
         rescale: rescale.is_some(),
         program_only,
         cnf_only,
+        layout_only,
         trace,
     }))
 }
@@ -303,7 +332,7 @@ fn once<T>(slot: &mut Option<T>, value: T, option: &str) -> Result<(), String> {
 
 fn main() -> ExitCode {
     budget::limit_to_cgroups();
-    #[cfg(all(unix, not(target_env = "msvc")))]
+    #[cfg(unix)]
     alloc::end_refusals_as_errors(format!("{}\n", refused()));
     // The run takes a thread whose stack is mapped whole as it starts. The
     // main thread's stack grows a page at a time, and a limit on the
@@ -457,9 +486,9 @@ fn answer(args: &Args, trace_file: &mut Option<std::fs::File>) -> ExitCode {
         let Cow::Owned(program) = &input.program else {
             eprintln!(
                 "--program is for a network file (.bif, .net, .hugin, .xdsl, .uai), a Dice \
-                 program (.dice), a Circulette netlist (.cql), an LPAD (a program that holds \
-                 `:- begin_lpad.`), a program given arguments or a program that consults files, \
-                 and {} is none of them",
+                 program (.dice), an LPAD (a program that holds `:- begin_lpad.`), a \
+                 program given arguments or a program that consults files, and {} is none of \
+                 them",
                 args.file
             );
             return ExitCode::from(2);
@@ -525,6 +554,10 @@ fn run(
     };
     if args.ground_only {
         print!("{}", tddlog::rewritten(&input.program, &options)?);
+        return Ok(());
+    }
+    if args.layout_only {
+        print!("{}", tddlog::layout(&input.program, &options)?);
         return Ok(());
     }
     if args.cnf_only {

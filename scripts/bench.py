@@ -436,6 +436,21 @@ DATA_DIR = 'data'
 # A scaled Dice loop's name (dice_scale.py: the loop of data/dice/LOOP.dice run
 # K times), which `folded` reads as the loop's program and its count where NAME.args is beside it.
 SCALED_LOOP = re.compile(r'dice_(.+)_k\d+')
+
+
+def loop_count(text):
+    """The count of a Dice program's first iterate call, the one dice_scale.py sets
+    (dice_LOOP_kK is data/dice/LOOP.dice with it set to K), or None."""
+    i = text.find('iterate(')
+    if i < 0:
+        return None
+    depth, j = 0, len(text)
+    for j in range(i + len('iterate'), len(text)):
+        depth += {'(': 1, ')': -1}.get(text[j], 0)
+        if depth == 0:
+            break
+    m = re.search(r',\s*(\d+)\s*$', text[i:j])
+    return int(m.group(1)) if m else None
 # The generators of SOUFFLE_WRITERS write the benchmark's original Souffle
 # program and its input relations beside the ProbLog one (`--souffle`,
 # NAME.souffle/), which PSouffle reads instead of a translation.
@@ -1830,11 +1845,15 @@ CHECK_TEXT = ('off the reference by more than 1e-9 and either by more than 1e-6 
 # (run_geni; kept while records of the earlier build stand), noDice six decimals
 # whose last is not rounded, Merlin six (its MAR file), ProbLog and PSouffle
 # eight significant digits, the network tools' drivers twelve, the exact
-# references written for the evaluation 17 decimals.
+# references written for the evaluation 17 decimals. Two exact references are
+# ProbLog's printed answers: exact:problog1 (problog_each.py prints ProbLog's
+# output) and problogex's exact:lit (lit_exact.py `expected` reads the outcomes
+# ProbLog's repository states, most to eight digits), keyed by family.
 PRINTED = {'merlin': ('dec', 6), 'nodice': ('unit', 1e-6), 'geni': ('dec', 7), 'problog': ('sig', 8),
            'psouffle': ('sig', 8), 'agrum': ('sig', 12), 'libdai': ('sig', 12), 'pgmpy': ('sig', 12),
            ('exact', 'cliquetree'): ('dec', 17), ('exact', 'lit'): ('dec', 17), ('exact', 'tpch'): ('dec', 17),
-           ('exact', 'reliability'): ('dec', 17), ('exact', 'lifted'): ('dec', 17)}
+           ('exact', 'reliability'): ('dec', 17), ('exact', 'lifted'): ('dec', 17), ('exact', 'problog1'): ('sig', 8),
+           ('exact', 'lit', 'problogex'): ('sig', 8)}
 # An answer's reference: an exact record (the solvers written for the
 # evaluation, bn_exact.py and the like, or the generator's own), then
 # the systems that compute in exact arithmetic (Psi's rationals, Storm's
@@ -1858,9 +1877,10 @@ UNDERFLOWS = {'ace'}
 CHECKED_SUITES = ('uai',)
 PR_REFS = [('exact', 'cliquetree'), ('merlin', 'bte-pr'), ('ganak', 'wmc'), ('tddlog', None)]
 
-def printed_error(system, variant, x):
-    """e(x): half a unit in the last place system:variant prints of x (PRINTED), 0 in full."""
-    p = PRINTED.get((system, variant)) or PRINTED.get(system)
+def printed_error(system, variant, x, family=None):
+    """e(x): half a unit in the last place system:variant prints of x (PRINTED; on
+    family's records where PRINTED names it), 0 in full."""
+    p = PRINTED.get((system, variant, family)) or PRINTED.get((system, variant)) or PRINTED.get(system)
     if p is None:
         return 0.0
     kind, n = p
@@ -1933,7 +1953,7 @@ def left_out(rec, ref):
         return []
     a = a if isinstance(a, dict) else {}
     return [q for q in b if q not in a
-            and not answer_right(0.0, b[q], 0.0, printed_error(ref['system'], ref.get('variant'), b[q]))]
+            and not answer_right(0.0, b[q], 0.0, printed_error(ref['system'], ref.get('variant'), b[q], ref.get('family')))]
 
 
 def answers_check(rec, ref):
@@ -1957,8 +1977,9 @@ def answers_check(rec, ref):
     if not pairs:
         return None
     gone = left_out(rec, ref)
-    right = not gone and all(answer_right(a[k], b[q], printed_error(rec['system'], rec.get('variant'), a[k]),
-                                          printed_error(ref['system'], ref.get('variant'), b[q])) for k, q in pairs)
+    right = not gone and all(answer_right(a[k], b[q], printed_error(rec['system'], rec.get('variant'), a[k], rec.get('family')),
+                                          printed_error(ref['system'], ref.get('variant'), b[q], ref.get('family')))
+                             for k, q in pairs)
     worst = max([answer_diff(a[k], b[q]) if all(isinstance(x, (int, float)) for x in (a[k], b[q]))
                  else (0.0 if a[k] == b[q] else math.inf) for k, q in pairs] + [math.inf] * bool(gone))
     return right, worst, len(qs) + len(zero)

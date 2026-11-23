@@ -627,25 +627,17 @@ impl Rewrite {
         let kept_masses: Vec<f64> = kept.iter().map(|&(_, w)| w).collect();
         let mut qs: Vec<Prob> = Vec::with_capacity(kept.len());
         chain_weights(&kept_masses, weighed.none, &mut qs);
-        let mut negs: Vec<GLit> = Vec::new();
+        let mut chain = context.clone();
+        chain.extend(first_w.map(GLit::Pos));
         let mut seen: FxHashMap<(u64, u64), usize> = FxHashMap::default();
         for (i, (&(h, _), &q)) in kept.iter().zip(&qs).enumerate() {
-            let mut body = context.clone();
-            if let Some(w) = first_w {
-                body.push(GLit::Pos(w));
-            }
-            body.extend_from_slice(&negs);
-            if i + 1 == kept.len() && full {
-                out.push(GroundRule::new(h, body));
-                break;
-            }
-            let k = seen.entry(q.bits()).or_insert(0);
-            let key = (q.bits(), *k);
-            *k += 1;
-            let s = self.fact(&mut atoms.switches, key, shared, "$rn_s", q);
-            body.push(GLit::Pos(s));
-            out.push(GroundRule::new(h, body));
-            negs.push(GLit::Neg(s));
+            let s = (i + 1 < kept.len() || !full).then(|| {
+                let k = seen.entry(q.bits()).or_insert(0);
+                let key = (q.bits(), *k);
+                *k += 1;
+                self.fact(&mut atoms.switches, key, shared, "$rn_s", q)
+            });
+            out.push(GroundRule::link(h, &mut chain, s));
         }
         if context.is_empty() {
             self.factor = (self.factor * Count::new(weighed.m)).normalized();

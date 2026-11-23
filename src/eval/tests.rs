@@ -14,7 +14,9 @@ enum Flaw {
     /// Every node's last two pairs swapped: the offsets are a grid's
     /// list.
     Listed,
-    /// One pair of node 5 names another node on the right.
+    /// One pair of node 5 names another node on the right, one that no
+    /// other pair of the level pairs with its left node: a level holds
+    /// no pair twice.
     Moved,
     /// Node 9 lacks its last pair.
     Short,
@@ -127,7 +129,7 @@ fn table(eng: &Engine, flaw: Flaw) -> (Tdd, VtreeIdx) {
             match flaw {
                 Flaw::Listed => pairs.swap(2, 3),
                 Flaw::Moved if u == 5 => {
-                    pairs[2] = ChildPair::new(a[n0 + 8], c[(n1 + 9 + 16 * n2) % 32])
+                    pairs[2] = ChildPair::new(a[n0 + 8], c[(n1 + 13 + 16 * n2) % 32])
                 }
                 Flaw::Short if u == 9 => drop(pairs.pop()),
                 _ => {}
@@ -170,7 +172,8 @@ fn golden_weights(n: usize, scale_of: impl Fn(usize) -> f64, neg_factor: f64) ->
 /// in floats and in `Count`s, under weights that keep floats in range
 /// and under weights whose products leave it. Every level of [`table`]
 /// is a grid, level T's offsets affine or a list, and each level's
-/// passes run in every way they may run, through every kernel.
+/// passes run in every way they may run, through every kernel where the
+/// target has kernels (`kernel::COMPILED`), and through none elsewhere.
 #[test]
 fn grids_count_to_the_bit_of_pairs() {
     let weights =
@@ -183,9 +186,10 @@ fn grids_count_to_the_bit_of_pairs() {
         let ways = grid.variants();
         assert!(ways.len() > 50, "{} ways", ways.len());
         for pass in 0..3 {
-            assert!(
+            assert_eq!(
                 ways.iter().any(|g| g.kernels()[pass]),
-                "some way runs pass {pass} of T through a kernel"
+                kernel::COMPILED,
+                "some way runs pass {pass} of T through a kernel, where the target has them"
             );
         }
         for scale in [1.0, 1e-90] {
@@ -728,9 +732,12 @@ fn centring_every_level_keeps_the_bits() {
         assert!(scaled, "{what}: centred");
         assert_eq!(centred, want, "{what}: centred");
         if grid_min == 0 {
-            let kernel = Route::Kernel.index::<f64>();
-            assert!(
-                routes.up[kernel] > 0 && routes.down[kernel] > 0,
+            // Through the kernels where the processor runs them, the scalar
+            // loops elsewhere.
+            let (k, vectors) = (Route::Kernel.index::<f64>(), kernel::avx2());
+            assert_eq!(
+                (routes.up[k] > 0, routes.down[k] > 0),
+                (vectors, vectors),
                 "{what}: {routes:?}"
             );
         }

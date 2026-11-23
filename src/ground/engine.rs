@@ -580,6 +580,17 @@ impl Relation {
         self.find(Self::hash(args), args)
     }
 
+    /// The place of a derived tuple in the order derived.
+    fn place(&self, args: &[Val]) -> Option<usize> {
+        if args.is_empty() {
+            return (!self.ids.is_empty()).then_some(0);
+        }
+        let t = self
+            .by_hash
+            .find(Self::hash(args), |t| self.tuple(t as usize) == args)?;
+        Some(t as usize)
+    }
+
     /// The atom of a derived tuple whose hash is `h`.
     fn find(&self, h: u64, args: &[Val]) -> Option<AtomId> {
         if args.is_empty() {
@@ -3276,8 +3287,15 @@ fn emit(g: &mut Grounder, key: Key, p: PredId, args: Vec<Val>, body: Vec<GLit>) 
 /// only over tuples in `range` of its relation, and the walk joins the rest
 /// of the body to them where that pays ([`from_delta`], [`from_pays`]).
 fn eval_rule(g: &mut Grounder, r: usize, delta: Option<(usize, (usize, usize))>) {
+    // A rule without variables, every rule of a ground program, is walked
+    // in its own order: each of its atoms is a lookup, so the walk from the
+    // round's atom reaches no fewer, and the one case [`from_pays`] takes it
+    // (the atom first of the rule's atoms, the next one's relation empty)
+    // orders the body as the rule's own order does. Building that order for
+    // each of a million rules and rounds cost more than their walks.
     if let Some((i, range)) = delta
         && i > 0
+        && g.rules[r].num_vars > 0
     {
         let variant = match g.from_delta.remove(&(r, i)) {
             Some(variant) => variant,
@@ -3755,14 +3773,21 @@ fn enter(
                 _ => None,
             };
             // Every argument bound, as in every literal of a ground program:
-            // the tuple is the atom, looked up at once.
-            if range.is_none()
-                && args.iter().all(|a| {
-                    matches!(a, Arg::Val(_))
-                        || matches!(a, Arg::Var(v) if subst[*v as usize].is_some())
-                })
-            {
-                return Alts::Once;
+            // the tuple is the atom, looked up at once, and walked over a
+            // range it is there where its place is. Its candidates from the
+            // posting lists were the same one tuple, after an index of every
+            // position of the relation.
+            if args.iter().all(|a| {
+                matches!(a, Arg::Val(_)) || matches!(a, Arg::Var(v) if subst[*v as usize].is_some())
+            }) {
+                let Some((s, e)) = range else {
+                    return Alts::Once;
+                };
+                let rel = &g.rels[*p as usize];
+                return match with_resolved(args, subst, |vals| rel.place(vals)) {
+                    Some(t) if s <= t && t < e => Alts::Once,
+                    _ => Alts::Spent,
+                };
             }
             // Candidate tuple indices, from the bound arguments' posting
             // lists, in the delta range where there is one. Scanning the

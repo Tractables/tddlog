@@ -719,7 +719,7 @@ impl Unit<'_> {
 }
 
 /// The unit of each derived atom: the merged components of
-/// [`crate::ground::deps::components`], which join the components that share a
+/// [`crate::ground::deps::unit_ranks`], which join the components that share a
 /// fact and then the ones with the same dependencies and consumers, joined
 /// again where they hold atoms of one exclusive set. A unit reads another's
 /// atom through an indicator of its own ([`introduce`]). The unit is meant

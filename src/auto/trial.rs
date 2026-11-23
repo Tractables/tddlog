@@ -9,7 +9,7 @@ use crate::ground::deps::Deps;
 use crate::tp;
 use crate::vtree::{self, Kind};
 
-use super::policy::{PROJECTED_DOUBLINGS, WORK_PER_HELD_PAIR};
+use super::policy::PROJECTED_DOUBLINGS;
 
 pub(super) struct Trial {
     pub(super) kind: Kind,
@@ -28,8 +28,6 @@ pub(super) struct Trial {
     pub(super) weight: u64,
     /// The work it may have spent by the end of its next turn.
     pub(super) target: u64,
-    /// The least watch that holds the formulas that stopped its attempts.
-    pub(super) held: usize,
     /// The engine work its attempts have spent, and its last attempt.
     pub(super) spent: u64,
     pub(super) last_work: u64,
@@ -40,25 +38,12 @@ pub(super) struct Trial {
     /// attempt at that target that left it in that phase
     /// ([`Self::projected`]).
     pub(super) progress: Vec<(u64, f64)>,
+    /// The steps of its phase left after its last recorded attempt.
+    pub(super) left: usize,
     /// Whether `progress` measures its query phase.
     pub(super) querying: bool,
-    /// The target of its compile's record at its first turn's mark, while
-    /// `progress` holds it ([`Self::record`], [`Self::ahead`]).
-    pub(super) mark: Option<u64>,
     pub(super) evaluation: Evaluation,
     pub(super) disabled: bool,
-    /// Whether the others' memory has been freed for it, which happens at
-    /// most once a run ([`super::run`]).
-    pub(super) freed_for: bool,
-    /// Whether it was last retired for memory refused while another trial
-    /// held what its attempts built. Such a trial runs again once no trial
-    /// is left, since what the others held is freed by then
-    /// (`super::run_within`; on multimodal_w11 under a 40 GB address-space
-    /// limit, `closed` was refused while `program:fanin` held its formulas,
-    /// and `program:fanin` was refused alone after it).
-    pub(super) behind: bool,
-    /// Whether it has run again so ([`Self::behind`]), at most once a run.
-    pub(super) revived: bool,
 }
 
 impl Trial {
@@ -72,18 +57,14 @@ impl Trial {
             kept: None,
             weight: 1,
             target: 0,
-            held: 0,
             spent: 0,
             last_work: 0,
             lost: 0,
             progress: Vec::new(),
+            left: 0,
             querying: false,
-            mark: None,
             evaluation: Evaluation::default(),
             disabled: false,
-            freed_for: false,
-            behind: false,
-            revived: false,
         }
     }
 
@@ -99,25 +80,6 @@ impl Trial {
                 }
                 _ => false,
             }
-    }
-
-    /// The pairs of the largest formula its next attempt may complete: a
-    /// [`WORK_PER_HELD_PAIR`]th of its target, and at least `first_pairs`
-    /// and what holds the formulas that stopped it ([`Self::hold`]).
-    pub(super) fn watch(&self, first_pairs: usize) -> usize {
-        first_pairs
-            .max(self.held)
-            .max(usize::try_from(self.target / WORK_PER_HELD_PAIR).unwrap_or(usize::MAX))
-    }
-
-    /// Raises the watch, by powers of two, until it holds a formula of
-    /// `pairs` that stopped an attempt.
-    pub(super) fn hold(&mut self, pairs: usize, first_pairs: usize) {
-        let mut watch = self.watch(first_pairs);
-        while watch < pairs {
-            watch = watch.saturating_mul(2);
-        }
-        self.held = watch;
     }
 
     /// Takes its weight away, once it has spent past its layout's estimate
@@ -139,64 +101,28 @@ impl Trial {
 
     /// Records the share of its phase finished after an attempt that did
     /// not finish it ([`Evaluation::progress`]), at the attempt's target,
-    /// in place of an earlier record at that target. A compile that passed
-    /// half its target in the attempt, its first turn's, is recorded there
-    /// too ([`Evaluation::marked`]), so that the turn after its first has a
-    /// doubling to be projected from. The first in its query phase drops
-    /// those of its compile: the phase is projected from where it began
-    /// ([`Self::began`]). An attempt that ended at the phase's last step,
-    /// as the record before it did, records nothing: the share of the
-    /// phase moves only when a step finishes, and at the last step only
-    /// when the phase does, so that the record says nothing the one before
-    /// it did not, and would put the pace of a trial one step from its
-    /// finish at none (1vfy, whose last join was stopped at 25.77 G of its
-    /// 25.8 G units, and which then waited behind trials far from theirs).
+    /// in place of an earlier record at that target. The first in its query
+    /// phase drops those of its compile: the phase is projected from where
+    /// it began ([`Self::began`]).
     pub(super) fn record_progress(&mut self) {
-        self.record(
-            self.evaluation.is_compiled(),
-            self.evaluation.progress(),
-            self.evaluation.marked(),
-        );
+        self.record(self.evaluation.is_compiled(), self.evaluation.progress());
     }
 
     /// [`Self::record_progress`] after an attempt that left the trial with
-    /// its compile finished or not, `progress` of its phase, and the
-    /// compile's progress at half the target where it passed it.
-    pub(super) fn record(
-        &mut self,
-        compiled: bool,
-        progress: Option<(usize, usize)>,
-        marked: Option<(usize, usize)>,
-    ) {
+    /// its compile finished or not, and `progress` of its phase.
+    pub(super) fn record(&mut self, compiled: bool, progress: Option<(usize, usize)>) {
         if compiled && !self.querying {
             self.querying = true;
             self.progress.clear();
-            self.mark = None;
         }
         if let Some((done, all)) = progress
             && all > 0
-            && !(done + 1 == all
-                && self
-                    .progress
-                    .last()
-                    .is_some_and(|&(_, d)| d == done as f64 / all as f64))
         {
             if self.progress.last().is_some_and(|&(t, _)| t == self.target) {
                 self.progress.pop();
             }
-            if let Some((done, all)) = marked
-                && all > 0
-                && !self.querying
-                && self
-                    .progress
-                    .last()
-                    .is_none_or(|&(t, _)| t < self.target / 2)
-            {
-                self.progress
-                    .push((self.target / 2, done as f64 / all as f64));
-                self.mark = Some(self.target / 2);
-            }
             self.progress.push((self.target, done as f64 / all as f64));
+            self.left = all.saturating_sub(done);
         }
     }
 
@@ -207,14 +133,47 @@ impl Trial {
     /// with no such record is projected from where it began
     /// ([`Self::began`]): the share it finished per doubling of the work
     /// spent since. Infinite where that span finished no step of the
-    /// phase; `None` before a compile has a record at half its target
-    /// (its first turn's where that turn passed it), or before a query
-    /// phase has spent any work. The records are by target, a power
+    /// phase; `None` before a compile has a record at half its target,
+    /// or before a query phase has spent any work. The records are by target, a power
     /// of two times the first, rather than by the work spent, which an
     /// attempt stopped by work overruns by a little: by the work, a record
     /// at a hair past half the last one went unread, and the projection
     /// waited a doubling more.
+    ///
+    /// `None` too while its last attempt lost the operation under way at
+    /// the guard ([`Self::lost`]), unless it holds the weight and the steps
+    /// left ([`Self::left`]), each costing what that one lost, fit in its
+    /// next turn: the step cut short cost more than the whole attempt, so
+    /// the pace of the steps before it projects nothing of a rest that may
+    /// hold more such steps, and the trial counts [`PROJECTED_DOUBLINGS`]
+    /// past the target the loss raised. What it lost is only a floor on
+    /// that step's cost, so the projection past it is a bet, which only the
+    /// trial the run bets on takes ([`super::policy::FAMILIES_WEIGHT`]): at
+    /// weight 1, `closed` on a weighted CNF benchmark, cut on the last of
+    /// 77 steps, spent 2.3 G units in its next turn without finishing it
+    /// where `td` finished in 0.2 G, and
+    /// `families:0` on an HMM of ProbLog's tutorial, its weight lost to its
+    /// estimate, spent 0.45 G units and 4 GiB where `closed` answers in
+    /// 0.4 M. `families:0` on a loop of Caesar ciphers, cut at 2^29
+    /// units at 81% of its query phase, was projected to finish at 2^30.8
+    /// under its new target of 2^31 and took the next attempt ahead of an
+    /// untried `closed`, spending 3.2 G units in one operation where
+    /// `closed` answers in 3.1 M; on Dice's counter, cut with 11 of 48
+    /// steps left, it was cut again at the same step and refused memory,
+    /// where `closed` answers in 27 K. Where they fit, as on the last step
+    /// of a phase, it keeps the projection: `families:0` on UAI's 1aie and
+    /// 1f94, cut on the last of 5552 and 7959 steps, otherwise counted the
+    /// most and gave `closed` and `td` 2.7 G and 5.4 G units of turns
+    /// before it finished. The next attempt that keeps a step projects
+    /// again.
     pub(super) fn projected(&self) -> Option<f64> {
+        if self.lost > 0
+            && (self.weight <= 1
+                || (self.left as u64).saturating_mul(self.lost)
+                    > self.target.saturating_sub(self.spent))
+        {
+            return None;
+        }
         let &(target, done) = self.progress.last()?;
         let before = self.progress.iter().rev().find(|&&(t, _)| t <= target / 2);
         let (at, doublings, finished) = match before {
@@ -256,19 +215,14 @@ impl Trial {
     /// past their targets take shares by their projections, not equal
     /// ones (arith_gcd_medium). At least none and at most
     /// [`PROJECTED_DOUBLINGS`], which is what a trial without a projection
-    /// counts. So does a compile projected from its first turn's mark to
-    /// finish within its target: its next turn would spend what the
-    /// compile leaves of it on the query phase, which the compile's pace
-    /// does not project (`program` on markov_n200, 99.5% compiled after
-    /// its first turn, spent two more on its query phase, where
-    /// `families:0`, which it went ahead of, answered in one).
+    /// counts.
     pub(super) fn ahead(&self, earliest: f64) -> f64 {
-        let target = (self.target.max(1) as f64).log2();
         match self.projected() {
-            Some(p) if p > target || !self.projected_from_mark() => {
+            Some(p) => {
+                let target = (self.target.max(1) as f64).log2();
                 (p - target.max(earliest)).clamp(0.0, PROJECTED_DOUBLINGS)
             }
-            _ => PROJECTED_DOUBLINGS,
+            None => PROJECTED_DOUBLINGS,
         }
     }
 
@@ -278,18 +232,9 @@ impl Trial {
     pub(super) fn finish(&self) -> f64 {
         let target = (self.target.max(1) as f64).log2();
         match self.projected() {
-            Some(p) if p.is_finite() && (p > target || !self.projected_from_mark()) => {
-                p.max(target)
-            }
+            Some(p) if p.is_finite() => p.max(target),
             _ => target + PROJECTED_DOUBLINGS,
         }
-    }
-
-    /// Whether its projection reads its compile's record at its first
-    /// turn's mark: whether its last record is the one after it.
-    fn projected_from_mark(&self) -> bool {
-        self.mark
-            .is_some_and(|m| self.progress.last().is_some_and(|&(t, _)| t == 2 * m))
     }
 
     /// Its place in the turns, the least first, in a race whose earliest
@@ -301,23 +246,14 @@ impl Trial {
         (self.target.max(1) as f64).log2() + self.ahead(earliest) - (self.weight as f64).log2()
     }
 
-    /// Whether its attempts left anything built: the formulas of its phase,
-    /// or the vtree its engine kept between attempts.
-    pub(super) fn holds(&self) -> bool {
-        self.kept.is_some() || self.evaluation.is_compiled() || self.evaluation.progress().is_some()
-    }
-
-    /// Frees what its attempts built, and the scratch its engine kept: its
-    /// next attempt begins its phase again, on its layout, with the target,
-    /// the watch and the work spent it has (`super::run_within`, where
-    /// another trial is refused memory). The layout stays, so that a later
+    /// Frees what its attempts built, and the scratch its engine kept, where
+    /// it is retired ([`Self::retire`]). The layout stays, so that a later
     /// trial with the same one is not tried ([`super::prepare`]).
     pub(super) fn release(&mut self) {
         self.evaluation = Evaluation::new(self.evaluation.traced());
         self.kept = None;
         self.progress.clear();
         self.querying = false;
-        self.mark = None;
         if let Some(layout) = self.built.as_mut() {
             layout.vtree =
                 Arc::new(tididi::Vtree::clone(&layout.vtree).with_context(Arc::default()));
@@ -325,13 +261,11 @@ impl Trial {
     }
 
     /// Ends the trial for the run, where an operation of its attempt was
-    /// refused memory behind a trial that has spent as much, while no other
-    /// trial held any, or outgrew tididi's 32-bit indices: an attempt in a
+    /// refused memory or outgrew tididi's 32-bit indices: an attempt in a
     /// later turn would resume at that operation with larger bounds and no
     /// less held, so the run goes on with the other trials, and fails with
     /// the refusal once none is left (on latin5 and gnb30 `families:0` is
-    /// refused memory and `closed` finishes), unless one was retired behind
-    /// another's memory ([`Self::behind`]). What the trial built is freed
+    /// refused memory and `closed` finishes). What the trial built is freed
     /// ([`Self::release`]).
     pub(super) fn retire(&mut self) {
         self.release();

@@ -127,8 +127,9 @@ pub use program::{GLit, GroundProgram, GroundRule, GroundStats};
 use std::sync::{Arc, OnceLock};
 
 use crate::eval::Count;
-use crate::syntax::Program;
+use crate::syntax::{Name, Program};
 use preprocess::defined;
+use rustc_hash::FxHashSet;
 use structure::Structure;
 use tables::Tables;
 
@@ -289,6 +290,7 @@ fn ground_tried(
         };
         return Ok(finish_keeping(gp, opts, keep));
     }
+    let written = written_names(program);
     let mut norm = normalize::normalize(program, counted)?;
     // The predicates no query or observation reads are not ground
     // ([`relevant`]).
@@ -300,7 +302,7 @@ fn ground_tried(
     // form holds in every world, and the linear form is what the bound-end
     // rewrite below and the compile's elimination of linear recursion take.
     let norm = chain::linearize(&norm).unwrap_or(norm);
-    let (gp, ground_size, kept) = ground_norm(&norm, opts, None, keep)?;
+    let (gp, ground_size, kept) = ground_norm(&norm, opts, None, keep, &written)?;
     // A program grounded level by level, each recursive stratum a loop over
     // a rising level, is not rewritten, as [`ground_norm`] does not give it
     // the magic rewrite: the chains from its bound ends run down the levels
@@ -321,16 +323,18 @@ fn ground_tried(
     let Some((linear, from_bound_end)) = linear::rewrite(&norm) else {
         return Ok((gp, kept));
     };
-    Ok(match ground_norm(&linear, opts, Some(ground_size), keep) {
-        Ok((mut alt, _, mut alt_kept)) if alt.size() < gp.size() => {
-            if let Some(k) = &mut alt_kept {
-                k.gp.stats.from_bound_end = from_bound_end.clone();
+    Ok(
+        match ground_norm(&linear, opts, Some(ground_size), keep, &written) {
+            Ok((mut alt, _, mut alt_kept)) if alt.size() < gp.size() => {
+                if let Some(k) = &mut alt_kept {
+                    k.gp.stats.from_bound_end = from_bound_end.clone();
+                }
+                alt.stats.from_bound_end = from_bound_end;
+                (alt, alt_kept)
             }
-            alt.stats.from_bound_end = from_bound_end;
-            (alt, alt_kept)
-        }
-        _ => (gp, kept),
-    })
+            _ => (gp, kept),
+        },
+    )
 }
 
 /// The finished ground program of `norm`, its size as ground, before
@@ -342,6 +346,7 @@ fn ground_norm(
     opts: &GroundOptions,
     bound: Option<usize>,
     keep: usize,
+    written: &Arc<FxHashSet<Name>>,
 ) -> Result<(GroundProgram, usize, Option<Simplified>), GroundError> {
     // A program may be non-stratified, by itself or through the rewrite: a
     // recursive component with internal negation is then grounded as it is,
@@ -375,7 +380,7 @@ fn ground_norm(
     // ([`modes`]). One whose queries reach an arithmetic literal or a call
     // of a goal with a variable free there is refused, as ProbLog stops
     // on it.
-    let gp = if magic::is_ground(norm) {
+    let mut gp = if magic::is_ground(norm) {
         engine::ground_normalized(norm, bound)?
     } else if modes::tests_unbound(norm)? {
         engine::topdown::ground(norm, bound)?
@@ -418,9 +423,25 @@ fn ground_norm(
             }
         }
     };
+    gp.written = Arc::clone(written);
     let size = gp.size();
     let (gp, kept) = finish_keeping(gp, opts, keep);
     Ok((gp, size, kept))
+}
+
+/// The names starting with `$` that `program` defines
+/// ([`GroundProgram::written`]).
+fn written_names(program: &Program) -> Arc<FxHashSet<Name>> {
+    Arc::new(
+        program
+            .clauses
+            .iter()
+            .flat_map(|c| &c.heads)
+            .map(|h| &h.atom.name)
+            .filter(|name| name.starts_with('$'))
+            .cloned()
+            .collect(),
+    )
 }
 
 /// `gp` finished under `opts` ([`finish`]), and a copy of it as simplified
@@ -432,7 +453,7 @@ fn finish_keeping(
     keep: usize,
 ) -> (GroundProgram, Option<Simplified>) {
     gp.stats.as_ground = (gp.num_atoms(), gp.rules.len());
-    let simplified = simplified(gp, opts);
+    let simplified = simplified(gp, opts, true);
     let kept = (simplified.gp.num_derived() >= keep).then(|| simplified.clone());
     (finished(simplified, opts, opts.views), kept)
 }
@@ -481,11 +502,13 @@ enum Stage {
 /// [`GroundOptions::defined`], where it is a CNF over its facts, the facts
 /// of probability one half its clauses define eliminated ([`defined`]).
 fn finish(gp: GroundProgram, opts: &GroundOptions, inline: bool) -> GroundProgram {
-    finished(simplified(gp, opts), opts, inline)
+    finished(simplified(gp, opts, true), opts, inline)
 }
 
-/// [`finish`]'s simplifications before the views are inlined.
-fn simplified(mut gp: GroundProgram, opts: &GroundOptions) -> Simplified {
+/// [`finish`]'s simplifications before the views are inlined, the
+/// variables held as bits written over their values where `write_values`
+/// holds.
+fn simplified(mut gp: GroundProgram, opts: &GroundOptions, write_values: bool) -> Simplified {
     gp.options = *opts;
     simplify::propagate_certain(&mut gp);
     simplify::merge_equal_atoms(&mut gp);
@@ -494,13 +517,12 @@ fn simplified(mut gp: GroundProgram, opts: &GroundOptions) -> Simplified {
     // A variable held as bits that its readers test together is written as
     // a table over its values ([`values`]).
     #[cfg(test)]
-    let written = if opts.values {
+    let write_values = write_values && opts.values;
+    let written = if write_values {
         values::bits_as_values(&mut gp)
     } else {
         0
     };
-    #[cfg(not(test))]
-    let written = values::bits_as_values(&mut gp);
     if written > 0 {
         gp.stats.values += written;
         simplify::restrict_to_relevant(&mut gp);
@@ -657,6 +679,30 @@ pub(crate) fn restricted(gp: &GroundProgram, queries: &[usize]) -> GroundProgram
         drop_detached(&mut part);
     }
     part
+}
+
+/// `part`, a window of `gp` that a run cut it into (`crate::solve`'s
+/// windows), under `gp`'s options and finished again as the grounder
+/// finishes a program, which finds what the incoming message proves certain
+/// or exclusive. A lone query of the window is not observed: its answer
+/// would be the evidence probability of the windows so far, not its own.
+/// Where `gp`'s lone query is observed, no window drops an observation
+/// ([`drop_detached`]): its probability is a factor of the answer.
+/// Its bits are not written over their values again: `gp`'s finish wrote
+/// them, and the one variable a window adds, its outgoing frontier, which
+/// its row queries test together, holds the whole window below it, which
+/// the pass would search to its work bound for nothing (a 131k-rule window
+/// of rl_ladder_300000: 1.9 s of its 2.3 s finish).
+pub(crate) fn window(gp: &GroundProgram, mut part: GroundProgram) -> GroundProgram {
+    part.options = GroundOptions {
+        observe_query: false,
+        detach: gp.options.detach && gp.observed_query.is_none(),
+        ..gp.options
+    };
+    part.written = Arc::clone(&gp.written);
+    part.stats.detached = gp.stats.detached;
+    let opts = part.options;
+    finished(simplified(part, &opts, false), &opts, opts.views)
 }
 
 /// The observations no query depends on dropped where they can hold
@@ -913,11 +959,12 @@ mod tests {
         let (program, counted) = super::terms::lower(&program).expect("lowers");
         let norm = super::normalize::normalize(&program, counted).expect("normalizes");
         let opts = GroundOptions::default();
-        let (_, size, _) = super::ground_norm(&norm, &opts, None, 0).expect("grounds");
+        let written = std::sync::Arc::default();
+        let (_, size, _) = super::ground_norm(&norm, &opts, None, 0, &written).expect("grounds");
         let (linear, rewritten) = super::linear::rewrite(&norm).expect("rewrites");
         assert_eq!(rewritten, ["s/1"]);
         assert!(matches!(
-            super::ground_norm(&linear, &opts, Some(2 * size), 0),
+            super::ground_norm(&linear, &opts, Some(2 * size), 0, &written),
             Err(super::GroundError::OverBound)
         ));
     }

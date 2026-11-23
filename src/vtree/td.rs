@@ -10,11 +10,12 @@ use crate::ground::deps::Deps;
 use crate::ground::{AtomId, GroundProgram, add_fact_copies};
 
 use super::TD_SEED;
+use super::fold::{Atop, UnitTree, stacked};
 use super::forest::Forest;
 use super::graph::{
-    elimination_budget, facts_by_level, interaction_edges, min_fill_cliques, minor_min_width,
+    elimination_budget, facts_by_level, interaction_edges, min_fill_trace, minor_min_width,
 };
-use super::separators::{self, Atop, CopyRule};
+use super::separators::{self, CopyRule};
 
 /// The `td` strategy's search budget is charged graph work, not seconds.
 ///
@@ -39,7 +40,7 @@ const MAX_TD_BUDGET_UNITS: u64 = 100_000_000;
 /// search below the floor returns a decomposition as narrow that lays out
 /// worse. On bn_munin1's 187 groups and 330 edges the scaled budget, 12.9 M
 /// units, found width 11 as the floor does, in 167 bags against 165, whose
-/// layout is estimated twice as costly, and the searched trial's compile
+/// layout is estimated twice as costly, and the searched layout's compile
 /// did twenty times the work. A budget twice the scaled one kept munin1's
 /// layout, but doubling every budget so cost 1npl's PR 1.7 times its time.
 /// The floor, 50 nominal milliseconds, is not felt in `auto` where the
@@ -102,14 +103,15 @@ fn root_bag(
 }
 
 /// A decomposition of the interaction graph rooted for its fold into a
-/// vtree shape ([`Rooted::lay_out`]): its bags' parents and children, the
-/// facts each introduces, and the order the fold lays them out in.
+/// vtree shape ([`Rooted::lay_out`]): its bags' parents, the bags as a
+/// [`UnitTree`], and the facts each introduces.
 ///
 /// A bag *introduces* a fact that is in it and in no ancestor bag, which by
 /// the connectivity of a tree decomposition is one the parent bag does not
-/// hold; every fact is introduced by exactly one bag. A bag's subtree combines
-/// its children's subtrees, balanced against each other, under a right-linear
-/// spine of the facts it introduces. A bag introducing no fact and covering
+/// hold; every fact is introduced by exactly one bag. The bags are the
+/// units of the fold ([`stacked`]): a bag's subtree combines its children's
+/// subtrees, balanced against each other, under a right-linear spine of the
+/// facts it introduces. A bag introducing no fact and covering
 /// none below it contributes nothing, and derived atoms are dropped wherever
 /// they appear. The two choices this leaves — where to root, and how to lay a
 /// bag out — are made below, each against what it measured.
@@ -123,12 +125,9 @@ fn root_bag(
 pub(super) struct Rooted {
     /// Each bag's parent, `usize::MAX` at a root.
     pub(super) parent: Vec<usize>,
-    /// The bags in a preorder.
-    preorder: Vec<usize>,
-    /// The roots, in the order the fold joins their subtrees.
-    pub(super) roots: Vec<usize>,
-    /// Each bag's children, in the order the fold joins their subtrees.
-    pub(super) children: Vec<Vec<usize>>,
+    /// The bags, their children and the roots, in the order the fold joins
+    /// their subtrees.
+    pub(super) tree: UnitTree,
     /// The facts each bag introduces, in the order of its spine from the
     /// subtree's root down.
     pub(super) introduced: Vec<Vec<AtomId>>,
@@ -140,12 +139,9 @@ pub(super) struct Rooted {
 }
 
 /// `td`'s bags rooted at `first` and at the first bag of every other
-/// component: each bag's parent (`usize::MAX` at a root), a preorder, the
-/// roots, and each bag's children.
-pub(super) fn root_bags(
-    td: &goatd::TreeDecomposition,
-    first: usize,
-) -> (Vec<usize>, Vec<usize>, Vec<usize>, Vec<Vec<usize>>) {
+/// component: the tree, its order a preorder reversed, and each bag's
+/// parent (`usize::MAX` at a root).
+pub(super) fn root_bags(td: &goatd::TreeDecomposition, first: usize) -> (UnitTree, Vec<usize>) {
     let bags = td.bags();
     let adjacency = td.adjacency();
     let mut parent = vec![usize::MAX; bags.len()];
@@ -180,7 +176,13 @@ pub(super) fn root_bags(
             children[parent[b]].push(b);
         }
     }
-    (parent, preorder, roots, children)
+    preorder.reverse();
+    let tree = UnitTree {
+        order: preorder,
+        children,
+        roots,
+    };
+    (tree, parent)
 }
 
 impl Rooted {
@@ -198,12 +200,12 @@ impl Rooted {
         if bags.is_empty() {
             return None;
         }
-        let (parent, preorder, mut roots, mut children) = root_bags(td, first);
+        let (mut tree, parent) = root_bags(td, first);
 
         // Top down, so that a fact lands in the highest bag that holds it.
         let mut introduced: Vec<Vec<AtomId>> = vec![Vec::new(); bags.len()];
         let mut placed = vec![false; num_atoms];
-        for &b in &preorder {
+        for &b in tree.order.iter().rev() {
             for &v in bags[b].vertices() {
                 let atom = v as AtomId;
                 if !leaf(atom) || placed[v as usize] {
@@ -217,7 +219,7 @@ impl Rooted {
             }
         }
 
-        // Bottom up: a preorder reversed has every bag after its children.
+        // Bottom up: the tree's order has every bag after its children.
         // The latest position in the compile order any fact of a bag's subtree
         // holds. A subtree whose facts are consumed late belongs leftmost, nearer
         // the root, for the same reason a bag's own spine is ordered that way.
@@ -225,7 +227,8 @@ impl Rooted {
         // the decomposer's adjacency lists give.
         let mut last: Vec<Option<usize>> = vec![None; bags.len()];
         let mut facts_under = vec![0usize; bags.len()];
-        for &b in preorder.iter().rev() {
+        let children = &mut tree.children;
+        for &b in &tree.order {
             last[b] = children[b]
                 .iter()
                 .filter_map(|&c| last[c])
@@ -239,13 +242,11 @@ impl Rooted {
             facts_under[b] =
                 introduced[b].len() + children[b].iter().map(|&c| facts_under[c]).sum::<usize>();
         }
-        roots.sort_by_key(|&r| Reverse(last[r]));
+        tree.roots.sort_by_key(|&r| Reverse(last[r]));
         let leaf = (0..num_atoms).map(|a| leaf(a as AtomId)).collect();
         Some(Rooted {
             parent,
-            preorder,
-            roots,
-            children,
+            tree,
             introduced,
             facts_under,
             placed,
@@ -253,58 +254,37 @@ impl Rooted {
         })
     }
 
-    /// The fold's forest, its root and the widest root path union, with the
-    /// atoms `atop` lays on spines above bags' subtrees and joins of their
-    /// children, the first nearest the root. `None` when the decomposition
-    /// covers no fact.
+    /// The fold's forest ([`stacked`]), its root and the widest root path
+    /// union, with the atoms `atop` lays on spines above bags' subtrees and
+    /// joins of their children, the first nearest the root. `None` when the
+    /// decomposition covers no fact.
     pub(super) fn lay_out(
         &self,
         td: &goatd::TreeDecomposition,
         atop: &Atop,
     ) -> Option<(Forest, usize, usize)> {
-        let Rooted {
-            parent: _,
-            preorder,
-            roots,
-            children,
-            introduced,
-            facts_under: _,
-            placed,
-            leaf,
-        } = self;
-        let bags = td.bags();
-        let mut forest = Forest::default();
-        let mut subtree: Vec<Option<usize>> = vec![None; bags.len()];
-        let mut items = Vec::new();
-        for &b in preorder.iter().rev() {
-            items.clear();
-            items.extend(children[b].iter().filter_map(|&c| subtree[c]));
-            // The children are balanced against each other; the variables this bag
-            // introduces sit above them on a right-linear spine, the one consumed
-            // last nearest this subtree's root. Balancing the introduced variables
-            // too costs several times the pairs: a bag's variables are tested one
-            // after another, and a spine is what lets a diagram finish with one of
-            // them before it reaches the next.
-            // Atoms laid atop a join of some of the children go above it, and
-            // those atop the subtree above its spine, the first topmost.
-            let joined = forest.balanced_with(&items, &|lo, hi| atop.group(b, lo, hi));
-            let spine = forest.spine(&introduced[b], joined);
-            subtree[b] = forest.spine(atop.bag(b), spine);
-        }
-
-        let mut tops: Vec<usize> = roots.iter().filter_map(|&r| subtree[r]).collect();
-        // Facts no bag introduced — an isolated fact occurring in no rule is a
-        // vertex of the graph and so normally is in a bag of its own, but nothing
-        // above depends on that — go in one balanced subtree at the root.
-        let stray: Vec<usize> = (0..placed.len())
-            .filter(|&a| !placed[a] && leaf[a])
-            .map(|a| forest.leaf(a as AtomId))
+        // Facts no bag introduced: an isolated fact occurring in no rule is a
+        // vertex of the graph and so normally is in a bag of its own, but
+        // nothing above depends on that. Each is a unit of one fact, and they
+        // are the children of one more root, which joins them balanced.
+        let stray: Vec<AtomId> = (0..self.placed.len())
+            .filter(|&a| !self.placed[a] && self.leaf[a])
+            .map(|a| a as AtomId)
             .collect();
-        if let Some(s) = forest.balanced(&stray) {
-            tops.push(s);
-        }
-        let root = forest.balanced(&tops)?;
-        let union = self.widest_root_path(bags, placed.len());
+        let (forest, root) = if stray.is_empty() {
+            stacked(&self.tree, &self.introduced, atop)?
+        } else {
+            let (mut tree, mut own) = (self.tree.clone(), self.introduced.clone());
+            let units = own.len()..own.len() + stray.len();
+            own.extend(stray.into_iter().map(|a| vec![a]));
+            own.push(Vec::new());
+            tree.order.extend(units.clone().chain([units.end]));
+            tree.children.extend(units.clone().map(|_| Vec::new()));
+            tree.children.push(units.clone().collect());
+            tree.roots.push(units.end);
+            stacked(&tree, &own, atop)?
+        };
+        let union = self.widest_root_path(td.bags(), self.placed.len());
         Some((forest, root, union))
     }
 
@@ -316,7 +296,13 @@ impl Rooted {
             Enter(usize),
             Leave(usize),
         }
-        let mut walk: Vec<Walk> = self.roots.iter().rev().map(|&r| Walk::Enter(r)).collect();
+        let mut walk: Vec<Walk> = self
+            .tree
+            .roots
+            .iter()
+            .rev()
+            .map(|&r| Walk::Enter(r))
+            .collect();
         while let Some(step) = walk.pop() {
             match step {
                 Walk::Enter(b) => {
@@ -328,7 +314,7 @@ impl Rooted {
                     }
                     union = union.max(live);
                     walk.push(Walk::Leave(b));
-                    walk.extend(self.children[b].iter().rev().map(|&c| Walk::Enter(c)));
+                    walk.extend(self.tree.children[b].iter().rev().map(|&c| Walk::Enter(c)));
                 }
                 Walk::Leave(b) => {
                     for &v in bags[b].vertices() {
@@ -608,9 +594,8 @@ fn fold(
 pub(super) fn min_fill_forest(gp: &GroundProgram, deps: &Deps) -> Option<(Forest, usize)> {
     let num_atoms = gp.num_atoms();
     gp.facts().next()?;
-    let edges = interaction_edges(gp);
-    let min_fill = min_fill_cliques(num_atoms, &edges);
-    let td = min_fill.decomposition(&goatd::Graph::new(num_atoms as u32, edges))?;
+    let graph = goatd::Graph::new(num_atoms as u32, interaction_edges(gp));
+    let td = min_fill_trace(&graph, None)?.decomposition(&graph).ok()?;
     let (forest, root, _) = fold(gp, deps, &td)?;
     Some((forest, root))
 }

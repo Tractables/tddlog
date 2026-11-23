@@ -51,10 +51,16 @@ thread_local! {
     pub(super) static NO_AVX2: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
+/// Whether this target has the kernels: a grid's plans hold them on
+/// x86-64, and run them where the processor has AVX2 too ([`avx2`]).
+/// Elsewhere (ARM, WebAssembly) every plan runs its scalar loops.
+#[cfg(test)]
+pub(super) const COMPILED: bool = cfg!(target_arch = "x86_64");
+
 /// Whether the processor runs the vector loops here; where it does not,
 /// their callers run scalar loops. The tests take a processor without
 /// AVX2 where `NO_AVX2` says so.
-fn avx2() -> bool {
+pub(super) fn avx2() -> bool {
     #[cfg(test)]
     if NO_AVX2.get() {
         return false;

@@ -121,6 +121,15 @@ class StatsTests(unittest.TestCase):
 
 
 class DiceTests(unittest.TestCase):
+    def test_the_loops_iterate_their_own_sizes(self):
+        # docs_dice.py's OWN: dice_LOOP is dice_LOOP_kOWN, the program dice_scale.py writes at OWN
+        own = {'caesar-iter': 3000, 'simpleCaesar': 1000, 'pmc1': 75, 'pmc2': 51}
+        for p, k in own.items():
+            self.assertEqual(bench.loop_count((scripts.parent / 'data' / 'dice' / f'{p}.dice').read_text()), k, p)
+        self.assertEqual(bench.loop_count('let x = iterate(f, (a, int(2, 1)), 12) in iterate(g, x, 3)'), 12)
+        self.assertIsNone(bench.loop_count('let x = f(1) in x'))
+        self.assertIsNone(bench.loop_count('iterate(f, x, n)'))
+
     def test_a_returned_tuple_answers_each_component(self):
         rows = bench.parse_dice('================[ Joint Distribution ]================\n'
                                 'Value\tProbability\t\n(true, true)\t0.\t\n(true, false)\t0.475\t\n'

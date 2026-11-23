@@ -18,21 +18,14 @@
 //! one further out, or none, counts that many, so that without
 //! projections the trials take equal shares for their weights, and a
 //! trial projected to finish soon takes its turns ahead of the others,
-//! by up to that many doublings. An attempt that ends at its phase's last
-//! step, as the one before it did, measures no pace: the share of a phase
-//! moves there only when the phase finishes ([`Trial::record_progress`]).
-//! A compile notes its progress at half
-//! its first turn's target ([`tp::Horizon`]), so that the pace of that
-//! turn's second half projects it where it puts the compile's finish past
-//! the trial's next target ([`Trial::ahead`]). The attempt's watch, the largest formula
-//! it may complete, is a [`policy::WORK_PER_HELD_PAIR`]th of the target in
-//! pairs, or more where a formula past the watch stopped an earlier
-//! attempt: such a stop raises the watch to hold it ([`Trial::hold`]) and
-//! leaves the target alone. Where `families:0`'s estimate
-//! calls for it, the searched families layout is built once `families:0`
-//! has spent what the search costs ([`policy::search_rent`]), and
-//! otherwise at its own turn; either way it may take `families:0`'s place
-//! and the weight ([`weigh_searched`]). A families trial's weight is a bet
+//! by up to that many doublings. The families trial starts on
+//! `families:0`'s layout. Where its estimate calls for it, the searched
+//! families layout is built once the trial has spent what the search costs
+//! ([`policy::search_rent`]) or is retired before then, and at no other
+//! time; the trial starts over
+//! on it, with the weight, only where it is estimated much smaller
+//! ([`search_families`]).
+//! A families trial's weight is a bet
 //! on its layout's estimate: its attempts spend no more than the estimate
 //! allows while it holds the weight, and it loses the weight past that
 //! ([`policy::bet_left`]). A weighted trial's compile is stopped by a
@@ -47,21 +40,10 @@
 //! ([`crate::evaluation::Evaluation::run`]): its trial keeps its place in
 //! the turns, where it lost it to trials far from their finish when the
 //! walk began again at a later turn (1rfs, whose walk outgrew an index at
-//! 9085 of 9086 steps). Beyond that, memory goes to the trial that has
-//! spent the most:
-//! refused it while other trials hold what their attempts built, and
-//! having spent more work than each of them, a trial takes it, once: what
-//! they hold is freed, each of them to begin its phase again at its next
-//! turn ([`Trial::release`]), and the refused trial resumes at its next
-//! turn. Refused otherwise (again, behind a trial that has spent as much,
-//! while no other trial holds anything, or past tididi's 32-bit indices),
-//! it is retired, and the run goes on with the others ([`Trial::retire`]).
-//! So a refusal discards less work than the refused trial has spent, from
-//! each other trial, and once a trial. A trial with no other left runs
-//! without bounds ([`attempt`]). A trial retired while another held what
-//! it built may have been refused for that memory alone: once no trial is
-//! left, each such trial runs again, once, with nothing held beside it
-//! ([`Trial::behind`]).
+//! 9085 of 9086 steps). Beyond that, a trial refused memory, or past
+//! tididi's 32-bit indices, is retired, and the run goes on with the
+//! others ([`Trial::retire`]). A trial with no other left runs
+//! without bounds ([`attempt`]).
 //!
 //! So the run spends on each other trial at most its weight's share of
 //! twice the winner's work, times two to the doublings by which the
@@ -86,8 +68,8 @@ use crate::{
 use tididi::limits::{LimitConfig, StopAt, StopRules};
 
 use policy::{
-    FAMILIES_WEIGHT, FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR,
-    bet_left, candidates, horizon, overspent_estimate, projected_from, search_due, search_rent,
+    FIRST_PAIRS, LEAD_SHARE, PROJECTED_DOUBLINGS, SEARCHED_GAP, WORK_PER_PAIR, bet_left,
+    candidates, horizon, overspent_estimate, projected_from, search_due, search_rent,
     ties_tables_by_clauses, weight,
 };
 use trial::Trial;
@@ -139,7 +121,7 @@ pub(crate) fn lays_families_first(gp: &GroundProgram) -> bool {
 /// `auto` on `original`, as grounded, its trials the [`candidates`], each
 /// compiling its layout's rewrite of its program ([`Programs::of`]:
 /// `original`, or `ready`'s `written` or `conditioned`, each eliminated
-/// once for all of them, [`Kind::eliminated`]); the `families:0` trial
+/// once, [`Kind::eliminated`]); the `families:0` trial
 /// takes `ready`'s `laid` as its own, and where `ready`'s `conditioned`
 /// [`decides`], `decision` is the first trial. Where the order turns on
 /// whether `families:0`'s rewrite ties tables, it is the order where it
@@ -175,7 +157,7 @@ pub(crate) fn run(
         trials,
         tabled,
         projection,
-        Watch::default(),
+        Start::default(),
         laid,
         traced,
     )
@@ -183,8 +165,8 @@ pub(crate) fn run(
 
 /// What [`run`] can be handed ready beside the program as ground, each
 /// where it was built: the program ground with its views in place, and
-/// that program conditioned on its guards ([`ready`]); and `families:0`'s
-/// program and layout, built from the program as ground by [`families`]
+/// that program conditioned on its guards ([`ready`],
+/// [`Kind::conditioned`]); and `families:0`'s program and layout, built from the program as ground by [`families`]
 /// (`solve::split_check`). Each is the whole program's: a part of a split
 /// is handed none.
 #[derive(Default)]
@@ -199,7 +181,7 @@ impl Ready {
     pub(crate) fn decides(&self, ground: &GroundProgram) -> bool {
         self.conditioned
             .as_ref()
-            .is_some_and(|c| decides(c, ground))
+            .is_some_and(|c| decides(c.stats.guarded, ground))
     }
 }
 
@@ -209,72 +191,68 @@ impl Ready {
 /// guards made where it ran. `written` is `kept` finished with its views
 /// in place under `options`, the options `ground` was ground under
 /// ([`Kind::ground_options`]), where the grounding inlined any atom, a
-/// view's or a chain's, or where [`may_decide`]; `conditioned` is
-/// `written` rewritten for `decision` ([`Kind::rewrite`]) where `ground`
-/// may decide, kept where the conditioning recorded decisions and made
-/// enough atoms for a trial to take it ([`takes_conditioned`]). `closed`
-/// takes less work on it: bb_altermu2_w11 2.29 G units against 14.4 G.
-/// The full weekend circuit of the bit-blasting paper (98 303 flips) runs
-/// out of memory under every other layout of the program as ground and
-/// compiles under `decision` in 533 M work units.
+/// view's or a chain's, or where `ground` [`may_decide`]; there,
+/// `conditioned` is `written` rewritten for `decision`
+/// ([`Kind::rewrite`]), kept where the conditioning recorded decisions and
+/// made enough atoms for a trial to take it ([`takes_conditioned`]). The
+/// full weekend circuit of the bit-blasting paper (98 303 flips) runs out of memory under every other
+/// layout of the program as ground and compiles under `decision` in 533 M
+/// work units.
 pub(crate) fn ready(
     ground: &GroundProgram,
     kept: Option<ground::Simplified>,
     options: GroundOptions,
 ) -> (Ready, Option<usize>) {
-    let Some(kept) = kept else {
+    let decide = may_decide(ground);
+    let Some(kept) = kept.filter(|_| decide || ground.stats.inlined + ground.stats.chained > 0)
+    else {
         return (Ready::default(), None);
     };
-    let decide = may_decide(ground);
-    let written = (ground.stats.inlined + ground.stats.chained > 0 || decide)
-        .then(|| ground::finish_kept(kept, &Kind::Decision.ground_options(options)));
-    let Some(program) = written.as_ref().filter(|_| decide) else {
-        return (
-            Ready {
-                written,
-                ..Ready::default()
-            },
-            None,
-        );
-    };
-    // `Kind::Decision.rewrite`, which `written`, read through no
+    let written = ground::finish_kept(kept, &Kind::Decision.ground_options(options));
+    if !decide {
+        let ready = Ready {
+            written: Some(written),
+            ..Ready::default()
+        };
+        return (ready, None);
+    }
+    // `Kind::Decision.rewrite`, which the program, read through no
     // indicator, takes in full, finished again only where a trial takes
     // it.
-    let decided = ground::guarded_where(Kind::eliminated(program.clone()), |made| {
+    let decided = ground::guarded_where(Kind::eliminated(written.clone()), |made| {
         takes_conditioned(made, ground)
     });
     let guarded = decided.as_ref().unwrap_or_else(|gp| gp).stats.guarded;
     let conditioned = decided.ok().filter(|gp| gp.stats.decisions.is_some());
     let ready = Ready {
-        written,
+        written: Some(written),
         conditioned,
         laid: None,
     };
     (ready, Some(guarded))
 }
 
-/// Whether `decision` is a trial on `conditioned`, `ground` conditioned on
-/// its guards: where the conditioning made at least as many atoms as
-/// `ground` has derived ones ([`derived_unmerged`]). The full weekend
-/// circuit of the bit-blasting paper makes 578 k for 160 k derived, and
-/// compiles only under `decision`; the arithmetic circuits make fewer
-/// (zeroone_w1: 960 for 7 238), and their `decision` compile does worse
-/// than the other trials' or runs out of memory.
-pub(crate) fn decides(conditioned: &GroundProgram, ground: &GroundProgram) -> bool {
-    conditioned.stats.guarded >= derived_unmerged(ground)
+/// Whether `decision` is a trial on `ground` conditioned on its guards,
+/// the conditioning having made `made` atoms: where it made at least as
+/// many as `ground` has derived ones ([`derived_unmerged`]). The full
+/// weekend circuit of the bit-blasting paper makes 578 k for 160 k
+/// derived, and compiles only under `decision`; the arithmetic circuits
+/// make fewer (zeroone_w1: 960 for 7 238), and their `decision` compile
+/// does worse than the other trials' or runs out of memory.
+pub(crate) fn decides(made: usize, ground: &GroundProgram) -> bool {
+    made >= derived_unmerged(ground)
 }
 
-/// Whether a trial takes `ground` conditioned on its guards, the
-/// conditioning having made `made` atoms ([`ready`]): where
-/// it made at least a quarter as many as `ground` has derived ones
-/// ([`derived_unmerged`]). `decision` takes it where it made as many
-/// ([`decides`]), and `program`, `closed` and `td` otherwise
-/// ([`Programs::of`]): `closed` wins bb_normal_mixture_theta_w9 (37 186
-/// made for 49 158) on it. The zeroone circuits make an eighth
-/// (bb_zeroone_w2_w25: 2 794 for 21 896), and the conditioned program,
-/// which the merge of equal gates does not follow (`ground::guarded`),
-/// holds 14 499 derived atoms where the program as ground holds 9 972;
-/// `auto` takes 27% longer with it.
+/// Whether `ready` keeps `ground` conditioned on its guards, the
+/// conditioning having made `made` atoms: where it made at least a quarter
+/// as many as `ground` has derived ones ([`derived_unmerged`]). The
+/// layouts that compile it ([`Kind::conditioned`]) take less work on it
+/// there: `closed` wins bb_normal_mixture_theta_w9 (37 186 made for
+/// 49 158) on it. The zeroone circuits make an eighth (bb_zeroone_w2_w25:
+/// 2 794 for 21 896), and the conditioned program, which the merge of
+/// equal gates does not follow (`ground::guarded`), holds 14 499 derived
+/// atoms where the program as ground holds 9 972; `auto` takes 27% longer
+/// with it.
 pub(crate) fn takes_conditioned(made: usize, ground: &GroundProgram) -> bool {
     made * 4 >= derived_unmerged(ground)
 }
@@ -291,12 +269,11 @@ pub(crate) fn derived_unmerged(ground: &GroundProgram) -> usize {
     ground.num_derived() + ground.stats.reduced
 }
 
-/// The programs `auto`'s trials rewrite: the program as ground, written
-/// without its linear recursion; the program ground with its views in
-/// place, where the grounding inlined any or `decision` may be a trial
-/// ([`ready`]); the program conditioned on its guards, where
-/// the conditioning records decisions; and whether `decision` is a trial
-/// on it ([`decides`]).
+/// The programs `auto`'s trials rewrite, each written without its linear
+/// recursion: the program as ground; the program ground with its views in
+/// place, where the grounding inlined any or `decision` may be a trial;
+/// and that program conditioned on its guards, where a trial takes it
+/// ([`ready`]); and whether `decision` is a trial ([`decides`]).
 struct Programs {
     ground: Arc<GroundProgram>,
     written: Option<Arc<GroundProgram>>,
@@ -305,66 +282,46 @@ struct Programs {
 }
 
 impl Programs {
-    /// The program trial `kind` rewrites. The conditioned program, where
-    /// there is one ([`takes_conditioned`]), goes to `decision` where it is
-    /// a trial; where it is not, it goes to `program`, `closed` and `td`,
-    /// whose layouts the rules' text does not set: `program`'s order is
-    /// the one the program states its facts in, the same in both
-    /// programs, and `closed` and `td` search theirs on
-    /// the program they get (`dynamic`, whose layout the text does not set
-    /// either, is a trial only where nothing is left to order, and never
-    /// beside a conditioned program). `program` and `program:fanin` rewrite
-    /// the program with its views in place otherwise
-    /// ([`Kind::ground_options`]), and the others the program as ground.
-    /// `program:fanin`
-    /// reads its order off the rules, a walk through the atoms they read,
-    /// and the conditioning rewrites what they read: a test of a number's
-    /// bits becomes the cube of the flips on its path, so the walk no
-    /// longer meets each number's flips together. In CUDD's model the
-    /// conditioned addFun_max_w17 under the order the walk reads off it
-    /// takes 29 times the recursive calls that either program takes under
-    /// the order it reads off the program as ground, while `program` takes
-    /// about the same work on both (8.85 G units against 8.64 G).
-    /// `families:0` takes more work on the conditioned program, its
-    /// indicators on every atom the conditioning made
-    /// (bb_normal_mixture_mu2_w7: 1.07 G units over its turns against
-    /// 133 M). Beside `decision` the order layouts get
-    /// further on the conditioned program and hold their diagrams between
-    /// turns: at 25 GB a process they starve bb_coinBias_w16's `decision`
-    /// of memory in its query phase, and the run runs out of time.
+    /// The program trial `kind` rewrites: the conditioned program, where
+    /// there is one, for the layouts that compile it
+    /// ([`Kind::conditioned`]); else the one its layout compiles alone,
+    /// grounded under [`Kind::ground_options`]. In the race `program` reads
+    /// the program with its views in place as it does alone; on the
+    /// program as ground its order looks cheap on bb_markov_n500 and
+    /// runs 1.07 G units before `families:0` finishes, where with the
+    /// views in place it projects past its target at its first attempt.
+    /// In CUDD's model the conditioned addFun_max_w17 under the order
+    /// `program:fanin`'s walk reads off it takes 29 times the recursive
+    /// calls, where `program` takes about the same work on both programs
+    /// (8.85 G units against 8.64 G). Beside `decision` the others leave
+    /// it to `decision`: the order layouts get further on it and hold
+    /// their diagrams between turns, and at 25 GB a process they starve
+    /// bb_coinBias_w16's `decision` of memory in its query phase.
     fn of(&self, kind: Kind) -> &Arc<GroundProgram> {
-        let conditioned = if self.decision {
-            kind == Kind::Decision
-        } else {
-            matches!(
-                kind,
-                Kind::Program { fan_in: false } | Kind::Closed | Kind::Td
-            )
-        };
+        let conditioned = kind.conditioned() && (kind == Kind::Decision || !self.decision);
         match (&self.conditioned, &self.written) {
             (Some(program), _) if conditioned => program,
-            (_, Some(program)) if kind == (Kind::Program { fan_in: false }) => program,
+            (_, Some(program)) if kind.views_in_place() => program,
             _ => &self.ground,
         }
     }
 }
 
-/// What a run of trials starts from: the first watch's pairs, from which
-/// the first targets follow, the live pairs at which a dynamic trial
-/// searches first, and tididi's soft byte budget for every operation,
-/// which refuses an operation as the allocator does when the host's
-/// memory runs out. A run starts from the default; the tests start from
-/// smaller ones, to make a small program take several turns or have its
-/// operations refused.
-struct Watch {
+/// What a run of trials starts from: the first pairs, from which the first
+/// targets follow, the live pairs at which a dynamic trial searches first,
+/// and tididi's soft byte budget for every operation, which refuses an
+/// operation as the allocator does when the host's memory runs out. A run
+/// starts from the default; the tests start from smaller ones, to make a
+/// small program take several turns or have its operations refused.
+struct Start {
     first_pairs: usize,
     dynamic_first_pairs: usize,
     memory_bytes: Option<u64>,
 }
 
-impl Default for Watch {
+impl Default for Start {
     fn default() -> Self {
-        Watch {
+        Start {
             first_pairs: FIRST_PAIRS,
             dynamic_first_pairs: tp::DYNAMIC_FIRST_PAIRS,
             memory_bytes: None,
@@ -392,8 +349,8 @@ pub(crate) const DECISION_DERIVED: usize = 4096;
 /// Whether trials `a` and `b` compile one rewrite of one program: both
 /// rewrite the program [`Programs::of`] gives them, and both or neither
 /// read it through indicators. A `td` trial's layout may add separator
-/// copies to its rewrite, and the layouts of `program` and `decision`
-/// their names ([`Prepared::lay_out`], [`Trial::copied`]).
+/// copies to its rewrite, and the layout of `decision` its names
+/// ([`Prepared::lay_out`], [`Trial::copied`]).
 fn same_rewrite(a: &Trial, b: &Trial, programs: &Programs) -> bool {
     Arc::ptr_eq(programs.of(a.kind), programs.of(b.kind))
         && a.kind.indicators() == b.kind.indicators()
@@ -472,21 +429,6 @@ fn prepare(
     if !rewrite(trials, i, programs, ledger) {
         return Ok(false);
     }
-    // Where `families:0`'s layout says no search would run on this program
-    // ([`vtree::Estimate::search_units`]), the searched layout is
-    // `families:0`'s, and the trial is disabled before its layout is built
-    // rather than once it is found to be the same (below), which saves
-    // building the same layout twice.
-    if trials[i].built.is_none()
-        && trials[i].kind == (Kind::Families { search: true })
-        && trials[..i].iter().any(|t| {
-            t.kind == (Kind::Families { search: false })
-                && t.estimate.is_some_and(|e| e.search_units == 0)
-        })
-    {
-        trials[i].disabled = true;
-        return Ok(false);
-    }
     if trials[i].built.is_none() {
         let t = &mut trials[i];
         // A layout that cannot be built, or cannot help (`td` where no
@@ -511,10 +453,9 @@ fn prepare(
         };
         (t.ground, t.deps) = (Some(ground), Some(deps));
         book_layout(t, &mut layout, layout_seconds, ledger);
-        // The searched families layout is the min-fill one where the
-        // decomposer does not search, and the one-component trials
-        // can agree. Comparing their rewrites too prevents confusing a
-        // rewrite with the original just because their numbered trees match.
+        // The one-component trials' layouts can agree. Comparing their
+        // rewrites too prevents confusing a rewrite with the original just
+        // because their numbered trees match.
         if trials[..i].iter().any(|p| {
             same_rewrite(p, &trials[i], programs)
                 && p.built.as_ref().is_some_and(|b| same_layout(b, &layout))
@@ -557,7 +498,7 @@ fn first_targets(trials: &mut [Trial], first_work: u64) {
     }
 }
 
-/// [`run`] over the given trials from `watch`, each trial's compile
+/// [`run`] over the given trials from `start`, each trial's compile
 /// recording its components for a trace of the run where `traced`. Where
 /// `tabled` is given, `trials` is the order where `families:0`'s rewrite
 /// ties no table by clauses and `tabled` the order where it does
@@ -569,15 +510,15 @@ fn run_within(
     trials: Vec<Kind>,
     mut tabled: Option<Vec<Kind>>,
     projection: Projection,
-    watch: Watch,
+    start: Start,
     laid: Option<Box<Prepared>>,
     traced: bool,
 ) -> Result<Run, Error> {
-    let Watch {
+    let Start {
         first_pairs,
         dynamic_first_pairs,
         memory_bytes,
-    } = watch;
+    } = start;
     // The trials' rewrites start from the program written without its
     // linear recursion.
     let start = Instant::now();
@@ -616,9 +557,11 @@ fn run_within(
         return Err(Error::Vtree("auto has no trial left".into()));
     }
     first_targets(&mut trials, first_work);
-    // Whether the searched families layout has been weighed against the
-    // laid one ([`weigh_searched`]); once a run.
-    let mut weighed = false;
+    // Whether the families trial has weighed its searched layout
+    // ([`search_families`]); once a run, where there is one.
+    let mut weighed = !trials
+        .iter()
+        .any(|t| t.kind == (Kind::Families { search: false }));
     // The last refusal that retired a trial ([`Trial::retire`]), which the
     // run fails with once every trial is retired or disabled.
     let mut refused: Option<tididi::OperationError> = None;
@@ -635,24 +578,6 @@ fn run_within(
             .filter(|&i| !trials[i].disabled)
             .min_by(|&i, &j| trials[i].key(earliest).total_cmp(&trials[j].key(earliest)));
         let Some(i) = next else {
-            // Trials retired while another held memory, which is freed now,
-            // run again, once each.
-            let behind: Vec<usize> = (0..trials.len())
-                .filter(|&j| trials[j].behind && !trials[j].revived)
-                .collect();
-            if !behind.is_empty() {
-                for &j in &behind {
-                    let t = &mut trials[j];
-                    (t.disabled, t.revived) = (false, true);
-                    ledger.notes.push(format!(
-                        "revived: {} indicators={} ({} units), retired while another trial held memory",
-                        t.kind,
-                        t.kind.indicators_name(),
-                        t.spent
-                    ));
-                }
-                continue;
-            }
             let error = refused.map_or_else(
                 || Error::Vtree("auto has no trial left".into()),
                 |e| Error::Trials {
@@ -690,11 +615,6 @@ fn run_within(
                 continue;
             }
         }
-        if !weighed && trials[i].kind == (Kind::Families { search: true }) {
-            weighed = true;
-            weigh_searched(&mut trials, &programs, &mut ledger)?;
-            continue;
-        }
         if !prepare(&mut trials, i, &programs, &mut ledger)? {
             continue;
         }
@@ -716,7 +636,6 @@ fn run_within(
         let left = t.target.saturating_sub(t.spent).max(1);
         let rent = if weighed { None } else { search_rent(t, left) };
         let bounds = Bounds {
-            pairs: t.watch(first_pairs),
             work: bet_left(t, rent.unwrap_or(left)),
             projected_from: projected_from(first_pairs),
             horizon: horizon(t),
@@ -738,51 +657,23 @@ fn run_within(
             Err(error) => error,
         };
         t.record_progress();
-        let Some(stop) = Stop::of(bounds, t.last_work, &error) else {
+        let Some(_) = Stop::of(&error) else {
             if let tp::CompileError::Tdd(
                 e @ (tididi::OperationError::OverBudget | tididi::OperationError::IndexOverflow),
             ) = error
             {
-                // Memory refused goes to the trial refused it where it has
-                // spent more than each trial that holds any, once: what
-                // they built is freed, and it resumes at its next turn.
-                let others: Vec<usize> = (0..trials.len())
-                    .filter(|&j| j != i && trials[j].holds())
-                    .collect();
-                let leads = others.iter().all(|&j| trials[j].spent < trials[i].spent);
-                if e == tididi::OperationError::OverBudget
-                    && !others.is_empty()
-                    && leads
-                    && !trials[i].freed_for
-                {
-                    trials[i].freed_for = true;
-                    let freed: Vec<String> = others
-                        .iter()
-                        .map(|&j| {
-                            trials[j].release();
-                            format!("{} ({} units)", trials[j].kind, trials[j].spent)
-                        })
-                        .collect();
-                    ledger.notes.push(format!(
-                        "released: {} for {} indicators={} ({} units), refused memory under a watch of {} pairs",
-                        freed.join(", "),
-                        trials[i].kind,
-                        trials[i].kind.indicators_name(),
-                        trials[i].spent,
-                        bounds.pairs
-                    ));
-                    continue;
-                }
                 let t = &mut trials[i];
                 ledger.notes.push(format!(
-                    "retired: {} indicators={} under a watch of {} pairs: {e}",
+                    "retired: {} indicators={} ({e})",
                     t.kind,
                     t.kind.indicators_name(),
-                    bounds.pairs
                 ));
                 t.retire();
-                t.behind = e == tididi::OperationError::OverBudget && !others.is_empty();
                 refused = Some(e);
+                if !weighed && search_due(t) {
+                    weighed = true;
+                    search_families(&mut trials, first_work, &programs, &mut ledger)?;
+                }
                 continue;
             }
             return Err(Error::Trials {
@@ -790,26 +681,19 @@ fn run_within(
                 notes: ledger.notes,
             });
         };
-        match stop {
-            // A formula past the watch: the trial's next attempt holds it.
-            Stop::Size(pairs) => t.hold(pairs, first_pairs),
-            // Its target spent, the trial's next doubles until it leaves
-            // the trial more than twice the work the stop lost. A turn
-            // that ended at a step it kept lost nothing; where the guard
-            // stopped an operation, the step it cut short starts over, and
-            // each time it is cut short its next try has at least twice the
-            // work (rus_20_40,
-            // whose last join of 3.3 G units was otherwise stopped at
-            // 2.1 G and given 2.1 G again).
-            Stop::Work => {
-                while t.target.saturating_sub(t.spent) <= t.lost.saturating_mul(2) {
-                    t.target = t.target.saturating_mul(2);
-                }
-            }
-            // Its compile projected past its horizon, the turn ends there as
-            // one that spent its target.
-            Stop::Projected => t.target = t.target.saturating_mul(2),
-        }
+        // Its target spent, or its compile projected past its horizon, the
+        // trial's next turn may spend as much again as it will have spent
+        // once it has done again what its stop lost, and no less than its
+        // target: the target doubles from the larger of the two. A step
+        // the guard cut short so has more than four times the work it lost
+        // on its next try (rus_20_40, whose last join of 3.3 G units was
+        // otherwise stopped at 2.1 G and given 2.1 G again; UAI's 1aie,
+        // whose `families:0` was otherwise given 1 unit after its first
+        // cut, then the same 8.6 G twice).
+        t.target = t
+            .target
+            .max(t.spent.saturating_add(t.lost))
+            .saturating_mul(2);
         if t.weight > 1 && overspent_estimate(t) {
             ledger.notes.push(format!(
                 "turn: {} indicators={} spent past its layout's estimate",
@@ -820,74 +704,80 @@ fn run_within(
         }
         if !weighed && search_due(&trials[i]) {
             weighed = true;
-            weigh_searched(&mut trials, &programs, &mut ledger)?;
+            search_families(&mut trials, first_work, &programs, &mut ledger)?;
         }
     }
 }
 
-/// Builds the searched families layout and weighs it against that of
-/// `families:0`, once `families:0` has spent the search's charge
-/// ([`search_due`]) or at the searched trial's own turn: where the
-/// searched layout is estimated [`SEARCHED_GAP`] times smaller, its trial
-/// takes `families:0`'s place in the order, just before it, with
-/// [`FAMILIES_WEIGHT`] whether or not `families:0` held it, at the first
-/// target of that weight, and so takes the next attempt, and `families:0`
-/// loses its weight, the bet now being on the searched layout (pedigree51,
-/// where `families:0` otherwise spent eight shares beside it;
-/// geni_router_24, where it spent them until it was refused memory). It
-/// keeps its target, its weighted turn counted as spent, so that the
-/// searched trial takes the next attempt whatever `families:0`'s
-/// projection: by its steps, `families:0` at 99% of its walk (pedigree37,
-/// 24 of 3492 steps left) looks as close as at 76% (bn_munin1, which took
-/// 1.8 G units more at its level, where the searched trial answers in
-/// 63 M).
-/// Where `families:0`'s rewrite ties no table by clauses the gap is the
-/// bet's evidence: on GeNI's routers, whose rewrite ties none, the
-/// searched layout wins, and at weight 1 the other trials' equal shares
-/// took router_20 from 12 s to 21 and router_24 past its memory.
-fn weigh_searched(
-    trials: &mut Vec<Trial>,
+/// Builds the searched families layout and weighs it against
+/// `families:0`'s, which the families trial is on, once the trial has
+/// spent the search's charge or been retired before it had
+/// ([`search_due`]). Where the searched layout is
+/// estimated [`SEARCHED_GAP`] times smaller, the trial starts over on it,
+/// its diagrams on `families:0`'s layout dropped, with
+/// [`policy::FAMILIES_WEIGHT`] whether or not it held the weight, at the
+/// first target of that weight, and so takes the next attempt whatever
+/// its projection on `families:0`'s layout: by its steps, `families:0` at
+/// 99% of its walk (pedigree37, 24 of 3492 steps left) looks as close as
+/// at 76% (bn_munin1, which took 1.8 G units more at its level, where the
+/// searched layout answers in 63 M). Otherwise the searched layout is
+/// dropped and the trial goes on as it was. Where `families:0`'s rewrite
+/// ties no table by clauses the gap is the bet's evidence: on GeNI's
+/// routers, whose rewrite ties none, the searched layout wins, and at
+/// weight 1 the other trials' equal shares took router_20 from 12 s to 21
+/// and router_24 past its memory.
+fn search_families(
+    trials: &mut [Trial],
+    first_work: u64,
     programs: &Programs,
     ledger: &mut Ledger,
 ) -> Result<(), Error> {
-    let laid = trials
-        .iter()
-        .position(|t| t.kind == (Kind::Families { search: false }) && !t.disabled);
-    let searched = trials.iter().position(|t| {
-        t.kind == (Kind::Families { search: true }) && !t.disabled && t.built.is_none()
-    });
-    let (Some(i), Some(j)) = (laid, searched) else {
+    let Some(t) = trials
+        .iter_mut()
+        .find(|t| t.kind == (Kind::Families { search: false }))
+    else {
         return Ok(());
     };
-    if !prepare(trials, j, programs, ledger)? {
-        return Ok(());
-    }
-    let pairs = |t: &Trial| t.estimate.map(|e| e.pairs);
-    let (Some(laid), Some(searched)) = (pairs(&trials[i]), pairs(&trials[j])) else {
+    // Where `families:0`'s layout says no search would run on this program
+    // ([`vtree::Estimate::search_units`]), the searched layout is its own.
+    let Some(laid) = t.estimate.filter(|e| e.search_units > 0).map(|e| e.pairs) else {
         return Ok(());
     };
-    if searched * SEARCHED_GAP > laid {
+    let mut searched = Trial {
+        ground: t.ground.clone(),
+        deps: t.deps.clone(),
+        evaluation: crate::evaluation::Evaluation::new(t.evaluation.traced()),
+        ..Trial::new(Kind::Families { search: true })
+    };
+    if !prepare(std::slice::from_mut(&mut searched), 0, programs, ledger)? {
         return Ok(());
     }
-    ledger.notes.push(format!("turn: {} indicators={} takes the place of {}, its layout estimated at {searched:.3e} pairs against {laid:.3e}",
-        trials[j].kind, trials[j].kind.indicators_name(), trials[i].kind));
-    trials[i].weight = 1;
-    let mut t = trials.remove(j);
-    t.target = t.target / t.weight * FAMILIES_WEIGHT;
-    t.weight = FAMILIES_WEIGHT;
-    trials.insert(i, t);
+    let pairs = searched.estimate.map_or(f64::NAN, |e| e.pairs);
+    let taken = pairs * SEARCHED_GAP <= laid;
+    ledger.notes.push(format!(
+        "turn: {} indicators={} {}, its layout estimated at {pairs:.3e} pairs against {laid:.3e}",
+        searched.kind,
+        searched.kind.indicators_name(),
+        if taken {
+            "takes the place of families:0"
+        } else {
+            "dropped"
+        }
+    ));
+    if taken {
+        searched.weight = weight(&searched);
+        searched.target = first_work.saturating_mul(searched.weight);
+        *t = searched;
+    }
     Ok(())
 }
 
-/// The bounds on an attempt beside other trials: the pairs of a formula it
-/// completes (its watch; a formula past it stops the attempt by size),
-/// which also bound its operations in flight ([`attempt`]), the engine
-/// work it may spend, and the base-2 logarithm of the work past which a
+/// The bounds on an attempt beside other trials: the engine work it may
+/// spend, and the base-2 logarithm of the work past which a
 /// projected finish stops its compile between components, once its trial
 /// has spent `projected_from` ([`tp::Horizon`]).
 #[derive(Clone, Copy)]
 struct Bounds {
-    pairs: usize,
     work: u64,
     projected_from: u64,
     horizon: f64,
@@ -900,25 +790,15 @@ enum Stop {
     /// Its compile was projected, between components, to finish past its
     /// horizon ([`policy::horizon`], [`tp::Horizon`]).
     Projected,
-    /// It needs a watch of these pairs: a formula it completed was past
-    /// the watch, or an operation in flight past its nodes or pairs.
-    Size(usize),
 }
 
 impl Stop {
-    /// Why an attempt within `bounds` that spent `work` stopped with
-    /// `error`, `None` where `error` is no stop.
-    fn of(bounds: Bounds, work: u64, error: &tp::CompileError) -> Option<Stop> {
+    /// Why an attempt stopped with `error`, `None` where `error` is no
+    /// stop.
+    fn of(error: &tp::CompileError) -> Option<Stop> {
         match error {
-            tp::CompileError::Oversize { pairs, .. }
-            | tp::CompileError::QueryOversize { pairs } => Some(Stop::Size(*pairs)),
-            tp::CompileError::Tdd(tididi::OperationError::Stopped) if work >= bounds.work => {
-                Some(Stop::Work)
-            }
+            tp::CompileError::Tdd(tididi::OperationError::Stopped) => Some(Stop::Work),
             tp::CompileError::Projected { .. } => Some(Stop::Projected),
-            tp::CompileError::Tdd(
-                tididi::OperationError::OutputCap | tididi::OperationError::Stopped,
-            ) => Some(Stop::Size(bounds.pairs.saturating_add(1))),
             _ => None,
         }
     }
@@ -927,13 +807,10 @@ impl Stop {
 /// One attempt of trial `t` within `bounds`: it compiles what is not
 /// compiled yet, then runs the query phase, each resuming where its last
 /// attempt stopped. Its turn ends at the first step it keeps once it has
-/// spent the bounds' work, besides what settling the names of `program`
-/// and `decision` spends (`tp::settle`), and the next attempt goes on from
+/// spent the bounds' work, besides what settling the names of `decision`
+/// spends (`tp::settle`), and the next attempt goes on from
 /// that step (`tp::TddBackend::pause`). An operation still in flight at
-/// twice the work is stopped, and lost. A formula it completes past the
-/// watch stops it by size; an operation in flight past twice the watch in
-/// nodes, or sixteen times it in pairs, is lost and built again in a later
-/// turn. Its compile stops between components where it is projected to
+/// twice the work is stopped, and lost. Its compile stops between components where it is projected to
 /// finish more than [`PROJECTED_DOUBLINGS`] doublings past its target over
 /// its weight ([`policy::horizon`], [`tp::Horizon`]): the turn cannot
 /// finish it, and the other trials take theirs before it goes on. Records
@@ -970,27 +847,19 @@ fn attempt(
     let result = tree.context().run(|engine| {
         let start_work = engine.limits().work_units();
         let mut limits = LimitConfig::none().with_memory_budget_bytes(memory_bytes);
-        if let Some(Bounds { pairs, work, .. }) = bounds {
+        if let Some(Bounds { work, .. }) = bounds {
             // The turn ends at the first step kept past its work
             // (`tp::TddBackend::pause`); one operation that runs on to
             // twice the work is stopped and lost.
             let guard_at = start_work.saturating_add(work.saturating_mul(2));
-            let stop = StopRules::default()
-                .with_unconditional(Some(StopAt::WorkUnits(guard_at)))
-                .with_after_pairs(Some((
-                    (pairs as u64).saturating_mul(16),
-                    StopAt::WorkUnits(0),
-                )));
-            limits = limits
-                .with_output_node_cap(Some((pairs as u64).saturating_mul(2)))
-                .with_stop_rules(stop);
+            let stop = StopRules::default().with_unconditional(Some(StopAt::WorkUnits(guard_at)));
+            limits = limits.with_stop_rules(stop);
         }
         let _guard = engine.limits().scope(limits);
         let horizon = bounds.map(|b| tp::Horizon {
             origin: start_work.saturating_sub(t.spent),
             from: b.projected_from,
             limit: b.horizon,
-            mark: t.target / 2,
         });
         let backend = tp::TddBackend::resume(engine, tree.clone(), kept);
         if let Some(b) = bounds {
@@ -1001,7 +870,9 @@ fn attempt(
             &backend,
             (t.kind, projection),
             dynamic_first_pairs,
-            bounds.map(|b| b.pairs),
+            // A bounded run is resumable, and only a run without bounds is
+            // the last.
+            bounds.is_none(),
             horizon,
         );
         work = engine.limits().work_units().saturating_sub(start_work);
@@ -1032,7 +903,6 @@ fn attempt(
     ledger.trial_seconds += seconds;
     let outcome = match &result {
         Ok(_) => "finished",
-        Err(tp::CompileError::QueryOversize { .. } | tp::CompileError::Oversize { .. }) => "size",
         Err(tp::CompileError::Projected { .. }) => "projected",
         Err(_) => "stopped",
     };
@@ -1065,8 +935,8 @@ fn attempt(
             }
             None => format!(", steps {done}/{all}"),
         });
-    let watch = bounds.map_or("none".to_string(), |b| b.pairs.to_string());
-    ledger.notes.push(format!("trial: {} indicators={}, watch={watch}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
+    let alone = if bounds.is_none() { ", alone" } else { "" };
+    ledger.notes.push(format!("trial: {} indicators={}{alone}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
         t.kind, t.kind.indicators_name(), progress.unwrap_or_default()));
     result
 }

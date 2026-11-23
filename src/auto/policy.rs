@@ -1,6 +1,6 @@
 //! `auto`'s policy: the trials a program gets, in order ([`candidates`]),
-//! their weights and first targets, and when the searched families layout
-//! takes `families:0`'s place.
+//! their weights and first targets, and when the families trial weighs its
+//! searched layout.
 
 use crate::GroundProgram;
 use crate::ground::{self, shape};
@@ -8,20 +8,20 @@ use crate::vtree::Kind;
 
 use super::trial::Trial;
 
-/// A trial's first watch on the pairs of its formulas. A layout whose
-/// formulas outgrow the watch stops early, having spent little, and tries
-/// again with a watch that holds them.
+/// The pairs a trial's first turn is measured in ([`WORK_PER_PAIR`],
+/// [`projected_from`]).
 pub(super) const FIRST_PAIRS: usize = 1 << 20;
 
-/// The engine work a trial's first turn gets for each pair of the first
-/// watch, times its weight: 2^28 units, high enough that cheap compiles
-/// (Win95pts, digit) finish there, low enough to cap what a layout that
-/// does not suit the program costs before the next is tried.
+/// The engine work a trial's first turn gets for each of the
+/// [`FIRST_PAIRS`], times its weight: 2^28 units, high enough that cheap
+/// compiles (Win95pts, digit) finish there, low enough to cap what a
+/// layout that does not suit the program costs before the next is tried.
 pub(super) const WORK_PER_PAIR: u64 = 256;
 
-/// The work a turn's target gives for each pair its watch may grow to: a
-/// turn of 2^28 units may hold formulas of 2^24 pairs. A trial that needs
-/// more ends its turn and goes on in its next, with twice the target.
+/// The work a turn's target spends for each pair of the formulas it
+/// builds: a turn of 2^28 units holds formulas of about 2^24 pairs. A
+/// layout estimated past that is past what its turn may hold
+/// ([`search_charge`]).
 pub(super) const WORK_PER_HELD_PAIR: u64 = 16;
 
 /// The doublings past its target within which a trial's projected finish
@@ -42,7 +42,7 @@ pub(super) const PROJECTED_DOUBLINGS: f64 = 3.0;
 /// The work a trial has spent from which its compile stops between
 /// components where it is projected to finish more than
 /// [`PROJECTED_DOUBLINGS`] doublings past its target (`tp::Horizon`): the
-/// work whose watch is the first one, `first_pairs` ([`FIRST_PAIRS`] in a
+/// work that holds the first pairs, `first_pairs` ([`FIRST_PAIRS`] in a
 /// run) times [`WORK_PER_HELD_PAIR`], 2^24 units, about a tenth of a
 /// second. Before it the components done are too few to project from, and
 /// a turn of less costs nothing that matters. `decision` on SPPL's markov
@@ -62,8 +62,8 @@ pub(super) fn projected_from(first_pairs: usize) -> u64 {
 pub(super) const LEAD_SHARE: u64 = 256;
 
 /// The share of the work `families:0` or a `decision` trial gets beside
-/// each other trial, and the searched families trial once it takes
-/// `families:0`'s place, whichever trial leads ([`super::weigh_searched`]).
+/// each other trial, and the families trial once it lays out its searched
+/// layout, whichever trial leads ([`super::search_families`]).
 /// Every benchmark
 /// network that no trial finishes in its first attempt is won by a
 /// families trial, and on those the other trials' work was most of the
@@ -79,10 +79,6 @@ pub(super) const LEAD_SHARE: u64 = 256;
 /// to 57, disease_small 66 s to 401, sorted_list 66 s to 102), and its
 /// first turn of eight shares on relational programs that `closed` wins
 /// (cora8000, 2^31 units in 13 s, where `closed` then answers in 9.6 M).
-/// The searched trial otherwise weighs 1: its layout
-/// estimated about as large as `families:0`'s, the bet is `families:0`'s,
-/// and at the weight its first attempt spent 2.1 G units on GeNI's
-/// weather_n7 and n8, which `program` wins.
 pub(super) const FAMILIES_WEIGHT: u64 = 8;
 
 /// The work a families trial may spend for each pair of its layout's
@@ -93,7 +89,6 @@ pub(super) const FAMILIES_WEIGHT: u64 = 8;
 /// turn (mnist_sum96); those that lose have spent 300 and more (GeNI's
 /// links and weather networks, 3 600 on weather_n7), or never finish
 /// (Dice's simpleCaesar, estimated at 7.9e4 pairs, where `td` finishes).
-/// Their formulas need not reach the watch, which grows with the target.
 pub(super) const WORK_PER_ESTIMATED_PAIR: u64 = 64;
 
 /// The work `t`, a families trial, may spend on its layout's estimate
@@ -143,9 +138,12 @@ pub(super) fn horizon(t: &Trial) -> f64 {
 }
 
 /// How much smaller the searched `families` layout must be estimated than
-/// `families:0`'s to take its place ([`search_due`]). The estimate decides
-/// where the gap is wide (bn_munin1); where the gap is narrow it misleads
-/// by less than it (bn_andes). Past what a turn may hold both estimates
+/// `families:0`'s for the families trial to take it ([`super::search_families`]).
+/// The estimate decides where the gap is wide (bn_munin1); where the gap
+/// is narrow it misleads by less than it (bn_andes), and the searched
+/// layout runs out of memory where min-fill's answers (UAI's csp_11, at
+/// 0.91, 0.7 s on min-fill's layout; Alea's arith_book at 0.70, GeNI's
+/// weather_h200 at 0.93). Past what a turn may hold both estimates
 /// run far over the formulas, but the gap still points the right way
 /// (pedigree7_10, and GeNI's link_12 at 4.15, where the searched layout
 /// wins at its weight and `program` takes 27 s).
@@ -157,9 +155,9 @@ pub(super) const SEARCHED_GAP: f64 = 4.0;
 /// the network sets; quartiles 1.1 and 3.8).
 pub(super) const SEARCH_UNITS_PER_WORK: u64 = 2;
 
-/// The work past which `laid`, the `families:0` trial, has the searched
-/// `families` layout built and weighed against its own
-/// ([`SEARCHED_GAP`]) before `closed` and `td` have their turns: what the
+/// The work past which `laid`, the families trial on `families:0`'s
+/// layout, has the searched `families` layout built and weighed against
+/// its own ([`SEARCHED_GAP`]) before `closed` and `td` have their turns: what the
 /// search charges, in units of work ([`SEARCH_UNITS_PER_WORK`]), where
 /// `laid`'s layout is estimated past what its turn may hold and its
 /// rewrite ties tables by clauses. Otherwise `closed` and `td` spend their
@@ -192,9 +190,13 @@ pub(super) fn search_rent(laid: &Trial, left: u64) -> Option<u64> {
         .map(|charge| charge - laid.spent)
 }
 
-/// Whether `laid` has spent its [`search_charge`].
+/// Whether `laid` has spent its [`search_charge`], or was retired before
+/// it had: refused memory, it would never pay the rest of the rent, and the
+/// searched layout would not be built (pedigree7_13, whose `families:0`
+/// is refused at 0.14 G units, where the searched layout answers in
+/// 0.86 G and `closed` and `td` run out of memory).
 pub(super) fn search_due(laid: &Trial) -> bool {
-    search_charge(laid).is_some_and(|charge| laid.spent >= charge)
+    search_charge(laid).is_some_and(|charge| laid.spent >= charge || laid.disabled)
 }
 
 /// Whether `t`'s rewrite holds some table's clauses
@@ -207,12 +209,14 @@ pub(super) fn ties_tables_by_clauses(t: &Trial) -> bool {
 }
 
 /// The weight of `t`: [`FAMILIES_WEIGHT`] for `decision`, which goes first
-/// where the conditioning decided ([`super::run`]), and for `families:0`
-/// once it has its rewrite, where that ties tables by clauses
+/// where the conditioning decided ([`super::run`]), for the families trial
+/// on its searched layout, which it takes only on the estimate's bet
+/// ([`super::search_families`]), and for `families:0` once it has its
+/// rewrite, where that ties tables by clauses
 /// ([`ties_tables_by_clauses`]); 1 otherwise.
 pub(super) fn weight(t: &Trial) -> u64 {
     match t.kind {
-        Kind::Decision => FAMILIES_WEIGHT,
+        Kind::Decision | Kind::Families { search: true } => FAMILIES_WEIGHT,
         Kind::Families { search: false } if ties_tables_by_clauses(t) => FAMILIES_WEIGHT,
         _ => 1,
     }
@@ -224,18 +228,22 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// for each ([`FEW_FACTS`]): with `closed` first the networks would pay for
 /// a `closed` trial that `families` then beats, and with the decomposer's
 /// search in the first families trials the small programs would pay for a
-/// search that lowers nothing. The searched layouts come last, so a program
-/// pays for the search only once every cheaper layout has had its turn,
-/// unless `families:0`'s estimate calls for it sooner ([`search_charge`]).
+/// search that lowers nothing. There is one families trial: it starts on
+/// `families:0`'s layout, and builds the searched layout only where
+/// `families:0`'s estimate calls for it, once it has spent what the search
+/// charges ([`search_charge`]); it takes the searched layout only where
+/// that is estimated [`SEARCHED_GAP`] times smaller
+/// ([`super::search_families`]).
 ///
 /// Each trial has its own budget, so a trial that never finishes first
 /// changes no answer and only costs its work.
 ///
 /// A program whose derived atoms are one component, or one recursive
 /// component that reads most of the facts, has no boundary for an
-/// indicator to cut and no component order for `closed` to search that
+/// indicator to cut and no component order for `closed` to follow that
 /// matters ([`shape::nothing_to_order`]): only an order of the
-/// facts themselves can help, and its trial is `dynamic`: the min-fill
+/// facts themselves can help. Where a derived atom depends on itself, its
+/// trial is `dynamic`: the min-fill
 /// vtree, searched by rotations between the compile's steps
 /// ([`crate::tp::Compilation::dynamic`]), unprojected, since the component's cone
 /// is most of the facts. The search beats the static min-fill vtree it
@@ -243,37 +251,32 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// min-fill there, and its decomposer's least budget costs seconds on
 /// programs that compile in milliseconds.
 ///
-/// Where no derived atom depends on itself, the one component is acyclic
-/// atoms merged because they read the same facts ([`crate::ground::deps::components`]),
-/// and the atoms still have a direction: a formula compiled bottom up wants
-/// its facts in reverse dependency order, which `closed` follows and
-/// `minfill`, `dynamic`'s start, does not see (`docs/design.md`, vtrees).
-/// There `closed` follows `dynamic`: a noisy-or network with every finding
+/// Elsewhere the one component is acyclic atoms merged because they read
+/// the same facts ([`crate::ground::deps::unit_ranks`]), and the trials are
+/// `td`, `dynamic` and `closed`, in that order. Where every rule reads
+/// facts alone, or copies of facts, `td`'s vtree is its decomposition
+/// folded ([`crate::vtree::build`]) and its compile is projected, so the
+/// evidence walk conjoins each observation at the lowest vtree node over
+/// its facts. `dynamic` starts from a fold too, but compiles unprojected:
+/// every formula is on the global scope, and the walk conjoins every
+/// observation at the root. A weighted CNF, its clauses observed true, is
+/// such a program, and so are the literature's noisy-or networks and
+/// databases and the TPC-H queries, where `td` first takes less trial
+/// work; on the tuple-independent databases
+/// ([`scripts/gen_pdb.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_pdb.py))
+/// `td` alone finishes pdb40. Where the atoms have a direction, a formula
+/// compiled bottom up wants its facts in reverse dependency order, which
+/// `closed` follows and `minfill`, `dynamic`'s start, does not see
+/// (`docs/design.md`, vtrees): a noisy-or network with every finding
 /// observed is one such component, and so is the growing-head program,
 /// whose heads share each annotated disjunction's switches; `dynamic`
 /// finishes neither, and `closed` both.
 ///
-/// `td` follows `closed` there: on the tuple-independent databases from
-/// the literature ([`scripts/gen_pdb.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_pdb.py)) both of the others stall, and
-/// `td` alone finishes pdb40.
-///
-/// Where every rule reads facts alone, or copies of facts
-/// ([`shape::reads_facts_alone`]), the atoms have no direction and `td`
-/// comes first, then `dynamic` and `closed`. `td`'s vtree there is its
-/// decomposition folded ([`crate::vtree::build`]) and its compile is projected, so
-/// the evidence walk conjoins each observation at the lowest vtree node
-/// over its facts. `dynamic` starts from a fold too, but compiles
-/// unprojected: every formula is on the global scope, and the walk conjoins
-/// every observation at the root. A weighted CNF, its clauses observed
-/// true, is such a program, and so are the literature's noisy-or networks
-/// and databases and the TPC-H queries, where `td` first takes less trial
-/// work.
-///
 /// Where the program is built gate by gate ([`built_of_gates`]), as the
 /// circuits Alea, Dice and pluck export are, and states its flips in the
 /// order its front end created them, `program` comes first, then
-/// `program:fanin`, ahead of the families trials, and `program` alone
-/// comes last elsewhere: the circuits compile best in the order their
+/// `program:fanin`, ahead of the families trials, and `program` is no trial
+/// elsewhere: the circuits compile best in the order their
 /// front end built them (triangle_small 24 s to 0.7) or in the order their
 /// gates read the facts (`program:fanin`: an adder's operand bits side by
 /// side, addFun_sum at 19 bits in 42 M units of work against 4.3 G;
@@ -282,7 +285,7 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// grids 3 to 60 times. `td` is no trial there: its order comes from a
 /// decomposition of the undirected interaction graph, which does not see
 /// the gates' direction, where the program's two orders and `closed`'s
-/// search over dependency orders follow it. In the timed runs of the
+/// dependency order follow it. In the timed runs of the
 /// circuits, GeNI's networks and Roulette's programs `td` won none, and
 /// its turns took a fifth of the time the losing trials spent on the
 /// circuits of a second or more. The property is read off the program as
@@ -299,8 +302,8 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// Where the program is a CNF over its facts and there are several units
 /// ([`shape::clauses_over_facts`]: every derived atom a copy of a fact or
 /// observed false and read by nothing), the families trials are left out
-/// and `td` comes before `closed`, as where every rule reads facts alone: a
-/// clause reads facts or copies of facts. A weighted CNF is such a program,
+/// and the trials are those of one component, `td` first: a clause reads
+/// facts or copies of facts. A weighted CNF is such a program,
 /// its copies the facts the conditioning on the evidence makes equal, which
 /// split its clauses into several units where without them they are one,
 /// and `td` comes first above. The families trials spend their turns there
@@ -334,7 +337,8 @@ pub(super) fn weight(t: &Trial) -> u64 {
 /// the other ([`super::run_within`]): where an earlier trial wins first,
 /// as `decision` does on the guarded circuits, the rewrite is not built.
 pub(super) fn candidates(gp: &GroundProgram, tables: bool) -> Vec<Kind> {
-    if shape::nothing_to_order(gp) {
+    let nothing = shape::nothing_to_order(gp);
+    if nothing {
         let by_head = gp.rules_by_head();
         let recursive = ground::deps::derived_sccs(gp, &by_head)
             .iter()
@@ -342,21 +346,16 @@ pub(super) fn candidates(gp: &GroundProgram, tables: bool) -> Vec<Kind> {
         if recursive {
             return vec![Kind::Dynamic];
         }
-        if shape::reads_facts_alone(gp) {
-            return vec![Kind::Td, Kind::Dynamic, Kind::Closed];
-        }
-        return vec![Kind::Dynamic, Kind::Closed, Kind::Td];
     }
-    if shape::clauses_over_facts(gp) {
-        return vec![Kind::Td, Kind::Closed];
+    if nothing || shape::clauses_over_facts(gp) {
+        return vec![Kind::Td, Kind::Dynamic, Kind::Closed];
     }
     let laid = Kind::Families { search: false };
-    let searched = Kind::Families { search: true };
     let mut trials =
         if gp.num_facts() <= FEW_FACTS && gp.num_derived() >= DERIVED_PER_FACT * gp.num_facts() {
-            vec![Kind::Closed, laid, Kind::Td, searched]
+            vec![Kind::Closed, laid, Kind::Td]
         } else {
-            vec![laid, Kind::Closed, Kind::Td, searched]
+            vec![laid, Kind::Closed, Kind::Td]
         };
     if built_of_gates(gp) && !tables {
         trials.retain(|&kind| kind != Kind::Td);
@@ -367,8 +366,6 @@ pub(super) fn candidates(gp: &GroundProgram, tables: bool) -> Vec<Kind> {
                 Kind::Program { fan_in: true },
             ],
         );
-    } else {
-        trials.push(Kind::Program { fan_in: false });
     }
     trials
 }

@@ -1,8 +1,7 @@
 //! Answers the queries of a file, as `tddlog FILE` does, and reports the
 //! probability of its evidence and which of `auto`'s trials answered. The
 //! file's extension names its format: a ProbLog program, a Dice program
-//! (`.dice`), a Circulette netlist (`.cql`) or a network (`.bif`, `.net`,
-//! `.xdsl`, `.uai`).
+//! (`.dice`) or a network (`.bif`, `.net`, `.xdsl`, `.uai`).
 //!
 //! ```text
 //! cargo run --release --example solve -- examples/alarm.pl

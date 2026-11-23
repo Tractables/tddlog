@@ -305,11 +305,6 @@ impl Exclusive {
     }
 }
 
-/// What the watch makes of a formula: `Ok` where it lets the formula
-/// through, `Err` with the formula, reduced in full, and its pairs where it
-/// refuses it.
-pub(super) type Checked<T> = Result<T, (Tdd, usize)>;
-
 /// Negates a formula, owned or lent, counted under the given source.
 pub(super) type Negate<'a> =
     dyn for<'f> Fn(NegationSource, Cow<'f, Tdd>) -> Result<Tdd, CompileError> + 'a;
@@ -351,13 +346,11 @@ pub(super) struct Factoring<'a> {
     pub(super) head: AtomId,
     pub(super) scratch: &'a std::cell::RefCell<Scratch>,
     pub(super) memo: &'a std::cell::RefCell<ClauseMemo>,
+    /// Passes a formula through, or refuses it past the guard of a
+    /// `dynamic` compile's round (`compile::GUARD`).
     pub(super) watched: &'a dyn Fn(Tdd, AtomId) -> Result<Tdd, CompileError>,
-    /// `watched` that hands back the formula the watch refused, reduced in
-    /// full, with its pairs, for the [`ClauseMemo`] to keep for the next
-    /// run (`clauses::Held`).
-    pub(super) checked: &'a dyn Fn(Tdd) -> Result<Checked<Tdd>, CompileError>,
     /// The pairs `watched` lets through.
-    pub(super) watch: Option<usize>,
+    pub(super) guard: Option<usize>,
     /// Counts that many operations of the given kind.
     pub(super) count: &'a dyn Fn(Op, usize),
     /// Negates, counted under the given source.

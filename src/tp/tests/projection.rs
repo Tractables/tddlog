@@ -203,8 +203,7 @@ fn projection_shrinks_the_formulas_it_is_for() {
             let backend = crate::tp::TddBackend::new(engine, vtree.clone());
             let var_of = crate::tp::fact_variables(&gp, &order);
             let compiled =
-                crate::tp::compile(&gp, var_of, Formulation::Dual, &backend, projection, None)
-                    .unwrap();
+                crate::tp::compile(&gp, var_of, Formulation::Dual, &backend, projection).unwrap();
             let nodes: usize = compiled
                 .formulas
                 .iter()

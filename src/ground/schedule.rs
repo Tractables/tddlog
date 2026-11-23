@@ -166,6 +166,27 @@ pub(crate) fn schedule_keyed<'k>(
     let pending: Vec<usize> = (0..body.len())
         .filter(|&i| !binding(i) && !switch(i))
         .collect();
+    // A body without variables, every body of a ground program: each
+    // literal is ready as it stands and every atom is a lookup, so the
+    // order below is the one the ranks and releases give, read off. In
+    // the source order the literals stay as written; otherwise the other
+    // literals come first, then the atoms in source order (`From`'s
+    // first), then the switches. The schedule's tables for each of a
+    // million ground rules cost more than grounding them.
+    if body.iter().all(|l| literal_vars(l).is_empty()) {
+        let mut out: Vec<usize> = match order {
+            Order::Source => (0..body.len()).filter(|&i| !switch(i)).collect(),
+            Order::From(first) if atoms.contains(&first) => pending
+                .iter()
+                .copied()
+                .chain(std::iter::once(first))
+                .chain(atoms.iter().copied().filter(|&l| l != first))
+                .collect(),
+            _ => pending.iter().chain(&atoms).copied().collect(),
+        };
+        out.extend((0..body.len()).filter(|&i| switch(i)));
+        return Ok(out);
+    }
     let mut s = Schedule::new(body, bound, &atoms, pending, keys);
     // In the order of the source a literal waits for the atoms written
     // before it, as a call in ProbLog's resolution does: a demand it makes
@@ -422,6 +443,27 @@ mod tests {
         };
         assert_eq!(order(Order::Join), Ok(vec![1, 4, 3, 0, 2]));
         assert_eq!(order(Order::Source), Ok(vec![1, 3, 4, 0, 2]));
+    }
+
+    /// A body without variables orders as one with them does where every
+    /// literal is ready: the others first, the atoms in source order (from
+    /// the one a round adds to), the switches last; the source order keeps
+    /// the literals as written.
+    #[test]
+    fn a_ground_body_orders_as_its_literals_are_ready() {
+        let p = parse_program("h :- s(a), q(a,b), \\+ t(a), r(b), \\+ w(a), u(c).\n").unwrap();
+        let order = |order| {
+            schedule_body(
+                &p.clauses[0].body,
+                &mut FxHashSet::default(),
+                |i| matches!(i, 0 | 2),
+                order,
+            )
+        };
+        assert_eq!(order(Order::Join), Ok(vec![4, 1, 3, 5, 0, 2]));
+        assert_eq!(order(Order::Source), Ok(vec![1, 3, 4, 5, 0, 2]));
+        assert_eq!(order(Order::From(3)), Ok(vec![4, 3, 1, 5, 0, 2]));
+        assert_eq!(order(Order::From(4)), Ok(vec![4, 1, 3, 5, 0, 2]));
     }
 
     /// An atom that shares no variable with those bound waits for one

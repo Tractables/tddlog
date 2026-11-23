@@ -5,9 +5,11 @@
 use std::fmt;
 use std::sync::{Arc, OnceLock};
 
+use rustc_hash::FxHashSet;
+
 use crate::by_hash::ByHash;
 use crate::eval::Count;
-use crate::syntax::Atom;
+use crate::syntax::{Atom, Name};
 
 use super::structure::Structure;
 use super::{Conditioned, Decisions, Defined, Encoding, GroundOptions};
@@ -85,6 +87,20 @@ impl GroundRule {
             body,
             pairs: false,
         }
+    }
+
+    /// Head `head` of a chain of switches, an annotated disjunction lowered
+    /// ([`super::normalize::chain_weights`]): true where `chain` holds, its
+    /// context and the switches before false, and its own `switch` true,
+    /// which joins the chain false. The last head of a chain of no mass of
+    /// no head has none.
+    pub(crate) fn link(head: AtomId, chain: &mut Vec<GLit>, switch: Option<AtomId>) -> Self {
+        let mut body = chain.clone();
+        if let Some(s) = switch {
+            body.push(GLit::Pos(s));
+            chain.push(GLit::Neg(s));
+        }
+        GroundRule::new(head, body)
     }
 
     /// The rules the rule stands for: itself, or one per pair.
@@ -285,6 +301,12 @@ pub struct GroundProgram {
     /// test grounds under options of its own and solves the program
     /// under the default ones (`solve_ground`).
     pub(super) options: GroundOptions,
+    /// The names starting with `$`, as the grounder names its own atoms,
+    /// that the source program defines itself, as a program the grounder
+    /// printed does (`--ground`): the program's atoms, which
+    /// [`super::simplify::merge_equal_atoms`] leaves to the merge that
+    /// knows the exclusive sets. Empty for nearly every program.
+    pub(crate) written: Arc<FxHashSet<Name>>,
     /// The structure the grounder computed for the program as it left it,
     /// or the first call of [`GroundProgram::structure`] after it.
     pub(super) structure: OnceLock<Arc<Structure>>,
@@ -385,6 +407,7 @@ impl Default for GroundProgram {
             weight: Count::ONE,
             stats: GroundStats::default(),
             options: GroundOptions::default(),
+            written: Arc::default(),
             structure: OnceLock::new(),
         }
     }
@@ -452,6 +475,7 @@ impl GroundProgram {
             weight,
             stats,
             options,
+            written,
             structure: _,
         } = self;
         GroundProgram {
@@ -465,12 +489,13 @@ impl GroundProgram {
             weight: *weight,
             stats: stats.clone(),
             options: *options,
+            written: Arc::clone(written),
             structure: OnceLock::new(),
         }
     }
     /// Gives back the room the program's lists hold past their lengths,
     /// which a rewrite that grew them by doubling leaves, where the
-    /// compile holds the program to its end ([`crate::indicators::name`]).
+    /// compile holds the program to its end ([`crate::indicators::introduce`]).
     pub(crate) fn shrink_to_fit(&mut self) {
         self.atoms.shrink_to_fit();
         self.kinds.shrink_to_fit();

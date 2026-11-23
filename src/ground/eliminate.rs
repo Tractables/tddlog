@@ -174,7 +174,8 @@ pub(crate) fn linear_recursion(gp: &mut GroundProgram) -> usize {
 /// The atoms in the order a bottom-up evaluation derives them: the facts,
 /// then each derived atom in the round after the last body atom of its
 /// first rule to complete, ties by number. The grounder numbers a source
-/// program so; `closed` starts its order search from that numbering.
+/// program so; `closed`'s order of the components starts from that
+/// numbering.
 fn by_rounds(gp: &GroundProgram) -> Vec<AtomId> {
     let n = gp.num_atoms();
     let mut readers: Vec<Vec<usize>> = vec![Vec::new(); n];
@@ -404,8 +405,8 @@ fn eliminate(
 /// The labels' presence is simulated on its own, the bodies left for the
 /// rewrite. A node's score changes only when a label at it or between two of
 /// its neighbours does, so after each step its neighbours and theirs are
-/// scored again; the heap is corrected on pop, as in
-/// `vtree::graph::min_fill_elimination`.
+/// scored again; a heap entry that is no longer its node's score is passed
+/// over when it is popped.
 ///
 /// Returns the order and the label products the rewrite takes along it, an
 /// edge in by an edge out at each step, or `None` once those pass `limit`.

@@ -15,7 +15,7 @@ abstract: >-
   facts, annotated disjunctions, and recursive rules with negation,
   comparisons and arithmetic. Front ends reduce ProbLog programs with
   function symbols and lists, Bayesian and Markov networks, Dice
-  programs, Circulette netlists and LPADs to them.
+  programs and LPADs to them.
   A program is ground, simplified, compiled bottom up into tree decision
   diagrams with the tididi library, and its queries are counted on the
   diagrams. A Rust library and command-line tool, with Python, C and

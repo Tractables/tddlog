@@ -4,11 +4,13 @@
 //! or by hand, and P(e) is the program's.
 
 use super::split::{Answering, Split, SplitBounds, query_parts, split_check};
+use super::windows::{WindowBounds, Windows};
 use super::{Options, Progress, Strategy, solve_ground, solve_split};
 use crate::eval::Count;
 use crate::ground::{GroundOptions, GroundProgram};
 use crate::query::assert_answers;
 use crate::{Kind, Projection, QueryResult, auto};
+use std::ops::RangeBounds;
 
 /// A network by hand: a, b given a, c given b (observed), d given a, e
 /// given b and d, f given d. e and f head groups, a and b go with the first
@@ -386,4 +388,642 @@ fn the_check_under_auto_splits_as_under_a_layout_and_runs_as_solve_ground() {
         ),
         Answering::Whole(None)
     ));
+}
+
+/// `source` cut into windows of `rules` ground rules or more
+/// ([`super::windows`]) under `options`: the runs answered (the windows,
+/// or the whole program), the notes and the solution.
+fn run_windowed(
+    source: &str,
+    rules: usize,
+    options: &Options,
+) -> (usize, Vec<String>, super::Solution) {
+    let bounds = SplitBounds {
+        windows: WindowBounds {
+            rules,
+            ..WindowBounds::DEFAULT
+        },
+        ..SplitBounds::default()
+    };
+    let (mut runs, mut notes) = (0, Vec::new());
+    let solution = solve_split(source, options, &bounds, &mut |p| match p {
+        Progress::Answered(_) => runs += 1,
+        Progress::Note(note) => notes.push(note),
+        _ => {}
+    })
+    .unwrap();
+    (runs, notes, solution)
+}
+
+/// The answers of `source` cut into windows of `rules` ground rules or
+/// more under `strategy`, the number of windows, and P(e), asked for.
+fn windowed(source: &str, rules: usize, strategy: Strategy) -> (usize, Vec<QueryResult>, Count) {
+    let options = Options {
+        strategy,
+        evidence_probability: true,
+        ..Options::default()
+    };
+    let (windows, _, solution) = run_windowed(source, rules, &options);
+    (
+        windows,
+        solution.answers.unwrap(),
+        solution.evidence_probability.unwrap(),
+    )
+}
+
+/// [`windowed`] under the default options: P(e) not asked for, so the
+/// observations no query depends on are dropped ([`GroundOptions::detach`]),
+/// and a lone query without evidence observed (`observed_query`). The
+/// number of windows and the answers.
+fn windowed_default(
+    source: &str,
+    rules: usize,
+    strategy: Strategy,
+) -> (usize, Option<Vec<QueryResult>>) {
+    let options = Options {
+        strategy,
+        ..Options::default()
+    };
+    let (windows, _, solution) = run_windowed(source, rules, &options);
+    (windows, solution.answers)
+}
+
+/// `source`'s answers under the default options cut into windows of
+/// `rules` rules, under `auto` and `closed`, against the whole program's
+/// to 1e-9 and against `expected`, computed by hand; and the windows, a
+/// number in `windows`.
+fn windows_agree_by_default(
+    source: &str,
+    rules: usize,
+    expected: &[(&str, f64)],
+    windows: impl RangeBounds<usize>,
+) {
+    for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+        let (one, whole) = windowed_default(source, usize::MAX, strategy);
+        let (count, cut) = windowed_default(source, rules, strategy);
+        assert_eq!(one, 1, "{strategy}: the whole program is one window");
+        assert!(windows.contains(&count), "{strategy}: {count} windows");
+        let what = format!("{strategy}, {count} windows");
+        let (whole, cut) = (whole.unwrap(), cut.unwrap());
+        let at_whole: Vec<(String, f64)> = whole
+            .iter()
+            .map(|r| (r.to_string(), r.probability))
+            .collect();
+        let at_whole: Vec<(&str, f64)> = at_whole.iter().map(|(a, p)| (a.as_str(), *p)).collect();
+        assert_answers(&what, &cut, &at_whole, 1e-9);
+        assert_answers(&what, &cut, expected, 1e-9);
+    }
+}
+
+/// `source`'s answers and P(e) cut into windows of `rules` rules, under
+/// `auto` and `closed`, against the whole program's to 1e-9 and against
+/// `expected`, computed by hand; and the windows, more than two.
+fn windows_agree(source: &str, rules: usize, expected: &[(&str, f64)], evidence: f64) {
+    windows_agree_in(source, rules, expected, evidence, 3..);
+}
+
+/// [`windows_agree`] with the number of windows in `windows`.
+fn windows_agree_in(
+    source: &str,
+    rules: usize,
+    expected: &[(&str, f64)],
+    evidence: f64,
+    windows: impl RangeBounds<usize>,
+) {
+    for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+        let (one, whole, z) = windowed(source, usize::MAX, strategy);
+        let (count, cut, z_cut) = windowed(source, rules, strategy);
+        assert_eq!(one, 1, "{strategy}: the whole program is one window");
+        assert!(windows.contains(&count), "{strategy}: {count} windows");
+        let what = format!("{strategy}, {count} windows");
+        let at_whole: Vec<(String, f64)> = whole
+            .iter()
+            .map(|r| (r.to_string(), r.probability))
+            .collect();
+        let at_whole: Vec<(&str, f64)> = at_whole.iter().map(|(a, p)| (a.as_str(), *p)).collect();
+        assert_answers(&what, &cut, &at_whole, 1e-9);
+        assert_answers(&what, &cut, expected, 1e-9);
+        for z in [z, z_cut] {
+            assert!(
+                (z.to_f64() - evidence).abs() < 1e-9,
+                "{what}: P(e) {z:?} against {evidence}"
+            );
+        }
+    }
+}
+
+/// A Markov chain of `n` steps, `s(0)` with probability 0.9 and each step
+/// keeping `s` with 0.95 and making it with 0.05, written out; then
+/// `rest`. P(s(i)) = 0.5 + 0.4 * 0.9^i, and P(s(j) | s(i)) = 0.5 + 0.5 *
+/// 0.9^(j - i) for i < j.
+fn chain(n: usize, rest: &str) -> String {
+    let mut s = String::from("0.9::s(0).\n");
+    for i in 1..=n {
+        s += &format!(
+            "0.95::s({i}) :- s({}).\n0.05::s({i}) :- \\+s({}).\n",
+            i - 1,
+            i - 1
+        );
+    }
+    s + rest
+}
+
+fn marginal(i: usize) -> f64 {
+    0.5 + 0.4 * 0.9f64.powi(i as i32)
+}
+
+fn given(i: usize, j: usize) -> f64 {
+    0.5 + 0.5 * 0.9f64.powi((j - i) as i32)
+}
+
+#[test]
+fn a_chain_cut_into_windows_gives_the_programs_answers() {
+    let n = 60;
+    windows_agree(
+        &chain(n, "query(s(60)).\nquery(\\+s(30)).\n"),
+        12,
+        &[("s(60)", marginal(60)), ("\\+s(30)", 1.0 - marginal(30))],
+        1.0,
+    );
+}
+
+#[test]
+fn evidence_in_the_middle_is_passed_on_by_the_windows() {
+    // Given s(30), s(60) is a chain of 30 steps from a certain start.
+    windows_agree(
+        &chain(60, "evidence(s(30)).\nquery(s(60)).\nquery(s(45)).\n"),
+        12,
+        &[("s(60)", given(30, 60)), ("s(45)", given(30, 45))],
+        marginal(30),
+    );
+}
+
+#[test]
+fn a_query_before_later_evidence_is_carried_to_it() {
+    // P(s(15) | s(60)) = P(s(15)) P(s(60) | s(15)) / P(s(60)).
+    let (q, e) = (15, 60);
+    windows_agree(
+        &chain(e, "query(s(15)).\nevidence(s(60)).\n"),
+        12,
+        &[("s(15)", marginal(q) * given(q, e) / marginal(e))],
+        marginal(e),
+    );
+}
+
+/// A ladder of `n` steps written as a loop: a(i) and b(i) each read a(i - 1)
+/// and b(i - 1), through switches of their own, so that given the step
+/// before they are independent; then `rest`.
+fn ladder(n: usize, rest: &str) -> String {
+    format!(
+        "steps({n}).
+step(1).
+step(T1) :- step(T), steps(N), T1 is T + 1, T1 =< N.
+0.6::a(0).
+0.3::b(0).
+0.7::a(T) :- step(T), T0 is T - 1, a(T0), b(T0).
+0.4::a(T) :- step(T), T0 is T - 1, \\+a(T0).
+0.5::b(T) :- step(T), T0 is T - 1, a(T0).
+0.2::b(T) :- step(T), T0 is T - 1, \\+b(T0).
+{rest}"
+    )
+}
+
+#[test]
+fn a_ladder_passes_the_joint_of_two_atoms() {
+    // The joint of a(i) and b(i) is carried forward over the four states.
+    let n = 40;
+    let source = ladder(
+        n,
+        "evidence(b(20)).\nquery(a(40)).\nquery(b(40)).\nquery(a(10)).\n",
+    );
+    // P(a' | a, b) and P(b' | a, b): one minus the product of the rules
+    // that hold failing.
+    let next = |a: bool, b: bool| {
+        let pa = 1.0 - (1.0 - if a && b { 0.7 } else { 0.0 }) * (1.0 - if a { 0.0 } else { 0.4 });
+        let pb = 1.0 - (1.0 - if a { 0.5 } else { 0.0 }) * (1.0 - if b { 0.0 } else { 0.2 });
+        (pa, pb)
+    };
+    // The joint over (a, b), state 2a + b, forward from step `from` to
+    // step `to`.
+    let forward = |mut joint: [f64; 4], from: usize, to: usize| {
+        for _ in from..to {
+            let mut out = [0.0; 4];
+            for (s, &p) in joint.iter().enumerate() {
+                let (pa, pb) = next(s >= 2, s % 2 == 1);
+                for (t, o) in out.iter_mut().enumerate() {
+                    let fa = if t >= 2 { pa } else { 1.0 - pa };
+                    let fb = if t % 2 == 1 { pb } else { 1.0 - pb };
+                    *o += p * fa * fb;
+                }
+            }
+            joint = out;
+        }
+        joint
+    };
+    let start = [0.4 * 0.7, 0.4 * 0.3, 0.6 * 0.7, 0.6 * 0.3];
+    let at20 = forward(start, 0, 20);
+    let evidence = at20[1] + at20[3];
+    let observed = [0.0, at20[1] / evidence, 0.0, at20[3] / evidence];
+    let end = forward(observed, 20, n);
+    // P(a(10) | b(20)): forward to 10, split on a(10), forward each to 20.
+    let at10 = forward(start, 0, 10);
+    let b20 = |j: [f64; 4]| {
+        let f = forward(j, 10, 20);
+        f[1] + f[3]
+    };
+    let a10 = b20([0.0, 0.0, at10[2], at10[3]]) / evidence;
+    windows_agree(
+        &source,
+        24,
+        &[
+            ("a(40)", end[2] + end[3]),
+            ("b(40)", end[1] + end[3]),
+            ("a(10)", a10),
+        ],
+        evidence,
+    );
+}
+
+/// P(s(j) | \+s(i)) in [`chain`], for i < j.
+fn given_not(i: usize, j: usize) -> f64 {
+    0.5 - 0.5 * 0.9f64.powi((j - i) as i32)
+}
+
+#[test]
+fn a_lone_query_observed_keeps_what_a_window_before_drops() {
+    // The lone query is observed and its answer is P(e): no window may
+    // drop an observation, whose probability is a factor of it. q holds
+    // with s(60), c and one of a and b: 0.8 * 0.75.
+    windows_agree_by_default(
+        &chain(
+            60,
+            "0.5::a.\n0.5::b.\n0.8::c.\nq :- s(60), a, c.\nq :- s(60), b, c.\nquery(q).\n",
+        ),
+        12,
+        &[("q", 0.6 * marginal(60))],
+        2..,
+    );
+}
+
+#[test]
+fn a_lone_query_observed_without_a_window_dropping() {
+    windows_agree_by_default(
+        &chain(60, "0.8::c.\nq :- s(60), c.\nquery(q).\n"),
+        12,
+        &[("q", 0.8 * marginal(60))],
+        2..,
+    );
+}
+
+#[test]
+fn every_window_and_the_last_holds_the_bounds_rules() {
+    let source = chain(60, "query(s(60)).\nquery(s(20)).\n");
+    let gp = ground(&source, true);
+    let total = gp.rules.len();
+    let of = |rules| {
+        let bounds = WindowBounds {
+            rules,
+            ..WindowBounds::DEFAULT
+        };
+        Windows::of(&gp, &bounds)
+    };
+    for rules in [12, 20, total / 3] {
+        let windows = of(rules).expect("a chain is cut");
+        let held: Vec<usize> = (0..windows.len()).map(|j| windows.held(j)).collect();
+        assert!(held.len() >= 2, "{rules}: {held:?}");
+        assert!(held.iter().all(|&h| h >= rules), "{rules}: {held:?}");
+    }
+    // Past half the program, a cut would leave fewer rules after it than a
+    // window holds: the program is one window, run whole.
+    let rules = total / 2 + 1;
+    assert!(of(rules).is_none(), "{rules} of {total}");
+    let expected = [("s(60)", marginal(60)), ("s(20)", marginal(20))];
+    for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+        let options = Options {
+            strategy,
+            ..Options::default()
+        };
+        let (runs, notes, solution) = run_windowed(&source, rules, &options);
+        assert_eq!(runs, 1, "{strategy}: {notes:?}");
+        assert!(!notes.iter().any(|n| n.starts_with("windows")), "{notes:?}");
+        assert_answers(
+            &strategy.to_string(),
+            &solution.answers.unwrap(),
+            &expected,
+            1e-9,
+        );
+    }
+}
+
+#[test]
+fn a_message_row_below_the_least_float_is_passed_as_a_count() {
+    // A hidden cause h = u, v at 0.25, with 2 200 observed effects at 0.4
+    // under h and 0.2 under \+h, and 2 199 at 0.2 under h and 0.4 under
+    // \+h: P(e | h) = 2 P(e | \+h), P(h | e) = 0.5 / 1.25 = 0.4, and x, one
+    // more effect of the first kind, 0.4 * 0.4 + 0.6 * 0.2 = 0.28. P(e) =
+    // 0.25 * 0.08^2199. A cut after the first thousand observations
+    // leaves P(\+h | e so far) below the least float, not zero.
+    let mut source = String::from("0.5::u.\n0.5::v.\nh :- u, v.\n");
+    for i in 0..2200 {
+        source += &format!("0.4::o{i} :- h.\n0.2::o{i} :- \\+h.\nevidence(o{i},true).\n");
+    }
+    for i in 0..2199 {
+        source += &format!("0.2::p{i} :- h.\n0.4::p{i} :- \\+h.\nevidence(p{i},true).\n");
+    }
+    source += "0.4::x :- h.\n0.2::x :- \\+h.\nquery(h).\nquery(x).\n";
+    let log10_e = 0.25f64.log10() + 2199.0 * 0.08f64.log10();
+    for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+        let options = Options {
+            strategy,
+            evidence_probability: true,
+            ..Options::default()
+        };
+        let (_, _, whole) = run_windowed(&source, usize::MAX, &options);
+        let (runs, notes, cut) = run_windowed(&source, 3000, &options);
+        let what = format!("{strategy}, {runs} runs");
+        assert!(
+            notes.iter().any(|n| n.starts_with("windows: ")),
+            "{what}: cut"
+        );
+        let expected = [("h", 0.4), ("x", 0.28)];
+        for solution in [&whole, &cut] {
+            assert_answers(&what, solution.answers.as_ref().unwrap(), &expected, 1e-9);
+            let z = solution.evidence_probability.unwrap().log10();
+            assert!(
+                (z - log10_e).abs() < 1e-9 * log10_e.abs(),
+                "{what}: log10 P(e) {z} against {log10_e}"
+            );
+        }
+        // The first window's row \+h, under the least float, is passed on:
+        // every run is a window's.
+        let windows = notes.iter().filter(|n| n.starts_with("window ")).count();
+        assert!(runs >= 2 && runs == windows, "{what}: {notes:?}");
+    }
+}
+
+#[test]
+fn a_chain_whose_rows_are_under_the_least_float_runs_windowed() {
+    // s(0) at 0.9, s(i) at 0.1 after s(i - 1) and 0.6 after \+s(i - 1);
+    // a(i) holds where s(0) to s(i) all do, at 0.9 * 0.1^i. 500 effects
+    // of a(400), each at 0.9 under it and 1e-4 under \+a(400), are
+    // observed (an observation of a(400) itself would make the chain
+    // certain up to it): P(e) = 0.9^501 * 0.1^400 to 1e-1600 of it, and
+    // given e, a(400) and so s(0) to s(400) hold to as close. Every window
+    // before the observations has the row a(i), s(i) at 0.9 * 0.1^i,
+    // under the least float from i = 308 on, and the row a(i), \+s(i) at
+    // zero. Given s(400), P(s(400 + k)) = 0.4 + 0.6 (-0.5)^k.
+    let (n, m) = (400, 440);
+    let mut source = String::from("0.9::s(0).\na(0) :- s(0).\n");
+    for i in 1..=m {
+        let j = i - 1;
+        source += &format!("0.1::s({i}) :- s({j}).\n0.6::s({i}) :- \\+s({j}).\n");
+        if i <= n {
+            source += &format!("a({i}) :- a({j}), s({i}).\n");
+        }
+    }
+    for k in 0..500 {
+        source +=
+            &format!("0.9::f({k}) :- a({n}).\n0.0001::f({k}) :- \\+a({n}).\nevidence(f({k})).\n");
+    }
+    source += &format!("query(s({m})).\nquery(s(399)).\n");
+    let s = 0.4 + 0.6 * (-0.5f64).powi(m - n);
+    let log10_e = 501.0 * 0.9f64.log10() - f64::from(n);
+    for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+        let options = Options {
+            strategy,
+            evidence_probability: true,
+            ..Options::default()
+        };
+        for rules in [usize::MAX, 150] {
+            let (runs, notes, solution) = run_windowed(&source, rules, &options);
+            let what = format!("{strategy}, {runs} runs");
+            let windows = notes.iter().filter(|n| n.starts_with("window ")).count();
+            assert_eq!(runs > 1, rules == 150, "{what}: {notes:?}");
+            assert!(runs == windows.max(1), "{what}: {notes:?}");
+            let answers = solution.answers.expect("e is possible");
+            let expected = [(format!("s({m})"), s), ("s(399)".to_string(), 1.0)];
+            let expected: Vec<(&str, f64)> =
+                expected.iter().map(|(a, p)| (a.as_str(), *p)).collect();
+            assert_answers(&what, &answers, &expected, 1e-9);
+            let z = solution.evidence_probability.unwrap().log10();
+            assert!(
+                (z - log10_e).abs() < 1e-9 * log10_e.abs(),
+                "{what}: log10 P(e) {z} against {log10_e}"
+            );
+        }
+    }
+}
+
+#[test]
+fn a_helper_of_each_step_read_by_the_next() {
+    // h(i) = c(i) or d(i), 0.75; s(i) after s(i - 1) 0.75, after \+s(i - 1)
+    // 0.15: s(i) = 0.375 + 0.525 * 0.6^i. By depth every h(i) would rank
+    // before s(2) and cross the boundaries up to s(i); by its late level
+    // it ranks right before s(i), so the program can be cut at every step:
+    // 240 rules in windows of 8 rules or more, 29 windows (by depth, 2).
+    let mut source = String::from("0.9::s(0).\n");
+    for i in 1..=60 {
+        source += &format!(
+            "0.5::c({i}).\n0.5::d({i}).\n0.2::k({i}).\nh({i}) :- c({i}).\nh({i}) :- d({i}).\ns({i}) :- s({j}), h({i}).\ns({i}) :- \\+s({j}), h({i}), k({i}).\n",
+            j = i - 1
+        );
+    }
+    source += "query(s(7)).\nquery(s(60)).\n";
+    let s = |i: i32| 0.375 + 0.525 * 0.6f64.powi(i);
+    windows_agree_in(&source, 8, &[("s(7)", s(7)), ("s(60)", s(60))], 1.0, 28..);
+}
+
+#[test]
+fn a_chain_observed_in_rules_stated_after_it_is_cut_at_every_step() {
+    // x(0) at 0.1; x(k) at 0.2 after x(k - 1), 0.3 after \+x(k - 1). An
+    // observation every 10 steps, 0.9 under x(k) and 0.2 under \+x(k), its
+    // rules and facts stated after the whole chain, where the program's
+    // order would leave them: the windows rank obs(k) right after x(k), and
+    // each step can be cut: 132 rules in windows of 8 rules or more, 16
+    // windows. By hand: the forward pass.
+    let n = 60;
+    let mut source = String::from("0.1::x(0).\n");
+    for k in 1..=n {
+        source += &format!(
+            "0.2::a({k}).\n0.3::b({k}).\nx({k}) :- x({j}), a({k}).\nx({k}) :- \\+x({j}), b({k}).\n",
+            j = k - 1
+        );
+    }
+    let observed = |k: usize| k % 10 == 5;
+    for k in (1..=n).filter(|&k| observed(k)) {
+        source += &format!(
+            "0.9::n1({k}).\n0.2::n0({k}).\nobs({k}) :- x({k}), n1({k}).\nobs({k}) :- \\+x({k}), n0({k}).\nevidence(obs({k})).\n"
+        );
+    }
+    source += &format!("query(x({n})).\n");
+    // (P(not x(k), e so far), P(x(k), e so far))
+    let mut alpha = (0.9, 0.1);
+    for k in 1..=n {
+        alpha = (alpha.0 * 0.7 + alpha.1 * 0.8, alpha.0 * 0.3 + alpha.1 * 0.2);
+        if observed(k) {
+            alpha = (alpha.0 * 0.2, alpha.1 * 0.9);
+        }
+    }
+    let z = alpha.0 + alpha.1;
+    let x = format!("x({n})");
+    windows_agree_in(&source, 8, &[(x.as_str(), alpha.1 / z)], z, 15..);
+}
+
+#[test]
+fn a_joint_over_the_second_half_of_a_chain_is_cut_at_every_step() {
+    // A hidden Markov model: x(0) at 0.1; x(k) at 0.9 after x(k - 1), 0.3
+    // after \+x(k - 1); v(k) observed, 0.65 under x(k) and 0.3 under
+    // \+x(k). all(k) is x(30) to x(k) all true, the joint its filtering
+    // asks. The grounder inlines all's rules a few steps to a rule, so by
+    // their late level alone they rank with the chain's last steps, each
+    // x(k) they read crosses every boundary up to its reader, and the joint
+    // is one window: 17 windows. Ranked after the atoms they read, each
+    // step of the joint can be cut too: 25 windows. By hand: the forward
+    // pass to x(30), then 0.9 * 0.65 a step.
+    let n = 60;
+    let mut source = String::from("0.1::x(0).\n");
+    for k in 1..=n {
+        source += &format!(
+            "0.9::a({k}).\n0.3::b({k}).\nx({k}) :- x({j}), a({k}).\nx({k}) :- \\+x({j}), b({k}).\n\
+             0.65::e1({k}).\n0.3::e0({k}).\nv({k}) :- x({k}), e1({k}).\nv({k}) :- \\+x({k}), e0({k}).\nevidence(v({k})).\n",
+            j = k - 1
+        );
+    }
+    source += "all(30) :- x(30).\n";
+    for k in 31..=n {
+        source += &format!("all({k}) :- all({j}), x({k}).\n", j = k - 1);
+    }
+    source += &format!("query(all({n})).\n");
+    // (P(not x(k), e so far), P(x(k), e so far))
+    let mut alpha = (0.9, 0.1);
+    let mut joint = 0.0;
+    for k in 1..=n {
+        alpha = (alpha.0 * 0.7 + alpha.1 * 0.1, alpha.0 * 0.3 + alpha.1 * 0.9);
+        alpha = (alpha.0 * 0.3, alpha.1 * 0.65);
+        if k == 30 {
+            joint = alpha.1;
+        } else if k > 30 {
+            joint *= 0.9 * 0.65;
+        }
+    }
+    let z = alpha.0 + alpha.1;
+    // Under `auto` alone: `closed` runs the whole program out of budget.
+    let (one, whole, z_whole) = windowed(&source, usize::MAX, Strategy::Auto);
+    let (count, cut, z_cut) = windowed(&source, 8, Strategy::Auto);
+    assert_eq!(one, 1);
+    assert!(count >= 24, "{count} windows");
+    let all = format!("all({n})");
+    for (what, answers, p_e) in [("whole", whole, z_whole), ("cut", cut, z_cut)] {
+        assert_answers(what, &answers, &[(all.as_str(), joint / z)], 1e-9);
+        assert!(
+            (p_e.to_f64() - z).abs() < 1e-9,
+            "{what}: P(e) {p_e:?} against {z}"
+        );
+    }
+}
+
+#[test]
+fn a_choice_across_cuts_with_later_evidence() {
+    // m1 makes s(10) true, m2 s(50); s(60) observed.
+    let z = 0.4 * given(10, 60) + 0.6 * given(50, 60);
+    windows_agree(
+        &chain(
+            60,
+            "0.4::m1; 0.6::m2.\ns(10) :- m1.\ns(50) :- m2.\nevidence(s(60)).\nquery(m1).\nquery(s(30)).\n",
+        ),
+        12,
+        &[
+            ("m1", 0.4 * given(10, 60) / z),
+            (
+                "s(30)",
+                (0.4 * given(10, 30) * given(30, 60) + 0.6 * marginal(30) * given(50, 60)) / z,
+            ),
+        ],
+        z,
+    );
+}
+
+#[test]
+fn a_cycle_in_each_step_is_not_cut() {
+    // u(i) and v(i) read each other: u(i) = s(i - 1) and (f(i) or h(i)),
+    // 0.95, so s(i) is the chain's step.
+    let mut source = String::from("0.9::s(0).\n");
+    for i in 1..=60 {
+        source += &format!(
+            "0.9::f({i}).\n0.5::g({i}).\n0.5::h({i}).\n0.05::k({i}).\nu({i}) :- s({j}), f({i}).\nu({i}) :- v({i}).\nv({i}) :- u({i}), g({i}).\nv({i}) :- s({j}), h({i}).\ns({i}) :- u({i}).\ns({i}) :- \\+s({j}), k({i}).\n",
+            j = i - 1
+        );
+    }
+    source += "evidence(s(30)).\nquery(s(60)).\nquery(s(45)).\n";
+    windows_agree(
+        &source,
+        24,
+        &[("s(60)", given(30, 60)), ("s(45)", given(30, 45))],
+        marginal(30),
+    );
+}
+
+#[test]
+fn evidence_true_and_false_with_queries_on_both_sides() {
+    let a = given(10, 30) * (1.0 - given(30, 50));
+    let b = (1.0 - given(10, 30)) * (1.0 - given_not(30, 50));
+    windows_agree(
+        &chain(
+            60,
+            "evidence(s(10)).\nevidence(s(50),false).\nquery(s(5)).\nquery(s(30)).\nquery(s(60)).\nquery(s(10)).\n",
+        ),
+        12,
+        &[
+            ("s(5)", marginal(5) * given(5, 10) / marginal(10)),
+            ("s(30)", a / (a + b)),
+            ("s(60)", given_not(50, 60)),
+            ("s(10)", 1.0),
+        ],
+        marginal(10) * (1.0 - given(10, 50)),
+    );
+}
+
+#[test]
+fn atoms_named_as_the_windows_name_theirs() {
+    windows_agree(
+        &chain(
+            60,
+            "0.5::'$wq'(0,0).\n0.5::'$wr'(1,0).\n0.5::'$ws'(1,0).\ny :- s(2), '$wq'(0,0).\nz :- s(60), '$wr'(1,0), '$ws'(1,0).\nquery(y).\nquery('$wq'(0,0)).\nquery(z).\n",
+        ),
+        12,
+        &[
+            ("y", 0.5 * marginal(2)),
+            ("'$wq'(0,0)", 0.5),
+            ("z", 0.25 * marginal(60)),
+        ],
+        1.0,
+    );
+}
+
+#[test]
+fn inconsistent_evidence_in_two_windows() {
+    let source = chain(
+        60,
+        "0.5::a.\ne1 :- s(20), a.\ne2 :- s(40), \\+a.\nevidence(e1).\nevidence(e2).\nquery(s(60)).\n",
+    );
+    for strategy in [Strategy::Auto, Strategy::Trial(Kind::Closed)] {
+        for rules in [usize::MAX, 12] {
+            let (count, answers) = windowed_default(&source, rules, strategy);
+            assert!(answers.is_none(), "{strategy}, {count} windows");
+            assert_eq!(count > 1, rules == 12, "{strategy}, {count} windows");
+        }
+    }
+}
+
+#[test]
+fn queries_held_to_late_evidence_wider_than_a_cut() {
+    // Six queries held to s(60) cross every boundary: no cut is narrow.
+    let mut source = chain(60, "evidence(s(60)).\n");
+    let mut expected = Vec::new();
+    for i in 1..=6 {
+        source += &format!("query(s({i})).\n");
+        expected.push((format!("s({i})"), marginal(i) * given(i, 60) / marginal(60)));
+    }
+    let expected: Vec<(&str, f64)> = expected.iter().map(|(a, p)| (a.as_str(), *p)).collect();
+    windows_agree_in(&source, 12, &expected, marginal(60), 1..=1);
 }

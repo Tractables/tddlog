@@ -164,9 +164,13 @@ pub(crate) const COMPLEMENT_FLOOR: f64 = 1e-4;
 /// The probability of the complement of a formula of probability `m`:
 /// `1 - m`, or where that is under [`COMPLEMENT_FLOOR`], what `count` gives,
 /// the complement's own formula counted.
-pub(crate) fn complement<E>(m: f64, count: impl FnOnce() -> Result<f64, E>) -> Result<f64, E> {
-    if 1.0 - m >= COMPLEMENT_FLOOR {
-        Ok(1.0 - m)
+pub(crate) fn complement<E>(
+    m: Count,
+    count: impl FnOnce() -> Result<Count, E>,
+) -> Result<Count, E> {
+    let c = 1.0 - m.to_f64();
+    if c >= COMPLEMENT_FLOOR {
+        Ok(Count::new(c))
     } else {
         count()
     }

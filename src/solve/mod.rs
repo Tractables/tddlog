@@ -8,11 +8,13 @@ mod split;
 mod subquery;
 #[cfg(test)]
 mod tests;
+mod windows;
 
 use std::time::Instant;
 
 use crate::auto;
 use crate::cnf::WeightedCnf;
+use crate::eval::Count;
 use crate::evaluation::Evaluation;
 use crate::ground::{self, GroundOptions, GroundProgram};
 use crate::strategy::{Prepared, Strategy};
@@ -21,6 +23,7 @@ use crate::tp::{self, Projection};
 use crate::vtree::Kind;
 use crate::{Error, QueryResult, Run, eval};
 use split::{Answering, SplitBounds, split_check};
+use windows::Windows;
 
 /// What a run is asked to do.
 #[derive(Clone, Copy, Debug)]
@@ -158,9 +161,9 @@ pub struct Solution {
 /// `options`.
 ///
 /// Under `auto`, a large circuit is ground again and conditioned on its
-/// guards (`auto::ready`), for `decision`, the first trial, where it is
-/// one (`auto::decides`), and for `program`, `closed` and `td` where it is
-/// not (`auto::Programs`). The queries are answered in groups,
+/// guards (`auto::ready`), for the layouts that compile it
+/// (`Kind::conditioned`), among them `decision`, the first trial where it
+/// is one (`auto::decides`). The queries are answered in groups,
 /// each on the part of the program it and the evidence depend on, where
 /// the parts' layouts are estimated much smaller than the program's
 /// (`split_check`); else all of them on the program, which under `auto`
@@ -220,6 +223,16 @@ fn solve_parsed(
         seconds: start.elapsed().as_secs_f64(),
         ground: &ground,
     });
+    // A program `auto` may not decide is cut before its kept grounding is
+    // finished again, and where it is cut, that grounding is dropped
+    // unfinished: no window is handed anything ready.
+    let decide = auto::may_decide(&ground);
+    let mut windows = if decide {
+        None
+    } else {
+        Windows::of(&ground, &bounds.windows)
+    };
+    let kept = kept.filter(|_| windows.is_none());
     // Its time is counted as the first part's rewrite's.
     let start = Instant::now();
     let (mut ready, guarded) = auto::ready(&ground, kept, ground_options);
@@ -231,6 +244,20 @@ fn solve_parsed(
             "decision: finished again, {guarded} atoms conditioned on their guards for {} derived, {tried}, {decided_seconds:.3}s",
             auto::derived_unmerged(&ground)
         )));
+    }
+    if decide && !decides {
+        windows = Windows::of(&ground, &bounds.windows);
+    }
+    if let Some(windows) = windows {
+        // Nothing is handed ready to a window.
+        drop(ready);
+        return solve_windows(
+            (program, &ground, windows),
+            options,
+            (projection, first_pairs),
+            decided_seconds,
+            progress,
+        );
     }
     let answering = if decides {
         Answering::Whole(None)
@@ -250,68 +277,147 @@ fn solve_parsed(
             (vec![ground], vec![queries])
         }
     };
-    let mut answers: Vec<Option<QueryResult>> = (0..places.iter().map(Vec::len).sum())
-        .map(|_| None)
-        .collect();
-    let (mut inconsistent, mut evidence_probability) = (false, None);
-    let count = parts.len();
-    let mut last = None;
-    for (i, (part, places)) in parts.into_iter().zip(places).enumerate() {
-        if count > 1 {
-            progress(Progress::Note(format!(
-                "part {} of {count}: {} queries",
-                i + 1,
-                places.len()
-            )));
+    let (queries, count) = (places.iter().map(Vec::len).sum(), parts.len());
+    let mut parts = parts.into_iter().zip(places);
+    let mut next = |j: usize, _: Option<&Run>| {
+        let (part, places) = parts.next().expect("a part");
+        let note = format!("part {} of {count}: {} queries", j + 1, places.len());
+        (part, places, 0, (count > 1).then_some(note))
+    };
+    let (parts, compile) = ((program, queries, count), (projection, first_pairs));
+    let first = (ready, decided_seconds);
+    solve_parts(parts, options, compile, first, &mut next, progress)
+}
+
+/// A part of a run: its program, the places among the program's queries of
+/// its first answers, how many answers follow them, and a note on it.
+type Part = (GroundProgram, Vec<usize>, usize, Option<String>);
+
+/// [`solve_parsed`]'s answers to `queries` queries, given by `count` parts:
+/// part `j` is `next(j, before)`, where `before` is the run of the part
+/// before, which is freed before part `j` compiles. The first is handed
+/// `ready` and charged `decided_seconds` of rewrite, and its `P(e)` is the
+/// solution's. Each run is reported to `progress`. Inconsistent evidence
+/// ends the run: every part holds the program's evidence.
+fn solve_parts(
+    (program, queries, count): (Program, usize, usize),
+    options: &Options,
+    compile: (Projection, usize),
+    (mut ready, decided_seconds): (auto::Ready, f64),
+    next: &mut dyn FnMut(usize, Option<&Run>) -> Part,
+    progress: &mut dyn FnMut(Progress<'_>),
+) -> Result<Solution, Error> {
+    let mut answers: Vec<Option<QueryResult>> = vec![None; queries];
+    let (mut last, mut evidence_probability) = (None::<Run>, None);
+    for j in 0..count {
+        let (part, places, rows, note) = next(j, last.as_ref());
+        if let Some(note) = note {
+            progress(Progress::Note(note));
         }
-        let mut run = match options.strategy {
-            Strategy::Auto => {
-                progress(Progress::Compiling(&part));
-                auto::run(part, projection, std::mem::take(&mut ready), options.trace)?
-            }
-            Strategy::Trial(kind) => {
-                let prepared = kind.prepare(part)?;
-                progress(Progress::Compiling(&prepared.ground));
-                run_prepared(prepared, kind, (projection, first_pairs), options.trace)?
-            }
-        };
-        if i == 0 {
+        drop(last.take());
+        let ready = std::mem::take(&mut ready);
+        let mut run = run_part(part, ready, options, compile, progress)?;
+        if j == 0 {
             run.rewrite_seconds += decided_seconds;
             evidence_probability = run.evidence_probability;
         }
         progress(Progress::Answered(&run));
-        match &run.results {
-            None => inconsistent = true,
-            Some(results) => {
-                assert_eq!(
-                    results.len(),
-                    places.len(),
-                    "an answer per query of the part"
-                );
-                for (r, &at) in results.iter().zip(&places) {
-                    answers[at] = Some(r.clone());
-                }
-            }
+        let Some(results) = &run.results else {
+            last = Some(run);
+            break;
+        };
+        assert_eq!(results.len(), places.len() + rows, "an answer each");
+        for (r, &at) in results.iter().zip(&places) {
+            answers[at] = Some(r.clone());
         }
-        // An earlier part's run is freed for the next.
         last = Some(run);
     }
-    let answers = (!inconsistent).then(|| {
-        answers
-            .into_iter()
-            .map(|r| r.expect("every part answered"))
-            .collect()
-    });
-    let evidence_probability = if options.evidence_probability {
-        evidence_probability
-    } else {
-        None
-    };
+    let last = last.expect("a program has a part");
+    let answers = answers.into_iter().map(|r| r.expect("every part answered"));
     Ok(Solution {
-        answers,
-        evidence_probability,
-        held: (program, last.expect("a program has a part")),
+        answers: last.results.as_ref().map(|_| answers.collect()),
+        evidence_probability: evidence_probability.filter(|_| options.evidence_probability),
+        held: (program, last),
     })
+}
+
+/// One part's run under `options`: `auto` handed `ready`, or the layout
+/// asked for.
+fn run_part(
+    part: GroundProgram,
+    ready: auto::Ready,
+    options: &Options,
+    (projection, first_pairs): (Projection, usize),
+    progress: &mut dyn FnMut(Progress<'_>),
+) -> Result<Run, Error> {
+    match options.strategy {
+        Strategy::Auto => {
+            progress(Progress::Compiling(&part));
+            auto::run(part, projection, ready, options.trace)
+        }
+        Strategy::Trial(kind) => {
+            let prepared = kind.prepare(part)?;
+            progress(Progress::Compiling(&prepared.ground));
+            run_prepared(prepared, kind, (projection, first_pairs), options.trace)
+        }
+    }
+}
+
+/// [`solve_parsed`] of `ground` cut into `windows`, as parts
+/// ([`solve_parts`]): each passes its frontier's joint to the next
+/// ([`Windows::program`]) and the probability of the evidence so far as
+/// its weight, so that the last one's is the program's, and answers the
+/// queries that lie in it.
+fn solve_windows(
+    (program, ground, windows): (Program, &GroundProgram, Windows),
+    options: &Options,
+    compile: (Projection, usize),
+    decided_seconds: f64,
+    progress: &mut dyn FnMut(Progress<'_>),
+) -> Result<Solution, Error> {
+    let count = windows.len();
+    progress(Progress::Note(format!(
+        "windows: {count}, cut at most {} atoms wide",
+        (0..count - 1)
+            .map(|j| windows.frontier(j).len())
+            .max()
+            .unwrap_or(0)
+    )));
+    let mut weight = Some(ground.weight);
+    let mut next = |j: usize, before: Option<&Run>| {
+        let mut message = Vec::new();
+        if let Some(before) = before {
+            // `Z` is known while every window's is.
+            weight = weight.and(before.evidence_probability);
+            // The rows as counts, which keep a row under the least float.
+            let results = before.results.as_deref().expect("a consistent window");
+            let rows = &results[results.len() - (1 << windows.frontier(j - 1).len())..];
+            message = rows.iter().map(|r| r.count).collect();
+        }
+        // An observed lone query's answer is `Z`, which no window drops a
+        // factor of (`ground::window`).
+        let known = if ground.observed_query.is_some() {
+            weight.expect("the evidence probability of each window")
+        } else {
+            weight.unwrap_or(Count::ONE)
+        };
+        let (part, places) = windows.program(ground, j, &message, known);
+        let note = format!(
+            "window {} of {count}: {} rules, {} queries, frontier {}",
+            j + 1,
+            part.rules.len(),
+            places.len(),
+            windows.frontier(j).len()
+        );
+        let rows = (1 << windows.frontier(j).len()) * usize::from(j + 1 < count);
+        (part, places, rows, Some(note))
+    };
+    let parts = (program, ground.num_queries(), count);
+    let first = (auto::Ready::default(), decided_seconds);
+    let mut solution = solve_parts(parts, options, compile, first, &mut next, progress)?;
+    let last = solution.held.1.evidence_probability;
+    solution.evidence_probability = weight.and(last).filter(|_| options.evidence_probability);
+    Ok(solution)
 }
 
 /// The program [`solve`] hands the compile under `options`, as `--ground`
@@ -322,16 +428,45 @@ fn solve_parsed(
 /// factor the conditioning takes out, which the program printed does not
 /// carry.
 pub fn rewritten(source: &str, options: &Options) -> Result<GroundProgram, Error> {
+    let ground = printed_ground(source, options)?;
+    Ok(match options.strategy {
+        Strategy::Auto => ground,
+        Strategy::Trial(kind) => std::sync::Arc::unwrap_or_clone(kind.prepare(ground)?.ground),
+    })
+}
+
+/// The layout the strategy of `options` gives the program [`rewritten`]
+/// prints, as `--layout` prints it: the vtree in the `.vtree` text format
+/// (`Vtree::to_text`), then a line `v <i> <atom>` for each variable `i`,
+/// the atom of the program that is its leaf. `auto` lays out a vtree per
+/// trial, so it is refused.
+pub fn layout(source: &str, options: &Options) -> Result<String, Error> {
+    let Strategy::Trial(kind) = options.strategy else {
+        return Err(Error::Options(
+            "auto lays out a vtree for each trial: --layout needs a named --vtree".into(),
+        ));
+    };
+    let prepared = kind.prepare(printed_ground(source, options)?)?;
+    let mut text = prepared.layout.vtree.to_text();
+    for (i, &a) in prepared.layout.order.iter().enumerate() {
+        text.push_str(&format!(
+            "v {} {}\n",
+            i + 1,
+            prepared.ground.atoms[a as usize]
+        ));
+    }
+    Ok(text)
+}
+
+/// The program `source` ground under `options` with a lone query kept a
+/// query, as [`rewritten`] and [`layout`] start from.
+fn printed_ground(source: &str, options: &Options) -> Result<GroundProgram, Error> {
     options.checked()?;
     let opts = GroundOptions {
         observe_query: false,
         ..options.ground_options()
     };
-    let ground = ground::ground(&parsed(source, options)?, &opts)?;
-    Ok(match options.strategy {
-        Strategy::Auto => ground,
-        Strategy::Trial(kind) => std::sync::Arc::unwrap_or_clone(kind.prepare(ground)?.ground),
-    })
+    Ok(ground::ground(&parsed(source, options)?, &opts)?)
 }
 
 /// The program [`rewritten`] gives under `auto`, ground without row
@@ -421,7 +556,7 @@ pub(crate) fn run_prepared(
             &backend,
             (kind, projection),
             first_pairs,
-            None,
+            true,
             None,
         )?;
         Ok::<_, tp::CompileError>((answers, backend.vtree()))

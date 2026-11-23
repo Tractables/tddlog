@@ -1699,22 +1699,19 @@ impl Written {
             for k in (0..dist.len()).rev() {
                 left[k] = left[k + 1] + dist[k].1;
             }
-            let mut chain: Vec<GLit> = Vec::new();
+            let mut chain = body.clone();
             for (k, &(c, p)) in dist.iter().enumerate() {
-                let mut b = body.clone();
-                b.extend_from_slice(&chain);
-                if k + 1 < dist.len() {
+                let s = (k + 1 < dist.len()).then(|| {
                     let weights = Prob {
                         p: p / left[k],
                         not: left[k + 1] / left[k],
                     };
                     let s = self.atom(base, "switch", switch, AtomKind::Fact(weights));
                     switch += 1;
-                    b.push(GLit::Pos(s));
-                    chain.push(GLit::Neg(s));
-                }
+                    s
+                });
                 let v = values[codes.binary_search(&c).expect("a code of the unit")];
-                self.rules.push(GroundRule::new(v, b));
+                self.rules.push(GroundRule::link(v, &mut chain, s));
             }
         }
         let w = self.values.len();

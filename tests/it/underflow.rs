@@ -520,3 +520,40 @@ fn posteriors_far_below_one_keep_their_digits() {
         ),
     );
 }
+
+#[test]
+fn a_certain_atom_negated_under_evidence_below_the_least_float() {
+    // h is certain, as a fact at 1 or by a rule, and 500 effects of it at
+    // 0.2 are observed: P(e) = 0.2^500, about 10^-349. With every
+    // observation kept, \+h's formula is false and its count against the
+    // evidence zero, a zero under no power of two: divided by P(e) in
+    // floats, where P(e) is zero, it answered NaN. ProbLog: h 1, \+h 0, x
+    // 0.4.
+    let observed: String = (0..500)
+        .map(|i| format!("0.2::p{i} :- h.\n0.4::p{i} :- \\+h.\nevidence(p{i},true).\n"))
+        .collect();
+    let queries = "0.4::x :- h.\n0.2::x :- \\+h.\nquery(h).\nquery(\\+h).\nquery(x).\n";
+    for head in ["1.0::h.\n", "t.\nh :- t.\n", "1.0::t.\nh :- t.\n"] {
+        let source = format!("{head}{observed}{queries}");
+        for strategy in [Strategy::Trial(Kind::Closed), Strategy::Auto] {
+            let what = format!("{head:?}, {strategy:?}");
+            let options = tddlog::Options {
+                evidence_probability: true,
+                ..common::options(strategy, Projection::default())
+            };
+            let run = common::run(&source, &options).unwrap();
+            assert_probabilities(
+                &what,
+                &run.results.expect("the evidence is consistent"),
+                &[1.0, 0.0, 0.4],
+                1e-12,
+            );
+            let pe = run.evidence_probability.expect("nothing detached").log10();
+            let want = 500.0 * 0.2f64.log10();
+            assert!(
+                (pe - want).abs() < 1e-9,
+                "{what}: log10 P(e) = {pe} against {want}"
+            );
+        }
+    }
+}

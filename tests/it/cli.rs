@@ -257,6 +257,69 @@ fn ground_prints_the_ground_program_a_strategy_compiles() {
     );
 }
 
+/// `--layout` prints a vtree with a leaf for each fact of the program
+/// `--ground` prints under the same strategy, and a `v` line naming each of
+/// those facts once; `auto` lays out a vtree per trial and is refused.
+#[test]
+fn layout_prints_a_vtree_over_the_facts_ground_prints() {
+    let file = "examples/smokers.pl";
+    let mut built = Vec::new();
+    for kind in [
+        "td",
+        "closed",
+        "families",
+        "families:0",
+        "dynamic",
+        "program",
+        "program:fanin",
+        "decision",
+    ] {
+        let out = tddlog(&["--layout", "--vtree", kind, file]);
+        if !out.status.success() {
+            continue;
+        }
+        built.push(kind);
+        let text = stdout(&out);
+        let ground = tddlog(&["--ground", "--vtree", kind, file]);
+        assert!(ground.status.success(), "{kind}");
+        let mut facts: Vec<&str> = stdout(&ground)
+            .lines()
+            .filter(|l| !l.starts_with('%') && !l.contains(":-"))
+            .filter_map(|l| l.split_once("::")?.1.strip_suffix('.'))
+            .collect();
+        facts.sort_unstable();
+        let vtree: String = text
+            .lines()
+            .filter(|l| !l.starts_with("v "))
+            .map(|l| l.to_string() + "\n")
+            .collect();
+        let vtree = tididi::vtree::Vtree::from_text(&vtree).unwrap();
+        assert_eq!(vtree.num_leaves() as usize, facts.len(), "{kind}: {text}");
+        let mut named: Vec<&str> = text
+            .lines()
+            .filter_map(|l| l.strip_prefix("v "))
+            .enumerate()
+            .map(|(i, l)| {
+                let (var, atom) = l.split_once(' ').unwrap();
+                assert_eq!(var.parse::<usize>().unwrap(), i + 1, "{kind}: {l}");
+                atom
+            })
+            .collect();
+        named.sort_unstable();
+        assert_eq!(named, facts, "{kind}");
+    }
+    for kind in ["td", "closed", "dynamic", "program", "program:fanin"] {
+        assert!(built.contains(&kind), "{kind} lays out smokers");
+    }
+    assert_exit(&["--layout", "--vtree", "auto", file], 2, "--layout");
+    assert_exit(&["--layout", file], 2, "--layout");
+    let source = std::fs::read_to_string(file).unwrap();
+    assert!(matches!(
+        tddlog::layout(&source, &tddlog::Options::default()),
+        Err(tddlog::Error::Options(_))
+    ));
+}
+
 #[test]
 fn options_that_ask_for_nothing_fail() {
     // Without the queries P(e) is all there is to answer.
@@ -473,6 +536,14 @@ fn bad_and_inert_options_exit_with_status_two() {
             "--no-queries is given twice",
         ),
         (&["no/such/file.pl"], "cannot read no/such/file.pl"),
+        (
+            &["--layout", "--vtree", "td", "--ground", "examples/alarm.pl"],
+            "--layout prints the vtree and stops, so --ground would do nothing",
+        ),
+        (
+            &["--layout", "--vtree", "td", "--stats", "examples/alarm.pl"],
+            "so --stats would do nothing",
+        ),
     ];
     for (args, message) in cases {
         assert_exit(args, 2, message);

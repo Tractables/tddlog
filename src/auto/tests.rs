@@ -8,7 +8,7 @@ use crate::ground::shape;
 
 /// [`run_within`] from the first round's `first_pairs` and the live pairs
 /// at which a dynamic trial searches first, `dynamic_first_pairs`.
-fn run_with_watch(
+fn run_from(
     original: GroundProgram,
     trials: Vec<Kind>,
     projection: Projection,
@@ -25,7 +25,7 @@ fn run_with_watch(
         trials,
         None,
         projection,
-        Watch {
+        Start {
             first_pairs,
             dynamic_first_pairs,
             memory_bytes: None,
@@ -35,7 +35,7 @@ fn run_with_watch(
     )
 }
 
-/// [`run_within`] with every operation held to `memory_bytes` ([`Watch`]):
+/// [`run_within`] with every operation held to `memory_bytes` ([`Start`]):
 /// the tests' way to make a trial's operations refused on a small program.
 fn run_in_memory(
     original: GroundProgram,
@@ -52,29 +52,28 @@ fn run_in_memory(
         trials,
         None,
         Projection::default(),
-        Watch {
+        Start {
             memory_bytes: Some(memory_bytes),
-            ..Watch::default()
+            ..Start::default()
         },
         None,
         false,
     )
 }
 
-/// The watch and the trial of each bounded attempt in `notes`, in order.
-fn attempts(notes: &[String]) -> Vec<(usize, String)> {
+/// The trial of each bounded attempt in `notes`, in order.
+fn attempts(notes: &[String]) -> Vec<String> {
     notes
         .iter()
         .filter_map(|n| {
-            let (trial, rest) = n.strip_prefix("trial: ")?.split_once(", watch=")?;
-            Some((rest.split(',').next()?.parse().ok()?, trial.to_string()))
+            let (trial, _) = n.strip_prefix("trial: ")?.split_once(", work=")?;
+            (!trial.ends_with(", alone")).then(|| trial.to_string())
         })
         .collect()
 }
 
 /// Asserts that the bounded attempts in `notes` go in turns: the trials
-/// take their first turns in the order of `trials`, and each trial's
-/// watch only grows from attempt to attempt, by powers of two.
+/// take their first turns in the order of `trials`.
 fn assert_turns(notes: &[String], trials: &[Kind]) {
     let name = |k: &Kind| format!("{k} indicators={}", k.indicators_name());
     let place = |t: &str| {
@@ -85,14 +84,10 @@ fn assert_turns(notes: &[String], trials: &[Kind]) {
     };
     let attempts = attempts(notes);
     let mut firsts: Vec<usize> = Vec::new();
-    let mut watch: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
-    for (w, t) in &attempts {
-        match watch.insert(t, *w) {
-            None => firsts.push(place(t)),
-            Some(before) => assert!(
-                *w >= before && (w / before).is_power_of_two() && w % before == 0,
-                "{t}: {before} then {w} in {notes:#?}"
-            ),
+    let mut seen = std::collections::HashSet::new();
+    for t in &attempts {
+        if seen.insert(t) {
+            firsts.push(place(t));
         }
     }
     assert!(firsts.is_sorted(), "{firsts:?} in {notes:#?}");
@@ -132,16 +127,9 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
         ground(&format!("{src}query(a{}).", n - 1))
     };
     let laid = Kind::Families { search: false };
-    let searched = Kind::Families { search: true };
     assert_eq!(
         candidates(&chain(FEW_FACTS + 1), false),
-        vec![
-            laid,
-            Kind::Closed,
-            Kind::Td,
-            searched,
-            Kind::Program { fan_in: false },
-        ],
+        vec![laid, Kind::Closed, Kind::Td],
     );
     // With few facts but one derived atom per fact the families
     // layout still comes first.
@@ -162,16 +150,7 @@ fn dynamic_is_the_one_trial_where_there_is_no_order_to_search() {
         gp.num_derived(),
         gp.num_facts()
     );
-    assert_eq!(
-        candidates(&gp, false),
-        vec![
-            Kind::Closed,
-            laid,
-            Kind::Td,
-            searched,
-            Kind::Program { fan_in: false },
-        ],
-    );
+    assert_eq!(candidates(&gp, false), vec![Kind::Closed, laid, Kind::Td],);
     // The smokers program is one recursive component: `smokes` over
     // three people, merged with nothing to be merged with. Queried for
     // everyone, as the benchmark programs are; a query for one person is
@@ -230,7 +209,7 @@ fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
                q :- \\+c, f10. q :- f11, f12.
                query(q).";
     // A mux whose rules each read a fact, with a view `g2`: neither
-    // writing is, and `program` alone goes last.
+    // writing is, and `program` is no trial.
     let mux = "0.5::f0. 0.5::f1. 0.5::f2. 0.5::f3. 0.5::f4. 0.5::f5.
                g1 :- f0, f1. g1 :- f2, \\+f0.
                g2 :- g1, f3.
@@ -247,13 +226,7 @@ fn a_program_built_gate_by_gate_tries_its_own_orders_first() {
         )
         .expect("grounds")
     };
-    let network = vec![
-        Kind::Families { search: false },
-        Kind::Closed,
-        Kind::Td,
-        Kind::Families { search: true },
-        Kind::Program { fan_in: false },
-    ];
+    let network = vec![Kind::Families { search: false }, Kind::Closed, Kind::Td];
     for views in [true, false] {
         let gp = ground(adder, views);
         assert_eq!(gp.stats.inlined, usize::from(views));
@@ -289,9 +262,9 @@ fn families_0_s_rewrite_settles_the_order_at_the_first_attempt_where_it_matters(
             program_leads(),
             Some(tabled),
             Projection::default(),
-            Watch {
+            Start {
                 first_pairs: 2,
-                ..Watch::default()
+                ..Start::default()
             },
             None,
             false,
@@ -308,14 +281,14 @@ fn families_0_s_rewrite_settles_the_order_at_the_first_attempt_where_it_matters(
     );
     let tried = attempts(notes);
     assert_eq!(
-        tried.first().map(|(_, t)| t.clone()),
+        tried.first().cloned(),
         Some(name(Kind::Families { search: false })),
         "{notes:#?}"
     );
     assert!(
         !tried
             .iter()
-            .any(|(_, t)| *t == name(Kind::Program { fan_in: true })),
+            .any(|t| *t == name(Kind::Program { fan_in: true })),
         "{notes:#?}"
     );
     let adder = run(regress(ADDER));
@@ -326,72 +299,76 @@ fn families_0_s_rewrite_settles_the_order_at_the_first_attempt_where_it_matters(
         "{notes:#?}"
     );
     assert_eq!(
-        attempts(notes).first().map(|(_, t)| t.clone()),
+        attempts(notes).first().cloned(),
         Some(name(Kind::Program { fan_in: false })),
         "{notes:#?}"
     );
 }
 
-/// Where `decision` is no trial, the conditioned program goes to
-/// `program`, `closed` and `td` and the program as ground to
-/// `program:fanin` and the families trials, so `program` and
-/// `program:fanin` share no rewrite; where it is a trial, it goes to
-/// `decision` alone ([`Programs::of`], [`same_rewrite`]).
+/// The conditioned program goes to the layouts whose order the rules'
+/// bodies do not set ([`Kind::conditioned`]); otherwise each trial rewrites
+/// the program its layout compiles alone: the program with its views in
+/// place for `program`, and the program as ground for the others
+/// ([`Programs::of`], [`same_rewrite`]).
 #[test]
-fn the_conditioned_program_goes_to_the_layouts_its_rewrite_cannot_mislead() {
-    let as_ground = regress("0.5::f0. 0.5::f1. q :- f0, f1. query(q).");
-    let conditioned = regress("0.5::f0. 0.5::f1. q :- f0. q :- f1. query(q).");
+fn the_conditioned_program_goes_to_the_layouts_the_bodies_do_not_order() {
+    let as_ground = Arc::new(regress("0.5::f0. 0.5::f1. q :- f0, f1. query(q)."));
+    let written = Arc::new(regress("0.5::f0. 0.5::f1. v :- f0, f1. q :- v. query(q)."));
+    let conditioned = Arc::new(regress("0.5::f0. 0.5::f1. q :- f0. q :- f1. query(q)."));
     let program = Kind::Program { fan_in: false };
     let fan_in = Kind::Program { fan_in: true };
-    let laid = Kind::Families { search: false };
-    for decision in [false, true] {
+    let kinds = [
+        Kind::Decision,
+        program,
+        Kind::Closed,
+        Kind::Td,
+        fan_in,
+        Kind::Families { search: false },
+        Kind::Families { search: true },
+    ];
+    for (kept, decision) in [(true, false), (false, false), (true, true)] {
         let programs = Programs {
-            ground: Arc::new(as_ground.clone()),
-            written: None,
-            conditioned: Some(Arc::new(conditioned.clone())),
+            ground: as_ground.clone(),
+            written: Some(written.clone()),
+            conditioned: kept.then(|| conditioned.clone()),
             decision,
         };
-        let is_conditioned = |kind: Kind| {
-            std::ptr::eq(
-                programs.of(kind),
-                programs.conditioned.as_ref().expect("conditioned"),
-            )
+        // Beside a `decision` trial the conditioned program is
+        // `decision`'s alone.
+        let takes =
+            |kind: Kind| kept && kind.conditioned() && (kind == Kind::Decision || !decision);
+        let reads = |kind: Kind| {
+            let of = programs.of(kind);
+            if Arc::ptr_eq(of, &conditioned) {
+                "conditioned"
+            } else if Arc::ptr_eq(of, &written) {
+                "written"
+            } else {
+                "ground"
+            }
         };
-        for kind in [program, Kind::Closed, Kind::Td] {
-            assert_eq!(
-                is_conditioned(kind),
-                !decision,
-                "{kind} decision {decision}"
-            );
+        for kind in kinds {
+            let expected = if takes(kind) {
+                "conditioned"
+            } else if kind.views_in_place() {
+                "written"
+            } else {
+                "ground"
+            };
+            assert_eq!(reads(kind), expected, "{kind} kept {kept} {decision}");
         }
-        for kind in [fan_in, laid, Kind::Families { search: true }] {
-            assert!(!is_conditioned(kind), "{kind} decision {decision}");
-        }
-        assert_eq!(is_conditioned(Kind::Decision), decision);
+        let alone = kept && !decision;
+        assert_eq!(
+            reads(program),
+            if alone { "conditioned" } else { "written" }
+        );
+        assert_eq!(
+            reads(Kind::Closed),
+            if alone { "conditioned" } else { "ground" }
+        );
+        assert_eq!(reads(fan_in), "ground");
         let (a, b) = (Trial::new(program), Trial::new(fan_in));
-        assert_eq!(same_rewrite(&a, &b, &programs), decision);
-    }
-    // The program with its views in place goes to `program` and
-    // `program:fanin`, where the conditioned program does not.
-    let written = regress("0.5::f0. 0.5::f1. v :- f0, f1. q :- v. query(q).");
-    for decision in [false, true] {
-        let programs = Programs {
-            ground: Arc::new(as_ground.clone()),
-            written: Some(Arc::new(written.clone())),
-            conditioned: Some(Arc::new(conditioned.clone())),
-            decision,
-        };
-        let is_written = |kind: Kind| {
-            std::ptr::eq(
-                programs.of(kind),
-                programs.written.as_ref().expect("written"),
-            )
-        };
-        assert_eq!(is_written(program), decision, "decision {decision}");
-        assert!(!is_written(fan_in), "decision {decision}");
-        for kind in [laid, Kind::Closed, Kind::Td, Kind::Decision] {
-            assert!(!is_written(kind), "{kind} decision {decision}");
-        }
+        assert!(!same_rewrite(&a, &b, &programs));
     }
 }
 
@@ -404,7 +381,6 @@ fn program_leads() -> Vec<Kind> {
         Kind::Program { fan_in: true },
         Kind::Families { search: false },
         Kind::Closed,
-        Kind::Families { search: true },
     ]
 }
 
@@ -413,7 +389,7 @@ fn program_leads() -> Vec<Kind> {
 /// step drops the signal with probability 1e-4 on one of its two routes,
 /// so that the query keeps it with probability (1 - 0.5e-4)^steps. Its
 /// views inlined, each step's two rules read facts of their own, and
-/// `auto` puts `program` last (`built_of_gates`); the tests of the turns
+/// `auto` gives it no `program` trial (`built_of_gates`); the tests of the turns
 /// give it [`program_leads`]' trials, where `program` leads.
 fn diamond_loop(steps: usize) -> GroundProgram {
     let mut src = String::from(
@@ -433,20 +409,19 @@ fn diamond_loop(steps: usize) -> GroundProgram {
 #[test]
 fn where_program_leads_it_and_the_next_trials_take_turns() {
     // Each step of the diamond loop reads every earlier one through the
-    // step before. Without names every layout without indicators compiled
-    // it in the square of the steps (24 M units under `program` at 400
-    // steps); `program` now names each step's result at a cut of width one
-    // (src/vtree/naming.rs), as `families:0` cuts each step at an
-    // indicator, and both are linear. `program` leads ([`program_leads`]),
-    // `program:fanin` lays out the same named order and is dropped, and `program` and `families:0` take turns of
-    // doubling work from 2^15 units (a first watch of 2^15 pairs): one of
+    // step before. Every layout without indicators compiles it in the
+    // square of the steps (24 M units under `program` at 400 steps), where
+    // `families:0` cuts each step at an indicator and is linear. `program`
+    // leads ([`program_leads`]), `program:fanin` lays out the same order
+    // and is dropped, and `program` and `families:0` take turns of
+    // doubling work from 2^15 units (first pairs of 2^15): one of
     // them finishes (`program`, projected to finish its compile within
     // two doublings, takes its turns ahead), and neither has spent more
     // than the other's work times two to the doublings a projection may
     // move it ahead, and one more for its turn.
     let steps = 400;
     let gp = diamond_loop(steps);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         program_leads(),
         Projection::default(),
@@ -463,12 +438,6 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
         .contains(&run.kind),
         "{notes:#?}"
     );
-    assert!(
-        notes
-            .iter()
-            .any(|n| n.starts_with("naming: ") && n.ends_with("widest 1, 399 copies of 399 atoms")),
-        "{notes:#?}"
-    );
     let work = |t: &str| -> u64 {
         notes
             .iter()
@@ -483,7 +452,7 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
             })
             .sum()
     };
-    let turns: Vec<_> = attempts(notes).into_iter().map(|(_, t)| t).collect();
+    let turns = attempts(notes);
     assert!(
         turns
             .iter()
@@ -509,7 +478,7 @@ fn where_program_leads_it_and_the_next_trials_take_turns() {
 
 #[test]
 fn a_turn_projected_past_its_horizon_ends_between_components() {
-    // At a first watch of 2^4 pairs the first turns are of 2^4 units where
+    // At first pairs of 2^4 the first turns are of 2^4 units where
     // `program` leads, and the projection is read from 2^8 units on. The
     // diamond loop's 400 steps are a component each, and `program`'s
     // compile, at the pace of its first components, is projected past its
@@ -517,7 +486,7 @@ fn a_turn_projected_past_its_horizon_ends_between_components() {
     // trials go on in later turns to the same answer.
     let steps = 400;
     let gp = diamond_loop(steps);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         program_leads(),
         Projection::default(),
@@ -550,47 +519,6 @@ fn a_turn_projected_past_its_horizon_ends_between_components() {
 }
 
 #[test]
-fn settling_past_its_budget_is_the_trials_work() {
-    // At 120 steps `program`'s first attempt compiles and settles its
-    // names past the budget, the compile's work: past it each cut still
-    // reads its readers before it keeps its names. Its turn ends at the
-    // query phase's first step. Uncharged, that work moved the end of the
-    // turn and the run's stop past what the trial had spent, and a stop
-    // read as one by size: the watch doubled and the work did not, and
-    // each attempt settled a few cuts more (watches of 2^16 and 2^17
-    // pairs, where no formula holds 2^15). Charged to the trial, the stop
-    // is one by work, and no trial's watch moves.
-    let steps = 120;
-    let gp = diamond_loop(steps);
-    let run = run_with_watch(
-        gp.clone(),
-        program_leads(),
-        Projection::default(),
-        1 << 15,
-        tp::DYNAMIC_FIRST_PAIRS,
-    )
-    .unwrap();
-    let notes = &run.vtree_notes;
-    assert!(
-        notes
-            .iter()
-            .any(|n| n.starts_with("trial: program indicators=off,")
-                && n.contains(", phase=query, steps 0/")
-                && n.contains(", stopped, ")),
-        "{notes:#?}"
-    );
-    assert!(
-        attempts(notes).iter().all(|&(watch, _)| watch == 1 << 15),
-        "{notes:#?}"
-    );
-    let p = run.results.unwrap()[0].probability;
-    assert!(
-        (p - (1.0 - 0.5e-4f64).powi(steps as i32)).abs() < 1e-12,
-        "{p}"
-    );
-}
-
-#[test]
 fn a_cnf_of_several_units_with_copies_takes_no_families_trial() {
     // Two facts made equal, one a copy of the other that a clause
     // reads, and a clause sharing no fact with the rest, kept as P(e)
@@ -609,7 +537,10 @@ fn a_cnf_of_several_units_with_copies_takes_no_families_trial() {
     .unwrap();
     assert_eq!(gp.stats.conditioned.merged, 1);
     assert!(!shape::nothing_to_order(&gp) && shape::clauses_over_facts(&gp));
-    assert_eq!(candidates(&gp, false), vec![Kind::Td, Kind::Closed]);
+    assert_eq!(
+        candidates(&gp, false),
+        vec![Kind::Td, Kind::Dynamic, Kind::Closed]
+    );
 }
 
 /// `closed` with `td` after it, for a program of facts alone, so that
@@ -633,7 +564,7 @@ fn a_small_compile_cannot_win_before_its_evidence_fits() {
     }
     source.push_str("query(\\+f(12)).\n");
     let gp = regress(&source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         closed_then_td(),
         Projection::default(),
@@ -667,7 +598,7 @@ fn competing_rewrites_preserve_the_problog_posteriors() {
         ("c(q)", 0.20266189),
         ("e(t)", 0.39609663),
     ];
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -708,7 +639,7 @@ fn a_trial_with_indicators_ties_tables_by_clauses() {
         ("c(q)", 0.20266189),
         ("e(t)", 0.39609663),
     ];
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         rewritten.clone(),
         Projection::default(),
@@ -736,36 +667,6 @@ fn a_trial_with_indicators_ties_tables_by_clauses() {
     }
 }
 
-#[test]
-fn families_0_holds_the_weight_only_where_its_rewrite_ties_tables_by_clauses() {
-    // A network's rewrite ties its tables by clauses, and `families:0`'s
-    // first watch is that of a weighted first target; UW-CSE's ties none,
-    // and its first watch is any trial's. A first round of two pairs.
-    let first_watch = |gp: GroundProgram| {
-        let trials = candidates(&gp, false);
-        let run = run_with_watch(
-            gp,
-            trials,
-            Projection::default(),
-            2,
-            tp::DYNAMIC_FIRST_PAIRS,
-        )
-        .unwrap();
-        let laid = Kind::Families { search: false };
-        let laid = format!("{laid} indicators={}", laid.indicators_name());
-        attempts(&run.vtree_notes)
-            .into_iter()
-            .find(|(_, t)| *t == laid)
-            .map(|(w, _)| w)
-            .unwrap_or_else(|| panic!("{:#?}", run.vtree_notes))
-    };
-    let unweighted = (2 * WORK_PER_PAIR / WORK_PER_HELD_PAIR) as usize;
-    let network = regress(include_str!("../../examples/bn_split.pl"));
-    assert_eq!(first_watch(network), FAMILIES_WEIGHT as usize * unweighted);
-    let relational = regress(include_str!("../../examples/uwcse.pl"));
-    assert_eq!(first_watch(relational), unweighted);
-}
-
 /// Trial `strategy` on `gp` written without its linear recursion, in
 /// attempts held to the bounds a trial gets beside others, round after
 /// round from two pairs. A trial alone runs unbounded, so this is how a
@@ -781,7 +682,6 @@ fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
     let mut ledger = Ledger::default();
     assert!(prepare(&mut trials, 0, &programs, &mut ledger).unwrap());
     let mut bounds = Bounds {
-        pairs: 2,
         work: 2 * WORK_PER_PAIR,
         projected_from: u64::MAX,
         horizon: f64::INFINITY,
@@ -796,9 +696,8 @@ fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
             &mut ledger,
         ) {
             Ok((results, sizes)) => return finish(&mut trials[0], results, sizes, ledger),
-            Err(e) => match Stop::of(bounds, trials[0].last_work, &e) {
+            Err(e) => match Stop::of(&e) {
                 Some(Stop::Work) => bounds.work *= 2,
-                Some(Stop::Size(pairs)) => bounds.pairs = pairs.next_power_of_two(),
                 Some(Stop::Projected) | None => panic!("{strategy}: {e:?}"),
             },
         }
@@ -850,7 +749,7 @@ fn a_program_with_nothing_to_order_matches_problog_round_after_round() {
 #[test]
 fn a_trial_alone_runs_in_one_unbounded_attempt() {
     // The program above, whose one trial is dynamic: under a first
-    // bound of two pairs it finishes in one attempt, without a watch,
+    // bound of two pairs it finishes in one last attempt,
     // with ProbLog's answers.
     let source = "0.6::edge(1,2). 0.5::edge(2,3). 0.7::edge(3,1). 0.4::edge(3,4). 0.8::edge(4,5).
         0.3::edge(5,3). 0.6::edge(5,6). 0.5::edge(6,4). 0.4::edge(2,6). 0.3::edge(6,1).
@@ -859,7 +758,7 @@ fn a_trial_alone_runs_in_one_unbounded_attempt() {
         path(X,Y) :- edge(X,Z), path(Z,Y).
         query(path(1,2)). query(path(1,3)). query(path(1,4)). query(path(1,5)). query(path(1,6)). query(path(1,7)).";
     let gp = regress(source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -871,7 +770,7 @@ fn a_trial_alone_runs_in_one_unbounded_attempt() {
     assert!(
         run.vtree_notes
             .iter()
-            .any(|n| n.starts_with("trial: dynamic") && n.contains("watch=none")),
+            .any(|n| n.starts_with("trial: dynamic") && n.contains(", alone, ")),
         "{:?}",
         run.vtree_notes
     );
@@ -916,129 +815,6 @@ fn a_dynamic_trial_compiles_primal_and_the_others_dual() {
     assert!(!r.kind.is_dynamic(), "{}", r.kind);
     assert_eq!(r.kind.formulation(), tp::Formulation::Dual);
     assert!((r.results.unwrap()[0].probability - 0.125).abs() < 1e-12);
-}
-
-#[test]
-fn an_operation_lost_in_flight_is_built_again_in_a_later_turn() {
-    // A first turn of 256 units holds a watch of 16 pairs and caps every
-    // operation at 32 nodes, so the conjunction of 40 observations stops
-    // in flight; the trial resumes in a later turn, under a larger cap,
-    // and answers. Each observed fact queried, so that the evidence is
-    // not dropped as detached (src/ground/detach.rs).
-    let mut source = String::new();
-    for i in 0..41 {
-        source.push_str(&format!("0.5::f({i}).\nquery(f({i})).\n"));
-        if i < 40 {
-            source.push_str(&format!("evidence(f({i}),true).\n"));
-        }
-    }
-    source.push_str("query(\\+f(40)).\n");
-    let gp = regress(&source);
-    let run = run_with_watch(
-        gp.clone(),
-        closed_then_td(),
-        Projection::default(),
-        1,
-        tp::DYNAMIC_FIRST_PAIRS,
-    )
-    .unwrap();
-    let trials: Vec<&String> = run
-        .vtree_notes
-        .iter()
-        .filter(|n| n.starts_with("trial: "))
-        .collect();
-    let name = |n: &str| n.split(", watch=").next().unwrap().to_string();
-    let lost = trials
-        .iter()
-        .position(|n| n.contains(", stopped,"))
-        .unwrap_or_else(|| panic!("{trials:#?}"));
-    assert!(
-        trials[lost + 1..]
-            .iter()
-            .any(|n| name(n) == name(trials[lost])),
-        "{trials:#?}"
-    );
-    let answers = run.results.unwrap();
-    assert_eq!(answers.len(), 42);
-    for (r, expected) in answers
-        .iter()
-        .zip([[1.0; 40].as_slice(), &[0.5, 0.5]].concat())
-    {
-        assert!((r.probability - expected).abs() < 1e-12, "{r:?}");
-    }
-}
-
-/// A Boolean query of TPC-H q18's shape ([`scripts/gen_tpch.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/gen_tpch.py)): one
-/// rule per lineitem of an order of a customer, every body over facts
-/// alone, one component; and its probability by hand, the query being
-/// hierarchical, read once.
-fn lineage_of_orders(customers: usize, orders: usize, lines: usize) -> (GroundProgram, f64) {
-    let mut src = String::new();
-    let mut k = 0;
-    let mut p = || {
-        k += 1;
-        0.05 + 0.9 * ((k * 37) % 101) as f64 / 101.0
-    };
-    let mut none = 1.0;
-    for c in 0..customers {
-        let pc = p();
-        src += &format!("{pc}::customer({c}).\n");
-        let mut no_order = 1.0;
-        for o in 0..orders {
-            let id = c * orders + o;
-            let po = p();
-            src += &format!("{po}::orders({id},{c}).\n");
-            let mut no_line = 1.0;
-            for l in 0..lines {
-                let pl = p();
-                src += &format!("{pl}::lineitem({id},{l}).\n");
-                no_line *= 1.0 - pl;
-            }
-            no_order *= 1.0 - po * (1.0 - no_line);
-        }
-        none *= 1.0 - pc * (1.0 - no_order);
-    }
-    src += "q :- customer(C), orders(O,C), lineitem(O,_).\nquery(q).\n";
-    (regress(&src), 1.0 - none)
-}
-
-#[test]
-fn a_loop_the_watch_refused_is_taken_in_the_trials_next_attempt() {
-    // Under a first watch of 512 pairs (a first turn of 2^13 units)
-    // every trial's formula, one loop of clauses over the whole lineage,
-    // is refused whole, as TPC-H q18's are. `td`, first, keeps its loop,
-    // and its next attempt, under a watch that holds it, takes the loop
-    // rather than build it again and finishes the compile; `td` finishes.
-    let (gp, p) = lineage_of_orders(10, 4, 5);
-    let td = Kind::Td;
-    assert_eq!(
-        candidates(&gp, false),
-        vec![td, Kind::Dynamic, Kind::Closed]
-    );
-    let run = run_with_watch(
-        gp.clone(),
-        candidates(&gp, false),
-        Projection::default(),
-        32,
-        tp::DYNAMIC_FIRST_PAIRS,
-    )
-    .unwrap();
-    assert_eq!(run.kind, td);
-    let trials: Vec<&String> = run
-        .vtree_notes
-        .iter()
-        .filter(|n| n.starts_with("trial: td "))
-        .collect();
-    assert!(trials.len() >= 2, "{:#?}", run.vtree_notes);
-    assert!(trials[0].contains(", components 0/1, size,"), "{trials:#?}");
-    assert!(trials[1].contains(", phase=query, "), "{trials:#?}");
-    assert_eq!(run.stats.clause_memo.retaken, 1);
-    assert_eq!(run.stats.clause_memo.built, 1, "the loop was built twice");
-    let answers = run.results.unwrap();
-    assert!(
-        (answers[0].probability - p).abs() < 1e-12,
-        "{answers:?} against {p}"
-    );
 }
 
 #[test]
@@ -1180,7 +956,7 @@ fn a_trial_that_loses_its_bet_at_a_kept_step_takes_its_turns_at_its_level() {
 }
 
 #[test]
-fn a_searched_layout_that_would_not_search_is_not_built() {
+fn a_families_trial_that_would_not_search_builds_no_searched_layout() {
     let gp = regress(include_str!("../../examples/bn_split.pl"));
     let programs = Programs {
         ground: Arc::new(ground::without_linear_recursion(gp)),
@@ -1188,25 +964,68 @@ fn a_searched_layout_that_would_not_search_is_not_built() {
         conditioned: None,
         decision: false,
     };
-    let mut trials = vec![
-        Trial::new(Kind::Families { search: false }),
-        Trial::new(Kind::Families { search: true }),
-    ];
+    let mut trials = vec![Trial::new(Kind::Families { search: false })];
     let mut ledger = Ledger::default();
     assert!(prepare(&mut trials, 0, &programs, &mut ledger).unwrap());
     assert!(trials[0].estimate.is_some_and(|e| e.search_units == 0));
     let notes = ledger.notes.len();
-    assert!(!prepare(&mut trials, 1, &programs, &mut ledger).unwrap());
-    assert!(trials[1].disabled && trials[1].built.is_none());
+    search_families(&mut trials, 1 << 28, &programs, &mut ledger).unwrap();
+    assert_eq!(trials[0].kind, Kind::Families { search: false });
     assert_eq!(ledger.notes.len(), notes);
     // The layout it would have built is `families:0`'s.
     let (searched, _) = vtree::build(
-        trials[1].ground.as_ref().unwrap(),
-        trials[1].deps.as_deref().unwrap(),
-        trials[1].kind,
+        trials[0].ground.as_ref().unwrap(),
+        trials[0].deps.as_deref().unwrap(),
+        Kind::Families { search: true },
     )
     .unwrap();
     assert!(same_layout(trials[0].built.as_ref().unwrap(), &searched));
+}
+
+#[test]
+fn the_searched_layout_is_due_only_once_its_charge_is_spent() {
+    // The race builds the searched layout at one point: after the attempt
+    // of `families:0` that spends what the search charges. A network's
+    // rewrite ties its tables by clauses, and with an estimate past what
+    // its turn may hold the search is due from its charge on; UW-CSE's ties
+    // none, and the search is never due, whatever the trial spends.
+    let laid_out = |source: &str| {
+        let programs = Programs {
+            ground: Arc::new(ground::without_linear_recursion(regress(source))),
+            written: None,
+            conditioned: None,
+            decision: false,
+        };
+        let mut trials = vec![Trial::new(Kind::Families { search: false })];
+        let mut ledger = Ledger::default();
+        assert!(prepare(&mut trials, 0, &programs, &mut ledger).unwrap());
+        let mut t = trials.pop().unwrap();
+        t.estimate = Some(vtree::Estimate {
+            pairs: 1e12,
+            search_units: 1 << 30,
+        });
+        t.target = 1 << 28;
+        t
+    };
+    let charge = (1 << 30) / SEARCH_UNITS_PER_WORK;
+    let mut network = laid_out(include_str!("../../examples/bn_split.pl"));
+    assert!(ties_tables_by_clauses(&network));
+    assert_eq!(search_charge(&network), Some(charge));
+    network.spent = charge - 1;
+    assert!(!search_due(&network));
+    network.spent = charge;
+    assert!(search_due(&network));
+    // Retired for memory before it has spent the charge, it would never
+    // spend the rest: the search is due then.
+    network.spent = 1;
+    network.retire();
+    assert!(search_due(&network));
+    let mut relational = laid_out(include_str!("../../examples/uwcse.pl"));
+    assert!(!ties_tables_by_clauses(&relational));
+    relational.spent = u64::MAX;
+    assert!(!search_due(&relational));
+    relational.retire();
+    assert!(!search_due(&relational));
 }
 
 #[test]
@@ -1232,7 +1051,7 @@ fn a_grid_answers_round_after_round() {
     source +=
         "path(X,Y) :- edge(X,Y).\npath(X,Y) :- edge(X,Z), path(Z,Y).\nquery(path(n0_0,n3_3)).\n";
     let gp = regress(&source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1286,7 +1105,7 @@ fn a_markov_network_answers_round_after_round() {
         source += &format!("query(y{j}(v_1)).\n");
     }
     let gp = regress(&source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1320,7 +1139,7 @@ fn the_shared_noisy_or_network_answers_round_after_round() {
     // does not come first. ProbLog 2.3.0.
     let gp = regress(include_str!("../../tests/regress/noisy_or_shared.pl"));
     let trials = vec![Kind::Dynamic, Kind::Closed, Kind::Td];
-    let run = run_with_watch(
+    let run = run_from(
         gp,
         trials.clone(),
         Projection::default(),
@@ -1354,7 +1173,7 @@ fn a_noisy_or_network_from_the_literature_answers_round_after_round() {
     // round of 256 pairs. [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py); ProbLog 2.3.0 agrees to
     // the eight digits it prints, one query at a time.
     let gp = regress(include_str!("../../tests/regress/noisyor15_22.pl"));
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1395,7 +1214,7 @@ fn mastermind_answers_round_after_round() {
     // [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py); ProbLog 2.3.0 gives the same, one query at a
     // time.
     let gp = regress(include_str!("../../tests/regress/mastermind3_4_3.pl"));
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1417,14 +1236,14 @@ fn mastermind_answers_round_after_round() {
 fn a_lost_query_operation_is_not_lost_again_under_the_same_bounds() {
     // UW-CSE with four students under a first round of 128 pairs: the
     // compiled `families:0` trial loses evidence conjunctions in flight
-    // to the node cap and to the round's work. No attempt repeats a
-    // stopped one at the same watch after the same work, which would lose
+    // to the round's work. No attempt repeats a stopped one under the
+    // same bounds after the same work, which would lose
     // the same operation twice: every round doubles both. ProbLog:
     // 0.094006751.
     let source = include_str!("../../examples/uwcse.pl")
         .replace("student(s2).", "student(s2).\nstudent(s3).\nstudent(s4).");
     let gp = regress(&source);
-    let run = run_with_watch(
+    let run = run_from(
         gp.clone(),
         candidates(&gp, false),
         Projection::default(),
@@ -1532,7 +1351,6 @@ fn query_counting_obeys_the_batch_work_limit() {
             tp::Formulation::Dual,
             &backend,
             Projection::default(),
-            None,
         )
         .unwrap();
         let stopped = LimitConfig::none().with_stop_rules(
@@ -1621,51 +1439,6 @@ fn a_trial_refused_memory_is_retired_and_the_next_answers() {
     }
 }
 
-#[test]
-fn a_trial_refused_memory_takes_what_the_others_hold() {
-    // `closed` goes first and stops at its first targets, holding what it
-    // built; `families:0`, refused memory in its query phase (as above),
-    // takes it: `closed`'s formulas are freed rather than `families:0`
-    // retired, and `families:0` resumes at its next turn and answers
-    // (geni_router_24, where `families` was refused at its last step while
-    // four stopped trials held their formulas).
-    let gp = beside_evidence();
-    let trials = vec![Kind::Closed, Kind::Families { search: false }];
-    let run = run_within(
-        Programs {
-            ground: Arc::new(gp),
-            written: None,
-            conditioned: None,
-            decision: false,
-        },
-        trials,
-        None,
-        Projection::default(),
-        Watch {
-            first_pairs: 1,
-            memory_bytes: Some(8 << 10),
-            ..Watch::default()
-        },
-        None,
-        false,
-    )
-    .unwrap();
-    let notes = &run.vtree_notes;
-    assert!(
-        notes.iter().any(|n| n.starts_with("released: closed (")
-            && n.contains(" for families:0 indicators=all ("))
-            && !notes.iter().any(|n| n.starts_with("retired: ")),
-        "{notes:#?}"
-    );
-    assert_eq!(run.kind, Kind::Families { search: false });
-    let answers = run.results.unwrap();
-    assert!(
-        (answers[0].probability - BESIDE_W).abs() < 1e-9
-            && (answers[1].probability - 0.29).abs() < 1e-9,
-        "{answers:?}"
-    );
-}
-
 /// examples/query_beside_evidence.pl with `e(on) :- c(z).` for its second
 /// rule: as written, both rules of `e(on)` read `b(f)`, which the evidence
 /// then makes hold, and `w` is false before any compile. By hand, `e(on)`
@@ -1680,147 +1453,6 @@ fn beside_evidence() -> GroundProgram {
 }
 
 const BESIDE_W: f64 = 0.18 * (1.0 - 0.452_121_76) / 0.28;
-
-fn run_query_beside_evidence(budget: u64) -> (bool, Vec<String>) {
-    let gp = regress(include_str!("../../examples/query_beside_evidence.pl"));
-    let result = run_within(
-        Programs {
-            ground: Arc::new(gp),
-            written: None,
-            conditioned: None,
-            decision: false,
-        },
-        vec![
-            Kind::Program { fan_in: false },
-            Kind::Closed,
-            Kind::Families { search: false },
-        ],
-        None,
-        Projection::default(),
-        Watch {
-            first_pairs: 1,
-            memory_bytes: Some(budget),
-            ..Watch::default()
-        },
-        None,
-        false,
-    );
-    let failed = result.is_err();
-    assert!(!failed || refused(&result), "budget {budget}");
-    let notes = match result {
-        Ok(run) => run.vtree_notes,
-        Err(Error::Trials { notes, .. }) => notes,
-        Err(_) => unreachable!(),
-    };
-    (failed, notes)
-}
-
-#[test]
-fn memory_goes_to_the_trial_that_has_spent_the_most_once() {
-    // Where no trial fits the budget, the memory others hold is freed for
-    // a refused trial only where it has spent more work than each of them,
-    // and once: refused again, or behind a trial that has spent as much,
-    // it is retired, and the run fails with the refusal. So a refusal
-    // discards less work than the refused trial has spent, and the trials
-    // cannot free each other for ever. Under some budgets of 1 to 4 KiB,
-    // `program` and `closed` are freed for `families:0`, retired at its
-    // next refusal, and `closed` for `program` (on bb_spacex_w17, freed for
-    // `families:0`, which had spent less, `program` did its 2 G units
-    // again). Which budgets do so moves with the memory tididi's
-    // operations take and with the turns, so several are tried. The rules
-    // (each release frees only trials that have spent less than the
-    // refused one, no trial is freed for twice, and a run that fails has
-    // retired every trial) are checked at every budget, and one budget
-    // must free memory twice, so that the second release is checked too.
-    let units = |s: &str| -> Vec<u64> {
-        s.split(" units)")
-            .filter_map(|p| p.rsplit('(').next()?.parse().ok())
-            .collect()
-    };
-    let mut most = 0;
-    for budget in (4..16).map(|k| k << 8) {
-        let (failed, notes) = run_query_beside_evidence(budget);
-        let released: Vec<&String> = notes
-            .iter()
-            .filter(|n| n.starts_with("released: "))
-            .collect();
-        most = most.max(released.len());
-        for note in &released {
-            let (freed, refused) = note.split_once(" for ").unwrap();
-            let (freed, refused) = (units(freed), units(refused));
-            assert!(
-                !freed.is_empty() && refused.len() == 1 && freed.iter().all(|&f| f < refused[0]),
-                "{notes:#?}"
-            );
-        }
-        for trial in [
-            "families:0 indicators=all",
-            "closed indicators=off",
-            "program indicators=off",
-        ] {
-            let freed = released
-                .iter()
-                .filter(|n| n.contains(&format!(" for {trial} (")))
-                .count();
-            assert!(freed <= 1, "{notes:#?}");
-            assert!(
-                !failed
-                    || notes
-                        .iter()
-                        .any(|n| n.starts_with(&format!("retired: {trial} "))),
-                "{notes:#?}"
-            );
-        }
-    }
-    assert!(most >= 2);
-}
-
-#[test]
-fn a_trial_retired_behind_held_memory_runs_again_once_none_is_left() {
-    // As above, under budgets of 1 to 4 KiB: a trial refused while
-    // another holds its formulas, and behind it in work, is retired behind
-    // it. Once every trial is retired, each trial retired so runs again,
-    // once, with nothing held beside it. Under a byte budget per operation
-    // it may be refused again, and the run then fails with the refusal;
-    // under an address-space limit, the formulas the others held may be
-    // what refused it (multimodal_w11 at 40 GB, where `closed` was refused
-    // while `program:fanin` held its formulas). Which budgets retire a
-    // trial behind another moves with the memory tididi's operations take,
-    // so several are tried.
-    let mut revivals = 0;
-    for budget in (4..16).map(|k| k << 8) {
-        let (failed, notes) = run_query_beside_evidence(budget);
-        let revived: Vec<usize> = (0..notes.len())
-            .filter(|&k| notes[k].starts_with("revived: "))
-            .collect();
-        revivals += revived.len();
-        for &k in &revived {
-            let trial = notes[k]["revived: ".len()..].split(" (").next().unwrap();
-            let retired = format!("retired: {trial} ");
-            assert!(
-                notes[..k].iter().any(|n| n.starts_with(&retired)),
-                "{notes:#?}"
-            );
-            assert!(
-                notes[k + 1..]
-                    .iter()
-                    .any(|n| n.starts_with(&format!("trial: {trial},"))),
-                "{notes:#?}"
-            );
-            assert!(
-                !failed || notes[k + 1..].iter().any(|n| n.starts_with(&retired)),
-                "{notes:#?}"
-            );
-            let again = format!("revived: {trial} ");
-            assert_eq!(
-                notes.iter().filter(|n| n.starts_with(&again)).count(),
-                1,
-                "{notes:#?}"
-            );
-        }
-    }
-    assert!(revivals > 0);
-}
 
 #[test]
 fn closed_follows_dynamic_where_nothing_to_order_has_no_recursion() {
@@ -1843,7 +1475,7 @@ fn closed_follows_dynamic_where_nothing_to_order_has_no_recursion() {
         let gp = regress(source);
         assert_eq!(
             candidates(&gp, false),
-            vec![Kind::Dynamic, Kind::Closed, Kind::Td]
+            vec![Kind::Td, Kind::Dynamic, Kind::Closed]
         );
         let alone = run_in_memory(gp.clone(), vec![Kind::Dynamic], budget);
         assert!(refused(&alone), "{:?}", alone.map(|r| r.kind));
@@ -1870,7 +1502,8 @@ fn td_comes_first_where_the_rules_read_copies_of_facts() {
     // Clauses observed true, two of which make x(1) and x(2) equal: the
     // conditioning makes one a copy of the other, which a clause of
     // three literals reads. The copy's formula is a literal of a fact,
-    // so every rule reads facts alone, and `td` is first and answers.
+    // so every rule reads facts alone and `td`'s vtree is its
+    // decomposition folded. `td` is first and answers.
     // By hand in the program's comment; ProbLog 2.3.0 agrees to the
     // eight digits it prints.
     let gp = regress(include_str!("../../tests/regress/condition_copies.pl"));
@@ -1886,7 +1519,7 @@ fn td_comes_first_where_the_rules_read_copies_of_facts() {
     );
     let trials = candidates(&gp, false);
     assert_eq!(trials, vec![Kind::Td, Kind::Dynamic, Kind::Closed]);
-    let run = run_with_watch(
+    let run = run_from(
         gp,
         trials,
         Projection::default(),
@@ -1930,7 +1563,7 @@ fn dynamic_answers_a_database_query_from_its_elimination_tree() {
         (candidates(&gp, false), Kind::Td),
         (vec![Kind::Dynamic], Kind::Dynamic),
     ] {
-        let run = run_with_watch(
+        let run = run_from(
             gp.clone(),
             trials,
             Projection::default(),
@@ -1956,11 +1589,11 @@ fn dynamic_answers_a_noisy_or_network() {
     // observed absent tie no causes together in the interaction graph,
     // and `dynamic` reads the facts in a pre-order of the elimination
     // tree, each disease's links beside it, and answers.
-    // [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py). Every rule reads facts alone, and `td` comes
-    // first there; `dynamic` alone is the run below.
+    // [`scripts/lit_exact.py`](https://github.com/Tractables/tddlog/blob/baselines/scripts/lit_exact.py). `td` is its first trial;
+    // `dynamic` alone is the run below.
     let gp = regress(include_str!("../../tests/regress/noisyor20_30.pl"));
     assert_eq!(candidates(&gp, false)[0], Kind::Td);
-    let run = run_with_watch(
+    let run = run_from(
         gp,
         vec![Kind::Dynamic],
         Projection::default(),
@@ -2137,71 +1770,61 @@ fn trials_projected_past_their_targets_count_from_the_earliest_finish() {
 }
 
 #[test]
-fn a_first_turn_is_projected_from_half_its_target() {
-    // The compile passed half its first target, 2^30 units, with 0.35 of
-    // its components and ended the turn with 0.55: 0.2 a doubling, so the
-    // 0.45 left takes 2.25 doublings more.
-    let first_turn = |marked| {
+fn a_cut_trial_projects_only_where_the_steps_left_fit_its_turn() {
+    // The compile finished 0.35 of its components at a target of 2^30
+    // units and 0.55 at 2^31: 0.2 a doubling, so the 0.45 left takes 2.25
+    // doublings more.
+    let turns = |records: &[(u64, usize)]| {
         let mut t = Trial::new(Kind::Closed);
-        t.target = 1 << 31;
-        t.spent = 1 << 31;
-        t.record(false, Some((55, 100)), marked);
+        for &(target, done) in records {
+            t.target = target;
+            t.spent = target;
+            t.record(false, Some((done, 100)));
+        }
         t
     };
-    let mut t = first_turn(Some((35, 100)));
+    let mut t = turns(&[(1 << 30, 35), (1 << 31, 55)]);
     assert_eq!(t.progress, vec![(1 << 30, 0.35), (1 << 31, 0.55)]);
     assert!(close(t.projected(), 33.25), "{:?}", t.projected());
+    // An attempt that lost its operation at the guard projects nothing
+    // where its 45 steps left, at the 2^29 units that one lost, would not
+    // fit in its next turn, until an attempt keeps a step again.
+    assert_eq!(t.left, 45);
+    t.lost = 1 << 29;
+    t.target = 1 << 33;
+    assert_eq!(t.projected(), None);
+    assert_eq!(t.ahead(SOONER), PROJECTED_DOUBLINGS);
+    assert_eq!(t.finish(), 33.0 + PROJECTED_DOUBLINGS);
+    t.lost = 0;
+    assert!(close(t.projected(), 33.25), "{:?}", t.projected());
+    // Cut on the last of 100 steps, a trial that holds the weight keeps
+    // its projection: the step fits in the next turn, 2^33 units past the
+    // 2^31 spent. At weight 1 it projects nothing.
+    let mut late = Trial::new(Kind::Families { search: false });
+    for (target, done) in [(1 << 30, 70), (1 << 31, 99)] {
+        late.target = target;
+        late.spent = target;
+        late.record(false, Some((done, 100)));
+    }
+    late.lost = 1 << 30;
+    late.target = 1 << 33;
+    assert_eq!(late.projected(), None);
+    late.weight = FAMILIES_WEIGHT;
+    assert!(
+        close(late.projected(), 31.0 + 1.0 / 29.0),
+        "{:?}",
+        late.projected()
+    );
+    // Three steps left at that cost would not fit in a turn of 2^31.
+    late.target = 1 << 32;
+    late.left = 3;
+    assert_eq!(late.projected(), None);
     // Its target doubled, it takes its turns ahead of an unprojected trial
     // of its weight by 1.75 doublings.
     t.target = 1 << 32;
     assert!(close(Some(t.ahead(SOONER)), 1.25));
-    // Without the mark the first turn projects nothing.
-    assert_eq!(first_turn(None).projected(), None);
-    // A first turn that leaves its compile projected to finish within the
-    // next target projects the compile's end alone, short of the query
-    // phase that turn would run: the trial counts as unprojected.
-    let mut nearly = Trial::new(Kind::Closed);
-    nearly.target = 1 << 31;
-    nearly.spent = 1 << 31;
-    nearly.record(false, Some((99, 100)), Some((60, 100)));
-    nearly.target = 1 << 32;
-    assert!(close(nearly.projected(), 31.0 + 0.01 / 0.39));
-    assert_eq!(nearly.ahead(SOONER), PROJECTED_DOUBLINGS);
-    // A later turn's projection within the target counts as before.
-    nearly.spent = 1 << 32;
-    nearly.record(false, Some((999, 1000)), None);
-    nearly.target = 1 << 33;
-    assert_eq!(nearly.ahead(SOONER), 0.0);
-    // A turn whose target has a record at half of it keeps that one.
-    t.record(false, Some((75, 100)), Some((60, 100)));
-    assert_eq!(
-        t.progress,
-        vec![(1 << 30, 0.35), (1 << 31, 0.55), (1 << 32, 0.75)]
-    );
-}
-
-#[test]
-fn an_attempt_that_ends_at_its_last_step_again_records_no_pace() {
-    // The doubling to 2^21 units brought the compile to its last step; the
-    // attempt at 2^22 was stopped in that step. Its record would put the
-    // pace at none; the trial is projected from the doubling before.
-    let attempts = |done| {
-        let mut t = Trial::new(Kind::Closed);
-        for (target, done) in [(1 << 20, 50), (1 << 21, done), (1 << 22, done)] {
-            t.target = target;
-            t.spent = target;
-            t.record(false, Some((done, 100)), None);
-        }
-        t
-    };
-    let t = attempts(99);
-    assert_eq!(t.progress, vec![(1 << 20, 0.5), (1 << 21, 0.99)]);
-    assert_eq!(t.ahead(SOONER), 0.0);
-    // A step short of its last, a doubling that finished none is the pace
-    // it measured.
-    let t = attempts(98);
-    assert_eq!(t.projected(), Some(f64::INFINITY));
-    assert_eq!(t.ahead(SOONER), PROJECTED_DOUBLINGS);
+    // A first turn alone projects nothing.
+    assert_eq!(turns(&[(1 << 31, 55)]).projected(), None);
 }
 
 #[test]
@@ -2217,7 +1840,7 @@ fn a_query_phase_is_projected_from_where_it_began() {
         ] {
             t.target = target;
             t.spent = target;
-            t.record(compiled, Some(progress), None);
+            t.record(compiled, Some(progress));
         }
         t.evaluation.query_work = query_work;
         t
@@ -2243,14 +1866,14 @@ fn a_query_phase_is_projected_from_where_it_began() {
     let mut t = compile_then_query(1 << 18);
     t.target = 1 << 23;
     t.spent = 1 << 23;
-    t.record(true, Some((1, 2)), None);
+    t.record(true, Some((1, 2)));
     assert!(close(t.projected(), 25.0), "{:?}", t.projected());
     // Where the compile finished in the trial's first attempt, the phase
     // is projected from where it began just the same.
     let mut t = Trial::new(Kind::Program { fan_in: false });
     t.target = 1 << 20;
     t.spent = 1 << 20;
-    t.record(true, Some((1, 4)), None);
+    t.record(true, Some((1, 4)));
     t.evaluation.query_work = 1 << 19;
     assert!(close(t.projected(), 23.0), "{:?}", t.projected());
 }

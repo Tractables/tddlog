@@ -115,7 +115,9 @@ pub use cnf::WeightedCnf;
 pub use ground::{GroundOptions, GroundProgram};
 pub use input::{Format, Input, consult, read};
 pub use query::QueryResult;
-pub use solve::{Options, Progress, Solution, rewritten, solve, solve_ground, weighted_cnf};
+pub use solve::{
+    Options, Progress, Solution, layout, rewritten, solve, solve_ground, weighted_cnf,
+};
 pub use strategy::Strategy;
 pub use tp::Projection;
 pub use vtree::Kind;
@@ -138,8 +140,7 @@ pub struct Run {
     /// Compilations started, including the ones that stopped at an oversize
     /// formula or a cap; one for a single layout.
     pub attempts: usize,
-    /// Diagnostic lines from the vtree searches that ran (`closed`, `td`,
-    /// `families`).
+    /// Diagnostic lines from the layouts that were built (`--stats`).
     pub vtree_notes: Vec<String>,
     /// Seconds of the rewrites of the program (`Kind::rewrite`), for
     /// `auto` over every trial's, and of the first part's `decision`

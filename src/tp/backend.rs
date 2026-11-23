@@ -140,9 +140,9 @@ pub(crate) enum Reduce {
     /// Between operations, where a backend may reduce less than fully.
     Between,
     /// The formula an atom finishes with, which the compiler measures,
-    /// stores and hands to `auto`'s watch. Always the full plan: a
+    /// stores and holds to a dynamic round's guard. Always the full plan: a
     /// diagram carrying dead pairs would make the run report a size it does
-    /// not have and the watch trip on pairs that are not there. Also a
+    /// not have and the guard trip on pairs that are not there. Also a
     /// product that has outgrown its operands, whose dead pairs the next
     /// product would multiply.
     Settled,
@@ -234,7 +234,7 @@ impl FullSchedule {
 
 /// The widest a schedule goes. Sixteen leaves a full minimization in every
 /// seventeenth call, which is often enough that a formula that starts
-/// carrying dead pairs is caught before the watch reads it.
+/// carrying dead pairs is caught before its size is read.
 const STRIDE_CAP: u32 = 16;
 /// The share of a diagram's pairs a full minimization between operations
 /// must free to count as worth its walk, as a right shift: 1/32.

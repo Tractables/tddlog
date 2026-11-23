@@ -9,7 +9,7 @@ use super::{AtomId, GroundProgram, RulesByHead};
 
 /// What the rewrites read of a ground program's structure: its rules by
 /// head, its derived atoms' components in dependency order, the unit of
-/// each atom in the sense of [`super::deps::components`], and the
+/// each atom in the sense of [`super::deps::unit_ranks`], and the
 /// exclusive sets. The grounder leaves it with the program it computed it
 /// for ([`GroundProgram::structure`]), so that the indicators and `auto`
 /// do not compute it again.

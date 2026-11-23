@@ -79,6 +79,7 @@
 
 use rustc_hash::FxHashMap;
 
+use super::fold::{Atop, UnitTree, stacked};
 use super::forest::Forest;
 use crate::ground::deps::Deps;
 use crate::ground::guards::DecisionNode;
@@ -91,7 +92,7 @@ use crate::syntax::{Atom, Term};
 /// `--stats`.
 pub(super) struct Named {
     pub(super) gp: GroundProgram,
-    pub(super) above: Vec<Vec<AtomId>>,
+    pub(super) above: Atop,
     pub(super) note: String,
 }
 
@@ -261,7 +262,7 @@ impl<'a> Tree<'a> {
         num_atoms: usize,
         (named_contexts, var_of_context): (&[u32], &[AtomId]),
         (cut, cut_var): (&[AtomId], &[AtomId]),
-    ) -> (Vec<Vec<AtomId>>, Vec<usize>) {
+    ) -> (Atop, Vec<usize>) {
         let nodes = &self.decisions.nodes;
         let contexts = &self.decisions.contexts;
         // The range of the tree each atom's cone holds, in the rewrite.
@@ -287,14 +288,19 @@ impl<'a> Tree<'a> {
         }
         // Each cut name above the lowest node holding its atom's cone, and
         // each context's name above its subtree, outermost.
-        let mut above: Vec<Vec<AtomId>> = vec![Vec::new(); nodes.len()];
+        let mut above = Atop::default();
         for &k in named_contexts {
-            above[contexts[k as usize].node as usize].push(var_of_context[k as usize]);
+            let node = contexts[k as usize].node as usize;
+            above
+                .units
+                .entry(node)
+                .or_default()
+                .push(var_of_context[k as usize]);
         }
         let mut cut_node: Vec<usize> = Vec::with_capacity(cut.len());
         for (&a, &var) in cut.iter().zip(cut_var) {
             let at = lowest(nodes, &self.range, held[a as usize]);
-            above[at].push(var);
+            above.units.entry(at).or_default().push(var);
             cut_node.push(at);
         }
         (above, cut_node)
@@ -630,14 +636,18 @@ fn lowest(nodes: &[DecisionNode], range: &[(u32, u32)], (lo, hi): (u32, u32)) ->
     at
 }
 
-/// The decisions' tree over the facts of `gp` (above), and its root, with
-/// the names `above` puts over its nodes (outermost first). Where the
-/// evidence fixed every fact the decisions name, the spine alone; `None`
-/// where `gp` has no facts.
+/// The decisions' tree over the facts of `gp` (above), folded ([`stacked`]),
+/// and its root, with the names `above` puts over its nodes (outermost
+/// first). Each node is a unit: a join's children are its two halves, and
+/// it owns the facts placed at it ([`Tree::homes`]) and, at a leaf, the
+/// leaf's fact below them. The facts the tree leaves out are a second root
+/// unit, on a spine in fan-in order, the first deepest. Where the evidence
+/// fixed every fact the decisions name, that spine alone; `None` where `gp`
+/// has no facts.
 pub(super) fn decision_forest(
     decisions: &Decisions,
     gp: &GroundProgram,
-    above: &[Vec<AtomId>],
+    above: &Atop,
     homes: &[Vec<AtomId>],
 ) -> Option<(Forest, usize)> {
     let by_name = facts_by_name(gp);
@@ -646,55 +656,40 @@ pub(super) fn decision_forest(
     for &f in homes.iter().flatten() {
         placed[f as usize] = true;
     }
-    let mut forest = Forest::default();
-    // Per node, where it went in the forest, if any of its facts is `gp`'s.
-    let mut at: Vec<Option<usize>> = Vec::with_capacity(decisions.nodes.len());
-    for (i, n) in decisions.nodes.iter().enumerate() {
-        let here =
-            match n {
-                DecisionNode::Leaf(name) => by_name
-                    .get(name)
-                    .filter(|&&a| !placed[a as usize])
-                    .map(|&a| {
-                        placed[a as usize] = true;
-                        forest.leaf(a)
-                    }),
-                &DecisionNode::Join(l, r) => match (at[l as usize], at[r as usize]) {
-                    (Some(l), Some(r)) => Some(forest.join(l, r)),
-                    (l, r) => l.or(r),
-                },
-            };
-        // The names outermost, the facts placed here below them.
-        let names = above.get(i).into_iter().flatten();
-        let here = forest.spine_up(
-            names
-                .chain(homes.get(i).into_iter().flatten())
-                .rev()
-                .inspect(|&&v| placed[v as usize] = true)
-                .copied(),
-            here,
-        );
-        at.push(here);
+    let n = decisions.nodes.len();
+    let mut tree = UnitTree {
+        order: (0..=n).collect(),
+        children: Vec::with_capacity(n + 1),
+        roots: n.checked_sub(1).into_iter().chain([n]).collect(),
+    };
+    let mut own: Vec<Vec<AtomId>> = Vec::with_capacity(n + 1);
+    for (i, node) in decisions.nodes.iter().enumerate() {
+        let mut here = homes.get(i).cloned().unwrap_or_default();
+        match node {
+            DecisionNode::Leaf(name) => {
+                tree.children.push(Vec::new());
+                if let Some(&a) = by_name.get(name).filter(|&&a| !placed[a as usize]) {
+                    here.push(a);
+                }
+            }
+            &DecisionNode::Join(l, r) => tree.children.push(vec![l as usize, r as usize]),
+        }
+        for &v in above.unit(i).iter().chain(&here) {
+            placed[v as usize] = true;
+        }
+        own.push(here);
     }
-    let root = at.last().copied().flatten();
     let mut rest: Vec<AtomId> = gp
         .facts()
         .map(|(a, _)| a)
         .filter(|&a| !placed[a as usize])
         .collect();
-    if rest.is_empty() {
-        return root.map(|root| (forest, root));
+    if !rest.is_empty() {
+        let met = crate::ground::deps::fan_in(gp, false);
+        rest.sort_unstable_by_key(|&a| met[a as usize]);
+        rest.reverse();
     }
-    let met = crate::ground::deps::fan_in(gp, false);
-    rest.sort_unstable_by_key(|&a| met[a as usize]);
-    // `(root (r1 (r2 ...)))`, built from its innermost join out, the first
-    // fact placed innermost (read first).
-    let spine = forest
-        .spine_up(rest.iter().copied(), None)
-        .expect("some rest");
-    let root = match root {
-        Some(root) => forest.join(root, spine),
-        None => spine,
-    };
-    Some((forest, root))
+    tree.children.push(Vec::new());
+    own.push(rest);
+    stacked(&tree, &own, above)
 }

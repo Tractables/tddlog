@@ -91,8 +91,7 @@
 //! Where the batch given up is the largest child's, which the node sets
 //! aside to meet its other items smallest first, those items are conjoined
 //! first, and their product goes into the target before the batch's
-//! operands: the chain is the node's last joins, and at the root the walk's,
-//! whose result the watch does not hold.
+//! operands: the chain is the node's last joins, and at the root the walk's.
 //!
 //! A result that meets a target is minimized in full off the schedule
 //! (see `EvidenceWalk::run`) where that costs less than the join it
@@ -1108,7 +1107,7 @@ impl EvidenceWalk {
     /// An atom's last read ([`Self::mark_last_reads`]) that copies its
     /// stored formula drops it from `compiled` once the copy is in its
     /// slot, as the compile drops a formula after its last reader: a walk
-    /// under a watch copies every formula it reads, and diamond at 3
+    /// short of the last call copies every formula it reads, and diamond at 3
     /// million steps placed 3.6 GB of copies beside the formulas they
     /// copied. A walk that sums out keeps them, for the walk that may start
     /// over in its place ([`Self::walks_again`]).
@@ -1118,7 +1117,6 @@ impl EvidenceWalk {
         compiled: &mut Compiled,
         table: &RefCell<ScopeTable>,
         sizes: &mut QuerySizes,
-        watch: Option<usize>,
     ) -> Result<Option<Formula>, CompileError> {
         let tree = &backend.vtree();
         while self.next_observed < self.observed.len() {
@@ -1157,7 +1155,7 @@ impl EvidenceWalk {
                         continue;
                     }
                 }
-                self.finish_join(a, b, out, backend, sizes, watch)?;
+                self.finish_join(a, b, out, backend, sizes)?;
             }
             let Some(&node) = self.nodes.get(self.next_node) else {
                 let main = self
@@ -1352,12 +1350,9 @@ impl EvidenceWalk {
             true => (Some(&self.union.first[..]), Some(&self.union.second[..])),
             false => (None, None),
         };
-        // The walk keeps its operands until a result exists. `and_onto` moves
-        // them onto the join's scope and gives them back when stopped, each on
-        // the scope it was left on; a pair refused after its moves goes back on
-        // the join's scope, which the retry then needs none for. The cap's pair
-        // floor is for the conjunction: the moves put no pair in flight, so it
-        // cannot stop them.
+        // The walk keeps its operands until a result exists. `and_onto` gives
+        // them back when stopped, each on the scope it was left on, which may
+        // be its own; the retry's join scope is read off the slots again.
         let (fa, fb) = (
             *self.slots[a].take().unwrap(),
             *self.slots[b].take().unwrap(),
@@ -1417,14 +1412,17 @@ impl EvidenceWalk {
             Ok(formula) => formula,
             Err(refused)
                 if matches!(refused.0, CompileError::Tdd(OperationError::Stopped))
-                    && refused.1.1.same(&scope)
-                    && refused.2.1.same(&scope)
                     && cap.is_some_and(|outer| !reached(outer.unconditional, backend)) =>
             {
                 // Past the cap: the operands go into the batch's target, or
-                // wait on the join's scope.
+                // wait on the join's scope. One handed back on its own scope
+                // is moved onto the join's, as a conjunction that moved it
+                // hands it back: a later join of it then covers its
+                // partner's variables too (rl_caesar_2000's join with its
+                // batch's target built 13 more levels of 2M cells on the
+                // smaller scope, 7% of the run's instructions).
                 let (_, fa, fb) = *refused;
-                self.restore_operands(a, b, fa, fb, backend)?;
+                self.restore_operands(a, b, fa, fb, Some(&scope), backend)?;
                 backend.kept();
                 if let Some(id) = batch {
                     self.unbatch(id)?;
@@ -1438,7 +1436,7 @@ impl EvidenceWalk {
             }
             Err(refused) => {
                 let (e, fa, fb) = *refused;
-                self.restore_operands(a, b, fa, fb, backend)?;
+                self.restore_operands(a, b, fa, fb, None, backend)?;
                 return Err(e);
             }
         };
@@ -1527,22 +1525,41 @@ impl EvidenceWalk {
         Ok((scope, merged))
     }
 
+    /// Puts the operands of a join that did not happen back in slots `a` and
+    /// `b`, each moved onto `onto` where given; a refused move leaves that
+    /// operand on its own scope and is the error returned.
     fn restore_operands(
         &mut self,
         a: usize,
         b: usize,
         fa: Part,
         fb: Part,
+        onto: Option<&VtreeScope>,
         backend: &TddBackend,
     ) -> Result<(), CompileError> {
         let (fa, fb) = (fa.owned(backend)?, fb.owned(backend)?);
+        let mut refused = None;
+        let mut moved = |(f, own): Formula| match onto {
+            Some(scope) if refused.is_none() && !own.same(scope) => {
+                match backend.embed_moving(f, &own, scope, None) {
+                    Ok(f) => (f, scope.clone()),
+                    Err(r) => {
+                        let (e, f) = *r;
+                        refused = Some(e);
+                        (f, own)
+                    }
+                }
+            }
+            _ => (f, own),
+        };
+        let (fa, fb) = (moved(fa), moved(fb));
         if let Some(so) = &mut self.sum_out {
             so.enter(&fa.1);
             so.enter(&fb.1);
         }
         self.slots[a] = Some(Box::new(fa));
         self.slots[b] = Some(Box::new(fb));
-        Ok(())
+        refused.map_or(Ok(()), Err)
     }
 
     /// Reduces the pending result of the front join, of slots `a` and `b`,
@@ -1551,9 +1568,7 @@ impl EvidenceWalk {
     /// The walk's last join makes the evidence formula, which only counting
     /// reads, and counting needs no reduced diagram: it stays as the
     /// conjunction left it (a full reduction there can spend the rest of the
-    /// round's work). Nor is it held to the watch: what is left of the attempt
-    /// is counting it, which costs less than the reduction a stop would have
-    /// paid for.
+    /// round's work).
     ///
     /// The other joins' results are pruned after every join and minimized in
     /// full on the walk's own schedule (`FullSchedule`, kept here since a
@@ -1569,9 +1584,6 @@ impl EvidenceWalk {
     /// times the one it was last due on is pruned instead, and the schedule
     /// goes on as after a full plan that freed nothing.
     ///
-    /// A result over the watch is measured as the schedule left it: a full plan
-    /// there frees next to nothing and never brings a result under the watch.
-    ///
     /// The last result of a given-up batch's chain, and a batch's product that
     /// holds fewer pairs than its target, are minimized in full off the
     /// schedule (see the module documentation).
@@ -1582,7 +1594,6 @@ impl EvidenceWalk {
         out: usize,
         backend: &TddBackend,
         sizes: &mut QuerySizes,
-        watch: Option<usize>,
     ) -> Result<(), CompileError> {
         let last = self.at_last_join();
         let pending = self.pending.as_mut().unwrap();
@@ -1636,9 +1647,7 @@ impl EvidenceWalk {
         self.joins.pop_front();
         self.completed_joins += 1;
         backend.kept();
-        // Commit even an oversized result before yielding. The next call checks
-        // the saved high-water mark before using it.
-        sizes.record(size, if last { None } else { watch })?;
+        sizes.record(size);
         Ok(())
     }
 

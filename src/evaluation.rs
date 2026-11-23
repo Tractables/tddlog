@@ -12,14 +12,14 @@ use crate::{QueryResult, eval, query};
 pub(crate) type Answers = (Option<Vec<QueryResult>>, query::QuerySizes);
 
 /// A program's compile and query phase on one vtree. A call that stops,
-/// at its watch, at the end of its turn or at the engine's limits, keeps
-/// what it built: the components finished, or the evidence conjunctions
-/// and answers completed, and the next call goes on from there. A run of one layout
-/// makes one call without a watch (`crate::solve`), `auto` one per attempt
-/// of a trial (`src/auto/`), without a watch only for a trial left alone,
-/// which an error retires. A call without a watch is the last: the last
-/// reads of the formulas in its compile and its evidence walk take them
-/// rather than copying them, and it cannot go on after an error.
+/// at the end of its turn or at the engine's limits, keeps what it built:
+/// the components finished, or the evidence conjunctions and answers
+/// completed, and the next call goes on from there. A run of one layout
+/// makes one last call (`crate::solve`), `auto` one per attempt of a trial
+/// (`src/auto/`), the last only for a trial left alone, which an error
+/// retires. In the last call the last reads of the formulas in its compile
+/// and its evidence walk take them rather than copying them, and it cannot
+/// go on after an error.
 #[derive(Default)]
 pub(crate) struct Evaluation {
     /// The compile under way, between its start and its finish.
@@ -79,16 +79,8 @@ impl Evaluation {
         }
     }
 
-    /// The components the compile had finished, and all of them, where its
-    /// last run passed half the trial's target ([`tp::Horizon`]); `None`
-    /// where it did not, or the compile has finished.
-    pub(crate) fn marked(&self) -> Option<(usize, usize)> {
-        self.compilation.as_ref().and_then(|c| c.marked)
-    }
-
-    /// The work units that settling the names of `program` and `decision`
-    /// has spent within its budget, over every call, which no turn is
-    /// charged for (`tp::settle`, `Settled::free`).
+    /// The work units that settling the names of `decision` has spent
+    /// within its budget, over every call, which no turn is charged for (`tp::settle`, `Settled::free`).
     pub(crate) fn settled_work(&self) -> u64 {
         self.compiled
             .as_ref()
@@ -123,19 +115,19 @@ impl Evaluation {
     /// facts' variables in `order`, on `backend` under `kind`'s
     /// formulation and projection ([`Kind::formulation`],
     /// [`Kind::projection`] of `projection`), then answer its queries, each
-    /// phase going on from where the last call stopped. `watch` bounds the
-    /// pairs of the formulas ([`tp::Compilation::run`]) and of what the
-    /// query phase builds, and `horizon` where the compile stops on its
-    /// projected finish ([`tp::Horizon`]). A dynamic layout searches first at `first_pairs`
-    /// live pairs; the vtree the search reached is `backend`'s, and the
-    /// next call must build on it.
+    /// phase going on from where the last call stopped. `last` says whether
+    /// the call is the last ([`tp::Compilation::run`]), and `horizon` where
+    /// the compile stops on its projected finish ([`tp::Horizon`]). A
+    /// dynamic layout searches first at `first_pairs` live pairs; the vtree
+    /// the search reached is `backend`'s, and the next call must build on
+    /// it.
     pub(crate) fn run(
         &mut self,
         (gp, deps, order): (&GroundProgram, &ground::deps::Deps, &[ground::AtomId]),
         backend: &tp::TddBackend,
         (kind, projection): (Kind, Projection),
         first_pairs: usize,
-        watch: Option<usize>,
+        last: bool,
         horizon: Option<tp::Horizon>,
     ) -> Result<Answers, tp::CompileError> {
         if self.compiled.is_none() {
@@ -162,7 +154,7 @@ impl Evaluation {
             }
             let compiling = self.compilation.as_mut().unwrap();
             compiling.horizon = horizon;
-            compiling.run(gp, backend, watch)?;
+            compiling.run(gp, backend, last)?;
             self.compiled = Some(compiling.finish(backend)?);
             self.compilation = None;
         }
@@ -175,7 +167,7 @@ impl Evaluation {
         let since = |e: &Self, (work, settled): (u64, u64)| {
             (backend.work_units() - work).saturating_sub(e.settled_work() - settled)
         };
-        let mut result = self.query_phase(gp, backend, watch, settled);
+        let mut result = self.query_phase(gp, backend, last, settled);
         // A walk refused memory or an index starts over within the call,
         // once, putting nothing off: the call goes on, within its turn, as
         // if that walk had not begun.
@@ -186,15 +178,15 @@ impl Evaluation {
             let dropped = self.query_work + since(self, began);
             if self.walk_again(e, dropped) {
                 began = (backend.work_units(), self.settled_work());
-                result = self.query_phase(gp, backend, watch, settled);
+                result = self.query_phase(gp, backend, last, settled);
             }
         }
         self.query_seconds += start.elapsed().as_secs_f64();
         self.query_work += since(self, began);
         let (results, mut sizes) = result?;
-        // Under a watch the phase may stop and go on in a later call, and
-        // its work units are not added up across calls.
-        if watch.is_none() {
+        // Short of the last call the phase may stop and go on in a later
+        // call, and its work units are not added up across calls.
+        if last {
             sizes.work_units = backend.work_units() - work;
         }
         // The query the evidence asks is answered by its probability, zero
@@ -209,6 +201,7 @@ impl Evaluation {
                     atom: atom.clone(),
                     positive: *positive,
                     probability: p.to_f64().clamp(0.0, 1.0),
+                    count: p,
                 }])
             }
         };
@@ -224,7 +217,7 @@ impl Evaluation {
         &mut self,
         gp: &GroundProgram,
         backend: &tp::TddBackend,
-        watch: Option<usize>,
+        last: bool,
         settled: u64,
     ) -> Result<Answers, tp::CompileError> {
         if self.query.is_none() {
@@ -241,10 +234,10 @@ impl Evaluation {
                 query
             }
         });
-        if watch.is_none() {
+        if last {
             query.take_last_reads(compiled);
         }
-        query.run(gp, backend, compiled, watch)
+        query.run(gp, backend, compiled)
     }
 
     /// Starts the query phase over, once, with an evidence walk that puts
@@ -282,7 +275,7 @@ mod tests {
         // Two naive Bayes models of 40 features, each with its first half
         // observed and no query, so that only P(e) is wanted and the walk
         // sums out. On `closed`'s right-linear layout it puts observations
-        // along the spine off. Stopped by the watch once it has, as a
+        // along the spine off. Stopped at the end of a turn once it has, as a
         // refusal of memory or of an index stops it ([`Evaluation::run`]),
         // it starts over putting nothing off, once, and answers the same
         // P(e), hand computed from the program's rounded weights: each
@@ -316,31 +309,35 @@ mod tests {
         let (layout, _) = crate::vtree::build(&gp, &deps, Kind::Closed).unwrap();
         let tree = layout.vtree.clone();
         let mut evaluation = Evaluation::default();
-        let run = |evaluation: &mut Evaluation, watch| {
+        // A call in a turn of `turn` work units, or the last call.
+        let run = |evaluation: &mut Evaluation, turn: Option<u64>| {
             tree.context().run(|engine| {
                 let backend = TddBackend::new(engine, tree.clone());
+                if let Some(turn) = turn {
+                    backend.end_turn_at(backend.work_units() + turn);
+                }
                 evaluation
                     .run(
                         (&gp, &deps, &layout.order),
                         &backend,
                         (Kind::Closed, Projection::default()),
                         1,
-                        watch,
+                        turn.is_none(),
                         None,
                     )
                     .map(|_| ())
             })
         };
-        let mut watch = 1;
+        let mut turns = 0;
         loop {
-            match run(&mut evaluation, Some(watch)) {
-                Err(CompileError::Oversize { .. } | CompileError::QueryOversize { .. }) => {}
-                other => panic!("at a watch of {watch} pairs: {other:?}"),
+            match run(&mut evaluation, Some(16)) {
+                Err(CompileError::Tdd(OperationError::Stopped)) => {}
+                other => panic!("after {turns} turns of 16 units: {other:?}"),
             }
             if evaluation.walk_again(OperationError::OverBudget, 0) {
                 break;
             }
-            watch *= 2;
+            turns += 1;
         }
         run(&mut evaluation, None).unwrap();
         assert!(

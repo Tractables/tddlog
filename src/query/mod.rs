@@ -32,6 +32,9 @@ pub struct QueryResult {
     /// `false` for a `query(\+a)`.
     pub positive: bool,
     pub probability: f64,
+    /// The probability as a count, which a float under the least normal
+    /// one does not hold: what a window passes on (`solve::windows`).
+    pub(crate) count: Count,
 }
 
 /// The query as ProbLog prints it: the atom, `\+` before a negative one.
@@ -79,8 +82,8 @@ pub struct QuerySizes {
     /// The query phase's negations, of the evidence and of the queries.
     pub negations: Negations,
     /// The work units the query phase charged to the backend's work clock;
-    /// zero where it ran under a watch, which may stop it and resume it in
-    /// a later attempt (`auto`).
+    /// zero where it ran short of its last call, which may stop it and
+    /// resume it in a later attempt (`auto`).
     pub work_units: u64,
     /// Seconds of the evidence walk, the conjunction of the observations
     /// or links into the evidence formula.
@@ -127,12 +130,8 @@ pub struct QuerySizes {
 }
 
 impl QuerySizes {
-    fn record(&mut self, pairs: usize, watch: Option<usize>) -> Result<(), CompileError> {
+    fn record(&mut self, pairs: usize) {
         self.largest = self.largest.max(pairs);
-        if watch.is_some_and(|w| pairs > w) {
-            return Err(CompileError::QueryOversize { pairs });
-        }
-        Ok(())
     }
 }
 
@@ -146,7 +145,7 @@ pub(crate) fn query_probabilities(
     backend: &TddBackend,
     compiled: &mut Compiled,
 ) -> Result<(Option<Vec<QueryResult>>, QuerySizes), CompileError> {
-    QueryEvaluation::new(gp, backend, compiled).run(gp, backend, compiled, None)
+    QueryEvaluation::new(gp, backend, compiled).run(gp, backend, compiled)
 }
 
 /// State belongs to one immutable ground program, compilation and vtree.
@@ -289,7 +288,7 @@ impl QueryEvaluation {
     /// last ([`EvidenceWalk::take_last_reads`]), to negate or embed rather
     /// than copy: of each atom observed that no query reads, as itself or
     /// through a template, and no tie stands on. For the phase's last run
-    /// only, as one without a watch is ([`crate::evaluation::Evaluation`]):
+    /// only ([`crate::evaluation::Evaluation`]):
     /// after an error, there is none.
     pub(crate) fn take_last_reads(&mut self, compiled: &mut Compiled) {
         self.took |= self.walk.take_last_reads(compiled);
@@ -307,13 +306,12 @@ impl QueryEvaluation {
         gp: &GroundProgram,
         backend: &TddBackend,
         compiled: &mut Compiled,
-        watch: Option<usize>,
     ) -> Result<(Option<Vec<QueryResult>>, QuerySizes), CompileError> {
         assert!(
             !self.spent,
             "a query phase that failed after taking formulas cannot go on"
         );
-        let result = self.answer(gp, backend, compiled, watch);
+        let result = self.answer(gp, backend, compiled);
         self.spent = self.took && result.is_err();
         result
     }
@@ -324,7 +322,6 @@ impl QueryEvaluation {
         gp: &GroundProgram,
         backend: &TddBackend,
         compiled: &mut Compiled,
-        watch: Option<usize>,
     ) -> Result<(Option<Vec<QueryResult>>, QuerySizes), CompileError> {
         let _route = backend
             .engine
@@ -344,15 +341,12 @@ impl QueryEvaluation {
             sizes,
             ..
         } = self;
-        // A result that exceeded the previous watch was saved. It may only
-        // feed further operations once the new allowance admits it.
-        sizes.record(sizes.largest, watch)?;
         if *impossible {
             return Ok((None, *sizes));
         }
         if !walk.done {
             let t = Instant::now();
-            let walked = walk.run(backend, compiled, scopes, sizes, watch);
+            let walked = walk.run(backend, compiled, scopes, sizes);
             sizes.walk_seconds += t.elapsed().as_secs_f64();
             *evidence = walked?;
         }
@@ -370,7 +364,7 @@ impl QueryEvaluation {
                 let w = weights.restrict(scope.vars());
                 sizes.evidence = backend.size(e);
                 sizes.evidence_implicit = backend.implicit_size(e);
-                sizes.record(sizes.evidence, None)?;
+                sizes.record(sizes.evidence);
                 if mass.is_none() {
                     let t = Instant::now();
                     *mass = Some(evidence_mass(backend, e, &w, counted, sizes)?);
@@ -401,7 +395,6 @@ impl QueryEvaluation {
             scopes: &scopes,
             weights,
             indicator_of,
-            watch,
             evidence,
             counted,
             pending_query,
@@ -419,9 +412,9 @@ impl QueryEvaluation {
             let p = match id {
                 None => {
                     if *positive {
-                        0.0
+                        Count::ZERO
                     } else {
-                        1.0
+                        Count::ONE
                     }
                 }
                 Some(a) => answers.probability(*a, *positive)?,
@@ -431,7 +424,8 @@ impl QueryEvaluation {
             out.push(QueryResult {
                 atom: atom.clone(),
                 positive: *positive,
-                probability: p.clamp(0.0, 1.0),
+                probability: p.to_f64().clamp(0.0, 1.0),
+                count: p,
             });
         }
         sizes.routes = counted
@@ -551,7 +545,6 @@ struct Answers<'a> {
     scopes: &'a Scopes<'a>,
     weights: &'a Probabilities,
     indicator_of: &'a FxHashMap<AtomId, AtomId>,
-    watch: Option<usize>,
     evidence: Option<Evidence<'a>>,
     counted: &'a mut Option<CountedEvidence>,
     pending_query: &'a mut Option<PendingQuery>,
@@ -566,7 +559,7 @@ impl Answers<'_> {
     /// or where that is too small to keep its digits, the count of the
     /// complement's formula (`eval::complement`). A fact's literal and a
     /// literal of the evidence are counted in the polarity asked.
-    fn probability(&mut self, a: AtomId, positive: bool) -> Result<f64, CompileError> {
+    fn probability(&mut self, a: AtomId, positive: bool) -> Result<Count, CompileError> {
         // A literal's count reads the pass down, walked by the first
         // literal under each level.
         let t = Instant::now();
@@ -599,7 +592,7 @@ impl Answers<'_> {
 
     /// `P(l | e)` for the literal `l` of polarity `positive` on `a`, where
     /// `a` has a variable of its own on the evidence's scope.
-    fn literal(&mut self, a: AtomId, positive: bool) -> Result<Option<f64>, CompileError> {
+    fn literal(&mut self, a: AtomId, positive: bool) -> Result<Option<Count>, CompileError> {
         let Some(ev) = &self.evidence else {
             return Ok(None);
         };
@@ -649,7 +642,7 @@ impl Answers<'_> {
         a: AtomId,
         template: Option<&Template>,
         polarity: bool,
-    ) -> Result<f64, CompileError> {
+    ) -> Result<Count, CompileError> {
         let t = Instant::now();
         let mass = if self.evidence.is_none() {
             self.count_alone(a, template, polarity)?
@@ -667,7 +660,7 @@ impl Answers<'_> {
         a: AtomId,
         template: Option<&Template>,
         polarity: bool,
-    ) -> Result<f64, CompileError> {
+    ) -> Result<Count, CompileError> {
         if self
             .pending_query
             .as_ref()
@@ -686,8 +679,13 @@ impl Answers<'_> {
             a,
         );
         let w = self.weights_on(scope, template);
-        self.sizes.record(self.backend.size(f), self.watch)?;
-        Ok(crate::eval::mass(self.backend.engine, f, &w, &mut self.sizes.recounts)?.to_f64())
+        self.sizes.record(self.backend.size(f));
+        Ok(crate::eval::mass(
+            self.backend.engine,
+            f,
+            &w,
+            &mut self.sizes.recounts,
+        )?)
     }
 
     /// `P(l | e)`: the formula of `l` counted where it was built, walked
@@ -698,7 +696,7 @@ impl Answers<'_> {
         a: AtomId,
         template: Option<&Template>,
         polarity: bool,
-    ) -> Result<f64, CompileError> {
+    ) -> Result<Count, CompileError> {
         self.sizes.products += 1;
         let built = self.formula(a, polarity)?;
         let (q, q_scope) = unpack(self.compiled, &built, a);
@@ -855,9 +853,9 @@ fn literal_ratio<V: Value>(
     positive: bool,
     w: &Probabilities,
     mass: Count,
-) -> Result<Option<f64>, tididi::OperationError> {
+) -> Result<Option<Count>, tididi::OperationError> {
     Ok(c.with_literal(e, leaf, var, positive, w)?
-        .map(|with| with.ratio(mass)))
+        .map(|with| with.quotient(mass)))
 }
 
 /// `P(q | e)` for the query formula `q`, counted against the evidence
@@ -873,14 +871,14 @@ fn joint_ratio<V: Value>(
     mass: Count,
     charged: &mut bool,
     host: &impl Fn(u64) -> Result<(), tididi::OperationError>,
-) -> Result<Option<f64>, tididi::OperationError> {
+) -> Result<Option<Count>, tididi::OperationError> {
     let q_counted = crate::eval::count::<V>(q, q_w)?;
     let charge = !*charged;
     let poll = |units: u64| if charge { host(units) } else { Ok(()) };
     let (joint, exact) =
         crate::eval::conjunction_count(e, c, shape, q, &q_counted, leaf_in_e, poll)?;
     *charged = true;
-    Ok(exact.then(|| joint.ratio(mass)))
+    Ok(exact.then(|| joint.quotient(mass)))
 }
 
 /// A query's formula kept across a size stop, and the polarity of the
@@ -911,146 +909,6 @@ mod tests {
             &GroundOptions::default(),
         )
         .unwrap()
-    }
-
-    #[test]
-    fn completed_evidence_pairs_survive_size_stops() {
-        // Each observed fact queried, so that the evidence is not dropped
-        // as detached (src/ground/detach.rs).
-        let mut source = String::new();
-        for i in 0..13 {
-            source.push_str(&format!("0.5::f({i}).\nquery(f({i})).\n"));
-            if i < 12 {
-                source.push_str(&format!("evidence(f({i}),true).\n"));
-            }
-        }
-        let gp = ground(&source);
-        let (
-            crate::vtree::Layout {
-                vtree: tree, order, ..
-            },
-            _,
-        ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
-        let mut compiled = tree.context().run(|engine| {
-            let backend = TddBackend::new(engine, tree.clone());
-            compile(
-                &gp,
-                fact_variables(&gp, &order),
-                Formulation::Dual,
-                &backend,
-                Projection::default(),
-                None,
-            )
-            .unwrap()
-        });
-        let mut state = tree.context().run(|engine| {
-            QueryEvaluation::new(&gp, &TddBackend::new(engine, tree.clone()), &compiled)
-        });
-        let mut joined = None;
-        for _ in 0..2 {
-            tree.context().run(|engine| {
-                assert!(matches!(
-                    state.run(
-                        &gp,
-                        &TddBackend::new(engine, tree.clone()),
-                        &mut compiled,
-                        Some(1)
-                    ),
-                    Err(CompileError::QueryOversize { .. })
-                ));
-            });
-            assert!(state.walk.completed_joins > 0);
-            let previous = joined.get_or_insert(state.walk.completed_joins);
-            assert_eq!(
-                state.walk.completed_joins, *previous,
-                "the oversized result must survive a repeated stop"
-            );
-        }
-        let (answers, _) = tree
-            .context()
-            .run(|engine| {
-                state.run(
-                    &gp,
-                    &TddBackend::new(engine, tree.clone()),
-                    &mut compiled,
-                    None,
-                )
-            })
-            .unwrap();
-        assert_eq!(
-            state.walk.completed_joins, 11,
-            "each of the twelve factors is joined exactly once"
-        );
-        let answers = answers.unwrap();
-        assert_eq!(answers[0].probability, 1.0);
-        assert_eq!(answers[12].probability, 0.5);
-    }
-
-    #[test]
-    fn completed_answers_and_pending_query_survive_size_stops() {
-        let gp = ground(
-            "0.5::a. 0.4::b. q :- a,b. missing :- fail. query(missing). query(q). query(\\+q).",
-        );
-        let (
-            crate::vtree::Layout {
-                vtree: tree, order, ..
-            },
-            _,
-        ) = crate::vtree::build(&gp, &crate::ground::deps::Deps::of(&gp), Kind::Closed).unwrap();
-        tree.context().run(|engine| {
-            let backend = TddBackend::new(engine, tree.clone());
-            let compiled = compile(
-                &gp,
-                fact_variables(&gp, &order),
-                Formulation::Primal,
-                &backend,
-                Projection::default(),
-                None,
-            )
-            .unwrap();
-            // Without evidence the compile counts `q` and drops its formula.
-            // Its formula is put back as a count the engine stopped leaves
-            // it, for the query phase to count.
-            let mut compiled = compiled;
-            let q = gp.queries[1].1.unwrap();
-            let id =
-                |name: &str| gp.atoms.iter().position(|a| a.to_string() == name).unwrap() as AtomId;
-            assert!(
-                compiled.for_queries.counted.contains_key(&q)
-                    && compiled.formulas[q as usize].is_none()
-            );
-            let scope = compiled.scope_of(q).clone();
-            let mut negations = Negations::default();
-            let mut literal = |x| {
-                compiled
-                    .literal_formula(
-                        &backend,
-                        &scope,
-                        id(x),
-                        true,
-                        (&mut negations, NegationSource::Query),
-                    )
-                    .unwrap()
-            };
-            let (a, b) = (literal("a"), literal("b"));
-            compiled.formulas[q as usize] = Some(std::sync::Arc::new(backend.and(a, b).unwrap()));
-            compiled.for_queries.counted.remove(&q);
-            let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
-            assert!(matches!(
-                state.run(&gp, &backend, &mut compiled, Some(0)),
-                Err(CompileError::QueryOversize { .. })
-            ));
-            assert_eq!(state.out.len(), 1);
-            assert!(state.pending_query.is_some());
-            let answers = state
-                .run(&gp, &backend, &mut compiled, None)
-                .unwrap()
-                .0
-                .unwrap();
-            for (answer, expected) in answers.iter().zip([0.0, 0.2, 0.8]) {
-                assert!((answer.probability - expected).abs() < 1e-12);
-            }
-        });
     }
 
     #[test]
@@ -1087,7 +945,6 @@ mod tests {
                                 form,
                                 &TddBackend::new(engine, tree.clone()),
                                 projection,
-                                None,
                             )
                             .unwrap()
                         })
@@ -1111,12 +968,7 @@ mod tests {
                                 ))),
                             );
                             let _guard = engine.limits().scope(limit);
-                            state.run(
-                                &gp,
-                                &TddBackend::new(engine, tree.clone()),
-                                &mut compiled,
-                                None,
-                            )
+                            state.run(&gp, &TddBackend::new(engine, tree.clone()), &mut compiled)
                         });
                         match result {
                             Ok(result) => break result,
@@ -1191,20 +1043,14 @@ mod tests {
                     .unwrap();
                 // The answers and the negations, and which of g, k and h4
                 // keep their stored formulas before and after the walk, with
-                // the take and without it, under a watch as a race's
+                // the take and without it, short of the last call as a race's
                 // attempt runs: a copy's last read drops the formula after.
                 let run = |take: bool| {
                     tree.context().run(|engine| {
                         let backend = TddBackend::new(engine, tree.clone());
-                        let mut compiled = compile(
-                            &gp,
-                            fact_variables(&gp, &order),
-                            form,
-                            &backend,
-                            projection,
-                            None,
-                        )
-                        .unwrap();
+                        let mut compiled =
+                            compile(&gp, fact_variables(&gp, &order), form, &backend, projection)
+                                .unwrap();
                         let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
                         if take {
                             state.take_last_reads(&mut compiled);
@@ -1212,9 +1058,7 @@ mod tests {
                         let held =
                             |c: &Compiled| ["g", "k", "h4"].map(|x| c.formulas[id(x)].is_some());
                         let before = held(&compiled);
-                        let watch = (!take).then_some(usize::MAX);
-                        let (answers, sizes) =
-                            state.run(&gp, &backend, &mut compiled, watch).unwrap();
+                        let (answers, sizes) = state.run(&gp, &backend, &mut compiled).unwrap();
                         (answers.unwrap(), sizes.negations, before, held(&compiled))
                     })
                 };
@@ -1257,15 +1101,12 @@ mod tests {
                 Formulation::Dual,
                 &backend,
                 Projection::default(),
-                None,
             )
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
             let held = |c: &Compiled| ["g", "k", "h4"].map(|x| c.formulas[id(x)].is_some());
             assert_eq!(held(&compiled), [true; 3]);
-            state
-                .run(&gp, &backend, &mut compiled, Some(usize::MAX))
-                .unwrap();
+            state.run(&gp, &backend, &mut compiled).unwrap();
             assert_eq!(held(&compiled), [true; 3]);
         });
     }
@@ -1288,7 +1129,6 @@ mod tests {
                 Formulation::Dual,
                 &backend,
                 Projection::default(),
-                None,
             )
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
@@ -1300,11 +1140,11 @@ mod tests {
                     ));
                 let _guard = engine.limits().scope(limit);
                 assert!(matches!(
-                    state.run(&gp, &backend, &mut compiled, None),
+                    state.run(&gp, &backend, &mut compiled),
                     Err(CompileError::Tdd(OperationError::Stopped))
                 ));
             }
-            let _ = state.run(&gp, &backend, &mut compiled, None);
+            let _ = state.run(&gp, &backend, &mut compiled);
         });
     }
 
@@ -1338,12 +1178,11 @@ mod tests {
                 Formulation::Dual,
                 &backend,
                 Projection::default(),
-                None,
             )
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
             assert_eq!(state.walk.held(), (0, 0, 0));
-            let (answers, _) = state.run(&gp, &backend, &mut compiled, None).unwrap();
+            let (answers, _) = state.run(&gp, &backend, &mut compiled).unwrap();
             assert!(answers.unwrap().iter().all(|a| a.probability == 1.0));
             assert_eq!(state.walk.completed_joins, 63);
             assert_eq!(state.walk.held(), (0, 0, 0), "every result is read");
@@ -1382,7 +1221,6 @@ mod tests {
                 Formulation::Primal,
                 &backend,
                 Projection::Off,
-                None,
             )
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
@@ -1392,7 +1230,7 @@ mod tests {
                     StopRules::default().with_after_pairs(Some((1, StopAt::WorkUnits(0)))),
                 );
             let _guard = engine.limits().scope(limit);
-            let result = state.run(&gp, &backend, &mut compiled, None);
+            let result = state.run(&gp, &backend, &mut compiled);
             let (_, sizes) = result.unwrap_or_else(|e| panic!("{e} at {:?}", state.progress()));
             (state.evidence_mass(), sizes)
         });
@@ -1479,7 +1317,6 @@ mod tests {
                                 Formulation::Dual,
                                 &TddBackend::new(engine, tree.clone()),
                                 Projection::default(),
-                                None,
                             )
                             .unwrap()
                         })
@@ -1511,12 +1348,7 @@ mod tests {
                                 ))),
                             );
                             let _guard = engine.limits().scope(limit);
-                            state.run(
-                                &gp,
-                                &TddBackend::new(engine, tree.clone()),
-                                &mut compiled,
-                                None,
-                            )
+                            state.run(&gp, &TddBackend::new(engine, tree.clone()), &mut compiled)
                         });
                         match result {
                             Ok((answers, _)) => break answers.unwrap(),
@@ -1614,7 +1446,6 @@ mod tests {
                             Formulation::Dual,
                             &TddBackend::new(engine, tree.clone()),
                             Projection::default(),
-                            None,
                         )
                         .unwrap()
                     })
@@ -1634,12 +1465,7 @@ mod tests {
                     state.walk.probe.refuse_rooms = refuse;
                     let (answers, _) = loop {
                         let result = tree.context().run(|engine| {
-                            state.run(
-                                &gp,
-                                &TddBackend::new(engine, tree.clone()),
-                                &mut compiled,
-                                None,
-                            )
+                            state.run(&gp, &TddBackend::new(engine, tree.clone()), &mut compiled)
                         });
                         match result {
                             Err(CompileError::Tdd(OperationError::OverBudget)) if refuse => {
@@ -1775,11 +1601,10 @@ mod tests {
                 Formulation::Dual,
                 &backend,
                 Projection::default(),
-                None,
             )
             .unwrap();
             let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
-            let (answers, sizes) = state.run(&gp, &backend, &mut compiled, None).unwrap();
+            let (answers, sizes) = state.run(&gp, &backend, &mut compiled).unwrap();
             let answers = answers.unwrap();
             assert_eq!(answers.len(), n);
             for (answer, expected) in answers.iter().zip(&expected) {
@@ -1850,11 +1675,10 @@ mod tests {
                     Formulation::Dual,
                     &backend,
                     Projection::default(),
-                    None,
                 )
                 .unwrap();
                 let mut state = QueryEvaluation::new(&gp, &backend, &compiled);
-                let (answers, _) = state.run(&gp, &backend, &mut compiled, None).unwrap();
+                let (answers, _) = state.run(&gp, &backend, &mut compiled).unwrap();
                 let answers = answers.unwrap();
                 assert_eq!(answers.len(), n);
                 for (answer, expected) in answers.iter().zip(&expected) {
