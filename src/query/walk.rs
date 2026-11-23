@@ -173,12 +173,12 @@
 //! result. The cap keeps the attempt cheap where a join grows little, and
 //! [`DEFER_FROM`] keeps small joins from waiting for nothing.
 //!
-//! A join stopped at its cap, a batch's or a node's last, neither waits nor
-//! gives its batch up while minimizing its operands in full frees a pair:
-//! it is tried again on them, and its result is minimized in full as well
-//! (`EvidenceWalk::settle_operands`). A result is only pruned off the
-//! full plan's schedule, and the twins a prune leaves multiply in the
-//! product the cap measures.
+//! A join stopped at its cap has its operands minimized in full first
+//! (`EvidenceWalk::settle_operands`): a result is only pruned off the full
+//! plan's schedule, and the twins a prune leaves multiply in the product
+//! the cap measures. A node's last join is then tried again if that freed
+//! a pair, its result minimized in full as well; a batch's join gives its
+//! batch up as before, on the smaller operands.
 
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -1436,7 +1436,7 @@ impl EvidenceWalk {
                 let (_, fa, fb) = *refused;
                 self.restore_operands(a, b, fa, fb, Some(&scope), backend)?;
                 backend.kept();
-                if self.settle_operands(a, b, backend)? {
+                if self.settle_operands(a, b, backend)? && batch.is_none() {
                     self.in_full.insert(out, None);
                     return Ok(false);
                 }
@@ -1479,13 +1479,14 @@ impl EvidenceWalk {
     }
 
     /// Minimizes the operands of a join stopped at its cap in full, and
-    /// whether that freed a pair, in which case the join is tried again,
-    /// its result minimized in full too, before it waits or its batch is
-    /// given up. Pruned operands keep twins, which multiply in the product
-    /// the cap measures (uai_pedigree25: a batch's operands of 3042 and
-    /// 7780 pairs, 2127 and 7688 minimized, made 179 842 pairs where the
-    /// minimized ones make 38 793; given up, the batch's chain into its
-    /// target built 329 033).
+    /// whether that freed a pair. Pruned operands keep twins, which multiply
+    /// in the product the cap measures (uai_1qt9: a node's last join of
+    /// 115 327 and 205 570 pairs, 86 382 and 14 996 minimized; with the
+    /// retries the walk's largest result fell from 47.6 M pairs to 11.8 M).
+    /// A batch's join is not tried again: the batch then goes on to join
+    /// its own products, and they stop again on the target's charge
+    /// (noisyor240_360: its chain into the target built 25 M pairs for six
+    /// joins where giving the batch up at once built 4.7 M).
     fn settle_operands(
         &mut self,
         a: usize,
