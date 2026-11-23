@@ -590,6 +590,31 @@ fn a_small_compile_cannot_win_before_its_evidence_fits() {
 }
 
 #[test]
+fn a_turn_ended_before_a_join_is_charged_its_estimate_and_answers_alike() {
+    let mut source = String::new();
+    for i in 0..13 {
+        source.push_str(&format!("0.5::f({i}).\nquery(f({i})).\n"));
+        if i < 12 {
+            source.push_str(&format!("evidence(f({i}),true).\n"));
+        }
+    }
+    source.push_str("query(\\+f(12)).\n");
+    let gp = regress(&source);
+    let run = bounded_alone_on(&gp, Kind::Closed, true);
+    assert!(
+        run.vtree_notes.iter().any(|n| n.contains("charged ahead")),
+        "no turn ended before a join: {:?}",
+        run.vtree_notes
+    );
+    let answers = run.results.unwrap();
+    assert_eq!(answers.len(), 14);
+    for (i, r) in answers.iter().enumerate() {
+        let expected = if i < 12 { 1.0 } else { 0.5 };
+        assert!((r.probability - expected).abs() < 1e-12, "{r:?}");
+    }
+}
+
+#[test]
 fn competing_rewrites_preserve_the_problog_posteriors() {
     let gp = regress(include_str!("../../examples/bn_split.pl"));
     let expected = [
@@ -674,6 +699,13 @@ fn a_trial_with_indicators_ties_tables_by_clauses() {
 /// round from two pairs. A trial alone runs unbounded, so this is how a
 /// test makes one resume.
 fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
+    bounded_alone_on(gp, strategy, false)
+}
+
+/// [`bounded_alone`], each turn the rent before the families search
+/// ([`Bounds::rent`]) where `rent`, its turns then from one unit up, a
+/// unit longer each, so that some turn ends inside a join's estimate.
+fn bounded_alone_on(gp: &GroundProgram, strategy: Kind, rent: bool) -> Run {
     let programs = Programs {
         ground: Arc::new(ground::without_linear_recursion(gp.clone())),
         written: None,
@@ -684,9 +716,10 @@ fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
     let mut ledger = Ledger::default();
     assert!(prepare(&mut trials, 0, &programs, &mut ledger).unwrap());
     let mut bounds = Bounds {
-        work: 2 * WORK_PER_PAIR,
+        work: if rent { 1 } else { 2 * WORK_PER_PAIR },
         projected_from: u64::MAX,
         horizon: f64::INFINITY,
+        rent,
     };
     loop {
         match attempt(
@@ -699,6 +732,7 @@ fn bounded_alone(gp: &GroundProgram, strategy: Kind) -> Run {
         ) {
             Ok((results, sizes)) => return finish(&mut trials[0], results, sizes, ledger),
             Err(e) => match Stop::of(&e) {
+                Some(Stop::Work) if rent => bounds.work += 1,
                 Some(Stop::Work) => bounds.work *= 2,
                 Some(Stop::Projected) | None => panic!("{strategy}: {e:?}"),
             },

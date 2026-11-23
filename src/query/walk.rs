@@ -1156,6 +1156,9 @@ impl EvidenceWalk {
                     }
                 };
                 if self.pending.is_none() {
+                    // A join reads every pair of its operands at least once,
+                    // at about a unit each.
+                    backend.pause_before((self.slot_pairs[a] + self.slot_pairs[b]) as u64)?;
                     // A join rescheduled makes a slot; a batch given up
                     // takes its own room (`EvidenceWalk::unbatch`).
                     self.room(1)?;

@@ -35,6 +35,9 @@ pub(super) struct Trial {
     /// The engine work its attempts have spent, and its last attempt.
     pub(super) spent: u64,
     pub(super) last_work: u64,
+    /// The part of `spent` charged for a step a turn ended before, which
+    /// no attempt has made yet (`tp::TddBackend::pause_before`).
+    pub(super) ahead: u64,
     /// The work its last attempt spent since its phase last kept a step
     /// ([`tp::TddBackend::lost`]): what a stop then lost.
     pub(super) lost: u64,
@@ -66,6 +69,7 @@ impl Trial {
             target: 0,
             spent: 0,
             last_work: 0,
+            ahead: 0,
             lost: 0,
             progress: Vec::new(),
             left: 0,

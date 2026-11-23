@@ -652,6 +652,7 @@ fn run_within(
             work: bet_left(t, rent.unwrap_or(left)),
             projected_from: projected_from(first_pairs),
             horizon: horizon(t),
+            rent: rent.is_some(),
         };
         let result = attempt(
             t,
@@ -807,6 +808,17 @@ struct Bounds {
     work: u64,
     projected_from: u64,
     horizon: f64,
+    /// Whether the work is the rent left to pay before the searched
+    /// families layout is weighed ([`search_rent`]): the turn then ends
+    /// before an evidence join that would carry it past the charge
+    /// (`tp::TddBackend::pause_before`), charged that join's estimate, so
+    /// that the search is due without paying for a join on the layout it
+    /// may replace. pedigree25's `families:0` otherwise finished a join
+    /// at 186 M units of its 200 M turn and built the next, of 40.5 M
+    /// operand pairs, for 159 M more, before the searched layout took
+    /// its place. Charged nothing, a turn so ended leaves the search not
+    /// yet due, and `closed` and `td` take their turns first.
+    rent: bool,
 }
 
 /// Why an attempt stopped.
@@ -870,6 +882,7 @@ fn attempt(
     let started = Instant::now();
     ledger.attempts += 1;
     let mut work = 0;
+    let mut ahead = 0;
     let result = tree.context().run(|engine| {
         let start_work = engine.limits().work_units();
         let mut limits = LimitConfig::none().with_memory_budget_bytes(memory_bytes);
@@ -890,6 +903,9 @@ fn attempt(
         let backend = tp::TddBackend::resume(engine, tree.clone(), kept);
         if let Some(b) = bounds {
             backend.end_turn_at(start_work.saturating_add(b.work));
+            if b.rent {
+                backend.end_turn_before();
+            }
         }
         let evaluated = t.evaluation.run(
             (gp, deps, order),
@@ -904,7 +920,13 @@ fn attempt(
         work = engine.limits().work_units().saturating_sub(start_work);
         // Settling within its budget is not charged to the trial's turn
         // (`tp::settle`).
-        let charged = work - (t.evaluation.settled_work() - settled);
+        // The estimate of a step the turn ended before is charged ahead,
+        // and the attempt that makes the step is charged only past it.
+        let made = work - (t.evaluation.settled_work() - settled);
+        let paid = made.min(t.ahead);
+        ahead = backend.ended_before();
+        t.ahead = t.ahead - paid + ahead;
+        let charged = made - paid + ahead;
         t.spent = t.spent.saturating_add(charged);
         t.last_work = charged;
         t.lost = backend.lost();
@@ -962,7 +984,12 @@ fn attempt(
             None => format!(", steps {done}/{all}"),
         });
     let alone = if bounds.is_none() { ", alone" } else { "" };
-    ledger.notes.push(format!("trial: {} indicators={}{alone}, work={work}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
+    let ahead = if ahead > 0 {
+        format!(", {ahead} charged ahead")
+    } else {
+        String::new()
+    };
+    ledger.notes.push(format!("trial: {} indicators={}{alone}, work={work}{ahead}, phase={phase}{}{reach}, {outcome}, {seconds:.3}s",
         t.kind, t.kind.indicators_name(), progress.unwrap_or_default()));
     result
 }
