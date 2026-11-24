@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -20,6 +21,8 @@ from unittest.mock import mock_open, patch
 scripts = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(scripts))
 from source_tree import SOURCE  # noqa: E402
+
+TRUE = shutil.which('true')   # /bin/true on Linux, /usr/bin/true on macOS
 spec = importlib.util.spec_from_file_location('bench', scripts / 'bench.py')
 bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
@@ -2921,7 +2924,7 @@ class MerlinTests(unittest.TestCase):
                 return {'status': 'ok', 'seconds': 0.5, 'stdout': tddlog_out, 'stderr': ''}
             if cmd[0] == sys.executable:   # bn_exact.py
                 return real(cmd, timeout, cwd, env)
-            self.assertEqual(cmd[0], '/bin/true')
+            self.assertEqual(cmd[0], TRUE)
             task = cmd[cmd.index('-t') + 1]
             Path(cmd[cmd.index('-o') + 1] + '.' + task).write_text(
                 MERLIN_MAR if task == 'MAR' else 'PR\n5.783825 (3.250000e+02)\nSTATUS\ntrue: Consistent evidence\n')
@@ -2930,7 +2933,7 @@ class MerlinTests(unittest.TestCase):
             (Path(d) / 'uai_markov.pl').write_text((regress / 'markov.pl').read_text())
             args = SimpleNamespace(suite='uai', only=['uai_markov'], families=[], uai_benchmarks=str(regress), dir=d,
                                    strategies=['auto', 'closed+evidence-probability'], kbs=[], pita='', aspmc='',
-                                   scallop='', dice='', exact=True, ace='', merlin='/bin/true', ganak='', pr=True,
+                                   scallop='', dice='', exact=True, ace='', merlin=TRUE, ganak='', pr=True,
                                    tddlog='tddlog', out=str(Path(d) / 'results.jsonl'), timeout=60, no_skip=True)
             with patch.object(bench, 'timed', timed), redirect_stdout(io.StringIO()):
                 bench.run(args)
@@ -3014,7 +3017,7 @@ class MerlinTests(unittest.TestCase):
             self.assertEqual((Path(d) / 'uai_markov.cnf').read_text(),
                              bench.gen_bn.uai_cnf(str(regress / 'markov.uai'), evidence)[0])
             args = SimpleNamespace(**vars(args), strategies=[], kbs=[], pita='', aspmc='', scallop='', dice='',
-                                   exact=False, ace='', merlin='', ganak='/bin/true', pr=True,
+                                   exact=False, ace='', merlin='', ganak=TRUE, pr=True,
                                    out=str(Path(d) / 'results.jsonl'), timeout=60, no_skip=True)
             with patch.object(bench, 'timed', timed), redirect_stdout(io.StringIO()):
                 bench.run(args)
@@ -3022,7 +3025,7 @@ class MerlinTests(unittest.TestCase):
             args.pr = False
             with self.assertRaisesRegex(SystemExit, '--ganak answers the partition function alone'):
                 bench.run(args)
-        self.assertEqual(calls, [['/bin/true', '--mode', '1', '--prob', '0', f'{d}/uai_markov.cnf']])
+        self.assertEqual(calls, [[TRUE, '--mode', '1', '--prob', '0', f'{d}/uai_markov.cnf']])
         self.assertEqual([(r['system'], r['variant'], r['status']) for r in records], [('ganak', 'wmc', 'ok')])
         self.assertAlmostEqual(records[0]['log10_z'], bench.math.log10(165), places=14)
         self.assertTrue(bench.has_cnf(('uaimarkov', ['gen_bn.py', 'markov.uai.gz', '--evid', 'markov.uai.evid'])))
@@ -3041,7 +3044,7 @@ class MerlinTests(unittest.TestCase):
             self.assertTrue((Path(d) / 'uai_markov.pl').exists())
             self.assertFalse((Path(d) / 'uai_markov.cnf').exists())
             args = SimpleNamespace(**vars(args), strategies=[], kbs=[], pita='', aspmc='', scallop='', dice='',
-                                   exact=False, ace='', merlin='', ganak='/bin/true', pr=True,
+                                   exact=False, ace='', merlin='', ganak=TRUE, pr=True,
                                    out=str(Path(d) / 'results.jsonl'), timeout=60, no_skip=True)
             with self.assertRaisesRegex(SystemExit, 'no CNF for uai_markov .*bench.py gen --cnf'):
                 bench.run(args)
@@ -3217,7 +3220,7 @@ class MerlinTests(unittest.TestCase):
 
     def test_ganak_outside_the_uai_suite_is_refused(self):
         args = SimpleNamespace(suite='standard', only=['grid6'], families=[], strategies=['auto'], kbs=[], pita='',
-                               aspmc='', scallop='', dice='', exact=False, ace='', merlin='', ganak='/bin/true',
+                               aspmc='', scallop='', dice='', exact=False, ace='', merlin='', ganak=TRUE,
                                pr=False, out='/dev/null', dir='bench')
         with self.assertRaisesRegex(SystemExit, '--ganak counts the weighted CNFs of the uai'):
             bench.run(args)
@@ -3557,7 +3560,9 @@ class LaneTests(unittest.TestCase):
                                tddlog='tddlog', timeout=1, no_skip=no_skip, exact=False, ace='', merlin='', ganak='',
                                pr=False, cpus=cpus)
         # a folded instance's command ends in its arguments: its name, for the mock to tell them apart
+        which = shutil.which   # --cpus checks for taskset, which macOS lacks; timed is mocked here
         with patch('builtins.open', mock_open()) as output, patch.object(bench, 'timed', timed), \
+                patch.object(bench.shutil, 'which', lambda n, *a, **k: n if n == 'taskset' else which(n, *a, **k)), \
                 patch.object(bench, 'arguments_of', lambda path: [Path(path).stem]), \
                 patch.object(bench, 'queries', return_value=['q']), redirect_stdout(io.StringIO()):
             bench.run(args)
