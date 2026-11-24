@@ -90,6 +90,22 @@
 //! pairs as their description can finish past the cap, and gives its batch
 //! up after the join instead (`EvidenceWalk::finish_join`).
 //!
+//! Where the walk sums out, that chain can grow through factors that read
+//! the target's variables before the last of their readers joins and the
+//! join sums them out (pedigree34: a chain of 30 factors into a 1.02 M-pair
+//! target grew to 106 M pairs and fell to 1.47 M at its 17th factor). Each
+//! join of such a chain is tried capped at [`DEFER_GROWTH`] times the
+//! target's pairs, or the floor any capped join has; past the cap, the
+//! factors still to come make a batch again, whose product meets the
+//! chain's result: among themselves they sum out what only they read
+//! before the result holds it (pedigree34's largest result 12.4 M pairs).
+//! That batch's joins are capped as any batch's are, and given up, it goes
+//! into the result as an uncapped chain, in the order of the first: where
+//! the factors' products grow past their caps among themselves too
+//! (pedigree38's 43 714-pair factor met with 661 pairs), the walk's order
+//! stands. A walk that sums nothing out has no join that shrinks the
+//! chain's result, and its chains are not capped.
+//!
 //! Where the batch given up is the largest child's, which the node sets
 //! aside to meet its other items smallest first, those items are conjoined
 //! first, and their product goes into the target before the batch's
@@ -273,6 +289,9 @@ struct PendingFormula {
 struct Batch {
     target: usize,
     product: usize,
+    /// Made of a capped chain's factors still to come
+    /// (`EvidenceWalk::rebatch`).
+    chained: bool,
 }
 
 /// What a node built: its result, and where it passed that up, the factors
@@ -447,6 +466,14 @@ pub(super) struct EvidenceWalk {
     /// joins is in, by the join's slot.
     batches: Vec<Batch>,
     batch_of: FxHashMap<usize, usize>,
+    /// The capped chains of given-up batches, by the slot each of their
+    /// joins fills, and the pairs of each chain's target, where it is capped
+    /// (module doc; [`EvidenceWalk::rebatch`]).
+    chain_of: FxHashMap<usize, usize>,
+    chain_start: Vec<Option<usize>>,
+    /// The place in its chain of each factor a batch made again took, which
+    /// the products of that batch's joins carry.
+    chain_order: FxHashMap<usize, usize>,
     union: Union,
     /// The leaves of the vtree's top chain, by variable, whether it ends
     /// over a node that is not a leaf, and the pre-order spans of the vtree's
@@ -532,6 +559,9 @@ impl EvidenceWalk {
             shared: FxHashMap::default(),
             batches: Vec::new(),
             batch_of: FxHashMap::default(),
+            chain_of: FxHashMap::default(),
+            chain_start: Vec::new(),
+            chain_order: FxHashMap::default(),
             union: Union::default(),
             chain,
             over_subtree,
@@ -778,7 +808,11 @@ impl EvidenceWalk {
             && self.joins.len() > from
         {
             let id = self.batches.len();
-            self.batches.push(Batch { target, product });
+            self.batches.push(Batch {
+                target,
+                product,
+                chained: false,
+            });
             for join in self.joins.range(from..) {
                 self.batch_of.insert(join.out(), id);
             }
@@ -906,7 +940,11 @@ impl EvidenceWalk {
     /// The chain makes a slot and a join per operand of the batch's joins
     /// to come and one more, for which it takes room first.
     fn unbatch(&mut self, id: usize) -> Result<(), CompileError> {
-        let Batch { target, product } = self.batches[id];
+        let Batch {
+            target,
+            product,
+            chained,
+        } = self.batches[id];
         let operands: usize = self
             .joins
             .iter()
@@ -938,6 +976,9 @@ impl EvidenceWalk {
             self.shared.remove(out);
         }
         operands.retain(|slot| !outs.contains(slot));
+        if chained {
+            operands.sort_by_key(|slot| self.chain_order.get(slot).copied().unwrap_or(usize::MAX));
+        }
         let at = self
             .joins
             .iter()
@@ -981,6 +1022,10 @@ impl EvidenceWalk {
             }
         };
         self.in_full.insert(into, None);
+        let capped = (!chained && self.sum_out.is_some()).then(|| {
+            self.chain_start.push(Some(self.slot_pairs[target]));
+            self.chain_start.len() - 1
+        });
         let mut acc = target;
         let count = operands.len();
         for (i, operand) in operands.into_iter().enumerate() {
@@ -990,6 +1035,9 @@ impl EvidenceWalk {
                 self.slot(None, 0)
             };
             chain.push(Join::Two(acc, operand, next));
+            if let Some(c) = capped {
+                self.chain_of.insert(next, c);
+            }
             acc = next;
         }
         // In the node's step the other items can be made by joins planned
@@ -1002,6 +1050,51 @@ impl EvidenceWalk {
             self.probe.unbatched += 1;
         }
         Ok(())
+    }
+
+    /// Makes the factors still to come of chain `c`, whose front join was
+    /// stopped at its cap, a batch whose product meets the front join's
+    /// result so far, and whether it did: not where one factor is left, or
+    /// one of them is still to be made (see the module documentation).
+    fn rebatch(&mut self, c: usize) -> Result<bool, CompileError> {
+        let len = self
+            .joins
+            .iter()
+            .take_while(|join| {
+                matches!(join, Join::Two(..)) && self.chain_of.get(&join.out()) == Some(&c)
+            })
+            .count();
+        let mut acc = None;
+        let mut factors = VecDeque::with_capacity(len);
+        for join in self.joins.range(..len) {
+            let Join::Two(a, factor, _) = *join else {
+                unreachable!("a chain joins two slots");
+            };
+            acc.get_or_insert(a);
+            factors.push_back(factor);
+        }
+        if len < 2 || factors.iter().any(|&f| self.slots[f].is_none()) {
+            return Ok(false);
+        }
+        let acc = acc.expect("the chain's front join");
+        self.room(len + 2)?;
+        let into = self.joins[len - 1].out();
+        let tail = self.joins.split_off(len);
+        for join in std::mem::take(&mut self.joins) {
+            self.chain_of.remove(&join.out());
+        }
+        for (i, &factor) in factors.iter().enumerate() {
+            self.chain_order.insert(factor, i);
+        }
+        let pairs = factors.iter().map(|&f| self.slot_pairs[f]).sum();
+        let id = self.batches.len();
+        let product = self
+            .conjoin_put_off(factors, &[Group { len, pairs }], acc)
+            .expect("a batch of two factors or more");
+        self.batches[id].chained = true;
+        self.joins.push_back(Join::Two(acc, product, into));
+        self.joins.extend(tail);
+        Ok(true)
     }
 
     /// An empty slot for a join's result, built on the scope over `shared`
@@ -1359,8 +1452,15 @@ impl EvidenceWalk {
             Some(id) => floor.max(self.charged(self.batches[id].target) as u64),
             None => floor,
         };
+        let chain = self.chain_of.get(&out).copied();
+        let floor = match chain.and_then(|c| self.chain_start[c]) {
+            Some(start) => floor.max(self.defer_growth.saturating_mul(start as u64)),
+            None => floor,
+        };
+        let chain = chain.filter(|&c| self.chain_start[c].is_some());
         let cap = (!last
             && (batch.is_some()
+                || chain.is_some()
                 || self.slot_pairs[a] >= self.defer_from
                     && self.slot_pairs[b] >= self.defer_from
                     && self.last_joins.contains(&out)))
@@ -1452,6 +1552,12 @@ impl EvidenceWalk {
                 let (_, fa, fb) = *refused;
                 self.restore_operands(a, b, fa, fb, Some(&scope), backend)?;
                 backend.kept();
+                if let Some(c) = chain {
+                    if !self.rebatch(c)? {
+                        self.chain_start[c] = None;
+                    }
+                    return Ok(false);
+                }
                 if self.settle_operands(a, b, backend)? && batch.is_none() {
                     self.in_full.insert(out, None);
                     return Ok(false);
@@ -1707,7 +1813,16 @@ impl EvidenceWalk {
         self.slots[out] = Some(Box::new(formula));
         self.slot_pairs[out] = size;
         self.shared.remove(&out);
-        self.batch_of.remove(&out);
+        let order = [a, b]
+            .iter()
+            .filter_map(|s| self.chain_order.remove(s))
+            .min();
+        if self.batch_of.remove(&out).is_some()
+            && let Some(order) = order
+        {
+            self.chain_order.insert(out, order);
+        }
+        self.chain_of.remove(&out);
         self.joins.pop_front();
         self.completed_joins += 1;
         backend.kept();
