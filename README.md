@@ -27,7 +27,7 @@ Markov networks, and Dice programs. It is a command-line tool and a Rust
 library, with Python, C and WebAssembly bindings.
 
 <!-- results:headline -->
-On [probabilistic logic programs](https://tractables.github.io/tddlog/#/category/logic-programs), tddlog is **214×** faster than ProbLog, and on [Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks) **58×** faster than Ace, the existing system that answers the most of each. [Detailed results below](#how-well-does-it-work).
+On [probabilistic logic programs](https://tractables.github.io/tddlog/#/category/logic-programs), tddlog is **211×** faster than ProbLog, and on [Bayesian networks](https://tractables.github.io/tddlog/#/category/bayesian-networks) **61×** faster than Ace, the existing system that answers the most of each. [Detailed results below](#how-well-does-it-work).
 <!-- /results:headline -->
 
 **Website: [tractables.github.io/tddlog](https://tractables.github.io/tddlog/).**
@@ -45,8 +45,8 @@ was checked against an exact reference.
        alt="Each type of program against the exact inference systems native to it: their answers, their total times and tddlog's, and tddlog's speed-up over each"></a>
   <br>
 <!-- results:overview -->
-<!-- written from bindings/wasm/results/categories.json, sha256 8dbb47cf73a2aa08861f00e58f1c91b42f5fde4e6f435b04d2607595e2498753 -->
-<sub>As of 2026-11-11. Click the figure for every result.</sub>
+<!-- written from bindings/wasm/results/categories.json, sha256 46b8bfc8a9f4d6a3f7bb2dbc1f232e0822656b654daf17164ae2adaed802806d -->
+<sub>As of 2026-11-23. Click the figure for every result.</sub>
 <!-- /results:overview -->
 </p>
 
@@ -58,7 +58,7 @@ each against itself alone:
 <!-- results:integrations -->
 | Integration | Instances | Answers | Total time | Faster |
 |---|--:|--:|--:|--:|
-| Alea.jl+tddlog against Alea.jl | 1001 | 647 (Alea.jl 379) | 6.5 h (Alea.jl 92 h) | 12× |
+| Alea.jl+tddlog against Alea.jl | 1001 | 647 (Alea.jl 379) | 6.8 h (Alea.jl 92 h) | 12× |
 | Roulette+tddlog against Roulette | 1269 | 802 (Roulette 509) | 8.6 h (Roulette 90 h) | 9.3× |
 <!-- /results:integrations -->
 
