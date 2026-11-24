@@ -352,6 +352,32 @@ fn a_summed_out_variable_stays_while_a_scope_holds_it() {
 }
 
 #[test]
+fn a_summed_out_operand_of_a_stopped_join_stays_on_its_scope() {
+    // tests/networks/observed_unary.uai holds 21 variables, each with the
+    // table 0.8, 0.2 and observed, 9 of them v_0. The evidence walk gives a
+    // batch up into a chain whose target holds no pairs, so the chain's cap
+    // stops its next join at once, while it places an operand with a
+    // summed-out level on the join's scope. Handed back, that operand was
+    // moved onto the join's scope, which a summed-out level refuses, and
+    // the run failed. Z = 0.8^9 0.2^12.
+    let path = "tests/networks/observed_unary.uai";
+    let evid = "tests/networks/observed_unary.uai.evid";
+    let out = tddlog(&[
+        path,
+        "--evidence",
+        evid,
+        "--no-queries",
+        "--evidence-probability",
+        "--precision",
+        "13",
+    ]);
+    let (_, log10_z) = answers(&out, "Z");
+    let got = log10_z.expect("a Z line");
+    let want = (0.8f64.powi(9) * 0.2f64.powi(12)).log10();
+    assert!((got - want).abs() < 1e-12, "log10 Z = {got} against {want}");
+}
+
+#[test]
 fn a_markov_file_of_rounded_tables_is_its_network() {
     // tests/networks/rounded.uai holds x0's table and x1's given x0, x1
     // first in its scope; x1's row at x0 = v_0, 0.160598 and 0.839403,

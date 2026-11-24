@@ -1694,7 +1694,11 @@ impl EvidenceWalk {
 
     /// Puts the operands of a join that did not happen back in slots `a` and
     /// `b`, each moved onto `onto` where given; a refused move leaves that
-    /// operand on its own scope and is the error returned.
+    /// operand on its own scope and is the error returned. An operand with a
+    /// summed-out level stays on its own scope: a move refuses it, and the
+    /// next join places it by its values (`SumOut::and_onto`). A join stopped
+    /// while placing it hands it back there (uai mastermind_05_08_03_0002,
+    /// whose capped chain into a target of no pairs stops at once).
     fn restore_operands(
         &mut self,
         a: usize,
@@ -1707,7 +1711,7 @@ impl EvidenceWalk {
         let (fa, fb) = (fa.owned(backend)?, fb.owned(backend)?);
         let mut refused = None;
         let mut moved = |(f, own): Formula| match onto {
-            Some(scope) if refused.is_none() && !own.same(scope) => {
+            Some(scope) if refused.is_none() && !own.same(scope) && !f.has_marginal_level() => {
                 match backend.embed_moving(f, &own, scope, None) {
                     Ok(f) => (f, scope.clone()),
                     Err(r) => {
