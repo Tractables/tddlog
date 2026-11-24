@@ -85,8 +85,10 @@
 //! into the target one at a time, in the order the factors were put off,
 //! which keeps the factors of one node together, and what they make is
 //! what their product with the target would have been. The cap reads the
-//! pairs a conjunction has in flight, which pass it before the result
-//! would.
+//! pairs a conjunction stores in flight, which pass it before the result
+//! would where every level is written out; a result whose levels hold
+//! pairs as their description can finish past the cap, and gives its batch
+//! up after the join instead (`EvidenceWalk::finish_join`).
 //!
 //! Where the batch given up is the largest child's, which the node sets
 //! aside to meet its other items smallest first, those items are conjoined
@@ -257,10 +259,12 @@ impl Join {
 }
 
 /// A join's result kept across a size stop, and whether it was reduced
-/// since: the walk resumes from it rather than joining again.
+/// since: the walk resumes from it rather than joining again. A capped
+/// join of a batch keeps the batch and its cap (`EvidenceWalk::finish_join`).
 struct PendingFormula {
     formula: Formula,
     reduced: bool,
+    capped: Option<(usize, u64)>,
 }
 
 /// A child's put-off factors conjoined among themselves into `product`,
@@ -456,6 +460,9 @@ pub(super) struct EvidenceWalk {
     pub(super) defer_from: usize,
     pub(super) defer_growth: u64,
     pending: Option<PendingFormula>,
+    /// A batch whose capped join made more pairs than its cap, to be given
+    /// up before the next join (`EvidenceWalk::finish_join`).
+    give_up: Option<usize>,
     /// When a join's result is minimized in full rather than pruned.
     full: FullSchedule,
     /// Whether the last full minimization freed a pair, and the pairs of
@@ -532,6 +539,7 @@ impl EvidenceWalk {
             defer_from: DEFER_FROM,
             defer_growth: DEFER_GROWTH,
             pending: None,
+            give_up: None,
             full: FullSchedule::default(),
             full_freed: true,
             full_due_on: 0,
@@ -1147,6 +1155,11 @@ impl EvidenceWalk {
         loop {
             while let Some(join) = self.joins.front() {
                 backend.pause()?;
+                if let Some(id) = self.give_up {
+                    self.unbatch(id)?;
+                    self.give_up = None;
+                    continue;
+                }
                 let (a, b, out) = match *join {
                     Join::Two(a, b, out) => (a, b, out),
                     Join::Smallest(..) => {
@@ -1474,6 +1487,7 @@ impl EvidenceWalk {
         self.pending = Some(PendingFormula {
             formula: (formula, scope),
             reduced: false,
+            capped: batch.filter(|_| cap.is_some()).map(|id| (id, floor)),
         });
         self.slots[a] = None;
         self.slots[b] = None;
@@ -1687,7 +1701,10 @@ impl EvidenceWalk {
         if let Some(so) = &mut self.sum_out {
             so.commit(a, b, out, &pending.formula.1);
         }
-        self.slots[out] = Some(Box::new(self.pending.take().unwrap().formula));
+        let PendingFormula {
+            formula, capped, ..
+        } = self.pending.take().unwrap();
+        self.slots[out] = Some(Box::new(formula));
         self.slot_pairs[out] = size;
         self.shared.remove(&out);
         self.batch_of.remove(&out);
@@ -1695,6 +1712,17 @@ impl EvidenceWalk {
         self.completed_joins += 1;
         backend.kept();
         sizes.record(size);
+        // The cap reads the pairs the conjunction stores in flight, and a
+        // level held as its description stores fewer than it has: a result
+        // past the cap in pairs had (pedigree40: 871 709 pairs, 129 760 of
+        // them described, under a cap of 862 435) gives its batch up as a
+        // stop would have, before its joins to come build on it.
+        if let Some((id, floor)) = capped
+            && size as u64 > floor
+            && self.batches[id].product != out
+        {
+            self.give_up = Some(id);
+        }
         Ok(())
     }
 
